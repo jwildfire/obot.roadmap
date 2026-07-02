@@ -34,9 +34,22 @@ Sub-issues are filed in the repo closest to the implementation work. All repos a
 - [requirements/dataspec/](requirements/dataspec/) — Data specification documents (`{issue_number}_dataspec.md`)
 - [.github/ISSUE_TEMPLATE/requirement.yml](.github/ISSUE_TEMPLATE/requirement.yml) — Requirement issue template (5 sections)
 
+## Creating Requirement issues
+
+Every Requirement issue must instantiate the [requirement template](.github/ISSUE_TEMPLATE/requirement.yml). Downstream automation (rollups, dashboards) parses the five sections, so hand-built bodies that drift from the template break silently. Agents creating issues via `gh issue create` bypass the web form, so they must reproduce the template themselves:
+
+1. Read `.github/ISSUE_TEMPLATE/requirement.yml` first — it is the source of truth. Do not reconstruct the sections from memory or by copying an existing issue.
+2. The body must contain exactly the template's five sections as `###` headings, in this order: `### Business Requirement`, `### Overview`, `### Data Requirement`, `### Design`, `### Tasks`. Never rename, reorder, add, or drop a section.
+3. Apply the `requirement` label the template sets, plus one or more topic labels.
+4. Keep the attribution line (see [Context](#context)) above the first section heading — it is a house convention, not a template section.
+5. Sections not yet populated get a short italic placeholder stating when they will be filled (e.g. `_To be populated during Requirement Gathering (Step 2)._`) — never omit them.
+
+Before submitting, verify with: `gh issue view <n> --json body -q .body | grep '^### '` — the output must be exactly the five headings above.
+
 ## Constraints
 
 - Always check the current state of referenced files before making changes — conventions may have evolved; do not assume historical practice still applies.
+- Requirement issues must follow the requirement template exactly — see [Creating Requirement issues](#creating-requirement-issues).
 - Never create Requirement issues without populating **Business Requirement** and **Overview**.
 - Never create Tasks before **Design** is populated. Data Requirement should be filled before Design unless data availability is obviously not at issue.
 - Items without clear scope stay in the `backlog` milestone.
