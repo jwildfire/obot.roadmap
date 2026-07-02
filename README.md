@@ -17,7 +17,7 @@ The workflow mirrors [Gilead-BioStats/gsm.roadmap](https://github.com/Gilead-Bio
 
 # Requirements
 
-Requirements are captured as GitHub issues using the [requirement issue template](.github/ISSUE_TEMPLATE/requirement.yml). Each issue body has five sections, populated incrementally as the requirement moves through the lifecycle:
+Requirements are captured as GitHub issues using the [requirement issue template](.github/ISSUE_TEMPLATE/requirement.yml) and tracked on the [obot Roadmap project](https://github.com/users/jwildfire/projects/1), whose Status field mirrors the lifecycle stages below. Each issue body has five sections, populated incrementally as the requirement moves through the lifecycle:
 
 | Section | When filled | Required at creation |
 |---|---|---|
