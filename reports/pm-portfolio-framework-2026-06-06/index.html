@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PM Agent and Portfolio Framework Review</title>
+<style>
+:root { --ink:#0f172a; --muted:#475569; --line:#dbe3ef; --bg:#f8fafc; --card:#fff; --accent:#f97316; --blue:#2563eb; }
+body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); line-height:1.5; }
+main { max-width:1100px; margin:0 auto; padding:32px 20px 64px; }
+h1 { font-size:2rem; margin:0 0 0.25rem; }
+h2 { margin-top:2rem; border-bottom:1px solid var(--line); padding-bottom:0.35rem; }
+h3 { margin-top:1.25rem; }
+.meta { color:var(--muted); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin:16px 0; box-shadow:0 10px 24px rgba(15,23,42,0.04); }
+.badge { display:inline-block; padding:0.2rem 0.5rem; border-radius:999px; background:#fff7ed; color:#9a3412; font-weight:700; font-size:0.85rem; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+ul { padding-left:1.25rem; }
+li { margin:0.35rem 0; }
+a { color:var(--blue); }
+code { background:#eef2ff; border-radius:4px; padding:0.1rem 0.25rem; }
+.status-ok { color:#15803d; font-weight:700; }
+.status-gap { color:#b45309; font-weight:700; }
+.status-risk { color:#b91c1c; font-weight:700; }
+</style>
+</head>
+<body><main>
+<p class="badge">Portfolio PM Audit</p>
+<h1>PM Agent and Portfolio Framework Review</h1>
+<p class="meta">Prepared 2026-06-06 11:50 EDT for Jeremy review.</p>
+
+<section class="card">
+<h2>Executive summary</h2>
+<p>The PM cycle that ran earlier was too narrow: it refreshed the active queue and selected a development target, but it did not rigorously audit the full GitHub portfolio against Jeremy's morning requirements. I created a new required <code>portfolio-pm-audit</code> skill and wired PM cycles to use it before selecting development work.</p>
+<p><strong>Recommendation:</strong> pause broad development until a full PM portfolio audit completes and updates Hub/issue gaps. Development can resume on a single target only after the audit produces an explicit handoff.</p>
+</section>
+
+<section class="grid">
+<div class="card"><h3>What improved</h3><ul>
+<li>Created <code>skills/portfolio-pm-audit/SKILL.md</code>.</li>
+<li>Updated <code>HEARTBEAT.md</code> and <code>AGENTS.md</code> so PM cycles must use the audit checklist.</li>
+<li>Added Human ToDo delegation gate requirements.</li>
+<li>Clarified that GitHub issues are durable PM memory and PRs are development artifacts.</li>
+</ul></div>
+<div class="card"><h3>Still missing</h3><ul>
+<li>Agent Overview page requested for the Hub is not published yet.</li>
+<li>Portfolio audit should be run as a first-class PM report, not just a queue refresh.</li>
+<li>No separate PM/Development agents are configured in OpenClaw; current sessions are prompt-scoped rather than agent-isolated.</li>
+<li>Several local worktrees are dirty or behind and need classification before development.</li>
+</ul></div>
+</section>
+
+<section class="card">
+<h2>Morning requirements checklist</h2>
+<ul>
+<li><span class="status-ok">Done:</span> Hub Human ToDos now use linked repo + issue/PR format and explicit <code>@jwildfire</code> wording.</li>
+<li><span class="status-ok">Done:</span> Linked Human ToDo artifacts received explicit <code>@jwildfire</code> clarification comments.</li>
+<li><span class="status-ok">Done:</span> Project issue type exists in Hub labels; active P004/P007 Project issues exist.</li>
+<li><span class="status-gap">Partial:</span> Requirements and Tasks exist for P004/P007, but the audit needs to verify parent/sub-issue linkage and stale tracker issues across repos.</li>
+<li><span class="status-gap">Partial:</span> Hub roadmap/homepage improved, but Agent Overview page has only a task issue, not a published page.</li>
+<li><span class="status-gap">Partial:</span> Orchestrator/delegation rules are in local instructions, but dedicated PM/Dev agent configuration is not yet real.</li>
+<li><span class="status-ok">Done:</span> Telegram formatting/truncation skills hardened.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>Current Project / Requirement / Task snapshot</h2>
+<h3>Hub repo open portfolio issues</h3>
+<ul>
+<li>#16 Project: P004 SafetyGraphics renderer modernization</li>
+<li>#17 Project: P007 Refactor development framework for increased autonomy</li>
+<li>#4 Requirement: P004 autonomous SafetyGraphics renderer modernization standard</li>
+<li>#14 Requirement: P007 PM visibility and human ToDo tracking</li>
+<li>#18 Requirement: P007 GitHub-native memory and work artifacts</li>
+<li>#21 Task: create Agent Overview page for current autonomous agents</li>
+</ul>
+<h3>safety-agent open PM/development issues</h3>
+<ul>
+<li>#5 Task: promote P004 renderer migration standard</li>
+<li>#6 Task: reconcile Safety Histogram implementation and evidence PRs</li>
+<li>#7 Task: define P004 testing agent GitHub App implementation path</li>
+<li>#3 legacy/full renderer migration tracker lacks current type/status labels and should be reconciled or closed/superseded.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>Dirty worktree and branch drift risks</h2>
+<p>Development cycles should use fresh worktrees or explicitly selected clean branches until these are classified.</p>
+<ul>
+<li><strong>autonomous-issue6-safety-histogram</strong> — ## issue6-reconcile-pr1</li>
+<li><strong>gsm.safety</strong> — ## codex/ae-explorer-report-scaffold...origin/codex/ae-explorer-report-scaffold [behind 10]</li>
+<li><strong>obot-claw.github.io</strong> — ## main...origin/main [behind 46]</li>
+<li><strong>safety-agent</strong> — ## p004-requirements-testing-framework</li>
+<li><strong>safety-histogram</strong> — ## test-driver/safety-histogram-trial...origin/test-driver/safety-histogram-trial [behind 4]</li>
+
+</ul>
+</section>
+
+<section class="card">
+<h2>Framework improvements recommended</h2>
+<ol>
+<li><strong>PM portfolio report every cycle:</strong> PM should produce an HTML/Markdown audit artifact before development starts.</li>
+<li><strong>Deterministic audit helper:</strong> add a script that queries GitHub issues/PRs/labels and outputs Project/Requirement/Task gaps.</li>
+<li><strong>Hub sync gate:</strong> PM cycle should fail closed if Hub homepage/roadmap/ToDos are stale relative to GitHub issues.</li>
+<li><strong>Agent capability page:</strong> publish the missing Hub Agent Overview page with Main/PM/Development/Testing agents, responsibilities, and escalation rules.</li>
+<li><strong>Dedicated agent configuration:</strong> create actual PM and Development agent configs/sessions or documented launch prompts, not just conceptual roles.</li>
+<li><strong>Research loop:</strong> PM audit should inspect current GitHub labels, issue templates, sub-issue support, project pages, and recent comments before making recommendations.</li>
+</ol>
+</section>
+
+<section class="card">
+<h2>Proposed next PM cycle contract</h2>
+<ol>
+<li>Run <code>portfolio-pm-audit</code>.</li>
+<li>Inventory live repos, issues, PRs, labels, Hub pages, Human ToDos, and dirty worktrees.</li>
+<li>Classify gaps as PM-fix-now, Development-handoff, Testing-handoff, New-agent-needed, or Jeremy-decision.</li>
+<li>Make safe issue/Hub updates.</li>
+<li>Only then choose a single development target with exact handoff instructions.</li>
+</ol>
+</section>
+
+<section class="card">
+<h2>Immediate next actions</h2>
+<ul>
+<li>Run full PM portfolio audit using the new skill and publish its findings.</li>
+<li>Create/publish the missing Hub Agent Overview page from issue #21.</li>
+<li>Decide whether to configure real isolated PM/Development agents or maintain prompt-scoped cycles for now.</li>
+<li>After audit, restart development only if the selected target remains highest priority.</li>
+</ul>
+</section>
+</main></body></html>

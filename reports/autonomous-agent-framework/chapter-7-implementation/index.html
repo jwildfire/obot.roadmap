@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>"Chapter 7: Implementation plan"</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework/chapter-7-implementation/index.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<link rel="stylesheet" href="../styles.css">
+<div class="report-page">
+<nav class="report-nav"><strong>Report chapters</strong><ol><li><a href="../">Index</a></li><li><a href="../chapter-1-options/">Chapter 1: Framework options</a></li><li><a href="../chapter-2-codex-plan/">Chapter 2: Codex-first operating model</a></li><li><a href="../chapter-3-supervision/">Chapter 3: Supervision failure analysis</a></li><li><a href="../chapter-4-paperclip-evaluation/">Chapter 4: Paperclip evaluation</a></li><li><a href="../chapter-5-paperclip-rollout/">Chapter 5: Paperclip rollout design</a></li><li><a href="../chapter-6-recommendation/">Chapter 6: Revised recommendation</a></li><li><a href="../chapter-7-implementation/">Chapter 7: Implementation plan</a></li><li><a href="../chapter-8-paperclip-production/">Chapter 8: Paperclip production rollout</a></li><li><a href="../chapter-9-openclaw-migration/">Chapter 9: OpenClaw model migration</a></li><li><a href="../chapter-10-claude-code-migration/">Chapter 10: Claude Code migration</a></li></ol></nav>
+
+<h1>Chapter 7: Implementation plan</h1>
+<p class="small"><strong>Updated:</strong> 2026-06-07 · Executes Chapter 6 Phase A. Designed to be run by Codex on obot's OpenClaw machine.</p>
+
+<div class="ok"><strong>Goal:</strong> complete <strong>one reliable PM→Dev→PR cycle</strong> on Codex-native execution plus a thin supervised runner — and pass Chapter 3's Triggered/Started/Completed taxonomy and Chapter 5's "Started vs triggered" + "Stall detection" acceptance tests <em>without Paperclip.</em> Passing this earns the Chapter 5 pilot. The keystone deliverable is a failure-injection test that proves a stalled run is detected and reported without Jeremy asking.</div>
+
+<h2>Non-goals (this phase)</h2>
+<ul>
+<li>No Paperclip install, account, or credentials yet — that is Chapter 5, gated on this phase passing.</li>
+<li>No custom orchestration <em>platform</em> — build the smallest runner that supervises one process. Stop at ~200 lines.</li>
+<li>No automatic merges; PRs stay review-gated per <a href="https://github.com/obot-claw/obot-claw.github.io/blob/main/autonomy.md">Autonomy</a>.</li>
+<li>No Telegram-as-executor; OpenClaw cron is demoted to wake/notify only.</li>
+<li>GitHub Issues/PRs remain the public source of truth.</li>
+</ul>
+
+<h2>Target architecture for this phase</h2>
+<table><thead><tr><th>Component</th><th>Role this phase</th><th>Concrete form</th></tr></thead><tbody>
+<tr><td>OpenClaw main obot</td><td>Telegram intake + scheduler + notifier. <strong>Not</strong> the executor.</td><td>Cron wakes a launcher / posts alerts; <code>systemEvent</code> wake path only (Chapter 3).</td></tr>
+<tr><td>Supervised runner</td><td>Starts a worker, writes a run-record, heartbeats, enforces a deadline, recovers.</td><td>New <code>scripts/run_codex_cycle.py</code>, extending the existing <code>scripts/work_session.py</code> ledger.</td></tr>
+<tr><td>Watchdog</td><td>Reads run-records, flags stalled/triggered-but-not-started, emits one alert.</td><td><code>scripts/check_runs.py</code> (or a <code>--watch</code> mode on the runner), run by cron.</td></tr>
+<tr><td>Dev executor</td><td>Isolated, audited code execution → PR.</td><td>Codex cloud <code>@codex</code> on an issue/PR, or a Codex Automation in a dedicated worktree.</td></tr>
+<tr><td>PM executor</td><td>Portfolio audit → durable artifact → Dev target or decline.</td><td>Codex local (non-interactive) wrapped by the runner; output is a GitHub issue comment.</td></tr>
+<tr><td>GitHub</td><td>Source of truth + audit.</td><td>Project / Requirement / Task issues; PR + Codex task log are the Dev evidence.</td></tr>
+<tr><td>Run-records dir</td><td>Durable ledger of every run's state.</td><td><code>runs/&lt;run_id&gt;.json</code> + transcript log, local + linked in issue comments.</td></tr>
+</tbody></table>
+
+<h2>Phase 0 — Demote cron, scaffold the ledger <span class="pill">~30 min</span></h2>
+<ol>
+<li>Edit the autonomous cron jobs so they only <em>wake</em> main obot or start the launcher script — never run a long PM/Dev <code>agentTurn</code> directly (Chapter 3 root cause).</li>
+<li>Create a durable run-records directory and decide its schema (below). Reuse <code>scripts/work_session.py</code> fields where they already exist (target, session ref, checkpoint, liveness, evidence, recovery).</li>
+<li>Create the GitHub issue set for this cycle pilot:
+  <ul><li><strong>Project:</strong> "Reliable autonomous cycle (execution-first)".</li><li><strong>Requirement:</strong> "Supervised Codex runner + watchdog with stall detection".</li><li><strong>Task:</strong> "Failure-injection acceptance test".</li><li><strong>Task:</strong> "PM dry-run audit artifact".</li><li><strong>Task:</strong> "Dev docs-only PR via Codex-native execution".</li></ul></li>
+</ol>
+
+<div class="card"><strong>Run-record schema</strong> (<code>runs/&lt;run_id&gt;.json</code>):
+<pre style="white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:10px;padding:12px;overflow:auto">{
+  "run_id": "2026-06-08-pm-01",
+  "role": "pm | dev",
+  "target_issue": "obot-claw/obot-claw.github.io#NN",
+  "repo": "obot-claw/...",
+  "executor": "codex-local | codex-cloud",
+  "state": "triggered | started | completed | failed",
+  "started_at": "ISO-8601 or null",
+  "heartbeat_at": "ISO-8601, updated every N seconds",
+  "deadline_at": "ISO-8601 (started_at + timeout)",
+  "artifact": "PR url / issue-comment url / audit file path / null",
+  "failure_reason": "string or null",
+  "recovery": "what the watchdog/obot should do on stall"
+}</pre>
+<p class="small">State rule (Chapter 3): only <code>started</code> counts as active; only <code>completed</code> counts as useful work. A record stuck in <code>triggered</code> past a short grace window is a failure, not progress.</p></div>
+
+<h2>Phase 1 — Supervised runner <span class="pill">core deliverable</span></h2>
+<ol>
+<li>Write <code>scripts/run_codex_cycle.py</code>. Inputs: <code>--role</code>, <code>--issue</code>, <code>--repo</code>, <code>--timeout</code>, <code>--prompt-template</code>, <code>--write-scope</code>.</li>
+<li>On start: write the run-record as <code>triggered</code>, launch the Codex CLI <strong>non-interactively as a managed subprocess</strong>, then flip to <code>started</code> once the process is confirmed running.</li>
+<li>Emit a heartbeat (update <code>heartbeat_at</code> + append a transcript line) every N seconds while the subprocess lives.</li>
+<li>On clean exit with an artifact: write <code>completed</code> + artifact link. On timeout/crash/no-artifact: write <code>failed</code> + <code>failure_reason</code>.</li>
+<li>Use a fresh worktree/clone for any write task; never mutate a dirty unrelated clone (Autonomy L3 rule).</li>
+</ol>
+<p class="small">Exit: a manual PM dry-run writes a run-record and either an audit artifact or a clear failure reason. Keep it boring; this is a supervisor, not a platform.</p>
+
+<h2>Phase 2 — Failure-injection test <span class="pill pill-go">the keystone</span></h2>
+<div class="card"><p>This is the test Chapter 3 said we have never passed and Chapter 5 lists as an acceptance gate. Do it on the cheap substrate first.</p>
+<ol>
+<li>Run the runner against a deliberately stalling prompt (or kill the subprocess mid-run) so it stops heart-beating before producing an artifact.</li>
+<li>The watchdog (<code>scripts/check_runs.py</code> on a short cron) must detect: (a) <code>triggered</code> that never reached <code>started</code>, and (b) <code>started</code> with a stale <code>heartbeat_at</code> past <code>deadline_at</code>.</li>
+<li>On detection it flips the record to <code>failed</code>, writes a failure artifact, and emits <strong>one</strong> concise (&lt;500 char, plain-text) Telegram alert via obot — without Jeremy asking.</li>
+</ol>
+<p><strong>Pass = </strong>"Started vs triggered" and "Stall detection" from Chapter 5, satisfied with no Paperclip in the loop.</p></div>
+
+<h2>Phase 3 — PM dry-run (authority L2)</h2>
+<ol>
+<li>Runner starts the PM role: read the <a href="https://github.com/obot-claw/obot-claw.github.io/blob/main/roadmap.md">Roadmap</a>, open issues, and Hub state (reuse <code>scripts/portfolio_audit.py</code>).</li>
+<li>PM produces a durable audit artifact as a GitHub issue comment and either selects one Dev target or declines with a reason.</li>
+<li>obot sends a Telegram summary <em>only after</em> the issue-comment artifact exists.</li>
+</ol>
+
+<h2>Phase 4 — Dev cycle via Codex-native (authority L2/L3)</h2>
+<ol>
+<li>Pick a safe <strong>documentation-only</strong> task in <code>obot-claw.github.io</code> (no secrets, deterministic check).</li>
+<li>Drive it Codex-native: tag <code>@codex</code> on the task issue, or run a Codex Automation in a dedicated worktree → one PR. <strong>No merge.</strong></li>
+<li>The PR + Codex task log are the durable evidence; link them back into the run-record and the issue.</li>
+<li>L3 (implementation PR) only if the parent Requirement already approves implementation scope; otherwise keep it an L2 draft/docs PR.</li>
+</ol>
+<p class="small">This is the half Codex 2026 already solves natively (isolated worktrees, scheduled automations, issue→PR, PR-as-audit) — lean on it instead of hand-building.</p>
+
+<h2>Phase 5 — Wire daily PM→Dev (only after a manual pass)</h2>
+<ol>
+<li>Daily PM cron wakes main obot or runs the launcher that starts the supervised runner.</li>
+<li>A watchdog cron checks the run-record after 5–10 min; a stall produces a visible alert, never a false "active" claim.</li>
+<li>If PM completes with a safe Dev target, the launcher starts Dev through the same supervised runner.</li>
+</ol>
+
+<h2>Graduation gate → Chapter 5 pilot</h2>
+<table><thead><tr><th>Criterion</th><th>Pass condition</th></tr></thead><tbody>
+<tr><td>One real cycle</td><td>A PM→Dev→PR cycle completed with liveness evidence at each step.</td></tr>
+<tr><td>Stall detection</td><td>Failure-injection test flips to <code>failed</code> + alerts, unprompted (Phase 2).</td></tr>
+<tr><td>No false status</td><td>Nothing was reported "active" without a <code>started</code> record + concrete evidence.</td></tr>
+<tr><td>GitHub artifacts</td><td>Audit comment + PR exist and are linked from run-records.</td></tr>
+<tr><td>Telegram hygiene</td><td>Summaries are &lt;500 char plain text, sent only after a durable artifact.</td></tr>
+</tbody></table>
+<div class="callout">When all five pass, proceed to <a href="../chapter-5-paperclip-rollout/">Chapter 5</a> and run the Paperclip pilot as a control-plane comparison against this runner, scored on the <a href="../chapter-6-recommendation/">Chapter 6</a> go/no-go gates.</div>
+
+<h2>Authority &amp; stop conditions</h2>
+<p>Follow the <a href="https://github.com/obot-claw/obot-claw.github.io/blob/main/autonomy.md">Autonomy operating contract</a>: default block authority <strong>L2</strong>; L3 only where the parent Requirement approves implementation; merges stay review-gated. <strong>Stop and report</strong> (don't push) if requirements are ambiguous, checks fail without a clear fix, work needs non-<code>obot-claw</code> writes, private data could be exposed, credentials/tooling are blocked, or work exceeds the active Requirement scope.</p>
+
+<h2>Deliverables checklist</h2>
+<ul>
+<li><code>scripts/run_codex_cycle.py</code> — supervised runner with run-record + heartbeat.</li>
+<li><code>scripts/check_runs.py</code> — watchdog with stall/triggered-but-not-started detection + Telegram alert.</li>
+<li><code>runs/</code> — durable run-record directory (gitignored if it may contain run detail, or sanitized if committed).</li>
+<li>Updated cron config: wake/notify only, no long <code>agentTurn</code>.</li>
+<li>GitHub Project + Requirement + 3 Task issues (Phase 0).</li>
+<li>One audit issue-comment artifact (Phase 3) and one docs PR (Phase 4).</li>
+<li>A short evidence note (or daily entry) recording the failure-injection pass.</li>
+</ul>
+
+<h2>Rollback / what not to do</h2>
+<ul>
+<li>Don't keep retrying OpenClaw cron <code>agentTurn</code> and calling it progress (Chapter 3).</li>
+<li>Don't let the runner grow into a scheduler/queue/agent-platform — if it does, that's the signal to pilot Paperclip, not to keep building.</li>
+<li>Don't start the Paperclip pilot before this phase passes — you'd be unable to attribute a failure to Paperclip vs the unsolved execution layer.</li>
+<li>If Codex-native cloud/GitHub access is unavailable, fall back to Codex local in a clean worktree under the same runner supervision.</li>
+</ul>
+
+<h2>Hand-off to the next session</h2>
+<div class="ok"><strong>First actions for Codex on obot's machine:</strong> (1) create the Phase 0 GitHub issue set; (2) demote the autonomous cron jobs to wake/notify; (3) scaffold <code>scripts/run_codex_cycle.py</code> + the run-record schema above; (4) run the Phase 2 failure-injection test and capture the alert as evidence. Report back with the run-records and issue/PR links — that evidence is the go/no-go input for the Chapter 5 Paperclip pilot.</div>
+<h2>Notes from obot for next Codex session</h2>
+<div class="callout">
+<strong>Start here:</strong> Jeremy confirmed Chapter 6/7 execution-first sequencing. The next session on obot's machine should implement <strong>obot-claw.github.io issue #38</strong>: scaffold the supervised Codex runner and run-record ledger. Do not install Paperclip first.
+</div>
+<ul>
+  <li><strong>Active issue:</strong> P009 Project #36, Requirement #37, Task #38.</li>
+  <li><strong>Then:</strong> Task #39 failure-injection watchdog test, then Task #40 PM→Dev→PR acceptance cycle.</li>
+  <li><strong>Local source of truth:</strong> read <code>AUTONOMOUS_QUEUE.md</code>, <code>TODO.md</code>, <code>AGENTS.md</code>, <code>HEARTBEAT.md</code>, and skills <code>work-session-supervision</code>, <code>codex-work-cycle</code>, and <code>portfolio-pm-audit</code>.</li>
+  <li><strong>Constraint:</strong> cron <code>agentTurn</code> is currently not trusted as an executor. Cron may wake/check; the runner must provide durable state and heartbeat evidence.</li>
+  <li><strong>Minimum deliverable for #38:</strong> a small runner/ledger scaffold with states <code>triggered</code>, <code>started</code>, <code>completed</code>, <code>failed</code>; heartbeat timestamp; transcript/log path; artifact link; failure reason; and recovery note.</li>
+  <li><strong>Do not drift:</strong> stop before building a large orchestration platform. The goal is one reliable Codex-native cycle, not a general agent company.</li>
+</ul>
+
+</div>
+</body>
+</html>

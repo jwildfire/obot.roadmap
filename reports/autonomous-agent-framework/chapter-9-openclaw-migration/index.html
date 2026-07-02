@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>"Chapter 9: OpenClaw model migration"</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework/chapter-9-openclaw-migration/index.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<link rel="stylesheet" href="../styles.css">
+<div class="report-page">
+<nav class="report-nav"><strong>Report chapters</strong><ol><li><a href="../">Index</a></li><li><a href="../chapter-1-options/">Chapter 1: Framework options</a></li><li><a href="../chapter-2-codex-plan/">Chapter 2: Codex-first operating model</a></li><li><a href="../chapter-3-supervision/">Chapter 3: Supervision failure analysis</a></li><li><a href="../chapter-4-paperclip-evaluation/">Chapter 4: Paperclip evaluation</a></li><li><a href="../chapter-5-paperclip-rollout/">Chapter 5: Paperclip rollout design</a></li><li><a href="../chapter-6-recommendation/">Chapter 6: Revised recommendation</a></li><li><a href="../chapter-7-implementation/">Chapter 7: Implementation plan</a></li><li><a href="../chapter-8-paperclip-production/">Chapter 8: Paperclip production rollout</a></li><li><a href="../chapter-9-openclaw-migration/">Chapter 9: OpenClaw model migration</a></li><li><a href="../chapter-10-claude-code-migration/">Chapter 10: Claude Code migration</a></li></ol></nav>
+
+<h1>Chapter 9: OpenClaw model migration</h1>
+<p class="small"><strong>Updated:</strong> 2026-06-08 · Migration plan for carrying the useful OpenClaw operating model into the new Paperclip agent company.</p>
+
+<div class="ok"><strong>Decision:</strong> migrate OpenClaw's operating contracts, not the isolated OpenClaw cron runner. The useful pieces are role separation, durable evidence, GitHub-native public memory, private local memory boundaries, Telegram formatting, liveness supervision, and human-decision gating. Paperclip should absorb those contracts into agent instructions, task templates, routines, comments, and run state.</div>
+
+<h2>What was reviewed</h2>
+<p>The review covered the current OpenClaw runtime instructions, heartbeat/autonomy policy, local queue and human ToDo files, daily and long-term memory notes, work-session ledger, dream question ledger, custom workflow skills, cron/job state, task-run ledger, and the existing Paperclip COO/PM/Development/Testing agent contracts.</p>
+<p>Sensitive config was treated only as policy shape. Credentials, auth profiles, tokens, and provider keys should not be copied into Paperclip prompts, skills, tasks, or public docs.</p>
+
+<h2>Main finding</h2>
+<table><thead><tr><th>OpenClaw surface</th><th>Migrate?</th><th>Paperclip destination</th></tr></thead><tbody>
+<tr><td>Role split: orchestrator, PM/Design, Development, Testing.</td><td>Yes.</td><td>COO, PM, Development, and Testing agent instructions.</td></tr>
+<tr><td>Work-session supervision and liveness evidence.</td><td>Yes.</td><td>Paperclip task templates, run comments, checkpoint fields, and COO status rules.</td></tr>
+<tr><td>Codex work-cycle launch fields.</td><td>Yes.</td><td>Required PM-to-Dev and Dev-to-Test handoff sections.</td></tr>
+<tr><td>Portfolio PM audit.</td><td>Yes.</td><td>PM routine and Paperclip company skill/template.</td></tr>
+<tr><td>Human ToDo delegation gate.</td><td>Yes.</td><td>PM decision gate and COO notification policy.</td></tr>
+<tr><td>GitHub PR flow.</td><td>Yes.</td><td>Development implementation contract and Testing verification contract.</td></tr>
+<tr><td>Telegram briefing and interview rules.</td><td>Yes.</td><td>COO Telegram/OpenClaw bridge contract.</td></tr>
+<tr><td>Memory layers.</td><td>Partially.</td><td>GitHub for public memory, Paperclip for local operational memory, private OpenClaw files only through sanitized summaries.</td></tr>
+<tr><td>OpenClaw isolated <code>agentTurn</code> cron runner.</td><td>No.</td><td>Retire after Paperclip routines prove reliable; do not reproduce its failure mode.</td></tr>
+</tbody></table>
+
+<h2>Contracts to migrate</h2>
+
+<h3>Role split</h3>
+<p>OpenClaw's strongest pattern is the split between orchestration, PM, Development, and independent Testing. Paperclip should keep that small-company shape:</p>
+<ul>
+<li><strong>COO:</strong> owns intake, routing, liveness checks, recovery, and concise operator summaries.</li>
+<li><strong>PM:</strong> owns portfolio audit, issue readiness, queue hygiene, requirement/task linkage, and human-decision triage.</li>
+<li><strong>Development:</strong> owns scoped implementation, branches, PRs, checks, and evidence.</li>
+<li><strong>Testing:</strong> owns independent acceptance, no-edit compliance, browser/check evidence, and requested-change findings.</li>
+</ul>
+
+<h3>Work-session supervision</h3>
+<p>OpenClaw learned not to call work active without evidence. Paperclip should encode this as a task contract: every PM, Development, or Testing task needs expected first checkpoint, evidence type, timeout, and recovery owner.</p>
+<div class="callout"><strong>Rule:</strong> a task is active only with fresh Paperclip run evidence, a recent task comment, a diff/commit, a running check, a PR update, or another durable artifact. A schedule entry or assignment alone is not liveness.</div>
+
+<h3>Launch fields</h3>
+<p>Before Development or Testing starts, PM or COO must define the target issue/PR, role, repository, branch/worktree strategy, allowed files, acceptance criteria, checks, evidence, checkpoint, non-goals, and recovery plan. Development should refuse tasks that omit fields that could change behavior or scope.</p>
+
+<h3>Portfolio PM audit</h3>
+<p>The PM routine should continue to audit the full <code>obot-claw</code> portfolio before selecting Development work. It should inspect Projects, Requirements, Tasks, PRs, Hub status, human ToDos, dirty worktree risk, parent/sub-issue links, and stale blockers. The local <code>AUTONOMOUS_QUEUE.md</code> file should become transitional backup once Paperclip/GitHub task sync is active.</p>
+
+<h3>Human ToDo gate</h3>
+<p>Before creating any Jeremy ToDo, PM must ask whether PM, Development, Testing, or a new specialist agent can do the work instead. If Jeremy truly owns the decision, the linked issue or PR must contain an explicit <code>@jwildfire</code> question or instruction with the decision criteria and evidence.</p>
+
+<h3>GitHub PR flow</h3>
+<p>Development should inherit the OpenClaw PR discipline: write only inside approved <code>obot-claw</code> repositories, capture repo freshness before editing, use branches and PRs for repo changes, assign Obot where appropriate, request Jeremy review when ready, and monitor checks through durable task/routine state instead of long silent polling.</p>
+
+<h3>Telegram/OpenClaw bridge</h3>
+<p>OpenClaw should remain the human front door, but it should address the COO rather than direct agent execution. Telegram output must stay short, plain text, and artifact-backed. The bridge should expose allowlisted actions such as health, latest status, review next queue item, start approved task, check failures, summarize latest artifact, and pause/stop where supported.</p>
+
+<h2>Memory migration</h2>
+<table><thead><tr><th>Memory type</th><th>Current role</th><th>Paperclip migration rule</th></tr></thead><tbody>
+<tr><td>GitHub issues and PRs</td><td>Durable public memory.</td><td>Keep as source of truth for project decisions, work evidence, PRs, reviews, and human asks.</td></tr>
+<tr><td>Paperclip tasks, comments, runs</td><td>New local operational memory.</td><td>Use for task state, assignments, run evidence, liveness, and local workflow state.</td></tr>
+<tr><td>Daily memory notes</td><td>Private operational diary.</td><td>Migrate only sanitized summaries into Paperclip when needed for task continuity.</td></tr>
+<tr><td>Long-term memory</td><td>Personal and operating preferences.</td><td>Do not expose wholesale. Convert only relevant policy preferences into scoped instructions.</td></tr>
+<tr><td>Dream notes and question ledger</td><td>Private synthesis and question dedupe.</td><td>Keep private until a question is promoted into a Paperclip task or GitHub issue comment.</td></tr>
+<tr><td>Human ToDo file</td><td>Local decision queue.</td><td>Move public items into GitHub/Paperclip issue state; keep private/config items direct-only.</td></tr>
+<tr><td>Work-session ledger</td><td>Liveness and recovery history.</td><td>Translate the evidence model into Paperclip run and checkpoint discipline.</td></tr>
+</tbody></table>
+
+<h2>Schedule migration</h2>
+<p>Do not copy every OpenClaw cron job into Paperclip immediately. The old isolated cron path repeatedly produced startup stalls and main-session reminder fallbacks. Paperclip routines should be promoted in stages.</p>
+<ol>
+<li><strong>Daily read-only PM portfolio review.</strong> First scheduled Paperclip routine. No repo edits, no Development launch.</li>
+<li><strong>PR review watch.</strong> Add once Paperclip can leave anti-spam state and durable findings.</li>
+<li><strong>COO status summary.</strong> Summarize only after durable Paperclip/GitHub artifacts exist.</li>
+<li><strong>Development task creation.</strong> Enable only after same-day PM readiness evidence is reliable.</li>
+<li><strong>Testing verification.</strong> Add independent acceptance tasks before any work is presented as ready.</li>
+<li><strong>Nightly briefing and framework review.</strong> Migrate only after Paperclip scheduling proves multi-day reliability.</li>
+<li><strong>Private dream synthesis.</strong> Migrate last, only after private-memory boundaries are explicit.</li>
+</ol>
+
+<h2>Do not migrate</h2>
+<ul>
+<li>Do not reproduce OpenClaw isolated <code>agentTurn</code> cron as the production executor.</li>
+<li>Do not copy raw credentials, auth profiles, tokens, or provider keys into Paperclip.</li>
+<li>Do not enable broad OpenClaw skill/plugin access inside Paperclip agents.</li>
+<li>Do not allow Telegram free text to become a command or unrestricted Paperclip task.</li>
+<li>Do not allow autonomous merges.</li>
+<li>Do not expose private memory wholesale to all agents.</li>
+<li>Do not retire OpenClaw schedules until Paperclip equivalents have passed on the same cadence with rollback available.</li>
+</ul>
+
+<h2>Agent-specific updates</h2>
+<table><thead><tr><th>Agent</th><th>Updates to add</th></tr></thead><tbody>
+<tr><td>COO</td><td>Telegram output contract, liveness rules, schedule promotion gates, Human ToDo notification gate, artifact-backed status summaries, and child-task creation rules.</td></tr>
+<tr><td>PM</td><td>Portfolio audit loop, Human ToDo gate, launch-field completeness checklist, GitHub-native memory rule, queue migration rule, and Project/Requirement/Task hygiene checklist.</td></tr>
+<tr><td>Development</td><td>GitHub PR flow, freshness capsule, branch/PR/check evidence, long-running watch rule, and stop conditions for ambiguous scope or dirty unrelated worktrees.</td></tr>
+<tr><td>Testing</td><td>Independent acceptance evidence, browser QA rule, PR review watch behavior, no-edit compliance checks, artifact-placement verification, and disposition verification.</td></tr>
+</tbody></table>
+
+<h2>Proposed Paperclip tasks</h2>
+<ol>
+<li><strong>Migrate OpenClaw supervision and launch-field contracts.</strong> Owner: COO. Output: updated agent instructions and task templates.</li>
+<li><strong>Port portfolio PM audit into Paperclip PM.</strong> Owner: PM. Output: PM skill/template with portfolio audit checklist and helper references.</li>
+<li><strong>Port GitHub PR flow into Development and Testing.</strong> Owner: Development, verified by Testing. Output: PR-flow contract plus testing acceptance checklist.</li>
+<li><strong>Define Paperclip memory boundaries.</strong> Owner: PM. Output: policy for GitHub public memory, Paperclip operational memory, and private OpenClaw memory.</li>
+<li><strong>Design Paperclip routine migration.</strong> Owner: COO. Output: routine migration map and first read-only PM schedule.</li>
+<li><strong>Design Telegram/OpenClaw COO bridge.</strong> Owner: COO. Output: allowlisted actions and plain-text formatting contract.</li>
+</ol>
+
+<h2>Acceptance gates</h2>
+<table><thead><tr><th>Before enabling</th><th>Required evidence</th></tr></thead><tbody>
+<tr><td>Scheduled Paperclip autonomy</td><td>Health OK, backup exists, contracts versioned, PM no-edit routine posts durable evidence, COO status is artifact-backed, and Telegram remains allowlisted.</td></tr>
+<tr><td>Development scheduling</td><td>PM routine passes repeatedly, GitHub path is scoped and documented, no-edit and issue-comment tasks pass without operator repair, and artifact placement is enforced.</td></tr>
+<tr><td>OpenClaw schedule retirement</td><td>Paperclip equivalent succeeds on the same cadence, failure alerts work, anti-spam behavior works, public/private boundaries are verified, and rollback is documented.</td></tr>
+</tbody></table>
+
+<h2>Recommended next step</h2>
+<div class="callout"><strong>Start here:</strong> update the existing Paperclip COO, PM, Development, and Testing instruction files with supervision and launch-field contracts. This is local, low risk, and improves the new agent company without enabling schedules or credentials.</div>
+<p>Then run a no-edit PM task against the rollout queue. The PM should review the Chapter 8/9 rollout tasks and produce a readiness note without changing repositories.</p>
+</div>
+</body>
+</html>

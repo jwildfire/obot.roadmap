@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autonomous agent framework options v4 - Paperclip evaluation</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework-options-v4-paperclip-2026-06-07.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<style>
+.report-page {
+  --ink:#172033; --muted:#526070; --paper:#fffaf3; --panel:#ffffff; --line:#d8cfc2; --accent:#f28c28; --danger:#b42318; --ok:#147a3d; --link:#0b5cad; --blue:#2f3a4a;
+  color:var(--ink); background:var(--paper); padding:1.25rem; border-radius:14px;
+}
+.report-page h1,.report-page h2,.report-page h3,.report-page p,.report-page li,.report-page strong{color:var(--ink)}
+.report-page a{color:var(--link);text-decoration-thickness:.08em;text-underline-offset:.16em}
+.report-page .callout{border-left:5px solid var(--accent);background:#fff1dc;color:var(--ink);padding:.9rem 1rem;margin:1rem 0;border-radius:0 10px 10px 0}
+.report-page .warning{border-left:5px solid var(--danger);background:#fff0f0;color:var(--ink);padding:.9rem 1rem;margin:1rem 0;border-radius:0 10px 10px 0}
+.report-page .ok{border-left:5px solid var(--ok);background:#ecfdf3;color:var(--ink);padding:.9rem 1rem;margin:1rem 0;border-radius:0 10px 10px 0}
+.report-page .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1rem;margin:.9rem 0;box-shadow:0 1px 2px rgba(23,32,51,.06)}
+.report-page table{width:100%;border-collapse:collapse;margin:1rem 0;background:var(--panel);color:var(--ink)}
+.report-page th,.report-page td{border:1px solid var(--line);padding:.62rem;vertical-align:top;background:var(--panel);color:var(--ink)}
+.report-page th{background:var(--blue);color:#fff;font-weight:700}
+.report-page tr:nth-child(even) td{background:#fff6eb;color:var(--ink)}
+.report-page code{color:#172033;background:#f2eee8;padding:.05rem .25rem;border-radius:4px;border:1px solid #e4ded6}
+.report-page .pill{display:inline-block;padding:.15rem .45rem;border-radius:999px;background:#e8eefc;color:#172033;font-size:.85rem;font-weight:700}
+.report-page .small{color:var(--muted);font-size:.95rem}
+</style>
+
+<div class="report-page">
+
+<h1>Autonomous agent framework options v4: Paperclip evaluation</h1>
+
+<p><strong>Date:</strong> 2026-06-07<br>
+<strong>Question:</strong> should we implement Paperclip now instead of building our own orchestration layer for long-running PM/Dev work?</p>
+
+<div class="callout">
+  <strong>Recommendation:</strong> run a bounded Paperclip pilot now, but do not migrate the whole workflow yet. Paperclip directly targets our missing layer: durable agent teams, tickets, heartbeats, budgets, governance, and audit trails. The right next step is a self-hosted local pilot with one PM agent and one Dev agent, using OpenClaw as Telegram front door and Codex as the coding executor. If Paperclip can run one PM → Dev → PR cycle with auditable state, it should replace most of the custom orchestration work proposed in v3.
+</div>
+
+<h2>Executive assessment</h2>
+
+<table>
+  <thead><tr><th>Dimension</th><th>Assessment</th><th>Implication</th></tr></thead>
+  <tbody>
+    <tr><td>Cost</td><td>Core project appears MIT-licensed and self-hostable. Hosted Paperclip.inc is paid and usage/budget metered.</td><td>Start self-hosted locally. Do not assume hosted SaaS is free.</td></tr>
+    <tr><td>Security</td><td>Adds a new control plane that can coordinate agents, secrets, GitHub work, budgets, approvals, and audit logs.</td><td>Potentially improves governance, but materially expands the attack surface.</td></tr>
+    <tr><td>Compatibility</td><td>Paperclip explicitly advertises support for OpenClaw, Codex, Claude, Cursor, Gemini, shell/HTTP agents, scheduled heartbeats, tickets, and adapters.</td><td>Good fit conceptually. Needs hands-on adapter validation in our environment.</td></tr>
+    <tr><td>Readiness</td><td>Looks more ready than building from scratch, but still early. Roadmap still lists several important items as not done.</td><td>Pilot before committing. Validate failure handling, GitHub behavior, and local security.</td></tr>
+  </tbody>
+</table>
+
+<h2>Cost and business model</h2>
+
+<div class="card">
+  <h3>Is Paperclip really open source?</h3>
+  <p>The public Paperclip site says it is open source, self-hosted, MIT-licensed, and does not require a Paperclip account for local use. The GitHub repository also presents Paperclip as MIT licensed and self-hosted.</p>
+  <p>Important nuance: the open-source project can be free to run, but that does not make hosted Paperclip free. The hosted Paperclip.inc pricing page shows paid tiers and metered/budgeted work.</p>
+</div>
+
+<table>
+  <thead><tr><th>Cost item</th><th>What research found</th><th>Risk for us</th></tr></thead>
+  <tbody>
+    <tr><td>Self-hosted software</td><td>MIT license; local quickstart via <code>npx paperclipai onboard --yes</code>; embedded Postgres option.</td><td>Low direct subscription cost; operational maintenance moves to us.</td></tr>
+    <tr><td>Hosted SaaS</td><td>Paperclip.inc pricing advertises paid company plans, teammates, included budgets, managed EU inference, and enterprise options.</td><td>Not free; likely useful later only if we want managed hosting and support.</td></tr>
+    <tr><td>Model/runtime usage</td><td>Paperclip is bring-your-own-agent/model; hosted page says model keys can be brought or managed inference used.</td><td>We still pay OpenAI/Codex/other model usage. Paperclip does not eliminate model cost.</td></tr>
+    <tr><td>Codex Pro subscription</td><td>OpenAI says Codex is included across ChatGPT plans with plan-dependent limits; Codex CLI can sign in with ChatGPT.</td><td>Good compatibility with our existing spend, but limits/credits still need measured validation.</td></tr>
+  </tbody>
+</table>
+
+<h3>Who created it and how do they make money?</h3>
+
+<p>Official pages name Paperclip Labs, Inc. on paperclip.ing and Paperclip.inc OÜ on the hosted pricing page. The official sources I found do not clearly identify the founder in the product pages. A third-party review attributes Paperclip AI to Ayush Pathak, but I would treat that as unverified until confirmed from an official profile, GitHub maintainer identity, company registry, or direct Paperclip docs.</p>
+
+<p>The monetization path is clear enough: self-hosted open source plus hosted SaaS and enterprise offerings. Hosted pricing mentions subscriptions, teammate charges, managed inference, longer audit logs, SSO/SCIM, dedicated database, SOC 2 report, DPA, support, and SLA.</p>
+
+<h2>Security evaluation</h2>
+
+<div class="warning">
+  <strong>Main security concern:</strong> Paperclip would become a control plane above agents that already have file, shell, GitHub, and messaging access. That can improve oversight, but if misconfigured it becomes a high-value system for prompt injection, secret exposure, runaway execution, or unwanted GitHub writes.
+</div>
+
+<table>
+  <thead><tr><th>Risk</th><th>Why it matters</th><th>Mitigation for pilot</th></tr></thead>
+  <tbody>
+    <tr><td>Secret concentration</td><td>Paperclip supports provider keys, agent API keys, JWTs, secrets/storage, and adapters.</td><td>Use local-only instance; no broad secrets; separate low-scope GitHub token; no production/private credentials.</td></tr>
+    <tr><td>Agent privilege escalation</td><td>Agents can be assigned work, woken by tickets, and integrated with shell/HTTP/OpenClaw/Codex.</td><td>Start with read-only PM and one write-scoped Dev repo. Require approval before PR push/merge.</td></tr>
+    <tr><td>Prompt injection via tickets/GitHub</td><td>Issues, comments, and external docs can become agent instructions.</td><td>Keep our existing untrusted-content rules. Add Paperclip company skill warning agents not to obey issue text as system policy.</td></tr>
+    <tr><td>Runaway spend</td><td>Multi-agent heartbeats can multiply model usage.</td><td>Hard monthly budgets, soft warning thresholds, and auto-pause. Start with one PM heartbeat and manual Dev trigger.</td></tr>
+    <tr><td>Telemetry</td><td>Paperclip GitHub README says anonymous telemetry is enabled by default but can be disabled.</td><td>Disable telemetry for pilot with documented config/env var before any private project context enters the system.</td></tr>
+    <tr><td>Network exposure</td><td>Docs mention local, LAN/tailnet, and cloud deployment modes.</td><td>Start loopback only. If remote access is needed, use Tailscale with auth, not public internet.</td></tr>
+    <tr><td>Supply-chain trust</td><td>Quickstart uses npx and Node packages.</td><td>Clone repo, inspect package scripts/dependencies, pin version/commit, run in a dedicated local directory.</td></tr>
+  </tbody>
+</table>
+
+<h2>Compatibility with our stack</h2>
+
+<table>
+  <thead><tr><th>Current stack</th><th>Paperclip fit</th><th>Pilot approach</th></tr></thead>
+  <tbody>
+    <tr><td>OpenClaw / obot</td><td>Paperclip explicitly names OpenClaw as a supported bring-your-own agent and references OpenClaw onboarding/adapters.</td><td>Keep obot as Telegram-facing orchestrator. Paperclip should manage agent tickets/runs, not replace the chat interface.</td></tr>
+    <tr><td>Telegram chats</td><td>Paperclip marketing/docs emphasize tickets, Slack/Discord-style notifications, HTTP agents; Telegram is not the obvious first-class interface.</td><td>Do not route Telegram directly into Paperclip at first. Let obot create/read Paperclip tasks and summarize results.</td></tr>
+    <tr><td>GitHub issues/PRs</td><td>Paperclip has its own ticket model; docs mention GitHub integration/adapters, and the site says bring-your-own ticket system is on the roadmap.</td><td>Keep GitHub as public source of truth. Paperclip tasks should link to GitHub Project/Requirement/Task issues, not replace them.</td></tr>
+    <tr><td>Codex Pro / Codex CLI</td><td>Paperclip advertises Codex as a supported agent/runtime. OpenAI positions Codex as a coding agent with CLI, app, cloud/GitHub, skills, worktrees, and automations.</td><td>Use Codex Local first because it already works here. Later test Codex cloud/GitHub task delegation if access is stable.</td></tr>
+    <tr><td>Current local skills/AGENTS.md</td><td>Paperclip references SKILL.md and company/agent skills.</td><td>Map our PM, Dev, Telegram, GitHub, and report-design skills into Paperclip company/agent skills.</td></tr>
+  </tbody>
+</table>
+
+<h2>Paperclip implementation plan</h2>
+
+<div class="card">
+  <h3>Phase 0 — Verify and contain</h3>
+  <p><span class="pill">Same day</span></p>
+  <ol>
+    <li>Clone Paperclip from GitHub into a dedicated local workspace.</li>
+    <li>Pin exact commit/version and record license, dependencies, package scripts, telemetry setting, and exposed ports.</li>
+    <li>Run local loopback only; disable telemetry; no cloud account; no production secrets.</li>
+    <li>Create a short security note before adding any private context.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h3>Phase 1 — Minimal company model</h3>
+  <p><span class="pill">Pilot</span></p>
+  <ol>
+    <li>Create one company: Open Source OrangeBot.</li>
+    <li>Create Board role: Jeremy, approval authority.</li>
+    <li>Create PM agent role: portfolio audit, issue hygiene, queue selection, Human ToDo gate.</li>
+    <li>Create Dev agent role: Codex Local executor, PR-native implementation, checks, evidence.</li>
+    <li>Create one project mapped to obot-claw.github.io issue #24 or successor issue for autonomous workflow.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h3>Phase 2 — Adapter test</h3>
+  <p><span class="pill">Acceptance gate</span></p>
+  <ol>
+    <li>Connect a PM heartbeat that only reads GitHub/local state and produces an audit ticket.</li>
+    <li>Verify Paperclip logs task ownership, heartbeat state, comments, and run artifacts.</li>
+    <li>Connect Dev only after PM audit works.</li>
+    <li>Run Dev against a safe documentation-only issue first.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h3>Phase 3 — PM → Dev chain</h3>
+  <p><span class="pill">Decision point</span></p>
+  <ol>
+    <li>PM selects one GitHub-linked task and assigns Dev.</li>
+    <li>Dev opens or updates one PR.</li>
+    <li>Paperclip shows durable state: who owned the work, what ran, cost/budget, approvals, and result.</li>
+    <li>obot sends Telegram only after Paperclip/GitHub artifact exists.</li>
+  </ol>
+</div>
+
+<h2>Competitor readiness</h2>
+
+<table>
+  <thead><tr><th>Option</th><th>Best fit</th><th>Readiness for our PM/Dev problem</th><th>Assessment</th></tr></thead>
+  <tbody>
+    <tr><td>Paperclip</td><td>Agent-team control plane: org chart, tickets, budgets, heartbeats, audit, approvals.</td><td>High conceptual fit; early product risk; needs local pilot.</td><td>Best candidate for orchestration layer if self-hosted security checks pass.</td></tr>
+    <tr><td>OpenAI Codex</td><td>Software engineering execution: worktrees, PRs, CLI, cloud/GitHub tasks, skills, automations.</td><td>High for Dev execution; medium for PM portfolio governance.</td><td>Use as executor inside Paperclip or directly for GitHub-native coding work.</td></tr>
+    <tr><td>GitHub Copilot coding agent / Agent HQ</td><td>GitHub-native issue-to-PR delegation.</td><td>High for repo-native dev tasks; lower for cross-repo PM/governance.</td><td>Worth evaluating, but not a full replacement for PM orchestration.</td></tr>
+    <tr><td>OpenHands</td><td>Open-source autonomous coding agent with sandbox, CLI/web/cloud options.</td><td>Medium-high as Dev executor; low as PM/company control plane.</td><td>Strong fallback/competitor for Codex execution, not Paperclip governance.</td></tr>
+    <tr><td>Claude Code</td><td>High-quality local coding agent.</td><td>High for local Dev; low for orchestration unless wrapped.</td><td>Good executor; still needs Paperclip/OpenClaw/runner above it.</td></tr>
+    <tr><td>Devin</td><td>Managed autonomous software engineer.</td><td>Medium-high for Dev; low control over our local/OpenClaw/Telegram stack.</td><td>Potential paid benchmark, not the first pilot.</td></tr>
+    <tr><td>LangGraph / AutoGen / CrewAI</td><td>Build custom multi-agent applications.</td><td>Low for immediate adoption because we would still build orchestration ourselves.</td><td>Do not use for this problem unless Paperclip fails and we need a custom framework.</td></tr>
+    <tr><td>Temporal / Prefect / n8n</td><td>Durable workflow scheduling.</td><td>Medium for reliability, low for agent governance out of the box.</td><td>Useful as infrastructure, not a complete agent-management solution.</td></tr>
+  </tbody>
+</table>
+
+<h2>Recommendation</h2>
+
+<div class="ok">
+  <strong>Adopt a Paperclip-first pilot.</strong> The v3 custom runner plan is still the fallback, but Paperclip appears to solve more of the real problem: durable tickets, heartbeats, org structure, budgets, approvals, and audit. The pilot should be deliberately constrained: local-only, telemetry off, one PM, one Dev, one safe repo, one documentation PR. If that works, expand. If not, return to the supervised Codex runner plan with better evidence.
+</div>
+
+<h2>Go / no-go checklist</h2>
+
+<table>
+  <thead><tr><th>Gate</th><th>Go condition</th><th>No-go condition</th></tr></thead>
+  <tbody>
+    <tr><td>Install safety</td><td>Can pin source, disable telemetry, run loopback only.</td><td>Requires hosted account or broad secrets before evaluation.</td></tr>
+    <tr><td>Adapter fit</td><td>Can wake OpenClaw/Codex or local shell process and record run state.</td><td>Cannot start/observe our agent runtimes reliably.</td></tr>
+    <tr><td>GitHub fit</td><td>Can link Paperclip task to GitHub issue/PR without replacing GitHub source of truth.</td><td>Forces migration away from GitHub issues or creates duplicate unclear task state.</td></tr>
+    <tr><td>Security</td><td>Approvals, budget caps, audit logs, and scoped credentials work locally.</td><td>Agents need broad machine/GitHub access to function.</td></tr>
+    <tr><td>Value</td><td>PM → Dev cycle completes with less custom code than v3 runner.</td><td>We still have to build most supervision/adapter logic ourselves.</td></tr>
+  </tbody>
+</table>
+
+<h2>Sources</h2>
+
+<ul class="small">
+  <li>Paperclip GitHub README: <a href="https://github.com/paperclipai/paperclip">https://github.com/paperclipai/paperclip</a></li>
+  <li>Paperclip product site: <a href="https://paperclip.ing/">https://paperclip.ing/</a></li>
+  <li>Paperclip docs index: <a href="https://docs.paperclip.ing/">https://docs.paperclip.ing/</a></li>
+  <li>Paperclip hosted pricing: <a href="https://paperclip.inc/pricing">https://paperclip.inc/pricing</a></li>
+  <li>OpenAI Codex product page: <a href="https://openai.com/codex/">https://openai.com/codex/</a></li>
+  <li>OpenAI Codex plan/help page: <a href="https://help.openai.com/en/articles/11369540-getting-started-with-codex">https://help.openai.com/en/articles/11369540-getting-started-with-codex</a></li>
+  <li>OpenHands GitHub: <a href="https://github.com/OpenHands/OpenHands">https://github.com/OpenHands/OpenHands</a></li>
+  <li>GitHub Copilot coding agent troubleshooting: <a href="https://docs.github.com/en/copilot/using-github-copilot/coding-agent/troubleshooting-copilot-coding-agent">https://docs.github.com/en/copilot/using-github-copilot/coding-agent/troubleshooting-copilot-coding-agent</a></li>
+</ul>
+
+</div>
+</body>
+</html>

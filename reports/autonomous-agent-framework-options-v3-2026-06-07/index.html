@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autonomous agent framework options v3</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework-options-v3-2026-06-07.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<style>
+.report-page {
+  --ink: #172033;
+  --muted: #526070;
+  --paper: #fffaf3;
+  --panel: #ffffff;
+  --line: #d8cfc2;
+  --accent: #f28c28;
+  --danger: #b42318;
+  --ok: #147a3d;
+  --link: #0b5cad;
+  color: var(--ink);
+  background: var(--paper);
+  padding: 1.25rem;
+  border-radius: 14px;
+}
+.report-page h1,
+.report-page h2,
+.report-page h3,
+.report-page p,
+.report-page li,
+.report-page strong { color: var(--ink); }
+.report-page a { color: var(--link); text-decoration-thickness: 0.08em; text-underline-offset: 0.16em; }
+.report-page .report-callout { border-left: 5px solid var(--accent); padding: 0.8rem 1rem; background: #fff1dc; color: var(--ink); margin: 1rem 0; border-radius: 0 10px 10px 0; }
+.report-page .report-warning { border-left: 5px solid var(--danger); padding: 0.8rem 1rem; background: #fff0f0; color: var(--ink); margin: 1rem 0; border-radius: 0 10px 10px 0; }
+.report-page .report-ok { border-left: 5px solid var(--ok); padding: 0.8rem 1rem; background: #ecfdf3; color: var(--ink); margin: 1rem 0; border-radius: 0 10px 10px 0; }
+.report-page .plan-step { border: 1px solid var(--line); border-radius: 12px; padding: 0.95rem; margin: 0.9rem 0; background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(23,32,51,0.06); }
+.report-page .score-table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: var(--panel); color: var(--ink); }
+.report-page .score-table th,
+.report-page .score-table td { border: 1px solid var(--line); padding: 0.6rem; vertical-align: top; color: var(--ink); background: var(--panel); }
+.report-page .score-table th { background: #2f3a4a; color: #ffffff; font-weight: 700; }
+.report-page .score-table tr:nth-child(even) td { background: #fff6eb; color: var(--ink); }
+.report-page .pill { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 999px; background: #e8eefc; color: #172033; font-size: 0.85rem; font-weight: 600; }
+.report-page code { color: #172033; background: #f2eee8; padding: 0.05rem 0.25rem; border-radius: 4px; border: 1px solid #e4ded6; }
+</style>
+
+<div class="report-page">
+
+<h1>Autonomous agent framework options v3</h1>
+
+<p><strong>Date:</strong> 2026-06-07<br>
+<strong>Purpose:</strong> identify the actual blocker preventing reliable long-running PM/Development sessions and define concrete next steps.</p>
+
+<div class="report-warning">
+  <strong>Bottom line:</strong> the blocker is not the PM prompt, the Dev prompt, Telegram formatting, or the portfolio framework. The blocker is OpenClaw cron <code>agentTurn</code> startup reliability: scheduled isolated agent runs are entering the runner and then failing before agent execution starts. Until that runner path is fixed or bypassed, cron cannot be trusted as the durable PM/Dev execution engine.
+</div>
+
+<h2>What failed</h2>
+
+<table class="score-table">
+  <thead><tr><th>Run</th><th>Expected</th><th>Observed</th><th>Interpretation</th></tr></thead>
+  <tbody>
+    <tr><td>2026-06-06 23:34 PM test</td><td>Start PM agent and audit portfolio</td><td>Failed after about 60 seconds: <code>isolated agent run stalled before execution start (runner-entered)</code></td><td>The agent never reached the PM prompt.</td></tr>
+    <tr><td>2026-06-07 06:33 PM retest</td><td>Start PM agent with lighter context</td><td>Same 60-second startup stall</td><td>Context size was not the primary cause.</td></tr>
+    <tr><td>2026-06-07 tiny persistent-session smoke test</td><td>Run a minimal <code>NO_REPLY</code> task</td><td>Same startup stall</td><td>The failure is in cron agentTurn runner startup, not task complexity.</td></tr>
+    <tr><td>2026-06-07 systemEvent fallback</td><td>Wake main session</td><td>Queued successfully and ended immediately</td><td>Useful as a reminder/wake path, but it does not execute autonomous work by itself.</td></tr>
+  </tbody>
+</table>
+
+<h2>Root cause assessment</h2>
+
+<p>The current architecture assumed cron could directly launch long-running isolated PM and Dev agent turns. That assumption is false in the current runtime. The evidence shows a startup handshake failure before the model receives or executes the prompt.</p>
+
+<p>The current failure mode is especially dangerous because it can look like a successful schedule trigger while producing no PM artifact, no Dev artifact, and no useful Telegram alert. This is why the supervision rules need to distinguish three states:</p>
+
+<ul>
+  <li><strong>Triggered:</strong> scheduler accepted a run request.</li>
+  <li><strong>Started:</strong> an agent began execution and produced liveness evidence.</li>
+  <li><strong>Completed:</strong> the run produced durable PM/Dev artifacts.</li>
+</ul>
+
+<p>Only the third state should count as useful autonomous work. Only the second state should count as active work.</p>
+
+<h2>Decision: stop treating cron agentTurn as the executor</h2>
+
+<div class="report-callout">
+  <strong>Recommendation:</strong> use cron only as a wake/checkpoint mechanism until OpenClaw cron agentTurn startup is fixed. Run long PM/Dev work through a separate durable execution path: either a TaskFlow-style local runner, Codex CLI in a supervised background process, or Codex cloud/GitHub-native tasks. OpenClaw should supervise and report, not be the only execution substrate.
+</div>
+
+<h2>Concrete implementation plan</h2>
+
+<div class="plan-step">
+  <h3>Step 1 — Split scheduler from executor</h3>
+  <p><span class="pill">Immediate</span></p>
+  <ol>
+    <li>Keep OpenClaw cron for timed wakeups and watchdog checks.</li>
+    <li>Stop using cron <code>agentTurn</code> as the primary long-running PM/Dev executor.</li>
+    <li>Represent every work cycle as a durable run record before execution starts.</li>
+    <li>Require the run record to contain: run id, phase, target issue, executor type, start time, heartbeat/checkpoint deadline, output artifact, and recovery action.</li>
+  </ol>
+  <p><strong>Exit criteria:</strong> a triggered-but-not-started run is automatically detected as failed within minutes.</p>
+</div>
+
+<div class="plan-step">
+  <h3>Step 2 — Build a local supervised Codex runner</h3>
+  <p><span class="pill">Today</span></p>
+  <ol>
+    <li>Create a script such as <code>scripts/run_codex_cycle.sh</code> or <code>scripts/run_codex_cycle.py</code>.</li>
+    <li>Inputs: role (<code>pm</code> or <code>dev</code>), target issue, repo, timeout, prompt template, allowed write scope.</li>
+    <li>Output: JSON run record plus transcript/log file under a durable run directory.</li>
+    <li>Run Codex CLI with explicit non-interactive flags and periodic heartbeat output so watchdogs can see liveness.</li>
+    <li>Use shell/background process management, not OpenClaw isolated cron agentTurn, for long execution.</li>
+  </ol>
+  <p><strong>Exit criteria:</strong> one PM dry run writes a run record and either a portfolio audit artifact or a clear failure reason.</p>
+</div>
+
+<div class="plan-step">
+  <h3>Step 3 — Make cron a launcher/checker, not the worker</h3>
+  <p><span class="pill">Today</span></p>
+  <ol>
+    <li>Daily PM cron wakes main obot or runs a small shell launcher that starts the supervised Codex runner.</li>
+    <li>A watchdog cron checks the run record after 5-10 minutes.</li>
+    <li>If PM completes with a safe Dev target, the launcher starts Dev using the same supervised runner.</li>
+    <li>If PM fails or stalls, watchdog posts one concise Telegram alert and does not pretend work is active.</li>
+  </ol>
+  <p><strong>Exit criteria:</strong> a PM failure produces a visible alert and a failure artifact without requiring Jeremy to ask.</p>
+</div>
+
+<div class="plan-step">
+  <h3>Step 4 — Prefer GitHub/Codex-native execution for real development</h3>
+  <p><span class="pill">Next</span></p>
+  <ol>
+    <li>Audit current Codex cloud/GitHub integration permissions for obot-claw.</li>
+    <li>If available, move Dev execution to GitHub/Codex-native PR tasks where possible.</li>
+    <li>Keep OpenClaw as intake, scheduling, monitoring, and Telegram reporting layer.</li>
+    <li>Keep local supervised Codex runner as fallback for repos/workflows not supported by Codex cloud.</li>
+  </ol>
+  <p><strong>Exit criteria:</strong> one GitHub issue can go PM plan → Dev task → PR → review response with durable status and no hidden agent state.</p>
+</div>
+
+<h2>Recommended near-term architecture</h2>
+
+<table class="score-table">
+  <thead><tr><th>Layer</th><th>Use now</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Scheduler</td><td>OpenClaw cron systemEvent / watchdog</td><td>Good at timed reminders and main-session wakeups; current agentTurn runner is unreliable.</td></tr>
+    <tr><td>Executor</td><td>Supervised Codex CLI runner</td><td>Direct process control, logs, heartbeat output, explicit timeout, recoverable failure artifacts.</td></tr>
+    <tr><td>Future executor</td><td>Codex GitHub/cloud tasks</td><td>Better fit for repo-native PR work once permissions and workflow are confirmed.</td></tr>
+    <tr><td>State</td><td>GitHub issues + local run ledger</td><td>Durable, reviewable, and not dependent on chat transcript memory.</td></tr>
+    <tr><td>Reporting</td><td>Short Telegram summary + linked durable artifact when requested</td><td>Prevents truncation and formatting drift.</td></tr>
+  </tbody>
+</table>
+
+<h2>Concrete next steps</h2>
+
+<ol>
+  <li><strong>Do not wait for the 07:30 PM cron as a real work executor.</strong> It is currently only a wake/check path.</li>
+  <li><strong>Create issue/PR for supervised Codex runner.</strong> This should be the next implementation target in <code>obot-claw.github.io</code>, not safety-agent.</li>
+  <li><strong>Implement runner with explicit heartbeat.</strong> Minimum viable script: start PM prompt, write <code>started</code>, update heartbeat every N seconds, write <code>completed</code> or <code>failed</code>.</li>
+  <li><strong>Add watchdog validation.</strong> A separate check reads the run record and alerts if no heartbeat or artifact appears.</li>
+  <li><strong>Run one PM dry run manually.</strong> The first success criterion is not “Dev shipped code”; it is “PM run produced durable audit output and correctly started or declined Dev.”</li>
+  <li><strong>Then wire daily PM → Dev.</strong> Only after the supervised runner passes a manual test should cron own the daily flow.</li>
+</ol>
+
+<h2>What not to do</h2>
+
+<ul>
+  <li>Do not keep retrying isolated cron <code>agentTurn</code> and calling it progress.</li>
+  <li>Do not count a cron <code>ok</code> event as PM/Dev completion unless an artifact exists.</li>
+  <li>Do not bury PM/Dev state in Telegram messages.</li>
+  <li>Do not build a full custom orchestration platform. Build the smallest runner/checkpoint layer needed, then prefer Codex/GitHub-native execution where it works.</li>
+</ul>
+
+<div class="report-ok">
+  <strong>Immediate recommendation:</strong> move today’s work to a supervised Codex runner implementation. The first acceptance test should deliberately simulate a stalled run and prove Jeremy gets a concise alert plus a durable failure record.
+</div>
+
+</div>
+</body>
+</html>

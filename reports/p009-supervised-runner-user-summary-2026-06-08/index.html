@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P009 supervised runner user summary</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/p009-supervised-runner-user-summary-2026-06-08.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<style>
+.report-summary {
+  display: grid;
+  gap: 1rem;
+}
+.report-summary .hero {
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  background: var(--panel);
+}
+.report-summary .hero p {
+  margin-bottom: 0;
+}
+.report-summary .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.report-summary .card {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  background: var(--panel);
+}
+.report-summary .card h3 {
+  margin-top: 0;
+}
+.report-summary .small {
+  color: var(--muted);
+  font-size: .95rem;
+}
+.report-summary .status {
+  display: inline-block;
+  padding: .12rem .45rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--border) 25%, transparent);
+}
+.report-summary .status.good {
+  color: #15803d;
+}
+.report-summary .status.wait {
+  color: #b45309;
+}
+</style>
+
+<article class="report-summary">
+  <section class="hero">
+    <p class="small"><strong>Date:</strong> 2026-06-08 - <strong>Scope:</strong> PR <a href="https://github.com/obot-claw/obot-claw.github.io/pull/41">#41</a>, P009 tasks <a href="https://github.com/obot-claw/obot-claw.github.io/issues/38">#38</a>, <a href="https://github.com/obot-claw/obot-claw.github.io/issues/39">#39</a>, and <a href="https://github.com/obot-claw/obot-claw.github.io/issues/40">#40</a>.</p>
+    <h1>P009 supervised runner user summary</h1>
+    <p>PR #41 changes OpenClaw automation from "a prompt was triggered, assume it is running" to "a worker is only active after a run record shows it started, heartbeated, and has a recovery path." For a Telegram user, the practical change is that obot can now run small PM/Development checks and report concrete run ids, states, heartbeats, transcripts, artifacts, and failures instead of vague status.</p>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h3>Before PR #41</h3>
+      <ul>
+        <li>Cron or Telegram could trigger work, but startup failures were easy to miss.</li>
+        <li>A task could be described as active without durable liveness evidence.</li>
+        <li>Stalled workers required manual follow-up to discover.</li>
+        <li>PM and Development handoffs were documented, but not yet proven by a supervised PM to Dev to PR cycle.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>After PR #41</h3>
+      <ul>
+        <li>Every supervised run gets a JSON record under <code>.codex-runs/</code>.</li>
+        <li>Runs move through <code>triggered</code>, <code>started</code>, <code>completed</code>, or <code>failed</code>.</li>
+        <li>Heartbeat, deadline, transcript, artifact, failure reason, and recovery note are captured.</li>
+        <li>Telegram smoke tests prove OpenClaw can invoke and summarize the runner.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>What changed for the operator</h2>
+    <table>
+      <thead><tr><th>Workflow</th><th>What you can ask now</th><th>What obot should report back</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Runner smoke test</td>
+          <td>Run the runner self-test from Telegram/OpenClaw.</td>
+          <td>Branch, command status, run id, state, heartbeat timestamp, and transcript path.</td>
+        </tr>
+        <tr>
+          <td>Failure-injection test</td>
+          <td>Run the watchdog failure test.</td>
+          <td>Both synthetic failures marked <code>failed</code>, reasons shown, alert length under 500 chars, repeat alert suppressed.</td>
+        </tr>
+        <tr>
+          <td>Real watchdog check</td>
+          <td>Check local run records with <code>check --mark-failed --json</code>.</td>
+          <td>Number of records checked, number newly failed, and any alert strings.</td>
+        </tr>
+        <tr>
+          <td>PM to Development acceptance</td>
+          <td>Run a PM audit, then a docs-only Development handoff, with PR evidence.</td>
+          <td>PM audit run record, Development run record, PR link, issue comment artifact, and post-artifact Telegram summary.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h3>New public script</h3>
+      <p><code>scripts/run_codex_cycle.py</code> is the thin runner. It starts one worker command, writes a run record, heartbeats while the worker is alive, captures output in a transcript, and records completion or failure.</p>
+      <p class="small">It is not a scheduler, queue, agent company, or Paperclip replacement. It is the minimum execution proof layer.</p>
+    </div>
+    <div class="card">
+      <h3>New watchdog behavior</h3>
+      <p>The same script has <code>check</code> mode. It detects records that were triggered but never started, or started records that passed their deadline or stopped heartbeating.</p>
+      <p class="small">With <code>--mark-failed</code>, it writes <code>state=failed</code>, <code>failure_reason</code>, and a concise <code>alert</code>.</p>
+    </div>
+    <div class="card">
+      <h3>New safety guidance</h3>
+      <p>The README now documents that run records and transcripts are local/private artifacts and that Telegram integrations must use allowlisted runner actions.</p>
+      <p class="small">The important rule: do not forward arbitrary chat text into <code>--command</code>.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>How this enables more automation through Telegram/OpenClaw</h2>
+    <p>The runner gives OpenClaw a small, observable execution primitive. Telegram can ask obot to run a bounded action, and obot can answer with a durable state record instead of a guess. That makes higher-level automation safer because each step has a machine-checkable result.</p>
+    <table>
+      <thead><tr><th>Automation capability</th><th>Enabled by</th><th>Why it matters</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Reliable status replies</td>
+          <td>Run id, state, heartbeat, transcript path.</td>
+          <td>Jeremy can ask "what happened?" and get evidence, not a narrative.</td>
+        </tr>
+        <tr>
+          <td>Stall detection</td>
+          <td><code>check --mark-failed</code> and deadline/heartbeat logic.</td>
+          <td>OpenClaw can surface a failed worker without waiting for manual discovery.</td>
+        </tr>
+        <tr>
+          <td>PM gating before Development</td>
+          <td>Supervised PM audit run <code>p009-40-pm-audit-r2</code>.</td>
+          <td>Development starts only after a PM artifact exists and reports no error-level blockers.</td>
+        </tr>
+        <tr>
+          <td>Docs-only Development handoff</td>
+          <td>Supervised Development run <code>p009-40-dev-docs-pr</code>.</td>
+          <td>OpenClaw can prove a safe Development task produced a PR artifact without merging.</td>
+        </tr>
+        <tr>
+          <td>Review-gated autonomy</td>
+          <td>PR #41 stays unmerged until human review.</td>
+          <td>Automation can prepare evidence and code, while final merge authority stays with Jeremy.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h3>Evidence already collected</h3>
+      <ul>
+        <li><span class="status good">Passed</span> #38 local runner dry run.</li>
+        <li><span class="status good">Passed</span> #38 Telegram/OpenClaw runner smoke test.</li>
+        <li><span class="status good">Passed</span> #39 local failure-injection test.</li>
+        <li><span class="status good">Passed</span> #39 Telegram/OpenClaw failure-injection test.</li>
+        <li><span class="status good">Passed</span> #40 PM audit and docs-only Development PR cycle.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What has not changed</h3>
+      <ul>
+        <li>No automatic merges.</li>
+        <li>No Paperclip installation.</li>
+        <li>No cron <code>agentTurn</code> executor path.</li>
+        <li>No broad Telegram shell access.</li>
+        <li>No public commit of local transcripts or run records.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>End-user command model</h2>
+    <p>For now, Telegram/OpenClaw should expose narrow commands that map to known runner actions:</p>
+    <ul>
+      <li><code>self-test</code> - prove the runner can complete a successful supervised command.</li>
+      <li><code>failure-test</code> - prove failure records and alerts work.</li>
+      <li><code>status</code> - inspect existing run records.</li>
+      <li><code>check --mark-failed</code> - detect stale or never-started runs and produce at most one alert per failed transition.</li>
+    </ul>
+    <p>Future PM or Development jobs should come from reviewed local templates or explicit operator-reviewed commands. Telegram should not become a general shell.</p>
+  </section>
+
+  <section>
+    <h2>Recommended next step</h2>
+    <p><span class="status wait">Review gate</span> PR #41 should be reviewed and merged as the P009 runner baseline. After merge, the next automation work should wire OpenClaw/Telegram to the allowlisted runner actions and then run future PM to Development cycles from <code>main</code>.</p>
+  </section>
+</article>
+</body>
+</html>

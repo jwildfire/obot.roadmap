@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Subagent Failure Deep Dive</title>
+<style>
+:root{--ink:#0f172a;--muted:#475569;--line:#dbe3ef;--bg:#f8fafc;--card:#fff;--accent:#f97316;--red:#b91c1c;--amber:#b45309;--green:#15803d;--blue:#2563eb}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);line-height:1.5}main{max-width:1120px;margin:0 auto;padding:32px 20px 64px}h1{font-size:2rem;margin:.2rem 0}h2{margin-top:2rem;border-bottom:1px solid var(--line);padding-bottom:.35rem}.meta{color:var(--muted)}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0;box-shadow:0 10px 24px rgba(15,23,42,.04)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.badge{display:inline-block;padding:.2rem .55rem;border-radius:999px;background:#fff7ed;color:#9a3412;font-weight:700;font-size:.85rem}.risk{color:var(--red);font-weight:700}.warn{color:var(--amber);font-weight:700}.ok{color:var(--green);font-weight:700}code{background:#eef2ff;border-radius:4px;padding:.1rem .25rem}pre{white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px;overflow:auto}a{color:var(--blue)}li{margin:.35rem 0}</style>
+</head>
+<body><main>
+<p class="badge">Deep dive</p>
+<h1>Subagent Failure Deep Dive</h1>
+<p class="meta">Prepared 2026-06-06 for Jeremy review.</p>
+
+<section class="card">
+<h2>Executive summary</h2>
+<p>The failures were not one single bug. They came from a <strong>mixed orchestration stack</strong>: earlier successful work used OpenClaw-native subagent completion, later attempts used the ChatGPT/Codex <code>spawn_agent</code>/<code>wait_agent</code> tools available in this runtime, while OpenClaw CLI session spawning was blocked by sandbox filesystem permissions. I then compounded that by treating returned agent ids as reliable active work without durable liveness evidence.</p>
+<p><strong>Bottom line:</strong> subagents are not safe to rely on here until we standardize on one mechanism, make it observable, and add a durable supervision layer. For now, bounded main-session work blocks with clean worktrees are more reliable.</p>
+</section>
+
+<section class="grid">
+<div class="card"><h2>Observed symptoms</h2><ul>
+<li>PM and Dev spawned agent ids later returned <code>not_found</code>.</li>
+<li><code>openclaw agent</code> via CLI failed with sandbox EPERM while trying to write identity/session files.</li>
+<li>OpenClaw status showed no Tasks and no active PM/Dev sessions, despite my earlier “active” wording.</li>
+<li>Manual main-session recovery succeeded: Hub Agent Overview was implemented, deployed, verified, and issue #21 closed.</li>
+</ul></div>
+<div class="card"><h2>Impact</h2><ul>
+<li>Status reliability dropped: I reported work as active without enough proof.</li>
+<li>PM handoff work stalled until Jeremy checked.</li>
+<li>The architecture needs explicit liveness checks and recovery, not trust in a returned id.</li>
+</ul></div>
+</section>
+
+<section class="card">
+<h2>Evidence timeline</h2>
+<ul>
+<li><span class="ok">Earlier success:</span> keynote-deck subagent completed and announced through OpenClaw with a session key and session id.</li>
+<li><span class="risk">CLI failure:</span> a PM attempt via <code>openclaw agent</code> failed with sandbox EPERM on <code>~/.openclaw/identity/.fs-safe...</code> and <code>~/.openclaw/agents/main/sessions/.fs-safe-replace...</code>.</li>
+<li><span class="risk">Spawn/wait mismatch:</span> later PM/Dev <code>spawn_agent</code> ids returned <code>not_found</code> when checked.</li>
+<li><span class="warn">Incorrect status:</span> I briefly reported Dev as active before re-checking liveness.</li>
+<li><span class="ok">Mitigation proven:</span> main-session supervised work block used a clean Hub worktree, pushed commit <code>96e4c55</code>, verified Pages, commented evidence, and closed #21.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>Likely causes</h2>
+<h3>1. Mixed subagent mechanisms</h3>
+<p>OpenClaw docs describe <code>sessions_spawn</code>, <code>sessions_yield</code>, and <code>subagents</code> as the native mechanism. The current runtime exposed separate <code>spawn_agent</code>/<code>wait_agent</code> tools, not the OpenClaw <code>sessions_spawn</code> stack. That means OpenClaw status, cron/task views, and session lists did not reliably reflect these tool-spawned agents.</p>
+
+<h3>2. Missing or unavailable OpenClaw session tools in this context</h3>
+<p>The runtime context indicated local embedded mode, with gateway-dependent tools unavailable. OpenClaw docs say <code>sessions_yield</code> is the correct waiting primitive for spawned subagents, and that <code>sessions_spawn</code> availability depends on tool policy. In this session, the proper OpenClaw session tools were not available as first-class tools.</p>
+
+<h3>3. Sandbox EPERM blocks CLI-based Gateway agent runs</h3>
+<p>Attempting to use <code>openclaw agent</code> from the sandbox hit filesystem writes outside the writable roots:</p>
+<pre>EPERM: operation not permitted, open '/Users/obot/.openclaw/identity/.fs-safe-...tmp'
+EPERM: operation not permitted, open '/Users/obot/.openclaw/agents/main/sessions/.fs-safe-replace...tmp'</pre>
+<p>So CLI fallback is not a reliable way to start isolated PM/Dev sessions from this sandbox.</p>
+
+<h3>4. No durable work-session ledger</h3>
+<p>There was no durable record of spawned work-session id, expected checkpoint, liveness method, and recovery plan. Without that, “still going?” required ad hoc reconstruction.</p>
+
+<h3>5. Auto-archive/stale-run semantics can hide old children</h3>
+<p>OpenClaw docs note that subagent sessions can auto-archive and stale unended runs stop counting as active. That is good hygiene, but it means status must be checked through the right owner/session and cannot be inferred from memory.</p>
+</section>
+
+<section class="card">
+<h2>Recommended mitigations</h2>
+<ol>
+<li><strong>Standardize on one runtime:</strong> prefer OpenClaw-native <code>sessions_spawn</code> + <code>sessions_yield</code> when available. Do not mix with separate <code>spawn_agent</code> unless we explicitly mark it experimental.</li>
+<li><strong>Expose needed tools:</strong> configure the main Telegram session with OpenClaw <code>sessions_spawn</code>, <code>sessions_yield</code>, and <code>subagents</code> if policy allows.</li>
+<li><strong>Do not use CLI agent fallback from sandbox:</strong> it currently cannot write required identity/session files. Use first-class tools or unsandboxed scheduled jobs.</li>
+<li><strong>Create a work-session ledger:</strong> record session id, task, issue/PR, start time, checkpoint, liveness method, and recovery plan in a local JSON/Markdown file and linked issue comments.</li>
+<li><strong>Add liveness gate:</strong> before saying a cycle is active, verify reachable session status or concrete evidence: recent diff, commit, check run, issue comment, report, or process.</li>
+<li><strong>Use TaskFlow/cron for long work:</strong> for work expected to survive turns, use durable TaskFlow/cron-style jobs with explicit announce delivery rather than ephemeral subagents.</li>
+<li><strong>Keep main-session recovery path:</strong> for bounded Hub/PM fixes, main can use clean worktrees and direct evidence when subagents fail.</li>
+</ol>
+</section>
+
+<section class="card">
+<h2>Concrete changes already made</h2>
+<ul>
+<li>Created <code>skills/work-session-supervision/SKILL.md</code>.</li>
+<li>Added supervision rules to <code>skills/portfolio-pm-audit/SKILL.md</code>.</li>
+<li>Updated <code>AGENTS.md</code> and <code>HEARTBEAT.md</code> to require liveness evidence.</li>
+<li>Filed Hub issue <a href="https://github.com/obot-claw/obot-claw.github.io/issues/25">#25: durable work-session supervision</a>.</li>
+<li>Updated Hub Agent Overview page to explain active vs proposed agent roles.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>Proposed implementation plan</h2>
+<ol>
+<li><strong>Issue #25:</strong> implement a work-session ledger and status helper.</li>
+<li><strong>Config audit:</strong> inspect tool policy for main Telegram sessions and decide whether to expose OpenClaw-native session tools.</li>
+<li><strong>TaskFlow option:</strong> if session tools cannot be safely exposed, implement PM/Dev cycles as durable TaskFlow/cron jobs with explicit completion announcements.</li>
+<li><strong>PM cycle update:</strong> every PM handoff must include monitoring plan and recovery action.</li>
+<li><strong>Status command/report:</strong> add a small report that lists planned, active, stalled, completed, pushed/deployed, and reviewed work.</li>
+</ol>
+</section>
+
+<section class="card">
+<h2>Open questions</h2>
+<ul>
+<li>Should we expose OpenClaw-native <code>sessions_spawn</code>/<code>sessions_yield</code>/<code>subagents</code> to this Telegram session, or prefer durable TaskFlow/cron jobs for PM/Dev?</li>
+<li>Should PM/Development/Testing become actual OpenClaw agent configs, or remain prompt-scoped work modes until the supervision layer is built?</li>
+</ul>
+</section>
+</main></body></html>
