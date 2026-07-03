@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #7 — Migrate the obot-claw hub into obot.roadmap</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .note { color: var(--muted); font-size: .9rem; }
+  nav.toc { background: var(--panel); border-radius: 8px; padding: 1rem 1.25rem; font-size: .92rem; }
+  nav.toc ol { margin: .25rem 0 0; padding-left: 1.25rem; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design: migrate the obot-claw hub into obot.roadmap as the project's memory</h1>
+  <p class="meta">
+    Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/7">jwildfire/obot.roadmap#7</a>
+    · 2026-07-02 · <span class="status">Decisions D1–D4 resolved — pending final sign-off</span><br>
+    Drafted by Claude Code using Fable 5; reviewed by @jwildfire. Decisions D1–D4 resolved by
+    @jwildfire on 2026-07-02 (all recommendations accepted).
+    HTML design-doc format per <a href="https://github.com/obot-claw/obot-claw.github.io/issues/59">obot-claw#59</a>.
+  </p>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#context">Context and goals</a></li>
+    <li><a href="#architecture">Architecture and directory layout</a></li>
+    <li><a href="#components">Components</a></li>
+    <li><a href="#inventory">Migration inventory and provenance</a></li>
+    <li><a href="#p00x">Legacy P00x disposition</a></li>
+    <li><a href="#automation">Automation</a></li>
+    <li><a href="#decisions">Decisions (resolved)</a></li>
+    <li><a href="#out-of-scope">Out of scope</a></li>
+    <li><a href="#tasks">Task preview</a></li>
+  </ol>
+</nav>
+
+<h2 id="context">1. Context and goals</h2>
+
+<p>
+From May to June 2026 the <a href="https://github.com/obot-claw/obot-claw.github.io">obot-claw hub</a>
+served as the portfolio's public memory: a nightly AI-written diary, homepage metrics, a
+"🙋&nbsp;Jeremy ToDo" queue, per-project rollups, and long-form AI-generated reports — most notably
+the ten-chapter <em>autonomous-agent-framework</em> report whose Chapter&nbsp;10 documents the migration
+to interactive Claude Code sessions. The hub was archived in July 2026 and its metrics frozen at the
+final nightly briefing (2026-06-11).
+</p>
+<p>
+obot.roadmap inherited the requirement lifecycle but not the memory. This design makes obot.roadmap
+the single durable home for both: <strong>the roadmap workflow stays GitHub-native (issues, project
+board, PRs), and the hub's narrative surfaces are rebuilt as a lightweight static site published
+from this repo.</strong> Guiding principles:
+</p>
+<ul>
+  <li><strong>GitHub is the source of truth.</strong> The site renders live GitHub state and repo
+      content; nothing on the site is authored only on the site.</li>
+  <li><strong>No build framework.</strong> Plain static HTML plus small generator scripts, mirroring
+      gsm.roadmap's static-artifact Pages deploy — no Jekyll, no site framework, no commit-back bots.</li>
+  <li><strong>Preserve provenance.</strong> Migrated content is copied verbatim where possible and
+      always labeled with its origin and frozen date; the archived repo remains the historical record.</li>
+</ul>
+
+<h2 id="architecture">2. Architecture and directory layout</h2>
+
+<pre><code>obot.roadmap/
+├── README.md                     # workflow docs (existing; History section links to the site)
+├── AGENTS.md                     # agent conventions (existing; gains diary + site conventions)
+├── site/                         # hand-authored static pages + assets
+│   ├── index.html                #   homepage (§3.1)
+│   └── assets/styles.css         #   shared stylesheet
+├── diary/                        # markdown diary entries — source of truth (§3.4)
+│   ├── README.md                 #   cadence + format conventions
+│   └── 2026-05-11.md … (32 migrated entries, then new per-session entries)
+├── reports/                      # artifacts framework, gsm.roadmap pattern (§3.5)
+│   ├── README.md                 #   index of reports with status (current / superseded)
+│   └── &lt;report-name&gt;/            #   one folder per report: index.html + README.md provenance
+├── requirements/                 # existing: design/ + dataspec/
+├── scripts/
+│   ├── build_dashboard.py        # metrics + Jeremy queue → dashboard.html (§3.2)
+│   ├── build_roadmap.mjs         # requirement status → roadmap.html (§3.3)
+│   └── render_diary.mjs          # diary/*.md → site diary pages (§3.4)
+└── .github/workflows/
+    └── deploy-site.yml           # assembles + deploys the Pages artifact (§6)
+</code></pre>
+
+<p>
+The deploy workflow assembles a <code>_site/</code> artifact from <code>site/</code>,
+<code>reports/</code>, and the rendered diary, runs the dashboard and roadmap generators, and
+publishes via <code>actions/deploy-pages</code> — the same pattern as gsm.roadmap's
+<code>deploy-requirements-report.yml</code>. Because generators run at deploy time, generated pages
+are never committed and the repo history stays clean.
+</p>
+
+<h2 id="components">3. Components</h2>
+
+<h3 id="homepage">3.1 Homepage — <code>site/index.html</code></h3>
+<p>
+A short, hand-maintained page for a first-time visitor: what the portfolio is (safety-graphics
+modernization, the repo table from README), how work happens (requirement lifecycle, agent-driven
+sessions), and four prominent links — Dashboard, Roadmap, Diary, Reports. It carries a brief
+history note pointing at the archived hub. Content is adapted from the hub's <code>index.md</code>;
+the hub's frozen metrics block (267 commits / 18 merged PRs / 11,855 lines / 2 releases, scope
+<code>obot-claw</code>) moves to the dashboard as a labeled historical baseline.
+</p>
+
+<h3 id="dashboard">3.2 Dashboard — generated <code>dashboard.html</code></h3>
+<p>
+Successor to the hub's nightly metrics plus ToDo queue, generated by
+<code>scripts/build_dashboard.py</code> (adapted from the hub's <code>update_metrics.py</code>).
+Two panels, with the Jeremy queue first because it is the dashboard's reason to exist:
+</p>
+<table>
+  <tr><th>Panel</th><th>Content</th><th>Source</th></tr>
+  <tr>
+    <td><strong>🙋 Jeremy queue</strong></td>
+    <td>Every open item across the portfolio waiting on @jwildfire, one line each with a direct
+        link: issues assigned to him, PRs where his review is requested, and Requirement issues
+        sitting at a sign-off gate (project Status = Design awaiting 👍, or Review).</td>
+    <td><code>gh search issues/prs</code> (assignee / review-requested) + Project&nbsp;1 Status field
+        via GraphQL, scoped to the portfolio repos listed in README.</td>
+  </tr>
+  <tr>
+    <td><strong>Key metrics</strong></td>
+    <td>Open requirements by lifecycle stage; open PRs across portfolio repos; commits and merged
+        PRs in the trailing 30 days; diary recency (date of last entry). The frozen obot-claw
+        baseline is shown as a separate, clearly labeled historical row.</td>
+    <td>GitHub REST via <code>gh api</code>, scope <code>jwildfire/*</code> portfolio repos.</td>
+  </tr>
+</table>
+<p class="note">
+The hub computed lines-of-code by cloning every repo; that is dropped — it was the most expensive
+metric and the least actionable. Metrics are recomputed from scratch on each deploy, so no state is
+stored between runs.
+</p>
+
+<h3 id="roadmap">3.3 Roadmap view — generated <code>roadmap.html</code></h3>
+<p>
+A requirement-status table generated by <code>scripts/build_roadmap.mjs</code> (successor to the
+hub's <code>generate-roadmap.mjs</code>, informed by gsm.roadmap's requirements prototype report):
+one row per Requirement issue with title, topic labels, milestone, project Status, linked design
+doc, and sub-issue progress. Grouped by lifecycle stage, closed requirements collapsed at the
+bottom. Data comes from the <code>requirement</code>-labeled issues in this repo joined with
+<a href="https://github.com/users/jwildfire/projects/1">Project&nbsp;1</a> Status values via GraphQL.
+Legacy P00x projects appear only through their disposition (§5) — the roadmap renders current
+requirements, not historical projects.
+</p>
+
+<h3 id="diary">3.4 Diary — <code>diary/*.md</code>, rendered to the site</h3>
+<p>
+The hub's 32 daily briefings (2026-05-11 → 2026-06-11) migrate verbatim into <code>diary/</code>
+with Jekyll front matter stripped and a one-line provenance header added ("Migrated from the
+archived obot-claw hub"). New entries continue the same file convention
+(<code>diary/YYYY-MM-DD.md</code>) and roughly the hub's section format — work completed, issues/PRs
+touched, blockers, items for Jeremy — but the cadence changes from nightly-automated to
+<strong>per working session</strong>: the agent wraps up any substantive session by writing or
+appending to that day's entry (per D2, resolved). <code>render_diary.mjs</code>
+converts the markdown to HTML at deploy time with a shared template, producing a dated index plus
+one page per entry, so the diary reads on the site exactly as it did on the hub while staying
+plain markdown in the repo.
+</p>
+
+<h3 id="reports">3.5 Artifacts framework — <code>reports/</code></h3>
+<p>
+Modeled directly on gsm.roadmap's <code>reports/</code>: <strong>one folder per report</strong>
+containing a self-contained <code>index.html</code> (plus any assets/CSV exports) and a
+<code>README.md</code> recording how the report was generated, its sources and assumptions, and an
+LLM-assistance disclaimer. <code>reports/README.md</code> indexes all reports with a status column
+(<em>current</em> / <em>superseded by X</em>). Future AI-generated reports (audits, deep dives,
+framework proposals) land here under the same contract. The site deploy publishes the folder
+as-is; the flagship migration is the ten-chapter autonomous-agent-framework report.
+</p>
+
+<h2 id="inventory">4. Migration inventory and provenance</h2>
+
+<p>Every migrated artifact gets a provenance note (origin path, frozen date, "archived repo remains
+the historical record"). Internal hub links are rewritten to their new locations or to the archived
+repo where the target is not migrated.</p>
+
+<table>
+  <tr><th>Hub source</th><th>Destination</th><th>Treatment</th></tr>
+  <tr><td><code>index.md</code></td><td><code>site/index.html</code> + dashboard baseline row</td>
+      <td>Rewritten (content basis, not a copy); frozen metrics become the historical baseline;
+          the static ToDo list is superseded by the live Jeremy queue.</td></tr>
+  <tr><td><code>daily/</code> (32 entries)</td><td><code>diary/</code></td>
+      <td>Verbatim; front matter stripped; provenance header added.</td></tr>
+  <tr><td><code>reports/autonomous-agent-framework/</code> (10 chapters, index, styles)</td>
+      <td><code>reports/autonomous-agent-framework/</code></td>
+      <td>Verbatim; add provenance README; flagship artifact.</td></tr>
+  <tr><td>Standalone HTML reports (autonomy-audit, pm-portfolio-framework, subagent-failure-deep-dive,
+          work-session-supervision-acceptance, p009-supervised-runner-user-summary,
+          framework-options v1–v4)</td>
+      <td><code>reports/&lt;name&gt;/index.html</code></td>
+      <td>Verbatim, one folder each; options v1–v3 marked <em>superseded</em> by v4 and the
+          ten-chapter report in the reports index (per D3, resolved).</td></tr>
+  <tr><td><code>scripts/update_metrics.py</code>, <code>generate-roadmap.mjs</code></td>
+      <td><code>scripts/build_dashboard.py</code>, <code>scripts/build_roadmap.mjs</code></td>
+      <td>Adapted (new scope, new data sources), not copied.</td></tr>
+  <tr><td>Other scripts (<code>work_session.py</code>, <code>run_codex_cycle.py</code>,
+          <code>p009_runner_action.py</code>, <code>portfolio_audit.py</code>,
+          <code>check_hub_sync.py</code>)</td>
+      <td>— (not migrated)</td>
+      <td>Retired runner/supervision mechanics; remain readable in the archive.</td></tr>
+  <tr><td><code>docs/</code> (codex-cycle-contract, openclaw-runner-actions,
+          runner-status-dashboard, work-session-supervision)</td>
+      <td>— (not migrated)</td>
+      <td>Contracts for retired runtimes; linked from the framework report's provenance README.</td></tr>
+  <tr><td><code>agents.md</code>, <code>autonomy.md</code>, <code>projects.md</code>,
+          <code>roadmap.md</code>, <code>projects/</code>, <code>_layouts/</code>,
+          <code>_config.yml</code>, <code>assets/</code></td>
+      <td>— (not migrated)</td>
+      <td>Superseded by AGENTS.md, the roadmap view, and the new site scaffold.</td></tr>
+  <tr><td>Closed P00x project/requirement issues</td><td>Disposition table, §5</td>
+      <td>Converted, recorded as historical, or flagged for decision.</td></tr>
+</table>
+
+<h2 id="p00x">5. Legacy P00x disposition</h2>
+
+<p>
+The hub tracked six projects (P004–P009); four have "Project" issues in the archived tracker, two
+existed only on the homepage rollup. Conversion target: active work becomes Requirement issues
+here; completed or superseded work is recorded as history, with its lessons preserved in the
+migrated reports.
+</p>
+
+<table>
+  <tr><th>Legacy project</th><th>Disposition</th><th>Detail</th></tr>
+  <tr>
+    <td>P004 SafetyGraphics renderer modernization
+        (<a href="https://github.com/obot-claw/obot-claw.github.io/issues/16">#16</a>)</td>
+    <td><strong>Already migrated</strong></td>
+    <td>Lives on as Requirements <a href="https://github.com/jwildfire/obot.roadmap/issues/1">#1</a>
+        (safety.viz) and <a href="https://github.com/jwildfire/obot.roadmap/issues/2">#2</a>
+        (Safety Histogram pilot); later renderers get requirements as the migration sequences them.</td>
+  </tr>
+  <tr>
+    <td>P005 gsm.safety static charts from FDA report <span class="note">(homepage only)</span></td>
+    <td><strong>Convert</strong></td>
+    <td>New <code>backlog</code> Requirement, label <code>safety</code> — static ggplot safety
+        displays aligned to FDA ST&amp;F guidance, referencing gsm.safety issues
+        <a href="https://github.com/obot-claw/gsm.safety/issues/27">#27</a>/<a
+        href="https://github.com/obot-claw/gsm.safety/issues/28">#28</a> and PR
+        <a href="https://github.com/obot-claw/gsm.safety/pull/29">#29</a> as prior art.</td>
+  </tr>
+  <tr>
+    <td>P006 R/Pharma 2026 AI keynote <span class="note">(homepage only)</span></td>
+    <td><strong>Convert (per D1)</strong></td>
+    <td>New <code>backlog</code> Requirement, label <code>ai</code> — HTML-first keynote deck on
+        open-source safety tooling and agentic engineering, continuing
+        <a href="https://github.com/obot-claw/RPharma2026-AIKeynote/pull/1">RPharma2026-AIKeynote PR #1</a>.</td>
+  </tr>
+  <tr>
+    <td>P007 autonomy framework
+        (<a href="https://github.com/obot-claw/obot-claw.github.io/issues/17">#17</a>)</td>
+    <td><strong>Historical</strong></td>
+    <td>Superseded by the Claude Code migration (framework report, Chapter&nbsp;10). The forward
+        automation thread continues in Requirement
+        <a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a> (obot GitHub App).</td>
+  </tr>
+  <tr>
+    <td>P008 Paperclip orchestration pilot
+        (<a href="https://github.com/obot-claw/obot-claw.github.io/issues/30">#30</a>)</td>
+    <td><strong>Historical</strong></td>
+    <td>Evaluated and retired; lessons preserved in framework report Chapters 4, 5, and 8.</td>
+  </tr>
+  <tr>
+    <td>P009 supervised Codex runner
+        (<a href="https://github.com/obot-claw/obot-claw.github.io/issues/36">#36</a>)</td>
+    <td><strong>Historical</strong></td>
+    <td>Proven and closed; lessons preserved in the framework report and the P009 user summary
+        report.</td>
+  </tr>
+</table>
+
+<h2 id="automation">6. Automation</h2>
+
+<p><code>.github/workflows/deploy-site.yml</code>, one workflow, mirroring gsm.roadmap's Pages deploy:</p>
+<ul>
+  <li><strong>Triggers:</strong> push to <code>main</code> touching <code>site/</code>,
+      <code>diary/</code>, <code>reports/</code>, or <code>scripts/</code>; a daily cron so the
+      dashboard and roadmap stay fresh without commits (per D4, resolved); and
+      <code>workflow_dispatch</code>.</li>
+  <li><strong>Steps:</strong> checkout → run <code>build_dashboard.py</code>,
+      <code>build_roadmap.mjs</code>, <code>render_diary.mjs</code> into <code>_site/</code> →
+      copy <code>site/</code> and <code>reports/</code> in → validate key pages exist →
+      <code>upload-pages-artifact</code> → <code>deploy-pages</code>.</li>
+  <li><strong>Permissions:</strong> <code>contents: read</code>, <code>pages: write</code>,
+      <code>id-token: write</code>. The Jeremy-queue search needs only public-repo read access via
+      the default token.</li>
+  <li><strong>No commit-back:</strong> generated HTML never lands in git; a failed generator fails
+      the deploy loudly rather than publishing a stale page silently.</li>
+</ul>
+<p class="note">
+Diary writing stays a session-agent responsibility (an AGENTS.md convention added at
+implementation), not a scheduled job — the hub's nightly automation ended with the hub, and an
+empty day should produce no entry rather than a machine-generated filler.
+</p>
+
+<h2 id="decisions">7. Decisions</h2>
+
+<p class="note">All four decisions were put to @jwildfire on 2026-07-02; each recommendation was
+accepted as-is.</p>
+
+<div class="decision"><strong>D1 — P006 keynote scope.</strong> Convert the R/Pharma 2026 keynote
+to a <code>backlog</code> Requirement here, or track it only in its own repo?
+<br><strong>Resolved:</strong> backlog Requirement here — the roadmap shows everything competing
+for Jeremy's portfolio time, and the keynote draws on this work.</div>
+
+<div class="decision"><strong>D2 — Diary cadence.</strong> One entry per working session (merged
+into a daily file), or a weekly rollup?
+<br><strong>Resolved:</strong> per working session — matches how work actually happens now and
+keeps entries factual; a weekly rollup can be layered on later if the diary gets noisy.</div>
+
+<div class="decision"><strong>D3 — Options-report retention.</strong> Migrate all four
+framework-options versions, or only v4 plus the ten-chapter report?
+<br><strong>Resolved:</strong> migrate all, marked superseded in the reports index — cheap to
+keep, and the memory philosophy favors preserving the decision trail.</div>
+
+<div class="decision"><strong>D4 — Dashboard refresh cadence.</strong> Daily cron vs. weekdays-only
+vs. dispatch-only.
+<br><strong>Resolved:</strong> daily — the queue is the page Jeremy checks, and a stale queue is
+worse than no queue.</div>
+
+<h2 id="out-of-scope">8. Out of scope</h2>
+<ul>
+  <li>Any change to the archived <code>obot-claw</code> repos — they stay read-only reference.</li>
+  <li>Reviving nightly Telegram/OpenClaw briefings or the Paperclip/Codex runner mechanics.</li>
+  <li>The obot GitHub App (Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a>)
+      — this design assumes plain Actions tokens; the App may later replace them.</li>
+  <li>Custom domain or site theming beyond a single shared stylesheet.</li>
+</ul>
+
+<h2 id="tasks">9. Task preview</h2>
+<p class="note">To be filed as Tasks on <a href="https://github.com/jwildfire/obot.roadmap/issues/7">#7</a>
+after design sign-off; listed here to show intended decomposition. All in
+<code>jwildfire/obot.roadmap</code>.</p>
+<ol>
+  <li>Scaffold <code>site/</code> (homepage + stylesheet) and <code>deploy-site.yml</code>; enable
+      GitHub Pages.</li>
+  <li>Migrate the diary archive; add <code>render_diary.mjs</code> and <code>diary/README.md</code>
+      cadence conventions.</li>
+  <li>Migrate reports (framework report + standalones) with provenance READMEs and the indexed
+      <code>reports/README.md</code>.</li>
+  <li>Implement <code>build_dashboard.py</code> (metrics + Jeremy queue).</li>
+  <li>Implement <code>build_roadmap.mjs</code> (requirement status view).</li>
+  <li>File P00x conversion issues per §5 (P005 requirement; P006 per D1).</li>
+  <li>Update README (History, site links) and AGENTS.md (diary convention; align the design-doc
+      convention to <code>{issue_number}_design.(md|html)</code> per obot-claw#59).</li>
+</ol>
+
+<footer>
+  Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/7">jwildfire/obot.roadmap#7</a> ·
+  Design document <code>requirements/design/7_design.html</code> ·
+  Generated with assistance from a large language model (Claude Code, Fable 5); validate details
+  against the linked GitHub sources before implementation.
+</footer>
+
+</body>
+</html>

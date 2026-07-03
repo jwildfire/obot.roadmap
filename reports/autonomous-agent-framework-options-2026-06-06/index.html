@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autonomous agent framework options</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework-options-2026-06-06.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<style>
+.report-callout { border-left: 4px solid #f28c28; padding: 0.7rem 1rem; background: #fff7ed; color: #1f2937; margin: 1rem 0; }
+.report-callout strong { color: #111827; }
+.score-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.score-table th, .score-table td { border: 1px solid #ddd; padding: 0.55rem; vertical-align: top; }
+.score-table th { background: #f5f5f5; color: #111827; }
+.pill { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 999px; background: #eef2ff; color: #1f2937; font-size: 0.85rem; }
+</style>
+
+<h1>Autonomous agent framework options</h1>
+
+<p><strong>Date:</strong> 2026-06-06<br>
+<strong>Scope:</strong> options for reliable PM → Development → Testing autonomous work cycles for the <code>obot-claw</code> GitHub portfolio.</p>
+
+<div class="report-callout">
+  <strong>Bottom line:</strong> Jeremy's concern is correct. A durable run ledger, session state, heartbeat/run records, and issue-to-PR handoffs are common patterns. We should not build a full bespoke orchestration platform. We should use the smallest custom layer needed to bridge OpenClaw/Telegram/GitHub today, while evaluating GitHub-native coding agents and Paperclip-style orchestration for the longer term.
+</div>
+
+<h2>Recommendation</h2>
+
+<ol>
+  <li><strong>Near term:</strong> finish PR #26 as a thin reliability shim, not as a product. Keep it focused on ledger/status/evidence so obot stops claiming invisible work is active.</li>
+  <li><strong>Next pilot:</strong> test a GitHub-native coding-agent path for one small <code>obot-claw.github.io</code> issue: Copilot cloud agent if available; otherwise Codex/Claude through GitHub third-party agent support if enabled.</li>
+  <li><strong>Parallel evaluation:</strong> run a Paperclip spike in a sandbox repo only. Paperclip's model maps closely to what we want: agents wake on assignments, run adapters, update task status, and store run records.</li>
+  <li><strong>Avoid for now:</strong> building a new multi-agent framework around LangGraph/CrewAI/Agents SDK/Microsoft Agent Framework. Those are useful for application agents, but they do not automatically solve GitHub PR lifecycle, sandboxing, liveness, or operator review.</li>
+</ol>
+
+<h2>What common systems already do</h2>
+
+<table class="score-table">
+  <thead><tr><th>Pattern</th><th>Seen in</th><th>Why it matters for obot</th></tr></thead>
+  <tbody>
+    <tr><td>Issue/task assignment creates a run</td><td>GitHub Copilot cloud agent, Jules, Paperclip, Devin</td><td>Maps directly to our Project / Requirement / Task issue model.</td></tr>
+    <tr><td>Run/session record stores status</td><td>OpenClaw tasks, Paperclip heartbeats, Devin sessions</td><td>Prevents the exact failure we hit: invisible or missing work being reported as active.</td></tr>
+    <tr><td>Agent works in isolated environment</td><td>Codex cloud, Copilot cloud agent, Jules, Devin, OpenHands</td><td>Reduces dirty worktree risk and makes outputs reviewable as PRs.</td></tr>
+    <tr><td>Human review remains terminal authority</td><td>GitHub Copilot, Jules, Devin, Codex</td><td>Matches Jeremy's preference: agents can build; humans decide/merge.</td></tr>
+    <tr><td>Explicit logs/session playback</td><td>GitHub Copilot session logs, Devin shell/IDE/browser, OpenClaw sessions/tasks</td><td>Required for reliable status and failure diagnosis.</td></tr>
+  </tbody>
+</table>
+
+<h2>Option analysis</h2>
+
+<h3>Option A — OpenClaw-native tasks/sessions plus PR #26 ledger</h3>
+<p><span class="pill">Best near-term fit</span></p>
+<p>OpenClaw already has a background task ledger for ACP runs, subagents, cron jobs, and CLI operations. Tasks move through queued/running/terminal states and can become <code>lost</code> if backing state disappears. OpenClaw sessions also expose stored session rows and trajectory export/tail commands.</p>
+<p><strong>Pros:</strong> already installed; aligns with Telegram/heartbeat; keeps local privacy; lowest migration cost.</p>
+<p><strong>Cons:</strong> current Telegram runtime did not expose the right first-class session tools, and the CLI fallback hit sandbox permission problems. Needs configuration/tooling repair before true autonomous cycles are safe.</p>
+<p><strong>Use it for:</strong> immediate supervision, liveness checks, cron/TaskFlow-backed work blocks, and status reporting.</p>
+
+<h3>Option B — GitHub-native coding agents</h3>
+<p><span class="pill">Best strategic path if available</span></p>
+<p>GitHub Copilot cloud agent can research, plan, make code changes, and open or update pull requests from issues, GitHub.com, VS Code, or automations. GitHub also documents third-party coding agents such as Claude and Codex that can be assigned to issues or mentioned on PRs.</p>
+<p><strong>Pros:</strong> issue-to-PR lifecycle is built in; session logs live where review happens; branch/PR/review is native; custom agents can specialize; security controls are documented.</p>
+<p><strong>Cons:</strong> availability depends on GitHub/Copilot plan and org settings; third-party agent access may require GitHub App enablement; task updates after assignment may need to happen on the PR, not only the issue.</p>
+<p><strong>Use it for:</strong> routine GitHub implementation tasks once obot-claw org settings support it.</p>
+
+<h3>Option C — Paperclip as orchestration/control plane</h3>
+<p><span class="pill">Promising but needs sandbox pilot</span></p>
+<p>Paperclip describes agents as workers that wake for heartbeats, run an adapter such as Claude Code CLI, check assignments, claim tasks, update status, and store run results for audit/debugging. It also has explicit agent identity, session persistence, and status states.</p>
+<p><strong>Pros:</strong> very close to our desired PM/Dev/Testing agent model; not tied to one agent runtime; gives us org structure, tasks, budgets, approvals, status, and run records.</p>
+<p><strong>Cons:</strong> newer system; likely operational overhead; would need careful privacy/security review; should not be wired into production obot until a small repo pilot proves it is stable.</p>
+<p><strong>Use it for:</strong> an experiment coordinating PM/Dev/Testing agents around a toy or low-risk public repo.</p>
+
+<h3>Option D — Codex CLI / Codex cloud</h3>
+<p><span class="pill">Useful execution engine, not full coordinator</span></p>
+<p>OpenAI's Codex CLI is a local coding agent. OpenAI also describes Codex cloud tasks as running in secure isolated containers with repo-provided code and dependencies. Codex usage is tracked across local and cloud clients through OpenAI's compliance/usage surfaces.</p>
+<p><strong>Pros:</strong> we already use Codex-style local development effectively; strong coding model; compatible with AGENTS.md; can be wrapped by OpenClaw/cron/Paperclip.</p>
+<p><strong>Cons:</strong> local CLI is not itself a durable multi-agent scheduler; our current sandbox blocked OpenClaw CLI fallback writes; cloud access and GitHub integration need explicit setup.</p>
+<p><strong>Use it for:</strong> coding execution inside a better run manager, not as the run manager.</p>
+
+<h3>Option E — Claude Code GitHub Actions / OpenHands / Devin / Jules</h3>
+<p><span class="pill">Viable alternatives by use case</span></p>
+<p>Claude Code GitHub Actions can respond to mentions on issues/PRs and create PRs through GitHub Actions. OpenHands provides a self-hostable agent SDK, CLI, local GUI, REST API, and cloud option. Devin and Jules are hosted asynchronous software engineering agents that emphasize parallel backlog tasks, PRs, and human review.</p>
+<p><strong>Pros:</strong> mature async development patterns; better out-of-box session visibility than our current ad hoc loop.</p>
+<p><strong>Cons:</strong> varying cost, vendor lock-in, setup, and repo access implications. Some are hosted systems, so private context and credentials need strict review.</p>
+<p><strong>Use it for:</strong> comparison pilots after GitHub-native availability is checked.</p>
+
+<h3>Option F — General multi-agent frameworks</h3>
+<p><span class="pill">Do not start here</span></p>
+<p>OpenAI Agents SDK, Microsoft Agent Framework, LangGraph, CrewAI, and AutoGen-style systems are useful when building an application that orchestrates agents. They offer patterns such as handoffs, agents-as-tools, graph workflows, checkpointing, and human-in-the-loop controls.</p>
+<p><strong>Pros:</strong> flexible; strong for custom workflows and PM/research/planning agents.</p>
+<p><strong>Cons:</strong> they do not automatically provide GitHub issue assignment, PR creation, code sandboxing, session logs, or deployment checks. We would still need to build those operational pieces.</p>
+<p><strong>Use it for:</strong> later, if we need a custom PM planner or evaluator loop after adopting a proven execution substrate.</p>
+
+<h2>Recommended next steps</h2>
+
+<ol>
+  <li><strong>Complete PR #26</strong> as a guardrail: acceptance matrix, one real ledger-backed cycle, and issue evidence.</li>
+  <li><strong>Audit GitHub agent availability</strong> for <code>obot-claw</code>: Copilot cloud agent, third-party Codex/Claude agents, required plans/settings/GitHub Apps.</li>
+  <li><strong>Create one pilot issue</strong> designed for a GitHub-native coding agent: small, testable, public, no secrets, clear acceptance criteria.</li>
+  <li><strong>Run Paperclip locally or in a sandbox</strong> against a low-risk repo and evaluate whether its heartbeat/status model can replace our custom ledger.</li>
+  <li><strong>Only then decide</strong> whether OpenClaw remains the primary orchestrator, GitHub-native agents become the dev execution layer, or Paperclip becomes the control plane.</li>
+</ol>
+
+<h2>Decision matrix</h2>
+
+<table class="score-table">
+  <thead><tr><th>Path</th><th>Reliability</th><th>Setup cost</th><th>GitHub fit</th><th>Privacy/control</th><th>Recommendation</th></tr></thead>
+  <tbody>
+    <tr><td>OpenClaw + PR #26</td><td>Medium now; high after tooling repair</td><td>Low</td><td>Medium</td><td>High</td><td>Use immediately as guardrail.</td></tr>
+    <tr><td>GitHub-native agents</td><td>High if enabled</td><td>Medium</td><td>High</td><td>Medium</td><td>Pilot next.</td></tr>
+    <tr><td>Paperclip</td><td>Unknown but architecturally relevant</td><td>Medium/high</td><td>Medium</td><td>Medium/high if self-hosted</td><td>Research pilot only.</td></tr>
+    <tr><td>Codex CLI wrapper</td><td>Medium</td><td>Low/medium</td><td>Medium</td><td>High local</td><td>Use as execution engine, not scheduler.</td></tr>
+    <tr><td>OpenHands</td><td>Medium/high</td><td>Medium/high</td><td>Medium</td><td>High if self-hosted</td><td>Consider after GitHub-agent pilot.</td></tr>
+    <tr><td>Devin/Jules</td><td>Medium/high</td><td>Low/medium</td><td>High</td><td>Lower, hosted</td><td>Useful benchmark, not first choice.</td></tr>
+    <tr><td>Agents SDK/LangGraph/CrewAI/MS Agent Framework</td><td>Depends on implementation</td><td>High</td><td>Low without extra work</td><td>High if self-built</td><td>Do not use for dev execution yet.</td></tr>
+  </tbody>
+</table>
+
+<h2>Implication for PR #26</h2>
+
+<p>PR #26 should be treated as a minimum viable safety layer, not the final orchestration platform. It should prevent false status reports while we evaluate better off-the-shelf execution/control planes. If a GitHub-native or Paperclip-like control plane wins, the #26 ledger can either become a compatibility adapter or be retired.</p>
+
+<h2>Sources</h2>
+
+<ul>
+  <li><a href="https://docs.openclaw.ai/automation/tasks">OpenClaw background tasks</a></li>
+  <li><a href="https://docs.openclaw.ai/cli/sessions">OpenClaw sessions CLI</a></li>
+  <li><a href="https://paperclip.inc/docs/guides/agent-developer/how-agents-work/">Paperclip: How agents work</a></li>
+  <li><a href="https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent">GitHub Copilot cloud agent</a></li>
+  <li><a href="https://docs.github.com/en/copilot/concepts/agents/about-third-party-coding-agents">GitHub third-party coding agents</a></li>
+  <li><a href="https://github.com/openai/codex">OpenAI Codex CLI repository</a></li>
+  <li><a href="https://help.openai.com/en/articles/11369540-getting-started-with-codex">OpenAI Help: using Codex with ChatGPT plan</a></li>
+  <li><a href="https://openai.com/index/introducing-codex/">OpenAI: Introducing Codex</a></li>
+  <li><a href="https://code.claude.com/docs/fr/github-actions">Claude Code GitHub Actions</a></li>
+  <li><a href="https://github.com/OpenHands/OpenHands">OpenHands GitHub repository</a></li>
+  <li><a href="https://jules.google/">Google Jules</a></li>
+  <li><a href="https://docs.devin.ai/get-started/devin-intro">Devin documentation</a></li>
+  <li><a href="https://openai.github.io/openai-agents-python/multi_agent/">OpenAI Agents SDK orchestration</a></li>
+  <li><a href="https://learn.microsoft.com/en-us/agent-framework/overview/">Microsoft Agent Framework overview</a></li>
+  <li><a href="https://arxiv.org/abs/2602.09185">AIDev: Studying AI Coding Agents on GitHub</a></li>
+  <li><a href="https://arxiv.org/abs/2601.15195">Where Do AI Coding Agents Fail?</a></li>
+</ul>
+</body>
+</html>

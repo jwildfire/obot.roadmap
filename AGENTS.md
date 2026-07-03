@@ -30,9 +30,12 @@ Sub-issues are filed in the repo closest to the implementation work. All repos a
 ## Key files
 
 - [README.md](README.md) — Authoritative workflow, lifecycle, labels, milestones
-- [requirements/design/](requirements/design/) — Design documents, one per requirement (`{issue_number}_design.md`)
+- [requirements/design/](requirements/design/) — Design documents, one per requirement (`{issue_number}_design.html`, or `.md` for simple designs)
 - [requirements/dataspec/](requirements/dataspec/) — Data specification documents (`{issue_number}_dataspec.md`)
 - [.github/ISSUE_TEMPLATE/requirement.yml](.github/ISSUE_TEMPLATE/requirement.yml) — Requirement issue template (5 sections)
+- [diary/](diary/) — AI-written diary, one `YYYY-MM-DD.md` per day with activity
+- [reports/](reports/) — AI-generated reports, one folder per report with a provenance README
+- [site/](site/) + [.github/workflows/deploy-site.yml](.github/workflows/deploy-site.yml) — static homepage; dashboard/roadmap/diary pages are generated at deploy time and never committed
 
 ## Creating Requirement issues
 
@@ -45,6 +48,14 @@ Every Requirement issue must instantiate the [requirement template](.github/ISSU
 5. Sections not yet populated get a short italic placeholder stating when they will be filled (e.g. `_To be populated during Requirement Gathering (Step 2)._`) — never omit them.
 
 Before submitting, verify with: `gh issue view <n> --json body -q .body | grep '^### '` — the output must be exactly the five headings above.
+
+## Diary
+
+Before ending any substantive working session, write that day's diary entry
+(`diary/YYYY-MM-DD.md`), or append a session section if the file exists. Follow the
+format of existing entries: work completed, issues/PRs touched, blockers/risks, and
+items needing @jwildfire. Never write filler entries for days without activity. See
+[diary/README.md](diary/README.md).
 
 ## Constraints
 

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autonomous agent framework options v2</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework-options-v2-2026-06-06.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<style>
+.report-callout { border-left: 4px solid #f28c28; padding: 0.7rem 1rem; background: #fff7ed; color: #1f2937; margin: 1rem 0; }
+.report-callout strong { color: #111827; }
+.plan-step { border: 1px solid #ddd; border-radius: 8px; padding: 0.9rem; margin: 0.8rem 0; }
+.score-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.score-table th, .score-table td { border: 1px solid #ddd; padding: 0.55rem; vertical-align: top; }
+.score-table th { background: #f5f5f5; color: #111827; }
+.pill { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 999px; background: #eef2ff; color: #1f2937; font-size: 0.85rem; }
+</style>
+
+<h1>Autonomous agent framework options v2</h1>
+
+<p><strong>Date:</strong> 2026-06-06<br>
+<strong>Focus:</strong> practical implementation plan using OpenClaw as the supervisor/orchestrator and Codex as the primary PM + Development execution framework.</p>
+
+<div class="report-callout">
+  <strong>Recommendation:</strong> finish PR #26 as a thin safety shim, then standardize on a hybrid OpenClaw + Codex operating model. OpenClaw should own intake, scheduling, Telegram, heartbeat, liveness, and durable status. Codex should own PM analysis and development execution inside clean GitHub-scoped work contexts. Other frameworks should remain appendix/pilot candidates unless this path fails.
+</div>
+
+<h2>Target operating model</h2>
+
+<table class="score-table">
+  <thead><tr><th>Layer</th><th>Primary tool</th><th>Responsibility</th><th>Durable evidence</th></tr></thead>
+  <tbody>
+    <tr><td>Intake/orchestration</td><td>OpenClaw main obot</td><td>Receive Telegram requests, decide PM vs Dev vs Testing, enforce formatting and safety rules.</td><td>Telegram summary, memory note, linked GitHub issue.</td></tr>
+    <tr><td>Task source of truth</td><td>GitHub issues</td><td>Project / Requirement / Task hierarchy, Human ToDos, acceptance criteria, status labels.</td><td>Issue body, comments, labels, sub-issue links.</td></tr>
+    <tr><td>PM execution</td><td>Codex</td><td>Portfolio audit, requirement gaps, issue drafting, implementation handoff.</td><td>Issue comments, new/updated issues, PM report.</td></tr>
+    <tr><td>Development execution</td><td>Codex</td><td>Clean branch/worktree, implementation, tests, PR, evidence comment.</td><td>Commit, draft PR, check logs, screenshots/report.</td></tr>
+    <tr><td>Supervision</td><td>OpenClaw tasks + PR #26 ledger</td><td>Record run id, checkpoint, liveness method, evidence, recovery plan; never claim invisible work is active.</td><td>Ledger row, OpenClaw task/session status, issue comment.</td></tr>
+    <tr><td>Review/merge</td><td>GitHub + Jeremy</td><td>Human review, requested changes, final merge authority.</td><td>PR review, merge commit, release/deploy if applicable.</td></tr>
+  </tbody>
+</table>
+
+<h2>Why Codex as primary PM + Development agent</h2>
+
+<ul>
+  <li>We already pay for and use Codex-style execution.</li>
+  <li>Codex is explicitly designed for software-engineering tasks, repo edits, tests, and PR-oriented output.</li>
+  <li>Codex CLI supports local development in the same AGENTS.md/skills/workspace discipline we already use.</li>
+  <li>Codex cloud/GitHub integrations can become the more durable execution path once org setup is confirmed.</li>
+  <li>OpenClaw remains valuable as the personal assistant/orchestrator, not as a custom coding-agent platform.</li>
+</ul>
+
+<h2>Implementation plan</h2>
+
+<div class="plan-step">
+  <h3>Phase 0 — Finish #26 as the safety gate</h3>
+  <p><span class="pill">Immediate</span></p>
+  <ol>
+    <li>Add an acceptance-criteria matrix to PR #26 and issue #25.</li>
+    <li>Record this v2 planning cycle using the new ledger helper.</li>
+    <li>Run the helper self-test and one real-cycle status report.</li>
+    <li>Mark PR #26 ready for review only after evidence is posted.</li>
+  </ol>
+  <p><strong>Exit criteria:</strong> no future PM/Dev cycle is called active unless it has a ledger/task/session reference plus a checkpoint and recovery plan.</p>
+</div>
+
+<div class="plan-step">
+  <h3>Phase 1 — Codex cycle contract</h3>
+  <p><span class="pill">Next 1-2 work blocks</span></p>
+  <ol>
+    <li>Create a reusable Codex cycle prompt template for PM and Development roles.</li>
+    <li>Require every Codex run to declare: target issue, repo, branch/worktree, allowed writes, checks, evidence, timeout, and non-goals.</li>
+    <li>Store run metadata in the PR #26 ledger and in the target GitHub issue.</li>
+    <li>Use clean worktrees or Codex cloud tasks; never run on dirty local clones unless explicitly scoped.</li>
+  </ol>
+  <p><strong>Exit criteria:</strong> one small public issue can go PM → Dev → PR with liveness evidence at each checkpoint.</p>
+</div>
+
+<div class="plan-step">
+  <h3>Phase 2 — GitHub-native Codex path</h3>
+  <p><span class="pill">Setup/audit</span></p>
+  <ol>
+    <li>Audit whether obot-claw has Codex cloud/GitHub integration access.</li>
+    <li>Confirm org permissions, GitHub App/install scope, token exposure, branch permissions, and PR creation behavior.</li>
+    <li>Define one tiny pilot issue with no secrets and deterministic checks.</li>
+    <li>Compare Codex cloud/GitHub output against local Codex CLI output on the same task.</li>
+  </ol>
+  <p><strong>Exit criteria:</strong> choose Codex cloud/GitHub for routine execution if it reliably creates reviewable PRs with logs; otherwise keep local CLI wrapped by OpenClaw supervision.</p>
+</div>
+
+<div class="plan-step">
+  <h3>Phase 3 — PM portfolio agent</h3>
+  <p><span class="pill">After execution path works</span></p>
+  <ol>
+    <li>Give Codex a PM-only role: no feature-code edits, only issue audit, labels, project structure, Human ToDo gate, and dev handoff.</li>
+    <li>Run PM audits against GitHub issues and Hub pages, not local memory alone.</li>
+    <li>Require PM to create/update issues before any Dev run starts.</li>
+    <li>Require PM output to include a machine-readable queue item for Development.</li>
+  </ol>
+  <p><strong>Exit criteria:</strong> PM selects a dev target from GitHub state and produces an exact handoff without main obot inventing missing context.</p>
+</div>
+
+<div class="plan-step">
+  <h3>Phase 4 — Development and Testing agents</h3>
+  <p><span class="pill">Scale-up</span></p>
+  <ol>
+    <li>Codex Development agent works only in branch/worktree or cloud task.</li>
+    <li>Codex Testing agent runs browser/GHA/static checks and comments evidence.</li>
+    <li>OpenClaw supervisor handles checkpoints and stalled/failed recovery.</li>
+    <li>GitHub PR remains the review and merge boundary.</li>
+  </ol>
+  <p><strong>Exit criteria:</strong> two consecutive work cycles complete without false active-status claims, dirty worktree bleed, or missing evidence.</p>
+</div>
+
+<h2>Concrete workflow</h2>
+
+<ol>
+  <li>Jeremy requests work in Telegram.</li>
+  <li>Main obot creates or selects a GitHub Task issue.</li>
+  <li>Main obot creates a ledger entry: target, role, session ref, checkpoint, liveness method, recovery plan.</li>
+  <li>Codex PM audits GitHub state and writes an implementation handoff.</li>
+  <li>OpenClaw checks liveness and evidence before launching Dev.</li>
+  <li>Codex Dev works in clean worktree/cloud task and opens a draft PR.</li>
+  <li>Testing/evidence runs. Failures become issue/PR comments, not vague Telegram claims.</li>
+  <li>Main obot sends a short Telegram update with repo/issue/PR references.</li>
+</ol>
+
+<h2>Codex execution standards</h2>
+
+<table class="score-table">
+  <thead><tr><th>Concern</th><th>Standard</th></tr></thead>
+  <tbody>
+    <tr><td>Scope</td><td>Only <code>obot-claw</code> GitHub writes unless Jeremy explicitly changes the guardrail.</td></tr>
+    <tr><td>Worktree</td><td>Use a fresh clone/worktree or Codex cloud task. Never mutate dirty unrelated clones.</td></tr>
+    <tr><td>Prompt contract</td><td>Include target issue, acceptance criteria, file ownership, checks, evidence, and stop conditions.</td></tr>
+    <tr><td>Security</td><td>Least-privilege GitHub permissions; avoid secret access; no sandbox bypass for routine work.</td></tr>
+    <tr><td>Evidence</td><td>PR body and issue comment must list files changed, checks run, failures, and next decision.</td></tr>
+    <tr><td>Telegram</td><td>Short summaries only; detailed status lives in GitHub/report/ledger.</td></tr>
+  </tbody>
+</table>
+
+<h2>What PR #26 should and should not become</h2>
+
+<p><strong>Should:</strong> provide a minimal state ledger, status helper, and recovery discipline until OpenClaw task/session visibility is fully reliable for this workflow.</p>
+<p><strong>Should not:</strong> become a custom scheduler, agent runtime, queue manager, or replacement for Codex/GitHub/OpenClaw task infrastructure.</p>
+
+<h2>Risks and mitigations</h2>
+
+<table class="score-table">
+  <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+  <tbody>
+    <tr><td>Codex cloud/GitHub integration unavailable or misconfigured</td><td>Use local Codex CLI in clean worktrees under OpenClaw supervision until access is fixed.</td></tr>
+    <tr><td>False active-status claims</td><td>Require ledger + checkpoint + evidence before saying work is active.</td></tr>
+    <tr><td>Dirty local state contaminates PRs</td><td>Fresh clone/worktree per dev task; branch naming tied to issue id.</td></tr>
+    <tr><td>Token/credential exposure</td><td>Prefer GitHub App scoped permissions, no public private-context dumps, sandboxed execution, short-lived tokens where possible.</td></tr>
+    <tr><td>PM creates vague Human ToDos</td><td>Human ToDo gate: delegate to PM/Dev/Testing first; if Jeremy is needed, issue must include explicit @jwildfire question.</td></tr>
+  </tbody>
+</table>
+
+<h2>Appendix: other options</h2>
+
+<ul>
+  <li><strong>GitHub-native Copilot/third-party coding agents:</strong> strong strategic candidate if org settings support it; evaluate as part of Codex GitHub setup.</li>
+  <li><strong>Paperclip:</strong> promising control-plane concept with heartbeats, adapters, task status, and run records; run a sandbox pilot, but do not switch production workflow yet.</li>
+  <li><strong>OpenHands:</strong> good self-hostable alternative if we want an agent runtime outside Codex/OpenClaw.</li>
+  <li><strong>Devin/Jules:</strong> useful hosted benchmarks, but introduce more vendor/process surface.</li>
+  <li><strong>Agents SDK/LangGraph/CrewAI/Microsoft Agent Framework:</strong> useful for custom app-agent orchestration, but not the fastest route to GitHub PR development cycles.</li>
+</ul>
+
+<h2>Sources</h2>
+
+<ul>
+  <li><a href="https://docs.openclaw.ai/automation/tasks">OpenClaw background tasks</a></li>
+  <li><a href="https://docs.openclaw.ai/cli/sessions">OpenClaw sessions CLI</a></li>
+  <li><a href="https://github.com/openai/codex">OpenAI Codex CLI repository</a></li>
+  <li><a href="https://openai.com/index/introducing-codex/">OpenAI: Introducing Codex</a></li>
+  <li><a href="https://openai.com/index/running-codex-safely/">OpenAI: Running Codex safely at OpenAI</a></li>
+  <li><a href="https://openai.com/index/introducing-upgrades-to-codex/">OpenAI: Codex upgrades</a></li>
+  <li><a href="https://help.openai.com/en/articles/11369540-getting-started-with-codex">OpenAI Help: getting started with Codex</a></li>
+  <li><a href="https://github.com/openai/codex-action">OpenAI codex-action</a></li>
+  <li><a href="https://paperclip.inc/docs/guides/agent-developer/how-agents-work/">Paperclip: how agents work</a></li>
+  <li><a href="https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent">GitHub Copilot cloud agent</a></li>
+  <li><a href="https://docs.github.com/en/copilot/concepts/agents/about-third-party-coding-agents">GitHub third-party coding agents</a></li>
+</ul>
+</body>
+</html>

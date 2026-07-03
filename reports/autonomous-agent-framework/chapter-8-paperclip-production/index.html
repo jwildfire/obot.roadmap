@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>"Chapter 8: Paperclip production rollout"</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework/chapter-8-paperclip-production/index.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<link rel="stylesheet" href="../styles.css">
+<div class="report-page">
+<nav class="report-nav"><strong>Report chapters</strong><ol><li><a href="../">Index</a></li><li><a href="../chapter-1-options/">Chapter 1: Framework options</a></li><li><a href="../chapter-2-codex-plan/">Chapter 2: Codex-first operating model</a></li><li><a href="../chapter-3-supervision/">Chapter 3: Supervision failure analysis</a></li><li><a href="../chapter-4-paperclip-evaluation/">Chapter 4: Paperclip evaluation</a></li><li><a href="../chapter-5-paperclip-rollout/">Chapter 5: Paperclip rollout design</a></li><li><a href="../chapter-6-recommendation/">Chapter 6: Revised recommendation</a></li><li><a href="../chapter-7-implementation/">Chapter 7: Implementation plan</a></li><li><a href="../chapter-8-paperclip-production/">Chapter 8: Paperclip production rollout</a></li><li><a href="../chapter-9-openclaw-migration/">Chapter 9: OpenClaw model migration</a></li><li><a href="../chapter-10-claude-code-migration/">Chapter 10: Claude Code migration</a></li></ol></nav>
+
+<h1>Chapter 8: Paperclip production rollout</h1>
+<p class="small"><strong>Updated:</strong> 2026-06-08 · POC completion summary and next-session handoff for production Paperclip adoption.</p>
+
+<div class="ok"><strong>Decision:</strong> the Paperclip proof of concept is complete enough to move from evaluation into a staged production rollout. Paperclip should become the primary local control plane for PM and Dev orchestration; Codex remains the coding executor; GitHub remains the durable source of truth; Telegram/OpenClaw becomes the intake and notification layer, not an unrestricted command runner.</div>
+
+<h2>What changed since Chapter 7</h2>
+<p>Chapter 7 recommended proving the execution layer before using Paperclip. That work has now happened. The supervised runner and watchdog passed self-test, failure-injection, status, and alert-suppression checks. Paperclip was then installed locally under guardrails, launched Codex successfully, completed PM-only and docs-only pilots, and produced a useful first real-work analysis on the SafetyGraphics modernization queue.</p>
+<p>The recommendation therefore changes from "delay Paperclip until the runner is proven" to "roll Paperclip forward as the production control plane, while preserving the runner contracts, GitHub audit trail, and Telegram safety boundaries that made the POC reliable."</p>
+
+<h2>Proof completed</h2>
+<table><thead><tr><th>Area</th><th>Result</th><th>Evidence</th></tr></thead><tbody>
+<tr><td>Supervised runner</td><td>Passed.</td><td>P009 delivered runner ledger scaffold, watchdog failure tests, PM audit/docs PR flow, and allowlisted Telegram/OpenClaw runner actions. Main self-test, status, and check commands passed from Telegram.</td></tr>
+<tr><td>Paperclip source/security gate</td><td>Passed with guardrails.</td><td>P008 #33 concluded conditional go: no install until local disposable/loopback-only constraints were accepted, telemetry disabled, no credentials, no OpenClaw auth, and no auto-pairing.</td></tr>
+<tr><td>Local Paperclip install</td><td>Passed after unsandboxed retry.</td><td>Initial embedded PostgreSQL bootstrap failed in the sandbox on <code>shmget</code>. Direct local install worked under guardrails on <code>127.0.0.1:3100</code>.</td></tr>
+<tr><td>PM-only pilot</td><td>Passed.</td><td>Paperclip task P008 #34 used a local Codex agent to audit loopback-only operation, absence of real credentials/OpenClaw auth, PM-only workflow suitability, and requirements before broader rollout.</td></tr>
+<tr><td>Productionized local baseline</td><td>Passed.</td><td>Paperclip root is <code>/Users/obot/.openclaw/paperclip</code>; source commit <code>76c88e585513dd19bce916ad555a8fee42ff7ded</code>; service <code>local.obot.paperclip</code>; health endpoint returns OK on <code>http://127.0.0.1:3100/api/health</code>; telemetry remains disabled.</td></tr>
+<tr><td>Codex runtime baseline</td><td>Passed.</td><td>Paperclip-launched Codex used <code>--sandbox workspace-write</code>, scoped network proxy access to <code>127.0.0.1</code>/<code>localhost</code>, and successfully reached the Paperclip loopback API from inside a run.</td></tr>
+<tr><td>Docs-only Dev pilot</td><td>Passed.</td><td>CodexDocsDev created and merged docs-only PRs, then hardened its contract so successful runs post evidence and PATCH the Paperclip task to done without operator repair.</td></tr>
+<tr><td>No-edit compliance</td><td>Passed.</td><td>A no-edit Paperclip/Codex task completed with no repository changes and a clean worktree.</td></tr>
+<tr><td>Real-work pilot</td><td>Partially passed.</td><td>CodexSafetyDev produced useful P004 SafetyGraphics issue analysis after correction, but the first artifact landed as a PR when it should have been an issue comment. The PR was closed unmerged and the note was moved to the issue.</td></tr>
+</tbody></table>
+
+<h2>Current operating model</h2>
+<table><thead><tr><th>Component</th><th>Production role</th><th>Boundary</th></tr></thead><tbody>
+<tr><td>Paperclip</td><td>Local control plane for tasks, agents, state, run visibility, and eventually scheduling.</td><td>Keep loopback-only initially. Do not expose publicly. Remote access, if needed, should be reviewed separately.</td></tr>
+<tr><td>Codex</td><td>Primary PM/Dev executor launched by Paperclip.</td><td>Use dedicated workdirs, explicit agent instructions, scoped network proxy, and repo-level task authority.</td></tr>
+<tr><td>GitHub</td><td>Durable source of truth for issues, PRs, comments, review gates, and public evidence.</td><td>Merges remain human-gated. Analysis notes default to issue comments unless a repo artifact is explicitly requested.</td></tr>
+<tr><td>Telegram/OpenClaw</td><td>Human front door and notification channel.</td><td>Map messages to allowlisted actions. Do not forward arbitrary chat text into command execution.</td></tr>
+<tr><td>Supervised runner contracts</td><td>Fallback and safety pattern for liveness, status, and alerts.</td><td>Keep the run-record/status/watchdog discipline even as Paperclip becomes the control plane.</td></tr>
+</tbody></table>
+
+<h2>Target Paperclip org structure</h2>
+<div class="callout"><strong>Recommendation:</strong> start with a four-agent company: one COO orchestrator plus three focused direct reports. The Testing agent should be separate from Development from day one, even if its initial contract is basic, because it creates an independent acceptance gate before work is presented as ready.</div>
+<table><thead><tr><th>Agent</th><th>Reports to</th><th>Primary responsibility</th><th>Initial authority</th></tr></thead><tbody>
+<tr><td>COO</td><td>Human board / Jeremy</td><td>Overall project movement. Receives Telegram/operator prompts, chooses the next workflow, coordinates PM/Dev/Test, monitors blocked work, and reports concise status back to the operator.</td><td>May create/assign Paperclip tasks, request scheduled runs, ask agents for clarification, and summarize results. Does not merge PRs or broaden scope without approval.</td></tr>
+<tr><td>PM</td><td>COO</td><td>Maintains the queue. Reviews GitHub issues for clarity, compliance with the operating framework, acceptance criteria, sequencing, labels/status, and Paperclip/GitHub sync correctness.</td><td>May update Paperclip tasks and GitHub issue comments/metadata under the Obot account. Should default to issue comments for analysis and ask COO for scope decisions.</td></tr>
+<tr><td>Development</td><td>COO</td><td>Implements approved work. Reads the GitHub/Paperclip task, asks the PM or COO for clarification when requirements are incomplete, writes code/docs, runs checks, and opens PRs.</td><td>May create branches and PRs in approved Obot repositories. Does not merge. Does not invent new requirements when issue acceptance criteria are unclear.</td></tr>
+<tr><td>Testing</td><td>COO</td><td>Independently verifies Development output against the issue requirements and the project documentation framework. Produces acceptance notes, missing-test findings, or requested changes.</td><td>May inspect PRs, run available tests/checks, comment findings, and mark Paperclip verification tasks done/blocked. Does not modify implementation unless explicitly assigned a fix task.</td></tr>
+</tbody></table>
+<p>This structure keeps the first production company small but real: the COO owns momentum, the PM owns issue quality and queue hygiene, Development owns implementation, and Testing owns acceptance evidence. Additional skills, tools, or specialist agents can be added later only when a repeated bottleneck is visible.</p>
+
+<h2>Daily operating loop</h2>
+<ol>
+<li>The COO runs once per day on schedule and may also be prompted manually through Telegram/OpenClaw.</li>
+<li>The COO asks the PM to review the next candidate in the GitHub/Paperclip queue.</li>
+<li>The PM confirms the issue is ready, updates GitHub/Paperclip metadata or comments, and either recommends Dev start or returns a clarification/blocker to the COO.</li>
+<li>If the task is ready, the COO assigns Development a scoped Paperclip task linked to the GitHub issue.</li>
+<li>Development implements the issue, opens a PR, posts evidence, and requests Testing review.</li>
+<li>Testing verifies the PR against the issue requirements and posts an acceptance note or requested changes.</li>
+<li>The COO summarizes the outcome to Telegram after durable GitHub/Paperclip artifacts exist.</li>
+</ol>
+<p class="small">The first scheduled version should run PM-only/no-edit. After that passes reliably, allow the COO to start Dev tasks for explicitly ready issues. Merge remains human-gated.</p>
+
+<h2>Lessons from the POC</h2>
+<ul>
+<li><strong>Paperclip can run Codex for the intended use case.</strong> The gap is no longer "can it launch Codex?" The remaining work is production communication, scheduling, credential scope, and task policy.</li>
+<li><strong>Artifact placement needs a rule.</strong> Real-work analysis and triage should default to GitHub issue comments. Repository files and PRs should be created only when the task explicitly asks for durable repo content or code changes.</li>
+<li><strong>Disposition must be explicit.</strong> Agents must post evidence and update Paperclip task state themselves. The POC showed this can work reliably once it is written into the agent contract.</li>
+<li><strong>No-edit tasks are valuable acceptance tests.</strong> They prove the agent can inspect, reason, and report without mutating a repo.</li>
+<li><strong>Domain judgment still needs human gates.</strong> Paperclip/Codex can move the queue, but first-pass analysis can be too generic. SafetyGraphics and gsm work should keep explicit PM checkpoints around statistical claims, validation evidence, release readiness, and package scope.</li>
+<li><strong>Telegram is useful, but only as an allowlisted interface.</strong> It should trigger known Paperclip workflows, request status, and deliver concise summaries. It should not become a free-form shell or arbitrary Codex prompt transport.</li>
+</ul>
+
+<h2>Rollout phases</h2>
+<h3>Phase 0 — Freeze and back up the POC baseline</h3>
+<ul>
+<li>Record the current Paperclip source commit, service name, health endpoint, data directory, and agent names.</li>
+<li>Back up Paperclip configuration and local data before adding credentials or scheduling.</li>
+<li>Preserve working launch/restart/health-check instructions for <code>/Users/obot/.openclaw/paperclip</code>.</li>
+<li>Keep telemetry disabled and Paperclip bound to <code>127.0.0.1:3100</code>.</li>
+</ul>
+
+<h3>Phase 1 — Version the local operating contracts</h3>
+<ul>
+<li>Create a controlled local location for agent instructions and task templates.</li>
+<li>Create the initial Paperclip org: COO as orchestrator, with PM, Development, and Testing as direct reports.</li>
+<li>Define the COO's Telegram-facing contract: accept operator intent, translate it into allowlisted Paperclip workflows, and report status only after artifacts exist.</li>
+<li>Define canonical contracts for PM selection, Dev implementation, no-edit verification, issue-comment analysis, PR creation, and task disposition.</li>
+<li>Define the initial handoff contracts: PM-to-Dev readiness note, Dev-to-Test review request, Test-to-COO acceptance or requested-changes note.</li>
+<li>Adopt the artifact-placement rule: issue comment by default; PR only for requested repo changes.</li>
+<li>Keep per-project agent instructions separate, starting with SafetyGraphics/gsm work.</li>
+</ul>
+
+<h3>Phase 2 — Add GitHub integration carefully</h3>
+<ul>
+<li>Evaluate Paperclip's GitHub Issues sync plugin path first, because the target model is direct Paperclip task tracking against GitHub issues.</li>
+<li>Use the sequestered <code>obot</code> GitHub identity for this integration. In this deployment, Paperclip is Obot; it may act through Obot credentials inside the intentionally isolated Obot GitHub estate.</li>
+<li>Start with GitHub issue sync for selected Obot repositories: import/link issues, mirror status where safe, and optionally bridge comments after a smoke test.</li>
+<li>Keep local <code>gh</code> available for Codex implementation work such as branch, commit, push, and PR creation until the plugin proves it covers those workflows.</li>
+<li>Grant enough permissions for the Obot estate workflow: read selected repositories, read/write issues and comments, create branches/PRs where approved. Treat merge/admin/secret/package permissions as separate escalation decisions.</li>
+<li>Do not grant broad organization access, secret access, package publishing, Pages administration, or autonomous merge permissions.</li>
+<li>Make every GitHub-writing workflow leave a durable issue comment or PR link.</li>
+</ul>
+
+<h3>Phase 3 — Add Telegram/OpenClaw control</h3>
+<ul>
+<li>Implement allowlisted Telegram actions against the COO: health, latest status, review next queue item, start approved task, check failures, summarize latest artifact, and stop/pause where supported.</li>
+<li>Route normal operator prompts to the COO, not directly to PM/Development/Testing, so one agent owns project-level coordination and status.</li>
+<li>Require task templates or explicit issue IDs for work creation. Do not pass arbitrary Telegram prose into <code>--command</code> or an unrestricted Paperclip task runner.</li>
+<li>Send Telegram summaries only after the durable Paperclip/GitHub artifact exists.</li>
+<li>Keep summaries short, plain text, and free of prompts, raw commands, transcripts, or credentials.</li>
+</ul>
+
+<h3>Phase 4 — Turn on scheduled autonomy</h3>
+<ul>
+<li>Begin with a daily COO-triggered PM queue review that is read-only/no-edit.</li>
+<li>If the PM finds a safe candidate, the COO creates or updates the Paperclip task and notifies Telegram instead of immediately launching broad Dev work.</li>
+<li>Promote to scheduled Dev only after daily PM queue review, GitHub/Paperclip sync, and no-edit runs are stable.</li>
+<li>Once promoted, the daily sequence is COO → PM readiness → Development PR → Testing acceptance → COO summary.</li>
+<li>Measure autonomy by useful issue comments, reviewable PRs, and low operator repair rate, not by number of agent runs.</li>
+</ul>
+
+<h3>Phase 5 — Apply to representative project work</h3>
+<ul>
+<li>Continue P004 SafetyGraphics sequencing first, because the real-work pilot already created useful issue-level analysis there.</li>
+<li>Use P005/gsm.safety only after the P004 implementation, validation, and testing decisions are clearer.</li>
+<li>Keep statistical validation, visual regression evidence, accessibility checks, and release-readiness decisions behind explicit review gates.</li>
+<li>Use Paperclip to drive momentum: select next issue, draft implementation plan, open PR, summarize review blockers, and prepare next task.</li>
+</ul>
+
+<h2>Production go/no-go gates</h2>
+<table><thead><tr><th>Gate</th><th>Pass condition</th></tr></thead><tbody>
+<tr><td>Health and restart</td><td>Paperclip starts cleanly, health endpoint is OK, and restart steps are documented.</td></tr>
+<tr><td>Backup and recovery</td><td>Configuration and task data can be backed up and restored or recreated without guesswork.</td></tr>
+<tr><td>Loopback/security posture</td><td>Paperclip remains loopback-only unless a separate remote-access design is approved.</td></tr>
+<tr><td>Task disposition</td><td>Agents post evidence and mark tasks done/blocked/failed without operator repair.</td></tr>
+<tr><td>No-edit compliance</td><td>No-edit verification tasks leave target repos clean.</td></tr>
+<tr><td>Artifact placement</td><td>Analysis notes go to issue comments; PRs contain only intentional repo changes.</td></tr>
+<tr><td>Org handoff</td><td>COO, PM, Development, and Testing roles exist with explicit handoff contracts and no direct Telegram-to-Dev bypass.</td></tr>
+<tr><td>GitHub permissions</td><td>Any token/App is limited, documented, auditable, and merge-incapable.</td></tr>
+<tr><td>Telegram safety</td><td>Telegram triggers only allowlisted Paperclip actions and never forwards arbitrary text as executable command input.</td></tr>
+</tbody></table>
+
+<h2>Known risks</h2>
+<ul>
+<li><strong>Prompt drift:</strong> agents may create plausible but misplaced artifacts unless the task template is explicit.</li>
+<li><strong>Credential creep:</strong> GitHub integration can become too broad if convenience wins over scoped access.</li>
+<li><strong>Scheduling reliability:</strong> Paperclip scheduling has not yet been proven across multiple days of unattended operation.</li>
+<li><strong>Multi-agent handoff:</strong> single-agent PM/Dev tasks passed; the COO → PM → Development → Testing workflow still needs production proof.</li>
+<li><strong>Browser/runtime checks:</strong> some visual or Playwright-style checks may still require host-specific handling outside the sandbox.</li>
+<li><strong>Domain correctness:</strong> safetyGraphics/gsm work needs human review for statistical, regulatory, and package-release decisions.</li>
+</ul>
+
+<h2>Do not do</h2>
+<ul>
+<li>Do not expose Paperclip publicly as the next step.</li>
+<li>Do not add a broad GitHub token or organization-wide credential.</li>
+<li>Do not let Telegram free text execute as a command or unrestricted agent prompt.</li>
+<li>Do not allow autonomous merges.</li>
+<li>Do not turn issue-analysis notes into repository files by default.</li>
+<li>Do not restart the framework selection debate unless a production rollout gate fails.</li>
+</ul>
+
+<h2>Next-session handoff</h2>
+<div class="callout"><strong>Starting point:</strong> assume the POC is complete and Paperclip is the selected production control plane. The next session should implement the rollout, not re-evaluate frameworks.</div>
+<ol>
+<li>Create a production Paperclip rollout issue/task that references this chapter as the operating plan.</li>
+<li>Back up the current Paperclip install, data, service configuration, and agent instructions.</li>
+<li>Move or copy agent instructions and task templates into a controlled local configuration location.</li>
+<li>Create the initial org: COO orchestrator with PM, Development, and Testing direct reports.</li>
+<li>Evaluate and configure GitHub Issues sync for selected Obot repositories using the sequestered Obot GitHub identity.</li>
+<li>Implement allowlisted Telegram/OpenClaw commands that address the COO for Paperclip health, status, queue review, approved task start, failure check, and latest-artifact summary.</li>
+<li>Add the first scheduled COO → PM queue review as read-only/no-edit.</li>
+<li>Run one scheduled representative P004/P005 analysis task and require the artifact to land as a GitHub issue comment unless a PR is explicitly requested.</li>
+<li>After the PM-only schedule passes, run one full COO → PM → Development → Testing pilot against a small ready issue, with merge held for human approval.</li>
+</ol>
+
+<h2>Decisions Jeremy still owns</h2>
+<ul>
+<li>Whether GitHub sync starts with the external Paperclip GitHub Issues plugin, a local custom bridge, or local <code>gh</code> passthrough while the plugin is evaluated.</li>
+<li>Whether Paperclip stays loopback-only for production v1 or gets a separate Tailscale/remote-access design.</li>
+<li>Which project queue runs first under schedule. Recommended: continue P004 SafetyGraphics before P005/gsm.safety.</li>
+<li>Which actions, if any, can advance from "notify for approval" to "start automatically" after the first week of scheduled runs.</li>
+</ul>
+</div>
+</body>
+</html>

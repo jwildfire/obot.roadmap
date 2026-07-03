@@ -1,0 +1,87 @@
+name: Deploy site
+
+# Assembles and deploys the obot.roadmap site (design doc #7 §6). Generators run at
+# deploy time so generated pages are never committed; a failed generator fails the
+# deploy loudly rather than publishing a stale page silently.
+#
+# The dashboard's sign-off gates and the roadmap's Status grouping read the
+# user-level obot Roadmap project, which the default token cannot see. Add a
+# ROADMAP_TOKEN repo secret (PAT with project read) to enable them; both scripts
+# degrade gracefully without it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "diary/**"
+      - "reports/**"
+      - "scripts/**"
+      - "requirements/design/**"
+      - ".github/workflows/deploy-site.yml"
+  schedule:
+    - cron: "0 10 * * *" # daily (design decision D4)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.ROADMAP_TOKEN != '' && secrets.ROADMAP_TOKEN || github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install renderer dependency
+        run: npm install --no-save marked
+
+      - name: Assemble static content
+        run: |
+          mkdir -p _site/requirements/design
+          cp -r site/. _site/
+          cp -r reports _site/reports
+          cp requirements/design/*.html _site/requirements/design/ 2>/dev/null || true
+
+      - name: Render diary
+        run: node scripts/render_diary.mjs
+
+      - name: Build roadmap
+        run: node scripts/build_roadmap.mjs
+
+      - name: Build dashboard
+        run: python3 scripts/build_dashboard.py
+
+      - name: Validate site
+        run: |
+          test -f _site/index.html
+          test -f _site/dashboard.html
+          test -f _site/roadmap.html
+          test -f _site/diary/index.html
+          test -f _site/reports/index.html
+          test -f _site/reports/autonomous-agent-framework/index.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

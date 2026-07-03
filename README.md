@@ -64,10 +64,26 @@ Formal requirement documentation lives under [`requirements/`](requirements/):
 
 | Directory | Contents |
 |---|---|
-| [`requirements/design/`](requirements/design/) | Design documents — one per requirement (`{issue_number}_design.md`) |
+| [`requirements/design/`](requirements/design/) | Design documents — one per requirement (`{issue_number}_design.html`, or `.md` for simple designs; HTML per [obot-claw#59](https://github.com/obot-claw/obot-claw.github.io/issues/59)) |
 | [`requirements/dataspec/`](requirements/dataspec/) | Data specification documents (`{issue_number}_dataspec.md`) |
 
 File names use the requirement issue number as prefix. These documents are linked from the issue's Design section.
+
+# Site
+
+The repo publishes the project homepage via GitHub Pages
+([`deploy-site.yml`](.github/workflows/deploy-site.yml)): a static site with a dashboard
+(key metrics + the queue of items waiting on @jwildfire), a requirement-status roadmap,
+the AI-written [diary](diary/), and [reports](reports/). The dashboard and roadmap are
+generated from live GitHub state at deploy time (daily cron) and never committed; see
+the [#7 design doc](requirements/design/7_design.html) for the architecture.
+
+| Directory | Contents |
+|---|---|
+| [`site/`](site/) | Hand-authored homepage + shared stylesheet |
+| [`diary/`](diary/) | AI-written diary — one markdown file per day with activity ([conventions](diary/README.md)) |
+| [`reports/`](reports/) | AI-generated reports, one folder per report ([index](reports/README.md)) |
+| [`scripts/`](scripts/) | Site generators (`build_dashboard.py`, `build_roadmap.mjs`, `render_diary.mjs`) |
 
 # Agentic scaffold
 
@@ -75,4 +91,4 @@ The workflow is designed to be maintained with AI-in-the-loop, following the con
 
 # History
 
-This repo replaced the [`obot-claw` hub](https://github.com/obot-claw/obot-claw.github.io) (archived July 2026), which ran an autonomous-agent portfolio ("Open Source OrangeBot") from May–June 2026. Its daily diary, reports, and closed project issues (P004/P007/P008/P009) remain readable in the archived repo. Open requirements were migrated here with links back to their originals.
+This repo replaced the [`obot-claw` hub](https://github.com/obot-claw/obot-claw.github.io) (archived July 2026), which ran an autonomous-agent portfolio ("Open Source OrangeBot") from May–June 2026. Open requirements were migrated here with links back to their originals, and the hub's diary and reports were migrated into [`diary/`](diary/) and [`reports/`](reports/) under requirement [#7](https://github.com/jwildfire/obot.roadmap/issues/7) — the site published from this repo replaced the hub as the project's memory. The closed P00x project issues remain readable in the archived repo; their disposition is recorded in the [#7 design doc](requirements/design/7_design.html).

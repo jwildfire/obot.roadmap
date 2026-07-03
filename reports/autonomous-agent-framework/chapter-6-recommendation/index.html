@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>"Chapter 6: Revised recommendation"</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework/chapter-6-recommendation/index.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<link rel="stylesheet" href="../styles.css">
+<div class="report-page">
+<nav class="report-nav"><strong>Report chapters</strong><ol><li><a href="../">Index</a></li><li><a href="../chapter-1-options/">Chapter 1: Framework options</a></li><li><a href="../chapter-2-codex-plan/">Chapter 2: Codex-first operating model</a></li><li><a href="../chapter-3-supervision/">Chapter 3: Supervision failure analysis</a></li><li><a href="../chapter-4-paperclip-evaluation/">Chapter 4: Paperclip evaluation</a></li><li><a href="../chapter-5-paperclip-rollout/">Chapter 5: Paperclip rollout design</a></li><li><a href="../chapter-6-recommendation/">Chapter 6: Revised recommendation</a></li><li><a href="../chapter-7-implementation/">Chapter 7: Implementation plan</a></li><li><a href="../chapter-8-paperclip-production/">Chapter 8: Paperclip production rollout</a></li><li><a href="../chapter-9-openclaw-migration/">Chapter 9: OpenClaw model migration</a></li><li><a href="../chapter-10-claude-code-migration/">Chapter 10: Claude Code migration</a></li></ol></nav>
+
+<h1>Chapter 6: Revised recommendation</h1>
+<p class="small"><strong>Updated:</strong> 2026-06-07 · Reframes Chapters 4–5. Same destination, corrected sequence.</p>
+
+<div class="callout"><strong>Right idea, wrong sequence.</strong> Chapter 5's pilot design is good and should be kept almost as-is. The one change: <strong>do not run it first.</strong> Every failure this report has actually documented (Chapter 3) lives in the <em>execution layer</em> — launching a worker and keeping it alive. Paperclip is a control plane that sits <em>above</em> that layer. Prove one reliable PM→Dev→PR cycle on Codex-native execution plus a thin supervised runner, then run the Chapter 5 Paperclip pilot as a control-plane comparison behind explicit go/no-go gates. Chapter 7 is the plan for that first step.</div>
+
+<h2>Two problems, not one</h2>
+<p>Chapters 1–5 treat this as a single "which framework?" question. It is really two independent problems that need different answers:</p>
+<table><thead><tr><th>Problem</th><th>Meaning</th><th>Blocking today?</th></tr></thead><tbody>
+<tr><td><strong>A. Execution reliability</strong></td><td>Can we reliably <em>launch</em> a worker, keep it alive with a heartbeat, observe liveness, and recover a stall?</td><td><strong>Yes — the proven blocker.</strong> Every failure in Chapter 3 is here.</td></tr>
+<tr><td><strong>B. Orchestration &amp; governance</strong></td><td>Org chart, tickets, budgets, approval gates, cross-role handoff, unified audit.</td><td><strong>No — aspirational.</strong> This is Paperclip's job, but we don't have it yet because we can't reliably run one agent.</td></tr>
+</tbody></table>
+<p>Paperclip is a Problem-B product. Our evidence is entirely Problem-A. That mismatch is the whole decision.</p>
+
+<h2>Where every documented failure actually lives</h2>
+<table><thead><tr><th>Failure (from Chapter 3 / supervision deep-dive)</th><th>Layer</th><th>Does adopting Paperclip first fix it?</th></tr></thead><tbody>
+<tr><td>Cron <code>agentTurn</code> stalls ~60s after entering the runner, before the prompt is reached</td><td>Execution / process launch</td><td><strong>Only if</strong> Paperclip's heartbeat launches the worker through a <em>different</em> path. If its adapter re-pokes OpenClaw cron, the stall persists.</td></tr>
+<tr><td>OpenClaw CLI agent fails with sandbox <code>EPERM</code> writing identity/session files</td><td>Execution / OS sandbox</td><td>No. A control plane above it inherits the same filesystem failure.</td></tr>
+<tr><td>Mixed subagent mechanisms; spawned ids return <code>not_found</code></td><td>Execution / runtime</td><td>Partially — only if its adapter owns the worker rather than wrapping the broken one.</td></tr>
+<tr><td>False "active" status with no durable proof</td><td>Supervision / state</td><td><strong>Yes</strong> — but a ~30-line run-record ledger also fixes it (and <code>scripts/work_session.py</code> already starts this).</td></tr>
+</tbody></table>
+<div class="warning"><strong>The trap:</strong> three of the four proven failures are <em>below</em> the layer Paperclip occupies. Adopting it first risks a polished org chart, budgets, and audit logs sitting on an executor that still cannot start a worker — which would <em>look</em> like progress while reproducing the exact "triggered but produced nothing" failure Chapter 3 warns about.</div>
+
+<h2>Chapter 5's own acceptance tests prove the point</h2>
+<div class="card"><p>Look at Chapter 5's two hardest acceptance tests:</p>
+<ul><li><strong>"Started vs triggered"</strong> — distinguish an accepted ticket from a running agent with a heartbeat.</li><li><strong>"Stall detection"</strong> — an artificially stalled agent is marked failed and surfaced without Jeremy asking.</li></ul>
+<p>These are <strong>execution-layer tests</strong>. They have nothing to do with org charts or budgets — they test whether you can launch, heartbeat, and supervise a worker. You can and should pass them <em>with a 200-line runner first.</em> If a thin runner cannot pass stall-detection, a Paperclip pilot won't tell you why — you won't be able to separate a Paperclip bug from your unsolved execution layer. Pass these on the simplest substrate, then ask Paperclip to do it better.</p></div>
+
+<h2>What the v-series underweights: Codex is now an executor, not just a CLI</h2>
+<div class="card"><p>Chapters 1–3 treated Codex as "a strong model you wrap." As of 2026, Codex ships the execution-layer primitives we were about to hand-build:</p>
+<ul>
+<li><strong>GitHub-native issue→PR:</strong> tag <code>@codex</code> on an issue or PR to spin a cloud task that opens/updates a PR.</li>
+<li><strong>Automations:</strong> scheduled background tasks that run on their own timer in <em>dedicated worktrees</em> — a scheduler + isolated environment we don't operate.</li>
+<li><strong>Parallel worktrees / cloud containers:</strong> isolation by default, removing the dirty-worktree and <code>EPERM</code> risks.</li>
+<li><strong>Native audit:</strong> the PR plus the Codex task log <em>is</em> the durable record — no separate ledger needed for Dev work.</li>
+</ul>
+<p>For the <strong>Dev half</strong> specifically, Codex cloud + GitHub already gives scheduled, isolated, PR-native, audited runs with near-zero ops and security surface — most of what we wanted from orchestration, today.</p></div>
+
+<h2>Scale mismatch</h2>
+<div class="card"><p>Paperclip's pitch is "run a <strong>company</strong> of agents — org charts, budgets, governance, accountability." That compounds with <em>many</em> agents across many repos with real spend to govern. We have one operator, ~5 active projects, and 2–3 <em>prompt-scoped</em> roles that aren't yet durable agents. At this scale the governance machinery is mostly inert weight: we'd pay the full control-plane + secret-concentration tax for a sliver of the benefit. <strong>Paperclip earns its keep once we have ≥3 concurrent agents whose spend/approvals we can't eyeball and handoffs GitHub issues stop modeling cleanly.</strong> Until then, Issues + PRs + a ledger <em>are</em> the control plane, and they're free.</p></div>
+
+<h2>A pattern worth naming</h2>
+<div class="warning">In two days the recommendation moved: smallest custom layer (Ch.1) → OpenClaw+Codex hybrid (Ch.2) → build a supervised runner (Ch.3) → adopt Paperclip-first (Ch.4–5). Each chapter is individually reasonable, but the trajectory is <strong>architecture churn in place of a shipped cycle.</strong> We have not completed a single reliable autonomous PM→Dev→PR loop. The discipline to adopt: stop re-selecting the framework; ship the smallest thing that makes one cycle provably reliable, then let the next layer be justified by a problem we actually hit.</div>
+
+<h2>Revised sequence</h2>
+<table><thead><tr><th>Phase</th><th>What</th><th>Status</th></tr></thead><tbody>
+<tr><td><strong>A — prove the executor</strong> (Chapter 7)</td><td>One PM→Dev→PR cycle on Codex-native execution + thin supervised runner. Pass Chapter 3's Triggered/Started/Completed taxonomy and Chapter 5's "Started vs triggered" + "Stall detection" tests — <em>without Paperclip.</em></td><td><span class="pill pill-go">Do first</span></td></tr>
+<tr><td><strong>B — pilot the control plane</strong> (Chapter 5)</td><td>Run Chapter 5's bounded Paperclip pilot exactly as designed, now as a comparison: does Paperclip's governance/audit replace more custom code than it costs to operate?</td><td><span class="pill pill-wait">After A passes</span></td></tr>
+<tr><td><strong>C — adopt or fall back</strong></td><td>Adopt Paperclip only if it clears the go/no-go below; otherwise keep the Phase-A runner and revisit at higher agent count.</td><td><span class="pill pill-wait">Behind gate</span></td></tr>
+</tbody></table>
+
+<h2>Go / no-go for adopting Paperclip (evaluate during Phase B)</h2>
+<table><thead><tr><th>Gate</th><th>Adopt if…</th><th>Walk away if…</th></tr></thead><tbody>
+<tr><td>Owns worker lifecycle</td><td>Its heartbeat launches Codex/Claude Code as a managed subprocess it can start, observe, and restart.</td><td>Its adapter just re-triggers the OpenClaw cron path — it inherits our blocker.</td></tr>
+<tr><td>Net code reduction</td><td>A PM→Dev→PR cycle runs with <em>less</em> custom glue than the Phase-A runner.</td><td>We still hand-build adapters, watchdogs, and GitHub linkage — the runner already won.</td></tr>
+<tr><td>GitHub stays source of truth</td><td>Tasks <em>link</em> to GitHub issues/PRs without duplicating them.</td><td>It forces a parallel ticket system we must reconcile by hand.</td></tr>
+<tr><td>Security containable</td><td>Loopback-only, telemetry off, scoped token, budget caps, approval gates verified locally.</td><td>It needs broad machine/GitHub access or a hosted account to be useful.</td></tr>
+<tr><td>Scale justifies it</td><td>≥3 concurrent agents with spend/approvals we can't eyeball.</td><td>Two prompt-scoped roles — Issues + ledger already suffice.</td></tr>
+</tbody></table>
+
+<h2>Agreement and divergence</h2>
+<div class="card"><p><strong>Agree with Chapters 4–5:</strong> Paperclip maps cleanly to the eventual target; the bounded pilot design (telemetry off, loopback, one PM + one Dev, scoped token, rollback, failure-injection test) is exactly right; hosted SaaS isn't free; the custom runner is the fallback.</p>
+<p><strong>Diverge:</strong> Chapters 4–5 call it "Paperclip-<strong>first</strong>" with the runner as fallback. This chapter <strong>inverts that</strong> — the Codex-native cycle + thin runner is the <em>primary</em> next deliverable because it attacks the <em>proven</em> blocker with the least risk; Paperclip becomes the Phase-B governance candidate evaluated only after a cycle reliably runs. Chapters 4–5 also under-weight how much Codex's 2026 cloud/automation/worktree features already collapse the execution problem, and the scale-mismatch cost of a control plane for a solo operator.</p></div>
+
+<div class="ok"><strong>One-line answer:</strong> Paperclip is a real value-add for a problem we don't have <em>yet</em>. Prove Codex-native execution + a thin runner can complete one reliable PM→Dev→PR loop (Chapter 7); then pilot Paperclip as the control plane on top, and adopt only when it clears the go/no-go and the agent count justifies an org chart.</div>
+
+<h2>Sources</h2>
+<ul class="small">
+<li>Paperclip GitHub: <a href="https://github.com/paperclipai/paperclip">github.com/paperclipai/paperclip</a> · product: <a href="https://paperclip.ing/">paperclip.ing</a> · pricing: <a href="https://paperclip.inc/pricing">paperclip.inc/pricing</a></li>
+<li>OpenAI Codex cloud: <a href="https://developers.openai.com/codex/cloud">developers.openai.com/codex/cloud</a> · GitHub integration: <a href="https://developers.openai.com/codex/integrations/github">/integrations/github</a> · changelog (automations, worktrees): <a href="https://developers.openai.com/codex/changelog">/changelog</a></li>
+<li>Internal: <a href="../chapter-3-supervision/">Chapter 3 (proven blocker)</a> · <a href="../chapter-5-paperclip-rollout/">Chapter 5 (pilot design)</a> · <a href="../chapter-7-implementation/">Chapter 7 (this plan)</a></li>
+</ul>
+</div>
+</body>
+</html>

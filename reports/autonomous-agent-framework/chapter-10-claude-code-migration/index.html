@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>"Chapter 10: Claude Code migration"</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework/chapter-10-claude-code-migration/index.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<link rel="stylesheet" href="../styles.css">
+<div class="report-page">
+<nav class="report-nav"><strong>Report chapters</strong><ol><li><a href="../">Index</a></li><li><a href="../chapter-1-options/">Chapter 1: Framework options</a></li><li><a href="../chapter-2-codex-plan/">Chapter 2: Codex-first operating model</a></li><li><a href="../chapter-3-supervision/">Chapter 3: Supervision failure analysis</a></li><li><a href="../chapter-4-paperclip-evaluation/">Chapter 4: Paperclip evaluation</a></li><li><a href="../chapter-5-paperclip-rollout/">Chapter 5: Paperclip rollout design</a></li><li><a href="../chapter-6-recommendation/">Chapter 6: Revised recommendation</a></li><li><a href="../chapter-7-implementation/">Chapter 7: Implementation plan</a></li><li><a href="../chapter-8-paperclip-production/">Chapter 8: Paperclip production rollout</a></li><li><a href="../chapter-9-openclaw-migration/">Chapter 9: OpenClaw model migration</a></li><li><a href="../chapter-10-claude-code-migration/">Chapter 10: Claude Code migration</a></li></ol></nav>
+
+<h1>Chapter 10: Claude Code migration</h1>
+<p class="small"><strong>Updated:</strong> 2026-07-01 · How the portfolio moved from the OpenClaw/Codex autonomous-agent stack to interactive Claude Code sessions under the gsm ecosystem's agent conventions.</p>
+
+<div class="ok"><strong>Decision:</strong> retire the autonomous OpenClaw/Codex/Paperclip control-plane work (P007, P008, P009) and develop the safety-chart portfolio (P004, P005) in interactive Claude Code sessions, using the <a href="https://github.com/Gilead-BioStats/gsm.agent">gsm.agent</a> development conventions and a lean adaptation of the <a href="https://github.com/Gilead-BioStats/gsm.roadmap">gsm.roadmap</a> requirement lifecycle (adopted in <a href="https://github.com/obot-claw/obot-claw.github.io/issues/51">#51</a>).</div>
+
+<h2>What happened</h2>
+<p>The autonomous pipeline stalled in the second week of June. The OpenClaw CLI gateway failed with a sandbox <code>EPERM</code> before the Development cron could launch, and the same sandbox had long blocked local Chromium (the Mach-port error that forced all browser evidence through GitHub Actions). Nightly briefings stopped on June 12 — the last automated commit this Hub received from the old stack.</p>
+<p>On June 12 the work restarted in an interactive Claude Code session, which produced the P004/P005 modernization plan and immediately cleared the oldest blocker: the full Playwright suite ran locally, 10/10 in about five seconds. The first merged artifact of the new workflow followed on June 24 — the safety-histogram dead-code cleanup (<a href="https://github.com/obot-claw/safety-histogram/pull/3">safety-histogram#3</a>), verified by a byte-identical rebuilt bundle and local browser evidence.</p>
+<p>On July 1 the migration was made explicit with four decisions, and the obot-era backlog was reconciled against them.</p>
+
+<h2>The four decisions</h2>
+<table><thead><tr><th>Question</th><th>Decision</th></tr></thead><tbody>
+<tr><td>Where does requirement tracking live?</td><td>In this Hub, publicly — restructured to follow the gsm.roadmap requirement lifecycle (Business Requirement + Overview at creation, then Data Requirement and Design; implementation as cross-repo sub-issues). Adopted in <a href="https://github.com/obot-claw/obot-claw.github.io/issues/51">#51</a> / <a href="https://github.com/obot-claw/obot-claw.github.io/pull/52">PR #52</a>.</td></tr>
+<tr><td>Where does the consolidated renderer library live?</td><td>A new standalone <code>safety.viz</code> repo — a gsm.viz-style Chart.js v4 + esbuild library with Vitest and Playwright, seeded from the Safety Histogram rewrite (<a href="https://github.com/obot-claw/safety-histogram/pull/1">safety-histogram#1</a>), consumed by <code>gsm.safety</code> htmlwidget bindings the way gsm.kri consumes gsm.viz.</td></tr>
+<tr><td>What happens to the obot-era backlog?</td><td>The three June decision drafts were posted (P004 standard adopted on <a href="https://github.com/obot-claw/safety-agent/pull/4">safety-agent#4</a>; Safety Histogram sequencing on <a href="https://github.com/obot-claw/safety-agent/issues/6">safety-agent#6</a>; the testing-agent GitHub App closed as superseded on <a href="https://github.com/obot-claw/safety-agent/issues/7">safety-agent#7</a>), and the agent-infrastructure projects P007, P008, and P009 closed as superseded.</td></tr>
+<tr><td>How is the tooling wired?</td><td>Workspace-only: a dedicated parent folder holds the working repos as siblings with gsm.agent cloned as <code>.github/</code>, per its README. No machine-global agent configuration.</td></tr>
+</tbody></table>
+
+<h2>What carries over from the obot framework</h2>
+<table><thead><tr><th>Practice</th><th>Where it lives now</th></tr></thead><tbody>
+<tr><td>Requirement matrices as the spec source (886 harvested rows across 9 renderers).</td><td><code>safety-agent</code> remains the matrix index; each renderer's matrix is copied into <code>safety.viz</code> as it migrates.</td></tr>
+<tr><td>Requirement IDs in test names and evidence-typed statuses.</td><td>Vitest/Playwright suites in <code>safety.viz</code>, per the standard adopted on <a href="https://github.com/obot-claw/safety-agent/pull/4">safety-agent#4</a>.</td></tr>
+<tr><td>Durable PR/issue evidence feeding this Hub.</td><td>Unchanged — Requirement issues, sub-issues, and PR evidence drive the generated roadmap.</td></tr>
+<tr><td>No autonomous merges; Jeremy gates every merge and close.</td><td>Enforced twice over: the gsm.agent approval conventions, and the Claude Code permission layer, which allows drafting, commenting, and pushing but denies <code>merge</code>/<code>close</code> commands to the agent.</td></tr>
+<tr><td>GxP language rules ("do not present screening approximations as validated statistical procedures").</td><td>Verbatim in the adopted standard.</td></tr>
+</tbody></table>
+
+<h2>What is retired</h2>
+<ul>
+<li>The grill-me/Telegram interview loop — flagged requirement rows get resolved in working sessions and recorded in the matrix directly.</li>
+<li>The work-session ledger and <code>test-driver:</code>/<code>impl:</code> commit-prefix role separation — independent test review happens as a separate review pass or stacked PR.</li>
+<li>The testing-agent GitHub App (<a href="https://github.com/obot-claw/safety-agent/issues/7">safety-agent#7</a>) — session permissions plus stacked PRs preserve the boundary it protected.</li>
+<li>The supervised Codex runner and watchdog (P009) and the Paperclip orchestration pilot (P008) — the ceremony existed to compensate for unattended autonomy; interactive sessions make it unnecessary.</li>
+<li>Nightly briefings — the public diary continues through Requirement issues, PR evidence, and these report chapters.</li>
+</ul>
+
+<h2>Why this works now</h2>
+<p>Chapters 1–9 of this report are a record of engineering around one constraint: an unattended agent needs scaffolding to be trusted — schedulers, heartbeats, watchdogs, ledgers, bounded write paths. An interactive session dissolves most of that constraint. The human is present at every gate, the sandbox restriction that blocked browser evidence does not apply, and the remaining discipline — specs as matrices, traceable tests, durable evidence, gated merges — turns out to be exactly the part worth keeping. The gsm ecosystem had already converged on the same conclusion, so the portfolio now runs on its shared conventions instead of a bespoke stack.</p>
+
+<h2>Status after the migration</h2>
+<table><thead><tr><th>Project</th><th>State</th></tr></thead><tbody>
+<tr><td>P004 — SafetyGraphics renderer modernization</td><td><strong>Active.</strong> Safety Histogram pilot landing next: merge <a href="https://github.com/obot-claw/safety-histogram/pull/1">PR #1</a> to a new <code>dev</code> branch per the <a href="https://github.com/obot-claw/safety-agent/issues/6">#6 decisions</a>, then scaffold <code>safety.viz</code> and extract the histogram as its first module. New Requirement issues follow the adopted lifecycle.</td></tr>
+<tr><td>P005 — Static safety displays (FDA ST&amp;F)</td><td><strong>Starting.</strong> Display inventory → Requirement issue → ggplot2 + workr YAML + pkgdown per display in <code>gsm.safety</code>.</td></tr>
+<tr><td>P007 / P008 / P009 — agent infrastructure</td><td><strong>Closed as superseded</strong> by this migration.</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

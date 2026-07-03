@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 3: Supervision failure analysis</title>
+<style>body{margin:2rem auto;max-width:64rem;padding:0 1rem;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1a1f24}a{color:#b45309}</style>
+</head>
+<body>
+<!-- Migrated from reports/autonomous-agent-framework/chapter-3-supervision/index.html (obot-claw hub, archived July 2026).
+     Jekyll front matter replaced by this self-contained shell; body content verbatim. -->
+<link rel="stylesheet" href="../styles.css">
+<div class="report-page">
+<nav class="report-nav"><strong>Report chapters</strong><ol><li><a href="../">Index</a></li><li><a href="../chapter-1-options/">Chapter 1: Framework options</a></li><li><a href="../chapter-2-codex-plan/">Chapter 2: Codex-first operating model</a></li><li><a href="../chapter-3-supervision/">Chapter 3: Supervision failure analysis</a></li><li><a href="../chapter-4-paperclip-evaluation/">Chapter 4: Paperclip evaluation</a></li><li><a href="../chapter-5-paperclip-rollout/">Chapter 5: Paperclip rollout design</a></li><li><a href="../chapter-6-recommendation/">Chapter 6: Revised recommendation</a></li><li><a href="../chapter-7-implementation/">Chapter 7: Implementation plan</a></li><li><a href="../chapter-8-paperclip-production/">Chapter 8: Paperclip production rollout</a></li><li><a href="../chapter-9-openclaw-migration/">Chapter 9: OpenClaw model migration</a></li><li><a href="../chapter-10-claude-code-migration/">Chapter 10: Claude Code migration</a></li></ol></nav>
+<h1>Chapter 3: Supervision failure analysis</h1><div class="warning"><strong>Actual blocker:</strong> OpenClaw cron agentTurn startup enters the runner and stalls before the agent receives the prompt. This invalidates cron agentTurn as the current long-running executor.</div><h2>Observed failures</h2><table><thead><tr><th>Run</th><th>Observed</th><th>Meaning</th></tr></thead><tbody><tr><td>2026-06-06 23:34 PM test</td><td>Stalled after about 60 seconds before execution start.</td><td>PM prompt was never reached.</td></tr><tr><td>2026-06-07 06:33 retest</td><td>Same stall with lighter context.</td><td>Context size was not primary cause.</td></tr><tr><td>Persistent-session smoke test</td><td>Same stall for a minimal NO_REPLY task.</td><td>Failure is in cron agentTurn runner startup.</td></tr><tr><td>systemEvent fallback</td><td>Queued and ended immediately.</td><td>Works as wake/check path, not as autonomous worker.</td></tr></tbody></table><h2>State taxonomy</h2><ul><li><strong>Triggered:</strong> scheduler accepted a run request.</li><li><strong>Started:</strong> an executor produced liveness evidence.</li><li><strong>Completed:</strong> durable PM/Dev artifact exists.</li></ul><p>Only Started counts as active work. Only Completed counts as useful autonomous work.</p><p class="small">Source report: <a href="../autonomous-agent-framework-options-v3-2026-06-07/">v3 blocker report</a></p>
+</div>
+</body>
+</html>
