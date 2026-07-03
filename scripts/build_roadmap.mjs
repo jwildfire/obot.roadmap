@@ -145,7 +145,7 @@ const html = `<!DOCTYPE html>
 </head>
 <body>
 <header class="site">
-  <h1>Roadmap</h1>
+  <a class="brand" href="index.html">🍊😺 obot</a>
   <nav class="site">
     <a href="index.html">Home</a>
     <a href="dashboard.html">Dashboard</a>
@@ -153,6 +153,7 @@ const html = `<!DOCTYPE html>
     <a href="reports/">Reports</a>
   </nav>
 </header>
+<h1>Roadmap</h1>
 <p>Requirement status across the portfolio, grouped by lifecycle stage
 (<a href="https://github.com/${REPO}#lifecycle">stage definitions</a>). Generated from
 GitHub issues and the <a href="https://github.com/users/${owner}/projects/${PROJECT_NUMBER}">obot
