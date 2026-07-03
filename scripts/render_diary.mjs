@@ -19,7 +19,7 @@ const page = (title, body, depth = 1) => `<!DOCTYPE html>
 </head>
 <body>
 <header class="site">
-  <h1>${title}</h1>
+  <a class="brand" href="${'../'.repeat(depth)}index.html">🍊😺 obot</a>
   <nav class="site">
     <a href="${'../'.repeat(depth)}index.html">Home</a>
     <a href="index.html">Diary index</a>
@@ -27,7 +27,7 @@ const page = (title, body, depth = 1) => `<!DOCTYPE html>
     <a href="${'../'.repeat(depth)}roadmap.html">Roadmap</a>
   </nav>
 </header>
-${body}
+${/<h1[\s>]/.test(body) ? '' : `<h1>${title}</h1>\n`}${body}
 <footer class="site">Source: <a href="https://github.com/jwildfire/obot.roadmap/tree/main/diary">diary/</a> in jwildfire/obot.roadmap.</footer>
 </body>
 </html>

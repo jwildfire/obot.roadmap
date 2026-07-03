@@ -136,7 +136,7 @@ html = f"""<!DOCTYPE html>
 </head>
 <body>
 <header class="site">
-  <h1>Dashboard</h1>
+  <a class="brand" href="index.html">🍊😺 obot</a>
   <nav class="site">
     <a href="index.html">Home</a>
     <a href="roadmap.html">Roadmap</a>
@@ -144,6 +144,8 @@ html = f"""<!DOCTYPE html>
     <a href="reports/">Reports</a>
   </nav>
 </header>
+
+<h1>Dashboard</h1>
 
 <h2>🙋 Jeremy queue</h2>
 <p class="meta">Everything across the portfolio waiting on @jwildfire.</p>
