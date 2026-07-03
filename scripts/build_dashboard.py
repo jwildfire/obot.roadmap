@@ -139,9 +139,10 @@ html = f"""<!DOCTYPE html>
   <a class="brand" href="index.html">🍊😺 obot</a>
   <nav class="site">
     <a href="index.html">Home</a>
+    <a href="dashboard.html" class="current" aria-current="page">Dashboard</a>
     <a href="roadmap.html">Roadmap</a>
-    <a href="diary/">Diary</a>
-    <a href="reports/">Reports</a>
+    <a href="news.html">News</a>
+    <a href="https://github.com/jwildfire/obot.roadmap">GitHub</a>
   </nav>
 </header>
 

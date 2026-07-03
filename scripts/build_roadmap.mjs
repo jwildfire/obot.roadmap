@@ -149,8 +149,9 @@ const html = `<!DOCTYPE html>
   <nav class="site">
     <a href="index.html">Home</a>
     <a href="dashboard.html">Dashboard</a>
-    <a href="diary/">Diary</a>
-    <a href="reports/">Reports</a>
+    <a href="roadmap.html" class="current" aria-current="page">Roadmap</a>
+    <a href="news.html">News</a>
+    <a href="https://github.com/jwildfire/obot.roadmap">GitHub</a>
   </nav>
 </header>
 <h1>Roadmap</h1>

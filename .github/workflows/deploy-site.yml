@@ -43,6 +43,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history — build_news.mjs dates artifacts from git log
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -68,11 +70,15 @@ jobs:
       - name: Build dashboard
         run: python3 scripts/build_dashboard.py
 
+      - name: Build news
+        run: node scripts/build_news.mjs
+
       - name: Validate site
         run: |
           test -f _site/index.html
           test -f _site/dashboard.html
           test -f _site/roadmap.html
+          test -f _site/news.html
           test -f _site/diary/index.html
           test -f _site/reports/index.html
           test -f _site/reports/autonomous-agent-framework/index.html
