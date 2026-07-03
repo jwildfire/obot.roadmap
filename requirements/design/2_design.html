@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #2 — Safety Histogram migration (pilot)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf6f1; --card:#ffffff; --ink:#271810; --ink-2:#6f6259; --line:#e5dcd2;
+    --accent:#f97316; --link:#c2410c;
+    --note-bg:#fdeadd; --note-line:#f6cdae;
+    --code-bg:#eeeae4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#221a14; --card:#2c221a; --ink:#f3ece4; --ink-2:#b3a698; --line:#453729;
+      --link:#f97316; --note-bg:#3a2414; --note-line:#7c4a22; --code-bg:#332a21;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:16px/1.6 "Instrument Sans",system-ui,-apple-system,sans-serif;}
+  .wrap{max-width:860px;margin:0 auto;padding:48px 28px 72px;}
+  h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:38px;line-height:1.15;margin:0 0 6px;}
+  .sub{color:var(--ink-2);margin:0 0 8px;font-size:16.5px;}
+  .stamp{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink-2);
+    border-top:3px solid var(--accent);display:inline-block;padding-top:8px;margin-bottom:34px;}
+  .stamp b{color:var(--accent);font-weight:500;}
+  h2{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:26px;margin:40px 0 12px;}
+  h3{font-size:16px;font-weight:600;margin:20px 0 6px;}
+  p{margin:0 0 12px;}
+  a{color:var(--link);text-decoration-thickness:1px;text-underline-offset:3px;}
+  code{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:var(--code-bg);
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px;}
+  pre{font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.55;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;padding:16px 20px;overflow-x:auto;}
+  pre code{background:none;border:none;padding:0;}
+  table{border-collapse:collapse;width:100%;margin:14px 0 20px;font-size:14.5px;}
+  th{text-align:left;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);
+    border-bottom:2px solid var(--line);padding:6px 14px 6px 0;}
+  td{border-bottom:1px solid var(--line);padding:9px 14px 9px 0;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .note{background:var(--note-bg);border:1px solid var(--note-line);border-radius:10px;
+    padding:14px 18px;margin:16px 0;}
+  .note b{color:var(--accent);}
+  ul,ol{margin:0 0 12px;padding-left:22px;}
+  li{margin-bottom:5px;}
+  .footer{margin-top:52px;padding-top:14px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--ink-2);}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>Safety Histogram migration (pilot)</h1>
+<p class="sub">Design document for <a href="https://github.com/jwildfire/obot.roadmap/issues/2">Requirement #2</a> · obot.roadmap · depends on <a href="1_design.html">#1 design</a></p>
+<span class="stamp">STATUS: <b>Draft — pending sign-off on #2</b> · drafted 2026-07-02, ported to obot.roadmap 2026-07-03 · drafted by Claude Code using Fable 5, reviewed by @jwildfire</span>
+
+<h2>Context</h2>
+<p>The histogram is the pilot for the renderer-migration recipe. Its inputs are already in
+place:</p>
+<ul>
+  <li><b>Spec:</b> the reviewed matrix at
+      <a href="https://github.com/jwildfire/safety.agent/blob/main/docs/requirements/safety-histogram.md">safety.agent
+      <code>docs/requirements/safety-histogram.md</code></a> (125 source-backed rows).</li>
+  <li><b>Working code:</b> safety-histogram
+      <a href="https://github.com/jwildfire/safety-histogram/pull/1">PR #1</a>, merged into
+      <code>dev</code> @ <code>a3ff9f7</code> with build + Playwright 10/10 evidence
+      (slice ① — done 2026-07-02). The implementation is a single ~680-line
+      <code>src/index.js</code> plus a browser test page.</li>
+</ul>
+<p>This document designs the two remaining slices: <b>②</b> extract the pilot into a
+safety.viz module, and <b>③</b> bind it as an htmlwidget in gsm.safety.</p>
+
+<h2>Slice ② — extract the module into safety.viz</h2>
+<p>The monolithic pilot decomposes into the module layout defined in
+<a href="1_design.html">1_design.html</a>. Mapping of existing pilot code:</p>
+<table>
+  <tr><th style="width:36%">safety.viz file</th><th>From the pilot (<code>src/index.js</code>)</th></tr>
+  <tr><td><code>src/histogram.js</code></td><td>Public entry + the lifecycle API (<code>init</code>, <code>setData</code>, <code>setSettings</code>, <code>render</code>, <code>resize</code>, <code>destroy</code>) — kept verbatim in shape (SH-API-001).</td></tr>
+  <tr><td><code>src/histogram/checkInputs.js</code></td><td>New — validates data/settings against the JSON schema (below); replaces ad-hoc guards.</td></tr>
+  <tr><td><code>src/histogram/configure.js</code></td><td>Settings defaults + merge (measure/value/participant column mapping, filters, bin config).</td></tr>
+  <tr><td><code>src/histogram/structureData.js</code></td><td>Filtering, missing/non-numeric removal + counts (SH-DATA-002), binning algorithms (SH-CTRL-006), grouping (SH-CHART-004).</td></tr>
+  <tr><td><code>src/histogram/getPlugins.js</code></td><td>Tooltip/footnote behavior (SH-CHART-002), normal-range overlay region (SH-CTRL-004), p-value annotations + disclaimer (SH-CHART-005), bar-selection highlighting.</td></tr>
+  <tr><td><code>src/histogram/getScales.js</code></td><td>X-axis domain/limits (SH-CTRL-005), tick modes — bin centers vs boundaries (SH-CTRL-007).</td></tr>
+  <tr><td><code>src/histogram/listing.js</code></td><td>Linked participant listing: pagination, search, sort, CSV export (SH-LIST-001..004).</td></tr>
+  <tr><td><code>tests/e2e/histogram.spec.js</code></td><td>Port of the pilot's 10 Playwright specs, renamed to requirement-ID keys, then extended to the remaining <code>browser</code>-evidence matrix rows.</td></tr>
+</table>
+<p>Controls (measure select, filters, normal-range checkbox, axis inputs, binning, group-by)
+stay part of the module — the legacy tool's control panel is in scope for feature parity
+(SH-CTRL-001..007), rendered by the module into its container.</p>
+
+<h3>Data contract (JSON schema)</h3>
+<table>
+  <tr><th style="width:22%">Field</th><th style="width:14%">Required</th><th>Source rows</th></tr>
+  <tr><td><code>measure</code>, <code>result</code></td><td>yes</td><td>SH-DATA-001 — one record per measurement, long format.</td></tr>
+  <tr><td><code>participant</code>, <code>unit</code>, <code>normalLow</code>, <code>normalHigh</code></td><td>optional</td><td>SH-DATA-003; normal-range behavior degrades gracefully when absent (SH-FUNC-004C).</td></tr>
+  <tr><td><code>filters[]</code>, <code>details[]</code></td><td>optional</td><td>SH-DATA-003 — configured filter and listing columns.</td></tr>
+</table>
+<p>Missing/non-numeric results are removed with a reported count (console + page note),
+per SH-DATA-002 — the pilot's behavior is the accepted resolution of the matrix's
+open invalid-data question.</p>
+
+<h3>Test plan (TDD)</h3>
+<ol>
+  <li>Copy the matrix into the working set; route rows by Evidence Type — <code>unit</code>
+      rows (binning, data prep, config merge) → Vitest; <code>browser</code> rows → Playwright.</li>
+  <li>Write requirement-ID-keyed tests first (red), porting the 10 pilot specs as the seed.</li>
+  <li>Extract/refactor pilot code into the module layout until green; no behavior changes
+      beyond the file reorganization.</li>
+  <li>Maintain the module coverage table (requirement ID → test) in <code>docs/</code>.</li>
+</ol>
+
+<h2>Slice ③ — <code>Widget_Histogram</code> in gsm.safety</h2>
+<ul>
+  <li>Mirrors gsm.kri's widget pattern: <code>inst/htmlwidgets/Widget_Histogram.js</code> +
+      <code>Widget_Histogram.yaml</code>, with the safety.viz bundle vendored at
+      <code>inst/htmlwidgets/lib/safety.viz-{version}/</code> (see
+      <a href="1_design.html">1_design.html</a>, Distribution).</li>
+  <li><code>Widget_Histogram()</code> R function maps a long lab-results data.frame
+      (<code>subjid</code>-keyed, per gsm column conventions) plus a settings list onto the
+      module's JSON contract, then calls the lifecycle API from the widget's
+      <code>renderValue</code>/<code>resize</code> hooks.</li>
+  <li>testthat coverage for the R-side mapping; a pkgdown example page provides the rendered
+      artifact for review.</li>
+</ul>
+
+<h2>Resolved and deferred items</h2>
+<table>
+  <tr><th style="width:34%">Item</th><th>Disposition</th></tr>
+  <tr><td>Invalid-data handling (matrix open item)</td><td><b>Resolved:</b> adopt the pilot's behavior — drop with reported count and visible note (SH-DATA-002).</td></tr>
+  <tr><td>p-value annotations (blocked rows)</td><td><b>Deferred:</b> ship the pilot's approximate screening annotations with the validation disclaimer (as merged); exact-method rows stay blocked pending method + fixtures and become a follow-up requirement if pursued.</td></tr>
+  <tr><td>Visual regression + accessibility hardening</td><td><b>Out of scope</b> for the pilot (flagged in the pilot's coverage matrix); explicit follow-up gates before the renderer batch.</td></tr>
+  <tr><td>Legacy Webcharts API</td><td>Not preserved (SH-API-002) — already replaced by the lifecycle API.</td></tr>
+</table>
+
+<div class="note"><b>Sign-off:</b> approval is recorded on
+<a href="https://github.com/jwildfire/obot.roadmap/issues/2">#2</a>. On sign-off,
+requirement-tasks files slices ② and ③ as sub-issues (slice ① is already done).</div>
+
+<div class="footer">
+  requirements/design/2_design.html · obot.roadmap hub · drafted 2026-07-02 for the former
+  obot-claw hub (#58), ported 2026-07-03, by Claude Code using Fable 5, reviewed by
+  @jwildfire · companion: <a href="1_design.html">1_design.html</a>
+</div>
+
+</div></body>
+</html>
