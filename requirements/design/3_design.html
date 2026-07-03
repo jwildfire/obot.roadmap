@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #3 — obot GitHub App for agent and automation access</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .note { color: var(--muted); font-size: .9rem; }
+  nav.toc { background: var(--panel); border-radius: 8px; padding: 1rem 1.25rem; font-size: .92rem; }
+  nav.toc ol { margin: .25rem 0 0; padding-left: 1.25rem; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design: obot GitHub App for agent and automation access</h1>
+  <p class="meta">
+    Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/3">jwildfire/obot.roadmap#3</a>
+    · 2026-07-03 · <span class="status">Draft — decisions D1–D4 pending @jwildfire</span><br>
+    Drafted by Claude Code using Fable 5 for @jwildfire review.
+    HTML design-doc format per <a href="https://github.com/obot-claw/obot-claw.github.io/issues/59">obot-claw#59</a>.
+  </p>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#context">Context and goals</a></li>
+    <li><a href="#architecture">Architecture — one app, two token flows</a></li>
+    <li><a href="#registration">App registration specification</a></li>
+    <li><a href="#keys">Key management</a></li>
+    <li><a href="#agent">Agent-side tooling</a></li>
+    <li><a href="#actions">GitHub Actions integration</a></li>
+    <li><a href="#retirement">obot-claw credential retirement</a></li>
+    <li><a href="#decisions">Decisions (pending)</a></li>
+    <li><a href="#out-of-scope">Out of scope</a></li>
+    <li><a href="#tasks">Task preview</a></li>
+  </ol>
+</nav>
+
+<h2 id="context">1. Context and goals</h2>
+
+<p>
+The obot portfolio previously ran on a dedicated GitHub machine account (<code>obot-claw</code>)
+plus an always-on OpenClaw runtime — a second full identity with long-lived credentials to secure
+and rotate. That setup was wound down in July 2026 (hub archived; see the
+<a href="7_design.html">#7 design</a>), leaving a gap: agents and automation still need a
+<strong>non-personal identity with scoped access</strong> to the portfolio repos, so that
+automated actions are attributable to the automation rather than to @jwildfire personally.
+</p>
+<p>
+A <strong>GitHub App</strong> fills the gap with far less surface area than a machine account:
+tokens are short-lived (1&nbsp;hour), scoped to an explicit repo whitelist, and minted from a
+single private key that Jeremy controls. Success criteria (from
+<a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a>):
+</p>
+<ul>
+  <li>The app is registered under @jwildfire and installed on the whitelisted portfolio repos.</li>
+  <li>At least one <em>agent</em> flow and one <em>GitHub Actions</em> flow authenticate through it.</li>
+  <li>No obot-claw credentials remain in use.</li>
+</ul>
+
+<h2 id="architecture">2. Architecture — one app, two token flows</h2>
+
+<pre><code>App registration (@jwildfire)          ── App ID + private key (PEM)
+        │
+        │  sign RS256 JWT (≤10 min TTL)
+        ▼
+POST /app/installations/{installation_id}/access_tokens
+        │
+        ▼
+Installation token (1 h TTL, repo-whitelisted, permission-capped)
+        │
+        ├── local agent:  GH_TOKEN=$(obot-app-token) gh …   /  git push via x-access-token
+        └── Actions:      actions/create-github-app-token@v2 → ${{ steps.app.outputs.token }}
+</code></pre>
+
+<p>
+Both consumers end at the same place: an installation token whose blast radius is capped three
+ways — by expiry (1&nbsp;hour), by the installation's repo whitelist, and by the app's permission
+set (§3). Actions performed with the token are attributed to the app's bot login
+(<code>&lt;slug&gt;[bot]</code>), so bot work is visibly distinct from @jwildfire's own.
+</p>
+
+<h3 id="identity-rules">2.1 Which identity, when</h3>
+<table>
+  <tr><th>Actor</th><th>Identity</th><th>Examples</th></tr>
+  <tr>
+    <td>Jeremy working interactively; agent work Jeremy reviews before it posts</td>
+    <td><strong>@jwildfire</strong> (existing <code>gh</code> auth — unchanged)</td>
+    <td>Requirement drafting, PRs from working sessions, sign-offs, merges</td>
+  </tr>
+  <tr>
+    <td>Automation acting on its own; agent actions that should read as obot's</td>
+    <td><strong>the app</strong> (<code>&lt;slug&gt;[bot]</code>)</td>
+    <td>Scheduled workflows, cross-repo rollups, bot status comments, the future diary
+        automation (separate requirement)</td>
+  </tr>
+</table>
+<p class="note">
+The AGENTS.md attribution convention ("This … was drafted by Claude Code using …") continues to
+apply to the <em>content</em> of issues, PRs, and comments regardless of which identity posts them.
+</p>
+<p>
+Bot-attributed git commits use the standard app-bot author format, with the bot user ID looked up
+once after registration (<code>gh api '/users/&lt;slug&gt;[bot]' --jq .id</code>):
+</p>
+<pre><code>git -c user.name='&lt;slug&gt;[bot]' \
+    -c user.email='&lt;ID&gt;+&lt;slug&gt;[bot]@users.noreply.github.com' commit …
+git push https://x-access-token:&lt;TOKEN&gt;@github.com/&lt;owner&gt;/&lt;repo&gt;.git</code></pre>
+
+<h2 id="registration">3. App registration specification</h2>
+
+<table>
+  <tr><th>Field</th><th>Value</th></tr>
+  <tr><td>Owner</td><td>@jwildfire (personal account — no org required; registration is a
+      personal-account action)</td></tr>
+  <tr><td>Name</td><td><strong>D1</strong> — recommended <code>obotclaw</code> (§8)</td></tr>
+  <tr><td>Description</td><td>Automation identity for Jeremy Wildfire's obot portfolio
+      (safety-graphics modernization)</td></tr>
+  <tr><td>Homepage URL</td><td><code>https://jwildfire.github.io/obot.roadmap/</code></td></tr>
+  <tr><td>Webhook</td><td><strong>Disabled</strong> — the app is an authentication identity only;
+      no event subscriptions, no endpoint to host or secure</td></tr>
+  <tr><td>Where can this app be installed?</td><td>Only on this account</td></tr>
+  <tr><td>Installation</td><td>"Only select repositories": <code>obot.roadmap</code>,
+      <code>safety.agent</code>, <code>safety.viz</code>, <code>gsm.safety</code>,
+      <code>safety-histogram</code>. New repos are added to the installation explicitly, never
+      "all repositories".</td></tr>
+</table>
+
+<h3 id="permissions">3.1 Permissions (D2)</h3>
+<table>
+  <tr><th>Permission</th><th>Access</th><th>Why</th></tr>
+  <tr><td>Metadata</td><td>Read</td><td>Mandatory for all apps</td></tr>
+  <tr><td>Contents</td><td>Read &amp; write</td><td>Clone, branch, commit, release assets</td></tr>
+  <tr><td>Issues</td><td>Read &amp; write</td><td>File/comment/label issues, rollups</td></tr>
+  <tr><td>Pull requests</td><td>Read &amp; write</td><td>Open PRs, PR comments</td></tr>
+</table>
+<p>
+Deliberately <strong>not</strong> requested at registration: <em>Workflows (write)</em> — only
+needed if the bot itself pushes changes under <code>.github/workflows/</code>; <em>Actions
+(read)</em> — portfolio repos are public, so run status is readable without it. Permission
+additions are cheap (edit the app, approve the update on the installation — a one-click owner
+action), so the set starts minimal and grows on demonstrated need.
+</p>
+<p class="note">
+<strong>Known limitation (verified against the GitHub App permissions reference, 2026-07-03):</strong>
+apps have no permission for <em>user-owned</em> Projects (v2) — the Projects permission exists only
+at the organization level. The app therefore cannot read the
+<a href="https://github.com/users/jwildfire/projects/1">obot Roadmap</a> user Project, and the
+site's <code>ROADMAP_TOKEN</code> PAT (project read) stays in place for Project-Status reads. The
+app replaces the obot-claw identity, not that token.
+</p>
+
+<h2 id="keys">4. Key management (D3)</h2>
+
+<table>
+  <tr><th>Item</th><th>Sensitivity</th><th>Storage</th></tr>
+  <tr><td>App ID, installation ID, bot user ID</td><td>Low (identifiers, not secrets)</td>
+      <td>Helper-script config (committed docs are fine)</td></tr>
+  <tr><td>Private key (PEM)</td><td><strong>Secret — equivalent to the bot identity</strong></td>
+      <td>Local: macOS Keychain via <code>security add-generic-password -s obot-github-app</code>;
+          the helper reads it with <code>security find-generic-password -w</code>. Never in
+          dotfiles, repos, or plain files on disk.<br>
+          Actions: repo secrets <code>OBOT_APP_ID</code> + <code>OBOT_APP_PRIVATE_KEY</code>,
+          added only to repos that run app workflows (initially <code>obot.roadmap</code>).</td></tr>
+  <tr><td>Installation tokens</td><td>Short-lived (1 h)</td>
+      <td>Never stored; minted on demand, held in process environment only</td></tr>
+</table>
+
+<ul>
+  <li><strong>Rotation:</strong> GitHub Apps allow two active private keys, so rotation is
+      zero-downtime — generate the new key, update Keychain + Actions secrets, delete the old key.
+      Cadence: annually, or immediately on any suspicion of exposure.</li>
+  <li><strong>Revocation:</strong> deleting the app's keys (or uninstalling the app) kills all
+      future token minting instantly; outstanding installation tokens die within the hour. This is
+      the emergency stop the obot-claw machine account never cleanly had.</li>
+</ul>
+
+<h2 id="agent">5. Agent-side tooling (D4)</h2>
+
+<p>
+Local agents need installation tokens without hand-running the JWT dance. Recommended shape: a
+<strong>small self-contained script plus a thin skill</strong>, both in
+<a href="https://github.com/jwildfire/safety.agent"><code>safety.agent</code></a> (the agent
+scaffold owns agent tooling; there is no <code>obot.agent</code> repo — that idea is shelved):
+</p>
+<ul>
+  <li><code>scripts/obot-app-token</code> — ~40 lines of bash on <code>openssl</code>: read the
+      PEM from Keychain, sign a 10-minute RS256 JWT, exchange it for an installation token, print
+      the token. No third-party dependencies (the community <code>gh-token</code> extension was
+      considered and passed over — an extra dependency for something this small, and less
+      auditable).</li>
+  <li>A skill (e.g. <code>obot-identity</code>) documenting when to act as the bot (§2.1) and the
+      two usage patterns:
+      <pre><code>GH_TOKEN=$(obot-app-token) gh api …        # API / issues / PRs as the bot
+git push https://x-access-token:$(obot-app-token)@github.com/… </code></pre></li>
+</ul>
+<p class="note">
+Acceptance for the agent flow: from a normal working session, mint a token and post a comment as
+the bot on a designated test issue — then confirm the comment renders as
+<code>&lt;slug&gt;[bot]</code>.
+</p>
+
+<h2 id="actions">6. GitHub Actions integration</h2>
+
+<p>
+Workflows use the first-party <a href="https://github.com/actions/create-github-app-token">
+<code>actions/create-github-app-token@v2</code></a>:
+</p>
+<pre><code>- id: app
+  uses: actions/create-github-app-token@v2
+  with:
+    app-id: ${{ secrets.OBOT_APP_ID }}
+    private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
+    # owner/repositories: defaults to the current repo; widen per workflow as needed
+- run: gh issue comment … --repo jwildfire/obot.roadmap
+  env:
+    GH_TOKEN: ${{ steps.app.outputs.token }}</code></pre>
+
+<ul>
+  <li><strong>First consumer (acceptance test):</strong> <code>app-smoke-test.yml</code> in
+      obot.roadmap, <code>workflow_dispatch</code>-only — mints a token and posts a comment on
+      <a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a> as the bot. Proves the
+      GHA path end-to-end without inventing automation the portfolio doesn't need yet.</li>
+  <li><strong>Real consumers, later:</strong> the scheduled diary/briefing automation (its own
+      requirement, deliberately out of scope here — this app is its prerequisite) and any
+      cross-repo rollup that must write outside the workflow's own repo.</li>
+  <li><strong>Unchanged:</strong> <code>deploy-site.yml</code> keeps the default
+      <code>GITHUB_TOKEN</code> (public reads + Pages deploy) and <code>ROADMAP_TOKEN</code>
+      (user-Project reads, §3.1).</li>
+</ul>
+
+<h2 id="retirement">7. obot-claw credential retirement</h2>
+
+<p>The requirement closes only when the old identity's credentials are dead, not merely unused:</p>
+<table>
+  <tr><th>Item</th><th>Action</th></tr>
+  <tr><td>obot-claw personal access tokens</td>
+      <td>Sign in as obot-claw once, delete <em>all</em> PATs (@jwildfire — requires the account's
+          credentials)</td></tr>
+  <tr><td>Local <code>gh</code> logins</td>
+      <td><code>gh auth status</code> on Jeremy's machines; <code>gh auth logout</code> any
+          obot-claw session</td></tr>
+  <tr><td>OpenClaw-era configs (<code>~/Documents/obot</code>, old runtime configs)</td>
+      <td>Audit for embedded tokens; scrub any found</td></tr>
+  <tr><td>Actions secrets on archived obot-claw repos</td>
+      <td>Document as inert — archived repos cannot run workflows; no action possible or needed</td></tr>
+  <tr><td>The obot-claw account itself</td>
+      <td>Keep, parked with zero credentials — it anchors the archived historical record. Deleting
+          it is out of scope (and would free the name for squatters).</td></tr>
+</table>
+
+<h2 id="decisions">8. Decisions</h2>
+
+<p class="note">Four decisions for @jwildfire, matching the open questions recorded on
+<a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a>. Each has a recommendation;
+none is executed until resolved.</p>
+
+<div class="decision"><strong>D1 — App name and branding.</strong> GitHub App names are global and
+"cannot use the same name as an existing GitHub account, unless it is your own" — which blocks
+<code>obot</code>, <code>orangebot</code>, and <code>obot-claw</code> (all existing accounts;
+@jwildfire is not an obot-claw org owner, so its name doesn't qualify as "your own").
+<br><strong>Recommendation:</strong> <code>obotclaw</code> — verified free as both an app slug and
+an account name on 2026-07-03; keeps the 🍊😺 brand continuity; actions read as
+<code>obotclaw[bot]</code>. Fallbacks (also verified free): <code>orange-obot</code>,
+<code>obot-hq</code>. Availability must be re-checked at registration time.</div>
+
+<div class="decision"><strong>D2 — Permission set.</strong> Everything the portfolio might need,
+or the minimum it needs now?
+<br><strong>Recommendation:</strong> minimal (§3.1): Contents / Issues / Pull&nbsp;requests
+read-write plus mandatory Metadata read; webhook disabled. Defer Workflows-write until a workflow
+actually pushes workflow files — additions are a one-click installation approval.</div>
+
+<div class="decision"><strong>D3 — Private-key storage and rotation.</strong>
+<br><strong>Recommendation:</strong> macOS Keychain locally, Actions secrets per consuming repo
+(§4); two-key zero-downtime rotation, annual cadence or on suspicion. No PEM on disk, ever.</div>
+
+<div class="decision"><strong>D4 — Agent-side token minting: CLI helper or skill?</strong>
+<br><strong>Recommendation:</strong> both, in <code>safety.agent</code> — a dependency-free
+<code>scripts/obot-app-token</code> script doing the work, and a thin skill telling agents when
+and how to use it (§5).</div>
+
+<h2 id="out-of-scope">9. Out of scope</h2>
+<ul>
+  <li><strong>Scheduled agentic runs</strong> (nightly diary/briefings) — explicitly excluded by
+      the requirement; file a separate Requirement once this app exists and the cadence is
+      decided. This design is its prerequisite.</li>
+  <li>The shelved <strong>obot worker machine / obot.agent repo</strong> — the helper lands in
+      safety.agent; nothing here depends on new infrastructure.</li>
+  <li>Webhooks and event-driven automation; GitHub Marketplace listing.</li>
+  <li>Replacing <code>ROADMAP_TOKEN</code> — impossible today (no user-Projects permission for
+      apps, §3.1).</li>
+  <li>Transferring app ownership to an organization — possible later without re-registration if
+      the portfolio ever moves back into an org.</li>
+</ul>
+
+<h2 id="tasks">10. Task preview</h2>
+<p class="note">To be filed as Tasks on
+<a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a> after design sign-off; listed
+here to show the intended decomposition.</p>
+<ol>
+  <li>Register the app per §3 and generate a private key — @jwildfire, guided (interactive GitHub
+      login required); install on the five whitelisted repos. <em>(depends on D1/D2)</em></li>
+  <li>Store credentials: PEM → Keychain; <code>OBOT_APP_ID</code> /
+      <code>OBOT_APP_PRIVATE_KEY</code> secrets → obot.roadmap. <em>(D3)</em></li>
+  <li>Implement <code>obot-app-token</code> + the identity skill in safety.agent; acceptance: bot
+      comment posted from a working session. <em>(D4)</em></li>
+  <li>Add <code>app-smoke-test.yml</code> to obot.roadmap; acceptance: dispatched run comments on
+      #3 as the bot.</li>
+  <li>Credential retirement audit per §7; record the outcome on #3.</li>
+  <li>Document the identity rules (§2.1) in obot.roadmap AGENTS.md and the README repo table.</li>
+</ol>
+
+<footer>
+  Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/3">jwildfire/obot.roadmap#3</a> ·
+  Design document <code>requirements/design/3_design.html</code> ·
+  Generated with assistance from a large language model (Claude Code, Fable 5); validate details
+  against the linked GitHub sources before implementation.
+</footer>
+
+</body>
+</html>
