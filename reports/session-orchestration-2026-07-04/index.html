@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap agent — session orchestration</title>
+<style>
+  :root {
+    --bg: #FBFAF7;
+    --surface: #F3F0E9;
+    --surface-2: #EDE9E0;
+    --ink: #26211B;
+    --muted: #6F6759;
+    --line: #E3DDD1;
+    --accent: #D96A0B;
+    --accent-text: #9A4A05;
+    --ok: #2F7D4F;
+    --warn: #A0740A;
+    --info: #2B6CB0;
+    --err: #B3372B;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17140F;
+      --surface: #201C15;
+      --surface-2: #282318;
+      --ink: #EDE7DC;
+      --muted: #A29A8C;
+      --line: #373125;
+      --accent: #F0913B;
+      --accent-text: #F0913B;
+      --ok: #5DBB84;
+      --warn: #E0B23F;
+      --info: #6BA5E7;
+      --err: #E07862;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17140F;
+    --surface: #201C15;
+    --surface-2: #282318;
+    --ink: #EDE7DC;
+    --muted: #A29A8C;
+    --line: #373125;
+    --accent: #F0913B;
+    --accent-text: #F0913B;
+    --ok: #5DBB84;
+    --warn: #E0B23F;
+    --info: #6BA5E7;
+    --err: #E07862;
+  }
+  :root[data-theme="light"] {
+    --bg: #FBFAF7;
+    --surface: #F3F0E9;
+    --surface-2: #EDE9E0;
+    --ink: #26211B;
+    --muted: #6F6759;
+    --line: #E3DDD1;
+    --accent: #D96A0B;
+    --accent-text: #9A4A05;
+    --ok: #2F7D4F;
+    --warn: #A0740A;
+    --info: #2B6CB0;
+    --err: #B3372B;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    margin: 0;
+    font-size: 16px;
+  }
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+  .prose { max-width: 740px; }
+
+  a { color: var(--accent-text); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  header.masthead {
+    border-bottom: 2px solid var(--accent);
+    padding: 40px 0 20px;
+    margin-bottom: 40px;
+  }
+  .brandline {
+    display: flex; align-items: baseline; gap: 10px;
+    font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .brandline .mark { letter-spacing: 0; font-size: 14px; }
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(24px, 4.5vw, 34px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+  h1 .prompt { color: var(--accent); }
+  .subtitle { color: var(--muted); margin: 0; max-width: 640px; }
+  .metaline {
+    font-family: var(--mono); font-size: 12.5px; color: var(--muted);
+    margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 22px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent-text);
+    margin: 56px 0 6px; font-weight: 600;
+  }
+  h2 {
+    font-size: 23px; font-weight: 750; letter-spacing: -0.015em;
+    margin: 0 0 14px; text-wrap: balance;
+  }
+  h3 { font-size: 16.5px; font-weight: 700; margin: 26px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  strong { font-weight: 650; }
+
+  code {
+    font-family: var(--mono); font-size: 0.86em;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 4px; padding: 1px 5px;
+    white-space: nowrap;
+  }
+  pre {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 6px; padding: 14px 18px;
+    overflow-x: auto; font-family: var(--mono); font-size: 13px;
+    line-height: 1.55; margin: 0 0 16px;
+  }
+  pre code { background: none; border: none; padding: 0; white-space: pre; }
+  pre .c { color: var(--muted); }
+  pre .hl { color: var(--accent-text); font-weight: 600; }
+
+  .thesis {
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 18px 22px; margin: 0 0 8px;
+  }
+  .thesis p:last-child { margin-bottom: 0; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 1px 10px 1px 7px; white-space: nowrap;
+    background: var(--surface); vertical-align: 1px;
+  }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .chip.working { color: var(--info); }
+  .chip.needs   { color: var(--warn); }
+  .chip.done    { color: var(--ok); }
+  .chip.failed  { color: var(--err); }
+
+  .tablewrap { overflow-x: auto; margin: 0 0 16px; border: 1px solid var(--line); border-radius: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600;
+    text-align: left; padding: 10px 16px;
+    background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: normal; }
+  td .mono { font-family: var(--mono); font-size: 13px; }
+
+  .phases { list-style: none; padding: 0; margin: 24px 0 8px; display: grid; gap: 14px; }
+  .phase {
+    display: grid; grid-template-columns: 52px 1fr; gap: 0;
+    border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+    background: var(--bg);
+  }
+  .phase .num {
+    background: var(--surface); border-right: 1px solid var(--line);
+    font-family: var(--mono); font-weight: 600; font-size: 15px;
+    color: var(--accent-text);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding-top: 18px;
+  }
+  .phase .body { padding: 16px 20px 12px; min-width: 0; }
+  .phase h3 { margin: 0 0 6px; font-size: 16px; }
+  .phase p, .phase ul { font-size: 15px; }
+  .phase pre { font-size: 12.5px; }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0 8px; }
+  @media (max-width: 680px) { .cards { grid-template-columns: 1fr; } .phase { grid-template-columns: 40px 1fr; } }
+  .card {
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 16px 18px 12px; background: var(--bg); min-width: 0;
+  }
+  .card h3 { margin: 0 0 4px; font-size: 15.5px; font-family: var(--mono); font-weight: 600; }
+  .card .tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 10px;
+  }
+  .card p, .card ul { font-size: 14.5px; }
+  .card ul { padding-left: 18px; }
+
+  .flow {
+    display: flex; align-items: stretch; gap: 0; margin: 20px 0 10px;
+    overflow-x: auto; padding-bottom: 6px;
+  }
+  .flow .node {
+    border: 1px solid var(--line); border-radius: 6px; background: var(--surface);
+    padding: 12px 16px; min-width: 190px; flex: 1;
+  }
+  .flow .node.this { border-color: var(--accent); background: var(--bg); }
+  .flow .node b { display: block; font-size: 14px; margin-bottom: 3px; }
+  .flow .node span { font-size: 13px; color: var(--muted); display: block; line-height: 1.45; }
+  .flow .arrow {
+    align-self: center; padding: 0 10px; color: var(--muted);
+    font-family: var(--mono); font-size: 16px; flex: 0 0 auto;
+  }
+
+  .decision {
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 14px 18px; margin-bottom: 12px; background: var(--bg);
+  }
+  .decision .dnum {
+    font-family: var(--mono); font-weight: 600; color: var(--accent-text);
+    font-size: 13px; margin-right: 8px;
+  }
+  .decision p { font-size: 15px; margin-bottom: 6px; }
+  .decision p:last-child { margin-bottom: 0; }
+  .rec { font-size: 14px; color: var(--muted); }
+  .rec b { color: var(--ink); }
+
+  .checklist { counter-reset: step; list-style: none; padding: 0; margin: 0 0 14px; }
+  .checklist li {
+    counter-increment: step; position: relative;
+    padding: 10px 14px 10px 46px; border-bottom: 1px solid var(--line);
+    font-size: 15px; margin: 0;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before {
+    content: counter(step);
+    position: absolute; left: 8px; top: 11px;
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    color: var(--accent-text); border: 1px solid var(--line);
+    border-radius: 4px; width: 24px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+  }
+  .size {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; margin-left: 8px;
+  }
+
+  footer {
+    margin-top: 72px; padding-top: 18px; border-top: 1px solid var(--line);
+    font-size: 13.5px; color: var(--muted);
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="brandline"><span class="mark">🍊😺</span> obot2 harness · implementation proposal</div>
+  <h1><span class="prompt">❯</span> Roadmap agent: session orchestration</h1>
+  <p class="subtitle">One interactive session picks 1–2 lanes, spawns a sibling session per lane, tracks their status, and closes the day by writing the diary entry.</p>
+  <div class="metaline">
+    <span>2026-07-04</span>
+    <span>home: safety.agent → upstream: gsm.agent / gsm.roadmap</span>
+    <span>relates: obot.roadmap #17 · #18</span>
+  </div>
+</header>
+
+<div class="thesis prose">
+  <p><strong>The mechanics already exist — the work is writing the procedure down.</strong> Sibling sessions (<code>claude --bg</code>), machine-readable per-session status, the <code>result:</code>/<code>needs input:</code>/<code>failed:</code> protocol, enforced worktree isolation, and a per-session diary cadence are all live in the harness today, and the pattern was proven on 2026-07-04 when the safety.viz scaffold ran as a briefed background session. What's missing is the orchestration procedure as durable skills: <strong>two new skills in safety.agent</strong> (<code>roadmap-session</code>, <code>diary-entry</code>), a formal lane-briefing contract, and one new Requirement on the hub. No new infrastructure.</p>
+</div>
+
+<p class="eyebrow">01 · Concept</p>
+<h2>What a roadmap-agent session looks like</h2>
+<div class="prose">
+  <p>Jeremy opens a Claude Code session in <code>obot2</code> and invokes the roadmap agent. It reads the hub, proposes one or two <strong>lanes</strong> — each a concrete unit of work, typically an open sub-issue with a designed requirement behind it — and, on approval, spawns a <strong>sibling session</strong> per lane. While lanes run, the roadmap session is the control tower: it reports status on demand, relays questions from lanes to Jeremy, and stays available for hub work (requirement edits, reviews, planning). When lanes land, it collects each one's result and PR links and writes the day's diary entry.</p>
+  <p><strong>Why siblings, not sub-agents.</strong> A sub-agent (Agent tool) runs inside the orchestrator's context and dies with it. A sibling is a full top-level session: its own context window, model, permission mode, transcript, and worktree — visible in the agents view, resumable, and it survives the orchestrator ending. Status lives in the harness, not in the orchestrator's memory, which is what makes orchestration restartable (see §06). This matches the existing preference and the scaffold <code>/spawn</code> pattern already in use.</p>
+</div>
+
+<p class="eyebrow">02 · Inventory</p>
+<h2>Already in the harness</h2>
+<p class="prose">Everything below exists today and was verified in this session. The orchestrator consumes these; it does not build them.</p>
+<div class="tablewrap">
+  <table>
+    <tr><th>Mechanism</th><th>What it gives the orchestrator</th></tr>
+    <tr>
+      <td class="mono">claude --bg "&lt;prompt&gt;"</td>
+      <td>Spawns a sibling session and returns immediately. Takes <code>--model</code>, <code>--permission-mode</code>, <code>--effort</code>. Already allowlisted via the scaffold <code>/spawn</code> command.</td>
+    </tr>
+    <tr>
+      <td class="mono">claude agents --json [--all] [--cwd &lt;path&gt;]</td>
+      <td>Scriptable session list (no TTY needed): active lanes, or with <code>--all</code> the full history. <code>--cwd</code> scopes to sessions started under the workspace.</td>
+    </tr>
+    <tr>
+      <td class="mono">~/.claude/jobs/&lt;id&gt;/state.json</td>
+      <td>Per-session state: <code>state</code>, <code>detail</code>, <code>tempo</code>, <code>output.result</code>, <code>children</code> (PR/issue links auto-scanned from the transcript), the original <code>intent</code> briefing, <code>resumeSessionId</code>, timestamps, token count.</td>
+    </tr>
+    <tr>
+      <td><span class="chip working">working</span> <span class="chip needs">needs input:</span> <span class="chip done">result:</span> <span class="chip failed">failed:</span></td>
+      <td>The background-session status protocol. A classifier reads each session's message text and keeps <code>state.json</code> current — lanes that follow the protocol are trackable for free.</td>
+    </tr>
+    <tr>
+      <td class="mono">bg worktree isolation</td>
+      <td>Background sessions must isolate into a git worktree before editing — enforced by the harness, and aligned with the AGENTS.md worktree convention. Lanes can't collide with each other or with Jeremy's checkout.</td>
+    </tr>
+    <tr>
+      <td class="mono">diary/ conventions</td>
+      <td>obot.roadmap's diary README already specifies <em>per-working-session</em> cadence (design decision D2): write the day's entry at session end, append a session section if the file exists.</td>
+    </tr>
+    <tr>
+      <td class="mono">scaffold /spawn briefing</td>
+      <td>The context-briefing pattern (&lt;300 words: paths, decisions, constraints, what's ruled out). The lane briefing below is this, formalized with a status-protocol and conventions section.</td>
+    </tr>
+  </table>
+</div>
+
+<p class="eyebrow">03 · Lifecycle</p>
+<h2>The session, phase by phase</h2>
+<ol class="phases">
+  <li class="phase">
+    <div class="num">0</div>
+    <div class="body">
+      <h3>Situate</h3>
+      <p>Build the picture before proposing anything: open requirements and sub-issue status from the hub (<code>gh</code> + Project status), the latest diary entry, and — critically — sessions already in flight or recently finished:</p>
+      <pre><code>claude agents --json --all --cwd ~/Documents/obot2</code></pre>
+      <p>Any stray <span class="chip done">result:</span> from a previous day that never made a diary entry gets picked up here (see §06).</p>
+    </div>
+  </li>
+  <li class="phase">
+    <div class="num">1</div>
+    <div class="body">
+      <h3>Pick lanes</h3>
+      <p>Propose 1–2 lanes as a multiple-choice prompt per the Decision Prompt convention. A lane is fully specified before spawn: <strong>repo · issue · done-condition · model/effort/permission-mode</strong>. Cap at two — siblings are full sessions, and the cap keeps cost and Jeremy's review load sane.</p>
+    </div>
+  </li>
+  <li class="phase">
+    <div class="num">2</div>
+    <div class="body">
+      <h3>Spawn</h3>
+      <p>Compose a lane briefing (contract in §04) and launch each sibling from the lane repo's directory, recording the job id → lane mapping in a session ledger:</p>
+      <pre><code>cd ~/Documents/obot2/&lt;repo&gt; && \
+claude --bg --model sonnet --permission-mode auto \
+  "&lt;lane briefing&gt;\n\n---\n\nTASK: &lt;issue + done-condition&gt;"</code></pre>
+    </div>
+  </li>
+  <li class="phase">
+    <div class="num">3</div>
+    <div class="body">
+      <h3>Track</h3>
+      <p>Default mode is <strong>on-demand</strong>: when Jeremy asks (or before any decision), render a status board from <code>claude agents --json</code> plus each lane's <code>state.json</code> — state chip, one-line <code>detail</code>, and any <code>children</code> PRs. When the session is just waiting for lanes to land, start a background watcher so the orchestrator is woken instead of polling:</p>
+      <pre><code><span class="c"># run_in_background Bash — exits (and wakes the orchestrator) on any state change</span>
+until [ "$(jq -r .state ~/.claude/jobs/&lt;id&gt;/state.json)" != "working" ]; do sleep 30; done</code></pre>
+      <p>On <span class="chip needs">needs input:</span>, surface the lane's question to Jeremy as a multiple-choice prompt, then relay the answer by resuming the lane in place:</p>
+      <pre><code>claude --bg --resume &lt;resumeSessionId&gt; "&lt;answer&gt;"  <span class="c"># spike first — see §07</span></code></pre>
+    </div>
+  </li>
+  <li class="phase">
+    <div class="num">4</div>
+    <div class="body">
+      <h3>Wrap up: the diary entry</h3>
+      <p>For each lane, collect <code>output.result</code> and <code>children</code> links from <code>state.json</code>, fold in the orchestrator's own hub work, and write <code>diary/YYYY-MM-DD.md</code> in the existing format (meta line, work completed, PRs/issues touched, blockers, 🙋 ToDo). Lanes still <span class="chip working">working</span> at wrap-up are listed as in-flight; tomorrow's entry closes them out. Commit direct to <code>main</code> under the standing autonomy grant, let Pages deploy, and hand Jeremy the deployed URL.</p>
+    </div>
+  </li>
+</ol>
+
+<p class="eyebrow">04 · Contract</p>
+<h2>The lane briefing</h2>
+<p class="prose">The scaffold <code>/spawn</code> briefing, formalized. Three sections, in this order — the third is what makes lanes <em>trackable</em>, and it's the part the current pattern leaves implicit:</p>
+<pre><code><span class="hl">CONTEXT</span>   <span class="c">— ~300 words: repo + paths, the spec source (issue link), decisions</span>
+<span class="c">            already made (do not re-litigate), constraints, what's been ruled out.</span>
+
+<span class="hl">TASK</span>      <span class="c">— the issue to implement + an explicit done-condition</span>
+<span class="c">            (usually: draft PR open with `Closes #N`, checks green, never merge).</span>
+
+<span class="hl">PROTOCOL</span>  <span class="c">— work in a worktree (../&lt;repo&gt;-worktrees/&lt;branch&gt;); follow</span>
+<span class="c">            .github/AGENTS.md conventions + attribution-at-bottom; emit</span>
+<span class="c">            `result:` / `needs input:` / `failed:` faithfully — your state.json</span>
+<span class="c">            is read by the roadmap session and becomes the diary entry.</span></code></pre>
+<p class="prose">This lives as a template in the <code>roadmap-session</code> skill (<code>references/lane-briefing.md</code>) so every spawn — human-initiated or, later, autonomous — produces sessions the tracker can read.</p>
+
+<p class="eyebrow">05 · Landing zones</p>
+<h2>Where the pieces go</h2>
+<div class="cards">
+  <div class="card">
+    <h3>safety.agent</h3>
+    <span class="tag">primary · new skills</span>
+    <ul>
+      <li><code>skills/roadmap-session/SKILL.md</code> — the §03 procedure, with <code>references/lane-briefing.md</code> and <code>references/status-protocol.md</code>.</li>
+      <li><code>skills/diary-entry/SKILL.md</code> — the wrap-up procedure, <strong>separate</strong> so the future nightly-diary lane (#18, lane 2) reuses it unchanged.</li>
+      <li>Both written overlay-shaped per #17: assume gsm.agent conventions, state only the delta.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>obot2 workspace</h3>
+    <span class="tag">wiring</span>
+    <ul>
+      <li>Per-skill symlinks in <code>.claude/skills/</code> (existing workspace pattern).</li>
+      <li>Allowlist <code>Bash(claude --bg:*)</code> and <code>Bash(claude agents:*)</code> in workspace settings so spawn/track don't prompt.</li>
+      <li>One CLAUDE.md line: roadmap sessions start with the <code>roadmap-session</code> skill.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>obot.roadmap</h3>
+    <span class="tag">hub · tracking + diary</span>
+    <ul>
+      <li>File this proposal as a new Requirement (see D1).</li>
+      <li>Diary README is already compatible — per-session cadence is its design decision D2. Optionally note the orchestrated-session shape (per-lane results + links).</li>
+      <li>No session ledger in the repo: <code>state.json</code> is the runtime source of truth; the diary is the durable record.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>gsm.agent / gsm.roadmap</h3>
+    <span class="tag">upstream · later</span>
+    <ul>
+      <li><strong>gsm.agent</strong>: the generic pieces — sibling-session orchestration, lane-briefing contract, status protocol — proposed as a PR per #17 bucket (b); a concrete first artifact for its v1.0 multi-agent-framework direction.</li>
+      <li><strong>gsm.roadmap</strong>: the roadmap-agent persona angle. Its v0.1 persona wraps status workflows and plain-English queries; session orchestration is the natural extension once proven here.</li>
+    </ul>
+  </div>
+</div>
+
+<p class="eyebrow">06 · Fit</p>
+<h2>Between #17 and #18 — the attended middle step</h2>
+<div class="flow">
+  <div class="node">
+    <b>#17 · overlay restructure</b>
+    <span>safety.agent becomes a thin overlay on gsm.agent — the home these skills are written into.</span>
+  </div>
+  <div class="arrow">→</div>
+  <div class="node this">
+    <b>This · attended orchestration</b>
+    <span>Jeremy conducts; lanes run as briefed siblings; roadmap agent tracks and writes the diary.</span>
+  </div>
+  <div class="arrow">→</div>
+  <div class="node">
+    <b>#18 · autonomous lanes</b>
+    <span>Proven lanes graduate to scheduled/event-driven runs under the App identity.</span>
+  </div>
+</div>
+<div class="prose">
+  <p>Every #18 candidate lane maps onto a piece built here: the <strong>background dev lane</strong> is exactly a lane briefing minus the human at the top; the <strong>nightly diary</strong> is the <code>diary-entry</code> skill on a schedule; the <strong>rollup</strong> reuses the same status-reading. Running lanes attended first surfaces the failure modes (briefing gaps, protocol drift, needs-input handling) while a human is watching — which is the cheap time to find them.</p>
+  <p>Restartability falls out of the architecture: because status lives in <code>state.json</code>, not in the orchestrator's context, the roadmap session can end while lanes run. The next roadmap session's Situate phase (<code>--all</code>) finds finished lanes and folds them into that day's diary. No lane is orphaned by a closed laptop.</p>
+</div>
+
+<p class="eyebrow">07 · Decisions</p>
+<h2>For Jeremy</h2>
+<div class="decision">
+  <p><span class="dnum">D1</span><strong>Track as a new hub Requirement, or fold into #18's design?</strong></p>
+  <p class="rec"><b>Recommend: new Requirement.</b> #18 is explicitly <em>unattended</em> operation gated on the App identity (#3); this is attended, needs no new identity, and can start now. Frame it as depending on #17 (overlay home) and feeding #18 (lane graduation).</p>
+</div>
+<div class="decision">
+  <p><span class="dnum">D2</span><strong>Who answers a lane's <code>needs input:</code>?</strong></p>
+  <p class="rec"><b>Recommend: the orchestrator relays</b> — question surfaces in the roadmap session as a multiple-choice prompt, answer goes back via <code>--resume</code>. Jeremy answering directly in the agents view stays as the escape hatch. Keeps one conversation as the control surface.</p>
+</div>
+<div class="decision">
+  <p><span class="dnum">D3</span><strong>Standing watcher or on-demand status?</strong></p>
+  <p class="rec"><b>Recommend: on-demand by default</b>, background watcher only when the session is idle-waiting for lanes to land (wrap-up). A standing 30s poll adds noise to a session Jeremy is actively using.</p>
+</div>
+<div class="decision">
+  <p><span class="dnum">D4</span><strong>One skill or two?</strong></p>
+  <p class="rec"><b>Recommend: two.</b> <code>roadmap-session</code> (orchestrate) + <code>diary-entry</code> (wrap-up), because the diary procedure is reused verbatim by #18's nightly lane and by any substantive non-orchestrated session.</p>
+</div>
+
+<p class="eyebrow">08 · Plan</p>
+<h2>Implementation order</h2>
+<ol class="checklist">
+  <li><strong>Spike the two unproven mechanics</strong> <span class="size">S</span> — relay-answer via <code>claude --bg --resume</code>, and the watcher-wakes-orchestrator loop. Everything else is verified; these two aren't. Do this before writing skills around them.</li>
+  <li><strong>File the Requirement</strong> on obot.roadmap with this proposal as its Overview <span class="size">S</span> — then Design sign-off per the lifecycle.</li>
+  <li><strong>Write <code>diary-entry</code></strong> in safety.agent <span class="size">S</span> — smallest piece, immediately useful in every session, no dependency on the spike.</li>
+  <li><strong>Write <code>roadmap-session</code></strong> + lane-briefing template + status-protocol reference <span class="size">M</span> — incorporating spike findings.</li>
+  <li><strong>Wire the workspace</strong> <span class="size">S</span> — skill symlinks, Bash allowlist entries, CLAUDE.md pointer.</li>
+  <li><strong>Run one real orchestrated session</strong> (two lanes, e.g. safety.viz#2 histogram + gsm.safety#30 widget) and let its diary entry be the acceptance evidence <span class="size">M</span>.</li>
+  <li><strong>Upstream</strong> <span class="size">M</span> — extract the generic orchestration pieces into a gsm.agent PR; open the gsm.roadmap persona conversation. Sequenced with (or after) #17's audit so it rides that classification.</li>
+</ol>
+
+<p class="eyebrow">09 · Caveats</p>
+<h2>Known risks</h2>
+<div class="prose">
+  <ul>
+    <li><strong><code>state.json</code> is a harness-internal surface,</strong> not a published API. The skill should pin the fields it reads and re-verify on CLI upgrades — cheap insurance against a rename.</li>
+    <li><strong>The <code>--resume</code> relay is the least-proven step</strong> (hence spike first). Fallback if it misbehaves: the orchestrator reports the question and Jeremy answers in the agents view directly.</li>
+    <li><strong>Diary push to <code>main</code>:</strong> the autonomy grant covers it, but the permission classifier still auto-denies main pushes unless Jeremy directs one in-session — the skill should end wrap-up with his explicit go, until the settings opt-out question is resolved.</li>
+    <li><strong>Cost:</strong> siblings are full sessions with full context loads. The two-lane cap plus lane-scoped briefings (Sonnet for well-specified implementation lanes) keeps this bounded.</li>
+  </ul>
+</div>
+
+<footer>
+  <hr style="border: none; border-top: 1px solid var(--line); margin: 0 0 14px;">
+  This proposal was drafted by Claude Code using Fable 5 for @jwildfire review.
+</footer>
+
+</div>
+
+</body>
+</html>
