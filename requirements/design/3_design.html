@@ -25,7 +25,7 @@
   header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
   .meta { color: var(--muted); font-size: .9rem; }
   .meta a { color: inherit; }
-  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+  .status { display: inline-block; background: #dcfce7; color: #166534; border-radius: 999px;
             padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
   h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
   h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
@@ -53,7 +53,7 @@
   <h1>Design: obot GitHub App for agent and automation access</h1>
   <p class="meta">
     Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/3">jwildfire/obot.roadmap#3</a>
-    · 2026-07-03 · <span class="status">Draft — decisions D1–D4 pending @jwildfire</span><br>
+    · 2026-07-03, updated 2026-07-04 · <span class="status">Approved — D1–D4 resolved by @jwildfire 2026-07-04</span><br>
     Drafted by Claude Code using Fable 5 for @jwildfire review.
     HTML design-doc format per <a href="https://github.com/obot-claw/obot-claw.github.io/issues/59">obot-claw#59</a>.
   </p>
@@ -152,7 +152,8 @@ git push https://x-access-token:&lt;TOKEN&gt;@github.com/&lt;owner&gt;/&lt;repo&
   <tr><th>Field</th><th>Value</th></tr>
   <tr><td>Owner</td><td>@jwildfire (personal account — no org required; registration is a
       personal-account action)</td></tr>
-  <tr><td>Name</td><td><strong>D1</strong> — recommended <code>obotclaw</code> (§8)</td></tr>
+  <tr><td>Name</td><td><code>obotclaw</code> — actions read as <code>obotclaw[bot]</code>
+      (<strong>D1, resolved</strong> — §8; availability re-checked at registration)</td></tr>
   <tr><td>Description</td><td>Automation identity for Jeremy Wildfire's obot portfolio
       (safety-graphics modernization)</td></tr>
   <tr><td>Homepage URL</td><td><code>https://jwildfire.github.io/obot.roadmap/</code></td></tr>
@@ -172,13 +173,25 @@ git push https://x-access-token:&lt;TOKEN&gt;@github.com/&lt;owner&gt;/&lt;repo&
   <tr><td>Contents</td><td>Read &amp; write</td><td>Clone, branch, commit, release assets</td></tr>
   <tr><td>Issues</td><td>Read &amp; write</td><td>File/comment/label issues, rollups</td></tr>
   <tr><td>Pull requests</td><td>Read &amp; write</td><td>Open PRs, PR comments</td></tr>
+  <tr><td>Workflows</td><td>Read &amp; write</td><td>Bot commits that touch
+      <code>.github/workflows/</code> — e.g. rolling out the anticipated
+      <code>@claude</code> PR-responder workflow (§9) across portfolio repos</td></tr>
+  <tr><td>Actions</td><td>Read</td><td>Workflow-run status and logs via the API, for
+      cross-repo run monitoring</td></tr>
+  <tr><td>Discussions</td><td>Read &amp; write</td><td>Added by @jwildfire at registration
+      (2026-07-04) — bot participation in repo Discussions</td></tr>
 </table>
+<p class="note"><strong>As registered (2026-07-04):</strong> App ID <code>4215246</code> ·
+installation <code>144370633</code> (the five §3 repos) · bot login <code>obotclaw[bot]</code>,
+user ID <code>299836032</code> · commit author
+<code>obotclaw[bot] &lt;299836032+obotclaw[bot]@users.noreply.github.com&gt;</code>.</p>
 <p>
-Deliberately <strong>not</strong> requested at registration: <em>Workflows (write)</em> — only
-needed if the bot itself pushes changes under <code>.github/workflows/</code>; <em>Actions
-(read)</em> — portfolio repos are public, so run status is readable without it. Permission
-additions are cheap (edit the app, approve the update on the installation — a one-click owner
-action), so the set starts minimal and grows on demonstrated need.
+D2 resolved to this <strong>broader set</strong> (the draft recommended a minimal one):
+<em>Workflows (write)</em> and <em>Actions (read)</em> are requested up front so the anticipated
+follow-on consumers — the <code>@claude</code> PR-responder, which needs its workflow file pushed
+to each participating repo, and cross-repo automation that watches run status — don't each
+trigger an edit-and-re-approve round-trip on the installation. The set is still bounded: no
+administration, organization, or account permissions, and the webhook stays disabled.
 </p>
 <p class="note">
 <strong>Known limitation (verified against the GitHub App permissions reference, 2026-07-03):</strong>
@@ -196,8 +209,10 @@ app replaces the obot-claw identity, not that token.
   <tr><td>App ID, installation ID, bot user ID</td><td>Low (identifiers, not secrets)</td>
       <td>Helper-script config (committed docs are fine)</td></tr>
   <tr><td>Private key (PEM)</td><td><strong>Secret — equivalent to the bot identity</strong></td>
-      <td>Local: macOS Keychain via <code>security add-generic-password -s obot-github-app</code>;
-          the helper reads it with <code>security find-generic-password -w</code>. Never in
+      <td>Local: macOS Keychain via <code>security add-generic-password -s obot-github-app</code>,
+          stored <strong>base64-wrapped</strong> (raw multiline values don't survive a
+          <code>security&nbsp;-w</code> round-trip); the helper reads it with
+          <code>security find-generic-password -w | base64 -d</code>. Never in
           dotfiles, repos, or plain files on disk.<br>
           Actions: repo secrets <code>OBOT_APP_ID</code> + <code>OBOT_APP_PRIVATE_KEY</code>,
           added only to repos that run app workflows (initially <code>obot.roadmap</code>).</td></tr>
@@ -260,9 +275,12 @@ Workflows use the first-party <a href="https://github.com/actions/create-github-
       obot.roadmap, <code>workflow_dispatch</code>-only — mints a token and posts a comment on
       <a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a> as the bot. Proves the
       GHA path end-to-end without inventing automation the portfolio doesn't need yet.</li>
-  <li><strong>Real consumers, later:</strong> the scheduled diary/briefing automation (its own
-      requirement, deliberately out of scope here — this app is its prerequisite) and any
-      cross-repo rollup that must write outside the workflow's own repo.</li>
+  <li><strong>Real consumers, later:</strong> the scheduled diary/briefing automation, the
+      <code>@claude</code> PR-responder (<code>claude-code-action</code> authenticated with this
+      app's token via its <code>github_token</code> input, so replies and commits post as
+      <code>obotclaw[bot]</code>) — each its own requirement, deliberately out of scope here;
+      this app is their prerequisite — and any cross-repo rollup that must write outside the
+      workflow's own repo.</li>
   <li><strong>Unchanged:</strong> <code>deploy-site.yml</code> keeps the default
       <code>GITHUB_TOKEN</code> (public reads + Pages deploy) and <code>ROADMAP_TOKEN</code>
       (user-Project reads, §3.1).</li>
@@ -290,39 +308,51 @@ Workflows use the first-party <a href="https://github.com/actions/create-github-
 
 <h2 id="decisions">8. Decisions</h2>
 
-<p class="note">Four decisions for @jwildfire, matching the open questions recorded on
-<a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a>. Each has a recommendation;
-none is executed until resolved.</p>
+<p class="note">All four decisions were <strong>resolved by @jwildfire on 2026-07-04</strong> in a
+working session (recorded on
+<a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a>). Original recommendations
+kept for the record; D2 resolved differently than recommended.</p>
 
 <div class="decision"><strong>D1 — App name and branding.</strong> GitHub App names are global and
 "cannot use the same name as an existing GitHub account, unless it is your own" — which blocks
 <code>obot</code>, <code>orangebot</code>, and <code>obot-claw</code> (all existing accounts;
 @jwildfire is not an obot-claw org owner, so its name doesn't qualify as "your own").
-<br><strong>Recommendation:</strong> <code>obotclaw</code> — verified free as both an app slug and
-an account name on 2026-07-03; keeps the 🍊😺 brand continuity; actions read as
-<code>obotclaw[bot]</code>. Fallbacks (also verified free): <code>orange-obot</code>,
-<code>obot-hq</code>. Availability must be re-checked at registration time.</div>
+Recommendation: <code>obotclaw</code> — verified free as both an app slug and an account name on
+2026-07-03; keeps the 🍊😺 brand continuity. Fallbacks (also verified free):
+<code>orange-obot</code>, <code>obot-hq</code>.
+<br><strong>Resolved (2026-07-04):</strong> <code>obotclaw</code>, as recommended; actions read as
+<code>obotclaw[bot]</code>. Availability re-checked at registration time.</div>
 
 <div class="decision"><strong>D2 — Permission set.</strong> Everything the portfolio might need,
-or the minimum it needs now?
-<br><strong>Recommendation:</strong> minimal (§3.1): Contents / Issues / Pull&nbsp;requests
-read-write plus mandatory Metadata read; webhook disabled. Defer Workflows-write until a workflow
-actually pushes workflow files — additions are a one-click installation approval.</div>
+or the minimum it needs now? Recommendation: minimal — Contents / Issues / Pull&nbsp;requests
+read-write plus mandatory Metadata read, deferring Workflows-write until a workflow actually
+pushes workflow files.
+<br><strong>Resolved (2026-07-04):</strong> the <em>broader</em> set (§3.1) — Contents / Issues /
+Pull&nbsp;requests read-write, <em>plus Workflows read-write and Actions read</em>, so the
+anticipated <code>@claude</code> PR-responder follow-on (§9) and cross-repo run monitoring don't
+each need an installation-approval round-trip. Webhook stays disabled.</div>
 
 <div class="decision"><strong>D3 — Private-key storage and rotation.</strong>
-<br><strong>Recommendation:</strong> macOS Keychain locally, Actions secrets per consuming repo
-(§4); two-key zero-downtime rotation, annual cadence or on suspicion. No PEM on disk, ever.</div>
+<br><strong>Resolved (2026-07-04), as recommended:</strong> macOS Keychain locally, Actions
+secrets per consuming repo (§4); two-key zero-downtime rotation, annual cadence or on suspicion.
+No PEM on disk, ever.</div>
 
 <div class="decision"><strong>D4 — Agent-side token minting: CLI helper or skill?</strong>
-<br><strong>Recommendation:</strong> both, in <code>safety.agent</code> — a dependency-free
-<code>scripts/obot-app-token</code> script doing the work, and a thin skill telling agents when
-and how to use it (§5).</div>
+<br><strong>Resolved (2026-07-04), as recommended:</strong> both, in <code>safety.agent</code> — a
+dependency-free <code>scripts/obot-app-token</code> script doing the work, and a thin skill
+telling agents when and how to use it (§5).</div>
 
 <h2 id="out-of-scope">9. Out of scope</h2>
 <ul>
   <li><strong>Scheduled agentic runs</strong> (nightly diary/briefings) — explicitly excluded by
       the requirement; file a separate Requirement once this app exists and the cadence is
       decided. This design is its prerequisite.</li>
+  <li><strong>The <code>@claude</code> PR-responder loop</strong> — long-running task handoff
+      where Jeremy discusses work with the bot via PR comments and
+      <code>claude-code-action</code> responds event-driven from GitHub Actions. Its own
+      follow-on requirement; this app supplies its identity (the action's
+      <code>github_token</code> input accepts a token minted from a custom app). D2's broader
+      permission set anticipates it.</li>
   <li>The shelved <strong>obot worker machine / obot.agent repo</strong> — the helper lands in
       safety.agent; nothing here depends on new infrastructure.</li>
   <li>Webhooks and event-driven automation; GitHub Marketplace listing.</li>
