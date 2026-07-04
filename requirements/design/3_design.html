@@ -178,7 +178,13 @@ git push https://x-access-token:&lt;TOKEN&gt;@github.com/&lt;owner&gt;/&lt;repo&
       <code>@claude</code> PR-responder workflow (§9) across portfolio repos</td></tr>
   <tr><td>Actions</td><td>Read</td><td>Workflow-run status and logs via the API, for
       cross-repo run monitoring</td></tr>
+  <tr><td>Discussions</td><td>Read &amp; write</td><td>Added by @jwildfire at registration
+      (2026-07-04) — bot participation in repo Discussions</td></tr>
 </table>
+<p class="note"><strong>As registered (2026-07-04):</strong> App ID <code>4215246</code> ·
+installation <code>144370633</code> (the five §3 repos) · bot login <code>obotclaw[bot]</code>,
+user ID <code>299836032</code> · commit author
+<code>obotclaw[bot] &lt;299836032+obotclaw[bot]@users.noreply.github.com&gt;</code>.</p>
 <p>
 D2 resolved to this <strong>broader set</strong> (the draft recommended a minimal one):
 <em>Workflows (write)</em> and <em>Actions (read)</em> are requested up front so the anticipated
@@ -203,8 +209,10 @@ app replaces the obot-claw identity, not that token.
   <tr><td>App ID, installation ID, bot user ID</td><td>Low (identifiers, not secrets)</td>
       <td>Helper-script config (committed docs are fine)</td></tr>
   <tr><td>Private key (PEM)</td><td><strong>Secret — equivalent to the bot identity</strong></td>
-      <td>Local: macOS Keychain via <code>security add-generic-password -s obot-github-app</code>;
-          the helper reads it with <code>security find-generic-password -w</code>. Never in
+      <td>Local: macOS Keychain via <code>security add-generic-password -s obot-github-app</code>,
+          stored <strong>base64-wrapped</strong> (raw multiline values don't survive a
+          <code>security&nbsp;-w</code> round-trip); the helper reads it with
+          <code>security find-generic-password -w | base64 -d</code>. Never in
           dotfiles, repos, or plain files on disk.<br>
           Actions: repo secrets <code>OBOT_APP_ID</code> + <code>OBOT_APP_PRIVATE_KEY</code>,
           added only to repos that run app workflows (initially <code>obot.roadmap</code>).</td></tr>
