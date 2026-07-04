@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #1 — safety.viz consolidated charting library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf6f1; --card:#ffffff; --ink:#271810; --ink-2:#6f6259; --line:#e5dcd2;
+    --accent:#f97316; --link:#c2410c;
+    --note-bg:#fdeadd; --note-line:#f6cdae;
+    --code-bg:#eeeae4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#221a14; --card:#2c221a; --ink:#f3ece4; --ink-2:#b3a698; --line:#453729;
+      --link:#f97316; --note-bg:#3a2414; --note-line:#7c4a22; --code-bg:#332a21;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:16px/1.6 "Instrument Sans",system-ui,-apple-system,sans-serif;}
+  .wrap{max-width:860px;margin:0 auto;padding:48px 28px 72px;}
+  h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:38px;line-height:1.15;margin:0 0 6px;}
+  .sub{color:var(--ink-2);margin:0 0 8px;font-size:16.5px;}
+  .stamp{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink-2);
+    border-top:3px solid var(--accent);display:inline-block;padding-top:8px;margin-bottom:34px;}
+  .stamp b{color:var(--accent);font-weight:500;}
+  h2{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:26px;margin:40px 0 12px;}
+  h3{font-size:16px;font-weight:600;margin:20px 0 6px;}
+  p{margin:0 0 12px;}
+  a{color:var(--link);text-decoration-thickness:1px;text-underline-offset:3px;}
+  code{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:var(--code-bg);
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px;}
+  pre{font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.55;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;padding:16px 20px;overflow-x:auto;}
+  pre code{background:none;border:none;padding:0;}
+  table{border-collapse:collapse;width:100%;margin:14px 0 20px;font-size:14.5px;}
+  th{text-align:left;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);
+    border-bottom:2px solid var(--line);padding:6px 14px 6px 0;}
+  td{border-bottom:1px solid var(--line);padding:9px 14px 9px 0;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .note{background:var(--note-bg);border:1px solid var(--note-line);border-radius:10px;
+    padding:14px 18px;margin:16px 0;}
+  .note b{color:var(--accent);}
+  ul{margin:0 0 12px;padding-left:22px;}
+  li{margin-bottom:5px;}
+  .footer{margin-top:52px;padding-top:14px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--ink-2);}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>safety.viz — consolidated charting library</h1>
+<p class="sub">Design document for <a href="https://github.com/jwildfire/obot.roadmap/issues/1">Requirement #1</a> · obot.roadmap</p>
+<span class="stamp">STATUS: <b>Draft — pending sign-off on #1</b> · drafted 2026-07-02, ported to obot.roadmap 2026-07-03 · drafted by Claude Code using Fable 5, reviewed by @jwildfire</span>
+
+<h2>Context and goals</h2>
+<p><a href="https://github.com/jwildfire/obot.roadmap/issues/1">#1</a> consolidates the
+nine legacy safetyGraphics renderers into one modern Chart.js library at
+<a href="https://github.com/jwildfire/safety.viz">jwildfire/safety.viz</a>, consumed by
+<code>Widget_*.R</code> htmlwidgets in gsm.safety — mirroring how
+<a href="https://github.com/Gilead-BioStats/gsm.kri">gsm.kri</a> consumes
+<a href="https://github.com/Gilead-BioStats/gsm.viz">gsm.viz</a>. This document settles the
+repo layout, module contract, stack, traceability approach, and the distribution decision.</p>
+<p><b>Non-goals:</b> no shared-utility layer until the second renderer forces one; no npm
+publication in the first iteration; no visual-regression or accessibility hardening in the
+pilot (tracked as explicit follow-ups).</p>
+
+<h2>Architecture overview</h2>
+<pre>
+safety.agent matrices          safety.viz                          consumers
+(requirement IDs)   ──keys──►  src/&lt;chart&gt;/ modules   ──esbuild──► dist/safety.viz-{version}/
+                               Vitest (unit)                        ├─► gsm.safety inst/htmlwidgets/lib/   (vendored)
+                               Playwright (browser evidence)        └─► examples/ static demo pages
+</pre>
+
+<h2>Repo layout</h2>
+<p>Mirrors gsm.viz's structure, with the test stack modernized:</p>
+<pre>
+safety.viz/
+├── src/
+│   ├── main.js               # public module collection; registers shared Chart.js plugins
+│   ├── histogram.js          # public entrypoint for one chart (one pair per renderer)
+│   ├── histogram/
+│   │   ├── checkInputs.js    # validate data/config against JSON schemas
+│   │   ├── configure.js      # defaults + metadata + user-config merge
+│   │   ├── structureData.js  # input records → Chart.js datasets
+│   │   ├── getPlugins.js     # tooltips, annotations, custom plugins
+│   │   ├── getScales.js      # axes
+│   │   ├── updateData.js     # update lifecycle
+│   │   └── updateConfig.js
+│   └── data/schema/          # JSON schemas — machine-readable data contracts
+├── tests/
+│   ├── unit/                 # Vitest, requirement-ID-keyed describe/it names
+│   └── e2e/                  # Playwright specs + fixtures + demo test pages
+├── examples/                 # static example pages (GitHub Pages later)
+├── dist/                     # committed esbuild bundles (see Distribution)
+├── package.json · vitest.config.js · playwright.config.js
+└── .github/workflows/ci.yml
+</pre>
+
+<h2>Module contract</h2>
+<p>Every renderer module exposes the <b>lifecycle API proven by the histogram pilot</b> as its
+public surface — this is what widget bindings and test harnesses call:</p>
+<table>
+  <tr><th style="width:32%">Method</th><th>Behavior</th></tr>
+  <tr><td><code>init(el, data, settings)</code></td><td>Mount into a container element; validate inputs (<code>checkInputs</code>) and render.</td></tr>
+  <tr><td><code>setData(data)</code> / <code>setSettings(settings)</code></td><td>Replace inputs; re-derive config and datasets.</td></tr>
+  <tr><td><code>render()</code> / <code>resize()</code></td><td>Redraw; respond to container size changes.</td></tr>
+  <tr><td><code>destroy()</code></td><td>Tear down the Chart.js instance and listeners; container returns to pre-init state.</td></tr>
+</table>
+<p>Internally each module follows the gsm.viz flow
+(<code>checkInputs → configure → structureData → getPlugins/getScales → new Chart(...)</code>),
+so the file layout stays recognizably parallel to the reference implementation even though the
+public API is the pilot's lifecycle shape.</p>
+
+<h2>Stack</h2>
+<table>
+  <tr><th style="width:22%">Choice</th><th style="width:30%">What</th><th>Rationale / deltas from references</th></tr>
+  <tr><td>Charting</td><td>Chart.js v4 (+ plugins as needed)</td><td>Pilot already runs 4.4.x; gsm.viz is on v3 — we take the newer major from the start.</td></tr>
+  <tr><td>Bundler</td><td>esbuild</td><td>Same as gsm.viz. The pilot used rollup; esbuild replaces it at extraction time (single-tool, fast, ESM-first).</td></tr>
+  <tr><td>Unit tests</td><td>Vitest</td><td>gsm.viz uses Jest 29 + jsdom; Vitest is the ESM-native equivalent with the same assertion style.</td></tr>
+  <tr><td>Browser evidence</td><td>Playwright</td><td>Carries over the pilot's 10-spec harness pattern; produces the browser-verifiable evidence the migration workflow requires.</td></tr>
+  <tr><td>Formatting</td><td>Prettier</td><td>Same as gsm.viz and the pilot.</td></tr>
+</table>
+
+<h2>Traceability and evidence</h2>
+<ul>
+  <li>Test names are keyed to requirement IDs from the
+      <a href="https://github.com/jwildfire/safety.agent/tree/main/docs/requirements">safety.agent matrices</a>,
+      e.g. <code>test('SH-CTRL-004: normal range checkbox displays overlay when available', …)</code>.</li>
+  <li>The matrix <b>Evidence Type</b> column routes each row: <code>unit</code> rows → Vitest;
+      <code>browser</code> rows → Playwright.</li>
+  <li>Each module maintains a coverage table (requirement ID → test file) in
+      <code>docs/</code>, the qcthat-style traceability artifact on the JS side.</li>
+  <li>Development follows the red-green TDD skill: matrix rows → failing tests → minimal implementation.</li>
+</ul>
+
+<h2>Distribution — the decision this document settles</h2>
+<p><b>Recommendation: vendored, versioned <code>dist/</code> directory; defer npm.</b></p>
+<ul>
+  <li>esbuild emits <code>dist/safety.viz-{version}/safety.viz.js</code> (IIFE/UMD for widgets)
+      and an ESM build; the versioned directory is committed to the repo.</li>
+  <li>gsm.safety vendors it at <code>inst/htmlwidgets/lib/safety.viz-{version}/</code> —
+      the exact precedent set by gsm.kri, which ships
+      <code>inst/htmlwidgets/lib/gsm.viz-2.3.0/</code>.</li>
+  <li>R packages must build offline from a plain clone (GxP-friendly, no node toolchain at
+      install time), which vendoring guarantees.</li>
+  <li>npm publication is deferred until the module API has survived at least renderer #2
+      (shift plot) without breaking changes; nothing in this layout blocks publishing later.</li>
+</ul>
+
+<h2>CI</h2>
+<p>One GitHub Actions workflow on PRs and <code>main</code>: <code>npm ci</code> → build →
+Vitest → Playwright (with browser install step). A drift check fails the build if
+<code>dist/</code> doesn't match a fresh build of <code>src/</code>.</p>
+
+<h2>Dependencies and sequencing</h2>
+<ul>
+  <li>First module is the histogram, extracted from safety-histogram <code>dev</code>
+      (merged PR #1) under <a href="https://github.com/jwildfire/obot.roadmap/issues/2">Requirement #2</a>
+      slice ② — see <a href="2_design.html">2_design.html</a>.</li>
+  <li>Renderer order thereafter: shift plot (39 matrix rows) → the remaining seven.</li>
+  <li>The repo lives at <code>jwildfire/safety.viz</code> alongside the rest of the project
+      (the obot-claw org is archived); nothing in this design depends on the owner.</li>
+</ul>
+
+<h2>Open questions</h2>
+<ul>
+  <li><b>Examples site scope</b> — defer building a GitHub Pages examples gallery until 2–3
+      modules exist; the Playwright test pages double as demos meanwhile.</li>
+</ul>
+
+<div class="note"><b>Sign-off:</b> approval is recorded on
+<a href="https://github.com/jwildfire/obot.roadmap/issues/1">#1</a>. Sub-issues are
+filed (via requirement-tasks) only after sign-off.</div>
+
+<div class="footer">
+  requirements/design/1_design.html · obot.roadmap hub · drafted 2026-07-02 for the former
+  obot-claw hub (#57), ported 2026-07-03, by Claude Code using Fable 5, reviewed by
+  @jwildfire · companion: <a href="2_design.html">2_design.html</a>
+</div>
+
+</div></body>
+</html>
