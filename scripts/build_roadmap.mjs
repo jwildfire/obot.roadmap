@@ -120,6 +120,15 @@ ${rows.join('\n')}
 </table>`;
 }
 
+// Audit log (site/roadmap-changelog.json) — the header version badge and modal
+// render from it; append an entry whenever roadmap content changes (AGENTS.md, Key files).
+const changelog = JSON.parse(
+  await fs.readFile(path.join(ROOT, 'site', 'roadmap-changelog.json'), 'utf8'),
+);
+const auditEntries = [...changelog.entries].sort((a, b) => b.date.localeCompare(a.date));
+if (!auditEntries.length) throw new Error('site/roadmap-changelog.json has no entries');
+const fmtDate = (iso) => iso.slice(0, 16).replace('T', ' ') + ' UTC';
+
 const issues = await fetchRequirements();
 const byStage = new Map(STAGES.map((s) => [s, []]));
 for (const issue of issues) {
@@ -134,6 +143,23 @@ for (const stage of STAGES.slice(0, -1)) {
 }
 const released = byStage.get('Released');
 sections += `<details class="closed-reqs"><summary>Released / closed (${released.length})</summary>\n${await table(released)}\n</details>\n`;
+
+const auditLogHtml = `<dialog id="audit-log" class="audit-log" aria-labelledby="audit-log-title">
+  <form method="dialog"><button class="audit-close" aria-label="Close">&times;</button></form>
+  <h2 id="audit-log-title">Audit log</h2>
+  <p class="meta">What changed in each roadmap update — maintained in
+  <a href="https://github.com/${REPO}/blob/main/site/roadmap-changelog.json"><code>roadmap-changelog.json</code></a>.</p>
+${auditEntries
+  .map(
+    (e) => `  <section class="audit-entry">
+    <h3>v${esc(e.version)} <span class="audit-date">${fmtDate(e.date)}</span></h3>
+    <ul>
+${e.changes.map((c) => `      <li>${esc(c)}</li>`).join('\n')}
+    </ul>
+  </section>`,
+  )
+  .join('\n')}
+</dialog>`;
 
 const html = `<!DOCTYPE html>
 <html lang="en">
@@ -152,6 +178,8 @@ const html = `<!DOCTYPE html>
     <a href="roadmap.html" class="current" aria-current="page">Roadmap</a>
     <a href="news.html">News</a>
     <a href="https://github.com/jwildfire/obot.roadmap">GitHub</a>
+    <button class="version-badge" id="version-badge" aria-haspopup="dialog" aria-controls="audit-log"
+      title="Roadmap audit log">v${esc(auditEntries[0].version)} – ${fmtDate(auditEntries[0].date)}</button>
   </nav>
 </header>
 <h1>Roadmap</h1>
@@ -160,6 +188,13 @@ const html = `<!DOCTYPE html>
 GitHub issues and the <a href="https://github.com/users/${owner}/projects/${PROJECT_NUMBER}">obot
 Roadmap project</a>.</p>
 ${sections}
+${auditLogHtml}
+<script>
+  const versionBadge = document.getElementById('version-badge');
+  const auditLog = document.getElementById('audit-log');
+  versionBadge.addEventListener('click', () => auditLog.showModal());
+  auditLog.addEventListener('click', (e) => { if (e.target === auditLog) auditLog.close(); });
+</script>
 <footer class="site">Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC ·
 regenerates daily via <code>deploy-site.yml</code>.</footer>
 </body>
