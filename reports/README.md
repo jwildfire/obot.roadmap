@@ -14,6 +14,7 @@ requirement [#7](https://github.com/jwildfire/obot.roadmap/issues/7).
 
 | Report | Date | Status |
 |---|---|---|
+| [safety.agent harness proposal (#17/#18)](harness-proposal-2026-07-04/) | 2026-07-04 | Current |
 | [Autonomous PM/Development framework report](autonomous-agent-framework/) (10 chapters) | 2026-06-06 → 06-11 | **Current** — flagship; Chapter 10 covers the Claude Code migration |
 | [Autonomy audit and refactor development framework](autonomy-audit-2026-06-05/) | 2026-06-05 | Current |
 | [PM agent and portfolio framework review](pm-portfolio-framework-2026-06-06/) | 2026-06-06 | Current |

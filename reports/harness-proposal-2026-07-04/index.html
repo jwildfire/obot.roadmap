@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.agent harness proposal</title>
+<style>
+  :root {
+    --paper: #FBFBFA;
+    --card: #FFFFFF;
+    --ink: #212B2E;
+    --muted: #5C6B6E;
+    --line: #DDE3E1;
+    --gsm: #1E6A5C;
+    --gsm-soft: #E4EFEC;
+    --obot: #3A5490;
+    --obot-soft: #E7EBF5;
+    --warn: #9A6A1F;
+    --warn-soft: #F5EDDC;
+    --good: #2E7D4F;
+    --good-soft: #E3F0E8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #151A1C;
+      --card: #1B2124;
+      --ink: #E3E9E7;
+      --muted: #94A3A1;
+      --line: #2C3538;
+      --gsm: #5CB8A0;
+      --gsm-soft: #1D2E2A;
+      --obot: #97AFE2;
+      --obot-soft: #222B3D;
+      --warn: #D9A84E;
+      --warn-soft: #33290F;
+      --good: #74C795;
+      --good-soft: #17301F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #151A1C;
+    --card: #1B2124;
+    --ink: #E3E9E7;
+    --muted: #94A3A1;
+    --line: #2C3538;
+    --gsm: #5CB8A0;
+    --gsm-soft: #1D2E2A;
+    --obot: #97AFE2;
+    --obot-soft: #222B3D;
+    --warn: #D9A84E;
+    --warn-soft: #33290F;
+    --good: #74C795;
+    --good-soft: #17301F;
+  }
+  :root[data-theme="light"] {
+    --paper: #FBFBFA;
+    --card: #FFFFFF;
+    --ink: #212B2E;
+    --muted: #5C6B6E;
+    --line: #DDE3E1;
+    --gsm: #1E6A5C;
+    --gsm-soft: #E4EFEC;
+    --obot: #3A5490;
+    --obot-soft: #E7EBF5;
+    --warn: #9A6A1F;
+    --warn-soft: #F5EDDC;
+    --good: #2E7D4F;
+    --good-soft: #E3F0E8;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.25rem 5rem; }
+
+  h1, h2, h3 {
+    font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+  h1 { font-size: 2.15rem; font-weight: 700; margin: 0.4rem 0 0.8rem; }
+  h2 { font-size: 1.4rem;  font-weight: 600; margin: 0 0 0.9rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 0.4rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--obot); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--obot); outline-offset: 2px; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.85em;
+  }
+  section { margin: 0 0 3rem; }
+
+  .eyebrow {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .lede { font-size: 1.12rem; color: var(--muted); margin-bottom: 0; }
+  .keyline { border: 0; border-top: 1px solid var(--line); margin: 2.4rem 0; }
+
+  .chip {
+    display: inline-block;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .chip.gsm  { color: var(--gsm);  background: var(--gsm-soft);  border-color: transparent; }
+  .chip.obot { color: var(--obot); background: var(--obot-soft); border-color: transparent; }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
+  .chip.good { color: var(--good); background: var(--good-soft); border-color: transparent; }
+
+  /* ---- status snapshot ---- */
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .facts > div { background: var(--card); padding: 1rem 1.1rem; }
+  .facts h3 { font-size: 0.95rem; }
+  .facts p { font-size: 0.9rem; color: var(--muted); margin: 0; }
+  @media (max-width: 640px) { .facts { grid-template-columns: 1fr; } }
+
+  /* ---- layering diagram ---- */
+  .stacks { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; align-items: end; }
+  @media (max-width: 640px) { .stacks { grid-template-columns: 1fr; } }
+  .stack-label {
+    font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+    font-size: 0.85rem; font-weight: 600; margin-bottom: 0.6rem;
+  }
+  .stratum {
+    border: 1px solid var(--line);
+    background: var(--card);
+    padding: 0.7rem 0.9rem;
+    margin-top: 6px;
+  }
+  .stratum .who {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem; letter-spacing: 0.06em;
+    display: block; margin-bottom: 0.2rem;
+  }
+  .stratum .what { font-size: 0.84rem; color: var(--muted); line-height: 1.45; }
+  .stratum.gsm  { border-top: 3px solid var(--gsm); }
+  .stratum.gsm .who  { color: var(--gsm); }
+  .stratum.obot { border-top: 3px solid var(--obot); }
+  .stratum.obot .who { color: var(--obot); }
+  .stratum.dup { border-style: dashed; }
+  .stratum.thin { padding-top: 0.45rem; padding-bottom: 0.45rem; }
+  .diagram-note { font-size: 0.86rem; color: var(--muted); margin-top: 1.1rem; }
+
+  /* ---- roadmap alignment ---- */
+  .align-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); font-size: 0.9rem; }
+  .align-grid > div { background: var(--card); padding: 0.85rem 1rem; }
+  .align-grid .hd {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+  }
+  .align-grid .hd.gsm { color: var(--gsm); }
+  .align-grid .hd.obot { color: var(--obot); }
+  .align-grid p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+  .align-grid strong { color: var(--ink); font-weight: 600; }
+  @media (max-width: 640px) { .align-grid { grid-template-columns: 1fr; } }
+
+  /* ---- requirement cards ---- */
+  .req {
+    border: 1px solid var(--line);
+    background: var(--card);
+    padding: 1.4rem 1.5rem 1.2rem;
+    margin: 0 0 1.75rem;
+  }
+  .req .issue-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.7rem; margin-bottom: 0.35rem; }
+  .req .issue-no { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; color: var(--muted); }
+  .req h3 { font-size: 1.15rem; margin: 0; }
+  .req .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 1.1rem; }
+  .req h4 {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); font-weight: 500; margin: 1.3rem 0 0.4rem;
+  }
+  .req p, .req li { font-size: 0.95rem; }
+  .req ul { margin: 0 0 0.6rem; padding-left: 1.2rem; }
+  .req li { margin-bottom: 0.35rem; }
+  .req li::marker { color: var(--muted); }
+  .req .draft-path { font-size: 0.8rem; color: var(--muted); margin: 1rem 0 0; border-top: 1px solid var(--line); padding-top: 0.7rem; }
+
+  /* ---- lanes table ---- */
+  .scroll-x { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); font-weight: 500; text-align: left;
+    padding: 0.45rem 0.9rem 0.45rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  td { padding: 0.55rem 0.9rem 0.55rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { font-weight: 600; font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-size: 0.85rem; white-space: nowrap; }
+
+  /* ---- open questions ---- */
+  .q { display: grid; grid-template-columns: 3rem 1fr; gap: 0.9rem; margin-bottom: 1.1rem; }
+  .q .qid {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem; font-weight: 600; color: var(--obot); padding-top: 0.1rem;
+  }
+  .q p { margin: 0; font-size: 0.95rem; }
+  .q .rec { color: var(--muted); font-size: 0.88rem; }
+
+  /* ---- next steps ---- */
+  ol.steps { padding-left: 1.3rem; margin: 0; }
+  ol.steps li { margin-bottom: 0.5rem; font-size: 0.95rem; }
+
+  footer {
+    margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+    font-size: 0.8rem; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">obot.roadmap · proposal for review · 2026-07-04</span>
+    <h1>A thinner harness: safety.agent on gsm.agent</h1>
+    <p class="lede">Two Requirements that rebuild safety.agent as a thin project overlay on the gsm.agent base harness, then stand up the autonomous lanes the July consolidation retired. Approved and posted 2026-07-04 as <a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a> and <a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a>.</p>
+  </header>
+
+  <hr class="keyline">
+
+  <section>
+    <h2>Where things stand</h2>
+    <div class="facts">
+      <div>
+        <h3>gsm.agent has a published roadmap</h3>
+        <p>v0.1 (end of July 2026): agent personas for all three pillars. v1.0 (Q3): bot identities live, per-agent skills libraries, formalized handoffs. Autonomy stance: <em>"Ops &amp; Roadmap rollups autonomous · rest interactive."</em></p>
+      </div>
+      <div>
+        <h3>safety.agent is a second full harness</h3>
+        <p>Written pre-consolidation: its own conventions, 8 skills, test framework, interview framework. Much of it restates gsm.agent ground; its remote still points at the archived <span class="mono">obot-claw</span> org.</p>
+      </div>
+      <div>
+        <h3>The enablers just landed</h3>
+        <p>Hub lifecycle is live on obot.roadmap. Issue #3 (obot GitHub App <span class="mono">obotclaw</span>) has an approved design — and explicitly deferred scheduled agentic runs to a separate Requirement.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The layering model</h2>
+    <div class="stacks">
+      <div>
+        <div class="stack-label">Today — two parallel harnesses</div>
+        <div class="stratum obot dup">
+          <span class="who">safety.agent</span>
+          <span class="what">Own mission, conventions, approval gates, TDD rules, 8 skills — overlapping gsm.agent, drifting as upstream evolves</span>
+        </div>
+        <div class="stratum gsm dup">
+          <span class="who">gsm.agent</span>
+          <span class="what">Conventions + skills, actively developed, separately restated above</span>
+        </div>
+      </div>
+      <div>
+        <div class="stack-label">Proposed — base + thin overlay</div>
+        <div class="stratum obot thin">
+          <span class="who">safety.agent · overlay</span>
+          <span class="what">Only the safety-graphics layer: GxP stance, renderer skills, requirement matrices, interview logs</span>
+        </div>
+        <div class="stratum gsm">
+          <span class="who">gsm.agent · base</span>
+          <span class="what">All shared conventions (drafts, attribution, approval gates, worktrees, TDD) + shared skills (<span class="mono">tdd</span>, <span class="mono">issue-review</span>, <span class="mono">sub-issue-linking</span>); generic safety.agent pieces contributed upstream where Gilead accepts them</span>
+        </div>
+      </div>
+    </div>
+    <p class="diagram-note">The obot2 workspace already imports the gsm.agent clone's <span class="mono">AGENTS.md</span> — the inheritance mechanism exists. This proposal makes safety.agent honor it instead of duplicating it, which also answers the gsm.agent roadmap's open <em>"shared scaffolding location"</em> question in practice: obot becomes the first external consumer of gsm.agent as a base harness.</p>
+  </section>
+
+  <section>
+    <h2>Alignment with the gsm.agent roadmap</h2>
+    <div class="align-grid">
+      <div class="hd gsm">gsm.agent plans</div>
+      <div class="hd obot">obot mirrors it with</div>
+      <div><p><strong>v0.1</strong> — parallel agent personas per pillar; workspace conventions stay in <span class="mono">AGENTS.md</span>, agent-specific bits extracted</p></div>
+      <div><p><strong>R1 below</strong> — safety.agent restructured as the project persona/overlay; conventions inherited, not restated</p></div>
+      <div><p><strong>v0.1 → v1.0</strong> — bot identity plan, then bots live (<span class="mono">@gsm-roadmap-bot</span>, <span class="mono">@gsm-dev-bot</span>)</p></div>
+      <div><p><strong>#3 (already approved)</strong> — the <span class="mono">obotclaw</span> GitHub App is obot's bot identity</p></div>
+      <div><p><strong>v1.0</strong> — Roadmap rollups autonomous; richer skills (<span class="mono">/regression-sweep</span>, <span class="mono">/security-review</span>, release helpers)</p></div>
+      <div><p><strong>R2 below</strong> — scheduled rollups, diary, event-driven responder, background dev lane under the App identity</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Requirement 1 — posted as <a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a></h2>
+    <div class="req">
+      <div class="issue-head">
+        <span class="issue-no"><a href="https://github.com/jwildfire/obot.roadmap/issues/17">obot.roadmap #17</a> · open</span>
+        <h3>Rebuild safety.agent as a thin overlay on the gsm.agent harness</h3>
+      </div>
+      <div class="chips">
+        <span class="chip">requirement</span>
+        <span class="chip">infrastructure</span>
+        <span class="chip">ai</span>
+        <span class="chip obot">milestone · 2026q3</span>
+      </div>
+      <h4>Business requirement</h4>
+      <p>Two harnesses means every gsm.agent improvement is either manually mirrored or silently drifts, and it is ambiguous which rulebook wins. Direction: leverage gsm.agent as much as possible; safety.agent carries only project-specific instructions. Success: one source of truth, upstream improvements flow through without copying, no stale obot-claw references.</p>
+      <h4>Overview</h4>
+      <ul>
+        <li><strong>Audit and classify</strong> every safety.agent artifact: duplicates → deleted with a pointer upstream; generic-but-useful (split-phase test-driver, stakeholder-interview workflow) → proposed to gsm.agent via PR; project-specific (GxP stance, renderer skills, requirement matrices) → kept, restructured.</li>
+        <li><strong>Restructure as the overlay</strong>: an explicit "gsm.agent conventions apply; this adds the safety-graphics layer" contract.</li>
+        <li><strong>Housekeeping</strong>: remote retargeted to <span class="mono">jwildfire/safety.agent</span>; obot-claw-era URLs and the stale staging-fork write policy swept out.</li>
+      </ul>
+      <p class="draft-path">Posted 2026-07-04 · draft archived at <span class="mono">.github/drafts/obot.roadmap/ISSUE_17_agent-overlay.md</span></p>
+    </div>
+
+    <h2>Requirement 2 — posted as <a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a></h2>
+    <div class="req">
+      <div class="issue-head">
+        <span class="issue-no"><a href="https://github.com/jwildfire/obot.roadmap/issues/18">obot.roadmap #18</a> · open</span>
+        <h3>Autonomous obot operations — scheduled and event-driven agent runs</h3>
+      </div>
+      <div class="chips">
+        <span class="chip">requirement</span>
+        <span class="chip">infrastructure</span>
+        <span class="chip">ai</span>
+        <span class="chip obot">milestone · 2026q3</span>
+        <span class="chip warn">depends on #3</span>
+      </div>
+      <h4>Business requirement</h4>
+      <p>The goal is increased automation, but today nothing runs unattended: the diary routine is paused for lack of a push identity, hub status is updated by hand, and all work is interactive. This is the Requirement that #3 explicitly deferred — the runs that use the App identity it created. The operating contract holds: bots draft, report, and update status; Jeremy approves and merges.</p>
+      <h4>Candidate lanes (final slate chosen in Design)</h4>
+      <div class="scroll-x">
+        <table>
+          <tr><th>Lane</th><th>Trigger</th><th>Writes</th><th>Human gate</th></tr>
+          <tr><td>Requirement rollup</td><td>Schedule</td><td>Status comments on open Requirements</td><td>None — report only</td></tr>
+          <tr><td>Nightly diary</td><td>Schedule, active days only</td><td><span class="mono">obot.roadmap/diary/</span></td><td>Pre-authorized policy (2026-07-01)</td></tr>
+          <tr><td>@claude responder</td><td>PR / issue events</td><td>Comments, review replies, checks</td><td>Jeremy merges</td></tr>
+          <tr><td>Background dev lane</td><td>Labeled issue</td><td>Worktree branch + draft PR</td><td>PR review</td></tr>
+        </table>
+      </div>
+      <p class="draft-path">Posted 2026-07-04 · draft archived at <span class="mono">.github/drafts/obot.roadmap/ISSUE_18_autonomous-ops.md</span> · Cross-cutting: a lane runbook in safety.agent — identity, trigger, scope, kill switch per lane</p>
+    </div>
+    <p class="diagram-note">Not duplicated here: bot identity itself (#3, design approved), QC test tooling (#15), and the renderer work these serve (#1, #2, #9).</p>
+  </section>
+
+  <section>
+    <h2>Open questions</h2>
+    <div class="q">
+      <span class="qid">Q1</span>
+      <div>
+        <p>File as two issues, or merge into one harness Requirement?</p>
+        <p class="rec">Recommend two — R1 is self-contained restructuring; R2 depends on #3 and will run on a different clock.</p>
+      </div>
+    </div>
+    <div class="q">
+      <span class="qid">Q2</span>
+      <div>
+        <p>Milestones: both <span class="mono">2026q3</span>?</p>
+        <p class="rec">Recommend yes — R1 tracks gsm.agent's July v0.1; R2 follows #3, which is already 2026q3 with design done. Fallback for R2 is 2026q4.</p>
+      </div>
+    </div>
+    <div class="q">
+      <span class="qid">Q3</span>
+      <div>
+        <p>Upstream contributions: propose the generic safety.agent pieces to Gilead's gsm.agent via PR, or carry them in safety.agent for now?</p>
+        <p class="rec">Recommend offering upstream (it's their roadmap's open question) with safety.agent as the fallback home until accepted — R1 is written that way.</p>
+      </div>
+    </div>
+    <div class="q">
+      <span class="qid">Q4</span>
+      <div>
+        <p>R2 lane slate: all four lanes in scope, or trim?</p>
+        <p class="rec">The rollup and diary are low-risk report-only lanes; the responder and background dev lane are the real autonomy step. Design can stage them, but say now if any lane is out.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Next steps</h2>
+    <ol class="steps">
+      <li><strong>Done</strong> — both drafts approved and posted (<a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a>); Q1–Q4 resolved per the recommendations. Diary entry for the day is <a href="https://github.com/jwildfire/obot.roadmap/pull/19">PR #19</a>.</li>
+      <li>@jwildfire: 👍 #17 and #18 to advance them from Requirement Gathering into Design; merge diary PR #19.</li>
+      <li>Each Requirement then enters the design phase (<span class="mono">requirement-design</span>) per the hub lifecycle — #18 implementation additionally waits on #3.</li>
+    </ol>
+  </section>
+
+  <footer>
+    Sources: gsm.agent roadmap v0.1 (published 2026-06-26) · safety.agent @ <span class="mono">4851375</span> · obot.roadmap issues #1–#15<br>
+    Drafted by Claude Code using Fable 5 for @jwildfire review · 2026-07-04
+  </footer>
+</div>
+</body>
+</html>
