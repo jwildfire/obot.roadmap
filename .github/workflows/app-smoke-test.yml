@@ -1,0 +1,24 @@
+# Acceptance test for the GHA token flow of the obotclaw GitHub App
+# (requirement #3, requirements/design/3_design.html §6). Dispatch-only;
+# posts a comment on issue #3 that must render as obotclaw[bot].
+name: App smoke test
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  comment-as-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.OBOT_APP_ID }}
+          private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
+      - name: Comment on the requirement issue as obotclaw[bot]
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          gh issue comment 3 --repo jwildfire/obot.roadmap --body "🍊😺 **GHA smoke test:** this comment was posted by \`app-smoke-test.yml\` (run ${{ github.run_id }}) with a token minted by \`actions/create-github-app-token@v2\` from the \`OBOT_APP_ID\` / \`OBOT_APP_PRIVATE_KEY\` secrets. If the author reads **obotclaw[bot]**, the Actions acceptance criterion from the #3 design (§6) is met."

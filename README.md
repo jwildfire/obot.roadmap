@@ -15,6 +15,11 @@ The workflow mirrors [Gilead-BioStats/gsm.roadmap](https://github.com/Gilead-Bio
 | [`safety-histogram`](https://github.com/jwildfire/safety-histogram) | Fork holding the nextgen histogram pilot (`dev` branch) |
 | `obot-claw/*` (archived) | Legacy RhoInc renderer forks and the retired hub — read-only reference |
 
+Automation acts through the [`obotclaw`](https://github.com/apps/obotclaw) GitHub App
+(`obotclaw[bot]`), installed only on the repos above — see
+[AGENTS.md → Identities](AGENTS.md#identities) and requirement
+[#3](https://github.com/jwildfire/obot.roadmap/issues/3).
+
 # Requirements
 
 Requirements are captured as GitHub issues using the [requirement issue template](.github/ISSUE_TEMPLATE/requirement.yml) and tracked on the [obot Roadmap project](https://github.com/users/jwildfire/projects/1), whose Status field mirrors the lifecycle stages below. Each issue body has five sections, populated incrementally as the requirement moves through the lifecycle:

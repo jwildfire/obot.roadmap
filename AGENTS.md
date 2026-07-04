@@ -57,6 +57,24 @@ format of existing entries: work completed, issues/PRs touched, blockers/risks, 
 items needing @jwildfire. Never write filler entries for days without activity. See
 [diary/README.md](diary/README.md).
 
+## Identities
+
+Two identities act in this portfolio (design: [#3](https://github.com/jwildfire/obot.roadmap/issues/3),
+[`requirements/design/3_design.html`](requirements/design/3_design.html) §2.1):
+
+- **@jwildfire** (existing `gh` auth, unchanged) — Jeremy working interactively, and agent
+  work Jeremy reviews before it posts: requirement drafting, working-session PRs,
+  sign-offs, merges.
+- **`obotclaw[bot]`** (GitHub App, App ID 4215246) — automation acting on its own, and
+  agent actions that should read as obot's: scheduled workflows, cross-repo rollups, bot
+  status comments. Local agents mint 1-hour tokens with `safety.agent`'s
+  `scripts/obot-app-token` (see its `obot-identity` skill); workflows use
+  `actions/create-github-app-token@v2` with the `OBOT_APP_ID` / `OBOT_APP_PRIVATE_KEY`
+  secrets.
+
+The drafted-by attribution convention applies to the *content* of issues, PRs, and
+comments regardless of which identity posts them.
+
 ## Constraints
 
 - Always check the current state of referenced files before making changes — conventions may have evolved; do not assume historical practice still applies.
