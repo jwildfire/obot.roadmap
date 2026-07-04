@@ -14,6 +14,14 @@ This repo deliberately mirrors [Gilead-BioStats/gsm.roadmap](https://github.com/
 - Topic labels classify the work: `safety`, `infrastructure`, `ai`. One or more per requirement.
 - All sign-offs are @jwildfire — this is a single-maintainer portfolio. Agent-drafted issues and PRs carry an attribution line noting the model used (e.g. "This Issue was drafted by Claude Code using Fable 5 and reviewed by @jwildfire").
 
+## Operating autonomy
+
+Standing grants from @jwildfire (2026-07-04):
+
+- **Standard updates need no prior approval** — filing and editing issues, requirement lifecycle updates, design/dataspec docs, diary entries, site content, and direct commits to `main`.
+- **Never delete anything without explicit approval** — no deleting files, issues, or releases, and no history rewrites or force-pushes.
+- **Review flow:** @jwildfire reviews artifacts and requirements in Chrome on the deployed site (https://jwildfire.github.io/obot.roadmap/). To request review, publish first (commit/push so Pages deploys), then share the deployed URL — not a raw file or terminal preview.
+
 ## Repos
 
 Sub-issues are filed in the repo closest to the implementation work. All repos are under `jwildfire/` unless noted.
