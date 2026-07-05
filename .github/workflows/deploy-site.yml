@@ -4,10 +4,9 @@ name: Deploy site
 # deploy time so generated pages are never committed; a failed generator fails the
 # deploy loudly rather than publishing a stale page silently.
 #
-# The dashboard's sign-off gates and the roadmap's Status grouping read the
-# user-level obot Roadmap project, which the default token cannot see. Add a
-# ROADMAP_TOKEN repo secret (PAT with project read) to enable them; both scripts
-# degrade gracefully without it.
+# The roadmap's Status grouping reads the user-level obot Roadmap project, which
+# the default token cannot see. Add a ROADMAP_TOKEN repo secret (PAT with project
+# read) to enable it; the script degrades gracefully without it.
 
 on:
   push:
@@ -67,8 +66,8 @@ jobs:
       - name: Build roadmap
         run: node scripts/build_roadmap.mjs
 
-      - name: Build dashboard
-        run: python3 scripts/build_dashboard.py
+      - name: Build metrics
+        run: python3 scripts/build_metrics.py
 
       - name: Build news
         run: node scripts/build_news.mjs
@@ -76,7 +75,7 @@ jobs:
       - name: Validate site
         run: |
           test -f _site/index.html
-          test -f _site/dashboard.html
+          grep -q "metric-row" _site/index.html
           test -f _site/roadmap.html
           test -f _site/news.html
           test -f _site/diary/index.html

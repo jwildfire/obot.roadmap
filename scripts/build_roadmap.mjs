@@ -174,7 +174,6 @@ const html = `<!DOCTYPE html>
   <a class="brand" href="index.html">🍊😺 obot</a>
   <nav class="site">
     <a href="index.html">Home</a>
-    <a href="dashboard.html">Dashboard</a>
     <a href="roadmap.html" class="current" aria-current="page">Roadmap</a>
     <a href="news.html">News</a>
     <a href="https://github.com/jwildfire/obot.roadmap">GitHub</a>

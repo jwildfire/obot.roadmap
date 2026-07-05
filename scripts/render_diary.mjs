@@ -22,7 +22,6 @@ const page = (title, body, depth = 1) => `<!DOCTYPE html>
   <a class="brand" href="${'../'.repeat(depth)}index.html">🍊😺 obot</a>
   <nav class="site">
     <a href="${'../'.repeat(depth)}index.html">Home</a>
-    <a href="${'../'.repeat(depth)}dashboard.html">Dashboard</a>
     <a href="${'../'.repeat(depth)}roadmap.html">Roadmap</a>
     <a href="${'../'.repeat(depth)}news.html" class="current" aria-current="page">News</a>
     <a href="https://github.com/jwildfire/obot.roadmap">GitHub</a>

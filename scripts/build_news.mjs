@@ -208,7 +208,6 @@ const html = `<!DOCTYPE html>
   <a class="brand" href="index.html">🍊😺 obot</a>
   <nav class="site">
     <a href="index.html">Home</a>
-    <a href="dashboard.html">Dashboard</a>
     <a href="roadmap.html">Roadmap</a>
     <a href="news.html" class="current" aria-current="page">News</a>
     <a href="https://github.com/${OWNER}/obot.roadmap">GitHub</a>

@@ -77,18 +77,18 @@ File names use the requirement issue number as prefix. These documents are linke
 # Site
 
 The repo publishes the project homepage via GitHub Pages
-([`deploy-site.yml`](.github/workflows/deploy-site.yml)): a static site with a dashboard
-(key metrics + the queue of items waiting on @jwildfire), a requirement-status roadmap,
-the AI-written [diary](diary/), and [reports](reports/). The dashboard and roadmap are
-generated from live GitHub state at deploy time (daily cron) and never committed; see
-the [#7 design doc](requirements/design/7_design.html) for the architecture.
+([`deploy-site.yml`](.github/workflows/deploy-site.yml)): a static site with key
+metrics on the homepage, a requirement-status roadmap, the AI-written
+[diary](diary/), and [reports](reports/). The metrics and roadmap are generated
+from live GitHub state at deploy time (daily cron) and never committed; see the
+[#7 design doc](requirements/design/7_design.html) for the architecture.
 
 | Directory | Contents |
 |---|---|
 | [`site/`](site/) | Hand-authored homepage + shared stylesheet |
 | [`diary/`](diary/) | AI-written diary — one markdown file per day with activity ([conventions](diary/README.md)) |
 | [`reports/`](reports/) | AI-generated reports, one folder per report ([index](reports/README.md)) |
-| [`scripts/`](scripts/) | Site generators (`build_dashboard.py`, `build_roadmap.mjs`, `render_diary.mjs`) |
+| [`scripts/`](scripts/) | Site generators (`build_metrics.py`, `build_roadmap.mjs`, `render_diary.mjs`) |
 
 # Agentic scaffold
 

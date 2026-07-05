@@ -43,7 +43,7 @@ Sub-issues are filed in the repo closest to the implementation work. All repos a
 - [.github/ISSUE_TEMPLATE/requirement.yml](.github/ISSUE_TEMPLATE/requirement.yml) — Requirement issue template (5 sections)
 - [diary/](diary/) — AI-written diary, one `YYYY-MM-DD.md` per day with activity
 - [reports/](reports/) — AI-generated reports, one folder per report with a provenance README
-- [site/](site/) + [.github/workflows/deploy-site.yml](.github/workflows/deploy-site.yml) — static homepage; dashboard/roadmap/diary pages are generated at deploy time and never committed
+- [site/](site/) + [.github/workflows/deploy-site.yml](.github/workflows/deploy-site.yml) — static homepage; homepage metrics and the roadmap/news/diary pages are generated at deploy time and never committed
 - [site/roadmap-changelog.json](site/roadmap-changelog.json) — roadmap page audit log; the header version badge and its modal render from it. Append an entry (newest first, UTC dates) with a semver bump whenever a change alters what roadmap.html shows — patch: content bookkeeping (stage moves, milestones); minor: new requirements or page features; major: structural redesign
 
 ## Creating Requirement issues
