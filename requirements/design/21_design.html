@@ -56,7 +56,7 @@
 
 <h1>safety.viz documentation site</h1>
 <p class="sub">Design document for <a href="https://github.com/jwildfire/obot.roadmap/issues/21">Requirement #21</a> · obot.roadmap · supersedes the examples-site deferral in the <a href="1_design.html">#1 design</a> · interim artifact for <a href="https://github.com/jwildfire/obot.roadmap/issues/15">#15</a></p>
-<span class="stamp">STATUS: <b>Drafted 2026-07-08</b> · drafted by Claude Code using Fable 5, reviewed by @jwildfire</span>
+<span class="stamp">STATUS: <b>Drafted 2026-07-08</b> · updated 2026-07-08 (dual-purpose screenshot baselines, per review Q&A) · drafted by Claude Code using Fable 5, reviewed by @jwildfire</span>
 
 <h2>Context</h2>
 <p>Requirement #21 (filed 2026-07-08) makes documentation the delivery bar for the renderer
@@ -76,7 +76,7 @@ settled inputs to this design:</p>
 <table>
   <tr><th style="width:34%">Decision</th><th>Choice</th></tr>
   <tr><td>Site tooling</td><td><b>Plain Node build script</b> — no static-site framework; mirrors the hub's hand-rolled-HTML precedent and the library's esbuild-minimal stack.</td></tr>
-  <tr><td>Evidence screenshots</td><td><b>Committed to the repo</b> — reviewable in PR diffs, stable, and available offline; regeneration is deliberate (see Evidence pipeline).</td></tr>
+  <tr><td>Evidence screenshots</td><td><b>Committed to the repo</b> — reviewable in PR diffs, stable, and available offline; regeneration is deliberate (see Evidence pipeline). <b>Dual-purpose</b> (review Q&amp;A, 2026-07-08): the committed screenshots are simultaneously Playwright visual-regression baselines.</td></tr>
   <tr><td>API reference</td><td><b>Generated from JSDoc in source</b> — docs cannot drift from code; the JSON schema feeds the data-contract section directly.</td></tr>
   <tr><td>Publish cadence</td><td><b>Every merge to main</b>, plus <b>PR-specific preview builds</b> published under <code>{site}/pr/{N}/</code>.</td></tr>
 </table>
@@ -134,21 +134,35 @@ so the same build works at the site root and under <code>/pr/{N}/</code>.</p>
       normalizes the results to <code>docs/evidence/&lt;module&gt;/evidence.json</code>:
       one record per test — test name, parsed requirement IDs, issue refs
       (<code>(#N)</code>), suite (unit/browser), pass/fail, screenshot filenames.</li>
-  <li>Playwright specs capture <b>named screenshots at assertion points</b> via a small
-      helper (<code>captureEvidence(page, 'SH-FUNC-004C', 'pulse-hides-control')</code>)
-      writing <code>docs/evidence/&lt;module&gt;/SH-FUNC-004C_pulse-hides-control.png</code>.
-      Capture runs under fixed conditions: 1280×800 viewport, device scale 1, animations
-      disabled, committed fixture data only.</li>
+  <li>Playwright specs capture <b>named screenshots at assertion points</b> as
+      <b>visual-regression assertions</b>:
+      <code>await expect(page).toHaveScreenshot('SH-FUNC-004C_pulse-hides-control.png')</code>,
+      with <code>snapshotPathTemplate</code> pointing baselines at
+      <code>docs/evidence/&lt;module&gt;/</code>. One committed PNG is therefore evidence
+      artifact, regression baseline, and site image at once — and site images can never go
+      stale, because a rendering change fails CI until baselines are deliberately
+      refreshed. Capture runs under fixed conditions: 1280×800 viewport, device scale 1,
+      animations disabled, committed fixture data only, with per-assertion
+      <code>maxDiffPixelRatio</code> thresholds to absorb antialiasing noise.</li>
   <li>Evidence is <b>committed</b> (decision above): PR reviews see the screenshots and
       status changes in the diff, and the site build is a pure function of the repo tree —
       no test execution needed to build or preview the site.</li>
 </ul>
+<h3>Canonical rendering environment</h3>
+<p>Pixel comparison is only stable within one rendering stack (fonts and canvas
+antialiasing differ across OSes), so baselines are canonical to <b>the Playwright Linux
+container CI already uses</b>. <code>npm run evidence:update</code> regenerates baselines
+inside that container (locally via Docker, or as a manually-triggered workflow that
+commits the refresh); a plain local <code>npm run evidence</code> still runs the suites
+and captures screenshots for eyeballing, but never writes canonical baselines. Playwright
+browser bumps that shift pixels are absorbed the same way — one deliberate refresh, which
+updates the site images in the same commit.</p>
 <h3>Freshness guard (CI)</h3>
-<p>A CI step re-runs the suites and compares <b>test IDs and pass/fail statuses only</b>
-against the committed <code>evidence.json</code> — a mismatch fails the build with
-"evidence stale — run <code>npm run evidence</code> and commit". Pixel-level screenshot
-comparison is deliberately <b>not</b> enforced (cross-environment rendering flake);
-screenshots refresh whenever the evidence script is rerun.</p>
+<p>Two layers, both in the regular CI workflow: (1) the browser suite's
+<code>toHaveScreenshot</code> assertions enforce the pixel baselines natively; (2) a step
+compares <b>test IDs and pass/fail statuses</b> against the committed
+<code>evidence.json</code> — a mismatch fails the build with "evidence stale — run
+<code>npm run evidence:update</code> and commit".</p>
 <h3>Evidence page</h3>
 <p>Generated per renderer by joining the coverage table
 (<code>docs/&lt;module&gt;-coverage.md</code>) with <code>evidence.json</code>: requirement
@@ -206,15 +220,17 @@ manual step).</p>
   <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/15">#15</a> — qcthat-compatible JS reporting</td><td><b>Interim artifact:</b> the evidence pages are the human-readable issue-linked qualification view; <code>evidence.json</code> (test ↔ requirement ↔ issue ↔ status) is designed to be trivially translatable to a qcthat matrix when #15 leaves the backlog. #15's scope is unchanged.</td></tr>
   <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/2">#2</a> — Safety Histogram migration</td><td>Adopts the done-gate retroactively: Released only after the histogram site entry deploys (see Done-gate mechanics).</td></tr>
   <tr><td><a href="https://github.com/jwildfire/gsm.safety/issues/30">gsm.safety#30</a> — Widget_Histogram</td><td><b>Sequenced after</b> this requirement's histogram entry (agreed 2026-07-08); the widget's docs will link to the module's site pages.</td></tr>
-  <tr><td>Visual regression + accessibility hardening</td><td>Still out of scope (per the #1/#2 designs); the committed screenshots are evidence artifacts, not visual-regression baselines.</td></tr>
+  <tr><td>Visual regression + accessibility hardening</td><td><b>Visual regression: now partially in scope</b> (review Q&amp;A 2026-07-08) — the committed evidence screenshots double as Playwright baselines, giving regression protection at every documented evidence point (not exhaustive visual coverage). Accessibility hardening remains out of scope (per the #1/#2 designs).</td></tr>
 </table>
 
 <h2>Candidate decomposition</h2>
 <p>Sub-issues to be filed via <code>requirement-tasks</code> after sign-off (all in
 safety.viz unless noted):</p>
 <ol>
-  <li>Evidence pipeline — <code>evidence.mjs</code>, capture helper, JSON reporters,
-      committed histogram evidence set, CI freshness guard.</li>
+  <li>Evidence pipeline — <code>evidence.mjs</code>, <code>toHaveScreenshot</code>
+      baselines in <code>docs/evidence/</code>, canonical-container
+      <code>evidence:update</code> flow, JSON reporters, committed histogram evidence set,
+      CI freshness guard.</li>
   <li>API reference — JSDoc annotations on the histogram module + <code>jsdoc -X</code> →
       page generation in <code>site.mjs</code>.</li>
   <li>Site build — <code>site.mjs</code>, shell/templates/config, gallery + histogram demo
