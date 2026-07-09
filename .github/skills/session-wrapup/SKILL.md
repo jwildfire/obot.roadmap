@@ -48,6 +48,12 @@ subagents). Sweep the evidence, don't trust recall:
 - **Local git state** in each workspace clone *and its `*-worktrees/` siblings*:
   `git log --all --since={date}` for commits, plus `git status` for uncommitted or
   unpushed work — unpushed work is a loose end, not a completion.
+- **Session scratchpad** — `.claude/session-notes/{YYYY-MM-DD}.md` in the
+  workspace, written mid-session by the
+  [`session-update`](../session-update/SKILL.md) /
+  [`session-note`](../session-note/SKILL.md) skills: fold unchecked Todo items
+  into the uncaptured-todo sweep (step 2) and Notes into the diary entry
+  (step 5), then check items off as captured — never delete the file.
 - **Memory** (`next-session-todo` and friends) for what the session was *supposed*
   to do — anything planned but untouched is carried forward in step 4.
 
