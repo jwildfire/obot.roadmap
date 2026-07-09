@@ -56,7 +56,7 @@
 
 <h1>safety.viz documentation site</h1>
 <p class="sub">Design document for <a href="https://github.com/jwildfire/obot.roadmap/issues/21">Requirement #21</a> · obot.roadmap · supersedes the examples-site deferral in the <a href="1_design.html">#1 design</a> · interim artifact for <a href="https://github.com/jwildfire/obot.roadmap/issues/15">#15</a></p>
-<span class="stamp">STATUS: <b>Drafted 2026-07-08</b> · updated 2026-07-08 (dual-purpose screenshot baselines, per review Q&A) · drafted by Claude Code using Fable 5, reviewed by @jwildfire</span>
+<span class="stamp">STATUS: <b>Drafted 2026-07-08</b> · updated 2026-07-08 (dual-purpose screenshot baselines; dev/main branch model — review Q&A) · drafted by Claude Code using Fable 5, reviewed by @jwildfire</span>
 
 <h2>Context</h2>
 <p>Requirement #21 (filed 2026-07-08) makes documentation the delivery bar for the renderer
@@ -79,6 +79,7 @@ settled inputs to this design:</p>
   <tr><td>Evidence screenshots</td><td><b>Committed to the repo</b> — reviewable in PR diffs, stable, and available offline; regeneration is deliberate (see Evidence pipeline). <b>Dual-purpose</b> (review Q&amp;A, 2026-07-08): the committed screenshots are simultaneously Playwright visual-regression baselines.</td></tr>
   <tr><td>API reference</td><td><b>Generated from JSDoc in source</b> — docs cannot drift from code; the JSON schema feeds the data-contract section directly.</td></tr>
   <tr><td>Publish cadence</td><td><b>Every merge to main</b>, plus <b>PR-specific preview builds</b> published under <code>{site}/pr/{N}/</code>.</td></tr>
+  <tr><td>Branch model (added in review)</td><td><b>Protected <code>main</code> + <code>dev</code> integration branch</b>: feature PRs target <code>dev</code>; release PRs go <code>dev</code> → <code>main</code>; the site builds a third tier from <code>dev</code> at <code>{site}/dev/</code>.</td></tr>
 </table>
 
 <h2>Architecture overview</h2>
@@ -90,7 +91,8 @@ settled inputs to this design:</p>
                                 │ emits relative-URL static pages
                                 ▼
                              _site/  ──►  gh-pages branch  ──►  https://jwildfire.github.io/safety.viz/
-                                             ├── /          (deployed from main)
+                                             ├── /          (deployed from main — releases)
+                                             ├── /dev/      (deployed from dev — integration)
                                              └── /pr/{N}/   (deployed per open PR, removed on close)</code></pre>
 
 <h2>Repo layout additions (safety.viz)</h2>
@@ -185,13 +187,30 @@ superseded, deferred, and pending rows alike.</p>
       description), keeping one source of truth for the contract.</li>
 </ul>
 
+<h2>Branch and release model</h2>
+<p>safety.viz adopts the gsm-style two-branch model (added in review, 2026-07-08 —
+<b>already applied to the repo</b>):</p>
+<ul>
+  <li><b><code>dev</code> is the integration branch</b> — feature-branch PRs target
+      <code>dev</code> (histogram PR #4 retargeted accordingly).</li>
+  <li><b>Releases are PRs from <code>dev</code> → <code>main</code></b>; the site root
+      republishes on merge, so the public site always reflects the latest release.</li>
+  <li><b><code>main</code> is protected</b>: PR required (no direct pushes), the
+      "Build, format, and test" check must pass, force pushes and deletion blocked;
+      required approvals set to 0 so @jwildfire can merge his own release PRs (the
+      never-merge-without-Jeremy gate stays a process rule).</li>
+  <li>CI runs on PRs and on pushes to <code>main</code> and <code>dev</code>.</li>
+</ul>
+
 <h2>Publishing model</h2>
 <p>The single-artifact <code>deploy-pages</code> flow replaces the whole site on every
 deploy, which cannot host persistent PR previews — so Pages serves from a
-<b><code>gh-pages</code> branch</b> written incrementally by <code>pages.yml</code>:</p>
+<b><code>gh-pages</code> branch</b> written incrementally by <code>pages.yml</code>,
+with three tiers:</p>
 <table>
   <tr><th style="width:34%">Trigger</th><th>Action</th></tr>
-  <tr><td>push to <code>main</code></td><td>build <code>_site/</code> → sync to the <code>gh-pages</code> root, preserving <code>pr/</code>.</td></tr>
+  <tr><td>push to <code>main</code> (release)</td><td>build <code>_site/</code> → sync to the <code>gh-pages</code> root, preserving <code>dev/</code> and <code>pr/</code>.</td></tr>
+  <tr><td>push to <code>dev</code> (integration)</td><td>build → sync to <code>gh-pages</code> <code>/dev/</code> — the always-current integration preview.</td></tr>
   <tr><td><code>pull_request</code> (same-repo)</td><td>build → sync to <code>gh-pages</code> <code>/pr/{N}/</code>; a sticky bot comment on the PR links the preview. Review of a renderer's site entry happens here, per the deployed-review workflow.</td></tr>
   <tr><td><code>pull_request</code> closed</td><td>remove <code>/pr/{N}/</code> from <code>gh-pages</code>.</td></tr>
 </table>
@@ -235,8 +254,8 @@ safety.viz unless noted):</p>
       page generation in <code>site.mjs</code>.</li>
   <li>Site build — <code>site.mjs</code>, shell/templates/config, gallery + histogram demo
       + evidence page assembly, link/asset validation, CONTRIBUTING done-gate checklist.</li>
-  <li>Publishing — <code>pages.yml</code> (main root + PR previews + close cleanup),
-      Pages settings, preview-link bot comment.</li>
+  <li>Publishing — <code>pages.yml</code> (main root + <code>/dev/</code> tier + PR
+      previews + close cleanup), Pages settings, preview-link bot comment.</li>
 </ol>
 
 <h2>Open questions</h2>
