@@ -31,6 +31,15 @@ const unent = (s = '') => s
 const stripTags = (s = '') => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 const clip = (s = '', n = 200) => (s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s);
 const day = (iso) => (iso || '').slice(0, 10);
+const fmtET = (d) => {
+  const stamp = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/New_York',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).format(d);
+  const zone = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
+    .formatToParts(d).find((p) => p.type === 'timeZoneName').value;
+  return `${stamp} ${zone}`;
+};
 
 function gitAddedDate(rel) {
   try {
@@ -231,7 +240,7 @@ ${monthFilters}
 ${feed}<p class="meta news-empty" hidden>Nothing matches the current filters.</p>
 </div>
 </div>
-<footer class="site">Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC ·
+<footer class="site">Generated ${fmtET(new Date())} ·
 Source: <a href="https://github.com/${OWNER}/obot.roadmap">jwildfire/obot.roadmap</a></footer>
 <script>
 (function () {

@@ -127,7 +127,16 @@ const changelog = JSON.parse(
 );
 const auditEntries = [...changelog.entries].sort((a, b) => b.date.localeCompare(a.date));
 if (!auditEntries.length) throw new Error('site/roadmap-changelog.json has no entries');
-const fmtDate = (iso) => iso.slice(0, 16).replace('T', ' ') + ' UTC';
+const fmtDate = (iso) => {
+  const d = new Date(iso);
+  const stamp = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/New_York',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).format(d);
+  const zone = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
+    .formatToParts(d).find((p) => p.type === 'timeZoneName').value;
+  return `${stamp} ${zone}`;
+};
 
 const issues = await fetchRequirements();
 const byStage = new Map(STAGES.map((s) => [s, []]));
@@ -194,7 +203,7 @@ ${auditLogHtml}
   versionBadge.addEventListener('click', () => auditLog.showModal());
   auditLog.addEventListener('click', (e) => { if (e.target === auditLog) auditLog.close(); });
 </script>
-<footer class="site">Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC ·
+<footer class="site">Generated ${fmtDate(new Date().toISOString())} ·
 regenerates daily via <code>deploy-site.yml</code>.</footer>
 </body>
 </html>

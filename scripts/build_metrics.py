@@ -13,6 +13,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 OWNER = "jwildfire"
@@ -71,7 +72,7 @@ def tiles(pairs: list[tuple[str, str]], cls: str = "metric") -> str:
                      for v, label in pairs)
 
 
-stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+stamp = datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d %H:%M %Z")
 
 section = f"""<h2>Key metrics</h2>
 <p class="meta">Scope: {", ".join(f"{OWNER}/{r}" for r in REPOS)}. Generated {stamp}; regenerates daily via <code>deploy-site.yml</code>.</p>
