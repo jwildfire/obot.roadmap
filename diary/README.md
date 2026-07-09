@@ -11,7 +11,9 @@ and site navigation stripped).
   never machine-generated filler.
 - **Cadence (design decision D2): per working session.** The agent wraps up any
   substantive session by writing that day's entry, or appending a session section
-  if the file already exists.
+  if the file already exists. The entry is the final step of the full
+  [`session-wrapup` skill](../.github/skills/session-wrapup/SKILL.md) — roadmap
+  hygiene, todo capture, scaffold review, and next-session planning come first.
 - Section format follows the hub entries: what was completed, issues/PRs touched,
   blockers/risks, and items needing @jwildfire.
 - Entries are rendered to the site by `scripts/render_diary.mjs` at deploy time;

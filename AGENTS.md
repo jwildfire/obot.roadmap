@@ -58,13 +58,16 @@ Every Requirement issue must instantiate the [requirement template](.github/ISSU
 
 Before submitting, verify with: `gh issue view <n> --json body -q .body | grep '^### '` — the output must be exactly the five headings above.
 
-## Diary
+## Diary and session wrapup
 
-Before ending any substantive working session, write that day's diary entry
-(`diary/YYYY-MM-DD.md`), or append a session section if the file exists. Follow the
-format of existing entries: work completed, issues/PRs touched, blockers/risks, and
-items needing @jwildfire. Never write filler entries for days without activity. See
-[diary/README.md](diary/README.md).
+Before ending any substantive working session, run the full **session wrapup** —
+the [`session-wrapup` skill](.github/skills/session-wrapup/SKILL.md): inventory the
+session's work across all agents, sweep the roadmap for uncaptured todos, review the
+session for scaffold updates, propose next-session tasks, then write and deploy that
+day's diary entry (`diary/YYYY-MM-DD.md`, or append a session section if the file
+exists). Follow the format of existing entries: work completed, issues/PRs touched,
+blockers/risks, and items needing @jwildfire. Never write filler entries for days
+without activity. See [diary/README.md](diary/README.md).
 
 ## Identities
 
