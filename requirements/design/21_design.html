@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #21 — safety.viz documentation site</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf6f1; --card:#ffffff; --ink:#271810; --ink-2:#6f6259; --line:#e5dcd2;
+    --accent:#f97316; --link:#c2410c;
+    --note-bg:#fdeadd; --note-line:#f6cdae;
+    --code-bg:#eeeae4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#221a14; --card:#2c221a; --ink:#f3ece4; --ink-2:#b3a698; --line:#453729;
+      --link:#f97316; --note-bg:#3a2414; --note-line:#7c4a22; --code-bg:#332a21;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:16px/1.6 "Instrument Sans",system-ui,-apple-system,sans-serif;}
+  .wrap{max-width:860px;margin:0 auto;padding:48px 28px 72px;}
+  h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:38px;line-height:1.15;margin:0 0 6px;}
+  .sub{color:var(--ink-2);margin:0 0 8px;font-size:16.5px;}
+  .stamp{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink-2);
+    border-top:3px solid var(--accent);display:inline-block;padding-top:8px;margin-bottom:34px;}
+  .stamp b{color:var(--accent);font-weight:500;}
+  h2{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:26px;margin:40px 0 12px;}
+  h3{font-size:16px;font-weight:600;margin:20px 0 6px;}
+  p{margin:0 0 12px;}
+  a{color:var(--link);text-decoration-thickness:1px;text-underline-offset:3px;}
+  code{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:var(--code-bg);
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px;}
+  pre{font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.55;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;padding:16px 20px;overflow-x:auto;}
+  pre code{background:none;border:none;padding:0;}
+  table{border-collapse:collapse;width:100%;margin:14px 0 20px;font-size:14.5px;}
+  th{text-align:left;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);
+    border-bottom:2px solid var(--line);padding:6px 14px 6px 0;}
+  td{border-bottom:1px solid var(--line);padding:9px 14px 9px 0;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .note{background:var(--note-bg);border:1px solid var(--note-line);border-radius:10px;
+    padding:14px 18px;margin:16px 0;}
+  .note b{color:var(--accent);}
+  ul,ol{margin:0 0 12px;padding-left:22px;}
+  li{margin-bottom:5px;}
+  .footer{margin-top:52px;padding-top:14px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--ink-2);}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>safety.viz documentation site</h1>
+<p class="sub">Design document for <a href="https://github.com/jwildfire/obot.roadmap/issues/21">Requirement #21</a> · obot.roadmap · supersedes the examples-site deferral in the <a href="1_design.html">#1 design</a> · interim artifact for <a href="https://github.com/jwildfire/obot.roadmap/issues/15">#15</a></p>
+<span class="stamp">STATUS: <b>Drafted 2026-07-08</b> · drafted by Claude Code using Fable 5, reviewed by @jwildfire</span>
+
+<h2>Context</h2>
+<p>Requirement #21 (filed 2026-07-08) makes documentation the delivery bar for the renderer
+migration: a GitHub Pages site for safety.viz with three pillars per renderer — a live
+<b>example-gallery demo</b>, a <b>test-evidence page</b> (requirements → tests →
+screenshots), and an <b>API reference</b> — plus the process rule that a renderer is not
+done, and its migration requirement not Released, until all three are published.</p>
+<p>Inputs already in place: the merged library scaffold (safety.viz
+<a href="https://github.com/jwildfire/safety.viz/pull/3">PR #3</a>), the histogram module
+extraction (<a href="https://github.com/jwildfire/safety.viz/pull/4">PR #4</a>) with its
+requirement-keyed test suite (32 Vitest + 15 Playwright), the coverage table
+<code>docs/histogram-coverage.md</code>, the JSON data contract
+<code>src/data/schema/histogram.json</code>, and the fixture demo page the Playwright
+harness already uses.</p>
+<p>Four scoping decisions were made with @jwildfire on 2026-07-08 and are treated as
+settled inputs to this design:</p>
+<table>
+  <tr><th style="width:34%">Decision</th><th>Choice</th></tr>
+  <tr><td>Site tooling</td><td><b>Plain Node build script</b> — no static-site framework; mirrors the hub's hand-rolled-HTML precedent and the library's esbuild-minimal stack.</td></tr>
+  <tr><td>Evidence screenshots</td><td><b>Committed to the repo</b> — reviewable in PR diffs, stable, and available offline; regeneration is deliberate (see Evidence pipeline).</td></tr>
+  <tr><td>API reference</td><td><b>Generated from JSDoc in source</b> — docs cannot drift from code; the JSON schema feeds the data-contract section directly.</td></tr>
+  <tr><td>Publish cadence</td><td><b>Every merge to main</b>, plus <b>PR-specific preview builds</b> published under <code>{site}/pr/{N}/</code>.</td></tr>
+</table>
+
+<h2>Architecture overview</h2>
+<pre><code>src/ (JSDoc)          docs/&lt;module&gt;-coverage.md      docs/evidence/&lt;module&gt;/   site/ (templates,
+  │ jsdoc -X                    │                      (committed json + png)     config, css)
+  ▼                             ▼                              ▼                     ▼
+  └────────────────────► scripts/site.mjs ◄──────────────────────────────────────────┘
+                        (plain Node, no framework)
+                                │ emits relative-URL static pages
+                                ▼
+                             _site/  ──►  gh-pages branch  ──►  https://jwildfire.github.io/safety.viz/
+                                             ├── /          (deployed from main)
+                                             └── /pr/{N}/   (deployed per open PR, removed on close)</code></pre>
+
+<h2>Repo layout additions (safety.viz)</h2>
+<pre><code>safety.viz/
+├── site/
+│   ├── shell.html              # shared page shell: header, nav, footer, styles
+│   ├── config.json             # per-renderer metadata: title, blurb, status
+│   │                           #   (available / in-migration / planned), hero evidence ID
+│   └── site.css                # one stylesheet for the whole site
+├── scripts/
+│   ├── site.mjs                # assembles _site/ from templates + generated data
+│   └── evidence.mjs            # runs the suites with JSON reporters + screenshot
+│                               #   capture and (re)writes docs/evidence/&lt;module&gt;/
+├── docs/evidence/&lt;module&gt;/     # committed: evidence.json + &lt;REQ-ID&gt;[_slug].png
+├── _site/                      # build output — gitignored, never committed
+└── .github/workflows/pages.yml # build → verify → publish (main + PR previews)</code></pre>
+<p>The site pages per renderer: <code>index.html</code> (gallery),
+<code>&lt;module&gt;/index.html</code> (live demo), <code>&lt;module&gt;/evidence.html</code>,
+<code>&lt;module&gt;/api.html</code>. All internal links and asset paths are <b>relative</b>,
+so the same build works at the site root and under <code>/pr/{N}/</code>.</p>
+
+<h2>Pillar 1 — Example gallery</h2>
+<ul>
+  <li><b>Homepage = gallery.</b> One card per renderer — all nine listed from
+      <code>site/config.json</code> with status badges (<i>available</i> /
+      <i>in-migration</i> / <i>planned</i>), so the gallery doubles as the migration
+      scoreboard. Card thumbnail is the renderer's designated hero screenshot from its
+      committed evidence set.</li>
+  <li><b>Demo pages are live.</b> Each available renderer's page mounts the module from the
+      committed versioned <code>dist/</code> bundle (the same IIFE asset gsm.safety
+      vendors) against the committed fixture data (e.g. <code>adbds.csv</code>), with the
+      full control panel active. The existing Playwright harness page is the seed; harness
+      pages stay test-only, demo pages get the site shell plus a short "what you're
+      looking at" intro and links to the evidence + API pages.</li>
+</ul>
+
+<h2>Pillar 2 — Test evidence</h2>
+<h3>Evidence pipeline (<code>npm run evidence</code>)</h3>
+<ul>
+  <li><code>scripts/evidence.mjs</code> runs Vitest and Playwright with JSON reporters and
+      normalizes the results to <code>docs/evidence/&lt;module&gt;/evidence.json</code>:
+      one record per test — test name, parsed requirement IDs, issue refs
+      (<code>(#N)</code>), suite (unit/browser), pass/fail, screenshot filenames.</li>
+  <li>Playwright specs capture <b>named screenshots at assertion points</b> via a small
+      helper (<code>captureEvidence(page, 'SH-FUNC-004C', 'pulse-hides-control')</code>)
+      writing <code>docs/evidence/&lt;module&gt;/SH-FUNC-004C_pulse-hides-control.png</code>.
+      Capture runs under fixed conditions: 1280×800 viewport, device scale 1, animations
+      disabled, committed fixture data only.</li>
+  <li>Evidence is <b>committed</b> (decision above): PR reviews see the screenshots and
+      status changes in the diff, and the site build is a pure function of the repo tree —
+      no test execution needed to build or preview the site.</li>
+</ul>
+<h3>Freshness guard (CI)</h3>
+<p>A CI step re-runs the suites and compares <b>test IDs and pass/fail statuses only</b>
+against the committed <code>evidence.json</code> — a mismatch fails the build with
+"evidence stale — run <code>npm run evidence</code> and commit". Pixel-level screenshot
+comparison is deliberately <b>not</b> enforced (cross-environment rendering flake);
+screenshots refresh whenever the evidence script is rerun.</p>
+<h3>Evidence page</h3>
+<p>Generated per renderer by joining the coverage table
+(<code>docs/&lt;module&gt;-coverage.md</code>) with <code>evidence.json</code>: requirement
+ID → source matrix rows (linked to the safety.agent matrix) → evidencing test(s) → status
+chip → screenshot(s). Unrouted/manual matrix rows render in the same routing-status
+sections the coverage table already carries, so the page tells the whole story — covered,
+superseded, deferred, and pending rows alike.</p>
+
+<h2>Pillar 3 — API reference</h2>
+<ul>
+  <li><b>JSDoc annotations in source</b> for each module's public surface: the factory +
+      lifecycle methods (<code>init</code>, <code>setData</code>, <code>setSettings</code>,
+      <code>render</code>, <code>resize</code>, <code>destroy</code>) and every
+      <code>DEFAULT_SETTINGS</code> key (type, default, behavior).</li>
+  <li><b>Generation:</b> <code>jsdoc -X</code> (the only new dev-dependency) emits doclet
+      JSON; <code>site.mjs</code> renders it into the per-renderer API page — no JSDoc
+      HTML templates or themes.</li>
+  <li><b>Data contract straight from the schema:</b> the API page's data section renders
+      <code>src/data/schema/&lt;module&gt;.json</code> directly (field, type, required,
+      description), keeping one source of truth for the contract.</li>
+</ul>
+
+<h2>Publishing model</h2>
+<p>The single-artifact <code>deploy-pages</code> flow replaces the whole site on every
+deploy, which cannot host persistent PR previews — so Pages serves from a
+<b><code>gh-pages</code> branch</b> written incrementally by <code>pages.yml</code>:</p>
+<table>
+  <tr><th style="width:34%">Trigger</th><th>Action</th></tr>
+  <tr><td>push to <code>main</code></td><td>build <code>_site/</code> → sync to the <code>gh-pages</code> root, preserving <code>pr/</code>.</td></tr>
+  <tr><td><code>pull_request</code> (same-repo)</td><td>build → sync to <code>gh-pages</code> <code>/pr/{N}/</code>; a sticky bot comment on the PR links the preview. Review of a renderer's site entry happens here, per the deployed-review workflow.</td></tr>
+  <tr><td><code>pull_request</code> closed</td><td>remove <code>/pr/{N}/</code> from <code>gh-pages</code>.</td></tr>
+</table>
+<p>The site build also runs as a check in the regular CI workflow (build must succeed,
+internal links and referenced screenshots must resolve), alongside the evidence freshness
+guard. Repo settings change: Pages source = <code>gh-pages</code> branch (one-time
+manual step).</p>
+
+<h2>Done-gate mechanics</h2>
+<ul>
+  <li>A renderer is <b>done</b> when its site entry is complete: gallery card + live demo
+      page, evidence page green for all matrix-routed rows, and API reference published.</li>
+  <li>Encoded in safety.viz <code>CONTRIBUTING.md</code> as the renderer
+      definition-of-done checklist, and in each renderer requirement's acceptance
+      criteria from here on.</li>
+  <li>On the hub board, a renderer migration requirement moves to <b>Released</b> only
+      after its site entry is deployed — the histogram requirement
+      (<a href="https://github.com/jwildfire/obot.roadmap/issues/2">#2</a>) stays in
+      Development until the histogram pages ship, even though its code merged.</li>
+</ul>
+
+<h2>Relationship to existing requirements</h2>
+<table>
+  <tr><th style="width:34%">Item</th><th>Disposition</th></tr>
+  <tr><td>#1 design — "examples-site scope deferred until 2–3 modules exist"</td><td><b>Superseded</b> by this design (decision 2026-07-08): the site ships with the histogram as its first entry.</td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/15">#15</a> — qcthat-compatible JS reporting</td><td><b>Interim artifact:</b> the evidence pages are the human-readable issue-linked qualification view; <code>evidence.json</code> (test ↔ requirement ↔ issue ↔ status) is designed to be trivially translatable to a qcthat matrix when #15 leaves the backlog. #15's scope is unchanged.</td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/2">#2</a> — Safety Histogram migration</td><td>Adopts the done-gate retroactively: Released only after the histogram site entry deploys (see Done-gate mechanics).</td></tr>
+  <tr><td><a href="https://github.com/jwildfire/gsm.safety/issues/30">gsm.safety#30</a> — Widget_Histogram</td><td><b>Sequenced after</b> this requirement's histogram entry (agreed 2026-07-08); the widget's docs will link to the module's site pages.</td></tr>
+  <tr><td>Visual regression + accessibility hardening</td><td>Still out of scope (per the #1/#2 designs); the committed screenshots are evidence artifacts, not visual-regression baselines.</td></tr>
+</table>
+
+<h2>Candidate decomposition</h2>
+<p>Sub-issues to be filed via <code>requirement-tasks</code> after sign-off (all in
+safety.viz unless noted):</p>
+<ol>
+  <li>Evidence pipeline — <code>evidence.mjs</code>, capture helper, JSON reporters,
+      committed histogram evidence set, CI freshness guard.</li>
+  <li>API reference — JSDoc annotations on the histogram module + <code>jsdoc -X</code> →
+      page generation in <code>site.mjs</code>.</li>
+  <li>Site build — <code>site.mjs</code>, shell/templates/config, gallery + histogram demo
+      + evidence page assembly, link/asset validation, CONTRIBUTING done-gate checklist.</li>
+  <li>Publishing — <code>pages.yml</code> (main root + PR previews + close cleanup),
+      Pages settings, preview-link bot comment.</li>
+</ol>
+
+<h2>Open questions</h2>
+<ul>
+  <li>None blocking. Two small calls left to implementation: the exact sticky-comment
+      mechanism for preview links, and per-renderer hero-screenshot choices in
+      <code>site/config.json</code>.</li>
+</ul>
+
+<div class="note"><b>Sign-off:</b> pending review by @jwildfire on
+<a href="https://github.com/jwildfire/obot.roadmap/issues/21">#21</a>. On approval, the
+issue's Design section links here and the work decomposes per Candidate decomposition.</div>
+
+<div class="footer">
+  requirements/design/21_design.html · obot.roadmap hub · drafted 2026-07-08 by Claude Code
+  using Fable 5, reviewed by @jwildfire · companions:
+  <a href="1_design.html">1_design.html</a> · <a href="2_design.html">2_design.html</a>
+</div>
+
+</div></body>
+</html>
