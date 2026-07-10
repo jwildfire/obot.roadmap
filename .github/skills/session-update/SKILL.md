@@ -1,6 +1,6 @@
 ---
 name: session-update
-description: "Add an item to the running session todo list. Use mid-session when @jwildfire says 'session update: …', 'add that to the session todo', or work surfaces a task to pick up later — the item lands in the session scratchpad that session-wrapup sweeps and session-overview re-reads. Do NOT use for already-scoped roadmap work (file/edit the issue directly) or for prose observations (that is session-note)."
+description: "Add an item to the running session todo list. Use mid-session when @jwildfire says 'session update: …', 'add that to the session todo', or work surfaces a task to pick up later — the item lands in the session scratchpad that session-wrapup sweeps and session-init re-reads. Do NOT use for already-scoped roadmap work (file/edit the issue directly) or for prose observations (that is session-note)."
 argument-hint: "The todo item to add"
 ---
 
@@ -8,7 +8,7 @@ argument-hint: "The todo item to add"
 
 Capture a todo the moment it surfaces, so it survives the session without
 interrupting the work in flight. Items go to the **session scratchpad** — the
-mid-session capture channel between [`session-overview`](../session-overview/SKILL.md)
+mid-session capture channel between [`session-init`](../session-init/SKILL.md)
 (which re-reads unfinished items at the next kickoff) and
 [`session-wrapup`](../session-wrapup/SKILL.md) (which sweeps them into durable
 homes: an issue, a diary loose end, or memory).
@@ -33,7 +33,7 @@ Created on first write with this skeleton:
 ## Notes
 ```
 
-`## Overview` belongs to [`session-overview`](../session-overview/SKILL.md) (the
+`## Overview` belongs to [`session-init`](../session-init/SKILL.md) (the
 persisted kickoff list); `## Todo` belongs to this skill; `## Notes` belongs to
 [`session-note`](../session-note/SKILL.md). Lines are checked off (`- [x]`) when
 captured elsewhere — never deleted.
@@ -72,5 +72,5 @@ to scope yet. For non-task observations, use `session-note`.
   (kickoff priorities + these additions + notes) on demand and checks items off
   as they finish.
 - `session-wrapup` sweeps unchecked items into durable homes and checks them off.
-- `session-overview` carries any still-unchecked items (e.g. from a session that
+- `session-init` carries any still-unchecked items (e.g. from a session that
   ended without a wrapup) into the next kickoff list.
