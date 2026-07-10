@@ -26,12 +26,15 @@ Created on first write with this skeleton:
 ```markdown
 # Session scratchpad — YYYY-MM-DD
 
+## Overview
+
 ## Todo
 
 ## Notes
 ```
 
-`## Todo` belongs to this skill; `## Notes` belongs to
+`## Overview` belongs to [`session-overview`](../session-overview/SKILL.md) (the
+persisted kickoff list); `## Todo` belongs to this skill; `## Notes` belongs to
 [`session-note`](../session-note/SKILL.md). Lines are checked off (`- [x]`) when
 captured elsewhere — never deleted.
 
@@ -65,8 +68,9 @@ to scope yet. For non-task observations, use `session-note`.
 
 ## Lifecycle
 
-- [`session-checklist`](../session-checklist/SKILL.md) re-renders the list on
-  demand and checks items off as they finish.
+- [`session-todo`](../session-todo/SKILL.md) re-renders the full session list
+  (kickoff priorities + these additions + notes) on demand and checks items off
+  as they finish.
 - `session-wrapup` sweeps unchecked items into durable homes and checks them off.
 - `session-overview` carries any still-unchecked items (e.g. from a session that
   ended without a wrapup) into the next kickoff list.

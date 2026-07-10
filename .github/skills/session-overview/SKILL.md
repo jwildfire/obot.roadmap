@@ -16,7 +16,7 @@ start of the next. The canonical trigger is @jwildfire's standing kickoff prompt
 > list. format as a numbered list with short bullets with links to relevant
 > roadmap items, issues and prs.
 
-The overview is done when three things are true:
+The overview is done when four things are true:
 
 1. **Evidence swept** — open issues, open PRs, the project board, and the recent
    diary entries have all been read; nothing is prioritized from memory alone.
@@ -26,6 +26,9 @@ The overview is done when three things are true:
 3. **Ownership clear** — every item is marked as agent-actionable now or gated on
    @jwildfire (review, sign-off, decision), so the session can start on the right
    work immediately.
+4. **List persisted** — the presented list is written to the session scratchpad's
+   `## Overview` section, so [`session-todo`](../session-todo/SKILL.md) can
+   re-render it on demand all session.
 
 ## When to Use
 
@@ -111,3 +114,28 @@ close with a "which item should I start?" decision prompt, and do not start on
 any item: @jwildfire reads the list and directs the session from there
 (his call, 2026-07-09). The Decision Prompt Convention does not apply to this
 closing step.
+
+### 4. Persist the list
+
+Write the presented list into today's session scratchpad —
+`.claude/session-notes/YYYY-MM-DD.md` in the workspace root (skeleton in
+[`session-update`](../session-update/SKILL.md); create the file with it if
+missing) — replacing the `## Overview` section:
+
+```markdown
+## Overview
+<!-- session-overview YYYY-MM-DD HH:MM -->
+
+### Agent-actionable
+- [ ] 1. {item, one line} ([#N](url), [PR #N](url))
+
+### Waiting on @jwildfire
+- [ ] 5. {ask, one line} ([PR #N](url))
+```
+
+One checkbox per numbered item, numbering and grouping kept, key links inline —
+condense each item's bullets to a single self-contained line. From here the
+scratchpad owns the state: [`session-todo`](../session-todo/SKILL.md) re-renders
+the list and checks items off as they finish; a later overview re-run replaces
+the section with the fresh sweep, preserving the check-state of items that carry
+over.
