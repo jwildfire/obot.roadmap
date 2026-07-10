@@ -175,8 +175,12 @@ issues without the checkpoint.
 
 ### 7. Draft and post the session summary
 
-- **File**: `diary/YYYY-MM-DD.md` (today). If it exists, append a session section
-  under the existing content — one file per day.
+- **File**: one post per session (@jwildfire, 2026-07-09). The day's first
+  session is `diary/YYYY-MM-DD.md`; each later session gets its **own file**
+  `diary/YYYY-MM-DD-N.md` (N = 2, 3, …) with the H1
+  `# Daily diary: YYYY-MM-DD — Session N`. Never append a second session to an
+  existing entry — `render_diary.mjs` gives every session file its own page and
+  news-index line.
 - **Format** (match recent entries; the diary README and the latest few entries are
   the exemplars):
   - Lead `<span class="meta">…</span>` paragraph — the session's story in 2–4

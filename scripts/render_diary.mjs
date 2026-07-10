@@ -33,35 +33,41 @@ ${/<h1[\s>]/.test(body) ? '' : `<h1>${title}</h1>\n`}${body}
 </html>
 `;
 
+// Entries are one per working session: YYYY-MM-DD.md for a day's first session,
+// YYYY-MM-DD-N.md (N = 2, 3, …) for later sessions the same day.
 const files = (await fs.readdir(SRC))
-  .filter((f) => /^\d{4}-\d{2}-\d{2}\.md$/.test(f))
+  .filter((f) => /^\d{4}-\d{2}-\d{2}(-\d+)?\.md$/.test(f))
+  .map((f) => f.replace('.md', ''))
   .sort();
 await fs.mkdir(OUT, { recursive: true });
 
+const label = (slug) => {
+  const m = slug.match(/^(\d{4}-\d{2}-\d{2})-(\d+)$/);
+  return m ? `${m[1]} — Session ${m[2]}` : slug;
+};
+
 const summaries = {};
-for (const [i, file] of files.entries()) {
-  const date = file.replace('.md', '');
-  const md = await fs.readFile(path.join(SRC, file), 'utf8');
+for (const [i, slug] of files.entries()) {
+  const md = await fs.readFile(path.join(SRC, `${slug}.md`), 'utf8');
   const meta = md.match(/<span class="meta">([^<]*)<\/span>/);
-  summaries[date] = meta ? meta[1] : '';
-  const prev = files[i - 1]?.replace('.md', '');
-  const next = files[i + 1]?.replace('.md', '');
+  summaries[slug] = meta ? meta[1] : '';
+  const prev = files[i - 1];
+  const next = files[i + 1];
   const nav = `<nav class="entry-nav">
-  <span>${prev ? `<a href="${prev}.html">← ${prev}</a>` : ''}</span>
-  <span>${next ? `<a href="${next}.html">${next} →</a>` : ''}</span>
+  <span>${prev ? `<a href="${prev}.html">← ${label(prev)}</a>` : ''}</span>
+  <span>${next ? `<a href="${next}.html">${label(next)} →</a>` : ''}</span>
 </nav>`;
   const body = nav + marked.parse(md) + nav;
-  await fs.writeFile(path.join(OUT, `${date}.html`), page(date, body));
+  await fs.writeFile(path.join(OUT, `${slug}.html`), page(label(slug), body));
 }
 
 const MIGRATION_CUTOFF = '2026-06-11'; // last hub nightly briefing
 const items = files
   .slice()
   .reverse()
-  .map((f) => {
-    const date = f.replace('.md', '');
-    const summary = summaries[date] ? ` — <span class="meta">${summaries[date]}</span>` : '';
-    return `  <li><a href="${date}.html">${date}</a>${summary}</li>`;
+  .map((slug) => {
+    const summary = summaries[slug] ? ` — <span class="meta">${summaries[slug]}</span>` : '';
+    return `  <li><a href="${slug}.html">${label(slug)}</a>${summary}</li>`;
   })
   .join('\n');
 const indexBody = `
