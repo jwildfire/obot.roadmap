@@ -106,6 +106,8 @@ items, issues, and PRs. Split it into two groups:
 - **Waiting on @jwildfire** — reviews, sign-offs, and decisions only he can make,
   each with a one-line ask and a direct link.
 
-Close by proposing which agent-actionable item to start with, as a
-multiple-choice prompt per the Decision Prompt Convention — do not start work
-until @jwildfire picks.
+**The list is the deliverable — presenting it ends the overview.** Do **not**
+close with a "which item should I start?" decision prompt, and do not start on
+any item: @jwildfire reads the list and directs the session from there
+(his call, 2026-07-09). The Decision Prompt Convention does not apply to this
+closing step.
