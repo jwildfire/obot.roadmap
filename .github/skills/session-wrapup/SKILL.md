@@ -136,22 +136,34 @@ Draft a prioritized, concrete list of what the next session should pick up:
 - The agreed list lands in the diary's **"Next session: loose ends"** section and
   the memory next-session pointer (step 6).
 
-### 5. Checkpoint — discuss with @jwildfire before changing anything
+### 5. Checkpoint — three questions, content inside the prompt
 
-Present the collected picture compactly, then clarify:
+The checkpoint is **one `AskUserQuestion` call with exactly three questions**
+(@jwildfire's format, 2026-07-09). Embed the substance **in each question's own
+text** — @jwildfire sees only the prompt while answering, so content that lives
+in earlier chat messages is invisible at decision time; a preview he can't see
+is no preview:
 
-- **Show**: the work inventory (merged / opened / closed / advanced), the proposed
-  hygiene fixes, the scaffold candidates, the draft next-session list, and the
-  diary lead — the session's story in a sentence or two.
-- **Ask**: the clarifying questions the sweep surfaced — judgment calls on stages,
-  what to carry vs. drop, wording for the diary, anything needing approval
-  (deletions, closes, upstream PRs) — as multiple-choice prompts per the Decision
-  Prompt Convention (`AskUserQuestion`), freeform kept available.
-- **Iterate**: discuss, adjust the plan, re-ask as needed. Move to the apply phase
-  only on an explicit go-ahead (Approval Convention).
-- If @jwildfire is unavailable (unattended background run, no reply), stop here and
-  surface `needs input:` with the full plan — never post the diary or edit issues
-  without the discussion.
+1. **Accomplishments** — the session's key accomplishments, compact, in the
+   question text; ask *"anything to add?"* Options: `Looks complete` /
+   `Missing something` (freeform Other supplies what).
+2. **Scaffold** — one or more concrete proposed scaffold improvements from
+   step 3, in the question text; ask *"agree?"* Options: `Apply as proposed` /
+   `Adjust` / `Skip this time`.
+3. **Priorities** — the top 3 priorities for the next session from step 4, in
+   the question text; ask *"agree?"* Options: `Agree` / `Reorder or swap`.
+
+The answers are the discussion: fold adjustments back into the plan, re-asking
+only what changed. Affirmative answers to all three are the go-ahead for the
+apply phase (Approval Convention satisfied); the diary entry is then composed
+from the approved content and posted under the standard-update grant. Anything
+beyond standing grants that the sweep surfaced (deletions, closing unverified
+work, upstream PRs) still needs its own explicit ask — raise it separately,
+never bundle it into the three questions.
+
+If @jwildfire is unavailable (unattended background run, no reply), stop here
+and surface `needs input:` with the full plan — never post the diary or edit
+issues without the checkpoint.
 
 ### 6. Apply the agreed changes
 
