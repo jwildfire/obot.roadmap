@@ -53,7 +53,9 @@ function gitAddedDate(rel) {
 
 // --- diary -------------------------------------------------------------------
 async function diaryItems() {
-  const files = (await fs.readdir(path.join(ROOT, 'diary'))).filter((f) => /^\d{4}-\d{2}-\d{2}\.md$/.test(f));
+  // YYYY-MM-DD.md plus same-day session posts YYYY-MM-DD-N.md; the slug's fixed
+  // date prefix keeps dayLabel/month slices correct and sorts sessions newest-first.
+  const files = (await fs.readdir(path.join(ROOT, 'diary'))).filter((f) => /^\d{4}-\d{2}-\d{2}(-\d+)?\.md$/.test(f));
   const items = [];
   for (const f of files) {
     const date = f.replace('.md', '');
