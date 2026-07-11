@@ -60,18 +60,29 @@ digests in the conversation — do not paste raw listings. Launch both in a sing
 message; read-only `Explore`-type agents suffice. Do not prioritize from recall
 alone: everything below must come back from the sweep.
 
+**Latency budget: the whole init should land in ~2 minutes** (@jwildfire,
+2026-07-10 — the first run took ~5 and that was too slow). Two rules keep it
+fast: the sweep runs **unattended** — kickoff sessions launch in auto mode, every
+command here is read-only, and if something would stall on a permission prompt
+the agent skips it, notes the gap in its digest, and moves on; and the GitHub
+pull is **batched, not per-repo/per-item** — three calls total, no drill-downs.
+
 - **GitHub sweep agent** — open issues and PRs across the active repos, plus the
-  project board:
+  project board, in **three batched calls** (not a per-repo loop):
 
   ```bash
-  for repo in obot.roadmap safety.viz gsm.safety safety-histogram safety.agent; do
-    gh issue list -R jwildfire/$repo --state open
-    gh pr list -R jwildfire/$repo --state open
-  done
-  gh project item-list 1 --owner jwildfire --format json   # board stages
+  gh search issues --owner jwildfire --state open --limit 100 \
+    --json repository,number,title,updatedAt
+  gh search prs --owner jwildfire --state open --limit 100 \
+    --json repository,number,title,isDraft,updatedAt
+  gh project item-list 1 --owner jwildfire --format json --limit 80   # board stages
   ```
 
-  (`jq` is not installed — parse JSON with `python3`, or drop `--format json`.)
+  Filter to the active repos (obot.roadmap, safety.viz, gsm.safety,
+  safety-histogram, safety.agent) in the parse step (`jq` is not installed —
+  use `python3`). Do **not** run `gh pr view` / `gh pr checks` per item — list
+  fields plus board stage are enough to prioritize; drill into a specific PR
+  only when its next step is genuinely ambiguous from title/state/draft flag.
   Digest to return, one line per item: `repo#N — title — board stage —
   draft/open — whether the next step is agent work or an @jwildfire gate`.
 
