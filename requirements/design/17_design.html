@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #17 — obot.agent as a thin overlay on the gsm.agent harness</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  .done { display: inline-block; background: #dcfce7; color: #166534; border-radius: 999px;
+          padding: .05rem .5rem; font-size: .78rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .note { color: var(--muted); font-size: .9rem; }
+  nav.toc { background: var(--panel); border-radius: 8px; padding: 1rem 1.25rem; font-size: .92rem; }
+  nav.toc ol { margin: .25rem 0 0; padding-left: 1.25rem; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design: obot.agent as a thin overlay on the gsm.agent harness</h1>
+  <p class="meta">
+    Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/17">jwildfire/obot.roadmap#17</a>
+    · 2026-07-11 · <span class="status">Draft — decisions D1–D4 pending @jwildfire</span><br>
+    Based on a full read-through audit of every obot.agent artifact against the gsm.agent harness (2026-07-11).
+  </p>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#context">Context and goals</a></li>
+    <li><a href="#groundwork">Executed groundwork (2026-07-11)</a></li>
+    <li><a href="#audit">Audit findings — the classification inventory</a></li>
+    <li><a href="#target">Target overlay layout</a></li>
+    <li><a href="#skills">Skills topology across the workspace</a></li>
+    <li><a href="#upstream">Upstream contributions to gsm.agent</a></li>
+    <li><a href="#decisions">Decisions (pending)</a></li>
+    <li><a href="#out-of-scope">Out of scope</a></li>
+    <li><a href="#tasks">Task preview</a></li>
+  </ol>
+</nav>
+
+<h2 id="context">1. Context and goals</h2>
+
+<p>
+<a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a> exists because the program
+maintained <strong>two full agent harnesses</strong>: gsm.agent (upstream, owns the ecosystem
+conventions) and safety.agent (predates the July 2026 consolidation, restating much of the same
+ground). Direction from @jwildfire (2026-07-04): <em>leverage gsm.agent as much as possible;
+the project repo serves only as additional instructions.</em>
+</p>
+<p>
+This design extends the original scope with the <strong>obot.agent conversion</strong> (approved
+2026-07-11): the repo renamed from <code>safety.agent</code> to <code>obot.agent</code> and widens
+from a safety-graphics overlay to <em>the obot program's agent layer</em> — absorbing the session
+skills that currently live in the hub and the agent-identity infrastructure it already carries.
+Success criteria (unchanged from #17, plus the conversion):
+</p>
+<ul>
+  <li>An agent in the obot2 workspace inherits gsm.agent's conventions and skills automatically.</li>
+  <li>obot.agent contains only what is specific to the obot program; no convention stated twice.</li>
+  <li>gsm.agent improvements flow through without copying; no stale obot-claw-era references remain.</li>
+  <li>Workspace skill symlinks resolve to live repos (today three point into an <em>archived</em> clone).</li>
+</ul>
+
+<h2 id="groundwork">2. Executed groundwork (2026-07-11) <span class="done">done</span></h2>
+
+<ul>
+  <li>safety.agent PR <a href="https://github.com/jwildfire/obot.agent/pull/10">#10</a>
+      (obotclaw[bot] PR-authorship rule) merged with @jwildfire's approval.</li>
+  <li>Repo renamed on GitHub → <a href="https://github.com/jwildfire/obot.agent">jwildfire/obot.agent</a>
+      (old URLs redirect); local clone dir renamed to match; remote retargeted over SSH.</li>
+  <li>obotclaw app installation verified against the renamed repo with a minted token
+      (installations track repo IDs, so the whitelist followed the rename).</li>
+  <li>Workspace <code>CLAUDE.md</code> repo list updated.</li>
+  <li>Housekeeping draft PR <a href="https://github.com/jwildfire/obot.agent/pull/11">obot.agent#11</a>:
+      README/agent.md retitle, dead obot-claw links retargeted to the hub, the stale
+      "obot-claw staging forks" write policy replaced with the obotclaw[bot] model, and the
+      obot-identity whitelist self-reference fixed.</li>
+</ul>
+
+<h2 id="audit">3. Audit findings — the classification inventory</h2>
+
+<p>
+The audit read every artifact (all AGENTS.md sections, all 9 skills, all docs including the
+9 requirement matrices, all templates, config, scripts, interview logs) against gsm.agent.
+Headline: <strong>bucket (a) — pure duplication — is nearly empty.</strong> obot.agent's
+71-line AGENTS.md is already overlay-shaped; it does not restate the draft/attribution/approval/
+worktree conventions. The real work is upstreaming two generic patterns (§6), fixing stale
+references (PR #11), and settling four decisions (§7). gsm.agent is an R/RBQM harness
+(testthat, <code>devtools::check()</code>); obot.agent is a JS renderer overlay
+(Vitest/Playwright/Chart.js) — most content is domain-specific by construction.
+</p>
+
+<h3>Bucket (b) — generic, propose upstream</h3>
+<table>
+  <tr><th>Artifact</th><th>Rationale</th></tr>
+  <tr><td><code>skills/stakeholder-interview</code> + <code>docs/interview-framework.md</code> +
+      <code>templates/interview-log.md</code> + <code>templates/interview-question.md</code></td>
+      <td>Generic stakeholder Q→decision→durable-artifact workflow; only the Telegram flavor is obot-specific</td></tr>
+  <tr><td>Split-phase test-driver <em>pattern</em> (underlying <code>p004-test-driver</code> /
+      <code>p004-test-setup</code> / <code>p004-write-tests</code>)</td>
+      <td>Setup→write split, bounded sub-agent, <code>test-driver:</code> evidence commits — stack-neutral; obot keeps the P004/Vitest instantiation</td></tr>
+</table>
+<p class="note">
+Upstreaming answers gsm.agent's open "shared scaffolding location" roadmap question in practice:
+obot becomes the first external consumer of gsm.agent as base-harness-plus-overlay.
+</p>
+
+<h3>Bucket (c) — obot-specific, keep (the overlay proper)</h3>
+<table>
+  <tr><th>Category</th><th>Artifacts</th></tr>
+  <tr><td>Contract & policy</td><td>AGENTS.md (mission, GxP non-negotiables, per-renderer artifacts, JS testing expectations, safety.viz branching model, migration sequence) — rewritten around an explicit overlay contract (§4)</td></tr>
+  <tr><td>Skills</td><td>chartjs-migration, renderer-modernization, requirements-harvesting, gxp-test-framework, obot-identity, P004 test-driver trio (as thin instances over the upstreamed pattern)</td></tr>
+  <tr><td>Docs</td><td>gsm-viz-reference, gxp-framework, test-framework, requirements-harvesting, <strong>the 9 requirement matrices + review doc</strong> (the highest-value asset), p004-test-driver-trial, skills-library-spike</td></tr>
+  <tr><td>Templates & infra</td><td>requirements-matrix, p004-test-driver-prompt, <code>scripts/</code> (obot-app-token, harvest), <code>interviews/</code> logs</td></tr>
+</table>
+
+<h3>Stale / superseded (beyond PR #11's scope)</h3>
+<table>
+  <tr><th>Artifact</th><th>Finding</th></tr>
+  <tr><td><code>docs/test-agent-github-app.md</code> + <code>config/github-app/*</code></td>
+      <td>Proposes creating an <code>obot-test-agent</code> app — superseded by the live obotclaw app
+      (<a href="3_design.html">#3 design</a>). Candidate for deletion, not link-fixing → <strong>D4</strong></td></tr>
+  <tr><td><code>interviews/p004-open-questions.md</code> dead obot-claw links</td>
+      <td>Historical record — leave as-is (see §8)</td></tr>
+  <tr><td><code>docs/test-framework.md</code> "OpenClaw" browser-QA reference</td>
+      <td>obot-claw-era tooling name; replace with current browser-QA tooling during the overlay rewrite</td></tr>
+</table>
+
+<h2 id="target">4. Target overlay layout</h2>
+
+<p>
+obot.agent converges to: <strong>mission + GxP stance + gsm.viz/JS reference + renderer
+requirement matrices + renderer/test skills + obot identity/token infra + session skills</strong>.
+Everything cross-cutting (drafts, attribution, approval gates, worktrees, generic TDD, interview
+workflow, generic test-driver) is sourced from gsm.agent.
+</p>
+<p>
+The new AGENTS.md opens with the overlay contract — "gsm.agent conventions apply; this repo adds
+the obot layer" — mirroring how the workspace <code>CLAUDE.md</code> already imports the gsm.agent
+clone's AGENTS.md. The safety.viz branching model stays but is explicitly scoped to safety.viz
+(not stated as an ecosystem default, which would contradict gsm.agent's "don't assume dev/main").
+A new short <strong>terminology doc</strong> defines <em>session</em> / <em>spawned agent</em> /
+<em>subagent</em> — groundwork consumed by
+<a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a> (autonomous operations).
+The shared <strong>keynote stylesheet</strong> lands here once extracted — it is being produced by
+the safety.viz v1.0-push website-cleanup workstream, not rebuilt in this requirement.
+</p>
+
+<h2 id="skills">5. Skills topology across the workspace</h2>
+
+<p>Where each skill family lives after the move (@jwildfire's calls, 2026-07-11):</p>
+<table>
+  <tr><th>Skill family</th><th>Today</th><th>Target</th></tr>
+  <tr><td>Session lifecycle (session-init/-note/-todo/-update/-wrapup)</td>
+      <td><code>obot.roadmap/.github/skills/</code></td>
+      <td><strong>obot.agent</strong> — agent capabilities live in the harness overlay</td></tr>
+  <tr><td>Requirement lifecycle (requirement-drafting/-design/-tasks)</td>
+      <td><code>obot-claw.github.io</code> clone (<em>archived repo</em> — symlinks into a dead home)</td>
+      <td><strong>obot.roadmap</strong> — they operate on hub files, so they live beside the lifecycle they manage</td></tr>
+  <tr><td>Ecosystem conventions (tdd, issue-review, sub-issue-linking)</td>
+      <td>gsm.agent clone (<code>.github/</code>)</td>
+      <td>unchanged — upstream</td></tr>
+  <tr><td>Renderer/identity (chartjs-migration, obot-identity, P004 trio, …)</td>
+      <td>obot.agent</td>
+      <td>unchanged — overlay</td></tr>
+</table>
+<p class="note">
+The workspace <code>.claude/skills/</code> symlinks are repointed in the same change; net effect is
+that no symlink resolves into an archived clone. Hub = content and its lifecycle; obot.agent = how
+the agent works; gsm.agent = ecosystem conventions.
+</p>
+
+<h2 id="upstream">6. Upstream contributions to gsm.agent</h2>
+
+<p>
+Two PRs to <code>Gilead-BioStats/gsm.agent</code>: (1) the stakeholder-interview workflow
+(skill + framework doc + two templates, de-Telegrammed); (2) a generic <code>test-driver</code>
+skill capturing the split-phase pattern. Mechanics: the Gilead <code>gh</code> API is SAML-blocked,
+so branches go up over SSH and @jwildfire opens the PRs from compare URLs. Fallback if upstream
+declines: obot.agent carries the generic pieces unchanged until accepted — no blocking dependency.
+</p>
+
+<h2 id="decisions">7. Decisions (pending)</h2>
+
+<div class="decision">
+<strong>D1 — TDD gate for JS work.</strong> gsm.agent's <code>tdd</code> skill hard-codes the Green
+gate as <code>devtools::check()</code> clean with R test naming; obot's P004 skills define a parallel
+JS discipline (Vitest/Playwright, requirement-ID test names). Both currently claim to be <em>the</em>
+test-first workflow. <em>Recommendation:</em> the overlay declares the JS instantiation as the
+project-level specialization of the upstream <code>tdd</code> skill (pointer + divergence table), and
+we propose upstream that <code>tdd</code> grow a stack-neutral core. No fork of the convention.
+</div>
+
+<div class="decision">
+<strong>D2 — Commit attribution mechanics.</strong> gsm.agent attributes via a
+<code>Co-Authored-By</code> trailer with @jwildfire as reviewer/merger; obot-identity makes
+obotclaw[bot] the <em>git author</em>. <em>Recommendation:</em> obot-identity supersedes the trailer
+for authorship (bot is the author), and commits keep the agent Co-Authored-By trailer so both the
+identity and the drafting model remain visible. Document this as an explicit overlay divergence.
+</div>
+
+<div class="decision">
+<strong>D3 — Skill frontmatter conformance.</strong> gsm.agent skills carry YAML frontmatter
+(<code>name</code>/<code>description</code>) that harnesses key on to auto-load; six obot skills are
+plain markdown without it. <em>Recommendation:</em> normalize all obot.agent (and moved hub) skills
+to the upstream SKILL.md frontmatter contract during the restructure.
+</div>
+
+<div class="decision">
+<strong>D4 — Delete the superseded test-agent app proposal.</strong>
+<code>docs/test-agent-github-app.md</code> + <code>config/github-app/*</code> propose an app the
+live obotclaw app replaced. <em>Recommendation:</em> delete both (git history preserves them) rather
+than carry-and-fix. Deletion requires explicit @jwildfire approval per the operating contract —
+hence a decision, not a task.
+</div>
+
+<h2 id="out-of-scope">8. Out of scope</h2>
+
+<ul>
+  <li>Historical records stay verbatim: <code>interviews/</code> logs keep their dead obot-claw
+      links as period artifacts.</li>
+  <li>The other 8 RhoInc renderer forks — no changes until each migration starts.</li>
+  <li>gsm.agent's own roadmap (personas, multi-agent framework) — we consume it, we don't design it.</li>
+  <li>#18's autonomous-operations design — only the terminology doc feeds it from here.</li>
+</ul>
+
+<h2 id="tasks">9. Task preview</h2>
+
+<p class="note">To be decomposed via <code>requirement-tasks</code> into cross-repo sub-issues after design sign-off.</p>
+<table>
+  <tr><th>#</th><th>Task</th><th>Repo</th><th>Depends on</th></tr>
+  <tr><td>T1</td><td>Move session skills into obot.agent; move requirement skills into obot.roadmap; repoint workspace symlinks</td><td>obot.agent, obot.roadmap, workspace</td><td>design sign-off</td></tr>
+  <tr><td>T2</td><td>Rewrite AGENTS.md as the overlay contract; add terminology doc; fix "OpenClaw" reference</td><td>obot.agent</td><td>D1, D2</td></tr>
+  <tr><td>T3</td><td>Normalize skill frontmatter across obot.agent + moved skills</td><td>obot.agent, obot.roadmap</td><td>D3, T1</td></tr>
+  <tr><td>T4</td><td>Upstream PRs: interview workflow, generic test-driver</td><td>gsm.agent</td><td>design sign-off</td></tr>
+  <tr><td>T5</td><td>Land the shared keynote stylesheet</td><td>obot.agent</td><td>safety.viz v1.0-push website PR</td></tr>
+  <tr><td>T6</td><td>Delete superseded test-agent app doc + config</td><td>obot.agent</td><td>D4 approval</td></tr>
+</table>
+
+<footer>
+  <p>Design doc for <a href="https://github.com/jwildfire/obot.roadmap/issues/17">jwildfire/obot.roadmap#17</a> ·
+  <code>requirements/design/17_design.html</code></p>
+  <hr style="border: none; border-top: 1px solid var(--rule);">
+  <p>This design doc was drafted by Claude Code using Fable 5 and reviewed by @jwildfire</p>
+</footer>
+
+</body>
+</html>
