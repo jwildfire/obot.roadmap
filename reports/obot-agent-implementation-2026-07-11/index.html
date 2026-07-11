@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>obot.agent — implementation report &amp; RC readiness</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --ok: #166534;
+    --ok-bg: #dcfce7;
+    --warn: #92400e;
+    --warn-bg: #fef3c7;
+    --block: #991b1b;
+    --block-bg: #fee2e2;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 56rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 1.5rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .pill { display: inline-block; border-radius: 999px; padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  .ok { background: var(--ok-bg); color: var(--ok); }
+  .warn { background: var(--warn-bg); color: var(--warn); }
+  .blocked { background: var(--block-bg); color: var(--block); }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  a { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .strip { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.25rem 0; }
+  .stat { flex: 1 1 10rem; background: var(--panel); border-radius: 8px; padding: .75rem 1rem; }
+  .stat .n { font-size: 1.35rem; font-weight: 700; display: block; }
+  .stat .l { color: var(--muted); font-size: .82rem; }
+  .verdict { background: var(--warn-bg); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+             padding: .9rem 1.1rem; margin: 1.25rem 0; }
+  .verdict strong:first-child { color: var(--warn); }
+  ol.timeline { list-style: none; padding: 0; margin: 1rem 0; border-left: 3px solid var(--rule); }
+  ol.timeline li { padding: .35rem 0 .35rem 1.1rem; position: relative; }
+  ol.timeline li::before { content: ""; position: absolute; left: -7px; top: .85rem;
+    width: 11px; height: 11px; border-radius: 50%; background: var(--accent); }
+  .note { color: var(--muted); font-size: .9rem; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           color: var(--muted); font-size: .85rem; }
+  @media (max-width: 40rem) { .strip { flex-direction: column; } table { display: block; overflow-x: auto; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>😺🤖 obot.agent — implementation report &amp; RC readiness</h1>
+  <p class="meta">
+    2026-07-11 · Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/17">obot.roadmap#17</a>
+    · Design <a href="../../requirements/design/17_design.html">17_design.html</a>
+    · <span class="pill warn">RC after three merges</span>
+  </p>
+</header>
+
+<div class="strip">
+  <div class="stat"><span class="n">1 → 1</span><span class="l">repos: safety.agent renamed to obot.agent, history intact</span></div>
+  <div class="stat"><span class="n">5</span><span class="l">sub-issues decomposed &amp; linked under #17</span></div>
+  <div class="stat"><span class="n">3</span><span class="l">draft PRs awaiting @jwildfire (#11 → #16 → #17)</span></div>
+  <div class="stat"><span class="n">0</span><span class="l">workspace symlinks into archived clones (was 3)</span></div>
+</div>
+
+<h2 id="verdict">RC readiness — the verdict</h2>
+
+<div class="verdict">
+<strong>Structurally ready; gated on review.</strong> Nothing outstanding requires new design or
+new decisions — D1–D4 are resolved and every remaining step is mechanical. obot.agent is
+RC-taggable the moment three things land:
+<ol>
+  <li>Merge the stacked drafts in order: <a href="https://github.com/jwildfire/obot.agent/pull/11">#11</a>
+      (housekeeping) → <a href="https://github.com/jwildfire/obot.agent/pull/16">#16</a> (session skills in)
+      → <a href="https://github.com/jwildfire/obot.agent/pull/17">#17</a> (overlay restructure; auto-retargets to main).</li>
+  <li>Complete <a href="https://github.com/jwildfire/obot.roadmap/issues/23">obot.roadmap#23</a>'s second half
+      (remove the hub's session-skill copies, repoint the last symlinks) — so the "no skill lives in
+      two places" criterion holds at tag time. Agent-executable minutes after #16 merges.</li>
+  <li>Tag <code>v0.1.0-rc1</code> with staged release notes (agent drafts, @jwildfire publishes).</li>
+</ol>
+<span class="note">Explicitly <em>not</em> RC blockers:
+<a href="https://github.com/jwildfire/obot.agent/issues/14">#14</a> (upstream contributions — outbound, lands on Gilead's timeline)
+and <a href="https://github.com/jwildfire/obot.agent/issues/15">#15</a> (keynote stylesheet — additive, blocked on the safety.viz v1.0 push).</span>
+</div>
+
+<h2 id="timeline">What happened today (2026-07-11)</h2>
+
+<ol class="timeline">
+  <li><strong>PR #10 merged</strong> — obotclaw[bot] authorship rule codified (@jwildfire approval). <span class="pill ok">done</span></li>
+  <li><strong>Rename executed</strong> — GitHub repo, local clone, remote, workspace <code>CLAUDE.md</code>; obotclaw app installation verified post-rename with a minted token. <span class="pill ok">done</span></li>
+  <li><strong>Full audit</strong> — every artifact read against gsm.agent; headline: near-zero true duplication, the AGENTS.md was already overlay-shaped. <span class="pill ok">done</span></li>
+  <li><strong>Design published + signed off</strong> — <a href="../../requirements/design/17_design.html">17_design.html</a>; D1 deferred (TDD gate, revisit at gsm.agent Q3), D2 (bot author + trailer), D3 (frontmatter), D4 (delete superseded app files) approved. <span class="pill ok">done</span></li>
+  <li><strong>Decomposition</strong> — 5 sub-issues posted, linked via GitHub sub-issue relationships, mirrored into #17's Tasks. <span class="pill ok">done</span></li>
+  <li><strong>Implementation</strong> — 3 draft PRs up; hub-side skill adoption committed direct to main (<code>66e758e</code>). <span class="pill warn">in review</span></li>
+</ol>
+
+<h2 id="architecture">The three-layer architecture now in force</h2>
+
+<table>
+  <tr><th>Layer</th><th>Owns</th><th>Repo</th></tr>
+  <tr><td><strong>gsm.agent</strong> (upstream)</td><td>Ecosystem conventions: drafts, attribution, approval gates, worktrees, TDD; skills <code>tdd</code>, <code>issue-review</code>, <code>sub-issue-linking</code></td><td><code>Gilead-BioStats/gsm.agent</code> (cloned as <code>.github/</code>)</td></tr>
+  <tr><td><strong>obot.agent</strong> (overlay)</td><td>Mission + GxP stance, gsm.viz/JS reference, requirement matrices, renderer + identity + P004 skills, <em>session skills</em> (PR #16), terminology doc, keynote stylesheet home</td><td><code>jwildfire/obot.agent</code></td></tr>
+  <tr><td><strong>obot.roadmap</strong> (hub)</td><td>Requirements + lifecycle, <em>requirement skills</em> (adopted today), design docs, diary, site, reports</td><td><code>jwildfire/obot.roadmap</code></td></tr>
+</table>
+<p class="note">One documented divergence from upstream: commit attribution (D2) — obotclaw[bot] is
+the git author <em>and</em> commits keep the agent Co-Authored-By trailer. Everything else defers upward.</p>
+
+<h2 id="inventory">Work inventory</h2>
+
+<table>
+  <tr><th>Item</th><th>What</th><th>Status</th></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.agent/pull/11">obot.agent PR #11</a></td><td>Rename housekeeping: README/agent.md retitle, dead obot-claw links → hub, staging-fork policy → obotclaw model, whitelist fix</td><td><span class="pill warn">draft — review 1st</span></td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.agent/pull/16">obot.agent PR #16</a></td><td>Absorb 5 session skills from the hub (3 cross-repo links repointed); closes <a href="https://github.com/jwildfire/obot.agent/issues/13">#13</a></td><td><span class="pill warn">draft — review 2nd</span></td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.agent/pull/17">obot.agent PR #17</a></td><td>Overlay restructure (+110/−128): overlay-contract AGENTS.md, <code>docs/terminology.md</code>, D2 mechanics, frontmatter ×6, D4 deletions, OpenClaw fix; closes <a href="https://github.com/jwildfire/obot.agent/issues/12">#12</a></td><td><span class="pill warn">draft — review 3rd (stacked on #11)</span></td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/23">obot.roadmap#23</a></td><td>Skills swap: requirement skills adopted (<code>66e758e</code>, stale refs fixed) ✓ · session-skill removal + symlink repoint</td><td><span class="pill warn">half done — 2nd half after #16</span></td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.agent/issues/14">obot.agent#14</a></td><td>Upstream interview workflow + generic test-driver to gsm.agent (staged locally for review before any push to Gilead)</td><td><span class="pill warn">queued — post-RC</span></td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.agent/issues/15">obot.agent#15</a></td><td>Land the shared keynote stylesheet</td><td><span class="pill blocked">blocked — safety.viz v1.0 push</span></td></tr>
+</table>
+
+<h2 id="criteria">#17 success criteria — scorecard</h2>
+
+<table>
+  <tr><th>Criterion</th><th>State</th></tr>
+  <tr><td>Workspace agents inherit gsm.agent conventions automatically</td><td><span class="pill ok">met</span> — CLAUDE.md imports upstream AGENTS.md; PR #17 makes the contract explicit</td></tr>
+  <tr><td>obot.agent contains only obot-specific material</td><td><span class="pill warn">met at merge</span> — D4 deletions + overlay rewrite are in PR #17</td></tr>
+  <tr><td>No convention stated in two places</td><td><span class="pill warn">met at merge</span> — audit found near-zero duplication; PR #17 removes the residue</td></tr>
+  <tr><td>Upstream improvements flow without copying</td><td><span class="pill ok">met</span> — overlay points at upstream; divergences must be documented (one exists: D2)</td></tr>
+  <tr><td>No stale obot-claw references (living docs)</td><td><span class="pill warn">met at merge</span> — PR #11 + #17; historical records stay verbatim by design (§8)</td></tr>
+  <tr><td>Skill symlinks resolve to live repos</td><td><span class="pill warn">5/8</span> — requirement-* done; session-* flip after #16 (#23 second half)</td></tr>
+</table>
+
+<footer>
+  <p>Report · <code>reports/obot-agent-implementation-2026-07-11/</code> ·
+     sources: <a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a> and linked sub-issues/PRs</p>
+  <hr style="border: none; border-top: 1px solid var(--rule);">
+  <p>This report was drafted by Claude Code using Fable 5 and reviewed by @jwildfire</p>
+</footer>
+
+</body>
+</html>
