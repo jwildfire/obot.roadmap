@@ -1,0 +1,47 @@
+# gsm.safety v1.0.0 — every safety.viz chart, now an R widget
+
+DRAFT — ships with the v1.0.0 tag after the RC merges; review on the rendered page.
+
+Six interactive clinical safety charts, one function call each. gsm.safety v1.0.0 wraps every renderer in the safety.viz v1.1.0 library as an R htmlwidget, so the charts the docs site demos are now first-class citizens of an R session, an R Markdown report, or a Shiny app.
+
+## The widgets
+
+| Widget | Chart | Data |
+| --- | --- | --- |
+| `Widget_Histogram()` | Result distributions with normal-range overlays, grouped small multiples, and a linked participant listing | labs/vitals (BDS) |
+| `Widget_ShiftPlot()` | Baseline-versus-comparison shifts per participant, with visit and summary-stat controls | labs/vitals (BDS) |
+| `Widget_DeltaDelta()` | Change on two measures at once (ALT vs AST by default), optional regression line | labs/vitals (BDS) |
+| `Widget_ResultsOverTime()` | Longitudinal results by visit with grouping and normal-range context | labs/vitals (BDS) |
+| `Widget_OutlierExplorer()` | Participant-level trajectories for spotting outliers per measure | labs/vitals (BDS) |
+| `Widget_AeTimelines()` | Per-participant adverse-event timelines colored by severity | adverse events |
+
+## One call to a rendered chart
+
+```r
+library(gsm.safety)
+
+Widget_Histogram(
+  dfResults = ExampleData("adbds"),
+  lSettings = list(group_by = "ARM", display_normal_range = TRUE)
+)
+```
+
+Every widget takes a long-format data.frame plus a settings list, validates your columns against the chart's shipped data contract before rendering (clear errors, not blank charts), and inherits the safety.viz control sidebar — filters, grouping, and linked listings — with no extra code.
+
+## Workflows and examples included
+
+Each chart ships a gsm-idiom report workflow (`inst/workflow/3_reports/`) runnable via `gsm.core::RunWorkflow()`, and a runner script (`inst/examples/`) that writes a standalone HTML report. `ExampleData()` provides the same pharmaverseadam-derived demo data the safety.viz site uses, so what you render locally matches the published demos exactly.
+
+## Built for regulated use
+
+The release is qualified with [qcthat](https://github.com/Gilead-BioStats/qcthat): every test names the GitHub issue it evidences, and the [v1.0.0 qualification matrix](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) — 47 issue-linked tests, all passing, `R CMD check` clean — publishes with the release alongside [rendered evidence pages](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) for every widget.
+
+## Breaking changes
+
+The experimental safetyCharts bridge is retired: `RenderSafetyChartsWidget()` and `MakeExampleData()` are removed, along with the safetyCharts/Tendril dependencies. The six `Widget_*()` functions and `SaveWidgetReport()` replace them.
+
+Development process: designed, built, and qualified against [obot.roadmap#28](https://github.com/jwildfire/obot.roadmap/issues/28) with per-issue commit and test traceability.
+
+---
+
+This release was drafted by Claude Code using Fable 5 and reviewed by @jwildfire.
