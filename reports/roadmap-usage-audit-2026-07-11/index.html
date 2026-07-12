@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap usage audit — the public story lags reality</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --ok: #166534;
+    --ok-bg: #dcfce7;
+    --warn: #92400e;
+    --warn-bg: #fef3c7;
+    --block: #991b1b;
+    --block-bg: #fee2e2;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 60rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 1.5rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .pill { display: inline-block; border-radius: 999px; padding: .1rem .6rem; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+  .ok { background: var(--ok-bg); color: var(--ok); }
+  .warn { background: var(--warn-bg); color: var(--warn); }
+  .blocked { background: var(--block-bg); color: var(--block); }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: .9rem 1.1rem; overflow-x: auto; font-size: .85rem; line-height: 1.5; }
+  pre code { background: none; padding: 0; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .65rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .note { color: var(--muted); font-size: .9rem; }
+  .callout { background: var(--panel); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: .75rem 1.1rem; margin: 1rem 0; }
+  ol.corrections > li { margin-bottom: .6rem; }
+  footer { margin-top: 3.5rem; color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Roadmap usage audit — the public story lags reality</h1>
+  <p class="meta">2026-07-11 · audit window 2026-07-08 → 07-11 ·
+    <a href="https://jwildfire.github.io/obot.roadmap/roadmap.html">roadmap.html</a> vs.
+    what actually shipped · read-only: no stage or issue state was changed by this audit</p>
+  <p><span class="pill blocked">Development lane: empty most of 07-11</span>
+     <span class="pill ok">actual: 21 PRs merged, 3 releases, 4 agents</span></p>
+</header>
+
+<p><strong>Trigger.</strong> On the evening of 2026-07-11 — the day
+<a href="https://github.com/jwildfire/safety.viz/releases/tag/v1.0.0">safety.viz v1.0.0</a>
+(22:31 EDT) and
+<a href="https://github.com/jwildfire/obot.agent/releases/tag/v0.1.0">obot.agent v0.1.0</a>
+(21:42 EDT) both shipped, with four agents concurrently running builds — @jwildfire opened
+the public roadmap page and found <em>nothing</em> "In Development". The page was not broken:
+it faithfully rendered a board that nobody had updated while the work ran. This report
+explains the mechanism, reconstructs the gap with specifics, names the root causes, and
+lists corrections (tier 1, not applied — awaiting @jwildfire) and practice changes (tier 2),
+flagging what belongs in the session-hub requirement
+(<a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>).</p>
+
+<h2 id="mechanism">1 · How roadmap.html decides "In Development"</h2>
+
+<p>The page is generated at deploy time by
+<code>scripts/build_roadmap.mjs</code> (never committed; rebuilt by
+<code>.github/workflows/deploy-site.yml</code> on every push to <code>main</code> touching
+<code>site/ diary/ reports/ scripts/ requirements/design/</code>, plus daily at 10:00 UTC).
+A row appears in the <strong>Development</strong> section if and only if:</p>
+
+<ol>
+  <li>It is an issue in <code>jwildfire/obot.roadmap</code> carrying the
+    <code>requirement</code> label — issues in implementation repos (safety.viz, obot.agent,
+    gsm.safety) <em>never</em> render, and neither do hub issues without the label
+    (e.g. <a href="https://github.com/jwildfire/obot.roadmap/issues/23">#23</a>, which sat at
+    board-Status "Development" all afternoon, invisibly); <em>and</em></li>
+  <li>Its item on the <a href="https://github.com/users/jwildfire/projects/1">obot Roadmap
+    user project</a> has the single-select <strong>Status field set to "Development"</strong>,
+    read via the <code>ROADMAP_TOKEN</code> secret (confirmed working: the live page reflects
+    board Status, including open issues shown as Released).</li>
+</ol>
+
+<div class="callout"><strong>The only signal is the manually-set board field.</strong>
+No PR, merge, commit, release, sub-issue state, or agent activity feeds the page. If no
+human or agent moves the Status field, the page cannot know work is happening. Two
+secondary signal losses compound it: the <em>Tasks</em> column parses only inline
+<code>### Tasks</code> checkboxes in the requirement body (it cannot see sub-issues — yet
+the <code>requirement-tasks</code> skill makes sub-issues the canonical task tracker), and
+"Released / closed" items collapse into a folded <code>&lt;details&gt;</code> at the bottom
+of the page, out of sight.</div>
+
+<p class="note">Fallback worth knowing: without a readable Status the script groups by
+issue state + milestone (<code>stageOf()</code>), a scheme in which "Development" is
+unreachable. That fallback was not the cause here — the token works — but it means a token
+regression would silently empty the Development lane forever.</p>
+
+<h2 id="activity">2 · What actually happened, 07-08 → 07-11</h2>
+
+<div class="tablewrap">
+<table>
+  <tr><th>Repo</th><th>PRs merged</th><th>Issues closed</th><th>Releases</th><th>Notes</th></tr>
+  <tr>
+    <td><a href="https://github.com/jwildfire/safety.viz">safety.viz</a></td>
+    <td>15 (#3, #4, #9–#13, #16, #18, #22, #23, #28, #30, #31, #36)</td>
+    <td>18 (#1, #2, #5–#8, #14, #15, #17, #19–#21, #24–#27, #29, #34)</td>
+    <td><strong>v0.1.0</strong> 07-11 08:04 EDT<br><strong>v1.0.0</strong> 07-11 22:31 EDT</td>
+    <td>Ultraplan fan-out: five new renderers, evidence framework, docs-site v1.0, binning QC — issues #14–#35 all opened and mostly closed inside the window</td>
+  </tr>
+  <tr>
+    <td><a href="https://github.com/jwildfire/obot.agent">obot.agent</a></td>
+    <td>6 (#10, #11, #16, #17, #19, #20)</td>
+    <td>3 (#12, #13, #18)</td>
+    <td><strong>v0.1.0</strong> 07-11 21:42 EDT (rc1 promoted same evening)</td>
+    <td>Full gsm.agent-overlay conversion; session-hub PR <a href="https://github.com/jwildfire/obot.agent/pull/24">#24</a> open implementing issues #21–#23</td>
+  </tr>
+  <tr>
+    <td><a href="https://github.com/jwildfire/obot.roadmap">obot.roadmap</a></td>
+    <td>0 (direct commits to main, per the standing grant)</td>
+    <td>2 (#23, #26)</td>
+    <td><strong>v0.2</strong> 07-10 21:33 EDT</td>
+    <td>Issues #23–#27 opened; designs #17 and #24 published; skills adopted then handed to obot.agent; 3 reports + session-report exemplar added</td>
+  </tr>
+  <tr>
+    <td><a href="https://github.com/jwildfire/gsm.safety">gsm.safety</a></td>
+    <td>0</td><td>0</td><td>—</td>
+    <td>Quiet; #27/#28/PR #29 added to the board 07-10 (Backlog/Review)</td>
+  </tr>
+</table>
+</div>
+
+<p>Four agents were active late 07-11: the safety.viz release build (hub
+<a href="https://github.com/jwildfire/obot.roadmap/issues/1">#1</a>), the obot.agent release
+(hub <a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a>), demo-data
+migration research (hub <a href="https://github.com/jwildfire/obot.roadmap/issues/25">#25</a>),
+and the devops-dashboard requirement design (hub
+<a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>).</p>
+
+<h3>What the page said meanwhile</h3>
+
+<p>Reconstructed from <code>site/roadmap-changelog.json</code> and diary entries:</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th>When (EDT)</th><th>Board event</th><th>Page's Development lane after deploy</th></tr>
+  <tr><td>07-08 (logged 07-09, v1.2.0)</td><td>#1, #3 → Review</td><td>#2 only (held by the done-gate)</td></tr>
+  <tr><td>07-10 ~21:53 (v1.3.0)</td><td>#1, #3 Review → <strong>Released</strong> ("scoped deliverable shipped"; issues left open)</td><td>#2 only</td></tr>
+  <tr><td>07-11 ~08:41 (v1.4.0)</td><td>#2, #21 → <strong>Released</strong> (v0.1.0 shipped)</td><td><strong>Empty</strong></td></tr>
+  <tr><td>07-11 ~13:10 (v1.5.0)</td><td>#17 Requirement Gathering → <strong>Review</strong> (skipping Design and Development); #23 → Development (not requirement-labeled — invisible); #24 added at Requirement Gathering</td><td><strong>Empty</strong></td></tr>
+  <tr><td>07-11 evening (unlogged)</td><td>#24 → Development</td><td>#24 only (page regenerated 22:59 EDT)</td></tr>
+</table>
+</div>
+
+<p>So for the whole shipping day the Development lane showed zero requirements, and by
+~23:00 exactly one — the session-hub requirement — while neither of the two requirements
+that actually shipped releases appeared as active anywhere above the fold.</p>
+
+<h2 id="gaps">3 · Gap analysis — five specific examples</h2>
+
+<div class="tablewrap">
+<table>
+  <tr><th>#</th><th>Gap</th><th>Detail</th></tr>
+  <tr>
+    <td>1</td>
+    <td><strong>Hub #1 (safety.viz) filed under "Released" during its biggest development day</strong></td>
+    <td>Moved Review → Released at the 07-10 wrapup on a "scoped deliverable (library scaffold) shipped" rationale, issue left open. Then 12+ PRs merged and <em>two releases</em> (v0.1.0, v1.0.0) shipped under it on 07-11 while the page showed it inside the collapsed "Released / closed" fold. Its Tasks column reads <code>0/1</code>; only <strong>1 of ~20</strong> implementation issues (safety.viz#1) is linked as a sub-issue — safety.viz #2, #5–#8, #14–#35 are all unlinked.</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>Hub #17 (obot.agent) skipped Development entirely</strong></td>
+    <td>One move, Requirement Gathering → Review, at the 07-11 13:10 wrapup — by the time anyone touched the stage, the design was approved <em>and</em> the three stacked implementation PRs were already in review, so the Development stage never existed on the public page. v0.1.0 then shipped at 21:42 EDT with the board still saying Review. Page Tasks: <code>0/5</code> despite 3 of 5 sub-issues closed (inline checkboxes never ticked). Sub-issue obot.agent#18 (docs refresh, closed via PR #19) was never linked.</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><strong>Hub #21 (docs site) built entirely while marked "Requirement Gathering"</strong></td>
+    <td>Its whole implementation — safety.viz #5–#8, four PRs, 07-09 → 07-11 — ran while the board said Requirement Gathering (added 07-09, v1.2.0). It jumped straight to Released at the 07-11 morning wrapup, never passing Development or Review. Page Tasks still shows <code>2/4</code> though all four sub-issues are closed.</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><strong>19 of 52 board items have no Status at all</strong></td>
+    <td>Work items get added to the board (a good instinct — diary 07-10/07-11 records the adds) but <code>gh project item-add</code> sets no Status, so safety.viz #20–#27, #29–#35 and obot.agent #12–#15 sit in no lane on the board — and being non-hub issues they never render on the page regardless. Board Status totals: 19 none, 14 Released, 8 Backlog, 6 Review, 3 Requirement Gathering, 2 Development.</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td><strong>Stage-semantics drift and unlogged moves</strong></td>
+    <td>"Released" (lifecycle stage 6: "included in a quarterly release") is being applied to <em>open</em> requirements at first ship — #1, #2, #3, #21 are all OPEN issues in Released, which is what evicted #1 from the active lanes. Hub #23 is CLOSED but its board Status still says Development. #24's move to Development happened without the changelog entry AGENTS.md requires for stage moves. Meanwhile the one workstream tracked correctly — #24 itself: design published, five sub-issues linked, moved to Development as its PR opened — proves the lifecycle works when it's driven.</td>
+  </tr>
+</table>
+</div>
+
+<h3>Sub-issue linkage scorecard</h3>
+
+<div class="tablewrap">
+<table>
+  <tr><th>Requirement</th><th>Linked sub-issues</th><th>Missing</th></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/1">#1</a> safety.viz</td><td>1 (safety.viz#1)</td><td>safety.viz #2, #5–#8, #14–#35 (~20 issues — the entire v0.1 → v1.0 arc)</td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a> obot.agent overlay</td><td>5 (obot.agent #12–#15, hub #23)</td><td>obot.agent #18</td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/21">#21</a> docs site</td><td>4 (safety.viz #5–#8)</td><td>— complete</td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a> session hub</td><td>5 (obot.agent #21–#23, hub #26, #27)</td><td>— complete (the model citizen)</td></tr>
+  <tr><td><a href="https://github.com/jwildfire/obot.roadmap/issues/25">#25</a> demo data</td><td>0</td><td>safety.viz #35 (the demo-data refactor issue it spawned from)</td></tr>
+</table>
+</div>
+
+<h2 id="rootcause">4 · Root causes</h2>
+
+<ol>
+  <li><strong>Stage moves are a wrapup-only, approval-gated ritual.</strong> The only
+    documented place stages move is phase 3 of the <code>session-wrapup</code> skill
+    ("apply the agreed changes — issue updates, stage moves…"), after interactive discussion
+    with @jwildfire. Nothing in the development loop — <code>tdd</code>, opening a PR,
+    merging, tagging a release — touches the board. On a day when four agents outrun the
+    wrapup, the public page necessarily trails reality by up to a full session; and because
+    wrapups batch the moves, requirements teleport across stages (#17: Requirement Gathering
+    → Review; #21: Requirement Gathering → Released) rather than dwelling in Development
+    where observers would see them.</li>
+  <li><strong>"Released" was redefined downward.</strong> Moving #1/#3 (07-10) and #2/#21
+    (07-11) to Released while leaving the issues open — "scoped deliverable shipped" —
+    removed them from every visible lane just before the largest push. The lifecycle table
+    has no answer for a requirement that spans multiple releases, so the board improvised
+    one that hides active work.</li>
+  <li><strong>The page reads a different signal than the one agents actually maintain.</strong>
+    Agents diligently update issues, PRs, sub-issues, evidence comments, and releases — the
+    page reads none of those. It reads one manual field (project Status) plus inline body
+    checkboxes that sub-issue-based tracking has obsoleted. High-fidelity work signals exist;
+    the page is wired to the lowest-fidelity, least-maintained one.</li>
+</ol>
+
+<p><strong>In one sentence:</strong> the roadmap page renders only the hand-moved board
+Status of hub requirement issues, and the only ritual that moves that field is the
+end-of-session wrapup — so on a day when the work outran the wrapup (and "Released" had
+already been applied to the open safety.viz requirement), the public page showed an empty
+Development lane while 21 PRs merged and two releases shipped.</p>
+
+<h2 id="recommendations">5 · Recommendations</h2>
+
+<h3>Tier 1 — immediate corrections (not applied; each is one board/issue action awaiting @jwildfire)</h3>
+
+<ol class="corrections">
+  <li><strong>Hub #1</strong>: board Released → <strong>Review</strong>, with a v1.0.0
+    evidence comment. Then decide: close it as delivered (re-filing the open remainder —
+    safety.viz #32/#33/#35 — under a follow-on requirement or #25), or keep it in Review
+    until the v1.0 sign-off. An open requirement should not sit in Released.</li>
+  <li><strong>Hub #17</strong>: v0.1.0 shipped with sign-off — move Review →
+    <strong>Released</strong> and close, re-homing the two open sub-issues (obot.agent #14
+    upstream staging, #15 stylesheet) — e.g. under hub #18 or as standalone board items.
+    Alternatively hold in Review if a formal post-release review is wanted; either way the
+    stage should record the decision, not the backlog of one.</li>
+  <li><strong>Hub #23</strong> (closed): board Development → <strong>Released</strong>
+    (or Done).</li>
+  <li><strong>Set a Status on all 19 no-status board items</strong>: closed ones
+    (safety.viz #20/#21 issues, #22–#27, #29, #31, #34; obot.agent #12/#13) → Released;
+    open in-flight ones (obot.agent #21–#23 are already Review via a later add — verify;
+    safety.viz #32/#33/#35, obot.agent #14/#15) → Backlog or Development to match reality.</li>
+  <li><strong>Link the missing sub-issues</strong>: safety.viz #2, #5–#8, #14–#35 → hub #1
+    (or at minimum the v1.0-cycle set #14–#35); obot.agent #18 → hub #17;
+    safety.viz #35 → hub #25.</li>
+  <li><strong>Sync the inline Tasks checklists</strong> in #17, #21, #24 (and #1 if kept
+    open) to sub-issue state — or replace each with a one-line pointer to the sub-issue
+    list, since the page can't read sub-issues yet (see tier 2).</li>
+  <li><strong>Log the corrections</strong>: one <code>site/roadmap-changelog.json</code>
+    patch entry covering #24's unlogged Development move plus whatever subset of the above
+    is applied.</li>
+</ol>
+
+<h3>Tier 2 — practice and process changes</h3>
+
+<ul>
+  <li><strong>Move stages at work boundaries, not wrapups.</strong> Adopt one rule:
+    <em>a requirement moves to Development when its first implementation PR opens (or its
+    first sub-issue goes in progress), to Review when the last planned PR merges and
+    evidence posts, to Released only when the release is tagged and signed off — at which
+    point the issue closes.</em> Wire it into the working skills: kickoff
+    (<code>session-init</code> flags any requirement about to be worked that isn't in
+    Development), the <code>tdd</code>/PR-open step (move the parent), and release tagging.
+    Wrapup then <em>verifies</em> stages instead of being the only thing that moves them.</li>
+  <li><strong>Fix the Released semantics.</strong> Either scope requirements per release
+    (close #-style: v0.1 requirement closes at v0.1, a new requirement carries v1.0) or
+    allow explicit regression (Released → Development re-opens the lane when a new cycle
+    starts under the same requirement). Pick one; the current improvisation hides work.</li>
+  <li><strong>Board adds always set a Status.</strong> Every <code>gh project item-add</code>
+    is immediately followed by a Status edit; "(no status)" is treated as a lint error at
+    wrapup.</li>
+  <li><strong>Sub-issue linking at creation time.</strong> When an agent files
+    implementation issues for a requirement (the ultraplan filed 8 in one evening), linking
+    them to the parent via the <code>sub-issue-linking</code> skill is part of filing, not
+    cleanup.</li>
+  <li><strong>Teach the page to read the signals agents maintain</strong> (small
+    <code>build_roadmap.mjs</code> changes, independent of #24): render sub-issue progress
+    via the GraphQL <code>subIssuesSummary</code> instead of (or alongside) inline
+    checkboxes; show open-PR / recent-merge counts on each requirement row as an activity
+    hint; and un-fold "Released / closed" entries that are still open issues so a
+    mis-staged requirement stays visible.</li>
+</ul>
+
+<h3>What belongs in hub #24 (session hub) scope</h3>
+
+<p>The findings that are <em>live-activity</em> problems, not lifecycle problems, belong in
+the session-hub requirement its sibling agent is designing now:</p>
+
+<ul>
+  <li><strong>The "who is building what right now" layer.</strong> roadmap.html is the
+    intent view (lifecycle lanes); the session hub's live dashboard is the activity view
+    (agents ↔ requirements ↔ PRs). Wiring a "live" badge onto a roadmap row when the hub
+    reports an active session on that requirement would have answered tonight's question
+    at a glance.</li>
+  <li><strong>Stage-drift detection.</strong> The wrapup report (and live mode) can compute
+    exactly what this audit computed by hand: board Status vs. sub-issue/PR/release state,
+    no-status board items, unticked Tasks, unlinked sub-issues — surfaced as a drift list
+    the wrapup's phase-3 discussion resolves. Wrapup already has a "stage correct?" checklist
+    item; #24 can make it evidence-driven instead of recall-driven.</li>
+  <li><strong>Optionally, the automation hook</strong> for the "Development on first PR"
+    rule — a small event-driven action fits #24's collectors better than the static site
+    generator.</li>
+</ul>
+
+<footer>
+  <p>Report · <code>reports/roadmap-usage-audit-2026-07-11/</code> · sources:
+    <code>scripts/build_roadmap.mjs</code>, <code>deploy-site.yml</code>, the live page,
+    <code>gh</code> queries across the four active repos, project 1 item list,
+    sub-issue GraphQL, <code>site/roadmap-changelog.json</code>, diaries 07-04 → 07-11</p>
+  <hr style="border: none; border-top: 1px solid var(--rule);">
+  <p>This report was drafted by Claude Code using Fable 5 and reviewed by @jwildfire</p>
+</footer>
+
+</body>
+</html>
