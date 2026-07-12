@@ -30,6 +30,13 @@ requirement [#7](https://github.com/jwildfire/obot.roadmap/issues/7).
 Superseded versions are retained deliberately (design decision D3) — the memory
 philosophy favors preserving the decision trail.
 
+## Session reports
+
+[`sessions/`](sessions/) holds the frozen per-session operational records produced at
+wrapup by the session hub ([requirement #24](https://github.com/jwildfire/obot.roadmap/issues/24)).
+It follows its own flat contract — one self-contained HTML file per working session,
+named by the diary slug — documented in [`sessions/README.md`](sessions/README.md).
+
 ## Adding a report
 
 1. Create `reports/<kebab-name-with-date>/` with a self-contained `index.html`.
