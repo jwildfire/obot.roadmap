@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hep-explorer — upstream backlog &amp; a clinical-guide section</title>
+<style>
+  :root {
+    --paper: #FBFBFA;
+    --card: #FFFFFF;
+    --ink: #212B2E;
+    --muted: #5C6B6E;
+    --line: #DDE3E1;
+    --gsm: #1E6A5C;
+    --gsm-soft: #E4EFEC;
+    --obot: #3A5490;
+    --obot-soft: #E7EBF5;
+    --warn: #9A6A1F;
+    --warn-soft: #F5EDDC;
+    --good: #2E7D4F;
+    --good-soft: #E3F0E8;
+    --bad: #A2402F;
+    --bad-soft: #F4E2DD;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #151A1C;
+      --card: #1B2124;
+      --ink: #E3E9E7;
+      --muted: #94A3A1;
+      --line: #2C3538;
+      --gsm: #5CB8A0;
+      --gsm-soft: #1D2E2A;
+      --obot: #97AFE2;
+      --obot-soft: #222B3D;
+      --warn: #D9A84E;
+      --warn-soft: #33290F;
+      --good: #74C795;
+      --good-soft: #17301F;
+      --bad: #E08972;
+      --bad-soft: #331A14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #151A1C;
+    --card: #1B2124;
+    --ink: #E3E9E7;
+    --muted: #94A3A1;
+    --line: #2C3538;
+    --gsm: #5CB8A0;
+    --gsm-soft: #1D2E2A;
+    --obot: #97AFE2;
+    --obot-soft: #222B3D;
+    --warn: #D9A84E;
+    --warn-soft: #33290F;
+    --good: #74C795;
+    --good-soft: #17301F;
+    --bad: #E08972;
+    --bad-soft: #331A14;
+  }
+  :root[data-theme="light"] {
+    --paper: #FBFBFA;
+    --card: #FFFFFF;
+    --ink: #212B2E;
+    --muted: #5C6B6E;
+    --line: #DDE3E1;
+    --gsm: #1E6A5C;
+    --gsm-soft: #E4EFEC;
+    --obot: #3A5490;
+    --obot-soft: #E7EBF5;
+    --warn: #9A6A1F;
+    --warn-soft: #F5EDDC;
+    --good: #2E7D4F;
+    --good-soft: #E3F0E8;
+    --bad: #A2402F;
+    --bad-soft: #F4E2DD;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 48rem; margin: 0 auto; padding: 3.5rem 1.25rem 5rem; }
+
+  h1, h2, h3 {
+    font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+  h1 { font-size: 2.15rem; font-weight: 700; margin: 0.4rem 0 0.8rem; }
+  h2 { font-size: 1.4rem;  font-weight: 600; margin: 0 0 0.9rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 0.4rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--obot); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--obot); outline-offset: 2px; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.85em;
+  }
+  section { margin: 0 0 3rem; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .eyebrow {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .lede { font-size: 1.12rem; color: var(--muted); margin-bottom: 0; }
+  .keyline { border: 0; border-top: 1px solid var(--line); margin: 2.4rem 0; }
+  .sec-eyebrow {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--obot); margin: 0 0 0.5rem;
+  }
+
+  .chip {
+    display: inline-block;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .chip.gsm  { color: var(--gsm);  background: var(--gsm-soft);  border-color: transparent; }
+  .chip.obot { color: var(--obot); background: var(--obot-soft); border-color: transparent; }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
+  .chip.good { color: var(--good); background: var(--good-soft); border-color: transparent; }
+  .chip.bad  { color: var(--bad);  background: var(--bad-soft);  border-color: transparent; }
+
+  /* ---- facts / at-a-glance ---- */
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .facts > div { background: var(--card); padding: 1rem 1.1rem; }
+  .facts h3 { font-size: 0.95rem; }
+  .facts p { font-size: 0.9rem; color: var(--muted); margin: 0; }
+  @media (max-width: 640px) { .facts { grid-template-columns: 1fr; } }
+
+  /* ---- stat strip ---- */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 0 0 1.4rem; }
+  .stats > div { background: var(--card); padding: 0.85rem 0.7rem; text-align: center; }
+  .stats .big {
+    font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+    font-size: 1.3rem; font-weight: 700; color: var(--obot); display: block; line-height: 1.15;
+  }
+  .stats .cap { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---- generic tables ---- */
+  .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); font-weight: 500; text-align: left;
+    padding: 0.5rem 0.9rem 0.5rem 0;
+    border-bottom: 1px solid var(--line); vertical-align: bottom;
+  }
+  td { padding: 0.55rem 0.9rem 0.55rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.k { font-weight: 600; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; white-space: nowrap; color: var(--obot); }
+
+  /* ---- gap analysis table ---- */
+  .gap td:first-child { font-weight: 600; font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-size: 0.9rem; white-space: nowrap; }
+  .gap .st { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.66rem; letter-spacing: 0.04em; }
+  .gap .st.miss { color: var(--bad); }
+  .gap .st.part { color: var(--warn); }
+
+  /* ---- candidate cards ---- */
+  .cands { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 0 0 1.6rem; }
+  @media (max-width: 720px) { .cands { grid-template-columns: 1fr; } }
+  .cand { border: 1px solid var(--line); background: var(--card); padding: 1rem 1.1rem 1.1rem; border-top: 3px solid var(--line); }
+  .cand.win { border-top-color: var(--gsm); box-shadow: 0 0 0 1px var(--gsm); }
+  .cand .tag { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--muted); letter-spacing: 0.04em; }
+  .cand h3 { font-size: 0.98rem; margin: 0.15rem 0 0.5rem; }
+  .cand p { font-size: 0.85rem; margin: 0 0 0.6rem; }
+  .cand .risk { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 0.55rem; }
+  .cand .risk b { color: var(--bad); font-weight: 600; }
+  .cand .score { font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-weight: 700; font-size: 1.05rem; float: right; }
+  .cand.win .score { color: var(--gsm); }
+
+  /* ---- score table ---- */
+  .scores th, .scores td { text-align: center; padding: 0.5rem 0.6rem; }
+  .scores th:first-child, .scores td:first-child { text-align: left; white-space: normal; }
+  .scores td.lens { font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-weight: 600; font-size: 0.84rem; color: var(--ink); }
+  .scores .col-win { background: var(--gsm-soft); }
+  .scores td.col-win { color: var(--gsm); font-weight: 600; }
+  .scores tr.total td { border-top: 2px solid var(--line); border-bottom: 0; font-weight: 700; font-size: 1rem; padding-top: 0.7rem; }
+  .scores tr.total td.col-win { color: var(--gsm); }
+  .scores .win-hd { color: var(--gsm); }
+
+  /* ---- pull quote ---- */
+  .quote { border-left: 3px solid var(--obot); background: var(--obot-soft); padding: 0.9rem 1.1rem; margin: 0 0 1.2rem; font-size: 0.95rem; }
+  .quote.gsm { border-left-color: var(--gsm); background: var(--gsm-soft); }
+  .quote .src { display: block; margin-top: 0.5rem; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  /* ---- riders list ---- */
+  ul.riders { list-style: none; padding: 0; margin: 0.4rem 0 0; }
+  ul.riders li { font-size: 0.9rem; padding: 0.4rem 0 0.4rem 1.4rem; position: relative; border-bottom: 1px solid var(--line); }
+  ul.riders li:last-child { border-bottom: 0; }
+  ul.riders li::before { content: "→"; position: absolute; left: 0; color: var(--gsm); }
+
+  /* ---- journey steps ---- */
+  .journey { counter-reset: jr; margin: 0.5rem 0 0; }
+  .journey .step { display: grid; grid-template-columns: 2rem 1fr; gap: 0.9rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
+  .journey .step:last-child { border-bottom: 0; }
+  .journey .n {
+    counter-increment: jr; font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem; font-weight: 600; color: var(--obot);
+    width: 1.7rem; height: 1.7rem; border: 1px solid var(--line); border-radius: 999px;
+    display: grid; place-items: center;
+  }
+  .journey .n::before { content: counter(jr); }
+  .journey .step h4 { margin: 0.1rem 0 0.15rem; font-size: 0.92rem; font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; }
+  .journey .step p { margin: 0; font-size: 0.86rem; color: var(--muted); }
+  .journey .step .t { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--gsm); }
+
+  /* ---- evidence figures ---- */
+  figure { margin: 0 0 1.4rem; border: 1px solid var(--line); background: var(--card); padding: 0.6rem; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); background: #0d1114; }
+  figure figcaption { font-size: 0.8rem; color: var(--muted); margin-top: 0.55rem; padding: 0 0.2rem; }
+  .fig-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 640px) { .fig-2 { grid-template-columns: 1fr; } }
+  .fig-2 figure { margin: 0; }
+  .report-link {
+    display: block; border: 1px solid var(--line); background: var(--card);
+    padding: 0.9rem 1.1rem; margin: 0 0 1.4rem; text-decoration: none; color: var(--ink);
+  }
+  .report-link .rl-eye { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--obot); }
+  .report-link .rl-t { font-weight: 600; font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; }
+  .report-link .rl-s { font-size: 0.82rem; color: var(--muted); }
+
+  /* ---- timeline ---- */
+  .timeline { position: relative; margin: 0.5rem 0 0; padding-left: 1.6rem; }
+  .timeline::before { content: ""; position: absolute; left: 0.42rem; top: 0.3rem; bottom: 0.3rem; width: 2px; background: var(--line); }
+  .phase { position: relative; margin-bottom: 1.3rem; }
+  .phase::before {
+    content: ""; position: absolute; left: -1.6rem; top: 0.35rem;
+    width: 0.85rem; height: 0.85rem; border-radius: 999px;
+    background: var(--paper); border: 2px solid var(--muted);
+  }
+  .phase.done::before { background: var(--gsm); border-color: var(--gsm); }
+  .phase.now::before { background: var(--obot); border-color: var(--obot); }
+  .phase .ph-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem; }
+  .phase h3 { margin: 0; font-size: 1rem; }
+  .phase .when { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--muted); }
+  .phase ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+  .phase li { font-size: 0.88rem; margin-bottom: 0.25rem; color: var(--muted); }
+  .phase li::marker { color: var(--gsm); }
+
+  /* ---- decision panel ---- */
+  .dec { border: 1px solid var(--line); background: var(--card); padding: 0.95rem 1.1rem; margin: 0 0 0.9rem; display: grid; grid-template-columns: 3rem 1fr; gap: 0.9rem; }
+  .dec .did { font-family: "SF Mono", Menlo, Consolas, monospace; font-weight: 700; color: var(--obot); font-size: 0.95rem; }
+  .dec h3 { font-size: 0.95rem; margin: 0 0 0.35rem; }
+  .dec p { margin: 0; font-size: 0.88rem; }
+  .dec .rec { color: var(--muted); font-size: 0.84rem; margin-top: 0.35rem; }
+  .dec .rec b { color: var(--gsm); font-weight: 600; }
+
+  footer {
+    margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+    font-size: 0.8rem; color: var(--muted);
+  }
+</style>
+<style>
+  /* report-specific */
+  .theme-h { font-family:"Avenir Next",Avenir,system-ui,sans-serif; font-weight:600; font-size:0.98rem; margin:1.4rem 0 0.5rem; }
+  .theme-h .chip { vertical-align:middle; margin-left:0.4rem; }
+  .browser { border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card); margin:0.6rem 0 1.4rem; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+  .browser .bar { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.8rem; border-bottom:1px solid var(--line); background:var(--paper); }
+  .browser .dot { width:0.6rem; height:0.6rem; border-radius:999px; background:var(--line); }
+  .browser .url { font-family:"SF Mono",Menlo,monospace; font-size:0.7rem; color:var(--muted); margin-left:0.4rem; }
+  .browser .tabs { display:flex; gap:0.1rem; padding:0 0.8rem; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .browser .tabs span { font-family:"SF Mono",Menlo,monospace; font-size:0.72rem; padding:0.5rem 0.7rem; color:var(--muted); border-bottom:2px solid transparent; }
+  .browser .tabs span.active { color:var(--gsm); border-bottom-color:var(--gsm); font-weight:600; }
+  .browser .page { padding:1.1rem 1.2rem; }
+  .browser .page h3.mk-title { font-size:1.15rem; margin:0 0 0.3rem; }
+  .mk-caution { border-left:3px solid var(--warn); background:var(--warn-soft); color:var(--warn); padding:0.6rem 0.8rem; font-size:0.82rem; margin:0 0 1rem; border-radius:0 4px 4px 0; }
+  .mk-sec { border-top:1px solid var(--line); padding:0.7rem 0 0.2rem; }
+  .mk-sec:first-of-type { border-top:0; }
+  .mk-sec h4 { font-family:"Avenir Next",Avenir,system-ui,sans-serif; font-size:0.86rem; margin:0 0 0.2rem; color:var(--ink); }
+  .mk-sec p { font-size:0.8rem; color:var(--muted); margin:0 0 0.6rem; }
+  .srclink { border:1px solid var(--line); background:var(--card); padding:0.8rem 1rem; margin:0 0 1.2rem; display:block; text-decoration:none; color:var(--ink); }
+  .srclink .rl-eye { font-family:"SF Mono",Menlo,monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--obot); }
+  .srclink .rl-t { font-weight:600; font-family:"Avenir Next",Avenir,system-ui,sans-serif; font-size:0.92rem; }
+  .srclink .rl-s { font-size:0.8rem; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">obot.roadmap · proposal · 2026-07-12</span>
+    <h1>Hep-explorer: upstream backlog &amp; a clinical-guide section</h1>
+    <p class="lede">Two proposals for the eDISH renderer, off the back of PR&nbsp;#44: a triage of every open issue in the original <span class="mono">SafetyGraphics/hep-explorer</span> against our port — with a short list to land this release — and a design for a <strong>Clinical guide</strong> section on the renderer site, grounded in the DIA-ASA working group's evaluation-workflow manual.</p>
+  </header>
+
+  <hr class="keyline">
+
+  <section>
+    <h2>Executive summary</h2>
+    <div class="facts">
+      <div><h3>The backlog</h3><p>All <strong>35</strong> open upstream issues triaged against our Chart.js port. Most are already delivered, deferred (sv#45–51), or not-applicable to a non-Webcharts renderer — leaving a thin, coherent slice of new value.</p></div>
+      <div><h3>This release</h3><p><strong>10</strong> small, in-scope wins in two themes — a clinical-guide cluster and control/legend completeness. Each is S–M effort and closes a visible gap without expanding the chart's surface.</p></div>
+      <div><h3>Clinical guide</h3><p>A new per-renderer <strong>Clinical guide</strong> tab that teaches the eDISH evaluation workflow and links to the authoritative manual — copyright-safe, and it satisfies upstream&nbsp;#328 outright.</p></div>
+    </div>
+    <div class="stats" style="margin-top:1.4rem;">
+      <div><span class="big num">35</span><span class="cap">triaged</span></div>
+      <div><span class="big num">10</span><span class="cap">add this release</span></div>
+      <div><span class="big num">6</span><span class="cap">map to defers</span></div>
+      <div><span class="big num">7</span><span class="cap">new follow-ups</span></div>
+      <div><span class="big num">12</span><span class="cap">out of scope</span></div>
+    </div>
+    <p style="font-size:0.9rem;color:var(--muted);margin-top:0.4rem;">Nothing here is filed or built yet — this is a proposal for your review. On your go I'll file the sub-issues and open a small PR for the clinical-guide section and the add-this-release cluster.</p>
+  </section>
+
+  <hr class="keyline">
+
+  <section>
+    <p class="sec-eyebrow">Part 1 · the upstream backlog</p>
+    <h2>What's worth migrating from <span class="mono" style="font-size:0.8em">SafetyGraphics/hep-explorer</span></h2>
+    <p>The 35 upstream hep-explorer issues cluster into five bands: legend/grouping UX, axis and display controls, clinical-guide linking and messaging, data-handling edge cases, and a handful of large visualization features. A large share is already behind us — 12 are out-of-scope because our Chart.js port already ships the behavior (click-to-filter legend, settings schema, subset-aware legend) or because they are upstream-only Webcharts/D3, IE, build, or code-style defects that share none of our rendering path. Another 6 map cleanly onto our existing sv#45–51 defers (animation, box-plots, sparklines, P_ALT footnote, CSV export) or the known population-profile gap, so they need no new tracking. That leaves 10 small, genuine, in-scope wins we can credibly land this release and 7 real gaps worth new sub-issues (two of which — #207/#248 — collapse into a single display-logic issue). Net: the upstream backlog is mostly either delivered, deferred, or not-applicable, with a thin, coherent slice of new value concentrated in control/legend completeness and clinical-guide linking.</p>
+
+    <h3 class="theme-h">Add to this release &mdash; theme 1: clinical-guide cluster <span class="chip gsm">4 items</span></h3>
+    <p style="font-size:0.9rem;color:var(--muted);">All small, all reinforcing the Clinical guide section below. <strong>#328 is a wiring task, not a feature build</strong> — the guide section satisfies it outright.</p>
+    <div class="scroll-x"><table class="gap"><thead><tr><th>Issue</th><th>Title</th><th>Effort</th><th>Why it makes the release</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/328"><span class="mono">#328</span></a></td><td>Add a link to the clinical workflow as part of the UI</td><td style="text-align:center"><span class="chip good">S</span></td><td>Header link from the chart to the clinical workflow/guide — the anchor deliverable of the clinical-guide section being scoped in parallel.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/335"><span class="mono">#335</span></a></td><td>Link to R/nR reference</td><td style="text-align:center"><span class="chip good">S</span></td><td>We derive and show R-Ratio but offer no link to its clinical rationale; a small in-widget reference link, same clinical-guide surface as #328.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/240"><span class="mono">#240</span></a></td><td>Allow some messages to be permanent</td><td style="text-align:center"><span class="chip good">S</span></td><td>Add a persistent &#x27;not validated for clinical use&#x27; caution alongside the existing data-cleaning note; ties directly into the clinical-guide messaging work.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/107"><span class="mono">#107</span></a></td><td>Add explanatory labels or footnotes for quadrant labels</td><td style="text-align:center"><span class="chip good">S</span></td><td>HEP-QUAD names each quadrant but explains none; a tooltip/caption on clinical meaning is a small, self-contained clinical win.</td></tr>
+    </tbody></table></div>
+
+    <h3 class="theme-h">Add to this release &mdash; theme 2: control &amp; legend completeness <span class="chip gsm">6 items</span></h3>
+    <p style="font-size:0.9rem;color:var(--muted);">Each closes a visible gap in a control or legend we already ship — self-contained, no new chart surface.</p>
+    <div class="scroll-x"><table class="gap"><thead><tr><th>Issue</th><th>Title</th><th>Effort</th><th>Why it makes the release</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/106"><span class="mono">#106</span></a></td><td>Make Quadrant labels optional</td><td style="text-align:center"><span class="chip good">S</span></td><td>Quadrant labels are always-on; adding a show/hide control is a contained control tweak not covered by any sv# defer.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/290"><span class="mono">#290</span></a></td><td>Annotate measures in spaghetti plot</td><td style="text-align:center"><span class="chip good">S</span></td><td>The HEP-SELECT line chart labels measures with abbreviations only; adding full measure names (or a clearer legend) is a small labeling clarity win.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/274"><span class="mono">#274</span></a></td><td>Make legend for point size</td><td style="text-align:center"><span class="chip good">S</span></td><td>We ship the Uniform/rRatio point-size control but no legend explaining the size encoding; a size legend is a small completeness win.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/108"><span class="mono">#108</span></a></td><td>Add frequencies and percentages for grouping variable</td><td style="text-align:center"><span class="chip good">S</span></td><td>The group legend shows swatch+value only; adding per-group n/% to the legend or a small group table is a genuine in-scope gap.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/112"><span class="mono">#112</span></a></td><td>Support different base value for log axis</td><td style="text-align:center"><span class="chip good">S</span></td><td>HEP-CTRL ships a linear/log toggle with a hard-coded base; exposing a log2/log10 base option is a small in-scope control tweak.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/238"><span class="mono">#238</span></a></td><td>Allow user to manually adjust axes</td><td style="text-align:center"><span class="chip warn">M</span></td><td>Controls offer a linear/log toggle but no manual axis min/max; a pair of axis-range inputs is a small in-scope control addition (also largely satisfies #209&#x27;s simpler intent).</td></tr>
+    </tbody></table></div>
+
+    <h3 class="theme-h">Already tracked &mdash; maps to an existing defer <span class="chip obot">6 items</span></h3>
+    <p style="font-size:0.9rem;color:var(--muted);">These need no new tracking — they belong to a v1.3.0 sub-issue we already filed, or the known population-profile gap.</p>
+    <div class="scroll-x"><table class="gap"><thead><tr><th>Issue</th><th>Title</th><th>Maps to</th><th>Note</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/84"><span class="mono">#84</span></a></td><td>Update ParticipantProfileURL setting</td><td><span class="chip obot">population-profile</span></td><td>We ship no external participant profile link at all — this per-participant/templated profile-URL request IS the documented population-profile known gap.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/273"><span class="mono">#273</span></a></td><td>Only use unique study day values in animation</td><td><span class="chip obot">sv#46</span></td><td>A tween refinement of the study-day animation we deferred wholesale as sv#46 (play/stop + motion trails).</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/262"><span class="mono">#262</span></a></td><td>New view for quadrant comparison</td><td><span class="chip obot">sv#47</span></td><td>Box/violin plots by visit comparing a quadrant vs the normal quadrant — box-plot rendering is already deferred under sv#47; a large view beyond v1.3.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/296"><span class="mono">#296</span></a></td><td>Keep x-axis domain constant across raw lab values summary table charts</td><td><span class="chip obot">sv#48</span></td><td>A rendering detail of the summary-table sparklines deferred as sv#48; our drill-down currently ships one line chart plus a numeric table, so the mini-charts don&#x27;t exist yet.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/327"><span class="mono">#327</span></a></td><td>Update wording for Palt footnote</td><td><span class="chip obot">sv#49</span></td><td>The Palt footnote only surfaces with the P_ALT estimate, deferred under sv#49; its &#x27;refer to clinical workflow&#x27; aspect is already covered by #328/#335, so it is not a separate release item.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/212"><span class="mono">#212</span></a></td><td>Is there a way to download a set of cases?</td><td><span class="chip obot">sv#50</span></td><td>Downloading data for a chosen set of cases (e.g. the Temple&#x27;s Corollary cases) is the CSV-export work already deferred under sv#50; we have selection + linked listing but no export.</td></tr>
+    </tbody></table></div>
+
+    <h3 class="theme-h">New follow-ups worth filing <span class="chip warn">7 items</span></h3>
+    <p style="font-size:0.9rem;color:var(--muted);">Real gaps not covered by any existing defer — but larger or more ambiguous than a this-release win. <strong>#207 and #248 collapse into one display-logic sub-issue.</strong></p>
+    <div class="scroll-x"><table class="gap"><thead><tr><th>Issue</th><th>Title</th><th>Effort</th><th>Why a follow-up (not this release)</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/248"><span class="mono">#248</span></a></td><td>Improve default display logic</td><td style="text-align:center"><span class="chip warn">M</span></td><td>Hide eDISH when no ULN, hide mDISH when no baseline, error when neither — conditional display gating we don&#x27;t do. Superset of #207; file ONE display-logic sub-issue covering both.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/207"><span class="mono">#207</span></a></td><td>Update baseline behavour</td><td style="text-align:center"><span class="chip warn">M</span></td><td>Suppress the mDISH toggle unless valid user-specified baseline values exist — same display-logic theme as #248; combine into the single display-logic sub-issue, do not file separately.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/140"><span class="mono">#140</span></a></td><td>Add option for static ULNs (not from user data)</td><td style="text-align:center"><span class="chip warn">M</span></td><td>We derive ULN/cutpoints data-driven only; no data-driven-vs-user-defined ULN-method control or per-measure numeric ULN entry — a genuine gap not in any sv# defer.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/229"><span class="mono">#229</span></a></td><td>Deal with unscheduled visits</td><td style="text-align:center"><span class="chip warn">M</span></td><td>HEP-DATA derives day/visit ordering when studyday is absent but has no explicit handling for unscheduled visits (which lack a scheduled study day).</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/209"><span class="mono">#209</span></a></td><td>Is there an interactive way to adjust the axes?</td><td style="text-align:center"><span class="chip warn">M</span></td><td>Interactive axis-range/zoom/pan, distinct from sv#45&#x27;s draggable cut-lines and richer than #238&#x27;s numeric min/max inputs; a real if low-priority gap worth its own followup.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/111"><span class="mono">#111</span></a></td><td>Improve ordering of legend for group variable</td><td style="text-align:center"><span class="chip good">S</span></td><td>We render the group legend in data/alpha order with no ordering by a numeric companion column (e.g. TRTN), so Placebo/Low/High can&#x27;t be forced into rank order.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/236"><span class="mono">#236</span></a></td><td>Don&#x27;t repeat colors after n=9</td><td style="text-align:center"><span class="chip good">S</span></td><td>The fixed categorical palette repeats colors once groups exceed its length; extending/deduplicating for n&gt;9 is a narrow robustness fix, better as a small followup than forced into this release.</td></tr>
+    </tbody></table></div>
+
+    <h3 class="theme-h">Out of scope / already shipped <span class="chip">12 items</span></h3>
+    <div class="scroll-x"><table class="gap"><thead><tr><th>Issue</th><th>Title</th><th>Reason</th><th>Detail</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/21"><span class="mono">#21</span></a></td><td>Click legend to filter groups</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">already shipped</span></td><td>SHIPPED — Group color-by legend exists and Chart.js legends natively toggle series visibility on click.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/302"><span class="mono">#302</span></a></td><td>Add a settings schema</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">already shipped</span></td><td>SHIPPED — the port already ships src/data/schema/hep-explorer.json validating required columns plus a structured controls/settings surface.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/160"><span class="mono">#160</span></a></td><td>treatment group after subset</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">already shipped</span></td><td>SHIPPED/fixed — an upstream Webcharts legend bug; our port derives groupValues from filteredPoints() so the legend already reflects only the current subset.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/164"><span class="mono">#164</span></a></td><td>apply labels to group drowdown</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">already addressable</span></td><td>Minor polish — the Group color-by picker exists and the JSON schema can already carry display labels; not a distinct release win.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/115"><span class="mono">#115</span></a></td><td>Add filter for baseline ALP?</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">already addressable</span></td><td>Achievable today via HEP-CTRL generic categorical filters on any configured column; the issue itself is an unresolved clinical-workflow decision, not a port gap.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/237"><span class="mono">#237</span></a></td><td>Add option to minimize messages after expanding</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">already addressable</span></td><td>Our port already surfaces a concise on-page note plus console warning rather than a verbose expandable panel; a collapse affordance adds little.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/198"><span class="mono">#198</span></a></td><td>Consider adding a &quot;Highlight&quot; functionality</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">out of v1.3 scope</span></td><td>A configurable ALT/TB/AST/ALP decision-rule builder that grays/highlights points — a large new feature (L) beyond v1.3 scope.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/239"><span class="mono">#239</span></a></td><td>Optimize code for improved performance in very large data sets</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">out of v1.3 scope</span></td><td>Binning/hexbin/decluttering for large data is a substantial new feature (L) beyond v1.3; we draw one point per participant.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/228"><span class="mono">#228</span></a></td><td>Add SEND example</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">not applicable (upstream-only)</span></td><td>Upstream demo-content work (wrangling a no-ULN SEND dataset), not a behavior gap; our port validates a long-format data contract via schema.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/325"><span class="mono">#325</span></a></td><td>oninit/cleanData/dropRows isn&#x27;t running</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">not applicable (upstream-only)</span></td><td>Not applicable — an internal Webcharts variable-name bug (imputedData vs imputed_data); our port already removes missing/non-numeric records with a reported count.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/251"><span class="mono">#251</span></a></td><td>Use `export default` for all functions</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">not applicable (upstream-only)</span></td><td>Not applicable — an upstream Webcharts/D3 module code-style convention irrelevant to our Chart.js architecture.</td></tr>
+<tr><td><a href="https://github.com/SafetyGraphics/hep-explorer/issues/299"><span class="mono">#299</span></a></td><td>hep-explorer not rendering any data in IE</td><td><span class="mono" style="font-size:0.72rem;color:var(--muted)">not applicable (upstream-only)</span></td><td>Not applicable — an Internet Explorer bug in the upstream Webcharts/D3 build; our Chart.js reimplementation does not target IE and shares none of that path.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <hr class="keyline">
+
+  <section>
+    <p class="sec-eyebrow">Part 2 · a clinical-guide section</p>
+    <h2>Turning the renderer into a review aid</h2>
+    <p>The manual is the DIA-ASA Biopharm Working Group&#x27;s user guide for the Hepatic Safety Explorer, an interactive successor to FDA&#x27;s static eDISH plot (peak transaminase versus peak total bilirubin, in fold-change from ULN). Beyond describing the tool&#x27;s controls, its clinical core is a structured hepatotoxicity evaluation workflow: a reviewer starts from a case sitting in one of three quadrants of interest (possible Hy&#x27;s Law, Temple&#x27;s Corollary, isolated hyperbilirubinemia) and walks a series of decision steps that gather evidence for or against a drug-caused injury, since drug-induced liver injury is a diagnosis of exclusion. This matters for our renderer because every clinical concept the workflow leans on — the named quadrants, movable cut-lines, the R-Ratio, the eDISH/mDISH toggle, timing windows, and per-participant lab-over-time drill-down — is already a live control in our Chart.js port, so a guide can teach the reasoning and point directly at the demo. Publishing that reasoning alongside the demo turns the renderer from a plotting widget into a review aid a clinician can actually act on.</p>
+
+    <a class="srclink" href="https://github.com/SafetyGraphics/SafetyGraphics.github.io/raw/master/guide/HepExplorerWorkflow_v1_2_1.pdf">
+      <span class="rl-eye">source · cited, not reproduced</span>
+      <div class="rl-t">Hepatic Safety Explorer User's Manual v1.2.1</div>
+      <div class="rl-s">DIA-ASA Interactive Safety Graphics Working Group · 84&nbsp;pp. · the guide summarizes its workflow structure and links here for the authoritative detail.</div>
+    </a>
+
+    <h3 class="theme-h">The eDISH evaluation workflow &mdash; and where each step already lives in our port</h3>
+    <div class="journey">
+<div class="step"><div class="n"></div><div><h4>Read the eDISH quadrants (orientation)</h4><p>Locate each case in one of four regions split by the ALT (3x ULN) and total-bilirubin (2x ULN) cut-lines: normal (lower-left), isolated hyperbilirubinemia (upper-left), Temple&#x27;s Corollary / isolated ALT (lower-right), and possible Hy&#x27;s Law (upper-right). Maps to our Quadrants feature (HEP-QUAD): named corners, live per-quadrant %, and the summary table.</p></div></div>
+<div class="step"><div class="n"></div><div><h4>Step 1 — Any potential Hy&#x27;s Law cases? / population confounders</h4><p>If the default ULN plot shows no upper-right cases, re-run against baseline to avoid missing low-starting patients; if cases appear, ask whether the population (e.g. oncology with liver metastases) explains them and raise the thresholds accordingly. Maps to the eDISH/mDISH Display toggle (HEP-DISPLAY) and the X/Y reference-line inputs (HEP-QUAD/HEP-CTRL).</p></div></div>
+<div class="step"><div class="n"></div><div><h4>mDISH (baseline-corrected) reasoning</h4><p>Switch the axes from fold-change-over-ULN to fold-change-over-baseline to gain sensitivity to drug effects and consistency across labs, especially with abnormal pre-dose chemistry; suggested boundaries are ~3.8x baseline ALT and ~4.8x baseline TB. Maps directly to our mDISH Display Type.</p></div></div>
+<div class="step"><div class="n"></div><div><h4>Step 2a — Timing coincidence and cholestasis screen</h4><p>Check that the ALT and bilirubin peaks (or qualifying elevations) fall within about 2-4 weeks of each other with bilirubin rising after ALT, and that alkaline phosphatase stays below 2x ULN so the bilirubin is not cholestatic. Maps to the timing-window days input (filled vs hollow points, HEP-CTRL) and the per-participant lab-over-time drill-down (HEP-SELECT).</p></div></div>
+<div class="step"><div class="n"></div><div><h4>R-Ratio / nR — hepatocellular vs cholestatic pattern</h4><p>Compute R = (ALT/ULN)/(ALP/ULN) to characterize injury type — roughly &gt;5 hepatocellular, 2-5 mixed, &lt;2 cholestatic — with the newer nR variant also considering AST. Maps to our derived R-Ratio (shown in the point tooltip) and the R-Ratio range filter (HEP-CTRL).</p></div></div>
+<div class="step"><div class="n"></div><div><h4>Step 2b — Onset window and rate of rise</h4><p>Confirm the ALT peak falls within the first ~12 weeks of dosing (the highest-risk window) and read how quickly ALT crosses 3x/5x/10x/20x ULN, since a steeper rise suggests a more acute, drug-related insult. Maps to the standardized lab-values-by-study-day line chart and study-day tooltips in the drill-down (HEP-SELECT).</p></div></div>
+<div class="step"><div class="n"></div><div><h4>Step 2c — Hepatocyte-loss estimate (PALT)</h4><p>Use a peak-ALT/AUC-derived estimate of hepatocyte loss to grade severity (mild vs moderate vs sufficient to produce Hy&#x27;s Law vs likely fatal), giving a magnitude read beyond raw peak ALT. Not yet in our port — deferred as the exposure track + P_ALT estimate (sv#49).</p></div></div>
+<div class="step"><div class="n"></div><div><h4>Steps 2d-2f — AST corroboration and AST/ALT ratio</h4><p>Cross-check the AST time course and the AST:ALT ratio to separate hepatocellular injury from mitochondrial, muscle, alcohol, or hemolysis-artifact sources, and confirm resolution after (or despite continued) dosing. Maps to the ALT/AST/TB/ALP measure pickers (HEP-DISPLAY) and the drill-down lab panels.</p></div></div>
+<div class="step"><div class="n"></div><div><h4>Temple&#x27;s Corollary branch (Steps 4-6)</h4><p>For isolated ALT elevation without qualifying bilirubin (lower-right), evaluate whether the case reflects real hepatocellular injury that could later progress into the Hy&#x27;s Law quadrant, running the analogous timing/rate/AST checks. Maps to the named Temple&#x27;s Corollary quadrant and the reference-line inputs that reclassify points live (HEP-QUAD).</p></div></div>
+<div class="step"><div class="n"></div><div><h4>Hyperbilirubinemia branch (Steps 7-9)</h4><p>For isolated bilirubin elevation without ALT (upper-left), consider non-hepatocellular causes (e.g. cholestasis, hemolysis, or benign unconjugated hyperbilirubinemia) that place a patient in this quadrant without drug injury. Maps to the named Hyperbilirubinemia quadrant and the ALP/measure controls used to probe the pattern.</p></div></div>
+    </div>
+
+    <h3 class="theme-h">How to include it in the package</h3>
+    <p style="font-size:0.9rem;color:var(--muted);">A minimal, incremental add that mirrors the existing evidence/api tabs and the conditional Matrix link — a good start, with room for a richer framework later.</p>
+<div class="dec"><div class="did">1</div><div><h3>Content source</h3><p>A per-renderer authored Markdown file at <span class='mono'>docs/guides/&lt;module&gt;.md</span> (e.g. <span class='mono'>docs/guides/hep-explorer.md</span>) — versioned and reviewable in-repo like the evidence JSON, rendered through the existing shell with no new runtime dependency.</p></div></div>
+<div class="dec"><div class="did">2</div><div><h3>Config field</h3><p>An optional <span class="mono">"guide": "hep-explorer.md"</span> key on the renderer's <span class="mono">config.json</span> entry. Because it is optional, only renderers that ship a guide get the tab — degrading gracefully exactly like the existing <span class="mono">matrixUrl</span> handling.</p></div></div>
+<div class="dec"><div class="did">3</div><div><h3>Tab entry</h3><p>A conditional <span class='mono'>tab('guide', 'guide.html', 'Clinical guide')</span> in <span class='mono'>scripts/site-lib.mjs</span> <span class='mono'>pageTabs()</span>, slotted between Live demo and Test evidence so the review-oriented reading sits next to the demo.</p></div></div>
+<div class="dec"><div class="did">4</div><div><h3>Page generation</h3><p>A block in <span class='mono'>scripts/site.mjs</span> that reads the guide Markdown, converts to HTML, and writes <span class='mono'>site/&lt;module&gt;/guide.html</span> through the same <span class='mono'>renderShell</span> path used for evidence/api — a pure function of the repo tree, no test run or network.</p></div></div>
+    <div class="quote gsm" style="margin-top:1rem;">
+      <strong>Later (non-blocking):</strong> promote the guide from freeform Markdown to structured <span class="mono">{stepId, quadrant, rationale, controlRefs[]}</span> steps; deep-link each step into the live demo via query-param presets (e.g. <span class="mono">?display=mDISH&amp;xref=4.8</span>) so &ldquo;try this&rdquo; buttons drive the actual chart; add a printable one-page SOP export; and a cross-renderer guide index so the guides become a browsable library.
+      <span class="src">refined framework — after the first guide ships</span>
+    </div>
+
+    <h3 class="theme-h">Mockup &mdash; the hep-explorer Clinical guide page</h3>
+    <div class="browser">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">jwildfire.github.io/safety.viz/hep-explorer/guide.html</span></div>
+      <div class="tabs"><span>Live demo</span><span class="active">Clinical guide</span><span>Test evidence</span><span>API reference</span><span>Requirement matrix ↗</span></div>
+      <div class="page">
+        <h3 class="mk-title">Clinical guide: reading the Hepatic Safety Explorer</h3>
+        <div class="mk-caution">⚠ Exploratory review aid, not a validated diagnostic tool — a drug-induced-liver-injury conclusion requires exclusion work beyond what this plot shows.</div>
+<div class="mk-sec"><h4>Header + non-diagnostic caution</h4><p>Page title (&quot;Clinical guide: reading the Hepatic Safety Explorer&quot;) and a short, prominent caution — in our own words — that this graphic is an exploratory review aid, not a validated diagnostic tool, and that a drug-induced-liver-injury conclusion requires exclusion work (e.g. serology) beyond what the plot shows. Sets expectations before any workflow.</p></div>
+<div class="mk-sec"><h4>What eDISH shows (orientation)</h4><p>Original-worded explanation that each point is one participant plotted at their peak transaminase (x) against peak total bilirubin (y) in fold-change units, and that two cut-lines carve the plane into four regions. Names the four quadrants and what each implies (normal; isolated hyperbilirubinemia; Temple&#x27;s Corollary / isolated ALT; possible Hy&#x27;s Law), with a one-line note that upper-right cases are only &#x27;potential&#x27; until further evaluated.</p></div>
+<div class="mk-sec"><h4>The three evaluation branches</h4><p>Brief framing that the workflow forks by quadrant of interest — possible Hy&#x27;s Law, Temple&#x27;s Corollary, isolated hyperbilirubinemia — each a short decision path that gathers evidence for or against a drug cause. Prepares the reader for the step list without reproducing the manual&#x27;s step text.</p></div>
+<div class="mk-sec"><h4>Step-by-step reasoning (summarized)</h4><p>Our ordered, paraphrased rendering of the workflowSteps: quadrant orientation; Step 1 population/oncology confounders and when to switch to mDISH; Step 2a timing coincidence + alkaline-phosphatase/cholestasis screen; R-Ratio/nR pattern interpretation; Step 2b onset window and rate of rise; Step 2c hepatocyte-loss (PALT) magnitude; Steps 2d-2f AST corroboration and resolution; and the parallel Temple&#x27;s Corollary and hyperbilirubinemia branches. Each item is a short rationale, not a transcription, with the authoritative PDF cited for the underlying evidence.</p></div>
+<div class="mk-sec"><h4>How this maps to the controls on this page</h4><p>A cross-reference table tying each clinical concept to the exact control in our demo: quadrants/cut-lines -&gt; Quadrants + X/Y reference-line inputs; baseline reasoning -&gt; eDISH/mDISH Display toggle; timing coincidence -&gt; timing-window days (filled vs hollow points); injury pattern -&gt; R-Ratio tooltip value + R-Ratio range filter; onset/rate-of-rise and AST checks -&gt; click-to-drill-down lab-values-by-study-day chart and measure pickers. Flags PALT/hepatocyte-loss as not-yet-implemented (deferred, sv#49) so the guide never points at a missing control.</p></div>
+<div class="mk-sec"><h4>Try it in the demo</h4><p>A few concrete &#x27;do this&#x27; prompts that link back to the Live demo tab (later, deep-linked presets): switch to mDISH, nudge the ALT reference line to an oncology-adjusted value, filter by R-Ratio range, and click a Hy&#x27;s-Law-quadrant point to inspect its lab trajectory. Turns passive reading into guided exploration.</p></div>
+<div class="mk-sec"><h4>Attribution and source link</h4><p>A clearly separated block stating that the workflow structure and clinical rationale are adapted and summarized from the DIA-ASA working group&#x27;s manual, with the exact attribution line and a link out to the authoritative PDF (see attribution field). Makes explicit that we summarize rather than reproduce and that the manual is the citable authority.</p></div>
+      </div>
+    </div>
+
+    <h3 class="theme-h">Ties to the upstream backlog &amp; staying copyright-safe</h3>
+    <p style="font-size:0.92rem;">Directly satisfies upstream #328 (add a link to the clinical workflow in the UI): shipping a Clinical guide tab that summarizes the workflow and links out to the authoritative PDF is a stronger answer than a bare link, and its &quot;Try it in the demo&quot; cross-references put the workflow one click from the chart. Relates to #327 (P_ALT footnote wording): our Step 2c summary and the controls-map both mark hepatocyte-loss/PALT as not-yet-implemented and deferred (sv#49), so the guide&#x27;s footnote wording should stay consistent with however #327 resolves the P_ALT language. Relates to #335 (R/nR reference link): the injury-pattern step explains R = (ALT/ULN)/(ALP/ULN) and the nR variant, and its attribution/source-link block is the natural home for the R/nR reference #335 asks for. Also touches the deferred obot.roadmap#30 sub-issues the guide should not over-promise against — sv#45 (draggable cut-lines), sv#49 (exposure track + P_ALT) — so the controls-map flags them as future rather than live.</p>
+    <div class="quote">The manual is a copyrighted third-party document, so the guide never reproduces its text. Every workflow description is rewritten in our own original words as a paraphrase of the workflow STRUCTURE and clinical rationale, not a transcription of the steps. Any direct quotation is kept minimal (under ~15 words), clearly quoted, and attributed to the DIA-ASA Interactive Safety Graphics Working Group. We do not copy the manual&#x27;s figures, appendix flow-diagrams, or step text into the repo; instead we link out to the authoritative published PDF as the citable source, and we credit the working group in a visible attribution block on the page. The guide&#x27;s value-add — mapping the clinical reasoning onto our specific Chart.js controls — is original content we author, which keeps it transformative and clear of reproducing the source.<span class="src">copyright posture</span></div>
+    <p style="font-size:0.82rem;color:var(--muted);"><strong>Attribution shown on the page:</strong> Clinical workflow summarized and adapted, in our own words, from the <em>Interactive Safety Graphic &mdash; Hepatic Safety Explorer User's Manual</em> (v1.2.1), a product of the DIA-ASA Interactive Safety Graphics Working Group. See the <a href="https://github.com/SafetyGraphics/SafetyGraphics.github.io/raw/master/guide/HepExplorerWorkflow_v1_2_1.pdf">authoritative manual</a> for the full workflow, citations, and clinical detail.</p>
+  </section>
+
+  <hr class="keyline">
+
+  <section>
+    <p class="sec-eyebrow">What I'd do next</p>
+    <h2>Recommendation</h2>
+    <p>Add ten items to this release, organized around two coherent themes. The first is a clinical-guide cluster: #328 (link to the clinical workflow), #335 (R/nR reference link), #240 (permanent &#x27;not validated for clinical use&#x27; caution), and #107 (explanatory footnotes on the quadrant labels) — all small, all reinforcing the clinical-guide section we are proposing in parallel. Crucially, #328 &quot;Add a link to the clinical workflow as part of the UI&quot; is not new scope: it is satisfied outright by that clinical-guide section, so shipping it is a wiring task, not a feature build. The second theme is control/legend completeness: #274 (point-size legend), #108 (per-group frequencies/percentages), #290 (full measure names in the detail chart), #106 (optional quadrant labels), #112 (log2/log10 base option), and #238 (manual axis min/max inputs). These make the release because each is S–M effort, self-contained, and closes a visible gap without expanding the chart&#x27;s surface. I deliberately held back the larger or ambiguous asks: interactive zoom/pan (#209), user-defined static ULNs (#140), unscheduled-visit handling (#229), display-logic gating (#207/#248), legend ordering (#111), and the n&gt;9 palette fix (#236) are real but warrant their own scoped sub-issues rather than being rushed in; the highlight rule-builder (#198), large-data performance (#239), and quadrant-comparison view (#262) are out of scope or already deferred.</p>
+
+    <div class="dec"><div class="did">A</div><div><h3>Approve the Clinical guide section (good start)</h3><p>On your go, I'll open a small safety.viz PR: the four-part framework above (config field + conditional tab + <span class="mono">site.mjs</span> gen + <span class="mono">docs/guides/hep-explorer.md</span>), populated with the copyright-safe guide content in the mockup.</p><p class="rec"><b>Recommend:</b> ship it — it satisfies #328, needs no new dependency, and is the anchor for the clinical-guide cluster.</p></div></div>
+    <div class="dec"><div class="did">B</div><div><h3>Confirm the add-this-release short list</h3><p>The 10 items (or a trimmed subset). The 4 clinical-guide-cluster items fold into the PR above; the 6 completeness items are each S–M control/legend tweaks.</p><p class="rec"><b>Recommend:</b> take all four clinical items + #274/#108/#290 (the cheapest completeness wins) now; hold #106/#112/#238 if you want a tighter release.</p></div></div>
+    <div class="dec"><div class="did">C</div><div><h3>File the follow-ups</h3><p>Seven new sub-issues of obot.roadmap#30 (with #207+#248 merged into one display-logic issue), plus finally filing the population-profile gap (#84) as sv#52.</p><p class="rec"><b>Recommend:</b> file on approval so the backlog is tracked, tagged v1.3.0 alongside sv#45–51.</p></div></div>
+    <p style="font-size:0.85rem;color:var(--muted);">None of this is filed or built yet — each item is an approval gate. Say which of A/B/C to proceed with and I'll execute.</p>
+  </section>
+
+  <footer>
+    <p>Triage of 35 upstream issues + clinical-guide design by a 7-agent workflow; synthesized and written up for review. Backlog links point to <span class="mono">SafetyGraphics/hep-explorer</span>; our deferred set is <span class="mono">safety.viz</span> sv#45–51 under <a href="https://github.com/jwildfire/obot.roadmap/issues/30">obot.roadmap#30</a>.</p>
+    <p>Drafted by Claude Code using Opus 4.8 and reviewed by @jwildfire · 2026-07-12</p>
+  </footer>
+</div>
+</body>
+</html>
