@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open.gismo v1.0 — design &amp; roadmap</title>
+<style>
+  :root {
+    --paper: #FBFBFA;
+    --card: #FFFFFF;
+    --ink: #212B2E;
+    --muted: #5C6B6E;
+    --line: #DDE3E1;
+    --gsm: #1E6A5C;
+    --gsm-soft: #E4EFEC;
+    --obot: #3A5490;
+    --obot-soft: #E7EBF5;
+    --warn: #9A6A1F;
+    --warn-soft: #F5EDDC;
+    --good: #2E7D4F;
+    --good-soft: #E3F0E8;
+    --bad: #A2402F;
+    --bad-soft: #F4E2DD;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #151A1C;
+      --card: #1B2124;
+      --ink: #E3E9E7;
+      --muted: #94A3A1;
+      --line: #2C3538;
+      --gsm: #5CB8A0;
+      --gsm-soft: #1D2E2A;
+      --obot: #97AFE2;
+      --obot-soft: #222B3D;
+      --warn: #D9A84E;
+      --warn-soft: #33290F;
+      --good: #74C795;
+      --good-soft: #17301F;
+      --bad: #E08972;
+      --bad-soft: #331A14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #151A1C;
+    --card: #1B2124;
+    --ink: #E3E9E7;
+    --muted: #94A3A1;
+    --line: #2C3538;
+    --gsm: #5CB8A0;
+    --gsm-soft: #1D2E2A;
+    --obot: #97AFE2;
+    --obot-soft: #222B3D;
+    --warn: #D9A84E;
+    --warn-soft: #33290F;
+    --good: #74C795;
+    --good-soft: #17301F;
+    --bad: #E08972;
+    --bad-soft: #331A14;
+  }
+  :root[data-theme="light"] {
+    --paper: #FBFBFA;
+    --card: #FFFFFF;
+    --ink: #212B2E;
+    --muted: #5C6B6E;
+    --line: #DDE3E1;
+    --gsm: #1E6A5C;
+    --gsm-soft: #E4EFEC;
+    --obot: #3A5490;
+    --obot-soft: #E7EBF5;
+    --warn: #9A6A1F;
+    --warn-soft: #F5EDDC;
+    --good: #2E7D4F;
+    --good-soft: #E3F0E8;
+    --bad: #A2402F;
+    --bad-soft: #F4E2DD;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 48rem; margin: 0 auto; padding: 3.5rem 1.25rem 5rem; }
+
+  h1, h2, h3 {
+    font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+  h1 { font-size: 2.15rem; font-weight: 700; margin: 0.4rem 0 0.8rem; }
+  h2 { font-size: 1.4rem;  font-weight: 600; margin: 0 0 0.9rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 0.4rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--obot); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--obot); outline-offset: 2px; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.85em;
+  }
+  section { margin: 0 0 3rem; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .eyebrow {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .lede { font-size: 1.12rem; color: var(--muted); margin-bottom: 0; }
+  .keyline { border: 0; border-top: 1px solid var(--line); margin: 2.4rem 0; }
+  .sec-eyebrow {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--obot); margin: 0 0 0.5rem;
+  }
+
+  .chip {
+    display: inline-block;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .chip.gsm  { color: var(--gsm);  background: var(--gsm-soft);  border-color: transparent; }
+  .chip.obot { color: var(--obot); background: var(--obot-soft); border-color: transparent; }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
+  .chip.good { color: var(--good); background: var(--good-soft); border-color: transparent; }
+  .chip.bad  { color: var(--bad);  background: var(--bad-soft);  border-color: transparent; }
+
+  /* ---- facts / at-a-glance ---- */
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .facts > div { background: var(--card); padding: 1rem 1.1rem; }
+  .facts h3 { font-size: 0.95rem; }
+  .facts p { font-size: 0.9rem; color: var(--muted); margin: 0; }
+  @media (max-width: 640px) { .facts { grid-template-columns: 1fr; } }
+
+  /* ---- stat strip ---- */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 0 0 1.4rem; }
+  .stats > div { background: var(--card); padding: 0.85rem 0.7rem; text-align: center; }
+  .stats .big {
+    font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+    font-size: 1.3rem; font-weight: 700; color: var(--obot); display: block; line-height: 1.15;
+  }
+  .stats .cap { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---- generic tables ---- */
+  .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); font-weight: 500; text-align: left;
+    padding: 0.5rem 0.9rem 0.5rem 0;
+    border-bottom: 1px solid var(--line); vertical-align: bottom;
+  }
+  td { padding: 0.55rem 0.9rem 0.55rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.k { font-weight: 600; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; white-space: nowrap; color: var(--obot); }
+
+  /* ---- gap analysis table ---- */
+  .gap td:first-child { font-weight: 600; font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-size: 0.9rem; white-space: nowrap; }
+  .gap .st { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.66rem; letter-spacing: 0.04em; }
+  .gap .st.miss { color: var(--bad); }
+  .gap .st.part { color: var(--warn); }
+
+  /* ---- candidate cards ---- */
+  .cands { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 0 0 1.6rem; }
+  @media (max-width: 720px) { .cands { grid-template-columns: 1fr; } }
+  .cand { border: 1px solid var(--line); background: var(--card); padding: 1rem 1.1rem 1.1rem; border-top: 3px solid var(--line); }
+  .cand.win { border-top-color: var(--gsm); box-shadow: 0 0 0 1px var(--gsm); }
+  .cand .tag { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--muted); letter-spacing: 0.04em; }
+  .cand h3 { font-size: 0.98rem; margin: 0.15rem 0 0.5rem; }
+  .cand p { font-size: 0.85rem; margin: 0 0 0.6rem; }
+  .cand .risk { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 0.55rem; }
+  .cand .risk b { color: var(--bad); font-weight: 600; }
+  .cand .score { font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-weight: 700; font-size: 1.05rem; float: right; }
+  .cand.win .score { color: var(--gsm); }
+
+  /* ---- score table ---- */
+  .scores th, .scores td { text-align: center; padding: 0.5rem 0.6rem; }
+  .scores th:first-child, .scores td:first-child { text-align: left; white-space: normal; }
+  .scores td.lens { font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-weight: 600; font-size: 0.84rem; color: var(--ink); }
+  .scores .col-win { background: var(--gsm-soft); }
+  .scores td.col-win { color: var(--gsm); font-weight: 600; }
+  .scores tr.total td { border-top: 2px solid var(--line); border-bottom: 0; font-weight: 700; font-size: 1rem; padding-top: 0.7rem; }
+  .scores tr.total td.col-win { color: var(--gsm); }
+  .scores .win-hd { color: var(--gsm); }
+
+  /* ---- pull quote ---- */
+  .quote { border-left: 3px solid var(--obot); background: var(--obot-soft); padding: 0.9rem 1.1rem; margin: 0 0 1.2rem; font-size: 0.95rem; }
+  .quote.gsm { border-left-color: var(--gsm); background: var(--gsm-soft); }
+  .quote .src { display: block; margin-top: 0.5rem; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  /* ---- riders list ---- */
+  ul.riders { list-style: none; padding: 0; margin: 0.4rem 0 0; }
+  ul.riders li { font-size: 0.9rem; padding: 0.4rem 0 0.4rem 1.4rem; position: relative; border-bottom: 1px solid var(--line); }
+  ul.riders li:last-child { border-bottom: 0; }
+  ul.riders li::before { content: "→"; position: absolute; left: 0; color: var(--gsm); }
+
+  /* ---- journey steps ---- */
+  .journey { counter-reset: jr; margin: 0.5rem 0 0; }
+  .journey .step { display: grid; grid-template-columns: 2rem 1fr; gap: 0.9rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
+  .journey .step:last-child { border-bottom: 0; }
+  .journey .n {
+    counter-increment: jr; font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem; font-weight: 600; color: var(--obot);
+    width: 1.7rem; height: 1.7rem; border: 1px solid var(--line); border-radius: 999px;
+    display: grid; place-items: center;
+  }
+  .journey .n::before { content: counter(jr); }
+  .journey .step h4 { margin: 0.1rem 0 0.15rem; font-size: 0.92rem; font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; }
+  .journey .step p { margin: 0; font-size: 0.86rem; color: var(--muted); }
+  .journey .step .t { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--gsm); }
+
+  /* ---- evidence figures ---- */
+  figure { margin: 0 0 1.4rem; border: 1px solid var(--line); background: var(--card); padding: 0.6rem; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); background: #0d1114; }
+  figure figcaption { font-size: 0.8rem; color: var(--muted); margin-top: 0.55rem; padding: 0 0.2rem; }
+  .fig-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 640px) { .fig-2 { grid-template-columns: 1fr; } }
+  .fig-2 figure { margin: 0; }
+  .report-link {
+    display: block; border: 1px solid var(--line); background: var(--card);
+    padding: 0.9rem 1.1rem; margin: 0 0 1.4rem; text-decoration: none; color: var(--ink);
+  }
+  .report-link .rl-eye { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--obot); }
+  .report-link .rl-t { font-weight: 600; font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; }
+  .report-link .rl-s { font-size: 0.82rem; color: var(--muted); }
+
+  /* ---- timeline ---- */
+  .timeline { position: relative; margin: 0.5rem 0 0; padding-left: 1.6rem; }
+  .timeline::before { content: ""; position: absolute; left: 0.42rem; top: 0.3rem; bottom: 0.3rem; width: 2px; background: var(--line); }
+  .phase { position: relative; margin-bottom: 1.3rem; }
+  .phase::before {
+    content: ""; position: absolute; left: -1.6rem; top: 0.35rem;
+    width: 0.85rem; height: 0.85rem; border-radius: 999px;
+    background: var(--paper); border: 2px solid var(--muted);
+  }
+  .phase.done::before { background: var(--gsm); border-color: var(--gsm); }
+  .phase.now::before { background: var(--obot); border-color: var(--obot); }
+  .phase .ph-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem; }
+  .phase h3 { margin: 0; font-size: 1rem; }
+  .phase .when { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--muted); }
+  .phase ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+  .phase li { font-size: 0.88rem; margin-bottom: 0.25rem; color: var(--muted); }
+  .phase li::marker { color: var(--gsm); }
+
+  /* ---- decision panel ---- */
+  .dec { border: 1px solid var(--line); background: var(--card); padding: 0.95rem 1.1rem; margin: 0 0 0.9rem; display: grid; grid-template-columns: 3rem 1fr; gap: 0.9rem; }
+  .dec .did { font-family: "SF Mono", Menlo, Consolas, monospace; font-weight: 700; color: var(--obot); font-size: 0.95rem; }
+  .dec h3 { font-size: 0.95rem; margin: 0 0 0.35rem; }
+  .dec p { margin: 0; font-size: 0.88rem; }
+  .dec .rec { color: var(--muted); font-size: 0.84rem; margin-top: 0.35rem; }
+  .dec .rec b { color: var(--gsm); font-weight: 600; }
+
+  footer {
+    margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+    font-size: 0.8rem; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">obot.roadmap · design &amp; roadmap · 2026-07-12</span>
+    <h1>open.gismo v1.0 — design &amp; roadmap</h1>
+    <p class="lede">A design decision and a phased plan to turn open.gismo into a v1.0 that replaces the safetyGraphics Shiny app: local-first compute on the modern gsm stack, with GitHub demoted from backbone to optional publisher. Includes the working Phase&nbsp;0 prototype built and verified this session.</p>
+  </header>
+
+  <hr class="keyline">
+
+  <!-- 1. EXECUTIVE SUMMARY -->
+  <section>
+    <h2>Executive summary</h2>
+    <div class="facts">
+      <div>
+        <h3>Decided</h3>
+        <p>Architecture <strong>C+</strong> — "local-first engine, portable site, thin app face." A four-judge panel scored it <span class="num">33</span> against <span class="num">22</span> (local Shiny app) and <span class="num">16</span> (GitHub template). Compute runs where the data lives; the v0.1 GitHub lane survives unchanged as an optional publisher.</p>
+      </div>
+      <div>
+        <h3>Built</h3>
+        <p>A working prototype on the <span class="mono">jwildfire/open.gismo</span> fork: the <span class="mono">og_*</span>/<span class="mono">fs_*</span> R surface, a Reports tab on the site, and a thin app. Full pipeline runs end-to-end locally in <span class="num">~20s</span> — 13 domains, 25 metrics, 2 interactive KRI reports, 25 static charts. Tests green in new CI.</p>
+      </div>
+      <div>
+        <h3>Next</h3>
+        <p>A four-phase roadmap to a v1.0 release by <strong>September 2026</strong>, ahead of the R/Pharma keynote: harden the local core, add settings &amp; data UX, prove the publish lane, ship. Six decisions (D1–D6) are staged for your ratification.</p>
+      </div>
+    </div>
+    <p style="margin-top:1.2rem; font-size:0.95rem;">The keynote arc this unlocks is true for real trial data: <em>one command, your data never leaves your laptop, and the same project folder publishes to the web when you choose to share it</em> — the safetyGraphics author replacing his own app on the stack the ecosystem moved to.</p>
+  </section>
+
+  <hr class="keyline">
+
+  <!-- 2. STATE OF THE UNION -->
+  <section>
+    <p class="sec-eyebrow">Where things stand</p>
+    <h2>open.gismo v0.1.0 was further along than a sketch — and a different product than v1.0 describes</h2>
+    <p>The honest read from the deep review: v0.1.0 shipped a small, well-tested R package (~800 lines of GitHub plumbing backed by ~4,800 lines of testthat + property tests), a Vite single-page <strong>pipeline explorer</strong>, four GitHub Actions, and a demo branch that is a genuine end-to-end artifact — 13 <span class="mono">Raw_*</span> domains snapshotted through the real gsm.mapping / gsm.kri / gsm.reporting workflows and deployed to Pages. The design doc's founding principle held: the only new R code is GitHub plumbing, and the pipeline itself is a thin layer over <span class="mono">workr</span>, exactly where gsm.kri's own dev branch is already heading.</p>
+    <p>But measured against the actual v1.0 goal — <em>replace the safetyGraphics Shiny app</em> — the front-end was a pipeline observability tool, not a safety-review app. There was no data on-ramp, no settings surface, and the interactive KRI reports the pipeline already produces were rendered nowhere. None of the three core user-facing requirements was met, though nearly every ingredient existed one shelf away.</p>
+
+    <div class="scroll-x">
+      <table class="gap">
+        <thead>
+          <tr><th>Core requirement</th><th>Status v0.1</th><th>What was already there / what was missing</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Load your own data</td>
+            <td><span class="st miss">MISSING&nbsp;UX</span></td>
+            <td>Mapping specs define the expected domains and <span class="mono">CheckSpec</span> can validate against them — but there was no on-ramp and no feedback telling a user <em>why</em> their data didn't fit. The GitHub route was never run end-to-end; the local route meant hand-editing a script.</td>
+          </tr>
+          <tr>
+            <td>Customize settings</td>
+            <td><span class="st part">CODE-ONLY</span></td>
+            <td>Every knob a monitor turns (thresholds, active metrics, group level) is already well-factored as YAML meta. But the static site is read-only by construction — there was no edit surface at all.</td>
+          </tr>
+          <tr>
+            <td>Linked static + interactive reports</td>
+            <td><span class="st part">NOT&nbsp;SURFACED</span></td>
+            <td>The closest gap: gsm.kri's <span class="mono">Report_KRI</span> already emits self-contained interactive HTML with within-report linking, and the demo branch ran it. Nobody could see the output — the site had no report viewer, and static-chart integration hadn't started.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.86rem; color:var(--muted); margin-top:1rem;">Two structural facts shaped the decision below: many target users <strong>cannot push clinical trial data to GitHub at all</strong> (and private-repo Pages costs money), and the pipeline's own reports render identically in a Shiny tab, an iframe on the static site, or a double-clicked local file — so the reporting layer is front-end-agnostic and the real fork is only about where data-loading and settings live.</p>
+  </section>
+
+  <hr class="keyline">
+
+  <!-- 3. ARCHITECTURE DECISION -->
+  <section>
+    <p class="sec-eyebrow">The architecture decision</p>
+    <h2>Three candidates, one panel, a clear winner</h2>
+    <p>The review put three coherent architectures to a four-judge panel — one judge per lens: the safetyGraphics end-user's experience, ecosystem strategy, one-session feasibility, and v1.0 roadmap durability.</p>
+
+    <div class="cands">
+      <div class="cand">
+        <span class="score num">16</span>
+        <span class="tag">Candidate A</span>
+        <h3>GitHub Study Template</h3>
+        <p>Double down on the backbone: a "use this template" study repo; drop <span class="mono">Raw_*.csv</span> in, push, and an Action runs the pipeline and redeploys Pages. Maximum reuse of v0.1.</p>
+        <p class="risk"><b>Risk:</b> the clinical-data wall makes it structurally demo/synthetic-grade for the core audience, and its critical loop runs through an Action that has never executed end-to-end.</p>
+      </div>
+      <div class="cand">
+        <span class="score num">22</span>
+        <span class="tag">Candidate B</span>
+        <h3>Local gismo app</h3>
+        <p>A <span class="mono">RunGismoApp()</span> Shiny successor to <span class="mono">safetyGraphicsApp()</span>: point at a folder, validate, tweak settings, Run, browse reports — data never leaves the machine. Best UX on paper.</p>
+        <p class="risk"><b>Risk:</b> rebuilds the Shiny monolith the ecosystem split to escape, orphans the entire v0.1 investment, and skips the genuinely hard part (mapping arbitrary data).</p>
+      </div>
+      <div class="cand win">
+        <span class="score num">33</span>
+        <span class="tag">Candidate C · chosen</span>
+        <h3>Local engine, portable site</h3>
+        <p>One command — <span class="mono">og_run(project_dir)</span> — runs the whole pipeline locally via a filesystem twin of the GitHub backend, into a project folder that is <em>also</em> push-to-Pages publishable. Same artifact, two targets.</p>
+        <p class="risk"><b>Risk:</b> the static site still can't edit settings interactively, so ease-of-use rests on the edit-YAML-and-rerun loop — a real gap, but one any later editor fills over the same files.</p>
+      </div>
+    </div>
+
+    <div class="scroll-x">
+      <table class="scores">
+        <thead>
+          <tr>
+            <th>Lens (judge)</th>
+            <th>A · Template</th>
+            <th>B · Shiny app</th>
+            <th class="win-hd">C · Local-first</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="lens">End-user experience</td><td>2</td><td>8</td><td class="col-win">6</td></tr>
+          <tr><td class="lens">Ecosystem strategy</td><td>7</td><td>3</td><td class="col-win">9</td></tr>
+          <tr><td class="lens">One-session feasibility</td><td>3</td><td>6</td><td class="col-win">9</td></tr>
+          <tr><td class="lens">v1.0 roadmap durability</td><td>4</td><td>5</td><td class="col-win">9</td></tr>
+          <tr class="total"><td>Total (of 40)</td><td>16</td><td>22</td><td class="col-win">33</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.84rem; color:var(--muted); margin-top:0.6rem;">C led on three of four lenses. The one lens it lost — end-user experience — is exactly the gap the adopted hybrid closes.</p>
+
+    <h3 style="margin-top:2rem;">The decision: C+ — C's engine, B's face, with anti-monolith riders</h3>
+    <p>The panel converged on the UX judge's hybrid, ratified with the strategy judge's riders. Build C's local core exactly as specified, then put a <em>thin</em> interactive shell on top — strictly an editor / runner / viewer that round-trips the project folder's YAML, never a monolith holding its own state. GitHub is demoted from backbone to publisher; the v0.1 <span class="mono">gh_*</span> package survives as the optional publishing lane.</p>
+    <ul class="riders">
+      <li>Sequence the four phases with explicit <span class="mono">MakeWorkflowList + RunWorkflows</span> (the session-verified path), not the experimental <span class="mono">RunProject</span>.</li>
+      <li>Promote the demo's manual GroupID coercion into a real workflow step (<span class="mono">StandardizeResults</span>), not script glue.</li>
+      <li>Keep the <span class="mono">gh_*</span> lane demonstrably green in new CI, so the two backend implementations are visibly one contract.</li>
+      <li>Any future settings UI is an editor <em>over</em> the same folder — layered later, never a re-architecture.</li>
+    </ul>
+
+    <div class="quote" style="margin-top:1.6rem;">
+      The target user cannot push trial data to GitHub at all, so any architecture whose primary loop is repo-plus-Action is disqualified on requirement&nbsp;#1 before UX is even discussed — while the bar this app must beat is a one-command local launch with a seconds-scale threshold-to-result loop, and every ingredient for exactly that is verified working today.
+      <span class="src">UX judge — the killer argument</span>
+    </div>
+    <div class="quote gsm">
+      The <span class="mono">lConfig</span> seam only becomes a real architecture the day it has a second implementation — and C's ~150-line <span class="mono">fs_lConfig</span> is that day: it proves the swappable-backend claim, unlocks the audience whose data can never touch GitHub, and orphans none of v0.1.
+      <span class="src">Strategy judge — the lConfig-seam argument</span>
+    </div>
+  </section>
+
+  <hr class="keyline">
+
+  <!-- 4. WHAT WAS BUILT -->
+  <section>
+    <p class="sec-eyebrow">Phase 0 · this session</p>
+    <h2>What was built</h2>
+    <p>The prototype ships on the <span class="mono">jwildfire/open.gismo</span> fork, branch <span class="mono">feat/local-first-prototype</span>, as a draft PR (<strong><a href="https://github.com/jwildfire/open.gismo/pull/1">PR #1</a></strong>). It adds a local-first R surface, surfaces the pipeline's reports on the existing site, and puts a thin app in front — all built and verified end-to-end this session.</p>
+
+    <div class="stats">
+      <div><span class="big num">~20s</span><span class="cap">full pipeline</span></div>
+      <div><span class="big num">25</span><span class="cap">metrics</span></div>
+      <div><span class="big num">2</span><span class="cap">interactive reports</span></div>
+      <div><span class="big num">25</span><span class="cap">static charts</span></div>
+      <div><span class="big num">821</span><span class="cap">tests green</span></div>
+    </div>
+
+    <h3>The new surface</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Function</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td class="k">fs_lConfig()</td><td>Filesystem LoadData/SaveData twin of <span class="mono">gh_lConfig</span> — the second implementation that turns the <span class="mono">workr</span> lConfig seam into a real swappable-backend contract.</td></tr>
+          <tr><td class="k">og_init(dir)</td><td>Scaffolds <span class="mono">config/</span> + <span class="mono">workflow/</span> + <span class="mono">input/</span> from the demo layout; <span class="mono">example=TRUE</span> seeds 13 <span class="mono">Raw_*</span> domains from <span class="mono">gsm.core::lSource</span> so it works before any user data arrives.</td></tr>
+          <tr><td class="k">og_validate(dir)</td><td>Runs the mapping specs' <span class="mono">CheckSpec</span> over the input CSVs and prints a human-readable per-domain pass/fail table — the "why did my data fail" forgiveness layer.</td></tr>
+          <tr><td class="k">og_run(dir)</td><td>Runs all four pipeline phases via <span class="mono">workr</span> and writes the demo payload (mapped data, metrics, reporting objects, reports, <span class="mono">status.json</span>) into the folder.</td></tr>
+          <tr><td class="k">og_view(dir)</td><td>Serves the built site over local HTTP and opens it in the browser.</td></tr>
+          <tr><td class="k">og_app(dir)</td><td>Thin Shiny shell: folder picker, validation table, metric-settings editor, Run button, live <span class="mono">Report_KRI</span> — every action round-trips the project folder's files.</td></tr>
+          <tr><td class="k">StandardizeResults()</td><td>The GroupID coercion seam, promoted from a demo script hack to a real workflow step.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.86rem; color:var(--muted); margin-top:0.8rem;">On the front-end, the Vite site gains a <strong>Reports tab</strong> (between Data and Packages) that lists and iframes the interactive KRI reports and shows static-chart thumbnails — the small change that makes the platform demo like a safety-review app instead of a pipeline monitor. New CI (<span class="mono">R-CMD-check</span> + <span class="mono">site-tests</span>) runs the previously-dormant test suites on every push.</p>
+
+    <h3 style="margin-top:2rem;">The acceptance journey</h3>
+    <p>The full loop was driven end-to-end from a fresh folder, and — critically — the settings loop was proven to change real output:</p>
+    <div class="journey">
+      <div class="step"><span class="n"></span><div><h4>Initialize <span class="t">~22s</span></h4><p><span class="mono">og_init(example=TRUE)</span> scaffolds the project and writes 13 example domains (183&nbsp;MB) from the bundled gsm.core data.</p></div></div>
+      <div class="step"><span class="n"></span><div><h4>Validate</h4><p><span class="mono">og_validate()</span> reports <strong>12/12</strong> input domains OK against the mapping specs.</p></div></div>
+      <div class="step"><span class="n"></span><div><h4>Run <span class="t">~20s</span></h4><p><span class="mono">og_run()</span> produces 13 mapped domains, 25 metrics, 4 reporting objects, 2 interactive KRI reports (site + country), 25 static chart PNGs, and the site payload.</p></div></div>
+      <div class="step"><span class="n"></span><div><h4>Edit data + settings</h4><p>Tighten <span class="mono">kri0001</span> thresholds and hand-edit the AE input CSV; separately deactivate <span class="mono">kri0012</span>.</p></div></div>
+      <div class="step"><span class="n"></span><div><h4>Rerun → changed flags</h4><p>Flagged sites move <strong>13&nbsp;→&nbsp;23</strong>; the deactivated metric drops the run to 24 metrics and stale outputs are cleaned. The customize-settings requirement, demonstrated on real output.</p></div></div>
+    </div>
+    <p style="font-size:0.86rem; color:var(--muted); margin-top:1rem;">Live acceptance testing also caught a foot-gun: an invalid Threshold/Flag combination could be written silently. A contract guard was added so the invalid combo now errors at write time with an actionable message.</p>
+
+    <h3 style="margin-top:2rem;">Evidence</h3>
+    <figure>
+      <img src="evidence/open-gismo-local-first-walkthrough.gif" alt="Animated walkthrough of the local-first prototype: init, validate, run, and viewing the interactive report and pipeline explorer in the browser.">
+      <figcaption>The local-first loop, start to finish: scaffold a project, validate the data, run the pipeline, and open the built site — no GitHub involved.</figcaption>
+    </figure>
+    <div class="fig-2">
+      <figure>
+        <img src="evidence/01_site_pipeline.png" alt="The open.gismo site pipeline explorer showing four columns: 13 mappings, 25 metrics, 4 reporting objects, 2 modules, each with green completion checks.">
+        <figcaption>The pipeline explorer after a local run — 13 mappings, 25 metrics, 4 reporting objects, 2 modules, all complete. The new Reports tab sits in the top-right nav.</figcaption>
+      </figure>
+      <figure>
+        <img src="evidence/03_app_project.png" alt="The thin Shiny app with Project, Settings, Run and Reports tabs; a project-folder picker, a Create example project button, an input-CSV uploader, and Status/Validation panels.">
+        <figcaption>The thin app (<span class="mono">og_app</span>): pick a folder or create an example project, add input CSVs, validate, and move to Settings / Run / Reports.</figcaption>
+      </figure>
+    </div>
+    <figure>
+      <img src="evidence/static_kri0001.png" alt="A static ggplot2 scatter chart for KRI0001 Adverse Event Rate: numerator versus denominator on a log scale, with grey, yellow and red predicted-bound curves and labeled flagged sites.">
+      <figcaption>A static chart export (<span class="mono">kri0001</span>, Adverse Event Rate) written beside its interactive report — the cheapest honest version of "linked static + interactive," and the P005/gsm.safety plug-in point.</figcaption>
+    </figure>
+    <a class="report-link" href="evidence/report_kri_site_demo.html">
+      <span class="rl-eye">Interactive artifact →</span>
+      <span class="rl-t">report_kri_site_demo.html</span><br>
+      <span class="rl-s">The real self-contained site-level KRI report produced by the run (8.4&nbsp;MB) — opens standalone, with its charts and within-report linking intact.</span>
+    </a>
+
+    <h3 style="margin-top:2rem;">Quality process</h3>
+    <p>The prototype was built by a six-package fleet and then put through a three-lens adversarial review (R-core, integration, packaging). The review confirmed <strong>12 findings</strong>; <strong>11 were fixed in this PR</strong> and <strong>1 was deferred</strong> to the roadmap — metric-phase <span class="mono">bContinueOnError</span>, which is spec-compliant demo-parity behavior today and becomes a graceful-degradation improvement in Phase 1. Three further candidate findings were investigated and dismissed. The R suite now runs <strong>640 pass / 0 fail</strong> (a suite that previously never ran in CI, plus two pre-existing dev-branch test bugs fixed) and the site suite runs <strong>181 vitest pass</strong>.</p>
+    <p style="font-size:0.84rem; color:var(--muted);">Whole-session process: a 7-reader review fleet feeding one synthesis, a 4-judge design panel, a 6-package build fleet, and a 3-lens adversarial review — the decision, the code, and the audit all in one session.</p>
+  </section>
+
+  <hr class="keyline">
+
+  <!-- 5. ROADMAP -->
+  <section>
+    <p class="sec-eyebrow">Roadmap to v1.0</p>
+    <h2>Four phases to September 2026</h2>
+    <p>Because C+ is durable by construction — every line written this session ships in v1.0, and every unresolved question is an optional lane rather than a blocking bet — the path forward is additive.</p>
+    <div class="timeline">
+      <div class="phase done">
+        <div class="ph-head"><h3>Phase 0 — Prototype</h3><span class="when">this session · done</span><span class="chip good">shipped</span></div>
+        <ul>
+          <li>Deep review (7 readers + synthesis + 4-judge panel); fork established.</li>
+          <li>Local-first layer: <span class="mono">fs_lConfig</span>, <span class="mono">og_init</span>, <span class="mono">og_validate</span>, <span class="mono">og_run</span>, <span class="mono">og_view</span>, <span class="mono">og_app</span>; site Reports tab; CI for the dormant tests; draft PR.</li>
+        </ul>
+      </div>
+      <div class="phase now">
+        <div class="ph-head"><h3>Phase 1 — Local core hardening</h3><span class="when">late July</span></div>
+        <ul>
+          <li>Shared <span class="mono">fs_lConfig ↔ gh_lConfig</span> contract test suite; workr provider-registry integration.</li>
+          <li>Upstream the GroupID type fix into the gsm pipeline and retire the <span class="mono">StandardizeResults</span> shim.</li>
+          <li>Real per-step <span class="mono">status.json</span> / <span class="mono">log.json</span> from <span class="mono">og_run</span> (replaces file-presence inference); graceful metric-failure handling.</li>
+          <li>Validation UX v2; R CMD check clean; CI green on both lanes.</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph-head"><h3>Phase 2 — Settings &amp; data UX</h3><span class="when">August</span></div>
+        <ul>
+          <li>Schema-driven settings forms generated from workflow meta (Threshold / Flag / Active / GroupLevel), writing YAML back.</li>
+          <li>Data-import assist: <span class="mono">haven</span> (sas7bdat/xpt) + CSV; light column-rename mapping stored in <span class="mono">data-config.yaml</span> (decision D3).</li>
+          <li>Linked static + interactive parity; the P005 / gsm.safety integration point lands here.</li>
+          <li>Local multi-snapshot story (decide the <span class="mono">ps-NNN</span> fate — D6).</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph-head"><h3>Phase 3 — Publish &amp; share</h3><span class="when">early September</span></div>
+        <ul>
+          <li><span class="mono">og_publish(dir, repo)</span> pushes the project folder to Pages via the existing <span class="mono">gh_*</span>/Actions lane — proving the never-run Action end-to-end.</li>
+          <li>pkgdown docs site + demo gallery.</li>
+          <li>Stretch: a shinylive/webR spike for in-browser settings editing (research bet, not gating).</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph-head"><h3>Phase 4 — v1.0 release</h3><span class="when">September</span></div>
+        <ul>
+          <li>Release checklist, versioning, gsm.library registration.</li>
+          <li>Keynote demo script: "the safetyGraphics author replaces his own app on the modern stack."</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="keyline">
+
+  <!-- 6. DECISIONS -->
+  <section>
+    <p class="sec-eyebrow">For @jwildfire</p>
+    <h2>Decisions D1–D6</h2>
+    <div class="dec">
+      <span class="did">D1</span>
+      <div>
+        <h3>Ratify architecture C+?</h3>
+        <p>Local-first core + thin Shiny shell; GitHub as the publishing lane.</p>
+        <p class="rec"><b>Recommend yes</b> — it won the panel 33/22/16, orphans nothing from v0.1, and is proven end-to-end in this PR.</p>
+      </div>
+    </div>
+    <div class="dec">
+      <span class="did">D2</span>
+      <div>
+        <h3>Where does development live?</h3>
+        <p>PR upstream to <span class="mono">Gilead-BioStats/open.gismo</span> dev, or continue on the <span class="mono">jwildfire</span> fork / OpenRBQM?</p>
+        <p class="rec">Fork is the working home now (SAML-blocked upstream); decide the eventual destination before Phase 1 opens hub sub-issues.</p>
+      </div>
+    </div>
+    <div class="dec">
+      <span class="did">D3</span>
+      <div>
+        <h3>v1.0 data-mapping ambition?</h3>
+        <p>gsm-convention-only + validation (cheap) · rename-map assist (middle, currently planned) · full safetyGraphics mapping UI (expensive).</p>
+        <p class="rec"><b>Recommend the middle path</b> — rename-map assist in <span class="mono">data-config.yaml</span>; the full mapping UI is the single most expensive missing piece and stays out of v1.0 unless you raise ambition.</p>
+      </div>
+    </div>
+    <div class="dec">
+      <span class="did">D4</span>
+      <div>
+        <h3>Shiny long-term?</h3>
+        <p>Keep Shiny as the local shell, or aim webR/static to replace it post-v1.0?</p>
+        <p class="rec">C+ works either way — the app is a thin editor over the folder, so this stays a deferrable call, not a foundation bet.</p>
+      </div>
+    </div>
+    <div class="dec">
+      <span class="did">D5</span>
+      <div>
+        <h3>File hub Requirement issues now?</h3>
+        <p>Open obot.roadmap Requirement issue(s) for Phases 1–4 with cross-repo sub-issues.</p>
+        <p class="rec">Every prototype piece maps one-to-one onto a requirement; recommend filing once C+ is ratified (D1).</p>
+      </div>
+    </div>
+    <div class="dec">
+      <span class="did">D6</span>
+      <div>
+        <h3>Project Snapshots (<span class="mono">ps-NNN</span>)?</h3>
+        <p>Give them a local story, keep them GitHub-only, or park them?</p>
+        <p class="rec">Built and tested but unused by the demo; recommend parking in the GitHub lane until the publishing story matures in Phase 2/3.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Sources: deep-review synthesis, 4-judge panel, build &amp; review fleet results (session 2026-07-12) · fork <span class="mono">jwildfire/open.gismo</span> @ <span class="mono">feat/local-first-prototype</span> · draft <a href="https://github.com/jwildfire/open.gismo/pull/1">PR #1</a> · v1.0 roadmap notes. Verified figures are session measurements on the reference machine.
+    <hr class="keyline" style="margin:1.4rem 0;">
+    This report was drafted by Claude Code using Fable 5 and reviewed by @jwildfire
+  </footer>
+</div>
+</body>
+</html>

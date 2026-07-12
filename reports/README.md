@@ -14,6 +14,7 @@ requirement [#7](https://github.com/jwildfire/obot.roadmap/issues/7).
 
 | Report | Date | Status |
 |---|---|---|
+| [open.gismo v1.0 — design & roadmap](open-gismo-v1-plan-2026-07-12/) | 2026-07-12 | Current — decisions D1–D6 awaiting @jwildfire; companion to [open.gismo PR #1](https://github.com/jwildfire/open.gismo/pull/1) |
 | [Roadmap usage audit — the public story lags reality](roadmap-usage-audit-2026-07-11/) | 2026-07-11 | Current — tier-1 corrections awaiting @jwildfire |
 | [safety.viz homepage — five layout directions](safety-viz-homepage-options-2026-07-11/) | 2026-07-11 | Current — awaiting @jwildfire's pick (safety.viz#29) |
 | [safety.agent harness proposal (#17/#18)](harness-proposal-2026-07-04/) | 2026-07-04 | Current |
