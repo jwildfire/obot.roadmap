@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Session report 2026-07-11-2 · obot</title>
+<style>
+  :root {
+    --ground:#faf8f5; --panel:#fff; --panel-2:#f3f0eb; --ink:#26221c; --ink-2:#5c564c;
+    --ink-3:#8a8378; --line:#e4dfd6; --accent:#c2540a; --accent-ink:#a34406; --accent-tint:#faeadd;
+    --good:#1a7f4b; --good-tint:#e2f2e8; --warn:#8a6100; --warn-tint:#f7ecd0;
+    --idle:#6b7280; --idle-tint:#ecebe7; --bad:#b3261e; --bad-tint:#f9e4e2;
+    --agent-orange:#d97706; --agent-green:#1a7f4b; --agent-pink:#d0459b; --agent-blue:#2563eb;
+    --agent-purple:#7c3aed; --agent-none:#9a938a;
+    --shadow:0 1px 2px rgba(38,34,28,.05),0 4px 14px rgba(38,34,28,.04);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#191712; --panel:#211e18; --panel-2:#2a2620; --ink:#ece7dd; --ink-2:#b3aa9b;
+      --ink-3:#7d7568; --line:#363129; --accent:#f08c3e; --accent-ink:#f3a163; --accent-tint:#38281a;
+      --good:#58c389; --good-tint:#1d3227; --warn:#e3b341; --warn-tint:#362d17;
+      --idle:#9aa2ad; --idle-tint:#2b2925; --bad:#e5736c; --bad-tint:#3a201e;
+      --agent-orange:#f59e0b; --agent-green:#58c389; --agent-pink:#ec6cb9; --agent-blue:#60a5fa;
+      --agent-purple:#a78bfa; --agent-none:#857d71; --shadow:none;
+    }
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:14px;
+         line-height:1.5; margin:0; padding:24px 20px 48px; }
+  a { color:var(--accent-ink); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  code { font-family:var(--mono); font-size:.9em; background:var(--panel-2); border-radius:4px; padding:0 4px; }
+  .wrap { max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+  header { display:flex; flex-direction:column; gap:10px; }
+  .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); }
+  .masthead { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  h1 { font-size:26px; font-weight:650; margin:0; letter-spacing:-.01em; }
+  h1 .ws { color:var(--ink-3); font-weight:400; }
+  .header-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .mode { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden;
+          font-family:var(--mono); font-size:11.5px; }
+  .mode span { padding:4px 12px; color:var(--ink-3); }
+  .mode .on { background:var(--accent-tint); color:var(--accent-ink); font-weight:600; }
+  .stamp { font-family:var(--mono); font-size:11.5px; color:var(--ink-3); }
+  .banner { display:flex; align-items:center; gap:10px; background:var(--warn-tint); color:var(--warn);
+            border:1px solid color-mix(in srgb,var(--warn) 30%,transparent); border-radius:8px;
+            padding:9px 14px; font-size:13px; font-weight:500; }
+  .banner.ok { background:var(--good-tint); color:var(--good); border-color:color-mix(in srgb,var(--good) 30%,transparent); }
+  .banner .dot { flex:none; width:8px; height:8px; border-radius:50%; background:currentColor; }
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .tile { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
+          padding:14px 16px 12px; display:flex; flex-direction:column; gap:2px; }
+  .tile .label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+  .tile .value { font-size:27px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .tile .value small { font-size:15px; font-weight:500; color:var(--ink-3); }
+  .tile .sub { font-size:12px; color:var(--ink-2); }
+  .grid { display:grid; grid-template-columns:1.45fr 1fr; gap:16px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
+  .panel-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+                padding:12px 16px 10px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .panel-head h2 { font-size:14px; font-weight:650; margin:0; }
+  .src { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .panel-body { padding:12px 16px 14px; display:flex; flex-direction:column; gap:10px; }
+  .badge-new { font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+               color:var(--accent-ink); background:var(--accent-tint); border-radius:4px; padding:2px 7px; }
+  .group-label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+                 color:var(--ink-3); padding-top:4px; }
+  ul.todo { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .todo li { display:flex; gap:10px; align-items:baseline; }
+  .box { flex:none; width:15px; height:15px; border-radius:4px; border:1.5px solid var(--ink-3);
+         position:relative; align-self:flex-start; margin-top:3px; }
+  .box.done { background:var(--good); border-color:var(--good); }
+  .box.done::after { content:""; position:absolute; left:4px; top:1px; width:4px; height:8px;
+                     border:solid var(--panel); border-width:0 2px 2px 0; transform:rotate(40deg); }
+  .todo .num { font-family:var(--mono); font-size:12px; color:var(--ink-3); flex:none; width:18px; text-align:right; }
+  .todo .txt { min-width:0; }
+  .todo li.is-done .txt { color:var(--ink-3); text-decoration:line-through; }
+  .todo time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; }
+  .refchip { font-family:var(--mono); font-size:11px; white-space:nowrap; background:var(--panel-2);
+             border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--accent-ink); }
+  .agents { display:flex; flex-direction:column; gap:10px; }
+  .agent { border:1px solid var(--line); border-radius:8px; background:var(--panel);
+           padding:10px 12px; display:flex; flex-direction:column; gap:7px; }
+  .agent-top { display:flex; align-items:center; gap:8px; }
+  .agent-dot { flex:none; width:9px; height:9px; border-radius:50%; }
+  .agent-name { font-family:var(--mono); font-size:12.5px; font-weight:600; overflow:hidden;
+                text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .pill { margin-left:auto; flex:none; display:inline-flex; align-items:center; gap:5px;
+          font-size:11px; font-weight:600; border-radius:999px; padding:2px 9px; }
+  .pill i { font-style:normal; font-size:10px; }
+  .pill.working { background:var(--good-tint); color:var(--good); }
+  .pill.blocked { background:var(--warn-tint); color:var(--warn); }
+  .pill.failed { background:var(--bad-tint); color:var(--bad); }
+  .pill.done, .pill.idle { background:var(--idle-tint); color:var(--idle); }
+  .agent-detail { font-size:12px; color:var(--ink-2); }
+  .agent-meta { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:11px;
+                color:var(--ink-3); font-variant-numeric:tabular-nums; flex-wrap:wrap; }
+  .tokbar { flex:1 1 60px; min-width:50px; height:4px; border-radius:2px; background:var(--panel-2); overflow:hidden; }
+  .tokbar b { display:block; height:100%; border-radius:2px; }
+  .agent-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .feed { display:flex; flex-direction:column; }
+  .evt { display:flex; gap:12px; align-items:baseline; padding:7px 0; border-bottom:1px solid var(--line); }
+  .evt:last-child { border-bottom:none; }
+  .evt time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; width:68px; }
+  .evt .txt { min-width:0; }
+  .repo { font-family:var(--mono); font-size:10.5px; border-radius:4px; padding:1px 6px;
+          background:var(--panel-2); border:1px solid var(--line); color:var(--ink-2); white-space:nowrap; }
+  .prose { font-size:13px; color:var(--ink-2); }
+  .prose div { margin-bottom:4px; }
+  .notice { font-family:var(--mono); font-size:11.5px; color:var(--warn); margin:0; }
+  .foot { font-family:var(--mono); font-size:11px; color:var(--ink-3); text-align:center; }
+  @media (max-width:940px) { .grid { grid-template-columns:1fr; } .tiles { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">obot session hub · session report</div>
+  <div class="masthead">
+    <h1>Session 2026-07-11-2 <span class="ws">· obot2</span></h1>
+    <div class="header-meta">
+      <span class="mode"><span class="">● Live</span><span class="on">Report</span></span>
+      <span class="stamp">generated 10:59 PM</span>
+    </div>
+  </div>
+  <div class="banner ok"><span class="dot"></span>Session report — frozen at wrapup. 5 agents, 887.4k tokens, 39 roadmap events.</div>
+</header>
+
+<section class="tiles">
+  <div class="tile"><span class="label">Priorities</span><span class="value">5 <small>open · 5 done</small></span><span class="sub">scratchpad kickoff list</span></div>
+  <div class="tile"><span class="label">Agents</span><span class="value">5</span><span class="sub">3 done · 2 working</span></div>
+  <div class="tile"><span class="label">Tokens</span><span class="value">887.4k</span><span class="sub">across 4 reporting sessions</span></div>
+  <div class="tile"><span class="label">Roadmap movement</span><span class="value">39 <small>events</small></span><span class="sub">since session start</span></div>
+</section>
+
+<div class="grid">
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Priorities</h2><span class="src">scratchpad · ## Overview (session-init)</span></div>
+  <div class="panel-body"><div class="group-label">Agent-actionable</div><ul class="todo"><li class="is-done"><span class="box done"></span><span class="num">1</span><span class="txt">1. safety.viz v1.0 wrap — <strong>RELEASED &amp; LEAD-REVIEWED</strong>: #23/#28/#22 merged to dev (Jeremy approved live, obotclaw executed), hold lifted → homepage follow-up <a href="https://github.com/jwildfire/safety.viz/pull/30">#30</a> (direction picked from the #29 layout report), release PR <a href="https://github.com/jwildfire/safety.viz/pull/31">#31</a> (main←dev) merged, <strong><a href="https://github.com/jwildfire/safety.viz/releases/tag/v1.0.0">v1.0.0 published</a></strong>; lead review verified root site + all six module pages live (200s), previews cleaned (pr/28→404), board carries #19–#35, hub <a href="https://github.com/jwildfire/obot.roadmap/issues/1">#1</a> ready for its Released stage move at wrapup</span></li>
+<li class="is-done"><span class="box done"></span><span class="num">2</span><span class="txt">2. safety.viz post-merge chores — DONE 07-11: all six modules live on /dev/ (demo/evidence/api 200), #19–#27 on the board, 9 worktrees + 12 local + 3 remote branches swept, <code>.claude/</code> removed, pr previews cleaned; blog draft <code>BLOG_N_ultracode-effort.md</code> still staged</span></li>
+<li class="is-done"><span class="box done"></span><span class="num">3</span><span class="txt">3. obot.agent v0.1 wrap — DONE (job 2a8347d1, 07-11 evening): #11 → #16 → #17 merged with Jeremy&#39;s explicit approval, hub #23 closed (both halves), docs refresh #19 merged; <strong>v0.1.0 FINAL released</strong> (rc1 published on Jeremy&#39;s &quot;Publish&quot;, then promoted to final per his feedback — line-wrap fix, release moved to main tip <code>68e061d</code>): <a href="https://github.com/jwildfire/obot.agent/releases/tag/v0.1.0">github.com/jwildfire/obot.agent/releases/tag/v0.1.0</a></span></li>
+<li><span class="box"></span><span class="num">4</span><span class="txt">4. Riding along — scaffold notes REVIEWED + quick wins executed (see log); hub #24 handed to devops-dash sibling 8e2c143a; <strong><a href="https://github.com/jwildfire/obot.agent/issues/15">obot.agent#15</a> keynote stylesheet: UNBLOCKED but still unowned</strong> (only remaining piece)</span></li></ul>
+<div class="group-label">Waiting on @jwildfire</div><ul class="todo"><li class="is-done"><span class="box done"></span><span class="num">5</span><span class="txt">5. Review + approve the safety.viz stack — APPROVED + merged 07-11 evening; hold later lifted, v1.0.0 released (see item 1)</span></li>
+<li class="is-done"><span class="box done"></span><span class="num">6</span><span class="txt">6. Review + approve the obot.agent stack — DONE: Jeremy personally merged #11/#16/#17/#19 and published v0.1.0 (see item 3)</span></li>
+<li><span class="box"></span><span class="num">7</span><span class="txt">7. Re-review gsm.safety <a href="https://github.com/jwildfire/gsm.safety/pull/29">PR #29</a> (fix pushed; changes-requested flag stale; closes <a href="https://github.com/jwildfire/gsm.safety/issues/28">#28</a>)</span></li>
+<li><span class="box"></span><span class="num">8</span><span class="txt">8. Answer harness Q1–Q4 on hub <a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a> to exit Requirement Gathering</span></li>
+<li><span class="box"></span><span class="num">9</span><span class="txt">9. Merge Gilead-BioStats/gsm.roadmap <a href="https://github.com/Gilead-BioStats/gsm.roadmap/pull/151">PR #151</a> (workr CompileWorkflow design → unblocks Phase 1 TDD)</span></li>
+<li><span class="box"></span><span class="num">10</span><span class="txt">10. Decisions backlog — keynote K2/K3/K4; session-orchestration D1–D4 (likely folds into hub <a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>); hub <a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a> §7 credential retirement (needs your sign-in)</span></li></ul>
+<div class="group-label">Parked (not this session&#39;s focus, per 07-11 wrapup)</div><ul class="todo"><li><span class="num">11</span><span class="txt">gsm.safety widget lane: Widget_Histogram <a href="https://github.com/jwildfire/gsm.safety/issues/30">#30</a> + QCThat <a href="https://github.com/jwildfire/gsm.safety/issues/27">#27</a> — next major lane after v1.0</span></li>
+<li><span class="num">12</span><span class="txt">Blog #5 &quot;Autonomy, or Lack Thereof&quot; + syndication (hub <a href="https://github.com/jwildfire/obot.roadmap/issues/22">#22</a>, outline PR <a href="https://github.com/jwildfire/jwildfire.github.io/pull/8">jwildfire.github.io#8</a>)</span></li>
+<li><span class="num">13</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/14">obot.agent#14</a> upstream staging to gsm.agent (post-RC; local staging only, Jeremy reviews before Gilead push)</span></li>
+<li><span class="num">14</span><span class="txt">Small checks: gsm.agent PR #33 status via local clone; draft gsm.datasim demo-data-pipeline requirement</span></li></ul></div>
+</section>
+<section class="panel">
+  <div class="panel-head"><h2>Roadmap activity</h2><span class="src">gh search issues/prs · updated ≥ session start (derived, cached · swept 10:59 PM)</span></div>
+  <div class="panel-body"><div class="feed"><div class="evt"><time>6:45 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/13">#13</a> Absorb the session skills from obot.roadmap — <strong>closed</strong></span></div>
+<div class="evt"><time>6:46 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/12">#12</a> Restructure obot.agent as the gsm.agent overlay — <strong>closed</strong></span></div>
+<div class="evt"><time>6:47 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/23">#23</a> Adopt requirement-lifecycle skills; hand session skills to obot.agent — <strong>closed</strong></span></div>
+<div class="evt"><time>6:55 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/4">PR #4</a> Document P004 renderer requirements and testing framework — <strong>updated</strong></span></div>
+<div class="evt"><time>8:25 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/18">#18</a> Docs refresh: README and agent.md still describe the pre-migration repo — <strong>closed</strong></span></div>
+<div class="evt"><time>8:25 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/19">PR #19</a> Docs refresh: README and agent.md describe the post-RC repo — <strong>merged</strong></span></div>
+<div class="evt"><time>9:32 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/11">PR #11</a> Rename housekeeping: obot.agent identity, retire obot-claw staging policy — <strong>merged</strong></span></div>
+<div class="evt"><time>9:32 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/16">PR #16</a> Absorb session-lifecycle skills from obot.roadmap — <strong>merged</strong></span></div>
+<div class="evt"><time>9:32 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/17">PR #17</a> Restructure obot.agent as the gsm.agent overlay — <strong>merged</strong></span></div>
+<div class="evt"><time>9:56 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/15">#15</a> Land the shared keynote stylesheet — <strong>updated</strong></span></div>
+<div class="evt"><time>10:01 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a> Requirement: rebuild safety.agent as a thin overlay on the gsm.agent harness — <strong>updated</strong></span></div>
+<div class="evt"><time>10:13 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/25">#25</a> Requirement: canonical demo data for safety.viz renderers — <strong>opened</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/14">#14</a> Build the shift-plot module: second renderer proving the framework (v0.2) — <strong>closed</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/19">#19</a> QC and fix the histogram binning algorithm against the original safety-histogram — <strong>closed</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/20">#20</a> v1.0 RC framework: multi-module evidence pipeline + renderer fan-out integration — <strong>closed</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/21">#21</a> Bring the docs site to v1.0 quality: keynote branding, audit-ready evidence report, technical overview, About page — <strong>closed</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/24">#24</a> Build the outlier-explorer module: participant results over time with population outlier context (v1.0 fan-out) — <strong>closed</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/25">#25</a> Build the delta-delta module: paired change-from-baseline scatter renderer — <strong>closed</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/26">#26</a> Build the ae-timelines module: adverse event timelines renderer (v1.0 fan-out) — <strong>closed</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/27">#27</a> Build the results-over-time module: population distribution of a measure at each visit (v1.0 fan-out) — <strong>closed</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/29">#29</a> Homepage: cut the intro to two sentences, move the story to About — <strong>closed</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/22">PR #22</a> Docs-site v1.0: keynote theme, story homepage, qualification-report evidence, API TOC, About + Architecture pages — <strong>merged</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/23">PR #23</a> Match the histogram binning algorithm to the original renderer — <strong>merged</strong></span></div>
+<div class="evt"><time>10:29 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/28">PR #28</a> v1.0 release candidate: five new renderers + multi-module evidence framework — <strong>merged</strong></span></div>
+<div class="evt"><time>10:32 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/31">PR #31</a> Release v1.0.0 — <strong>merged</strong></span></div>
+<div class="evt"><time>10:32 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/1">#1</a> Requirement: safety.viz — consolidated safety-chart JavaScript library — <strong>updated</strong></span></div>
+<div class="evt"><time>10:33 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/30">PR #30</a> Homepage: two-sentence intro; story moves to About — <strong>merged</strong></span></div>
+<div class="evt"><time>10:33 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/20">PR #20</a> Re-type matrix rows evidenced by safety.viz v1.0 tests — <strong>merged</strong></span></div>
+<div class="evt"><time>10:41 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/21">#21</a> Build the session-hub generator: collectors, session model, live mode — <strong>opened</strong></span></div>
+<div class="evt"><time>10:41 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/22">#22</a> Add report mode + the session-wrapup report step — <strong>opened</strong></span></div>
+<div class="evt"><time>10:41 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/23">#23</a> Add the session-scaffold skill + ## Scaffold capture channel — <strong>opened</strong></span></div>
+<div class="evt"><time>10:41 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/34">#34</a> README rewrite for v1.0: this is a usable tool now — <strong>opened</strong></span></div>
+<div class="evt"><time>10:41 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/27">#27</a> Render session reports as diary tabs (render_diary.mjs follow-up) — <strong>opened</strong></span></div>
+<div class="evt"><time>10:41 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/35">#35</a> Demo-data refactor: scripted pharmaverse ADaM pipeline replaces hand-trimmed CSVs — <strong>opened</strong></span></div>
+<div class="evt"><time>10:41 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/32">#32</a> Site-generator hardening: latent issues surfaced in the v1.0 docs-site review — <strong>opened</strong></span></div>
+<div class="evt"><time>10:41 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/33">#33</a> Fan-out robustness: cross-module data-handling gaps from the v1.0 review — <strong>opened</strong></span></div>
+<div class="evt"><time>10:43 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a> Requirement: session hub — live session dashboard + wrapup session report — <strong>updated</strong></span></div>
+<div class="evt"><time>10:45 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/26">#26</a> Create the reports/sessions/ home + diary link convention — <strong>closed</strong></span></div>
+<div class="evt"><time>10:57 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/36">PR #36</a> README rewrite for v1.0: this is a usable tool now — <strong>opened</strong></span></div></div></div>
+</section></div>
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Agents</h2><span class="src">~/.claude/jobs/*/state.json + claude agents --json</span></div>
+  <div class="panel-body"><div class="agents"><div class="agent">
+  <div class="agent-top">
+    <span class="agent-dot" style="background:var(--agent-orange)"></span>
+    <span class="agent-name">😺🤖 07-11 2</span>
+    <span class="pill done"><i>✓</i>done</span>
+  </div>
+  <div class="agent-detail">Start a sub-agent to audit how well we&#39;ve been using the roadmap in the last few days. I just clicked on <a href="https://jwildfire.github.io/obot.roadmap/roadmap.html">jwildfire.github.io/obot.roadmap/roadmap.html</a> and don&#39;t see anything in development which seems crazy considering there are several active agents running builds ...</div>
+  <div class="agent-meta">
+    <span>6:17 PM–10:59 PM (4h 42m)</span>
+    <span class="tokbar"><b style="width:39%;background:var(--agent-orange)"></b></span><span>156.0k tok</span>
+    <span>fable-5[1m]</span>
+    
+  </div>
+  
+  
+</div>
+<div class="agent">
+  <div class="agent-top">
+    <span class="agent-dot" style="background:var(--agent-green)"></span>
+    <span class="agent-name">👯🤖 07-11 sv-v1.1</span>
+    <span class="pill working"><i>●</i>working</span>
+  </div>
+  <div class="agent-detail">PR #36 drafted, unit tests pass; waiting on CI</div>
+  <div class="agent-meta">
+    <span>6:37 PM–10:59 PM (4h 22m)</span>
+    <span class="tokbar"><b style="width:100%;background:var(--agent-green)"></b></span><span>487.2k tok</span>
+    <span>fable-5[1m]</span>
+    
+  </div>
+  <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/safety.viz/pull/28">PR safety.viz#28</a> <a class="refchip" href="https://github.com/jwildfire/safety.viz/pull/23">PR safety.viz#23</a> <a class="refchip" href="https://github.com/jwildfire/safety.viz/pull/30">PR safety.viz#30</a> <a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/20">PR obot.agent#20</a> <a class="refchip" href="https://github.com/jwildfire/safety.viz/pull/31">PR safety.viz#31</a> <a class="refchip" href="https://claude.ai/code/artifact/a75fbb56-2163-48c0-bf9e-3dc05b93da63">claude.ai/code/artifact/a75fbb56-2163-48c0-bf9e-3dc05b93da63</a> <a class="refchip" href="https://github.com/jwildfire/safety.viz/pull/36">PR safety.viz#36</a></div>
+  
+</div>
+<div class="agent">
+  <div class="agent-top">
+    <span class="agent-dot" style="background:var(--agent-green)"></span>
+    <span class="agent-name">👯🤖 07-11 oa-v0.1</span>
+    <span class="pill done"><i>✓</i>done</span>
+  </div>
+  <div class="agent-detail">obot.agent v0.1.0 released to GitHub; #23 closed, rc1 tag preserved</div>
+  <div class="agent-meta">
+    <span>6:37 PM–10:05 PM (3h 28m)</span>
+    <span class="tokbar"><b style="width:24%;background:var(--agent-green)"></b></span><span>94.9k tok</span>
+    <span>fable-5[1m]</span>
+    
+  </div>
+  <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/11">PR obot.agent#11</a> <a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/19">PR obot.agent#19</a></div>
+  
+</div>
+<div class="agent">
+  <div class="agent-top">
+    <span class="agent-dot" style="background:var(--agent-green)"></span>
+    <span class="agent-name">👯🤖 07-11 data-mig</span>
+    <span class="pill done"><i>✓</i>done</span>
+  </div>
+  <div class="agent-detail">Agree with pharmaverseadam rec. Implement.</div>
+  <div class="agent-meta">
+    <span>9:55 PM–10:59 PM (1h 4m)</span>
+    <span class="tokbar"><b style="width:37%;background:var(--agent-green)"></b></span><span>149.2k tok</span>
+    <span>opus-4-8</span>
+    
+  </div>
+  
+  
+</div>
+<div class="agent">
+  <div class="agent-top">
+    <span class="agent-dot" style="background:var(--agent-green)"></span>
+    <span class="agent-name">👯🤖 07-11 devops-dash</span>
+    <span class="pill working"><i>●</i>working</span>
+  </div>
+  <div class="agent-detail">starting…</div>
+  <div class="agent-meta">
+    <span>10:16 PM–10:46 PM (30m)</span>
+    
+    <span>fable-5</span>
+    
+  </div>
+  
+  
+</div></div></div>
+</section>
+<section class="panel">
+  <div class="panel-head"><h2>Notes</h2><span class="src">scratchpad · ## Notes (session-note)</span></div>
+  <div class="panel-body"><ul class="todo"><li><time>19:05</time><span class="txt">Jeremy wants to migrate safety.viz off the vendored &quot;RhoInc data-library&quot; demo data (<code>site/data/adbds.csv</code> / <code>adae.csv</code>, the v0.1/v1.0 stopgap): the data most likely originates from <a href="https://github.com/SafetyGraphics/safetyData">safetyGraphics/safetyData</a>, which would be the truer source; also consider the canonical pharmaverse (e.g. pharmaversesdtm/pharmaverseadam) or CDISC pilot data packages. Folds into the existing gsm.datasim demo-data-pipeline requirement idea (parked item) — the replacement source is now a design question for that requirement.</span></li>
+<li><span class="txt"><strong>MERGED to dev:</strong> #23 (62dfaeff) → bump pushed (016fd9e) → #28 (02fcd146); #22 auto-MERGED via ancestry, #21 credit intact. All v1.0 issues auto-closed (#14/#19/#20/#21/#24–#27); safety.viz open-issue list is EMPTY. dev CI+Pages green; /dev/ serves the six-renderer v1.0 site; cancelled preview-cleanup runs rerun → /pr/22|23|28/ all 404. Issues/PRs #19–#27 on the obot Roadmap board (#14 not added — briefing range was 19–27). 📣 <strong>obot.agent#15 UNBLOCKED</strong> (needed #22 merged) — for the oa-v0.1 sibling.</span></li>
+<li><span class="txt">Sweep under standing grant (all verified MERGED + tip==headRefOid + ancestor-of-dev): remote branches 19-histogram-binning/21-website-v1/rc-v1.0 deleted; 9 worktrees removed (incl. locked plan-session jolly-popping-fog + my release-prep-v1); safety.viz-worktrees/ dir gone; 12 local branches deleted; local dev fast-forwarded; clone clean on main.</span></li>
+<li><span class="txt"><strong>HELD, ready to execute on Jeremy&#39;s word:</strong> release PR main←dev (drafts/safety.viz/PR_N_release-v1-0-0.md), v1.0.0 tag + GitHub release (RELEASE_v1-0-0.md), v1.0.0 milestone, fast-follow issues (ISSUE_N_site-gen-hardening.md, ISSUE_N_fanout-robustness.md). Blocker first: evidence-matrix update (see RELEASE BLOCKER above).</span></li>
+<li><span class="txt">Third sibling spawned: job 5622f339 &quot;😺🤖 07-11 data-mig&quot; (green, <strong>Opus 4.8</strong> per model-allocation — research + template-driven requirement drafting) — verify vendored demo-data provenance vs safetyGraphics/safetyData, evaluate pharmaverse/CDISC/gsm.datasim alternatives, draft + file the hub demo-data migration requirement. Research + requirement ONLY; no safety.viz changes while sv-v1 releases.</span></li>
+<li><time>19:15</time><span class="txt">Design directive from Jeremy: replace the word &quot;GitHub&quot; with a right-justified icon in the nav on all pages (site chrome). Posted to the style guide issue obot.agent#15 so the shared keynote stylesheet work picks it up.</span></li>
+<li><time>00:45</time><span class="txt">Jeremy designated the rewritten v1.0.0 release announcement (<a href="https://github.com/jwildfire/safety.viz/releases/tag/v1.0.0">live</a>, draft at <code>drafts/safety.viz/RELEASE_v1-0-0-announcement.md</code>) as the <strong>exemplar for major-release notes</strong>: functionality-first — what the tool does, a chart table with demo links, a vendor+mount snippet, data contracts, the trust/evidence story — with work-history compressed to one line and a what&#39;s-next pointer. Minor and bugfix releases can be proportionally lighter.</span></li></ul></div>
+</section>
+<section class="panel">
+  <div class="panel-head"><h2>Scaffold improvements</h2><span class="src">scratchpad · ## Scaffold (session-scaffold)</span></div>
+  <div class="panel-body"><p class="notice">⚠ no ## Scaffold section yet — capture with &quot;scaffold: …&quot;</p></div>
+</section>
+<section class="panel">
+  <div class="panel-head"><h2>Next session <span class="badge-new">render-only</span></h2><span class="src">next-session-todo memory + last diary loose ends</span></div>
+  <div class="panel-body"><div class="prose">Set at the 2026-07-11 wrapup (checkpoint approved; diary <code>diary/2026-07-11.md</code> is the
+full record). Jeremy&#39;s explicit focus: <strong>next session wraps safety.viz v1 and
+obot.agent v0.1 — nothing else above the fold.</strong>
+
+1. <strong>safety.viz v1.0 wrap.</strong> The ultraplan session (<strong>id <code>c5b379fa</code></strong>, &quot;safety-viz v1
+   ultraplan&quot;) delivered the whole push as three draft PRs — review/merge in order:
+   <a href="https://github.com/jwildfire/safety.viz/pull/23">#23</a> (binning fix, verify vs the
+   original renderer first) → <a href="https://github.com/jwildfire/safety.viz/pull/28">#28</a>
+   (v1.0 RC: five new renderers + multi-module evidence framework) →
+   <a href="https://github.com/jwildfire/safety.viz/pull/22">#22</a> (docs-site v1.0: keynote
+   theme, qualification-report evidence, About/Architecture). Then: evidence green on
+   Pages, tag <strong>v1.0.0</strong> (no milestone exists — still intentionally uncreated), board
+   adds for new issues #19–#27, worktree sweep (7 worktrees under
+   <code>safety.viz-worktrees/</code>; merged ⇒ delete per [[worktree-cleanup-grant]]), and the
+   stray untracked <code>.claude/</code> dir in the safety.viz clone. Staged by the ultraplan:
+   <code>PR_28_rc-v1.md</code>, <code>BLOG_N_ultracode-effort.md</code> in <code>.github/drafts/safety.viz/</code>.
+2. ~~<strong>obot.agent v0.1.</strong>~~ <strong>DONE 2026-07-11 eve</strong> (job 2a8347d1): #11→#16→#17→#19
+   merged with Jeremy&#39;s approval, hub #23 closed both halves, scorecard report live
+   (all six criteria met). <strong>v0.1.0 FINAL released</strong> — rc1 promoted per Jeremy
+   (line-wrap fix; release on main tip 68e061d):
+   <a href="https://github.com/jwildfire/obot.agent/releases/tag/v0.1.0.">github.com/jwildfire/obot.agent/releases/tag/v0.1.0.</a> The rc1 git tag
+   remains on 66d6769 (delete only on Jeremy&#39;s word).
+3. <strong>Riding along:</strong> obot.agent#15 (keynote stylesheet) unblocks when safety.viz PR
+   #22 merges; <strong>triage hub #24</strong> (session-hub dashboard requirement, obotclaw-filed
+   by the ultraplan, concept mockup linked — likely absorbs the old
+   session-orchestration D1–D4 thread); <strong>review the ultraplan&#39;s scaffold
+   recommendations</strong> at <code>.github/drafts/safety.viz/NOTES_v1-scaffold-improvements.md</code>
+   (Jeremy&#39;s scaffold direction at the 07-11 checkpoint).
+
+Carried (below the fold): gsm.safety lane (#30 Widget_Histogram unblocked; PR #29
+re-review — changes-requested flag stale; #27 QCThat); obot.agent#14 upstream staging
+(post-RC; stage locally, Jeremy reviews before any Gilead push); blog #5 + big.blog
+syndication ([[keynote-plan]] has voice/mechanics); hub #18 harness answers; hub #3 §7
+obot-claw credential retirement (Jeremy sign-in); Gilead gsm.roadmap PR #151
+([[workr-compileworkflow-project]]); gsm.agent PR #33 check.</div>
+<div class="group-label">last diary (2026-07-11.md)</div><div class="prose"><div>Per @jwildfire at the wrapup checkpoint: <strong>only the two wrap-ups above the fold.</strong></div><div>1. <strong>safety.viz v1.0 wrap</strong> — review/merge <a href="https://github.com/jwildfire/safety.viz/pull/23">#23</a></div><div>   → <a href="https://github.com/jwildfire/safety.viz/pull/28">#28</a> →</div><div>   <a href="https://github.com/jwildfire/safety.viz/pull/22">#22</a>, evidence green on Pages, tag</div><div>   <strong>v1.0.0</strong> (milestone still intentionally uncreated), board adds for #20–#27, worktree</div><div>   sweep + <code>.claude/</code> cleanup.</div><div>2. <strong>obot.agent v0.1</strong> — merge <a href="https://github.com/jwildfire/obot.agent/pull/11">#11</a> →</div><div>   <a href="https://github.com/jwildfire/obot.agent/pull/16">#16</a> →</div><div>   <a href="https://github.com/jwildfire/obot.agent/pull/17">#17</a>, finish</div><div>   <a href="https://github.com/jwildfire/obot.roadmap/issues/23">hub #23</a> second half, tag</div><div>   <strong>v0.1.0-rc1</strong> with staged release notes.</div><div>3. <strong>Riding along</strong> — <a href="https://github.com/jwildfire/obot.agent/issues/15">obot.agent#15</a></div></div></div>
+</section></div>
+</div>
+
+<div class="foot">frozen operational record · pairs with diary/2026-07-11-2.md · boundary: session-init marker → job ce8f336e (6:17 PM) · session-hub (obot.agent v0.2 · <a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>)</div>
+</div>
+
+</body>
+</html>
