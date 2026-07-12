@@ -9,7 +9,15 @@ a thin overlay on gsm.agent) and
 [#18](https://github.com/jwildfire/obot.roadmap/issues/18) (autonomous lanes), with the
 generic pieces flowing upstream to gsm.agent / gsm.roadmap once proven.
 
-**Status: posted for @jwildfire review** (publish-first review flow) — decisions D1–D4
+**Status: absorbed by [requirement #24](https://github.com/jwildfire/obot.roadmap/issues/24)** (2026-07-11) —
+the session-lifecycle half shipped with obot.agent v0.1.0 (session skills, lead/sibling
+spawn pattern); the visibility/tracking half is designed in
+[Design #24 — session hub](../../requirements/design/24_design.html), whose §3 records the
+disposition of this proposal's D1–D4 (the D2 needs-input relay moves to
+[#18](https://github.com/jwildfire/obot.roadmap/issues/18)). Kept unchanged below as the
+point-in-time record.
+
+Original status: posted for @jwildfire review (publish-first review flow) — decisions D1–D4
 and the implementation order are open. Originally published as a
 [Claude Code artifact](https://claude.ai/code/artifact/a88637ab-928a-4f32-b2f7-9c8af30c8ad9);
 this copy is the point-in-time record. Once reviewed, the live state of the work moves to
