@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #24 — session hub: live session dashboard + wrapup session report</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  .done { display: inline-block; background: #dcfce7; color: #166534; border-radius: 999px;
+          padding: .05rem .5rem; font-size: .78rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .note { color: var(--muted); font-size: .9rem; }
+  nav.toc { background: var(--panel); border-radius: 8px; padding: 1rem 1.25rem; font-size: .92rem; }
+  nav.toc ol { margin: .25rem 0 0; padding-left: 1.25rem; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design: session hub — live session dashboard + wrapup session report</h1>
+  <p class="meta">
+    Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/24">jwildfire/obot.roadmap#24</a>
+    · 2026-07-11 · <span class="status">Decisions pending — D1–D4 open for @jwildfire</span><br>
+    The driver requirement for <strong>obot.agent v0.2</strong>. Visual spec:
+    <a href="https://claude.ai/code/artifact/e07af7e3-c405-4ef6-b56d-0d9b1fbddd2f">concept mockup</a>
+    (built 2026-07-11 from that morning's real session data).
+  </p>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#context">Context and goals</a></li>
+    <li><a href="#sources">Where the data already lives — verified inventory</a></li>
+    <li><a href="#prior-art">Prior art absorbed: the session-orchestration proposal</a></li>
+    <li><a href="#architecture">Architecture — one generator, three collectors, two modes</a></li>
+    <li><a href="#panels">Panels — the render contract</a></li>
+    <li><a href="#report">Report mode and the diary</a></li>
+    <li><a href="#skills">Session-skill changes (obot.agent)</a></li>
+    <li><a href="#decisions">Decisions (open)</a></li>
+    <li><a href="#out-of-scope">Out of scope</a></li>
+    <li><a href="#risks">Risks</a></li>
+    <li><a href="#acceptance">Acceptance criteria</a></li>
+    <li><a href="#tasks">Task preview — the obot.agent v0.2 milestone</a></li>
+  </ol>
+</nav>
+
+<h2 id="context">1. Context and goals</h2>
+
+<p>
+obot.agent v0.1.0 (released 2026-07-11) gave working sessions a full lifecycle — <code>session-init</code>
+opens, five skills capture state along the way, <code>session-wrapup</code> closes into a diary entry —
+and the lead/sibling spawn pattern made sessions <em>multi-agent operations</em>: the 07-11 sessions ran
+four to five concurrent named agents. What v0.1 did not ship is a way to <strong>see</strong> a session.
+Mid-session state lives in files designed for agents (scratchpad, <code>state.json</code>, memory), and
+the operational picture at wrapup is reconstructed from transcripts and then discarded.
+</p>
+<p>
+<a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a> closes that gap with a
+<strong>read-only static generator</strong> that renders one self-contained HTML page from the sources the
+session framework already maintains — a <strong>live dashboard</strong> during the session, and at wrapup the
+same view <strong>frozen into a session report</strong> published on the hub and linked from the diary entry.
+The reports double as keynote material for the R/Pharma 2026 diary narrative
+(<a href="https://github.com/jwildfire/obot.roadmap/issues/22">#22</a>,
+<a href="https://github.com/jwildfire/obot.roadmap/issues/10">#10</a>).
+Goals, in priority order:
+</p>
+<ul>
+  <li>Answer “where are we?” at a glance, all session long, without asking an agent to re-render anything.</li>
+  <li>Freeze each session's operational record into a durable, linkable report — no more reconstruct-and-discard.</li>
+  <li>Add exactly <strong>one</strong> new capture channel (<code>## Scaffold</code>); everything else is render-only. No new state stores, no sync drift.</li>
+  <li>Ship as the headline of <strong>obot.agent v0.2</strong>, alongside the session skills it visualizes.</li>
+</ul>
+
+<h2 id="sources">2. Where the data already lives — verified inventory</h2>
+
+<p>Every input was verified against live data on 2026-07-11. Pinned fields are the parse contract (§4).</p>
+
+<table>
+  <tr><th>Source</th><th>What it provides</th><th>Pinned fields / format</th></tr>
+  <tr>
+    <td><code>~/.claude/jobs/&lt;id&gt;/state.json</code></td>
+    <td>Per background session: identity, status, progress, links, output</td>
+    <td><code>name</code>, <code>color</code>, <code>state</code> (working / needs&#8209;input / done / failed), <code>detail</code>,
+        <code>tempo</code>, <code>tokens</code>, <code>children[]</code> (PR/issue links: <code>kind</code>, <code>href</code>, <code>id</code>),
+        <code>output.result</code>, <code>createdAt</code>, <code>firstTerminalAt</code>, <code>updatedAt</code>, <code>cwd</code>,
+        <code>respawnFlags</code> (model), <code>intent</code> (briefing text)</td>
+  </tr>
+  <tr>
+    <td><code>claude agents --json [--all] --cwd &lt;ws&gt;</code></td>
+    <td>Session index: interactive sessions (which have no <code>state.json</code>) + liveness of background ones</td>
+    <td><code>kind</code> (interactive/background), <code>name</code>, <code>status</code> (busy/idle), <code>state</code>, <code>startedAt</code>, <code>sessionId</code>, <code>id</code>, <code>cwd</code></td>
+  </tr>
+  <tr>
+    <td>Scratchpad <code>.claude/session-notes/YYYY-MM-DD.md</code></td>
+    <td>Priorities with check-state, mid-session todos, notes, scaffold candidates, per-agent session logs</td>
+    <td>Sections <code>## Overview</code> (session-init; grouped checklists + <code>&lt;!-- session-init … --&gt;</code> marker),
+        <code>## Todo</code>, <code>## Notes</code>, <code>## Scaffold</code> (new, §7); <code>## Session log — …</code> headings</td>
+  </tr>
+  <tr>
+    <td>Memory + diary</td>
+    <td>“Next session” panel</td>
+    <td><code>memory/next-session-todo.md</code> body; newest <code>diary/*.md</code> “Next session: loose ends” section</td>
+  </tr>
+  <tr>
+    <td>GitHub (batched <code>gh</code> sweep)</td>
+    <td>Roadmap activity since session start</td>
+    <td><code>gh search issues/prs --owner jwildfire --updated "&gt;=&lt;start&gt;"</code> + project-board statuses
+        (obot Roadmap, user project 1). <strong>Derived and cached, never stored.</strong></td>
+  </tr>
+</table>
+
+<p class="note">
+Not available (and therefore out of scope for v1, §9): per-session <strong>cost in USD</strong>. The statusline
+stdin JSON carries <code>cost.total_cost_usd</code>, but it is push-based, render-time-only, and interactive-only —
+there is no persisted per-session cost store. <code>state.json → tokens</code> is exact and persisted, so
+<strong>tokens are the v1 effort metric</strong>; a cost estimate (tokens × model rates, model from
+<code>respawnFlags</code>) is a cheap follow-on once wanted.
+</p>
+
+<h2 id="prior-art">3. Prior art absorbed: the session-orchestration proposal</h2>
+
+<p>
+The <a href="https://jwildfire.github.io/obot.roadmap/reports/session-orchestration-2026-07-04/">session-orchestration
+proposal (2026-07-04)</a> designed the same territory before the session skills existed, and left four decisions
+open. Events resolved most of it; #24 absorbs the remainder. Disposition, decision by decision:
+</p>
+
+<table>
+  <tr><th>2026-07-04 decision</th><th>Disposition</th></tr>
+  <tr>
+    <td><strong>D1</strong> — track as a new hub Requirement, or fold into #18?</td>
+    <td><span class="done">Overtaken</span> The lifecycle/skills half shipped with obot.agent v0.1
+        (session skills absorbed via obot.agent#13 / hub #23); the spawn pattern is live practice.
+        The visibility/tracking half <strong>is #24</strong> — this requirement.</td>
+  </tr>
+  <tr>
+    <td><strong>D2</strong> — who answers a lane's <code>needs input:</code>?</td>
+    <td><span class="status">Not absorbed</span> Deliberately out of scope here (§9). The dashboard
+        <em>surfaces</em> needs-input prominently (banner + agent pill); <em>answering</em> stays in the
+        agents view or the lead session. The relay question moves to
+        <a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a>'s design.</td>
+  </tr>
+  <tr>
+    <td><strong>D3</strong> — standing watcher or on-demand status?</td>
+    <td><span class="done">Superseded by #24</span> The live dashboard <em>is</em> the standing watcher —
+        a page humans glance at, replacing both the 30-second poll loop and “ask an agent to re-render
+        the todo list.” One-shot generation still works for on-demand use.</td>
+  </tr>
+  <tr>
+    <td><strong>D4</strong> — one skill or two?</td>
+    <td><span class="done">Superseded</span> v0.1 shipped five session skills; the wrapup/diary
+        procedure the old D4 wanted separated exists as <code>session-wrapup</code>.</td>
+  </tr>
+</table>
+
+<p class="note">
+With sign-off on this design, the 2026-07-04 report gets a status note (“absorbed by
+<a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>, 2026-07-11”) at the top of its README and
+page — annotated, per hub convention, never deleted. That closes the “session-orchestration D1–D4” item that has
+ridden the decisions backlog since 07-04.
+</p>
+
+<h2 id="architecture">4. Architecture — one generator, three collectors, two modes</h2>
+
+<p>
+A single zero-dependency Node script, <code>tools/session-hub/session-hub.mjs</code>, shipped in
+<strong>obot.agent</strong> (the versioned home of the session skills it visualizes; same layout precedent as the
+hub's <code>scripts/render_diary.mjs</code>). No server, no npm installs, no runtime state of its own.
+</p>
+
+<pre><code>collect                       normalize                render
+───────                       ─────────                ──────
+jobs/*/state.json   ─┐
+claude agents --json ┼──►  session model (JS object) ──►  one self-contained HTML file
+scratchpad sections  ┤     · session identity + boundary      · live:   .claude/session-hub/live.html
+memory + last diary  ┤     · agents[] (pinned fields)         · report: obot.roadmap/reports/sessions/
+gh sweep (cached)   ─┘     · priorities/todos/notes/scaffold            YYYY-MM-DD[-N].html
+                           · roadmap events since start</code></pre>
+
+<ul>
+  <li><strong>Collectors are independent and fallible.</strong> Each returns either data or a degradation notice;
+      a collector failure (missing file, renamed field, <code>gh</code> offline) renders as a per-panel notice line,
+      never a crash. The <code>state.json</code> parser pins exactly the fields in §2 and treats everything else as
+      opaque.</li>
+  <li><strong>Session boundary</strong> (D4): the session starts at the newest <code>&lt;!-- session-init … --&gt;</code>
+      marker in today's scratchpad; agents in scope are jobs under the workspace <code>cwd</code> with
+      <code>updatedAt ≥ start</code> (plus anything still running); the <code>gh</code> sweep filters
+      <code>updated ≥ start</code>. Fallback when no marker exists: local midnight.</li>
+  <li><strong>The <code>gh</code> sweep is cached</strong> (<code>.claude/session-hub/cache/gh-sweep.json</code>,
+      ~5-minute TTL) so a 60-second regenerate loop doesn't hammer the API; the panel shows the sweep's timestamp.
+      Gilead-BioStats repos are excluded (SAML-blocked API).</li>
+  <li><strong>Live mode</strong> (D1): <code>--watch</code> regenerates on an interval (default 60&nbsp;s) to
+      <code>.claude/session-hub/live.html</code> in the workspace (not a git repo — nothing to ignore); the page
+      auto-refreshes and is read in Chrome from <code>file://</code>.</li>
+  <li><strong>Report mode</strong> (§6): <code>--report</code> runs the same pipeline once, freezing live panels
+      into outcomes, and writes into the hub for publication.</li>
+  <li><strong>Visual system:</strong> the mockup's — keynote-adjacent warm palette, light/dark via
+      <code>prefers-color-scheme</code>, all CSS inline. Alignment with the shared keynote stylesheet
+      (<a href="https://github.com/jwildfire/obot.agent/issues/15">obot.agent#15</a>) once that lands.</li>
+</ul>
+
+<h2 id="panels">5. Panels — the render contract</h2>
+
+<p>Exactly the mockup's inventory; each panel header names its source on the page itself, so the dashboard doubles as documentation.</p>
+
+<table>
+  <tr><th>Panel</th><th>Source</th><th>Notes</th></tr>
+  <tr><td>Masthead + mode pill</td><td>generator args</td><td>Session name/date · workspace · Live/Report · generated-at stamp</td></tr>
+  <tr><td>Alert banner</td><td>agents model</td><td>Only when ≥1 agent is <code>needs-input</code>/<code>failed</code> (or a rate-limit pattern is detected in <code>detail</code>); otherwise absent</td></tr>
+  <tr><td>Stat tiles ×4</td><td>derived</td><td>Priorities open/done · agents by state · total tokens · roadmap-event count</td></tr>
+  <tr><td>Priorities</td><td>scratchpad <code>## Overview</code></td><td>Groups preserved (agent-actionable / waiting on @jwildfire / parked); check-state + issue refchips linkified</td></tr>
+  <tr><td>Roadmap activity</td><td><code>gh</code> sweep (cached)</td><td>Time-ordered events: PRs opened/merged, issues filed/closed, board moves, releases — since session start</td></tr>
+  <tr><td>Agents</td><td><code>state.json</code> + <code>claude agents --json</code></td><td>Per session: color dot (orange lead / green sibling convention), name, state pill, one-line <code>detail</code>, since/duration, token bar, model, PR/issue chips from <code>children</code>; <code>output.result</code> when done</td></tr>
+  <tr><td>Notes</td><td>scratchpad <code>## Notes</code></td><td>Timestamped, newest last</td></tr>
+  <tr><td>Scaffold improvements</td><td>scratchpad <code>## Scaffold</code></td><td>The one new capture channel (§7)</td></tr>
+  <tr><td>Next session</td><td><code>next-session-todo</code> memory + last diary loose ends</td><td>Render-only</td></tr>
+</table>
+
+<h2 id="report">6. Report mode and the diary</h2>
+
+<p>
+At wrapup, <code>session-hub.mjs --report</code> renders the final state with report semantics: the mode pill flips,
+the banner becomes an outcome strip, agents show final results (<code>output.result</code>), durations and total
+tokens, priorities show final check-state, and roadmap activity becomes the session's definitive event timeline.
+Output: <code>obot.roadmap/reports/sessions/{slug}.html</code>, where <strong>the slug mirrors the diary entry</strong>
+(<code>2026-07-11</code>, <code>2026-07-11-2</code>, …) — one report per diary entry, forever paired.
+</p>
+<p>
+Diary integration (D2) is <strong>link-first</strong>: the wrapup commits the report and adds one line to the diary
+entry (“📊 <a href="#">Session report</a>” under the meta block). That needs zero changes to
+<code>render_diary.mjs</code> — a Markdown link renders as-is. Promoting the report to a proper <em>tab</em> on the
+diary page (and a chip on the diary index) is a contained <code>render_diary.mjs</code> follow-up, filed as its own
+small hub issue, not blocking v0.2.
+</p>
+
+<h2 id="skills">7. Session-skill changes (obot.agent)</h2>
+
+<ul>
+  <li><strong><code>session-wrapup</code></strong> gains a report step: render <code>--report</code>, commit to
+      <code>reports/sessions/</code>, link from the diary entry (rides the existing diary commit under the standing
+      hub grant). Its scaffold-review step (step 3) becomes a sweep of the <code>## Scaffold</code> list instead of
+      end-of-session recall.</li>
+  <li><strong><code>session-scaffold</code> (new, D3):</strong> a thin capture skill mirroring
+      <code>session-note</code> — trigger “scaffold: …” / “add that to the scaffold list” — appending to
+      <code>## Scaffold</code> in the scratchpad. Continuous-improvement candidates get captured when the friction
+      happens, not reconstructed at wrapup.</li>
+  <li><strong><code>session-init</code></strong>: no functional change (the <code>&lt;!-- session-init … --&gt;</code>
+      marker it already writes becomes the session-boundary anchor, D4); its scratchpad skeleton adds the empty
+      <code>## Scaffold</code> section, and its kickoff summary mentions the dashboard command.</li>
+  <li><strong>Docs:</strong> <code>tools/session-hub/README.md</code> (usage, data contract, degradation behavior);
+      terminology stays aligned with <code>docs/terminology.md</code> (the Agents panel shows <em>sessions</em> —
+      the lead and spawned agents; subagents are invisible by design, they have no session state).</li>
+</ul>
+
+<h2 id="decisions">8. Decisions (open)</h2>
+
+<p>Carried from the issue's Design placeholder; each with a recommendation. These go to @jwildfire as the gate on this design.</p>
+
+<div class="decision">
+  <strong>D1 — Refresh mechanism: static watch loop, or a tiny local server?</strong><br>
+  <strong>Recommend: static watch loop.</strong> <code>--watch</code> regenerates every ~60&nbsp;s; the page
+  auto-refreshes; Chrome reads it from <code>file://</code>. Zero dependencies, zero ports, nothing extra to
+  babysit — and it keeps the “read-only static generator” promise in the requirement. A local server's only real
+  win is flicker-free partial refresh, which invites interactivity scope creep; revisit only if the full-page
+  refresh annoys in practice (a scroll-position-restore snippet is the cheap mitigation).
+</div>
+
+<div class="decision">
+  <strong>D2 — Report placement and diary integration?</strong><br>
+  <strong>Recommend: <code>reports/sessions/{diary-slug}.html</code> + link-first diary integration.</strong>
+  Slug mirrors the diary entry so report and entry are permanently paired; the wrapup adds a one-line link in the
+  entry (no <code>render_diary.mjs</code> change needed now). The proper diary <em>tab</em> + index chip is a
+  contained follow-up issue on <code>render_diary.mjs</code>, post-v0.2.
+</div>
+
+<div class="decision">
+  <strong>D3 — <code>## Scaffold</code> capture UX: dedicated skill, or a session-note extension?</strong><br>
+  <strong>Recommend: dedicated <code>session-scaffold</code> skill.</strong> The existing pattern is one thin skill
+  per capture channel (<code>session-note</code> → Notes, <code>session-update</code> → Todo); a separate skill
+  keeps triggers unambiguous for both Jeremy and agents, and the wrapup sweep targets exactly one section.
+  Overloading session-note with a flag saves one file but muddies the trigger phrase.
+</div>
+
+<div class="decision">
+  <strong>D4 — Session boundary: calendar day, or job cluster?</strong><br>
+  <strong>Recommend: lifecycle boundary — session-init marker to wrapup — with calendar-day fallback.</strong>
+  Anchor on the newest <code>&lt;!-- session-init … --&gt;</code> marker in today's scratchpad; include jobs
+  updated since it (plus still-running carryovers); report slug takes the diary session number. This matches the
+  diary's per-working-session convention exactly, and handles both real cases from this week: two sessions in one
+  day (07-11 → <code>-2</code>) and one session spanning midnight (07-10 21:30 → 07-11 08:10). A pure calendar-day
+  boundary mishandles both.
+</div>
+
+<h2 id="out-of-scope">9. Out of scope</h2>
+
+<ul>
+  <li><strong>Answering needs-input from the page</strong> (the old orchestration D2) — the dashboard is read-only;
+      relay/answer flows belong to <a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a>.</li>
+  <li><strong>Cost in USD</strong> — no persisted per-session cost source exists (§2 note); tokens are the v1
+      metric, model-rate estimation a follow-on.</li>
+  <li><strong>Cross-session analytics</strong> — reports accumulate under <code>reports/sessions/</code>; trends,
+      token/cost rollups, and keynote-cut visualizations are a later requirement once a few weeks of reports exist.</li>
+  <li><strong>Autonomous regeneration/publishing</strong> — v1 is interactive-local; an unattended lane that
+      regenerates and publishes belongs to #18.</li>
+  <li><strong>Replacing <code>claude agents</code> / the agents TUI</strong> — the hub is a workspace-level view,
+      not a process manager.</li>
+</ul>
+
+<h2 id="risks">10. Risks</h2>
+
+<table>
+  <tr><th>Risk</th><th>Mitigation</th></tr>
+  <tr>
+    <td><code>state.json</code> is a harness-internal format, not a documented API; fields may rename on CLI upgrades.</td>
+    <td>Pin the §2 field list in one parser module; treat everything else as opaque; per-agent degradation (row renders with whatever fields survive + a notice); re-verify on CLI upgrades. Carried over verbatim from the issue's known-risk note.</td>
+  </tr>
+  <tr>
+    <td>Scratchpad format drift — it's prose maintained by several agents.</td>
+    <td>Tolerant section parser: recognized structures (checkboxes, timestamps, refs) get rich rendering; anything else passes through as plain text rather than being dropped.</td>
+  </tr>
+  <tr>
+    <td><code>gh</code> sweep: rate limits, offline, SAML-blocked orgs.</td>
+    <td>Single batched sweep, cached with TTL; on failure the panel shows the last cache + its timestamp; Gilead-BioStats excluded by construction.</td>
+  </tr>
+  <tr>
+    <td>Report snapshots drift from the diary narrative (two records of one session).</td>
+    <td>They are different views by design — report = operational record (frozen data), diary = narrative. The shared slug + mutual link keeps them paired; neither restates the other.</td>
+  </tr>
+</table>
+
+<h2 id="acceptance">11. Acceptance criteria</h2>
+
+<ol>
+  <li><strong>Live:</strong> one command from the workspace renders every §5 panel from a real session's data;
+      opened in Chrome from <code>file://</code>, check-states, agent states, and token counts match the underlying
+      sources at render time; the watch loop keeps it current unattended.</li>
+  <li><strong>Degradation:</strong> removing a pinned <code>state.json</code> field, an entire scratchpad section,
+      or network access still yields a rendered page with per-panel notices — no crash, no blank page.</li>
+  <li><strong>Report:</strong> a real session's wrapup produces <code>reports/sessions/{slug}.html</code>,
+      committed to the hub, linked from that day's diary entry, live on the Pages site — the first exemplar being
+      the session that implements this.</li>
+  <li><strong>Scaffold channel:</strong> “scaffold: …” lands in <code>## Scaffold</code>, shows on the dashboard,
+      and the wrapup sweep processes the list.</li>
+  <li><strong>Footprint:</strong> no new state stores beyond the <code>## Scaffold</code> section; roadmap activity
+      remains derived + cached, never committed.</li>
+</ol>
+
+<h2 id="tasks">12. Task preview — the obot.agent v0.2 milestone</h2>
+
+<p class="note">
+Decomposed via <code>requirement-tasks</code> into linked sub-issues <em>after</em> design sign-off — this preview
+is for shape and sizing only. #24 is the driver requirement for the <strong>obot.agent v0.2</strong> milestone.
+</p>
+
+<table>
+  <tr><th>#</th><th>Repo</th><th>Task</th><th>Size</th></tr>
+  <tr><td>1</td><td>obot.agent</td><td><code>tools/session-hub/</code> generator: collectors + session model + live-mode renderer (<code>--watch</code>), degradation behavior, README</td><td>M</td></tr>
+  <tr><td>2</td><td>obot.agent</td><td>Report mode (<code>--report</code>, freeze semantics) + <code>session-wrapup</code> report step</td><td>S–M</td></tr>
+  <tr><td>3</td><td>obot.agent</td><td><code>session-scaffold</code> skill + scratchpad skeleton (<code>## Scaffold</code>) + session-init/wrapup text updates; workspace wiring (symlink, allowlist)</td><td>S</td></tr>
+  <tr><td>4</td><td>obot.roadmap</td><td><code>reports/sessions/</code> home (README, index listing) + diary link convention; supersession note on the 2026-07-04 orchestration report</td><td>S</td></tr>
+  <tr><td>—</td><td>obot.roadmap</td><td><em>Follow-up (post-v0.2):</em> diary tab/index chip in <code>render_diary.mjs</code></td><td>S</td></tr>
+</table>
+
+<footer>
+  <hr style="border: none; border-top: 1px solid var(--rule); margin: 0 0 .75rem;">
+  This design was drafted by Claude Code using Fable 5 for @jwildfire review.
+</footer>
+
+</body>
+</html>
