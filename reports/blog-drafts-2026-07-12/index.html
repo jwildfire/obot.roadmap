@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blog drafts for review — R/Pharma diary #5–#7</title>
+<style>
+  :root {
+    --paper: #FBFBFA; --card: #FFFFFF; --ink: #212B2E; --muted: #5C6B6E;
+    --line: #DDE3E1; --accent: #C2410C; --accent-soft: #FBEADF;
+    --obot: #3A5490; --obot-soft: #E7EBF5;
+    --good: #2E7D4F; --good-soft: #E3F0E8; --warn: #9A6A1F; --warn-soft: #F5EDDC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #151A1C; --card: #1B2124; --ink: #E3E9E7; --muted: #94A3A1;
+      --line: #2C3538; --accent: #F09B6B; --accent-soft: #34210F;
+      --obot: #97AFE2; --obot-soft: #222B3D;
+      --good: #74C795; --good-soft: #17301F; --warn: #D9A84E; --warn-soft: #33290F; }
+  }
+  :root[data-theme="dark"] { --paper: #151A1C; --card: #1B2124; --ink: #E3E9E7; --muted: #94A3A1;
+      --line: #2C3538; --accent: #F09B6B; --accent-soft: #34210F;
+      --obot: #97AFE2; --obot-soft: #222B3D;
+      --good: #74C795; --good-soft: #17301F; --warn: #D9A84E; --warn-soft: #33290F; }
+  :root[data-theme="light"] { --paper: #FBFBFA; --card: #FFFFFF; --ink: #212B2E; --muted: #5C6B6E;
+      --line: #DDE3E1; --accent: #C2410C; --accent-soft: #FBEADF;
+      --obot: #3A5490; --obot-soft: #E7EBF5;
+      --good: #2E7D4F; --good-soft: #E3F0E8; --warn: #9A6A1F; --warn-soft: #F5EDDC; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+  header.page h1 { font-size: 1.7rem; line-height: 1.25; margin: 0 0 0.4rem; }
+  header.page .sub { color: var(--muted); font-size: 0.95rem; }
+  header.page .sub a { color: var(--obot); }
+  a { color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1.4rem 1.6rem; margin: 1.5rem 0; }
+  .card h2 { margin-top: 0; font-size: 1.2rem; }
+  .pill { display: inline-block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 0.15rem 0.6rem; border-radius: 999px; margin-right: 0.4rem; }
+  .pill.rec { background: var(--good-soft); color: var(--good); }
+  .pill.alt { background: var(--warn-soft); color: var(--warn); }
+  .pill.slot { background: var(--obot-soft); color: var(--obot); }
+  table.order { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  table.order th, table.order td { text-align: left; padding: 0.5rem 0.7rem;
+    border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.order th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .qs { font-size: 0.93rem; }
+  .qs li { margin: 0.35rem 0; }
+  nav.toc { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1rem 0 0; }
+  nav.toc a { background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+    padding: 0.35rem 0.9rem; text-decoration: none; font-size: 0.88rem; color: var(--ink); }
+  nav.toc a:hover { border-color: var(--accent); }
+  section.draft { margin-top: 3.5rem; }
+  section.draft > .drafthead { border-bottom: 3px solid var(--accent); padding-bottom: 0.6rem; margin-bottom: 1rem; }
+  section.draft > .drafthead h2 { font-size: 1.45rem; margin: 0 0 0.3rem; }
+  section.draft > .drafthead .file { font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--muted); word-break: break-all; }
+  .fm-block { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.85rem; }
+  .fm-row { display: flex; gap: 0.8rem; padding: 0.15rem 0; }
+  .fm-key { flex: 0 0 6.5rem; color: var(--muted); font-family: ui-monospace, monospace; font-size: 0.78rem; padding-top: 0.1rem; }
+  .fm-val { min-width: 0; }
+  .fm-comment .fm-val { color: var(--warn); }
+  article.post-body { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 2rem 2.2rem; font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; line-height: 1.75; }
+  article.post-body h2 { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 1.25rem; margin-top: 2rem; }
+  article.post-body pre { background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    padding: 0.9rem 1.1rem; overflow-x: auto; font-size: 0.82rem; line-height: 1.5; }
+  article.post-body code { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.88em; }
+  article.post-body blockquote { border-left: 3px solid var(--accent); margin: 1.2rem 0; padding: 0.2rem 0 0.2rem 1.1rem; color: var(--muted); font-style: italic; }
+  article.post-body .todo-note { background: var(--warn-soft); border: 1px dashed var(--warn); border-radius: 8px;
+    padding: 0.6rem 0.9rem; font-family: -apple-system, sans-serif; font-size: 0.85rem; color: var(--warn); margin: 1rem 0; }
+  article.post-body .footnotes { font-size: 0.88rem; color: var(--muted); }
+  article.post-body div:has(> table), article.post-body .table-wrap { overflow-x: auto; }
+  article.post-body table { border-collapse: collapse; font-size: 0.9rem; min-width: 100%; }
+  article.post-body th, article.post-body td { border: 1px solid var(--line); padding: 0.45rem 0.6rem; text-align: left; }
+  article.post-body img { max-width: 100%; }
+  footer.page { margin-top: 4rem; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+  @media (max-width: 640px) { article.post-body { padding: 1.3rem 1.1rem; } .fm-row { flex-direction: column; gap: 0; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="page">
+  <h1>Blog drafts for review — R/Pharma diary #5–#7</h1>
+  <div class="sub">
+    2026-07-12 · requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/22">obot.roadmap#22</a> ·
+    branch <code>blog/2026-07-12-drafts</code> in <code>jwildfire.github.io</code> (local only — <strong>nothing pushed, nothing published</strong>)
+  </div>
+  <nav class="toc">
+    <a href="#order">Series-order proposal</a>
+    <a href="#post5">#5 Autonomy</a>
+    <a href="#post6">#6 Ultracode</a>
+    <a href="#post7">#7 safety.viz</a>
+    <a href="#decisions">Decisions needed</a>
+  </nav>
+</header>
+
+<div class="card" id="order">
+  <h2>Series-order proposal</h2>
+  <p><span class="pill rec">Recommended</span><strong>Option A — keep the numeric order; publish #5 first.</strong>
+  The reason to jump the ultracode post ahead was that #5 was outline-only. That reason is gone: #5 is now a full draft, and the overnight ultracode experiment gave it the ending the outline was waiting for. Keeping the order also preserves the ultracode post&rsquo;s internal reference to &ldquo;the &lsquo;autonomy with review gates&rsquo; thesis from the last post.&rdquo;</p>
+  <table class="order">
+    <tr><th>Slot</th><th>Post</th><th>Proposed date</th><th>Why here</th></tr>
+    <tr><td>#5</td><td>Autonomy, or Lack Thereof</td><td>first — e.g. 07-13/14</td><td>Pays off diary #2&rsquo;s &ldquo;moving on&rdquo; cliffhanger; the overnight run is its closing scene; sets up #6&rsquo;s thesis reference.</td></tr>
+    <tr><td>#6</td><td>Ultracode: Five Renderers Before Lunch</td><td>a few days after #5</td><td>The anatomy + the bill of one multi-agent session — exactly what #5&rsquo;s closing line promises. Opening re-anchored to &ldquo;the morning of July 11th&rdquo; so the publish date can float.</td></tr>
+    <tr><td>#7</td><td>Introducing safety.viz</td><td>after #6, anytime</td><td>The &ldquo;what actually got built&rdquo; payoff; pairs with the live v1.0/v1.1 releases and tees up the promised <code>gsm.safety</code> post.</td></tr>
+  </table>
+  <p style="margin-bottom:0"><span class="pill alt">Alternative</span><strong>Option B — ultracode out today as #5, autonomy becomes #6.</strong> Fastest path to publishing the ready post, but needs a one-sentence reword of the &ldquo;last post&rdquo; thesis reference in the ultracode draft, and #5&rsquo;s narrative (June backstory) reads slightly odd after it. Say the word and the swap is a two-minute edit.</p>
+</div>
+
+<div class="card">
+  <h2>Publish mechanics (when approved)</h2>
+  <p style="margin-top:0.4rem">For each approved post: set the front-matter <code>date</code>, move <code>_drafts/&lt;name&gt;.md</code> → <code>_posts/YYYY-MM-DD-&lt;slug&gt;.md</code>, commit, push <code>main</code>. Note the blog repo&rsquo;s local <code>main</code> is still 1 commit ahead of origin (<code>acfcbe1</code>, the original ultracode draft) — the first publish push carries it up. The keynote page and big.blog syndication copy trail the personal site and get updated after posts go live. The blog sibling can stage all of this on request.</p>
+</div>
+
+<section class="draft" id="post5">
+  <div class="drafthead">
+    <h2><span class="pill slot">proposed #5</span>#5 — Autonomy, or Lack Thereof</h2>
+    <div class="file">_drafts/autonomy-or-lack-thereof.md @ blog/2026-07-12-drafts</div>
+  </div>
+  <div class="card" style="margin-top:0.8rem"><strong>Status:</strong> Full draft (was outline-only). New ending: the 2026-07-12 overnight experiment — two jobs at bedtime, ~2¼ h, ~1.4M tokens, zero intervention, two draft PRs at the review gate in the morning.
+    <ul class="qs" style="margin-bottom:0"><li>One TODO left in the OBot v2 section: your color on the GPT-5.5 sessions and what Paperclip did day-to-day — plus whether to link the public hub reports from that era (<a href='https://jwildfire.github.io/obot.roadmap/reports/autonomous-agent-framework-options-v4-paperclip-2026-06-07/'>Paperclip framework options</a>, <a href='https://jwildfire.github.io/obot.roadmap/reports/autonomy-audit-2026-06-05/'>autonomy audit</a>, <a href='https://jwildfire.github.io/obot.roadmap/reports/p009-supervised-runner-user-summary-2026-06-08/'>supervised-runner summary</a>).</li><li>Confirm the paraphrase of the disputed open.gismo decision (&ldquo;how central GitHub should be to the platform&rdquo;) matches your read of D1.</li><li>The &ldquo;Last Night&rdquo; section heading reads relative to publish time — fine if this ships mid-July, rename if it slips.</li><li>Tags kept from your outline (incl. Paperclip) — trim if you want.</li></ul>
+  </div>
+  <div class="fm-block"><div class="fm-row"><span class="fm-key">title</span><span class="fm-val">R/Pharma Diary</span></div><div class="fm-row"><span class="fm-key">series_part</span><span class="fm-val">5</span></div><div class="fm-row"><span class="fm-key">excerpt</span><span class="fm-val">The dream: hand an agent a goal at bedtime and wake up to useful progress. The reality: autonomy is a supervision problem — heartbeats, review gates, a control plane — and one night in July the loop finally closed while I slept.</span></div><div class="fm-row"><span class="fm-key">tags</span><span class="fm-val">RPharma AI Agents Autonomy Paperclip OBot DeveloperDiary</span></div><div class="fm-row fm-comment"><span class="fm-key">note</span><span class="fm-val">title: 5 — Autonomy, or Lack Thereof"</span></div></div>
+<article class="post-body">
+<div class="todo-note">
+<strong>Draft note (not published):</strong> date: set on publish —
+proposed slot is ahead of the ultracode post, which becomes #6
+</div>
+<p>Back in June, I closed <a
+href="https://jwildfire.github.io/2026/06/12/setting-up-obot-openclaw.html">the
+Obot post</a> with a scorecard — 51% fun, 49% frustrating — and a
+promise: I was “strongly leaning towards moving on to experiment with
+other tools. More on that in a future post.”<a href="#fn1"
+class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>This is that post. It took a month to write, and the reason it took a
+month is the story.</p>
+<p>A quick note on sequencing: <a
+href="https://jwildfire.github.io/2026/07/02/safetygraphics-heart-gsm.html">the
+last post</a> promised an introduction to <code>{gsm.safety}</code>
+next. That post is still coming — this one jumped the queue.</p>
+<h2 id="the-dream">The Dream</h2>
+<p>What I wanted from Obot was always simple to state:</p>
+<blockquote>
+<p>Give the agent a goal, go do the day job, and come back to useful
+progress.</p>
+</blockquote>
+<p>That’s the whole dream. Not a chatbot, not fancy autocomplete — a
+coworker that keeps moving while I’m in meetings.</p>
+<h2 id="the-reality">The Reality</h2>
+<p>It didn’t happen. Work got busy, my attention drifted, and Obot did
+not magically keep advancing the project in the background. Every time I
+checked in, it was right where I’d left it: perfectly capable, patiently
+idle. The project moved exactly as fast as my attention did — which was
+the one thing the whole setup was supposed to fix.</p>
+<p>The humbling part is that the agent was never the problem. Give it a
+bounded task — fix this bug, draft this doc, clean up these issues — and
+it did fine. Autonomy is different. Autonomy is a systems problem, not a
+model capability. For “come back to useful progress” to work, the system
+around the agent needs:</p>
+<ul>
+<li>durable memory, so context survives between sessions</li>
+<li>scoped permissions, so it can act without me hovering</li>
+<li>a task queue, so it always knows what’s next</li>
+<li>heartbeat/liveness checks, so silence means “working,” not
+“dead”</li>
+<li>status reporting, so I can see progress without interrogating
+it</li>
+<li>review gates, so nothing ships without a human</li>
+<li>recovery paths, so stuck work gets unstuck instead of quietly
+dying</li>
+</ul>
+<p>None of that is glamorous. All of it, I now think, is the actual
+product. The boring stuff <em>is</em> the autonomy.</p>
+<h2 id="obot-v2">OBot v2</h2>
+<p>So I started building the boring stuff. OBot v2 was a much more
+structured framework: a PM agent to own issues, scope, prioritization,
+and handoffs; a Dev agent for implementation and PRs; a Testing agent
+for browser checks, visual validation, and regression evidence. OpenClaw
+heartbeats gave me liveness — a pulse I could check instead of wondering
+whether anything was actually happening. And a local control-plane
+layer, Paperclip, to tie the pieces together.</p>
+<p>I spent a few days working the problem with GPT-5.5, and it genuinely
+felt like it was getting close. The roles made sense, the heartbeats
+beat, and I could squint and see the loop closing.</p>
+<div class="todo-note">
+<strong>Draft note (not published):</strong> TODO (Jeremy): a sentence
+or two of color here — what the GPT-5.5 sessions were like, what
+Paperclip actually did day-to-day, and whether any of it (repo, report,
+heartbeat logs) is safe to link.
+</div>
+<h2 id="then-fable-5-happened">Then Fable 5 Happened</h2>
+<p>You can guess what happened next, because it’s what always happens in
+this field: the frontier moved. Just as my homegrown supervision stack
+felt close, Anthropic shipped Fable 5, and it suddenly seemed worth
+trying the whole problem inside Claude Code instead of on my own
+scaffolding. So in early July, the Obot of the June post was formally
+retired: the always-on OpenClaw runtime shut down, the obot-claw machine
+account archived — and no more heartbeats, because nothing needs to stay
+alive anymore. The ideas survived the retirement even though the
+implementation didn’t: the public <a
+href="https://github.com/jwildfire/obot.roadmap">roadmap repo</a> became
+the memory and the task queue, sessions report status as they run, and
+every piece of work lands as a pull request behind a review gate. I
+didn’t abandon the supervision problem — I just stopped hand-building
+the plumbing and started configuring it.</p>
+<h2 id="last-night">Last Night</h2>
+<p>Which brings me to why I can finally finish this post.</p>
+<p>On the night of July 11–12, I ran the first honest test of the dream.
+A little after midnight, I launched two overnight agent jobs, both
+deliberately ambitious stretch goals, with a monitor watching each one
+for stalls — a direct descendant of those OpenClaw heartbeats, checking
+job state on a timer and flagging anything silent for more than forty
+minutes. Then I went to sleep.</p>
+<p>Both jobs landed clean in about two and a quarter hours — roughly 1.4
+million tokens between them, zero human intervention — and the morning
+digest was waiting when I woke up:</p>
+<ul>
+<li>A full port of hep-explorer — <code>{safetyGraphics}</code>’s <a
+href="https://safetygraphics.github.io/hep-explorer/">eDISH</a>
+liver-safety chart, coordinated participant drill-down and all — to <a
+href="https://github.com/jwildfire/safety.viz"><code>safety.viz</code></a>,
+as <a href="https://github.com/jwildfire/safety.viz/pull/44">draft PR
+#44</a>: +8,487/−32 across 41 files, 307 unit tests and 15 end-to-end
+tests, CI green, with a <a
+href="https://jwildfire.github.io/safety.viz/pr/44/hep-explorer/">live
+preview</a> I could click around in the browser.</li>
+<li>A v1.0 plan for <code>{open.gismo}</code> with a working Phase-0
+prototype, as <a
+href="https://github.com/jwildfire/open.gismo/pull/1">draft PR #1</a>:
++7,243/−69 across 103 files, 640 passing R tests, plus a <a
+href="https://jwildfire.github.io/obot.roadmap/reports/open-gismo-v1-plan-2026-07-12/">deployed
+design report</a> laying out the plan and its open decisions.</li>
+</ul>
+<p>The detail I care about most: both landed as <em>draft</em> pull
+requests. Neither agent merged anything, released anything, or declared
+victory — they published previews and a plan for me to read, but nothing
+shipped. The work rolled up to the review gate and stopped there,
+waiting for a human.</p>
+<p>And the morning review had actual judgment in it. The eDISH port
+looked great — that one’s now the high-priority lane. The
+<code>{open.gismo}</code> plan was thorough, and I disagreed with one of
+its headline design decisions (roughly: how central GitHub should be to
+the platform). So that decision is now an <a
+href="https://github.com/jwildfire/obot.roadmap/issues/34">open
+discussion on the roadmap</a> instead of an assumption baked into merged
+code. That disagreement is the review gate doing its job: autonomy
+between the gates, judgment at them.</p>
+<h2 id="what-i-learned">What I Learned</h2>
+<p>The hard part is not getting an agent to write code. The hard part is
+making the work observable, reviewable, and recoverable.</p>
+<p>Or shorter: the bottleneck was never intelligence. The bottleneck was
+supervision.</p>
+<p>Look back at the list in The Reality section. That night, every item
+on it was accounted for: the roadmap was the queue, memory carried
+context into the jobs, the monitor was the heartbeat, the digest was the
+status report, scoped permissions let the jobs build, test, and open PRs
+without waking me, and two draft PRs were the review gates. Recovery was
+the one item that went untested — the stall alarm was armed but never
+fired, because nothing stalled. The autonomy that finally worked isn’t
+an agent that never sleeps. It’s an agent I can hand a goal at bedtime —
+because the plumbing around it holds until morning.</p>
+<p>It took two frameworks, three agent roles, a control plane, and a
+model release to get one good night of sleep. Worth it.</p>
+<p>Next post: the anatomy of one of these multi-agent sessions from the
+inside — what ran, what broke, and the bill.</p>
+<hr />
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p><strong>AI collaboration note</strong> — I outlined this
+post; Claude Code (using Fable 5) drafted it from my outline and the
+overnight session logs, and I reviewed and edited the result before
+publication.<a href="#fnref1" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+</article>
+</section>
+<section class="draft" id="post6">
+  <div class="drafthead">
+    <h2><span class="pill slot">proposed #6</span>#6 — Ultracode: Five Renderers Before Lunch</h2>
+    <div class="file">_drafts/ultracode-effort-safety-viz-v1.md @ blog/2026-07-12-drafts</div>
+  </div>
+  <div class="card" style="margin-top:0.8rem"><strong>Status:</strong> Publish-prep pass only — no prose rewrites. Retitled to the series form, series_part 6, opening anchored to July 11, relative-time phrasing fixed, all links verified, optional July-12 postscript added (flagged in a draft note).
+    <ul class="qs" style="margin-bottom:0"><li>Keep or cut the optional postscript.</li><li>On publish: set the date and consider linking &ldquo;the last post&rdquo; to #5 once it has a filename.</li></ul>
+  </div>
+  <div class="fm-block"><div class="fm-row"><span class="fm-key">title</span><span class="fm-val">R/Pharma Diary</span></div><div class="fm-row"><span class="fm-key">series_part</span><span class="fm-val">6</span></div><div class="fm-row"><span class="fm-key">date</span><span class="fm-val">2026-07-11</span></div><div class="fm-row"><span class="fm-key">excerpt</span><span class="fm-val">One morning, twelve agents, two workstreams, one session-limit outage — an honest accounting of the multi-agent session that built the safety.viz v1.0 release candidate, including the bill.</span></div><div class="fm-row"><span class="fm-key">tags</span><span class="fm-val">RPharma AI Agents SafetyGraphics DeveloperDiary Ultracode</span></div><div class="fm-row fm-comment"><span class="fm-key">note</span><span class="fm-val">title: 6 — Ultracode: Five Renderers Before Lunch"</span></div><div class="fm-row fm-comment"><span class="fm-key">note</span><span class="fm-val">series_part: proposed slot: after #5 "Autonomy, or Lack Thereof" (now drafted) — Jeremy's call</span></div><div class="fm-row fm-comment"><span class="fm-key">note</span><span class="fm-val">date: set to the actual publish date (and match the _posts/ filename) when publishing</span></div></div>
+<article class="post-body">
+<p>At 9:17 on the morning of July 11th, <a
+href="https://github.com/jwildfire/safety.viz"><code>safety.viz</code></a>
+— the Chart.js library that’s replacing the old
+<code>{safetyGraphics}</code> renderers — had one working chart. By
+11:40, a release-candidate PR was open with six: histogram, four new lab
+renderers, and a stretch-goal adverse-event timeline that needed a whole
+new data domain. 247 unit tests and 92 browser tests, all green. I sent
+about six messages the entire time.<a href="#fn1" class="footnote-ref"
+id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>This series has promised an honest accounting of what agentic
+development actually costs, so this post is that: what ran, what broke,
+what I actually did, and the bill.</p>
+<h2 id="the-shape-of-the-morning">The Shape of the Morning</h2>
+<p>The plan was something I’ve started calling an “ultracode” session:
+instead of one agent grinding through a task list, an orchestrator runs
+multiple workstreams in parallel and I supervise from a distance.</p>
+<p>Two workstreams launched together:</p>
+<ul>
+<li><strong>A website agent</strong> — a single agent doing a full
+overhaul of the docs site: gallery, evidence pages, API reference.</li>
+<li><strong>A scripted workflow</strong> — and this is the interesting
+part — a piece of deterministic orchestration <em>code</em>, not a model
+improvising a plan. The script defined the stages: fix two gating
+defects, then fan out five renderer builders in parallel, then
+integrate. Every step journaled to disk with a run ID.</li>
+</ul>
+<p>That distinction matters more than I expected. When things went wrong
+(they did — see below), the scripted workflow resumed from its journal
+like nothing happened. The improvising agent did not.</p>
+<h2 id="gates-before-fan-out">Gates Before Fan-Out</h2>
+<p>The sequencing insight of the day: two fixes ran <em>before</em> the
+fan-out, because the five new renderers were all going to clone the
+histogram module’s pattern. Ship a defect in the template and you ship
+it five times.</p>
+<p><strong>Gate one</strong> was a histogram binning bug (#19) with a
+genuinely fun diagnosis. The new Chart.js histogram didn’t match the
+2017-era original. To find out why, the agent cloned the original
+renderer, actually <em>executed</em> its d3-v3 source, and pinned it
+down: Webcharts used a quantile scale for binning, and a quantile scale
+over a two-point domain degenerates to uniform bins. Nine-year-old
+behavior, reproduced from primary sources rather than guessed at. The
+fix went up as its own small PR and was green in about an hour.</p>
+<p><strong>Gate two</strong> generalized the evidence pipeline — the
+machinery that produces the screenshots and requirement-coverage reports
+we treat as validation evidence — from “works for one module” to “works
+for N modules,” with CI stamping provenance on every evidence set.</p>
+<p>Then the fan-out: five renderer builders in parallel git worktrees on
+parameterized ports, each doing red-green TDD against requirement
+matrices harvested from the original <code>{safetyGraphics}</code>
+charts. All five shipped, including the adverse-event-timelines stretch
+goal, which needed a newly vendored ADAE dataset. Between them: 139 new
+unit tests, 68 new browser tests, and — importantly — requirement rows
+that <em>didn’t</em> make the cut were descoped honestly and documented
+per module, not quietly dropped.</p>
+<h2 id="picking-models-like-picking-staff">Picking Models Like Picking
+Staff</h2>
+<p>Mid-session I sent one piece of guidance: “pick the best model, don’t
+have to use fable for everything.” The orchestrator split the work
+accordingly — Claude Fable 5 for the judgment-heavy jobs (the two gates,
+the stretch renderer, integration, website design, conflict
+reconciliation) and Claude Opus 4.8 for the four lab-renderer builders,
+which were following an established template.</p>
+<p>The mechanics of the reallocation were the striking part. The
+workflow script is a persisted artifact, so the orchestrator edited the
+model assignments in the script and resumed from the run ID. Completed
+steps replayed from cache; only new work ran on the new models. Editing
+a config file mid-flight and resuming is the most boring possible
+description of that, which is exactly the point — boring is what you
+want from orchestration.</p>
+<h2 id="what-broke">What Broke</h2>
+<p>Honesty section. Four things went wrong, and they’re the most
+instructive part of the morning.</p>
+<p><strong>The session limit killed everything, 13 minutes in.</strong>
+I run this on a Claude subscription plan with rolling session limits,
+and at 9:30 the ceiling landed on both workstreams at once. The scripted
+workflow shrugged — journal on disk, resumed cleanly when I said
+“continue.” The website agent was another story. Its ~1,060 lines of
+uncommitted work on disk survived fine, and a successor agent triaged
+all of it and kept everything. But its design-review catalog — the
+analysis of what needed fixing across the site — lived only in the dead
+agent’s transcript and had to be redone from scratch. Lesson, now
+written in the project memory: <strong>transcript-only deliverables die
+with the session. Commit working notes.</strong></p>
+<p><strong>The permission classifier refused to let the orchestrator
+merge.</strong> Even after I’d approved a PR, the agent’s attempt to
+merge it was blocked. Annoying in the moment, correct on reflection:
+this workspace has a hard “never merge without Jeremy’s explicit
+approval” rule, and the classifier can’t see into a conversation to
+verify approval happened. So the boundary holds mechanically and the
+human clicks merge. I’ll take a guardrail that’s occasionally
+overcautious over one that’s occasionally absent.</p>
+<p><strong>Large binary pushes died on HTTP/2</strong> with a git error
+message that pointed everywhere except the actual problem. Not an agent
+failure — just ordinary infrastructure friction that agents hit exactly
+the way we do, and then have to debug through the same misleading error
+text.</p>
+<p><strong>All four Opus builders independently made the identical
+one-line framework fix.</strong> Same defect, same file, same fix, four
+times, in four isolated worktrees. Convergent evolution is a nice
+validation signal — four independent agents agreed on the diagnosis —
+but integration had to notice and dedupe it. Parallel agents don’t just
+divide work; they occasionally quadruplicate it.</p>
+<h2 id="review-gates-as-pull-requests">Review Gates as Pull
+Requests</h2>
+<p>My other mid-session redirect: no giant release-candidate dump.
+Instead, three staged PRs, each with a live GitHub Pages preview I could
+open in a browser:</p>
+<ol type="1">
+<li><strong>#23</strong> — the binning fix. Small, reviewable, green in
+about an hour.</li>
+<li><strong>#22</strong> — the docs-site overhaul. Approved the same
+morning; my entire review comment was “website looks great!”</li>
+<li><strong>#28</strong> — the RC itself: five renderers plus framework
+changes, superseding the other two.</li>
+</ol>
+<p>This is the “autonomy with review gates” thesis from the last post,
+made concrete. The agents ran autonomously <em>between</em> the gates;
+the gates were PRs with rendered previews, sized so a human could
+actually review them.</p>
+<p>Integration deserves a line of its own. Five branches merged, with
+every shared-file conflict reconciled rather than force-resolved —
+including one where two agents had independently re-vendored the same
+CSV and the reconciler verified the files value-identical, row for row,
+before picking one. Final battery: 247 unit tests, 92 Playwright tests,
+6 evidence sets with CI provenance, and an authorship audit showing all
+46 commits correctly attributed to the <code>obotclaw[bot]</code> app
+identity.</p>
+<h2 id="what-the-human-actually-did">What the Human Actually Did</h2>
+<p>My complete contribution, reconstructed from the transcript: the
+kickoff message, the model-allocation guidance, two “continue”s after
+the outage, the staged-PR redirect, and the website approval. Six short
+messages, maybe ten minutes of typing, plus the PR reviews themselves.
+The reviews were the real work, and they were the <em>right</em> work —
+that’s where the judgment belongs.</p>
+<h2 id="the-bill">The Bill</h2>
+<p>The numbers, as promised.</p>
+<p><strong>Wall clock:</strong> kickoff 09:17 ET, RC PR open ~11:40 ET.
+About 2 hours 20 minutes, including the 15-minute session-limit
+outage.</p>
+<p><strong>Agents:</strong> 1 orchestrator plus 12 subagent spawns — 10
+completed, 1 killed mid-work by the usage limit, 1 that died instantly
+on the same limit. The scripted workflow alone ran 8 agents through 918
+tool calls over 98 minutes, reporting 1,973,684 subagent tokens. The
+successor website agent: 190,341 tokens across 105 tool calls in 32
+minutes. The reconciliation agent: 72,178 tokens, 33 tool calls, six and
+a half minutes. The aborted first workflow run burned 136,069 tokens
+before dying. Total reported subagent tokens: about <strong>2.37
+million</strong> (the orchestrator’s own overhead isn’t in these
+counters).</p>
+<p><strong>Cost, two ways:</strong></p>
+<p><em>Plan-adjusted:</em> I run this on a subscription plan, so the
+day’s marginal dollar cost was <strong>$0</strong>. The real cost was
+hitting the session ceiling 13 minutes in and spending 15 minutes
+waiting and recovering. On a subscription, the scarce resource isn’t
+dollars — it’s the rolling limit, and multi-agent fan-out eats it
+fast.</p>
+<p><em>Raw API-equivalent (rough estimate):</em> at current list prices
+— Fable 5 at $50 per million output tokens, Opus 4.8 at $25 — the ~2.37M
+reported tokens would be somewhere around <strong>$60–$120 in output
+tokens</strong> depending on how the Fable/Opus split shakes out (my
+best guess with the day’s allocation: roughly $90). Big caveat: these
+counters are output-weighted and don’t capture input or cache-read
+traffic, which on agentic work is substantial. A defensible
+order-of-magnitude for the full morning is <strong>low hundreds of
+dollars</strong> — call it $150–$400 — and I wouldn’t quote it tighter
+than that.<a href="#fn2" class="footnote-ref" id="fnref2"
+role="doc-noteref"><sup>2</sup></a></p>
+<p>For a morning that produced a six-renderer release candidate with 339
+passing tests and full evidence trails, either framing seems like a
+bargain. For a morning that produced the <em>wrong</em> six renderers,
+it would be an expensive way to generate review work. The gates are what
+keep it the first thing.</p>
+<h2 id="what-this-means-for-october">What This Means for October</h2>
+<p>The keynote thesis this diary keeps circling: the interesting
+question isn’t whether agents can write the code — the morning
+confirmed, again, that they can — it’s whether the surrounding system
+makes the work observable, reviewable, and recoverable. The morning’s
+evidence, point by point: the scripted workflow was recoverable
+(journal, run ID, resume) where the improvising agent was not; the work
+was observable (evidence sets, provenance, authorship audit); and the
+review gates were real PRs a human could approve between coffee
+refills.</p>
+<p>The failures all landed in the same place, too. Nothing broke because
+a model wasn’t smart enough. Things broke where state lived in the wrong
+place (a transcript instead of a file), where infrastructure hiccupped
+(HTTP/2), and where parallel workers lacked a shared view (four
+identical fixes). The bottleneck still isn’t intelligence. It’s
+plumbing.</p>
+<p>Next up: getting these renderers wired into <code>{gsm.safety}</code>
+as htmlwidgets, so R users can actually call them.</p>
+<div class="todo-note">
+<strong>Draft note (not published):</strong> OPTIONAL postscript — keep
+or cut, Jeremy’s call. Facts: RC landed; v1.0.0 + v1.1.0 both released
+2026-07-12; hep-explorer/eDISH port opened as safety.viz PR #44 from the
+first overnight ultracode run.
+</div>
+<p><em>Postscript (July 12): The release candidate landed, and <a
+href="https://github.com/jwildfire/safety.viz/releases/tag/v1.0.0">v1.0.0</a>
+and <a
+href="https://github.com/jwildfire/safety.viz/releases/tag/v1.1.0">v1.1.0</a>
+both shipped within a day. A seventh chart — a port of the hep-explorer
+eDISH display — is already in review as <a
+href="https://github.com/jwildfire/safety.viz/pull/44">PR #44</a>, from
+an overnight run.</em></p>
+<hr />
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p><strong>AI collaboration note</strong> — this post was
+drafted by Claude Code (using Fable 5) from the session logs and my
+notes, and reviewed and edited by me before publication. Fittingly, the
+draft was itself produced by a subagent.<a href="#fnref1"
+class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Output rates from Anthropic’s published pricing as of
+2026-07-11: Claude Fable 5 at $10/$50 per million input/output tokens,
+Claude Opus 4.8 at $5/$25. The reported counters undercount total
+traffic (no input/cache figures), so treat the dollar range as an
+order-of-magnitude estimate, not an invoice.<a href="#fnref2"
+class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+</article>
+</section>
+<section class="draft" id="post7">
+  <div class="drafthead">
+    <h2><span class="pill slot">proposed #7</span>#7 — Introducing safety.viz</h2>
+    <div class="file">_drafts/introducing-safety-viz.md @ blog/2026-07-12-drafts</div>
+  </div>
+  <div class="card" style="margin-top:0.8rem"><strong>Status:</strong> New draft adapting the v1.0.0/v1.1.0 release notes into diary voice: chart table, mount snippet (v1.1.0 bundle), data contracts, the trust story, and an honest note that three renderers are still to come.
+    <ul class="qs" style="margin-bottom:0"><li>Entirely sourced from release notes + diary facts — add a first-person reaction beat if you want one (natural spot: after the live-site link).</li><li>Acknowledges diary #4&rsquo;s gsm.safety promise and defers it — confirm that&rsquo;s enough, or re-sequence.</li></ul>
+  </div>
+  <div class="fm-block"><div class="fm-row"><span class="fm-key">title</span><span class="fm-val">R/Pharma Diary #7 — Introducing safety.viz</span></div><div class="fm-row"><span class="fm-key">series_part</span><span class="fm-val">7</span></div><div class="fm-row"><span class="fm-key">excerpt</span><span class="fm-val">The payoff post: safety.viz v1.0 shipped with six interactive safety charts — an agent-assisted re-implementation of the safetyGraphics renderers. What it does, how to use it, and why you can trust it.</span></div><div class="fm-row"><span class="fm-key">tags</span><span class="fm-val">RPharma AI ClinicalTrials SafetyGraphics SafetyViz DeveloperDiary</span></div><div class="fm-row fm-comment"><span class="fm-key">note</span><span class="fm-val">title: #7 is the proposed slot — Jeremy's call</span></div></div>
+<article class="post-body">
+<div class="todo-note">
+<strong>Draft note (not published):</strong> No date field yet — the
+publication date is assigned when this draft moves from _drafts to
+_posts.
+</div>
+<p>Back in <a
+href="https://jwildfire.github.io/2026/07/02/safetygraphics-heart-gsm.html">diary
+#4</a>, I laid out the plan for <code>{safetyGraphics}</code> v2 — keep
+what worked, modernize the framework, borrow GxP practices from
+<code>{gsm}</code> — and ended on the obvious question: <em>can we
+actually do this?</em><a href="#fn1" class="footnote-ref" id="fnref1"
+role="doc-noteref"><sup>1</sup></a></p>
+<p>Here’s the first real answer. Ten days later, <code>safety.viz</code>
+v1.0.0 shipped with six interactive charts, and v1.1.0 followed the same
+day. This is the “what actually got built” post I’ve been wanting to
+write since the series started.</p>
+<p><strong>You can try every chart live right now: <a
+href="https://jwildfire.github.io/safety.viz/"
+class="uri">https://jwildfire.github.io/safety.viz/</a>.</strong></p>
+<h2 id="what-it-is">What It Is</h2>
+<p><code>safety.viz</code> is a charting library for monitoring
+clinical-trial safety. Point any of its six charts at your study data
+and review it in the browser: filter, group, zoom, and click through
+from a pattern on the screen to the participant records behind it.</p>
+<p>Under the hood it’s a Chart.js library, and it’s an agent-assisted
+re-implementation of the <code>{safetyGraphics}</code> interactive
+renderers — six of those displays so far, rebuilt on a modern engine.
+You vendor a committed bundle: no build step, no
+<code>npm install</code>, with an ESM build committed alongside for
+anyone who wants it.</p>
+<h2 id="the-charts">The Charts</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Chart</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong><a
+href="https://jwildfire.github.io/safety.viz/histogram/index.html">Safety
+Histogram</a></strong></td>
+<td>Distribution of any lab or vital-sign measure, with normal-range
+overlay, treatment-group small multiples, and a linked participant
+listing</td>
+</tr>
+<tr class="even">
+<td><strong><a
+href="https://jwildfire.github.io/safety.viz/outlier-explorer/index.html">Safety
+Outlier Explorer</a></strong></td>
+<td>Every participant’s results over time as one line each, against the
+population — click a line to isolate a participant</td>
+</tr>
+<tr class="odd">
+<td><strong><a
+href="https://jwildfire.github.io/safety.viz/results-over-time/index.html">Safety
+Results Over Time</a></strong></td>
+<td>Population distribution of a measure at each visit as
+box-and-whisker marks, with grouping and outlier flags</td>
+</tr>
+<tr class="even">
+<td><strong><a
+href="https://jwildfire.github.io/safety.viz/shift-plot/index.html">Safety
+Shift Plot</a></strong></td>
+<td>Baseline vs. comparison-visit values on a scatter — who moved, and
+which direction</td>
+</tr>
+<tr class="odd">
+<td><strong><a
+href="https://jwildfire.github.io/safety.viz/delta-delta/index.html">Safety
+Delta-Delta</a></strong></td>
+<td>Paired change-from-baseline for two measures on one scatter
+(e.g. ALT change vs. AST change)</td>
+</tr>
+<tr class="even">
+<td><strong><a
+href="https://jwildfire.github.io/safety.viz/ae-timelines/index.html">Adverse
+Event Timelines</a></strong></td>
+<td>Each participant’s AEs as timelines colored by severity, serious
+events marked, with click-through detail</td>
+</tr>
+</tbody>
+</table>
+<p>Every chart ships with a live demo against real example data, a
+generated API reference, and its own test-evidence report.</p>
+<h2 id="using-it">Using It</h2>
+<p>Mounting a chart is a few lines. Drop in the bundle and hand a chart
+your rows:</p>
+<pre class="html"><code>&lt;script src=&quot;dist/safety.viz-1.1.0/safety.viz.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+  SafetyViz.histogram(&#39;#container&#39;, {
+    value_col: &#39;STRESN&#39;,
+    measure_col: &#39;TEST&#39;,
+    filters: [{ value_col: &#39;ARM&#39;, label: &#39;Treatment Group&#39; }]
+  }).init(rows); // rows: array of records, e.g. parsed from an ADaM BDS extract
+&lt;/script&gt;</code></pre>
+<p>Each chart declares its expected columns in a <a
+href="https://github.com/jwildfire/safety.viz/tree/main/src/data/schema">JSON-Schema
+data contract</a> and validates its inputs on <code>init</code> —
+malformed rows are removed and counted, not silently plotted, which
+matters when the thing on screen is supposed to represent someone’s
+labs. Defaults follow ADaM-style column names (<code>USUBJID</code>,
+<code>TEST</code>, <code>STRESN</code>, <code>VISIT</code>…), and every
+mapping is a setting, so pointing a chart at differently-named columns
+is configuration, not a code change.</p>
+<h2 id="why-you-can-trust-it">Why You Can Trust It</h2>
+<p>This is the part I care about most, and the part a clinical audience
+should care about most.</p>
+<p>These are not new chart designs. Each one re-implements an
+interactive display originally built by <a
+href="https://github.com/RhoInc">Rho, Inc.</a> and used in practice
+under the <code>{safetyGraphics}</code> project (<a
+href="https://jwildfire.github.io/safety.viz/about.html">full credits
+here</a>). We’re not inventing new ways to look at safety data; we’re
+carefully rebuilding displays that reviewers already trust.</p>
+<p>And “carefully” has a specific meaning. Every chart traces to a
+reviewed requirement matrix harvested from the original’s documentation.
+There are 249 unit tests and 94 browser tests, each keyed to a
+requirement ID, and they’re published as <a
+href="https://jwildfire.github.io/safety.viz/histogram/evidence.html">audit-style
+evidence reports</a> you can actually read — not just a green check on
+CI. The histogram’s binning got an extra layer: we cross-validated it
+against the original renderer’s real source, 420 out of 420 results
+matching across all six binning algorithms.</p>
+<p>That evidence trail is the whole point of the GxP angle from diary
+#4. The interesting claim of this project was never “an agent can write
+a chart.” It’s that an agent can rebuild a regulated display <em>and
+leave behind the paperwork that lets a human sign off on it.</em></p>
+<h2 id="already-moving">Already Moving</h2>
+<p>v1.1.0 landing the same day is a fair preview of the pace. The
+histogram now opens on an all-measures overview — small-multiple
+histograms of every measure in the dataset, so you get the overall shape
+at a glance, then click a panel to drill into the familiar
+single-measure view (<a
+href="https://github.com/jwildfire/safety.viz/issues/39">#39</a>). The
+example data got a real pipeline, too: it’s now derived from pharmaverse
+ADaM sources (CDISC Pilot 01) by a committed, deterministic script,
+regenerable byte-identically (<a
+href="https://github.com/jwildfire/safety.viz/issues/35">#35</a>). And
+the overview shipped with five new reviewed requirements of its own
+(SH-OVW-001…005), because of course it did.</p>
+<h2 id="for-r-users">For R Users</h2>
+<p>If you live in R, you don’t touch the JavaScript.
+<code>{gsm.safety}</code> wraps this same bundle as
+<code>Widget_*</code> htmlwidgets — the histogram widget is next on its
+roadmap. And yes, I still owe you the proper <code>{gsm.safety}</code>
+introduction I promised at the end of diary #4; that’s coming in a
+future post, now that the charts underneath it actually exist.</p>
+<h2 id="whats-next">What’s Next</h2>
+<p>A seventh chart is already in review: the hep-explorer / eDISH port,
+opened as <a
+href="https://github.com/jwildfire/safety.viz/pull/44">safety.viz PR
+#44</a> from an overnight agent run. That’s a satisfying callback to
+diary #4, where I singled out eDISH as exactly the kind of display that
+matters to safety reviewers. How it got built — overnight, while I was
+asleep — is a story for another post.</p>
+<p>And the port itself isn’t finished: three
+<code>{safetyGraphics}</code> renderers — the Paneled Outlier Explorer,
+Adverse Event Explorer, and Web Codebook — are still to come, each with
+a reviewed requirement matrix already waiting.</p>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p><strong>AI collaboration note</strong> — this post was
+drafted by Claude Code (using Fable 5), adapting the
+<code>safety.viz</code> v1.0.0 and v1.1.0 release notes into the diary’s
+voice, and I reviewed and edited it before publication.<a href="#fnref1"
+class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+</article>
+</section>
+<div class="card" id="decisions">
+  <h2>Decisions needed from @jwildfire</h2>
+  <ol class="qs" style="margin-bottom:0">
+    <li><strong>Series order</strong> — Option A (5 → 6 → 7, recommended) or Option B (ultracode first)?</li>
+    <li><strong>Publish approvals</strong> — which posts, and on what dates? (Publishing = moving to <code>_posts/</code> and pushing <code>main</code>, including the pending <code>acfcbe1</code> commit.)</li>
+    <li><strong>Per-post items</strong> — the TODO/color spots and open questions listed under each draft above.</li>
+  </ol>
+</div>
+
+<footer class="page">
+  <p>Drafts live on branch <code>blog/2026-07-12-drafts</code> (worktree <code>jwildfire.github.io-worktrees/blog-2026-07-12</code>), commit <code>2594c80</code>. Produced by a 3-lane draft → fact-check → revise workflow (8 agents, ~0.9M subagent tokens; safety.viz adaptation on Opus 4.8, judgment lanes on Fable 5). Every number traces to the 2026-07-12 diary entry, session notes, or the safety.viz release notes.</p>
+  <hr style="border:none;border-top:1px solid var(--line)">
+  <p>This report was drafted by Claude Code using Fable 5 and reviewed by @jwildfire</p>
+</footer>
+</div>
+</body>
+</html>
