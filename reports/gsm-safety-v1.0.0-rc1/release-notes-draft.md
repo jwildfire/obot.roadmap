@@ -2,7 +2,7 @@
 
 DRAFT — ships with the v1.0.0 tag after the RC merges; review on the rendered page.
 
-Six interactive clinical safety charts, one function call each. gsm.safety v1.0.0 wraps every renderer in the safety.viz v1.1.0 library as an R htmlwidget, so the charts the docs site demos are now first-class citizens of an R session, an R Markdown report, or a Shiny app.
+Seven interactive clinical safety charts, one function call each. gsm.safety v1.0.0 wraps every renderer in the safety.viz v1.2.0 library as an R htmlwidget, so the charts the docs site demos are now first-class citizens of an R session, an R Markdown report, or a Shiny app.
 
 ## The widgets
 
@@ -14,6 +14,7 @@ Six interactive clinical safety charts, one function call each. gsm.safety v1.0.
 | `Widget_ResultsOverTime()` | Longitudinal results by visit with grouping and normal-range context | labs/vitals (BDS) |
 | `Widget_OutlierExplorer()` | Participant-level trajectories for spotting outliers per measure | labs/vitals (BDS) |
 | `Widget_AeTimelines()` | Per-participant adverse-event timelines colored by severity | adverse events |
+| `Widget_HepExplorer()` | eDISH hepatic safety explorer: peak liver measures with Hy's Law quadrants and participant drill-down | labs/vitals (BDS) |
 
 ## One call to a rendered chart
 
@@ -34,11 +35,11 @@ Each chart ships a gsm-idiom report workflow (`inst/workflow/3_reports/`) runnab
 
 ## Built for regulated use
 
-The release is qualified with [qcthat](https://github.com/Gilead-BioStats/qcthat): every test names the GitHub issue it evidences, and the [v1.0.0 qualification matrix](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) — 47 issue-linked tests, all passing, `R CMD check` clean — publishes with the release alongside [rendered evidence pages](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) for every widget.
+The release is qualified with [qcthat](https://github.com/Gilead-BioStats/qcthat): every test names the GitHub issue it evidences, and the [v1.0.0 qualification matrix](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) — 52 issue-linked tests, all passing, `R CMD check` clean — publishes with the release alongside [rendered evidence pages](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) for every widget.
 
 ## Breaking changes
 
-The experimental safetyCharts bridge is retired: `RenderSafetyChartsWidget()` and `MakeExampleData()` are removed, along with the safetyCharts/Tendril dependencies. The six `Widget_*()` functions and `SaveWidgetReport()` replace them.
+The experimental safetyCharts bridge is retired: `RenderSafetyChartsWidget()` and `MakeExampleData()` are removed, along with the safetyCharts/Tendril dependencies. The seven `Widget_*()` functions and `SaveWidgetReport()` replace them.
 
 Development process: designed, built, and qualified against [obot.roadmap#28](https://github.com/jwildfire/obot.roadmap/issues/28) with per-issue commit and test traceability.
 
