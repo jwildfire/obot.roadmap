@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nepExplorer → safety.viz — migration assessment</title>
+<style>
+  :root {
+    --paper: #FBFBFA; --card: #FFFFFF; --ink: #212B2E; --muted: #5C6B6E; --line: #DDE3E1;
+    --gsm: #1E6A5C; --gsm-soft: #E4EFEC; --obot: #3A5490; --obot-soft: #E7EBF5;
+    --warn: #9A6A1F; --warn-soft: #F5EDDC; --good: #2E7D4F; --good-soft: #E3F0E8;
+    --bad: #A2402F; --bad-soft: #F4E2DD;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #151A1C; --card: #1B2124; --ink: #E3E9E7; --muted: #94A3A1; --line: #2C3538;
+      --gsm: #5CB8A0; --gsm-soft: #1D2E2A; --obot: #97AFE2; --obot-soft: #222B3D;
+      --warn: #D9A84E; --warn-soft: #33290F; --good: #74C795; --good-soft: #17301F;
+      --bad: #E08972; --bad-soft: #331A14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #151A1C; --card: #1B2124; --ink: #E3E9E7; --muted: #94A3A1; --line: #2C3538;
+    --gsm: #5CB8A0; --gsm-soft: #1D2E2A; --obot: #97AFE2; --obot-soft: #222B3D;
+    --warn: #D9A84E; --warn-soft: #33290F; --good: #74C795; --good-soft: #17301F;
+    --bad: #E08972; --bad-soft: #331A14;
+  }
+  :root[data-theme="light"] {
+    --paper: #FBFBFA; --card: #FFFFFF; --ink: #212B2E; --muted: #5C6B6E; --line: #DDE3E1;
+    --gsm: #1E6A5C; --gsm-soft: #E4EFEC; --obot: #3A5490; --obot-soft: #E7EBF5;
+    --warn: #9A6A1F; --warn-soft: #F5EDDC; --good: #2E7D4F; --good-soft: #E3F0E8;
+    --bad: #A2402F; --bad-soft: #F4E2DD;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 17px; line-height: 1.6; margin: 0; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 48rem; margin: 0 auto; padding: 3.5rem 1.25rem 5rem; }
+  h1, h2, h3 { font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; letter-spacing: -0.01em; text-wrap: balance; line-height: 1.2; }
+  h1 { font-size: 2.15rem; font-weight: 700; margin: 0.4rem 0 0.8rem; }
+  h2 { font-size: 1.4rem; font-weight: 600; margin: 0 0 0.9rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 0.4rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--obot); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  code, .mono { font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.85em; }
+  section { margin: 0 0 3rem; }
+  .num { font-variant-numeric: tabular-nums; }
+  .eyebrow { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+  .lede { font-size: 1.12rem; color: var(--muted); margin-bottom: 0; }
+  .keyline { border: 0; border-top: 1px solid var(--line); margin: 2.4rem 0; }
+  .sec-eyebrow { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--obot); margin: 0 0 0.5rem; }
+  .chip { display: inline-block; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; letter-spacing: 0.02em; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .chip.gsm { color: var(--gsm); background: var(--gsm-soft); border-color: transparent; }
+  .chip.obot { color: var(--obot); background: var(--obot-soft); border-color: transparent; }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
+  .chip.good { color: var(--good); background: var(--good-soft); border-color: transparent; }
+  .chip.bad { color: var(--bad); background: var(--bad-soft); border-color: transparent; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .facts > div { background: var(--card); padding: 1rem 1.1rem; }
+  .facts h3 { font-size: 0.95rem; }
+  .facts p { font-size: 0.9rem; color: var(--muted); margin: 0; }
+  @media (max-width: 640px) { .facts { grid-template-columns: 1fr; } }
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 0 0 1.4rem; }
+  .stats > div { background: var(--card); padding: 0.85rem 0.7rem; text-align: center; }
+  .stats .big { font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--obot); display: block; line-height: 1.15; }
+  .stats .cap { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 500; text-align: left; padding: 0.5rem 0.9rem 0.5rem 0; border-bottom: 1px solid var(--line); vertical-align: bottom; }
+  td { padding: 0.55rem 0.9rem 0.55rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.k { font-weight: 600; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; white-space: nowrap; color: var(--obot); }
+  .gap td:first-child { font-weight: 600; font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-size: 0.9rem; }
+  .st { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.66rem; letter-spacing: 0.04em; font-weight: 600; }
+  .st.ok { color: var(--good); }
+  .st.part { color: var(--warn); }
+  .st.miss { color: var(--bad); }
+  .cands { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0 0 1.6rem; }
+  @media (max-width: 720px) { .cands { grid-template-columns: 1fr; } }
+  .cand { border: 1px solid var(--line); background: var(--card); padding: 1rem 1.1rem 1.1rem; border-top: 3px solid var(--line); }
+  .cand.win { border-top-color: var(--gsm); box-shadow: 0 0 0 1px var(--gsm); }
+  .cand .tag { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--muted); letter-spacing: 0.04em; }
+  .cand h3 { font-size: 0.98rem; margin: 0.15rem 0 0.5rem; }
+  .cand p { font-size: 0.85rem; margin: 0 0 0.6rem; }
+  .cand .risk { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 0.55rem; }
+  .cand .risk b { color: var(--bad); font-weight: 600; }
+  .cand .verdict { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.72rem; float: right; }
+  .cand.win .verdict { color: var(--gsm); }
+  .quote { border-left: 3px solid var(--obot); background: var(--obot-soft); padding: 0.9rem 1.1rem; margin: 0 0 1.2rem; font-size: 0.95rem; }
+  .quote.gsm { border-left-color: var(--gsm); background: var(--gsm-soft); }
+  .quote.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .quote .src { display: block; margin-top: 0.5rem; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  ul.riders { list-style: none; padding: 0; margin: 0.4rem 0 0; }
+  ul.riders li { font-size: 0.9rem; padding: 0.4rem 0 0.4rem 1.4rem; position: relative; border-bottom: 1px solid var(--line); }
+  ul.riders li:last-child { border-bottom: 0; }
+  ul.riders li::before { content: "→"; position: absolute; left: 0; color: var(--gsm); }
+  .timeline { position: relative; margin: 0.5rem 0 0; padding-left: 1.6rem; }
+  .timeline::before { content: ""; position: absolute; left: 0.42rem; top: 0.3rem; bottom: 0.3rem; width: 2px; background: var(--line); }
+  .phase { position: relative; margin-bottom: 1.3rem; }
+  .phase::before { content: ""; position: absolute; left: -1.6rem; top: 0.35rem; width: 0.85rem; height: 0.85rem; border-radius: 999px; background: var(--paper); border: 2px solid var(--muted); }
+  .phase.done::before { background: var(--gsm); border-color: var(--gsm); }
+  .phase.now::before { background: var(--obot); border-color: var(--obot); }
+  .phase .ph-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem; }
+  .phase h3 { margin: 0; font-size: 1rem; }
+  .phase .when { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--muted); }
+  .phase ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+  .phase li { font-size: 0.88rem; margin-bottom: 0.25rem; color: var(--muted); }
+  .phase li::marker { color: var(--gsm); }
+  .dec { border: 1px solid var(--line); background: var(--card); padding: 0.95rem 1.1rem; margin: 0 0 0.9rem; display: grid; grid-template-columns: 3rem 1fr; gap: 0.9rem; }
+  .dec .did { font-family: "SF Mono", Menlo, Consolas, monospace; font-weight: 700; color: var(--obot); font-size: 0.95rem; }
+  .dec h3 { font-size: 0.95rem; margin: 0 0 0.35rem; }
+  .dec p { margin: 0; font-size: 0.88rem; }
+  .dec .rec { color: var(--muted); font-size: 0.84rem; margin-top: 0.35rem; }
+  .dec .rec b { color: var(--gsm); font-weight: 600; }
+  .srclink { border: 1px solid var(--line); background: var(--card); padding: 0.8rem 1rem; margin: 0 0 0.8rem; display: block; text-decoration: none; color: var(--ink); }
+  .srclink .rl-eye { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--obot); }
+  .srclink .rl-t { font-weight: 600; font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; font-size: 0.92rem; }
+  .srclink .rl-s { font-size: 0.8rem; color: var(--muted); }
+  footer { margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--line); font-size: 0.8rem; color: var(--muted); }
+  .callout { border: 1px solid var(--line); border-left: 3px solid var(--gsm); background: var(--gsm-soft); padding: 0.9rem 1.1rem; margin: 0 0 1.4rem; font-size: 0.92rem; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .callout.bad { border-left-color: var(--bad); background: var(--bad-soft); }
+  .callout h3 { font-size: 0.95rem; margin: 0 0 0.35rem; }
+  .callout p { margin: 0; font-size: 0.88rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">obot.roadmap · assessment · 2026-07-15</span>
+    <h1>nepExplorer → safety.viz: migration assessment</h1>
+    <p class="lede">Can the SafetyGraphics kidney-function renderer become a Chart.js module in <span class="mono">safety.viz</span>? Short answer: <strong>yes, and it is a natural next renderer</strong> — its core chart is a direct kidney analog of the already-shipped hep-explorer. The work splits cleanly into a straightforward core scatter and a heavier patient-profile drill-down, and the main open question is data, not architecture.</p>
+  </header>
+
+  <hr class="keyline">
+
+  <section>
+    <h2>Executive summary</h2>
+    <div class="facts">
+      <div><h3>What it is</h3><p>A KDIGO-staged nephrotoxicity explorer: a per-participant scatter over creatinine change, with click-through patient-profile line charts. Clinically the kidney twin of eDISH.</p></div>
+      <div><h3>Best source</h3><p>The current <strong>Shiny v1.0.0</strong> (R/ggplot2/plotly) is the behavioral source of truth. The <strong>deprecated JS v0.9.0</strong> (D3 + RhoInc webcharts) is the legacy stack we are replacing — reference only.</p></div>
+      <div><h3>Architecture fit</h3><p><strong>Canvas-first</strong>, not table-first. Reuses the proven hep-explorer / delta-delta module pattern — the KDIGO stage zones are a Chart.js background plugin.</p></div>
+    </div>
+    <div class="stats" style="margin-top:1.4rem;">
+      <div><span class="big num">2</span><span class="cap">incarnations</span></div>
+      <div><span class="big num">~1.5k</span><span class="cap">R lines (Shiny)</span></div>
+      <div><span class="big num">4</span><span class="cap">measures missing<br>in demo data</span></div>
+      <div><span class="big num">2</span><span class="cap">phases</span></div>
+      <div><span class="big" style="color:var(--gsm)">GO</span><span class="cap">recommendation</span></div>
+    </div>
+    <div class="callout">
+      <h3>Recommendation — proceed, phased, after a data decision</h3>
+      <p>Migrate nepExplorer as a canvas-first module on the hep-explorer/delta-delta pattern, in two phases: <b>(1)</b> the KDIGO creatinine scatter (small–medium, demoable on today's pharmaverseadam data) and <b>(2)</b> the patient-profile drill-down (medium–large, blocked on kidney-specific measures the demo data lacks). Settle the demo-data question first (decision D1 below) — it gates phase 2's scope, not phase 1.</p>
+    </div>
+  </section>
+
+  <hr class="keyline">
+
+  <section>
+    <p class="sec-eyebrow">1 · Clinical purpose</p>
+    <h2>What nepExplorer does: KDIGO nephrotoxicity screening</h2>
+    <p>nepExplorer helps a safety reviewer spot <strong>acute declines in renal function</strong> in trial lab data. It is built around the <strong>KDIGO</strong> acute-kidney-injury (AKI) staging criteria, which classify severity from serum-creatinine change relative to baseline. The tool implements two of the KDIGO creatinine axes:</p>
+    <ul class="riders">
+      <li><strong>Fold change in serum creatinine</strong> (value ÷ baseline): Stage&nbsp;1 at &gt;1.5×, Stage&nbsp;2 at &gt;2×, Stage&nbsp;3 at &gt;3× <em>or</em> an absolute value ≥&nbsp;4&nbsp;mg/dL.</li>
+      <li><strong>Absolute change in serum creatinine</strong> (value − baseline): the KDIGO ≥&nbsp;0.3&nbsp;mg/dL acute-rise trigger, with higher cut-points annotated.</li>
+    </ul>
+    <p>The <strong>main chart</strong> is a scatter, one point per participant, of each subject's maximum fold change (x) against maximum absolute change (y), laid over colored L-shaped <strong>KDIGO stage zones</strong> (white → yellow → orange → red for no-stage → 1 → 2 → 3). A companion <strong>summary table</strong> cross-tabulates the fold-change and absolute-change stage counts. It is the clinical sibling of hep-explorer's Hy's-Law eDISH quadrant plot — same "diagnostic scatter with clinical threshold zones + drill-down" shape, different organ.</p>
+    <p>Clicking a point opens a <strong>patient profile</strong>: a demographics panel plus small-multiple time-series line charts across five measure groups — serum creatinine &amp; cystatin C, eGFR (creatinine- and cystatin-C–based), related electrolytes (BUN, sodium, potassium, bicarbonate, chloride, phosphate, calcium), blood pressure, and the urine albumin/creatinine ratio — with KDIGO reference lines, a measure picker, and a time-animation control on the main scatter.</p>
+    <div class="callout warn">
+      <h3>Latent bug in the R source worth catching, not copying</h3>
+      <p>The absolute-change staging in <span class="mono">creatinine_data_fcn.R</span> uses a <span class="mono">case_when</span> ordered <span class="mono">&gt;0.3 → &gt;1.5 → &gt;2.5</span>. Because <span class="mono">case_when</span> returns the first match, every value above 0.3 is labeled "Stage&nbsp;1" and the Stage&nbsp;2/3 branches are unreachable. Migration should re-derive the staging from KDIGO intent (descending cut-points), not port the bug. Flag for the clinical owners.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="sec-eyebrow">2 · Two incarnations</p>
+    <h2>Which source to migrate from</h2>
+    <p>The repo has lived twice. Jeremy's recollection is correct: it began as a JavaScript renderer and was <strong>rewritten as a Shiny app in 2025</strong> (NEWS: "Migrated from Javascript to R"). Both are on GitHub.</p>
+    <div class="cands">
+      <div class="cand win">
+        <span class="verdict">SOURCE OF TRUTH</span>
+        <span class="tag">master · v1.0.0 · 2025</span>
+        <h3>Shiny app (R)</h3>
+        <p>ggplot2 + plotly scatter, <span class="mono">gt</span> summary table, plotly patient-profile line charts; a safetyGraphics module with a settings/mapping object. ~1,500 lines across ~13 R files. Actively the current product; carries the authoritative KDIGO logic, unit-conversion notes, and the richest feature set.</p>
+        <p class="risk">Use for: <b style="color:var(--gsm)">clinical logic, thresholds, feature scope, patient-profile design.</b></p>
+      </div>
+      <div class="cand">
+        <span class="verdict">REFERENCE ONLY</span>
+        <span class="tag">deprecated-js · v0.9.0</span>
+        <h3>Legacy JS renderer</h3>
+        <p>D3 + RhoInc <span class="mono">webcharts</span>, ~2,700 lines / 92 files, structured as <span class="mono">kdigoScatterPlot</span> + <span class="mono">timeSeries</span> with a <span class="mono">settings-schema.json</span>. This is exactly the legacy stack safety.viz exists to replace, and it predates the v1.0 feature set.</p>
+        <p class="risk">Use for: interaction/UX cues only. <b>Do not</b> port webcharts idioms.</p>
+      </div>
+    </div>
+    <div class="quote gsm">
+      Migrate from the Shiny v1.0.0 as the behavioral spec, exactly as hep-explorer reimplemented RhoInc's <span class="mono">safety-eDISH</span> behavior in Chart.js rather than lifting its webcharts code. The deprecated JS is a UX reference, not a code source.
+      <span class="src">Recommendation · source selection</span>
+    </div>
+  </section>
+
+  <section>
+    <p class="sec-eyebrow">3 · Architecture fit</p>
+    <h2>Canvas-first — it maps onto proven modules</h2>
+    <p>safety.viz modules share a lifecycle (<span class="mono">init / setData / setSettings / render / resize / destroy</span>) and internal flow (<span class="mono">checkInputs → configure → structureData → getScales/getPlugins → new Chart</span>) over a shared control shell. nepExplorer is squarely <strong>canvas-first</strong> (a diagnostic scatter is the primary object), so it slots into the same pattern as the two closest precedents:</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>nepExplorer element</th><th>safety.viz precedent</th><th>Mapping</th></tr></thead>
+        <tbody>
+          <tr><td class="k">KDIGO scatter</td><td>hep-explorer eDISH / delta-delta</td><td>Per-participant scatter of two derived measures; direct reuse of scale + point-selection machinery.</td></tr>
+          <tr><td class="k">KDIGO stage zones</td><td>hep-explorer <span class="mono">quadrantPlugin</span></td><td>Colored background regions + labels drawn by a Chart.js canvas plugin. Stage rectangles instead of Hy's-Law quadrant cut-lines — same technique.</td></tr>
+          <tr><td class="k">value ÷ baseline, value − baseline</td><td>hep-explorer ×ULN/×Baseline; delta-delta change-from-baseline</td><td><span class="mono">structureData</span> reduces to one point per participant. Simpler here (single measure, baseline only).</td></tr>
+          <tr><td class="k">measure_values matching</td><td>hep-explorer ALT/AST/TB/ALP</td><td>Match CREAT (and profile measures) from the measure column via a <span class="mono">measure_values</span> mapping.</td></tr>
+          <tr><td class="k">Summary stage table</td><td>delta-delta linked measure table</td><td>Listing area in the shell; a stage cross-tab instead of a per-measure table.</td></tr>
+          <tr><td class="k">Patient-profile line charts</td><td>results-over-time / outlier-explorer</td><td>Time-series line rendering exists; a multi-panel per-participant profile is net-new wiring on top of it.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The core scatter is well-trodden ground. The genuinely new surface is the <strong>patient-profile panel</strong> — five stacked small-multiple charts, a demographics table, a measure picker, and the scatter time-animation — which is richer than hep-explorer's participant-detail popover and has no one-to-one precedent yet.</p>
+  </section>
+
+  <section>
+    <p class="sec-eyebrow">4 · Data requirements</p>
+    <h2>The data gap is the real constraint</h2>
+    <p>nepExplorer needs a tall labs domain (id, value, measure, study-day, visit, visit-number, unit, baseline flag) plus vitals (blood pressure) and demographics. The clinical logic depends on a set of measure values. Here is how those line up against safety.viz's current demo data — <strong>pharmaverseadam (CDISC Pilot 01)</strong>, shipped in v1.1.0 as <span class="mono">site/data/adbds.csv</span>:</p>
+    <div class="scroll-x">
+      <table class="gap">
+        <thead><tr><th>Measure / feature</th><th>Used by</th><th>In pharmaverseadam?</th></tr></thead>
+        <tbody>
+          <tr><td>Serum creatinine</td><td>Main KDIGO scatter, profile</td><td><span class="st ok">PRESENT</span> — core chart works today</td></tr>
+          <tr><td>Blood pressure (sys/dia)</td><td>BP profile sub-chart</td><td><span class="st ok">PRESENT</span></td></tr>
+          <tr><td>BUN, Na, K, Cl, Ca, Phosphate</td><td>Related-electrolytes sub-chart</td><td><span class="st ok">PRESENT</span> (6 of 7)</td></tr>
+          <tr><td>Bicarbonate</td><td>Related-electrolytes sub-chart</td><td><span class="st miss">ABSENT</span></td></tr>
+          <tr><td>eGFR (creatinine-based)</td><td>eGFR profile sub-chart</td><td><span class="st part">DERIVABLE</span> — CKD-EPI from creatinine + age/sex</td></tr>
+          <tr><td>Cystatin C</td><td>Creatinine sub-chart alt, eGFRcys</td><td><span class="st miss">ABSENT</span> — not derivable</td></tr>
+          <tr><td>eGFRcys (cystatin-C-based)</td><td>eGFR profile sub-chart</td><td><span class="st miss">ABSENT</span> — needs cystatin C</td></tr>
+          <tr><td>Urine albumin/creatinine ratio</td><td>Urine ACR sub-chart</td><td><span class="st miss">ABSENT</span> — distinct urinalysis measure</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The takeaway: the <strong>core KDIGO scatter is fully demoable on today's data</strong> (creatinine is present), and two of the five profile sub-charts (BP, related electrolytes) largely work. But the kidney-specialized measures — <strong>cystatin C, eGFRcys, and the urine ACR</strong> — are genuinely absent from pharmaverseadam and cannot be derived. The RhoInc "renderer-specific" dataset that nepExplorer itself ships (and that was safety.viz's <em>own</em> demo data before the v1.1.0 pharmaverse migration) does carry all of them.</p>
+    <div class="callout warn">
+      <h3>Unit dependence — the KDIGO absolute thresholds assume mg/dL</h3>
+      <p>The fold-change axis (a ratio) is unit-independent and safe. But the absolute-change axis and the "≥&nbsp;4&nbsp;mg/dL" rule are <strong>mg/dL-specific</strong>, and the demo creatinine is in <span class="mono">µmol/L</span> (≈88.4× larger). nepExplorer handles this with an explicit conversion step and warns that factors vary by sponsor. The Chart.js module must be <strong>unit-aware</strong> (convert to mg/dL for the absolute axis, or make thresholds unit-parameterized) — not hard, but a correctness trap if missed.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="sec-eyebrow">5 · Effort &amp; phasing</p>
+    <h2>Two phases, gated by the data decision</h2>
+    <div class="timeline">
+      <div class="phase now">
+        <div class="ph-head"><h3>Phase 1 — KDIGO creatinine scatter</h3><span class="chip obot">S–M</span></div>
+        <ul>
+          <li>Canvas module on the hep-explorer/delta-delta pattern: per-participant scatter of fold change vs absolute change.</li>
+          <li>KDIGO stage-zone background plugin (adapt <span class="mono">quadrantPlugin</span>) + stage summary table in the shell.</li>
+          <li>Unit-aware standardization; point selection; tooltips; the coverage/evidence/API done-gate.</li>
+          <li><b>Demoable on current pharmaverseadam data.</b> Comparable in size to delta-delta / the hep-explorer core.</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph-head"><h3>Phase 2 — patient-profile drill-down</h3><span class="chip warn">M–L</span></div>
+        <ul>
+          <li>Multi-panel small-multiple time series (creatinine/eGFR/electrolytes/BP/urine ACR) reusing results-over-time / outlier-explorer line rendering.</li>
+          <li>Demographics panel, measure picker, KDIGO reference lines, optional scatter time-animation.</li>
+          <li><b>Blocked on the demo-data decision</b> (D1): cystatin C, eGFRcys, and urine ACR sub-charts need data augmentation or a kidney-specific demo set.</li>
+        </ul>
+      </div>
+    </div>
+    <p>The <strong>done-gate</strong> applies per phase: a module is not finished until the Pages site carries a gallery demo, an evidence page, and an API reference — factor that in beyond the code itself, as with every prior renderer.</p>
+  </section>
+
+  <section>
+    <p class="sec-eyebrow">6 · Risks</p>
+    <h2>What could bite</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Risk</th><th>Sev</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td><b>Demo data lacks kidney-specialized measures</b> (cystatin C, eGFRcys, urine ACR)</td><td><span class="chip bad">high</span></td><td>Decide D1: derive eGFR (CKD-EPI); retain RhoInc renderer-specific data as a nep-specific demo; or scope phase 2 to available measures.</td></tr>
+          <tr><td><b>Unit dependence</b> of absolute KDIGO thresholds</td><td><span class="chip warn">med</span></td><td>Build the module unit-aware; convert to mg/dL for the absolute axis; parameterize thresholds.</td></tr>
+          <tr><td><b>Clinical-logic fidelity</b> (incl. the DELTA_STAGE bug)</td><td><span class="chip warn">med</span></td><td>Re-derive KDIGO staging from intent; validate against clinical owners; don't blind-port R.</td></tr>
+          <tr><td><b>Patient-profile scope</b> — richest surface, no exact precedent</td><td><span class="chip warn">med</span></td><td>Phase it; lean on results-over-time/outlier-explorer; treat time-animation as optional.</td></tr>
+          <tr><td><b>Scope creep</b> — two features in one renderer</td><td><span class="chip obot">low</span></td><td>Ship phase 1 as a standalone renderer with its own done-gate before starting phase 2.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="sec-eyebrow">7 · Recommendation &amp; decisions</p>
+    <h2>Proceed — and one decision unblocks it</h2>
+    <p>nepExplorer is a strong fit and a natural addition to the renderer set: it extends the eDISH-style diagnostic-scatter family from liver to kidney, reuses machinery that is already proven twice, and rounds out the organ-system coverage of the safety graphics suite. Recommend adding it to the <a href="https://github.com/jwildfire/obot.roadmap/issues/29">v1.3 renderer slate (hub #29)</a> and mining the upstream repo under <a href="https://github.com/jwildfire/obot.roadmap/issues/33">hub #33</a>, migrating from the Shiny v1.0.0 as the behavioral spec, in the two phases above.</p>
+    <div class="dec">
+      <div class="did">D1</div>
+      <div>
+        <h3>Demo data for the patient profile</h3>
+        <p>Phase 2 needs cystatin C, eGFRcys, and urine ACR, which pharmaverseadam lacks. Options: (a) derive eGFR + retain the RhoInc renderer-specific dataset as a nep-specific demo; (b) augment pharmaverseadam with synthetic kidney measures; (c) scope phase 2 to available measures only.</p>
+        <p class="rec">Leaning: <b>(a)</b> — the RhoInc set was purpose-built for hep/nep and was safety.viz's own demo data pre-v1.1.0, so it is a known-good, self-consistent kidney demo without inventing data.</p>
+      </div>
+    </div>
+    <div class="dec">
+      <div class="did">D2</div>
+      <div>
+        <h3>Phase 1 alone, or bundle both?</h3>
+        <p>Phase 1 (KDIGO scatter) is demoable today and independently valuable. Phase 2 (profile) is the larger, data-gated lift.</p>
+        <p class="rec">Leaning: <b>ship phase 1 as a standalone renderer</b> with its own done-gate; start phase 2 once D1 is settled.</p>
+      </div>
+    </div>
+    <div class="dec">
+      <div class="did">D3</div>
+      <div>
+        <h3>Time-animation of the scatter</h3>
+        <p>nepExplorer animates the scatter across visits (plotly frames). Chart.js can do this, but it is custom and non-core.</p>
+        <p class="rec">Leaning: <b>defer to a follow-up</b>; not required for a v1 of the renderer.</p>
+      </div>
+    </div>
+    <p style="margin-top:1.4rem;">This is an initial assessment for direction-setting, not a committed plan. On a GO, the next step is a hub requirement (Business Requirement → Data Requirement → Design) that resolves D1–D3 and decomposes phase 1 into safety.viz sub-issues.</p>
+  </section>
+
+  <section>
+    <p class="sec-eyebrow">Sources</p>
+    <h2>What this is based on</h2>
+    <a class="srclink" href="https://github.com/SafetyGraphics/nepExplorer"><span class="rl-eye">upstream · master</span><br><span class="rl-t">SafetyGraphics/nepExplorer — Shiny v1.0.0</span><br><span class="rl-s">R/ modules, inst/config/nepExplorer.yaml, data-raw/ (meta + adbds), outline.md, NEWS.md</span></a>
+    <a class="srclink" href="https://github.com/SafetyGraphics/nepExplorer/tree/deprecated-js"><span class="rl-eye">upstream · deprecated-js</span><br><span class="rl-t">SafetyGraphics/nepExplorer — legacy JS v0.9.0</span><br><span class="rl-s">src/kdigoScatterPlot, src/timeSeries, settings-schema.json (D3 + RhoInc webcharts)</span></a>
+    <a class="srclink" href="https://github.com/jwildfire/safety.viz"><span class="rl-eye">target</span><br><span class="rl-t">jwildfire/safety.viz — Chart.js library</span><br><span class="rl-s">hep-explorer branch (eDISH precedent), delta-delta &amp; results-over-time modules, src/data/schema/*, site/data/adbds.csv (pharmaverseadam demo)</span></a>
+  </section>
+
+  <footer>
+    <p>Assessment drafted by Claude Code (Fable&nbsp;5) as background session <span class="mono">👯🤖 nep-explorer-assess</span>, reviewed by @jwildfire. Assessment only — no code changes, issues, or PRs. Repos inspected by shallow clone and by reading the safety.viz working tree on 2026-07-15. Effort sizes are relative T-shirt estimates for direction-setting, not commitments.</p>
+    <p>Related: <a href="https://github.com/jwildfire/obot.roadmap/issues/29">hub #29 — safety.viz v1.3 renderers</a> · <a href="https://github.com/jwildfire/obot.roadmap/issues/33">hub #33 — legacy renderer issue mining</a> · <a href="../hep-explorer-backlog-and-guide-2026-07-12/">companion: hep-explorer backlog &amp; guide</a></p>
+  </footer>
+</div>
+</body>
+</html>
