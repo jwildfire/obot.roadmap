@@ -8,8 +8,9 @@ Chart.js library. **Assessment only** — no code changes, issues, or PRs were m
 
 - **Report:** [`index.html`](index.html)
 - **Date:** 2026-07-15
-- **Author:** Claude Code (Fable 5), background session `👯🤖 nep-explorer-assess`, reviewed by @jwildfire
-- **Status:** Current — direction-setting input for hub [#29](https://github.com/jwildfire/obot.roadmap/issues/29) (v1.3 renderers) and [#33](https://github.com/jwildfire/obot.roadmap/issues/33) (legacy renderer mining); decisions D1–D3 await @jwildfire.
+- **Author:** Claude Code (Opus 4.8), background session `👯🤖 nep-explorer-assess`, reviewed by @jwildfire
+- **Filed as:** requirement [#35](https://github.com/jwildfire/obot.roadmap/issues/35) — nepExplorer migration (Requirement Gathering).
+- **Status:** Current — direction-setting input for hub [#35](https://github.com/jwildfire/obot.roadmap/issues/35); related [#29](https://github.com/jwildfire/obot.roadmap/issues/29) (v1.3 renderers), [#33](https://github.com/jwildfire/obot.roadmap/issues/33) (legacy renderer mining); decisions D1–D3 await @jwildfire.
 
 ## Bottom line
 
