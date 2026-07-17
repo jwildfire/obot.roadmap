@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}h1,h2,h3,h4,h5,h6,p,figure,blockquote,ul,ol,dl{margin:0}ul,ol{padding:0}</style>
+<title>Safety Graphics — Improvement Requirements & Feasibility</title>
+<style>
+  :root {
+    /* ground + ink (cool, blue-biased neutrals — chosen, not default grey) */
+    --ground: #f4f6f7;
+    --surface: #ffffff;
+    --surface-2: #eef2f3;
+    --ink: #16232d;
+    --muted: #536470;
+    --faint: #7f929e;
+    --border: #dde4e7;
+    --hairline: #e8edef;
+    /* accent — clinical instrument teal */
+    --accent: #0e7c86;
+    --accent-deep: #0a5b63;
+    --accent-tint: #e2f1f2;
+    /* feasibility semantics (separate from accent) */
+    --high: #1a8f5a;      --high-tint: #e3f4ec;
+    --mod:  #b3760f;      --mod-tint:  #f8efdd;
+    --expl: #5359bf;      --expl-tint: #ecedfa;
+    --flag: #b0472e;      --flag-tint: #f8e8e3;
+    /* type roles */
+    --f-display: "SF Pro Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --f-serif: "Iowan Old Style", "Palatino Linotype", "Charter", Georgia, Cambria, "Times New Roman", serif;
+    --f-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --shadow: 0 1px 2px rgba(20,40,55,.05), 0 8px 24px -12px rgba(20,40,55,.14);
+    --shadow-soft: 0 1px 2px rgba(20,40,55,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0d141a;
+      --surface: #141e26;
+      --surface-2: #1a2831;
+      --ink: #e7eef2;
+      --muted: #9aabb6;
+      --faint: #6f828e;
+      --border: #263640;
+      --hairline: #1f2d36;
+      --accent: #3cc3d0;
+      --accent-deep: #2a99a4;
+      --accent-tint: #0f2e33;
+      --high: #47c98a;      --high-tint: #103026;
+      --mod:  #e0a94b;      --mod-tint:  #33270f;
+      --expl: #949bf0;      --expl-tint: #1e2148;
+      --flag: #e08466;      --flag-tint: #3a201a;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+      --shadow-soft: 0 1px 2px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground:#f4f6f7; --surface:#ffffff; --surface-2:#eef2f3; --ink:#16232d; --muted:#536470; --faint:#7f929e;
+    --border:#dde4e7; --hairline:#e8edef; --accent:#0e7c86; --accent-deep:#0a5b63; --accent-tint:#e2f1f2;
+    --high:#1a8f5a; --high-tint:#e3f4ec; --mod:#b3760f; --mod-tint:#f8efdd; --expl:#5359bf; --expl-tint:#ecedfa; --flag:#b0472e; --flag-tint:#f8e8e3;
+    --shadow:0 1px 2px rgba(20,40,55,.05),0 8px 24px -12px rgba(20,40,55,.14); --shadow-soft:0 1px 2px rgba(20,40,55,.04);
+  }
+  :root[data-theme="dark"] {
+    --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831; --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+    --border:#263640; --hairline:#1f2d36; --accent:#3cc3d0; --accent-deep:#2a99a4; --accent-tint:#0f2e33;
+    --high:#47c98a; --high-tint:#103026; --mod:#e0a94b; --mod-tint:#33270f; --expl:#949bf0; --expl-tint:#1e2148; --flag:#e08466; --flag-tint:#3a201a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6); --shadow-soft:0 1px 2px rgba(0,0,0,.25);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-serif);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* ---- shared type ---- */
+  h1, h2, h3, .eyebrow, .label, .pill, .meter-cap, .matrix, .badge, .num, nav, .foot-meta { font-family: var(--f-display); }
+  .mono { font-family: var(--f-mono); }
+  .eyebrow {
+    font-size: 12px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); margin: 0;
+  }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--accent-deep); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+  /* ---- masthead ---- */
+  header.mast { padding: 64px 0 28px; border-bottom: 1px solid var(--border); }
+  .mast h1 {
+    font-size: clamp(30px, 5vw, 46px); line-height: 1.06; letter-spacing: -.02em;
+    font-weight: 750; margin: 16px 0 0; text-wrap: balance; max-width: 20ch;
+  }
+  .mast .dek {
+    margin: 18px 0 0; max-width: 62ch; font-size: 19px; color: var(--muted);
+    line-height: 1.55;
+  }
+  .mast .metaline {
+    margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px 22px;
+    font-family: var(--f-display); font-size: 13px; color: var(--faint);
+  }
+  .mast .metaline b { color: var(--muted); font-weight: 600; }
+
+  /* ---- framing callout ---- */
+  .callout {
+    margin: 30px 0 0; background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent); border-radius: 10px; padding: 18px 22px;
+    box-shadow: var(--shadow-soft);
+  }
+  .callout.warn { border-left-color: var(--flag); }
+  .callout .label { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin: 0 0 6px; }
+  .callout.warn .label { color: var(--flag); }
+  .callout p { margin: 6px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--ink); }
+  .callout p:first-of-type { margin-top: 0; }
+
+  /* ---- section headings ---- */
+  .sec-head { margin: 56px 0 6px; display: flex; align-items: baseline; gap: 12px; }
+  .sec-head h2 { font-size: 15px; font-weight: 680; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  .sec-rule { height: 1px; background: var(--border); flex: 1; align-self: center; }
+
+  /* ---- portfolio matrix ---- */
+  .matrix-scroll { overflow-x: auto; margin: 18px 0 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-soft); }
+  table.matrix { border-collapse: collapse; width: 100%; min-width: 780px; font-size: 13.5px; }
+  table.matrix th {
+    text-align: left; font-size: 11px; font-weight: 680; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--faint); padding: 14px 16px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  table.matrix td { padding: 15px 16px; border-bottom: 1px solid var(--hairline); vertical-align: top; color: var(--muted); line-height: 1.45; }
+  table.matrix tr:last-child td { border-bottom: none; }
+  table.matrix .m-name { color: var(--ink); font-weight: 620; font-family: var(--f-display); }
+  table.matrix .m-num { font-family: var(--f-mono); color: var(--faint); font-size: 12px; }
+  table.matrix tr:hover td { background: var(--surface-2); }
+
+  /* ---- pills / badges ---- */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 650;
+    letter-spacing: .02em; padding: 3px 10px; border-radius: 100px; white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .pill.high { color: var(--high); background: var(--high-tint); border-color: color-mix(in srgb, var(--high) 22%, transparent); }
+  .pill.mod  { color: var(--mod);  background: var(--mod-tint);  border-color: color-mix(in srgb, var(--mod) 22%, transparent); }
+  .pill.expl { color: var(--expl); background: var(--expl-tint); border-color: color-mix(in srgb, var(--expl) 22%, transparent); }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 620; letter-spacing: .03em;
+    padding: 3px 9px; border-radius: 6px; background: var(--surface-2); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .badge.track { background: transparent; }
+
+  /* ---- legend ---- */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 16px 0 0; }
+  .legend .leg { display: flex; gap: 9px; align-items: flex-start; font-size: 13px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 10px 13px; flex: 1 1 240px; box-shadow: var(--shadow-soft); }
+  .legend .leg .swatch { width: 10px; height: 10px; border-radius: 3px; margin-top: 4px; flex: none; }
+  .legend .leg b { color: var(--ink); font-family: var(--f-display); font-weight: 630; font-size: 12.5px; }
+
+  /* ---- detailed initiative cards ---- */
+  .init {
+    position: relative; margin: 22px 0 0; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 26px 30px 28px; box-shadow: var(--shadow); overflow: hidden;
+  }
+  .init::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .init.high::before { background: var(--high); }
+  .init.mod::before  { background: var(--mod); }
+  .init.expl::before { background: var(--expl); }
+
+  .init-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+  .init-num { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; color: var(--faint); letter-spacing: .02em; }
+  .init-top .grow { flex: 1; }
+  .init h3 { font-family: var(--f-display); font-size: 24px; line-height: 1.15; letter-spacing: -.015em; font-weight: 720; margin: 12px 0 0; text-wrap: balance; }
+  .init .domain { font-family: var(--f-display); font-size: 12px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-top: 2px; }
+
+  .ask { margin: 14px 0 0; font-size: 16.5px; line-height: 1.62; color: var(--ink); max-width: 68ch; }
+  .ask em { color: var(--muted); font-style: italic; }
+
+  /* meter */
+  .meter { display: flex; align-items: center; gap: 10px; }
+  .meter .bars { display: flex; gap: 3px; }
+  .meter .bars i { width: 20px; height: 6px; border-radius: 2px; background: var(--border); }
+  .init.high .meter .bars i:nth-child(-n+3) { background: var(--high); }
+  .init.mod  .meter .bars i:nth-child(-n+2) { background: var(--mod); }
+  .init.expl .meter .bars i:nth-child(-n+1) { background: var(--expl); }
+  .meter .meter-cap { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); font-weight: 640; }
+
+  /* requirement + feasibility blocks */
+  .block { margin-top: 22px; }
+  .block > .label { font-family: var(--f-display); font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .block > .label::after { content: ""; height: 1px; background: var(--hairline); flex: 1; }
+
+  ul.reqs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  ul.reqs li { display: grid; grid-template-columns: 78px 1fr; gap: 14px; align-items: start; font-size: 15.5px; line-height: 1.52; }
+  ul.reqs .rid { font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--accent); background: var(--accent-tint); border-radius: 5px; padding: 3px 7px; text-align: center; letter-spacing: .01em; margin-top: 2px; }
+  ul.reqs .rtxt { color: var(--ink); }
+  ul.reqs .rtxt b { font-weight: 640; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fcell { background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 10px; padding: 14px 16px; }
+  .fcell .k { font-family: var(--f-display); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin: 0 0 7px; }
+  .fcell .v { font-size: 14.5px; line-height: 1.5; color: var(--ink); margin: 0; }
+  .fcell .v .mono { font-size: 12.5px; color: var(--muted); }
+
+  .qw { margin-top: 20px; background: var(--high-tint); border: 1px solid color-mix(in srgb, var(--high) 24%, transparent); border-radius: 11px; padding: 15px 18px; }
+  .qw .label { color: var(--high); }
+  .qw ul { margin: 8px 0 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .qw li { position: relative; padding-left: 22px; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+  .qw li::before { content: "→"; position: absolute; left: 0; color: var(--high); font-weight: 700; font-family: var(--f-display); }
+
+  .srcflag { margin-top: 18px; display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--muted); background: var(--flag-tint); border: 1px solid color-mix(in srgb, var(--flag) 20%, transparent); border-radius: 9px; padding: 11px 14px; line-height: 1.5; }
+  .srcflag .tag { font-family: var(--f-display); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--flag); background: var(--surface); border: 1px solid color-mix(in srgb, var(--flag) 30%, transparent); border-radius: 5px; padding: 2px 7px; flex: none; margin-top: 1px; }
+  .srcflag.done { background: var(--high-tint); border-color: color-mix(in srgb, var(--high) 22%, transparent); }
+  .srcflag.done .tag { color: var(--high); border-color: color-mix(in srgb, var(--high) 32%, transparent); }
+
+  /* cross-cutting + next steps */
+  .obs { margin: 20px 0 0; display: flex; flex-direction: column; gap: 12px; }
+  .obs .o { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 17px 20px; box-shadow: var(--shadow-soft); }
+  .obs .o h4 { font-family: var(--f-display); font-size: 16px; font-weight: 660; letter-spacing: -.01em; margin: 0 0 6px; color: var(--ink); }
+  .obs .o p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted); }
+  .obs .o p b { color: var(--ink); font-weight: 620; }
+
+  ol.steps { margin: 18px 0 0; padding: 0; list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 12px; }
+  ol.steps li { display: grid; grid-template-columns: 34px 1fr; gap: 15px; align-items: start; }
+  ol.steps li::before { counter-increment: s; content: counter(s); font-family: var(--f-display); font-weight: 720; font-size: 14px; color: var(--accent); background: var(--accent-tint); border-radius: 8px; height: 30px; display: flex; align-items: center; justify-content: center; }
+  ol.steps .st { font-size: 15.5px; line-height: 1.55; color: var(--ink); padding-top: 3px; }
+  ol.steps .st b { font-weight: 640; }
+  ol.steps .st .mono { font-size: 12.5px; }
+
+  /* footer */
+  footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); }
+  footer .foot-meta { font-family: var(--f-display); font-size: 13px; color: var(--faint); line-height: 1.6; }
+  footer .foot-meta b { color: var(--muted); font-weight: 600; }
+  footer .attr { margin-top: 14px; font-family: var(--f-display); font-size: 12px; color: var(--faint); font-style: normal; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px 72px; }
+    .grid2 { grid-template-columns: 1fr; }
+    .init { padding: 22px 20px 24px; }
+    ul.reqs li { grid-template-columns: 64px 1fr; gap: 11px; }
+    .mast { padding-top: 44px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">Safety Graphics Suite · Requirements &amp; Feasibility</p>
+    <h1>Five improvement ideas, scoped into actionable requirements</h1>
+    <p class="dek">A working assessment of the safety-graphics to-do list — three renderer initiatives, one emerging program area, and one research track — each broken into concrete requirements with a high-level read on feasibility, what it builds on, and where the risk sits.</p>
+    <div class="metaline">
+      <span><b>Prepared for</b> Jeremy Wildfire</span>
+      <span><b>Source</b> colleague to-do list (5 items)</span>
+      <span><b>Date</b> 17 Jul 2026</span>
+      <span><b>Status</b> Draft for review</span>
+    </div>
+  </header>
+
+  <div class="callout">
+    <p class="label">Read this first — source coverage</p>
+    <p>All four referenced documents have now been read into this assessment: the composite-plot paper (Tesfaldet et&nbsp;al., <em>Drug Safety</em> 2024;47:699–710 — Paul "Skip" Hayashi a co-author), the <em>ISG Renal Safety Explorer Manual v1.0</em>, the CSRC <em>Example QT Tool Display v2</em> mockup, and the <em>QT Safety Explorer Draft Clinical Workflow (28 Apr 2025)</em>. Initiatives 01–03 are grounded in source and marked <b>Source reviewed</b>; 04 (Benefit-Risk) and 05 (recurrent AE) remain scoped from domain knowledge, as no source was provided. Feasibility here is a triage read, not a committed estimate.</p>
+  </div>
+
+  <div class="sec-head"><h2>Portfolio at a glance</h2><span class="sec-rule"></span></div>
+  <div class="matrix-scroll">
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>Initiative</th>
+          <th>Domain</th>
+          <th>Feasibility</th>
+          <th>Horizon</th>
+          <th>Key dependency</th>
+          <th>Recommended next step</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="m-num">01</span> &nbsp;<span class="m-name">Hep Explorer — composite plot</span></td>
+          <td>Hepatic (DILI)</td>
+          <td><span class="pill high">High</span></td>
+          <td>Near-term</td>
+          <td>FDA reference code exists; needs baseline-abnormal demo cohort</td>
+          <td>Port the composite-eDISH algorithm into the canvas renderer</td>
+        </tr>
+        <tr>
+          <td><span class="m-num">02</span> &nbsp;<span class="m-name">Renal Explorer — finish &amp; integrate</span></td>
+          <td>Renal (KDIGO)</td>
+          <td><span class="pill mod">Moderate</span></td>
+          <td>Near / mid-term</td>
+          <td>Shiny→suite port; import/mapping cross-cutting; cystatin&nbsp;C / urine gaps</td>
+          <td>Land on-the-fly calc + dual-scale scatter first; scope the guided workflow separately</td>
+        </tr>
+        <tr>
+          <td><span class="m-num">03</span> &nbsp;<span class="m-name">QT Explorer — build</span></td>
+          <td>Cardiac (QTc)</td>
+          <td><span class="pill mod">Moderate</span></td>
+          <td>Near / mid-term</td>
+          <td>QTcI individualized correction; multi-interval breadth; Shiny→suite port</td>
+          <td>Map the mockup's views onto delta-delta / results-over-time / outlier-explorer; build QTcI</td>
+        </tr>
+        <tr>
+          <td><span class="m-num">04</span> &nbsp;<span class="m-name">Benefit-Risk tools</span></td>
+          <td>Cross-endpoint</td>
+          <td><span class="pill expl">Exploratory</span></td>
+          <td>Gated</td>
+          <td>ASA taskforce scope (Waterhouse, via Mengchun)</td>
+          <td>Hold for spec; pre-build the forest-plot primitive</td>
+        </tr>
+        <tr>
+          <td><span class="m-num">05</span> &nbsp;<span class="m-name">Recurrent AE analysis</span></td>
+          <td>Adverse events</td>
+          <td><span class="pill expl">Exploratory</span></td>
+          <td>Research + quick wins</td>
+          <td>Statistician for formal models; MedDRA grouping</td>
+          <td>Ship the descriptive quick wins now; scope modeling with stats</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="legend" aria-label="Feasibility scale">
+    <div class="leg"><span class="swatch" style="background:var(--high)"></span><span><b>High</b> — strong existing foundation, deterministic path, incremental build on shipped code.</span></div>
+    <div class="leg"><span class="swatch" style="background:var(--mod)"></span><span><b>Moderate</b> — clearly buildable, but new construction and/or notable unknowns (data, spec, units).</span></div>
+    <div class="leg"><span class="swatch" style="background:var(--expl)"></span><span><b>Exploratory</b> — blocked on external spec or specialist input; quick wins may exist ahead of the full effort.</span></div>
+  </div>
+
+  <!-- ============ 01 HEP ============ -->
+  <div class="sec-head"><h2>Detailed assessment</h2><span class="sec-rule"></span></div>
+
+  <article class="init high">
+    <div class="init-top">
+      <span class="init-num">INITIATIVE 01</span>
+      <span class="grow"></span>
+      <span class="badge track">Flagship renderer</span>
+      <span class="pill high">High feasibility</span>
+    </div>
+    <div class="domain">Hepatic safety · DILI</div>
+    <h3>Hep Explorer — composite plot for patients with baseline liver abnormality</h3>
+    <p class="ask">Extend the shipped hep-explorer (eDISH) with the FDA <em>composite plot</em> method for detecting DILI in patients who already have abnormal liver tests at baseline — the population where the standard ×ULN-normalized eDISH view is least reliable. The method anchors an eDISH-style view to each subject's <em>own</em> baseline (×BLN) alongside the population norm (×ULN).</p>
+
+    <div class="block">
+      <p class="label">What the method actually is</p>
+      <p style="margin:0;font-size:15.5px;line-height:1.62;color:var(--muted);max-width:68ch">Not a single overlaid panel — a <b>three-step construction</b>. <b>Step 1:</b> a pretreatment eDISH classifies each subject by baseline ALT/BILI in ×ULN into the four quadrants (Normal&nbsp;&amp;&nbsp;NN, Temple's Corollary, Cholestasis, Hy's&nbsp;Law), each given a colored symbol. <b>Step 2:</b> a peak on-treatment eDISH (×ULN) where subjects <em>keep their baseline color</em>, so quadrant-to-quadrant <b>migration</b> is visible. <b>Step 3:</b> a <b>four-panel shift plot</b> (one panel per on-treatment quadrant) re-plotting peak ALT and BILI as multiples of the subject's <em>own baseline</em> (<span class="mono">×BLN</span>), with <span class="mono">1× / 3× / 5×BLN</span> reference lines. A color-coded <b>migration table</b> tallies moves of concern vs. potential benefit by arm.</p>
+    </div>
+
+    <div class="block">
+      <p class="label">Proposed requirements</p>
+      <ul class="reqs">
+        <li><span class="rid">HEP-C1</span><span class="rtxt"><b>Pretreatment eDISH classification.</b> Classify each subject by baseline ALT/BILI (<span class="mono">×ULN</span>; <span class="mono">ALT 3×</span>, <span class="mono">BILI 2×</span> cut-lines) into the four quadrants and assign the paper's colored symbols, carried through every panel.</span></li>
+        <li><span class="rid">HEP-C2</span><span class="rtxt"><b>On-treatment migration view.</b> Peak on-treatment eDISH (×ULN) with subjects retaining their baseline-quadrant color, surfacing migration from baseline to on-treatment.</span></li>
+        <li><span class="rid">HEP-C3</span><span class="rtxt"><b>×BLN composite shift panels.</b> Four panels (by on-treatment quadrant) plotting peak ALT &amp; BILI in multiples of the subject's own baseline, with <span class="mono">1×/3×/5×BLN</span> reference lines showing magnitude and direction of change.</span></li>
+        <li><span class="rid">HEP-C4</span><span class="rtxt"><b>Migration table + concern coding.</b> Pretreatment × on-treatment quadrant matrix with counts, color-coded red/yellow/green/gray for DILI concern, plus a by-arm summary of concerning vs. beneficial migrations.</span></li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <p class="label">Feasibility</p>
+      <div class="meter" style="margin-bottom:16px"><span class="bars"><i></i><i></i><i></i></span><span class="meter-cap">High — algorithm fully specified, FDA reference code available</span></div>
+      <div class="grid2">
+        <div class="fcell"><p class="k">Builds on</p><p class="v">The shipped hep-explorer module (safety.viz v1.2.0) — canvas eDISH, quadrant/threshold plugin, tooltip &amp; drill-down. The algorithm is fully specified in the paper <b>and</b> FDA released reference code (<span class="mono">github.com/FDA/Composite-eDISH-Plot</span>, public domain) — nothing to reverse-engineer.</p></div>
+        <div class="fcell"><p class="k">Data needs</p><p class="v">Baseline + peak ALT/BILI in ×ULN — standard ADaM (<span class="mono">BASE</span>, <span class="mono">ABLFL</span>). A demo cohort with <b>abnormal baselines</b> (e.g. chronic hepatitis / chronic liver disease) to show the mode off.</p></div>
+        <div class="fcell"><p class="k">Key unknowns / risk</p><p class="v">Mostly a UI question — the composite is a multi-panel display plus a color-coded table, more than today's single eDISH panel. Paper's own noted limit: it doesn't incorporate <span class="mono">ALP</span> (cholestatic injury).</p></div>
+        <div class="fcell"><p class="k">Effort</p><p class="v">Moderate — larger than an axis toggle (four ×BLN panels + migration table), but materially de-risked by the reference implementation. Fits the evidence + gallery pipeline.</p></div>
+      </div>
+    </div>
+
+    <div class="srcflag done"><span class="tag">Source reviewed</span><span>Tesfaldet et&nbsp;al., <em>Drug Safety</em> 2024;47:699–710 — read in full. The scope above (3-step composite: baseline eDISH → migration eDISH → four-panel ×BLN shift, plus the migration table) reflects the paper's Section&nbsp;2.2 and Figs&nbsp;2–6. FDA reference code: <span class="mono">github.com/FDA/Composite-eDISH-Plot</span> (DOI 10.5281/zenodo.10892050, public domain).</span></div>
+  </article>
+
+  <!-- ============ 02 RENAL ============ -->
+  <article class="init mod">
+    <div class="init-top">
+      <span class="init-num">INITIATIVE 02</span>
+      <span class="grow"></span>
+      <span class="badge track">Flagship renderer</span>
+      <span class="pill mod">Moderate feasibility</span>
+    </div>
+    <div class="domain">Renal safety · KDIGO</div>
+    <h3>Renal Explorer — finish it, and bring it into the suite</h3>
+    <p class="ask">Complete the Renal Safety Explorer: give it a way to <em>import</em> data, the ability to <em>map</em> data that isn't already in ADaM, <em>integrate</em> it into the safety-graphics suite instead of running standalone, and compute derived values — <span class="mono">eGFR</span>, <span class="mono">albumin/creatinine</span>, <span class="mono">BUN/creatinine</span> — on the fly rather than requiring them precalculated.</p>
+
+    <div class="block">
+      <p class="label">Roadmap tie-in &amp; what the manual specifies</p>
+      <p style="margin:0;font-size:15.5px;line-height:1.6;color:var(--muted);max-width:68ch">A migration assessment already exists — <a href="https://github.com/jwildfire/obot.roadmap/issues/35">hub #35</a> (verdict: <b>GO, phased</b>). The v1.0 manual fills in the detail: the existing tool is an <b>R Shiny / safetyGraphics</b> app whose core display is a scatter of each subject's <b>maximal creatinine change</b>, staged on <em>two</em> scales — KDIGO (relative) and Delta-Creatinine (absolute) — with a stage-proportion table. Click-through opens a patient profile (SCr/cystatin&nbsp;C change with stage lines, eGFR trend, electrolyte fold-change, BP, urine ACR). It also embeds a full <b>Steps&nbsp;1a–5d AKI evaluation workflow</b>. The asks decompose into five sub-requirements — two renderer-local, two cross-cutting platform capabilities, and the guided workflow.</p>
+    </div>
+
+    <div class="block">
+      <p class="label">Proposed requirements</p>
+      <ul class="reqs">
+        <li><span class="rid">REN-1</span><span class="rtxt"><b>Suite integration.</b> Port the Shiny/safetyGraphics tool into safety.viz as a first-class renderer (the hub&nbsp;#35 migration): the <b>dual-scale</b> KDIGO + Delta-Creatinine max-change scatter, stage table, and click-through patient profile.</span></li>
+        <li><span class="rid">REN-2</span><span class="rtxt"><b>On-the-fly derived values.</b> Compute at render time <span class="mono">eGFRcr</span> and <span class="mono">eGFRcr-cys</span> (CKD-EPI 2021 race-free, exact Delgado 2022 equations in the manual), urine <span class="mono">albumin:creatinine</span> (mg/g, KDIGO A1/A2/A3 bands), and <span class="mono">BUN:Cr</span> (prerenal <span class="mono">&gt;20:1</span>) — with unit normalization (<span class="mono">µmol/L ↔ mg/dL, ÷88.4</span>) and the manual's non-steady-state accuracy caveat carried into the UI.</span></li>
+        <li><span class="rid">REN-3</span><span class="rtxt"><b>Data import.</b> A straightforward way to load a dataset — currently absent. Best treated as a <b>shared</b> suite capability, not renal-only (see cross-cutting note).</span></li>
+        <li><span class="rid">REN-4</span><span class="rtxt"><b>Non-ADaM mapping.</b> An interactive mapping layer from arbitrary source columns to the domains/units the renderer expects — again a shared capability every renderer would use.</span></li>
+        <li><span class="rid">REN-5</span><span class="rtxt"><b>Guided evaluation workflow.</b> The manual's literature-backed AKI workflow (staging → cystatin&nbsp;C concordance → injury period → BUN:Cr, hypotension, urinalysis, sediment score, FENa/FEUr). A distinct, higher-effort feature; several steps use data outside the core dataset.</span></li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <p class="label">Feasibility</p>
+      <div class="meter" style="margin-bottom:16px"><span class="bars"><i></i><i></i><i></i></span><span class="meter-cap">Moderate — display &amp; calc fully specified; import/mapping/workflow enlarge scope</span></div>
+      <div class="grid2">
+        <div class="fcell"><p class="k">Builds on</p><p class="v">The hub&nbsp;#35 assessment + the existing canvas scatter/staging-zone and patient-profile patterns. The manual fully specifies the display, hover fields, staging thresholds, and the exact eGFR equations — little is left to interpretation.</p></div>
+        <div class="fcell"><p class="k">Data needs</p><p class="v">Creatinine + age/sex (eGFRcr); cystatin&nbsp;C (eGFRcr-cys — <b>often absent</b>); urine albumin &amp; creatinine (ACR — <b>often absent</b>); BUN, electrolytes, BP. Manual confirms cystatin&nbsp;C and urine measures are typically not collected — matches the hub&nbsp;#35 gap.</p></div>
+        <div class="fcell"><p class="k">Key unknowns / risk</p><p class="v">Import (REN-3) + mapping (REN-4) are architectural, not renal-specific. eGFR accuracy caveat (non-steady-state creatinine). The guided workflow (REN-5) is a large add. Unit trap: absolute mg/dL thresholds vs. µmol/L source.</p></div>
+        <div class="fcell"><p class="k">Effort</p><p class="v">REN-1/REN-2 moderate, near-term; REN-3/REN-4 larger, better funded as a shared platform investment; REN-5 substantial (guided workflow + interpretation content).</p></div>
+      </div>
+    </div>
+
+    <div class="qw">
+      <p class="label">Quick wins</p>
+      <ul>
+        <li>Ship the on-the-fly <span class="mono">eGFR</span> / <span class="mono">ACR</span> / <span class="mono">BUN:Cr</span> calculators (REN-2) — the exact equations are in the manual; deterministic, and it removes the "must precalculate" friction immediately.</li>
+        <li>Land the dual-scale KDIGO + Delta-Creatinine max-change scatter as a suite renderer (REN-1) — hub&nbsp;#35 says the core scatter is demoable with today's data.</li>
+      </ul>
+    </div>
+
+    <div class="srcflag done"><span class="tag">Source reviewed</span><span><em>ISG Renal Safety Explorer User's Manual &amp; Workflow v1.0</em> (ASA Biopharm Safety WG) — read in full. It specifies the dual-scale scatter, click-through patient-profile plots, hover fields, KDIGO + Delta-Creatinine staging thresholds, the exact CKD-EPI 2021 eGFR equations, and the Steps&nbsp;1a–5d AKI workflow. The existing tool is an R Shiny / safetyGraphics app, consistent with the hub&nbsp;#35 migration. Only screenshots of the finished tool are still to come.</span></div>
+  </article>
+
+  <!-- ============ 03 QT ============ -->
+  <article class="init mod">
+    <div class="init-top">
+      <span class="init-num">INITIATIVE 03</span>
+      <span class="grow"></span>
+      <span class="badge track">Flagship renderer</span>
+      <span class="pill mod">Moderate feasibility</span>
+    </div>
+    <div class="domain">Cardiac safety · QT/QTc · ICH E14</div>
+    <h3>QT Explorer — build the tool from the CSRC-reviewed mockup</h3>
+    <p class="ask">Build the QT Safety Explorer. A display mockup has been reviewed with the Cardiac Safety Research Consortium (<span class="mono">Display v2</span>) and a draft ICH-E14 clinical workflow drafted with them (28 Apr 2025). Like the renal tool, it exists today as an <b>R Shiny / safetyGraphics</b> app (v0.1); the suite version hasn't been started, but the spec is unusually complete.</p>
+
+    <div class="block">
+      <p class="label">What the mockup + workflow specify</p>
+      <p style="margin:0;font-size:15.5px;line-height:1.62;color:var(--muted);max-width:68ch">Two display types, named explicitly in the workflow. <b>Central tendency</b> — mean/median QTcX over time by arm, with a Tmax marker and the ICH-E14 metric (largest upper bound of the two-sided 90% CI for the mean difference), read against a ~<span class="mono">10&nbsp;ms</span> threshold. <b>Outlier / categorical analysis</b> — a scatter of QTc <em>change-from-baseline</em> vs. <em>baseline</em> QTc per timepoint, carrying <b>both</b> absolute cut-lines (<span class="mono">450/480/500&nbsp;ms</span>, as diagonals) and change-from-baseline lines (<span class="mono">30/60&nbsp;ms</span>, horizontal), colored by arm with <b>moxifloxacin as positive control</b> — plus count/% tables by arm. It spans intervals (QTc, HR, PR, QRS, JT), in Δ and double-delta (<span class="mono">ΔΔ</span>) form, with per-subject drill-down (ΔQTc/PR/QRS + K, Mg, TSH over time) and a QT-RR hysteresis plot.</p>
+    </div>
+
+    <div class="block">
+      <p class="label">Proposed requirements</p>
+      <ul class="reqs">
+        <li><span class="rid">QT-1</span><span class="rtxt"><b>Central-tendency display.</b> Mean/median QTcX (Δ / ΔΔ) over time by arm, Tmax marker, and the ICH-E14 largest-upper-90%-CI-of-mean-difference metric against a ~<span class="mono">10&nbsp;ms</span> reference.</span></li>
+        <li><span class="rid">QT-2</span><span class="rtxt"><b>Outlier scatter.</b> QTc change-from-baseline vs. baseline QTc per timepoint, with absolute <span class="mono">450/480/500&nbsp;ms</span> diagonals and <span class="mono">30/60&nbsp;ms</span> change lines, colored by arm (moxifloxacin positive control).</span></li>
+        <li><span class="rid">QT-3</span><span class="rtxt"><b>Categorical tables.</b> Counts/% exceeding the QTc thresholds by arm, plus PR (<span class="mono">&gt;220&nbsp;ms / &gt;25%</span>) and QRS (<span class="mono">&gt;120&nbsp;ms / &gt;25%</span>).</span></li>
+        <li><span class="rid">QT-4</span><span class="rtxt"><b>Correction + Δ toggles.</b> QTcF, QTcB, and <b>QTcI</b> (individualized from per-subject QT-RR slopes; the "sum-of-squared-slopes" diagnostic), and Δ vs. ΔΔ (baseline- and placebo-adjusted).</span></li>
+        <li><span class="rid">QT-5</span><span class="rtxt"><b>Subject drill-down + hysteresis.</b> Per-subject profiles (ΔQTc/PR/QRS + K, Mg, TSH over time) and a QT-RR hysteresis plot.</span></li>
+        <li><span class="rid">QT-6</span><span class="rtxt"><b>Guided ICH-E14 workflow.</b> The Steps 1a–3d logic: central tendency ≥10&nbsp;ms → HR/PR/QRS confounders → between-arm comparison → categorical outliers → hysteresis.</span></li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <p class="label">Feasibility</p>
+      <div class="meter" style="margin-bottom:16px"><span class="bars"><i></i><i></i><i></i></span><span class="meter-cap">Moderate — best-specified greenfield; high reuse, but broad + QTcI modeling</span></div>
+      <div class="grid2">
+        <div class="fcell"><p class="k">Builds on</p><p class="v">Strong reuse of shipped primitives: <b>delta-delta</b> (the ΔΔ concept is literally this renderer), results-over-time (central tendency), outlier-explorer + the scatter-with-zones grammar (outlier scatter), and patient-profile (drill-down). The CSRC mockup + workflow fix the display.</p></div>
+        <div class="fcell"><p class="k">Data needs</p><p class="v">ECG intervals (QT, RR/HR, PR, QRS) — ADaM <span class="mono">ADEG</span>; plus electrolytes (K, Mg), TSH, vitals for drill-down. Demo aligns with the xanomeline CDISC pilot + a moxifloxacin positive-control arm — confirm ECG/QT coverage in the demo package.</p></div>
+        <div class="fcell"><p class="k">Key unknowns / risk</p><p class="v"><b>QTcI</b> individualized correction is real modeling (per-subject QT-RR regression + correction-method selection). Breadth is the other load — 5–6 linked views, multi-interval, plus the guided workflow. Scope assumes generally-healthy adults (excludes congenital/structural long-QT).</p></div>
+        <div class="fcell"><p class="k">Effort</p><p class="v">Moderate–large as a full module, but front-loaded reuse makes QT-1/2/3 achievable early; QTcI (QT-4) and the workflow (QT-6) are the tail.</p></div>
+      </div>
+    </div>
+
+    <div class="srcflag done"><span class="tag">Source reviewed</span><span>CSRC <em>Example QT Tool Display v2</em> (6-slide mockup, incl. the change-vs-baseline outlier scatter with 450/480/500 diagonals) and the <em>QT Safety Explorer Draft Clinical Workflow, 28 Apr 2025</em> (v0.1, ISG × CSRC) — both read in full. Note: the mockup does <b>not</b> feature concentration–QTc (C-QTc); an earlier draft of this assessment speculated it, now corrected. The existing tool is an R Shiny / safetyGraphics app, same lineage as the renal explorer.</span></div>
+  </article>
+
+  <!-- ============ 04 BR ============ -->
+  <article class="init expl">
+    <div class="init-top">
+      <span class="init-num">INITIATIVE 04</span>
+      <span class="grow"></span>
+      <span class="badge track">New program area</span>
+      <span class="pill expl">Exploratory · gated</span>
+    </div>
+    <div class="domain">Benefit-risk · cross-endpoint</div>
+    <h3>Benefit-Risk tools — Forest Plot &amp; Value Tree</h3>
+    <p class="ask">The ASA working group merged the ISG taskforce with the Benefit-Risk Assessment Tools Suite taskforce — both build open-source tools for a common platform. Scope so far appears to be a <em>Forest Plot</em> and a <em>Value Tree</em>; Mengchun is confirming progress with Brian Waterhouse. Details are pending.</p>
+
+    <div class="block">
+      <p class="label">Proposed requirements (provisional)</p>
+      <ul class="reqs">
+        <li><span class="rid">BR-1</span><span class="rtxt"><b>Forest plot primitive.</b> Point estimates with confidence intervals across endpoints / subgroups — a standard, broadly reusable chart (subgroup safety, meta-analysis, benefit-risk summaries).</span></li>
+        <li><span class="rid">BR-2</span><span class="rtxt"><b>Value tree.</b> A hierarchical benefit-risk value tree (MCDA-style: weighted benefit and risk criteria). Less common; needs a defined data model for the criteria hierarchy.</span></li>
+        <li><span class="rid">BR-0</span><span class="rtxt"><b>Alignment first.</b> Confirm the merged taskforce's tool list, data model, and platform target before firming BR-1/BR-2 — the requirement can't be fixed until the scope lands.</span></li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <p class="label">Feasibility</p>
+      <div class="meter" style="margin-bottom:16px"><span class="bars"><i></i><i></i><i></i></span><span class="meter-cap">Exploratory — buildable, but blocked on external scope</span></div>
+      <div class="grid2">
+        <div class="fcell"><p class="k">Builds on</p><p class="v">The forest plot is a well-understood viz with clear precedent; it would slot into the suite as a general primitive. The value tree is a newer structure for this stack.</p></div>
+        <div class="fcell"><p class="k">Key unknowns / risk</p><p class="v">Everything downstream of scope: which tools, whose data model, which platform. Building ahead of the taskforce decision risks rework.</p></div>
+        <div class="fcell"><p class="k">Dependency</p><p class="v">External — the merged ASA taskforce (Waterhouse, via Mengchun). "Stay tuned" is the current state; requirements stay provisional until then.</p></div>
+        <div class="fcell"><p class="k">Effort</p><p class="v">Forest plot: modest. Value tree: moderate (new data model + layout). Sequencing waits on BR-0.</p></div>
+      </div>
+    </div>
+
+    <div class="qw">
+      <p class="label">Low-risk pre-investment</p>
+      <ul>
+        <li>Build the <b>forest-plot primitive</b> (BR-1) now — it's independently useful across the suite (subgroup safety, KRI summaries) and de-risks the BR work whatever the taskforce decides.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ============ 05 RECURRENT AE ============ -->
+  <article class="init expl">
+    <div class="init-top">
+      <span class="init-num">INITIATIVE 05</span>
+      <span class="grow"></span>
+      <span class="badge track">Research track · wish list</span>
+      <span class="pill expl">Exploratory</span>
+    </div>
+    <div class="domain">Adverse events · recurrent-event analysis</div>
+    <h3>Recurrent AE analysis — beyond first occurrence</h3>
+    <p class="ask">Today every AE frequency rate counts only the <em>first</em> occurrence of an event per patient. The wish-list tool would detect when a patient experiences the same (or a similar) AE repeatedly over time — and surface when the interval between events is <em>shortening</em> or severity is <em>increasing</em>. As noted, the statistics here are genuinely non-trivial and will need specialist support.</p>
+
+    <div class="block">
+      <p class="label">Proposed requirements</p>
+      <ul class="reqs">
+        <li><span class="rid">RAE-1</span><span class="rtxt"><b>Recurrence descriptives.</b> Events-per-subject counts and distribution; a recurrence flag for subjects with <span class="mono">≥2</span> occurrences of the same preferred term.</span></li>
+        <li><span class="rid">RAE-2</span><span class="rtxt"><b>Mean Cumulative Function.</b> MCF / Nelson-Aalen recurrent-event curves by arm — the standard non-parametric summary of event burden over time.</span></li>
+        <li><span class="rid">RAE-3</span><span class="rtxt"><b>Inter-event &amp; severity trajectory.</b> Gap-time between recurrences and severity across successive occurrences per subject — surfaces shortening intervals / escalation.</span></li>
+        <li><span class="rid">RAE-4</span><span class="rtxt"><b>Formal modeling (with stats).</b> Recurrent-event models — Andersen-Gill, PWP gap-time, frailty/random-effect — and trend tests for interval shortening and severity increase.</span></li>
+        <li><span class="rid">RAE-5</span><span class="rtxt"><b>"Similar" event grouping.</b> Define same-or-similar via the MedDRA hierarchy (PT → HLT/HLGT, or SMQ) rather than exact-PT only.</span></li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <p class="label">Feasibility</p>
+      <div class="meter" style="margin-bottom:16px"><span class="bars"><i></i></span><span class="meter-cap">Exploratory overall — but the descriptive layer is High</span></div>
+      <div class="grid2">
+        <div class="fcell"><p class="k">Builds on</p><p class="v">The existing ae-timelines renderer already draws per-subject event timelines — a natural home for gap-time and recurrence display (RAE-3). MCF is well-supported in R.</p></div>
+        <div class="fcell"><p class="k">Data needs</p><p class="v">ADaM <span class="mono">ADAE</span> with onset/end dates and severity (<span class="mono">ASTDT/AENDT</span>, <span class="mono">AESEV/ASEV</span>) — all standard, all available. RAE-5 needs the MedDRA hierarchy.</p></div>
+        <div class="fcell"><p class="k">Key unknowns / risk</p><p class="v">The formal modeling (RAE-4) is where "not as straightforward as I thought" lives — within-subject correlation, competing risks, and defining the estimand need a statistician before implementation.</p></div>
+        <div class="fcell"><p class="k">Effort</p><p class="v">RAE-1/2/3 small–moderate and shippable now; RAE-4 is a research collaboration, not a sprint.</p></div>
+      </div>
+    </div>
+
+    <div class="qw">
+      <p class="label">Quick wins — highlighted per request</p>
+      <ul>
+        <li><b>Events-per-subject counts + recurrence flag</b> (RAE-1) — pure descriptive, immediately answers "who has repeats."</li>
+        <li><b>MCF curve by arm</b> (RAE-2) — the standard, interpretable recurrent-event summary; no strong modeling assumptions.</li>
+        <li><b>Gap-time on ae-timelines</b> (RAE-3) — extend a renderer we already ship rather than building new; makes shortening intervals visible.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ============ CROSS-CUTTING ============ -->
+  <div class="sec-head"><h2>Cross-cutting observations</h2><span class="sec-rule"></span></div>
+  <div class="obs">
+    <div class="o">
+      <h4>Import + mapping is a suite capability, not a renal feature</h4>
+      <p>The renal asks for data import (REN-3) and non-ADaM mapping (REN-4) are the same gap every renderer has — safety.viz currently expects pre-mapped input. And both the renal and QT explorers arrive as <b>safetyGraphics R&nbsp;Shiny apps that bring their own data model</b>, so the same import/mapping problem recurs with each port. Building it <b>once, shared</b> (a suite-level import + interactive mapping layer) serves the whole suite and the open.gismo platform — far better than a per-tool loader.</p>
+    </div>
+    <div class="o">
+      <h4>Three of five reuse the same scatter-with-zones spine</h4>
+      <p>Hep composite, renal KDIGO, and the QT outlier scatter are all <b>the same visual grammar</b>: a scatter with reference thresholds/zones plus a patient drill-down. The QT mockup confirms it — its outlier view carries absolute <em>and</em> change-from-baseline cut-lines on one scatter, exactly the eDISH/KDIGO pattern. The suite's quadrant/threshold plugin, delta-delta renderer, and patient-profile pattern already carry it — which is why these read as achievable rather than novel.</p>
+    </div>
+    <div class="o">
+      <h4>Two items need people, not just code</h4>
+      <p>Benefit-Risk (BR-0) is gated on the <b>ASA taskforce</b> scope, and recurrent-AE modeling (RAE-4) needs a <b>statistician</b>. Both have low-risk work that can start ahead of those conversations — the forest-plot primitive and the recurrent-AE descriptives respectively — so neither has to stall entirely.</p>
+    </div>
+  </div>
+
+  <!-- ============ SEQUENCING ============ -->
+  <div class="sec-head"><h2>Recommended sequencing</h2><span class="sec-rule"></span></div>
+  <ol class="steps">
+    <li><span class="st"><b>All four sources are now reviewed</b> — Initiatives 01–03 are source-grounded, so the gating question shifts from "get the docs" to build order. The hep composite plot, with FDA reference code in hand, is the natural first build.</span></li>
+    <li><span class="st"><b>Ship the deterministic quick wins.</b> On-the-fly renal calculators (REN-2, equations in hand), the hep composite mode (HEP-C1–C4, with the FDA reference code as a starting point), and the recurrent-AE descriptives (RAE-1/2/3). All build on shipped code.</span></li>
+    <li><span class="st"><b>Promote import + mapping to a shared requirement.</b> Scope REN-3/REN-4 as a suite/platform capability rather than renal-only, so every renderer benefits.</span></li>
+    <li><span class="st"><b>Turn the QT mockup into a renderer requirement.</b> Convert <span class="mono">Display v2</span> + the clinical workflow into a scoped module (QT-1–4 for v1, QT-5 as fast-follow).</span></li>
+    <li><span class="st"><b>Park BR and recurrent-AE modeling on their dependencies.</b> Pre-build the forest-plot primitive (BR-1); open the stats conversation for RAE-4 — neither blocks the rest.</span></li>
+  </ol>
+
+  <footer>
+    <p class="foot-meta"><b>Method.</b> Requirements and feasibility ratings were derived from the five to-do items, prior safety.viz architecture, the nepExplorer migration assessment (<a href="https://github.com/jwildfire/obot.roadmap/issues/35">hub #35</a>), and all four referenced source documents, now read in full: Tesfaldet et&nbsp;al., <em>Drug Safety</em> 2024;47:699–710 (composite plot; Hayashi a co-author); the <em>ISG Renal Safety Explorer Manual v1.0</em>; the CSRC <em>Example QT Tool Display v2</em>; and the <em>QT Safety Explorer Draft Clinical Workflow (28 Apr 2025)</em>. Initiatives 01–03 are grounded in source; 04 (Benefit-Risk) and 05 (recurrent AE) remain scoped from domain knowledge, as no source was provided. Feasibility is a high-level triage read, not a committed estimate.</p>
+    <p class="attr">Drafted by Claude Code (Fable 5) for @jwildfire · 17 Jul 2026 · Safety Graphics Suite</p>
+  </footer>
+
+</div>
+
+</body>
+</html>

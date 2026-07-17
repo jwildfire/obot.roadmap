@@ -14,6 +14,7 @@ requirement [#7](https://github.com/jwildfire/obot.roadmap/issues/7).
 
 | Report | Date | Status |
 |---|---|---|
+| [Safety graphics — improvement requirements & feasibility](safety-graphics-improvement-assessment-2026-07-17/) | 2026-07-17 | Current — 5 colleague ideas scoped; all 4 sources reviewed; Initiative 01 (hep composite, [sv#67](https://github.com/jwildfire/safety.viz/issues/67)) + Initiative 03 (QT Phase 1, [hub #36](https://github.com/jwildfire/obot.roadmap/issues/36) / [sv#68](https://github.com/jwildfire/safety.viz/issues/68)) building; renal ties [#35](https://github.com/jwildfire/obot.roadmap/issues/35) |
 | [nepExplorer → safety.viz — migration assessment](nepexplorer-migration-assessment-2026-07-15/) | 2026-07-15 | Current — GO (phased); decisions D1–D3 awaiting @jwildfire; input to [hub #29](https://github.com/jwildfire/obot.roadmap/issues/29) / [#33](https://github.com/jwildfire/obot.roadmap/issues/33) |
 | [Hep-explorer — upstream backlog & a clinical-guide section](hep-explorer-backlog-and-guide-2026-07-12/) | 2026-07-12 | Current — proposal awaiting @jwildfire (A/B/C decisions); companion to [safety.viz PR #44](https://github.com/jwildfire/safety.viz/pull/44) |
 | [open.gismo v1.0 — design & roadmap](open-gismo-v1-plan-2026-07-12/) | 2026-07-12 | Current — decisions D1–D6 awaiting @jwildfire; companion to [open.gismo PR #1](https://github.com/jwildfire/open.gismo/pull/1) |
