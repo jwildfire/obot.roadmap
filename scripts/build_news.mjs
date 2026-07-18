@@ -114,6 +114,7 @@ async function artifactItems() {
   const reportsDir = path.join(ROOT, 'reports');
   for (const entry of await fs.readdir(reportsDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
+    if (entry.name === 'sessions') continue; // per-session operational reports are linked from diary entries, not standalone news artifacts
     const rel = `reports/${entry.name}`;
     const nameDate = (entry.name.match(/\d{4}-\d{2}-\d{2}/) || [])[0];
     const date = nameDate || gitAddedDate(rel) || gitAddedDate(`${rel}/index.html`);
