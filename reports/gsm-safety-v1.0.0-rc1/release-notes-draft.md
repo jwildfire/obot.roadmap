@@ -2,7 +2,7 @@
 
 DRAFT — ships with the v1.0.0 tag after the RC merges; review on the rendered page.
 
-Seven interactive clinical safety charts, one function call each. gsm.safety v1.0.0 wraps every renderer in the safety.viz v1.2.0 library as an R htmlwidget, so the charts the docs site demos are now first-class citizens of an R session, an R Markdown report, or a Shiny app.
+Seven interactive clinical safety charts, one function call each. gsm.safety v1.0.0 wraps every renderer in the safety.viz v1.4.0 library as an R htmlwidget, so the charts the docs site demos are now first-class citizens of an R session, an R Markdown report, or a Shiny app.
 
 ## The widgets
 
