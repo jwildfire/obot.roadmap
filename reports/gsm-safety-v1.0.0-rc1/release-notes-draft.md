@@ -37,7 +37,11 @@ Each chart ships a gsm-idiom report workflow (`inst/workflow/3_reports/`) runnab
 
 ## Built for regulated use
 
-The release is qualified with [qcthat](https://github.com/Gilead-BioStats/qcthat): every test names the GitHub issue it evidences, and the [v1.0.0 qualification matrix](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) — 67 issue-linked tests, all passing, `R CMD check` clean — publishes with the release alongside [rendered evidence pages](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) for every widget.
+The release is qualified with [qcthat](https://github.com/Gilead-BioStats/qcthat): every test names the GitHub issue it evidences, and the [v1.0.0 qualification matrix](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) — 73 issue-linked tests, all passing, `R CMD check` clean — publishes with the release alongside [rendered evidence pages](https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.0.0-rc1/) for every widget.
+
+## Gallery
+
+The package home page now opens with a thumbnail gallery — one real chart image per widget, each linking to a live interactive example on the docs site.
 
 ## Breaking changes
 
