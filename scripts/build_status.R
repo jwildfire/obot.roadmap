@@ -34,36 +34,17 @@ repos <- local({
 
 token <- Sys.getenv("GITHUB_PAT", unset = Sys.getenv("GITHUB_TOKEN", unset = ""))
 
-# Written when gh.dash cannot render, so /status.html always has something honest
-# to embed. Deliberately plain: it inherits nothing from the site stylesheet.
+# Publishes site/status-unavailable.html in place of the dashboard, so the frame in
+# status.html always has something honest to show. The workflow does the same when
+# this script never gets to run at all.
 placeholder <- function(reason) {
-  html <- sprintf(
-    '<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Package status — unavailable</title>
-<style>
- body { margin: 0; padding: 2rem 1.5rem; background: #faf6f1; color: #2a211b;
-        font: 16px/1.6 system-ui, -apple-system, sans-serif; }
- h1 { font: 400 1.4rem/1.2 Georgia, serif; margin: 0 0 .75rem; }
- p { margin: 0 0 .75rem; max-width: 42rem; }
- code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86em;
-        background: #f5efe7; border: 1px solid #ece2d7; border-radius: 6px; padding: .1em .35em; }
- .meta { color: #6b5d52; font-size: .9rem; }
-</style></head><body>
-<h1>Package status is temporarily unavailable</h1>
-<p>The dashboard could not be rebuilt on this deploy, so nothing current is shown here.
-Everything else on the site published normally.</p>
-<p class="meta">Attempted %s · reason: <code>%s</code> ·
-rebuilt by <code>scripts/build_status.R</code> on every run of
-<a href="https://github.com/jwildfire/obot.roadmap/actions/workflows/deploy-site.yml">deploy-site.yml</a>.</p>
-</body></html>',
-    format(Sys.time(), "%Y-%m-%d %H:%M %Z", tz = "America/New_York"),
-    gsub("[<>&]", " ", substr(reason, 1, 300))
+  file.copy(
+    file.path(root, "site", "status-unavailable.html"),
+    file.path(out_dir, "index.html"),
+    overwrite = TRUE
   )
-  writeLines(html, file.path(out_dir, "index.html"))
   cat(sprintf("::warning title=Package status dashboard::%s\n", substr(reason, 1, 200)))
-  cat("status: placeholder written\n")
+  cat("status: placeholder published\n")
 }
 
 if (!ok) {
