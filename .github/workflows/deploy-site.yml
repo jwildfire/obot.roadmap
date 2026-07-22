@@ -101,15 +101,24 @@ jobs:
         with:
           repository: Gilead-BioStats/gh.dash
           token: ${{ github.token }}
-          path: .gh.dash
+          path: gh.dash-src
 
-      - name: Install gh.dash
+      # deps:: from gh.dash's own DESCRIPTION, so its dependency list is not
+      # duplicated here; rmarkdown is a Suggests but the report needs it. gh.dash
+      # itself is installed with R CMD INSTALL rather than pak's local:: source —
+      # local:: packaged the checkout into a 4 kB stub and failed inside pkgdepends.
+      - name: Install gh.dash dependencies
         continue-on-error: true
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          working-directory: gh.dash-src
           packages: |
+            deps::.
             any::rmarkdown
-            local::./.gh.dash
+
+      - name: Install gh.dash
+        continue-on-error: true
+        run: R CMD INSTALL --no-docs gh.dash-src
 
       - name: Build package status dashboard
         continue-on-error: true
