@@ -16,6 +16,9 @@ const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 const [owner, name] = REPO.split('/');
 
 const STAGES = ['Backlog', 'Requirement Gathering', 'Design', 'Development', 'Review', 'Released'];
+// Section order on the page: in-flight work first, backlog last (Released stays a
+// collapsed details block at the bottom).
+const DISPLAY_STAGES = ['Development', 'Review', 'Design', 'Requirement Gathering', 'Backlog'];
 
 async function graphql(query, variables) {
   const res = await fetch('https://api.github.com/graphql', {
@@ -38,9 +41,10 @@ query ($owner: String!, $name: String!, $cursor: String) {
            states: [OPEN, CLOSED], orderBy: {field: CREATED_AT, direction: ASC}) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number title url state body
+        number title url state body updatedAt
         milestone { title }
         labels(first: 10) { nodes { name } }
+        subIssuesSummary { total completed }
         projectItems(first: 5) {
           nodes {
             project { number }
@@ -77,8 +81,12 @@ function stageOf(issue) {
   return issue.milestone && issue.milestone.title !== 'backlog' ? 'Requirement Gathering' : 'Backlog';
 }
 
-function taskProgress(body) {
-  const section = body?.split(/^### Tasks/m)[1] ?? '';
+// Sub-issues are the canonical task tracker (requirement-tasks skill); inline
+// "### Tasks" checklists are a legacy fallback for requirements that predate it.
+function taskProgress(issue) {
+  const s = issue.subIssuesSummary;
+  if (s?.total) return `${s.completed}/${s.total}`;
+  const section = issue.body?.split(/^### Tasks/m)[1] ?? '';
   const done = (section.match(/- \[x\]/gi) || []).length;
   const open = (section.match(/- \[ \]/g) || []).length;
   return done + open ? `${done}/${done + open}` : '—';
@@ -99,23 +107,28 @@ async function designLink(number) {
   return '—';
 }
 
-async function row(issue) {
+async function row(issue, stage) {
   const labels = issue.labels.nodes.map((l) => l.name).filter((l) => l !== 'requirement');
+  const stillOpen =
+    stage === 'Released' && issue.state === 'OPEN'
+      ? ' <span class="status-pill still-open">still open</span>'
+      : '';
   return `  <tr>
     <td><a href="${issue.url}">#${issue.number}</a></td>
-    <td>${esc(issue.title)}</td>
+    <td>${esc(issue.title)}${stillOpen}</td>
     <td>${labels.map((l) => `<code>${esc(l)}</code>`).join(' ') || '—'}</td>
     <td>${issue.milestone ? esc(issue.milestone.title) : '—'}</td>
     <td>${await designLink(issue.number)}</td>
-    <td>${taskProgress(issue.body)}</td>
+    <td>${taskProgress(issue)}</td>
+    <td>${issue.updatedAt.slice(0, 10)}</td>
   </tr>`;
 }
 
-async function table(issues) {
+async function table(issues, stage) {
   if (!issues.length) return '<p class="meta">None.</p>';
-  const rows = await Promise.all(issues.map(row));
+  const rows = await Promise.all(issues.map((i) => row(i, stage)));
   return `<table>
-  <tr><th>#</th><th>Requirement</th><th>Labels</th><th>Milestone</th><th>Design</th><th>Tasks</th></tr>
+  <tr><th>#</th><th>Requirement</th><th>Labels</th><th>Milestone</th><th>Design</th><th>Tasks</th><th>Updated</th></tr>
 ${rows.join('\n')}
 </table>`;
 }
@@ -146,12 +159,12 @@ for (const issue of issues) {
 }
 
 let sections = '';
-for (const stage of STAGES.slice(0, -1)) {
+for (const stage of DISPLAY_STAGES) {
   const group = byStage.get(stage);
-  sections += `<h2>${stage} <span class="status-pill ${stage.toLowerCase().replace(/ /g, '-')}">${group.length}</span></h2>\n${await table(group)}\n`;
+  sections += `<h2>${stage} <span class="status-pill ${stage.toLowerCase().replace(/ /g, '-')}">${group.length}</span></h2>\n${await table(group, stage)}\n`;
 }
 const released = byStage.get('Released');
-sections += `<details class="closed-reqs"><summary>Released / closed (${released.length})</summary>\n${await table(released)}\n</details>\n`;
+sections += `<details class="closed-reqs"><summary>Released / closed (${released.length})</summary>\n${await table(released, 'Released')}\n</details>\n`;
 
 const auditLogHtml = `<dialog id="audit-log" class="audit-log" aria-labelledby="audit-log-title">
   <form method="dialog"><button class="audit-close" aria-label="Close">&times;</button></form>
@@ -192,9 +205,12 @@ const html = `<!DOCTYPE html>
 </header>
 <h1>Roadmap</h1>
 <p>Requirement status across the portfolio, grouped by lifecycle stage
-(<a href="https://github.com/${REPO}#lifecycle">stage definitions</a>). Generated from
+(<a href="https://github.com/${REPO}#lifecycle">stage definitions</a>), in-flight work first. Generated from
 GitHub issues and the <a href="https://github.com/users/${owner}/projects/${PROJECT_NUMBER}">obot
 Roadmap project</a>.</p>
+<p class="meta">For the narrative view — accomplishments, status by workstream, and proposed
+next steps — see the <a href="reports/executive-overview-2026-07-21/">executive overview
+(2026-07-21)</a> and the <a href="reports/">reports index</a>.</p>
 ${sections}
 ${auditLogHtml}
 <script>
