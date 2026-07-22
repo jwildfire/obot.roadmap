@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}h1,h2,h3,h4,h5,h6,p,figure,blockquote,ul,ol,dl{margin:0}ul,ol{padding:0}</style>
+<title>FDA Standard Safety Tables &amp; Figures — Static Display Strategy</title>
+<style>
+  :root {
+    --ground: #f4f6f7;
+    --surface: #ffffff;
+    --surface-2: #eef2f3;
+    --ink: #16232d;
+    --muted: #536470;
+    --faint: #7f929e;
+    --border: #dde4e7;
+    --hairline: #e8edef;
+    --accent: #0e7c86;
+    --accent-deep: #0a5b63;
+    --accent-tint: #e2f1f2;
+    --own:  #1a8f5a;      --own-tint:  #e3f4ec;
+    --part: #b3760f;      --part-tint: #f8efdd;
+    --gap:  #b0472e;      --gap-tint:  #f8e8e3;
+    --alt:  #5359bf;      --alt-tint:  #ecedfa;
+    --f-display: "SF Pro Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --f-serif: "Iowan Old Style", "Palatino Linotype", "Charter", Georgia, Cambria, "Times New Roman", serif;
+    --f-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --shadow: 0 1px 2px rgba(20,40,55,.05), 0 8px 24px -12px rgba(20,40,55,.14);
+    --shadow-soft: 0 1px 2px rgba(20,40,55,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0d141a; --surface: #141e26; --surface-2: #1a2831;
+      --ink: #e7eef2; --muted: #9aabb6; --faint: #6f828e;
+      --border: #263640; --hairline: #1f2d36;
+      --accent: #3cc3d0; --accent-deep: #2a99a4; --accent-tint: #0f2e33;
+      --own:#47c98a; --own-tint:#103026; --part:#e0a94b; --part-tint:#33270f;
+      --gap:#e08466; --gap-tint:#3a201a; --alt:#949bf0; --alt-tint:#1e2148;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+      --shadow-soft: 0 1px 2px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground:#f4f6f7; --surface:#ffffff; --surface-2:#eef2f3; --ink:#16232d; --muted:#536470; --faint:#7f929e;
+    --border:#dde4e7; --hairline:#e8edef; --accent:#0e7c86; --accent-deep:#0a5b63; --accent-tint:#e2f1f2;
+    --own:#1a8f5a; --own-tint:#e3f4ec; --part:#b3760f; --part-tint:#f8efdd; --gap:#b0472e; --gap-tint:#f8e8e3; --alt:#5359bf; --alt-tint:#ecedfa;
+    --shadow:0 1px 2px rgba(20,40,55,.05),0 8px 24px -12px rgba(20,40,55,.14); --shadow-soft:0 1px 2px rgba(20,40,55,.04);
+  }
+  :root[data-theme="dark"] {
+    --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831; --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+    --border:#263640; --hairline:#1f2d36; --accent:#3cc3d0; --accent-deep:#2a99a4; --accent-tint:#0f2e33;
+    --own:#47c98a; --own-tint:#103026; --part:#e0a94b; --part-tint:#33270f; --gap:#e08466; --gap-tint:#3a201a; --alt:#949bf0; --alt-tint:#1e2148;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6); --shadow-soft:0 1px 2px rgba(0,0,0,.25);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--f-serif); font-size: 17px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px 96px; }
+  h1, h2, h3, .eyebrow, .label, .pill, .matrix, .badge, .num, .foot-meta, th, .kicker { font-family: var(--f-display); }
+  .mono { font-family: var(--f-mono); font-size: .92em; }
+  .eyebrow { font-size: 12px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--accent-deep); }
+
+  header.hero { padding: 64px 0 30px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+  header.hero h1 { font-size: clamp(30px, 4.6vw, 46px); line-height: 1.1; letter-spacing: -.02em; font-weight: 700; margin: 14px 0 16px; }
+  .standfirst { font-size: 20px; color: var(--muted); line-height: 1.55; max-width: 74ch; }
+  .meta { margin-top: 22px; font-size: 13.5px; color: var(--faint); font-family: var(--f-display); display: flex; flex-wrap: wrap; gap: 8px 18px; }
+
+  section { margin: 52px 0; }
+  h2 { font-size: 26px; letter-spacing: -.01em; font-weight: 680; margin: 0 0 6px; }
+  h2 .num { color: var(--accent); font-weight: 650; margin-right: 10px; font-variant-numeric: tabular-nums; }
+  h3 { font-size: 18.5px; font-weight: 650; margin: 30px 0 8px; letter-spacing: -.005em; }
+  p { margin: 0 0 16px; max-width: 76ch; }
+  ul, ol { margin: 0 0 16px; padding-left: 22px; max-width: 76ch; }
+  li { margin-bottom: 8px; }
+  strong { font-weight: 680; }
+  .lede { font-size: 18.5px; color: var(--muted); margin-bottom: 26px; max-width: 76ch; }
+
+  .callout {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 4px; padding: 22px 26px; margin: 26px 0; box-shadow: var(--shadow-soft);
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .kicker { font-size: 12px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 8px; }
+  .callout.warn { border-left-color: var(--gap); }
+  .callout.warn .kicker { color: var(--gap); }
+
+  .tbl-scroll { overflow-x: auto; margin: 22px 0; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); box-shadow: var(--shadow-soft); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-family: var(--f-display); }
+  th { text-align: left; font-weight: 650; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2); white-space: nowrap; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--hairline); vertical-align: top; line-height: 1.45; }
+  tr:last-child td { border-bottom: none; }
+  td.id { font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+
+  .tag { display: inline-block; font-size: 11.5px; font-weight: 620; padding: 2.5px 8px; border-radius: 20px; white-space: nowrap; letter-spacing: .01em; }
+  .t-own  { background: var(--own-tint);  color: var(--own); }
+  .t-part { background: var(--part-tint); color: var(--part); }
+  .t-gap  { background: var(--gap-tint);  color: var(--gap); }
+  .t-alt  { background: var(--alt-tint);  color: var(--alt); }
+  .t-none { background: var(--surface-2); color: var(--faint); }
+
+  .statrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 14px; margin: 28px 0; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 16px 18px; box-shadow: var(--shadow-soft); }
+  .stat .figure { font-family: var(--f-display); font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.05; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .stat .cap { font-family: var(--f-display); font-size: 12.5px; color: var(--muted); margin-top: 6px; line-height: 1.35; }
+
+  .layers { margin: 26px 0; }
+  .layer { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 18px 22px; margin-bottom: 10px; box-shadow: var(--shadow-soft); }
+  .layer .lname { font-family: var(--f-display); font-weight: 680; font-size: 15.5px; margin-bottom: 4px; }
+  .layer .lname span.badge { font-size: 11px; font-weight: 620; padding: 2px 8px; border-radius: 20px; background: var(--accent-tint); color: var(--accent-deep); margin-left: 8px; letter-spacing: .02em; }
+  .layer p { font-size: 15.5px; margin: 0; color: var(--muted); max-width: none; }
+  .layer.shared { border-left: 3px solid var(--accent); }
+
+  .verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 26px 0; }
+  .opt { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 18px 20px; box-shadow: var(--shadow-soft); }
+  .opt.rejected { opacity: .95; }
+  .opt .otitle { font-family: var(--f-display); font-weight: 680; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .opt p { font-size: 14.5px; margin: 0; color: var(--muted); max-width: none; }
+  .opt.chosen { border-color: var(--own); border-width: 1.5px; }
+
+  .phase { border-left: 2px solid var(--border); padding-left: 22px; margin: 0 0 26px; position: relative; }
+  .phase::before { content: ""; position: absolute; left: -6px; top: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+  .phase h3 { margin-top: 0; }
+  .phase .ptag { font-family: var(--f-display); font-size: 11.5px; font-weight: 620; color: var(--faint); letter-spacing: .08em; text-transform: uppercase; }
+
+  .decision { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 20px 24px; margin-bottom: 14px; box-shadow: var(--shadow-soft); }
+  .decision .dhead { font-family: var(--f-display); font-weight: 680; font-size: 16px; margin-bottom: 10px; }
+  .decision .dhead .dnum { color: var(--accent); margin-right: 8px; }
+  .decision .rec { background: var(--own-tint); color: var(--own); font-size: 13.5px; font-family: var(--f-display); font-weight: 600; padding: 9px 13px; border-radius: 4px; margin-top: 12px; }
+  .decision p { font-size: 15.5px; margin-bottom: 10px; }
+  .decision ul { font-size: 15.5px; margin-bottom: 0; }
+
+  footer { border-top: 1px solid var(--border); margin-top: 64px; padding-top: 26px; }
+  .foot-meta { font-size: 13.5px; color: var(--faint); line-height: 1.6; }
+  .foot-meta a { color: var(--muted); }
+  hr.rule { border: none; border-top: 1px solid var(--border); margin: 26px 0; }
+
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    header.hero { padding-top: 40px; }
+    .standfirst { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Assessment &amp; Plan · Requirement #9 · Project P005</p>
+  <h1>Static safety displays from the FDA Standard Safety Tables &amp; Figures guide</h1>
+  <p class="standfirst">The open-source R ecosystem has largely solved the guide's <em>tables</em> and has barely touched its <em>figures</em> — and the untouched figures are, almost exactly, the safetyGraphics chart set we already own. That coincidence should decide the whole strategy.</p>
+  <div class="meta">
+    <span>2026-07-21</span><span>·</span>
+    <span>Source: FDA ST&amp;F Integrated Guide v2.0 (April 2025), 136 pp.</span><span>·</span>
+    <span>Hub requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/9">#9</a></span>
+  </div>
+</header>
+
+<section id="summary">
+  <h2><span class="num">01</span>The recommendation in brief</h2>
+  <p class="lede">Build the figures. Borrow the tables. Share the rules, not the renderer.</p>
+
+  <p>The FDA's Integrated Guide specifies <strong>60 tables and 22 figures</strong> across three delivery tiers. Reimplementing all 82 displays in R would take years and would duplicate work the pharmaverse has already done. It is also unnecessary, because the coverage in the existing ecosystem is strikingly lopsided:</p>
+
+  <div class="statrow">
+    <div class="stat"><div class="figure">26/60</div><div class="cap">Guide tables with a published open-source R template (pharmaverse <span class="mono">cardinal</span>)</div></div>
+    <div class="stat"><div class="figure">4/22</div><div class="cap">Guide figures with one — and its figure numbering is stale against v2.0</div></div>
+    <div class="stat"><div class="figure">15</div><div class="cap">Guide figures with <em>no</em> static-R implementation anywhere in open source</div></div>
+    <div class="stat"><div class="figure">12</div><div class="cap">Of those 15 that already have a shipped safety.viz interactive twin</div></div>
+  </div>
+
+  <p>Twelve unserved FDA figures collapse into just <strong>four reusable chart engines</strong> — quadrant scatter (DILI), shift scatter, box-plot-over-time, and the dot-plus-forest risk-difference panel — and every one of the four already exists as a working, requirement-traced Chart.js renderer in <span class="mono">safety.viz</span>. That is the whole project's leverage, and it is the proposed Phase 1.</p>
+
+  <div class="callout">
+    <span class="kicker">The architecture answer</span>
+    <p>Neither a single integrated JS library nor two fully parallel libraries. Instead: <strong>one shared R derivation layer carrying the guide's normative rules, feeding two thin renderers</strong> — ggplot2/gt for static submission output, and the existing safety.viz widgets for interactive exploration. This is precisely the pattern <span class="mono">gsm.kri</span> already runs (<span class="mono">Visualize_Scatter</span> ↔ <span class="mono">Widget_ScatterPlot</span> over identical inputs), extended with the observation that for regulatory work the <em>rules</em> are the asset worth single-sourcing, not the pixels.</p>
+  </div>
+</section>
+
+<section id="guide">
+  <h2><span class="num">02</span>What the guide actually asks for</h2>
+
+  <p>Version 2.0 (April 2025) is governed by MAPP 6025.9, effective 13 June 2025, and is produced by CDER's Biomedical Informatics and Regulatory Review Science team. It organises displays into three delivery tiers, which matters enormously for scoping:</p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>Tier</th><th>Section</th><th>Delivery rule</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Core</strong></td><td>2</td><td>Generated in every ST&amp;F package, automatically</td><td>Tables 1–28, Figures 1–12</td></tr>
+      <tr><td><strong>Expanded</strong></td><td>3</td><td>Also generated automatically; deeper cuts of the same topics</td><td>Tables 29–38, Figure 13</td></tr>
+      <tr><td><strong>Optional</strong></td><td>4</td><td>Only on review-team request</td><td>Tables 39–55, Figures 14–22</td></tr>
+      <tr><td><strong>Appendix</strong></td><td>5</td><td>Reference criteria — not displays</td><td>Tables 56–60</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Three structural facts shape any implementation plan:</p>
+
+  <p><strong>The 22 figures collapse to 8 chart engines.</strong> Five KM/time-to-event plots, six median-and-IQR box plots over time, two mean-change line plots with CI, two DILI quadrant scatters, two baseline-versus-postbaseline shift scatters, two paired-bar data-availability plots, two dot-plus-forest AE panels, and one incidence-rate point-range plot. The guide multiplies these by analyte panel — chemistry, kidney, liver, lipids, haematology — so parameterisation, not new code, generates most of the catalogue.</p>
+
+  <p><strong>Most of the work is derivation, not drawing.</strong> The guide is largely a specification of <em>analysis rules</em>: treatment-emergent AE definitions, narrow-versus-broad OND Custom Medical Queries (OCMQs, formerly FMQs), three-level laboratory abnormality grading, extreme-value exclusion, a sparse-visit rule dropping timepoints with under 10% of subjects, the 30-day pairing window for DILI quadrant assignment, risk difference with unadjusted 95% CI, and incidence rates per 100 person-years. These rules are renderer-agnostic, and they are the part nobody has packaged.</p>
+
+  <p><strong>Appendix Tables 56–60 are data, not displays.</strong> Level 1/2/3 abnormality thresholds for chemistry and haematology, plus implausible-value thresholds for chemistry, haematology and vital signs in both US-conventional and SI units. These should ship as package datasets on day one: they are small, self-contained, immediately useful to both renderers, and currently unavailable in any R package.</p>
+
+  <div class="callout warn">
+    <span class="kicker">No official reference implementation exists</span>
+    <p>The guide ships no companion code. A full-text search of v2.0 for <span class="mono">R package</span>, <span class="mono">SAS</span>, <span class="mono">open source</span>, <span class="mono">GitHub</span>, <span class="mono">PHUSE</span> and <span class="mono">reference implementation</span> returns nothing. Every display instead carries the placeholder footnote <em>"Source: [include Applicant source, datasets and/or software tools used]"</em> — the FDA asks the applicant to name its own tooling. There is no FDA repository of reference outputs, and no PHUSE deliverable implements the guide display-by-display. The mock displays embedded in the PDF are the de-facto specification.</p>
+  </div>
+</section>
+
+<section id="landscape">
+  <h2><span class="num">03</span>What already exists — and what does not</h2>
+
+  <h3>pharmaverse <span class="mono">cardinal</span> — the only package that names this guide as its spec</h3>
+  <p>The package formerly called <span class="mono">falcon</span> was renamed <span class="mono">cardinal</span> in July 2024. It is a Roche-led, industry-collaborative effort (Sanofi, Boehringer Ingelheim and Moderna contributing), Apache-2 licensed, and its tables were updated to the 2025 v2.0 numbering in August 2025. Two caveats materially change how we should use it:</p>
+  <ul>
+    <li><strong>It is no longer an installable function library.</strong> A September 2025 pull request archived all 32 <span class="mono">make_*</span> files into <span class="mono">R/archive/</span>. Verified directly: <span class="mono">NAMESPACE</span> now exports nothing and <span class="mono">R/</span> contains only a package stub. Cardinal today is a catalogue of Quarto templates you copy, not a package you call.</li>
+    <li><strong>Its figure work stopped in August 2024.</strong> Only four figure templates exist, and their numbering still follows the 2022 v1.x scheme — <span class="mono">fig_02</span> is v2.0's Figure 13, <span class="mono">fig_14</span> is roughly v2.0's Figure 9. Commit volume has fallen from 141 in 2023 to 24 so far in 2026, almost all CI and version bumps.</li>
+  </ul>
+  <p>It has never been on CRAN. Treat it as an excellent, permissively-licensed reference for table logic, and as evidence that the figure half is genuinely unclaimed.</p>
+
+  <h3>Roche's <span class="mono">tern</span> / <span class="mono">rtables</span> stack — mature, but thin on these figures</h3>
+  <p>All actively released and on CRAN. <span class="mono">tern</span> exports seven graph functions, of which <span class="mono">g_km</span> and <span class="mono">g_lineplot</span> map cleanly onto the guide's KM and mean-change families. There is no box-plot function, no shift scatter, and no DILI screening plot. J&amp;J's <span class="mono">junco</span> (CRAN, May 2026) now supplies production RTF and DOCX export on top of this stack, which closes the historic submission-format gap.</p>
+
+  <h3><span class="mono">safetyCharts</span> — our own prior art, and its status is worse than it looks</h3>
+  <p>Verified against CRAN: <span class="mono">safetyCharts</span> and <span class="mono">safetyGraphics</span> were both <strong>archived on 25 March 2026</strong>, as collateral from <span class="mono">Tendril</span>'s removal for uncorrected check failures. This is a transitive-dependency casualty rather than a quality judgement — and notably, the retirement of the Tendril bridge is already done in the unmerged <span class="mono">gsm.safety</span> v1.0.0 branch. More importantly for this plan: safetyCharts was always overwhelmingly interactive. Only two of its charts have static ggplot2 versions. There is no large static codebase waiting to be ported.</p>
+
+  <h3>Figure-by-figure coverage</h3>
+  <p>The central table of this assessment. "safety.viz" marks a shipped, requirement-traced interactive renderer we already control.</p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>FDA figure</th><th>Chart engine</th><th>cardinal</th><th>tern</th><th>safety.viz</th><th>Static-R status</th></tr></thead>
+    <tbody>
+      <tr><td class="id">F1, F4, F11, F13, F14</td><td>Kaplan-Meier / cumulative incidence</td><td><span class="tag t-part">3 templates</span></td><td><span class="tag t-own">g_km</span></td><td><span class="tag t-none">—</span></td><td><span class="tag t-own">Covered — wrap, don't build</span></td></tr>
+      <tr><td class="id">F6, F9</td><td>Mean change over time, 95% CI</td><td><span class="tag t-part">1 template</span></td><td><span class="tag t-own">g_lineplot</span></td><td><span class="tag t-own">results-over-time</span></td><td><span class="tag t-own">Covered</span></td></tr>
+      <tr><td class="id">F7, F8</td><td>DILI quadrant scatter (eDISH)</td><td><span class="tag t-none">—</span></td><td><span class="tag t-none">—</span></td><td><span class="tag t-own">hep-explorer</span></td><td><span class="tag t-gap">Gap — we own the twin</span></td></tr>
+      <tr><td class="id">F15, F22</td><td>Baseline vs. max/min shift scatter</td><td><span class="tag t-none">—</span></td><td><span class="tag t-none">—</span></td><td><span class="tag t-own">shift-plot</span></td><td><span class="tag t-gap">Gap — we own the twin</span></td></tr>
+      <tr><td class="id">F10, F16–F20</td><td>Median &amp; IQR box plot over time</td><td><span class="tag t-none">—</span></td><td><span class="tag t-none">—</span></td><td><span class="tag t-own">outlier-explorer</span></td><td><span class="tag t-gap">Gap — 6 figures, one engine</span></td></tr>
+      <tr><td class="id">F2, F3</td><td>Dot plot + risk-difference forest panel</td><td><span class="tag t-none">—</span></td><td><span class="tag t-part">g_forest (partial)</span></td><td><span class="tag t-own">ae-explorer</span></td><td><span class="tag t-gap">Gap — we own the twin</span></td></tr>
+      <tr><td class="id">F5, F21</td><td>Paired-bar data availability / retention</td><td><span class="tag t-none">—</span></td><td><span class="tag t-none">—</span></td><td><span class="tag t-none">—</span></td><td><span class="tag t-gap">Gap — no twin, but simple</span></td></tr>
+      <tr><td class="id">F12</td><td>Incidence rate over time, point-range</td><td><span class="tag t-none">—</span></td><td><span class="tag t-none">—</span></td><td><span class="tag t-none">—</span></td><td><span class="tag t-gap">Gap — no twin</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <span class="kicker">The strategic finding</span>
+    <p>Fifteen of the guide's twenty-two figures have no static-R implementation in any open-source package. <strong>Twelve of those fifteen already exist as shipped safety.viz interactive renderers</strong>, and they reduce to four chart engines. The gap in the global ecosystem and the assets on our own shelf are very nearly the same set. Building the figures is not a detour from the safetyGraphics modernisation — it <em>is</em> the modernisation, pointed at a regulatory specification.</p>
+  </div>
+</section>
+
+<section id="architecture">
+  <h2><span class="num">04</span>Parallel or integrated? Neither, exactly</h2>
+
+  <p>The framing question was whether to run parallel R and JS libraries or integrate them. Both pure options have disqualifying problems, and the right answer moves the sharing to a different layer than either implies.</p>
+
+  <div class="verdict">
+    <div class="opt rejected">
+      <div class="otitle"><span class="tag t-gap">Rejected</span> One library, JS renders both</div>
+      <p>Export static images from safety.viz via headless Chromium. Fails on two counts: Chart.js draws to <strong>canvas, so output is raster</strong> — submission figures want vector PDF or SVG — and making a browser toolchain a deliverable-production dependency is a qualification liability in a validated environment. It also gives no path to RTF or DOCX tables.</p>
+    </div>
+    <div class="opt rejected">
+      <div class="otitle"><span class="tag t-gap">Rejected</span> Two fully independent libraries</div>
+      <p>Static R and interactive JS each implement everything. This duplicates the guide's <em>normative rules</em> — extreme-value exclusion, the under-10% sparse-visit rule, Level 1/2/3 grading, the 30-day DILI pairing window — in two languages. Two implementations of a regulatory definition will drift, and drift here is the expensive kind.</p>
+    </div>
+    <div class="opt chosen">
+      <div class="otitle"><span class="tag t-own">Recommended</span> Shared derivation layer, two thin renderers</div>
+      <p>Put every rule the FDA specifies in R, once. Both renderers consume its output. Static and interactive differ only in drawing medium — exactly how <span class="mono">gsm.kri</span> pairs <span class="mono">Visualize_*</span> with <span class="mono">Widget_*</span> over one shared data interface.</p>
+    </div>
+  </div>
+
+  <h3>The three layers</h3>
+  <div class="layers">
+    <div class="layer shared">
+      <div class="lname">L1 · Derivation and reference data <span class="badge">shared · R</span></div>
+      <p>Package datasets for Appendix Tables 56–60, plus functions applying the guide's normative rules: TEAE flagging, OCMQ narrow/broad assignment, abnormality grading, extreme-value exclusion, ULN-multiple computation, DILI quadrant assignment, last-on-treatment windows, risk difference with CI, incidence rates. Output is <strong>enriched participant-level data</strong> — the input frame plus derived columns — not a pre-aggregated result set.</p>
+    </div>
+    <div class="layer">
+      <div class="lname">L2a · Static renderers <span class="badge">R</span></div>
+      <p><span class="mono">Visualize_*</span> ggplot2 functions returning plot objects, and <span class="mono">Table_*</span> / <span class="mono">Listing_*</span> functions returning gt or gtsummary objects. Exports to PNG, PDF and SVG now; RTF and DOCX when a submission path is needed.</p>
+    </div>
+    <div class="layer">
+      <div class="lname">L2b · Interactive renderers <span class="badge">JS</span></div>
+      <p>The existing <span class="mono">safety.viz</span> Chart.js modules and their <span class="mono">Widget_*</span> htmlwidget bindings, unchanged in kind, now reading L1-enriched data rather than deriving flags client-side.</p>
+    </div>
+  </div>
+
+  <p><strong>Why enriched participant-level data rather than pre-aggregated results.</strong> This is the design choice that makes the shared layer viable. safety.viz's value is client-side interactivity — brushing, filtering, drill-down — which needs participant-level data in the browser. Forcing everything through a pre-aggregated R summary would break that. Adding derived <em>columns</em> instead single-sources the rules while leaving the interactive renderers fully capable. Presentational shaping (binning, sorting, layout) stays where it is, in each renderer.</p>
+
+  <div class="callout warn">
+    <span class="kicker">The one real refactor cost</span>
+    <p>safety.viz currently derives flags in JS, inside each module's <span class="mono">structureData.js</span>. Moving normative derivations upstream to R is a genuine change to its data contract, not a free alignment. Scope it deliberately: only rules the FDA <em>specifies</em> move to L1; everything presentational stays in JS. Expect this to be the main integration cost of Phase 1, and treat the DILI pair (Figures 7 and 8, where <span class="mono">hep-explorer</span> already computes ULN multiples and quadrant membership client-side) as the proving ground.</p>
+  </div>
+</section>
+
+<section id="plan">
+  <h2><span class="num">05</span>Phased plan</h2>
+  <p class="lede">Ordered so that every phase ships something reviewable, and the riskiest integration question is answered first.</p>
+
+  <div class="phase">
+    <p class="ptag">Phase 0 · unblocked today</p>
+    <h3>Specification and reference data</h3>
+    <p>Convert the display inventory produced for this assessment into an obot.agent requirement matrix, keyed the same way as the safety.viz renderer matrices so one requirement ID can span a static and an interactive rendering. Ship Appendix Tables 56–60 as package datasets with unit tests. Populate the Data Requirement and Design sections of hub <a href="https://github.com/jwildfire/obot.roadmap/issues/9">#9</a>.</p>
+    <p>Nothing blocks this, and the reference data is independently useful to every later phase.</p>
+  </div>
+
+  <div class="phase">
+    <p class="ptag">Phase 1 · the differentiated twelve</p>
+    <h3>Four chart engines, twelve FDA figures, each with a shipped interactive twin</h3>
+    <p>In order of decreasing leverage: DILI quadrant scatter (Figures 7 and 8, plus companion Tables 21 and 22), shift scatter (15 and 22), box-plot-over-time (10 and 16–20 — six figures from one engine), and the dot-plus-forest AE panel (2 and 3).</p>
+    <p>Start with the DILI pair as a vertical slice: requirement, L1 derivation, ggplot2 renderer, vdiffr snapshot evidence, published gallery entry beside the existing <span class="mono">hep-explorer</span> demo. It exercises the entire chain, and it is the display where our asset is most clearly differentiated — nothing in cardinal or tern implements an eDISH plot.</p>
+  </div>
+
+  <div class="phase">
+    <p class="ptag">Phase 1b · cheap completions</p>
+    <h3>The three unserved figures with no twin</h3>
+    <p>Paired-bar retention plots (Figures 5 and 21) and the incidence-rate point-range plot (Figure 12). Simple engines, no interactive counterpart to reconcile, and they complete the "exists nowhere else" set at fifteen.</p>
+  </div>
+
+  <div class="phase">
+    <p class="ptag">Phase 2 · borrow</p>
+    <h3>Kaplan-Meier family</h3>
+    <p>Figures 1, 4, 11, 13 and 14. Wrap <span class="mono">ggsurvfit</span> or <span class="mono">tern::g_km</span> and adapt cardinal's <span class="mono">fig_01</span> template rather than writing new code — but supply the guide's mandated furniture, which the existing templates do not fully provide: at-risk and cumulative-event strip tables beneath every plot, pointwise 95% CI bars, and earliest-qualifying-event semantics.</p>
+  </div>
+
+  <div class="phase">
+    <p class="ptag">Phase 3 · tables and listings</p>
+    <h3>Selective, ARD-first, seeded from cardinal</h3>
+    <p>Do not rebuild 55 displays. Port the table logic we actually need from cardinal's Quarto templates into callable <span class="mono">Table_*</span> functions over <span class="mono">gtsummary</span> and <span class="mono">cards</span>, prioritising the tables that pair with Phase 1 figures — 21 and 22 with the DILI plots, 52 and 53 with the lab thresholds, the Table 20 family with abnormality grading. Cardinal's Apache-2 licence permits this with attribution; the ARD-first structure aligns with CDISC's Analysis Results Standard.</p>
+  </div>
+
+  <div class="callout warn">
+    <span class="kicker">Gating dependency</span>
+    <p>P005's home is <span class="mono">gsm.safety</span>, and its v1.0.0 rewrite — seven <span class="mono">Widget_*</span> bindings, the vendored safety.viz 1.4.0 bundle, qcthat qualification — is still sitting in <strong>open, unmerged PR #39</strong>. <span class="mono">main</span> remains the stale v0.1.0 safetyCharts bridge. Phase 0 can proceed against the release branch, but Phase 1 should not start until #39 lands, or the static work will be built on a foundation that is still moving.</p>
+  </div>
+</section>
+
+<section id="decisions">
+  <h2><span class="num">06</span>Decisions needed</h2>
+  <p class="lede">Four calls that change what gets built. Recommendations given; none are executed.</p>
+
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D1</span>Where does the static code live?</div>
+    <p>Options: a new <span class="mono">Visualize_*</span> / <span class="mono">Table_*</span> family inside <span class="mono">gsm.safety</span> alongside the existing widgets, or a separate ST&amp;F package.</p>
+    <ul>
+      <li><strong>Single package</strong> mirrors gsm.kri, which carries ggplot2, gt, DT, htmlwidgets and rmarkdown together. One requirement matrix, one pkgdown gallery, static and interactive side by side — which is the stated review goal.</li>
+      <li><strong>Separate package</strong> keeps gsm.safety lean (it currently imports only gsm.core, htmlwidgets, jsonlite, stats and utils) and isolates a heavier table stack, but fragments the review surface.</li>
+    </ul>
+    <div class="rec">Recommend: single package. The "review it alongside safety.viz graphics" goal argues directly against splitting, and file-level namespacing is enough separation. Revisit only if the table dependencies prove heavy in Phase 3.</div>
+  </div>
+
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D2</span>How deep does the shared layer go?</div>
+    <p>Full L1 — safety.viz stops deriving normative flags and consumes R-enriched data — versus loose coupling, where both sides implement independently and share only the requirement matrix and demo data.</p>
+    <div class="rec">Recommend: full L1 for rules the FDA specifies; loose coupling for everything presentational. Prove it on the DILI pair before committing the other three engines.</div>
+  </div>
+
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D3</span>Scope commitment</div>
+    <p>The differentiated twelve first, or tier-complete coverage of everything in Core?</p>
+    <p>Tier-complete Core means 28 tables and 12 figures including the KM family and the whole OLE section — defensible as a coherent deliverable, but it spends early effort on displays cardinal and tern already cover.</p>
+    <div class="rec">Recommend: differentiated twelve first. It is the only work no one else is doing, it reuses assets we already own, and it produces a far better story than partial duplication.</div>
+  </div>
+
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D4</span>Output formats, and how far toward submission</div>
+    <p>PNG and PDF from ggplot2 is trivial. Submission-grade RTF and DOCX for tables is a larger commitment — reachable via <span class="mono">gt::as_rtf()</span> for the gtsummary stack, or by adopting <span class="mono">junco</span> on rtables.</p>
+    <div class="rec">Recommend: PNG plus vector PDF/SVG now; defer RTF and DOCX to Phase 3, and decide the stack then based on whether a real submission consumer exists.</div>
+  </div>
+
+  <hr class="rule">
+
+  <h3>Worth considering separately: contributing upstream</h3>
+  <p>Cardinal is pharmaverse-hosted, Apache-2, industry-collaborative, and has had no figure activity since August 2024 — with four templates whose numbering is stale against the v2.0 guide it claims to implement. It covers the tables well and the figures barely. We would be building precisely its missing half, from assets nobody else has.</p>
+  <p>Offering the figure engines upstream — or simply publishing them as the interoperable complement — turns a solo modernisation into a visible contribution to the shared ecosystem, and it is a considerably stronger keynote narrative than a parallel implementation. It costs coordination and some API compromise. Flagged as a strategic option, not folded into the plan.</p>
+</section>
+
+<section id="risks">
+  <h2><span class="num">07</span>Risks and honest caveats</h2>
+  <ul>
+    <li><strong>Scope is the dominant risk.</strong> Eighty-two numbered displays, plus roughly a dozen unnumbered analyte-panel variants, is far beyond a solo track. The phased scope above is deliberately a small fraction of the guide, and the plan is only credible if that restraint holds.</li>
+    <li><strong>The guide is a moving target.</strong> v2.0 renumbered displays relative to the 2022 edition — cardinal's figure templates are stale for exactly this reason. Any requirement matrix should record the guide version against each display ID.</li>
+    <li><strong>Mock displays are the only specification.</strong> With no reference implementation and no published reference outputs, "correct" means visually matching the PDF's mocks and satisfying the stated rules. Expect genuine ambiguity, and record interpretation decisions per display.</li>
+    <li><strong>Figures 2, 3 and 12 were read from titles and section text, not rendered mocks.</strong> Their exact visual form should be confirmed against the PDF pages before implementation; the dot-plus-forest characterisation is well-supported but worth verifying at build time.</li>
+    <li><strong>ADaM alignment is assumed, not verified.</strong> The guide is written against ADaM-shaped data. gsm.safety v1.0.0 ships pharmaverseadam demo data, which is promising, but the mapping from gsm's Mapped_* domains to the guide's expectations has not been checked.</li>
+    <li><strong>cardinal's trajectory could change.</strong> It is in low-maintenance mode now, but it is Roche-backed with several sponsors involved. A renewed figure push upstream would change the calculus — worth re-checking before Phase 1 starts.</li>
+  </ul>
+</section>
+
+<footer>
+  <p class="foot-meta">
+    <strong>Provenance.</strong> Display inventory extracted from all 136 pages of the FDA Standard Safety Tables and Figures Integrated Guide v2.0 (April 2025) in three independent passes. Ecosystem state read from local clones of gsm.safety (including the unmerged release/v1.0.0 worktree), safety.viz v1.4.0, gsm.kri and obot.roadmap. Landscape findings gathered from public sources; the three most consequential claims — cardinal's archived package functionality, and the CRAN archival of safetyCharts and safetyGraphics — were verified directly against the cardinal repository and CRAN package pages rather than taken from search results. Machine-readable inventory accompanies this report; see the README for sources and assumptions.
+  </p>
+  <p class="foot-meta" style="margin-top:14px;">
+    This report was drafted by Claude Code using Fable 5 and reviewed by @jwildfire.
+  </p>
+</footer>
+
+</div>
+</body>
+</html>
