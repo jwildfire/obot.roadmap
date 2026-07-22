@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #43 — abnormal-baseline DILI tools: migration Sankey + ALT waterfall</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  .done { display: inline-block; background: #dcfce7; color: #166534; border-radius: 999px;
+          padding: .05rem .5rem; font-size: .78rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .question { background: #f3f6fb; border-left: 4px solid #3b6fb6; border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1.1rem 0; }
+  .question .qid { color: #1e4e8c; }
+  .rec { display: block; margin-top: .4rem; }
+  .note { color: var(--muted); font-size: .9rem; }
+  .sw { display: inline-block; width: .72rem; height: .72rem; border-radius: 3px;
+        border: 1px solid rgba(0,0,0,.25); vertical-align: -1px; margin-right: .35rem; }
+  .tablewrap { overflow-x: auto; }
+  nav.toc { background: var(--panel); border-radius: 8px; padding: 1rem 1.25rem; font-size: .92rem; }
+  nav.toc ol { margin: .25rem 0 0; padding-left: 1.25rem; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design: abnormal-baseline DILI tools — migration Sankey and ALT waterfall</h1>
+  <p class="meta">
+    Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/43">jwildfire/obot.roadmap#43</a>
+    · 2026-07-22 · <span class="status">Draft — seven open judgement calls (§11) await review</span><br>
+    Source: Amirzadegan J, Tesfaldet B, Pei YV, Navarro Almario E, Avigan MI, Hayashi PH.
+    <em>Emerging Tools to Support DILI Assessment in Clinical Trials with Abnormal Baseline Serum Liver
+    Tests or Pre-existing Liver Diseases.</em> <em>Drug Safety</em> 2025;48(5):443–453
+    (<a href="https://doi.org/10.1007/s40264-024-01511-8">doi:10.1007/s40264-024-01511-8</a>;
+    <a href="https://pubmed.ncbi.nlm.nih.gov/39932652/">PMID 39932652</a>;
+    <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11982145/">PMC11982145</a>).<br>
+    Implementation: <a href="https://github.com/jwildfire/safety.viz/issues/91">safety.viz#91</a> ·
+    <a href="https://github.com/jwildfire/safety.viz/issues/92">#92</a> ·
+    <a href="https://github.com/jwildfire/safety.viz/issues/93">#93</a>.
+    Baseline for all work: <code>origin/dev</code> at v1.4.1.
+  </p>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#context">Context and goals</a></li>
+    <li><a href="#coverage">What the paper proposes, and what safety.viz already has</a></li>
+    <li><a href="#topology">Topology — one new view, one new module, one shared core</a></li>
+    <li><a href="#split">Splitting <code>hep-explorer</code></a></li>
+    <li><a href="#sankey">Figure 3 — the migration Sankey</a></li>
+    <li><a href="#waterfall">Figure 5 — the modified ALT waterfall</a></li>
+    <li><a href="#contract">Data contract and settings</a></li>
+    <li><a href="#demo">Demo data</a></li>
+    <li><a href="#delivery">Delivery — three PRs</a></li>
+    <li><a href="#risks">Risks</a></li>
+    <li><a href="#questions">Open judgement calls</a></li>
+  </ol>
+</nav>
+
+<h2 id="context">1. Context and goals</h2>
+
+<p>
+The eDISH plot — peak alanine aminotransferase against peak total bilirubin, both in multiples of the
+upper limit of normal, divided into four quadrants by cut-lines at ALT 3× and bilirubin 2× ULN — is the
+standard population-level screen for drug-induced liver injury in a clinical trial. safety.viz ships it as
+<code>hep-explorer</code>. Its entire interpretive power rests on one assumption: that participants
+<strong>started normal</strong>. Only then does a point in the Hy's-Law quadrant mean that something
+happened on study.
+</p>
+
+<p>
+In a trial that enrols people who are already sick, that assumption fails on day one. In steatohepatitis,
+chronic viral hepatitis, cirrhosis, alcohol-associated hepatitis, or advanced oncology, a large share of
+the population — sometimes half — sits in the Hy's-Law quadrant at screening, for reasons that have
+nothing to do with the investigational product. The plot fills with participants whose position was
+established before the first dose. Genuine drug-induced injuries are plotted in the same crowd as
+baseline disease and become indistinguishable from it, and the reviewer is left with no usable
+population-level view of the trial at exactly the moment hepatotoxicity assessment matters most. These
+are not edge-case trials; populations with pre-existing liver disease are a large and growing share of
+development programmes.
+</p>
+
+<p>
+It is worth being precise about what is lost, because the remedy is organised around it. eDISH does three
+jobs: (a) it compares the drug arm against the control arm, (b) it ranks severity, and (c) it identifies
+the individual participants a reviewer must read case by case. An abnormal-baseline population breaks all
+three at once. FDA's Division of Hepatology and Nutrition published the problem and its proposed remedies
+in <em>Drug Safety</em> in 2025 (Amirzadegan et al., cited above), stating plainly that the generalisable
+utility of eDISH pertains only to trials enrolling patients with normal or near-normal baseline liver
+tests, and that reviewers currently lack tools for the rest.
+</p>
+
+<p>
+Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/43">#43</a> implements the two
+figures from that paper which safety.viz does not yet cover. Goals, in priority order:
+</p>
+
+<ul>
+  <li>A safety scientist running an abnormal-baseline trial can answer all three eDISH questions in
+      safety.viz without misreading baseline disease as drug injury.</li>
+  <li>The two new tools are joined, not merely adjacent: the population view hands the reviewer directly
+      into the individual-participant view carrying exactly the participants in question.</li>
+  <li>One shared per-participant hepatic reduction — one cohort definition, one baseline definition, one
+      on-treatment definition — serves Figures 3, 4 and 5, so the three cannot disagree about who a
+      participant is.</li>
+  <li>No regression to the shipped scatter and composite views. Pixel-level evidence baselines are the
+      gate, not a hope (§4, §9).</li>
+  <li>Both figures reach the published done-gate — gallery, live demo, guide, evidence page, API
+      reference — so the work is reviewable on the site rather than described in a PR.</li>
+</ul>
+
+<h2 id="coverage">2. What the paper proposes, and what safety.viz already has</h2>
+
+<p>
+The paper presents five figures. Three of them are already in the library, one of them deliberately as a
+demonstration of what <em>does not</em> work.
+</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:14%">Figure</th><th style="width:32%">Tool</th><th>Status in safety.viz</th></tr>
+  <tr>
+    <td>Figure 1</td>
+    <td>eDISH scatter, peak ALT vs peak TB in ×ULN, four named quadrants</td>
+    <td><span class="done">Shipped</span> <code>hep-explorer</code> scatter view, <code>display:
+        'relative_uln'</code>.</td>
+  </tr>
+  <tr>
+    <td>Figure 2</td>
+    <td>mDISH — the same plot in multiples of each participant's own baseline</td>
+    <td><span class="done">Shipped</span> <code>display: 'relative_baseline'</code>. The paper presents
+        this as a <strong>negative result</strong>: its hypothetical Subjects A and B land on the
+        <em>same</em> point despite B having jaundice and an ALT of 1000 U/L. Dividing by baseline
+        visualises the shift but destroys severity ranking and cannot prioritise individual cases —
+        eDISH functions (b) and (c) are lost. That is precisely why Figures 3 and 4 exist.</td>
+  </tr>
+  <tr>
+    <td><strong>Figure 3</strong></td>
+    <td><strong>Bidirectional Sankey of baseline → on-treatment quadrant shifts, with per-arm cross
+        tables</strong></td>
+    <td><span class="status">To build</span> — <a href="https://github.com/jwildfire/safety.viz/issues/92">safety.viz#92</a></td>
+  </tr>
+  <tr>
+    <td>Figure 4</td>
+    <td>Composite mDISH plot, marks carrying the baseline quadrant of origin</td>
+    <td><span class="done">Shipped</span> <code>hep-explorer</code> composite view, delivered under
+        safety.viz#67 from Tesfaldet et al., <em>Drug Safety</em> 2024;47:699–710 — the immediate
+        predecessor paper, sharing an author with this one.</td>
+  </tr>
+  <tr>
+    <td><strong>Figure 5</strong></td>
+    <td><strong>Modified waterfall — per-participant baseline vs maximum on-treatment ALT in absolute
+        U/L</strong></td>
+    <td><span class="status">To build</span> — <a href="https://github.com/jwildfire/safety.viz/issues/93">safety.viz#93</a></td>
+  </tr>
+</table>
+</div>
+
+<p>
+The paper's Table 1 is not a menu; it is an applicability rule keyed to the enrolled population's baseline
+liver chemistry, and it is what makes the two missing figures different products rather than two views of
+one thing:
+</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:38%">Baseline population</th><th>Recommended tool</th></tr>
+  <tr><td>ALT ≥ 3×ULN <strong>and</strong> TB &gt; 2×ULN (for example alcohol-associated hepatitis)</td>
+      <td>Sankey plus composite analysis. The waterfall is marked inapplicable.</td></tr>
+  <tr><td>ALT ≥ 3×ULN with TB 1.5–2×ULN</td><td>Either; the two overlap in this band.</td></tr>
+  <tr><td>ALT ≥ 3×ULN but TB ≤ 1.5×ULN</td><td>Modified waterfall.</td></tr>
+</table>
+</div>
+
+<h2 id="topology">3. Topology — one new view, one new module, one shared core</h2>
+
+<div class="decision">
+  <strong>Decision.</strong> Figure 3 becomes <code>hep-explorer</code>'s <strong>third view</strong>
+  (<code>view: 'migration'</code>, label “Migration (Sankey)”), ordered between the scatter and the
+  composite. Figure 5 becomes a <strong>new sibling module <code>hep-waterfall</code></strong>. A new
+  non-renderer directory <code>src/hep-core/</code> holds the single per-participant hepatic reduction
+  that feeds Figures 3, 4 and 5.
+</div>
+
+<p>
+<strong>Why Figure 3 is a view and not a module.</strong> The paper is explicit that the Sankey and the
+composite plot are a deliberate <em>two-step</em> replacement for the single eDISH plot. The Sankey
+answers “which arm is shifting worse, and how severely” — eDISH functions (a) and (b) — but by
+construction it aggregates, so it cannot name individuals. Function (c) is supplied by the composite plot.
+The two steps operate on the same trial, the same cohort, the same quadrant definitions and the same
+per-participant reduction. Keeping them in one module means a reviewer can click a pink ribbon and land in
+the composite plot with exactly those participants carried across and highlighted. That hand-off is the
+paper's argument made executable, and it is not purchasable across a module boundary: two modules can
+exchange a hyperlink, not a selection.
+</p>
+
+<p>
+<strong>Why Figure 5 is a module and not a fourth view.</strong> Table 1 assigns it to a different
+population. It <em>excludes</em> participants with elevated baseline bilirubin — precisely the
+participants the migration and composite views exist to serve — and it plots absolute U/L rather than a
+ratio to ULN or to baseline. Different population, different units, different question. It gets its own
+gallery card, guide, evidence page and API reference.
+</p>
+
+<p>
+The house doctrine in <code>docs/view-selector-inventory.md</code> defines a view as a mutually exclusive
+switch of the primary display of the <em>same</em> dataset, but it was written retrospectively to decide
+whether existing single-view renderers should gain a selector; it never ruled on where new capability
+lands. Rather than diverge from it silently, the migration PR amends it with an explicit promotion test:
+</p>
+
+<blockquote class="note">
+  <strong>View or module?</strong> A new representation becomes its own <strong>module</strong> when it
+  changes the <strong>required data contract</strong> or the <strong>eligible cohort</strong>. Otherwise it
+  is a <strong>view</strong> of the renderer that already owns that cohort.
+</blockquote>
+
+<p>
+Under that test Figure 3 is a view — same cohort, same quadrants, same reduction; <code>arm_col</code> is
+required <em>for that view</em>, enforced by a view-aware guard rather than by the module's global
+contract — and Figure 5 is a module. The accepted cost of this topology is that Figure 3 has no gallery
+card of its own; see <a href="#questions">O5</a>.
+</p>
+
+<h2 id="split">4. Splitting <code>hep-explorer</code></h2>
+
+<p>
+<strong>Verdict: split it, and first.</strong> <code>src/hep-explorer.js</code> is 2,149 lines on
+<code>dev</code> — more than twice the next-largest entry file (<code>ae-explorer.js</code>, 944). Size
+alone would not justify a refactor mid-feature. The blocking problem is structural: the participant
+selection layer is genuinely bi-view, and three of its members branch on <code>state.view</code>
+internally (the select control's change handler, its Clear handler, and the active-selection getter).
+Adding a third view turns three binary branches into three-way branches inside the selection-carry
+protocol that <code>HEP-SELECT-006</code> pins — and the migration view needs <em>more</em> from that
+layer than either existing view: ribbon-to-identifier-set selection, cross-table-cell selection, and an
+explicit programmatic hand-off into the composite view. The selection layer has to be redesigned before
+the Sankey can be built at all. This is a prerequisite, not polish.
+</p>
+
+<h3>The five-method view contract</h3>
+
+<p>
+One interface, three implementors. After the split, no shared widget contains a <code>state.view</code>
+comparison; the only dispatch is in the orchestrator, and a unit test reads the sources to forbid one
+view file from importing another.
+</p>
+
+<pre><code>// every src/hep-explorer/views/*.js default-exports this shape
+export default {
+  id: 'migration',
+  label: 'Migration (Sankey)',
+  slots: ['sankeyWrap', 'crossTableWrap'],   // which shell slots this view shows
+  contributeControls(host, builders),         // replaces the per-view control gate
+  render(host, { carriedIds }),               // unifies renderComposite / restoreSelection
+  onParticipantsChanged(host, ids),           // replaces the state.view branch in the select widget
+  clearSelection(host),
+  highlight(host),
+  teardown(host)
+};</code></pre>
+
+<p>
+Alongside it, <code>src/hep-explorer/selection.js</code> becomes the view-agnostic selection layer —
+<code>mount</code>, <code>sync</code>, <code>set</code>, <code>clear</code>, <code>carried</code>,
+<code>updateTraceHeader</code>, <code>annotationText</code>, <code>dispatch</code> — and is the sole
+writer of the <code>participantsSelected</code> event.
+</p>
+
+<h3>Internal files, not separate npm modules</h3>
+
+<p>
+<code>SafetyViz.hepExplorer({view})</code> is a released, versioned surface, and it is the surface the
+planned <code>Widget_HepExplorer.R</code> binding in <code>gsm.safety</code> consumes by module name.
+Views are an implementation detail. Publishing them as separate modules would fabricate a public boundary
+the paper does not have, multiply the one-entry-per-renderer model across <code>site/config.json</code>,
+evidence routing, the API generator and the requirements extractor, and destroy the selection-carry
+behaviour outright.
+</p>
+
+<p>
+A hard constraint reinforces this. <code>scripts/api/extract.mjs</code> hardcodes the API source files for
+a module as <code>src/&lt;module&gt;.js</code> and <code>src/&lt;module&gt;/configure.js</code>. Therefore
+<strong>no public (non-<code>@private</code>) method may leave <code>src/hep-explorer.js</code></strong> —
+only internals move — or <code>npm run docs:api</code> fails and the site build breaks with it.
+</p>
+
+<h3>Cost, and the merge gate</h3>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:26%">Cost</th><th>Assessment</th></tr>
+  <tr><td>Public API</td><td><strong>None.</strong> Class name, factory, settings and the
+      <code>participantsSelected</code> event are unchanged; <code>src/main.js</code> is untouched by the
+      refactor.</td></tr>
+  <tr><td>Test files touched</td><td><strong>Zero.</strong> <code>src/hep-explorer/composite.js</code>
+      becomes a <code>@deprecated</code> pure re-export shim, so its 332-line unit test keeps its import
+      path and every assertion; <code>structureData.js</code> re-exports the moved statistics the same
+      way. The shims are deleted in a final cleanup PR once nothing imports them.</td></tr>
+  <tr><td>Evidence baselines</td><td><strong>Zero drift is the acceptance criterion</strong>, not a hope.
+      Evidence freshness is keyed by test title and screenshots by pixels; a moves-only refactor changes
+      neither.</td></tr>
+  <tr><td>Requirement IDs</td><td><strong>No renumbering.</strong> IDs live on tests. Only the “test file”
+      column of the coverage document changes, and only where a unit test file was added.</td></tr>
+  <tr><td>Effort</td><td>About 2.5 days, and it is on the critical path for both figures.</td></tr>
+</table>
+</div>
+
+<pre><code># PR merge gate — run it literally
+git diff --stat docs/evidence/          # MUST be empty
+git diff --name-only origin/dev -- tests/ \
+  | grep -v '^tests/unit/hep-explorer/\(quadrants\|subjects\|arms\|migration\|selection\)\.test\.js$'
+                                        # MUST be empty</code></pre>
+
+<p class="note">
+If a pixel moved, the refactor is wrong: find the semantic difference rather than rebaselining. The one
+deliberate exception is the baseline-identity correctness fix described in §6, which is landed as its own
+isolated commit precisely so its evidence churn stays attributable.
+</p>
+
+<h2 id="sankey">5. Figure 3 — the migration Sankey</h2>
+
+<h3>5.1 Technology: hand-rolled inline SVG</h3>
+
+<p>
+Three options were considered and two rejected on capability before taste.
+</p>
+
+<ul>
+  <li><strong><code>chartjs-chart-sankey</code> (rejected).</strong> It is a left-to-right layered DAG
+      renderer: nodes are placed by graph depth and flow direction is uniform. Figure 3 is
+      <em>mirrored about a pinned centre column</em> — the same baseline node emits ribbons from
+      <em>both</em> faces simultaneously, sized by the union of two arms. Expressing that would mean
+      fabricating duplicate left/right node identities, overriding automatic placement to force three
+      fixed columns and a severity sort, and hand-drawing the concern colouring anyway. We would write
+      the layout algorithm regardless and pay a runtime dependency for a fill loop — a dependency that
+      also enters the vendored <code>dist/</code> bundle and the downstream <code>gsm.safety</code>
+      htmlwidget.</li>
+  <li><strong>A Chart.js canvas plugin (rejected).</strong> Both existing hepatic plugins begin by reading
+      <code>scales.x</code>/<code>scales.y</code> and bail out without them; the pattern does not transfer
+      to a scale-free diagram. It would require mounting dummy scales purely to obtain a chart area, then
+      hand-rolling <code>Path2D</code> hit-testing with its device-pixel-ratio trap, our own hover state
+      and tooltip DOM — and it would deliver zero accessibility, in a module whose stated purpose is
+      regulatory case review.</li>
+  <li><strong>Inline SVG (chosen).</strong> Already a house idiom (<code>ae-explorer.js</code>,
+      <code>delta-delta/listing.js</code>), with evidenced screenshot baselines already shipping over SVG.
+      The object is a diagram — twelve nodes, at most thirty-two ribbons, no scales, no zoom. Hover,
+      <code>:focus-visible</code>, <code>tabindex</code> and DOM events come free, and because we round
+      every coordinate to integers the output is <em>more</em> pixel-stable than canvas antialiasing.</li>
+</ul>
+
+<p>
+The shared shell contract requires a visible <code>canvas</code> or <code>table</code> in the main column;
+the migration view satisfies it twice over, because the per-arm cross tables are real
+<code>&lt;table&gt;</code> elements (the same route qt-explorer's Categorical view already takes). An
+explicit browser test pins that the view renders both an <code>svg</code> and a <code>table</code>, so a
+later refactor cannot drop the table and break the contract invisibly. Geometry is computed in a pure,
+DOM-free <code>sankeyLayout.js</code> and unit-tested as numbers.
+</p>
+
+<h3>5.2 Severity ordering — the one real design decision</h3>
+
+<p>
+The Sankey's vertical axis has to mean something: the paper's whole visual claim is that unfavourable
+shifts travel <em>up</em>. That requires ranking the four quadrants by severity, and the existing
+<code>COMPOSITE_QUADRANTS</code> constant is factor order, not severity order. Worse, the shipped
+<code>CONCERN_MATRIX</code> <em>deliberately declines</em> to rank Cholestasis against Temple's Corollary:
+both directions between them are coded neutral. If they were stacked as distinct tiers, a Cholestasis to
+Temple's Corollary ribbon would travel visually upward while being painted neutral — a chart that
+contradicts itself about its own core mapping.
+</p>
+
+<div class="decision">
+  <strong>Resolution: three tiers, four nodes.</strong> Hy's Law occupies the top tier and Normal &amp;
+  Near-Normal the bottom. Cholestasis and Temple's Corollary are adjacent <em>sub-nodes inside one
+  shared tier</em>, under a single tier label “Single-analyte elevation”, so the diagram never asserts an
+  ordering between them.
+</div>
+
+<p>
+The governing rule follows: <strong>ribbon colour is derived from <code>concernOf(baseline,
+onTreatment)</code> and never from the sign of the vertical movement.</strong> <code>CONCERN_MATRIX</code>
+is the clinical source of truth and is reused unmodified. Colour comes from the clinician; geometry comes
+from the tiers; and because of how the tiers were chosen, the two provably agree across all sixteen
+quadrant pairs:
+</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:22%">Concern</th><th style="width:38%">Transitions</th><th style="width:18%">Ribbon direction</th><th>Paper</th></tr>
+  <tr>
+    <td><span class="sw" style="background:#f28b82"></span><strong>Red</strong> (5)</td>
+    <td>NN → CH, NN → TC, NN → HL, CH → HL, TC → HL</td>
+    <td><strong>all up</strong></td>
+    <td>Unfavourable / pink. Five is exactly the caption's count of upward shift types.</td>
+  </tr>
+  <tr>
+    <td><span class="sw" style="background:#81c995"></span><strong>Green</strong> (5)</td>
+    <td>CH → NN, TC → NN, HL → NN, HL → CH, HL → TC</td>
+    <td><strong>all down</strong></td>
+    <td>Favourable / green.</td>
+  </tr>
+  <tr>
+    <td><span class="sw" style="background:#fdd663"></span><strong>Yellow</strong> (2)</td>
+    <td>CH → TC, TC → CH</td>
+    <td>lateral</td>
+    <td>Neutral — and the reason the two share a tier.</td>
+  </tr>
+  <tr>
+    <td><span class="sw" style="background:#dadce0"></span><strong>Grey</strong> (4)</td>
+    <td>the diagonal — NN → NN, CH → CH, TC → TC, HL → HL</td>
+    <td>lateral (self-flow)</td>
+    <td>No migration.</td>
+  </tr>
+</table>
+</div>
+
+<p class="note">
+HL = possible Hy's Law · CH = cholestasis / isolated hyperbilirubinaemia · TC = Temple's Corollary
+(isolated ALT) · NN = normal &amp; near-normal. The correspondence is pinned as a unit test
+(<code>HEP-MIG-009</code>), so geometry and clinical semantics cannot drift apart later.
+</p>
+
+<h3>5.3 Layout</h3>
+
+<p>
+<code>layoutSankey({counts, cells, width, height, hideDiagonal})</code> returns nodes, ribbon paths and the
+scale, with no DOM access. The drawing surface is a fixed <code>viewBox</code> of 980×540 scaled to
+<code>width: 100%</code>, so the internal coordinate system never depends on the element's measured width
+and screenshots are stable across viewport jitter. Bands run left to right: placebo on-treatment nodes,
+placebo ribbons, the centre column of baseline nodes, active ribbons, active on-treatment nodes, with
+labels outside each edge. Six properties carry the design:
+</p>
+
+<ol>
+  <li><strong>One shared scale, never rescaled per column or per arm.</strong> “Does the drug arm have more
+      upward shifts?” is the entire clinical question, so a pixel must mean the same number of
+      participants everywhere. A single pixels-per-participant unit is derived from the larger of the
+      centre and side totals and applied to every node and every ribbon.</li>
+  <li><strong>Severity stacking</strong> top to bottom in every column, with a full-tier gap between tiers
+      and a smaller gap between the two sub-nodes of the shared tier. Faint full-width tier rules sit
+      behind everything, so “up is worse” reads without consulting the labels.</li>
+  <li><strong>Centre nodes are sized by the larger of their two arms' counts</strong>, and each face
+      allocates only its own arm's count, centred vertically. The shortfall shows as symmetric padding on
+      that face — truthfully “this arm has fewer participants starting here”. Node labels carry the
+      literal per-arm counts (for example <code>Hy's Law 5 / 9</code>), so geometry never carries the
+      message alone.</li>
+  <li><strong>Deterministic anchor allocation.</strong> Each centre node keeps two independent cursors,
+      one per face; each side node keeps one. Every face walks the opposite endpoint's quadrants in
+      severity order, advancing by count times the scale. Contiguous slices, no sorting by size, no
+      randomness — repeated renders are byte-identical.</li>
+  <li><strong>One ribbon formula for both directions.</strong> The cubic control offset is half the
+      horizontal span, which is negative on the left side, so the mirror comes for free rather than from a
+      second code path. Self-flows are straight bands, not loops, and because the tiers align they read as
+      horizontal by construction.</li>
+  <li><strong>Stability details that make evidence trustworthy.</strong> Zero-count nodes render as a
+      one-pixel stub with a dimmed label so the four-row grid stays geometrically stable as filters
+      change; ribbons paint thickest-first so thin ones remain on top and clickable; node fills reuse the
+      <em>same</em> quadrant hexes as the composite view, which is what makes the two-step hand-off
+      legible; and every coordinate is integer-rounded before serialisation. The computed geometry is
+      stashed on the root element as <code>$hepSankey</code>, following the existing convention, so
+      browser tests assert numbers rather than pixels.</li>
+</ol>
+
+<h3>5.4 Interaction, accessibility, and the hand-off</h3>
+
+<p>
+Every ribbon is a single <code>&lt;path&gt;</code> carrying <code>data-side</code>,
+<code>data-pre</code>, <code>data-post</code> and <code>data-count</code>, plus
+<code>tabindex</code>, <code>role="button"</code> and an accessible name of the form “4 participants
+shifted from Normal &amp; NN to Hy's Law on active drug — unfavourable”. Hovering applies a class to the
+ribbon and its two endpoint nodes and shows an HTML tooltip (not a native <code>&lt;title&gt;</code>,
+which would never appear in a screenshot). Clicking, or pressing Enter or Space, selects that flow's
+participants and dispatches <code>participantsSelected</code>. Cross-table cells use the same
+arm-and-quadrant-pair key, so ribbon and cell selection are parity-tested rather than coincidentally
+equal. At least one browser test clicks a centroid computed from <code>$hepSankey</code>, so a
+geometry-correct but pointer-wrong bug cannot pass.
+</p>
+
+<p>
+<strong>The hand-off is the point.</strong> After a selection the footnote reads “4 participants shifted
+Normal &amp; NN → Hy's Law on active drug”, with a button labelled “Review these 4 in the composite
+plot”. The button switches the view and the existing carried-selection mechanism restores exactly those
+participants, highlighted, in the composite panels. That is eDISH function (c), delivered by Figure 4 at
+the moment Figure 3 raises the question.
+</p>
+
+<p>
+<strong>The paper's own blind spot is made visible.</strong> A grey Hy's-Law-to-Hy's-Law self-flow looks
+reassuring, but it is exactly where the acknowledged limitation lives: a shift view cannot detect
+worsening <em>within</em> a category. When that cell is non-empty the view renders a caution note stating
+the count and offering to select those participants for individual review.
+</p>
+
+<h3>5.5 Cross tables</h3>
+
+<p>
+The existing <code>migrationMatrix</code> already produces the paper's cross table — rows are baseline
+quadrant, columns are on-treatment quadrant, sixteen dense cells with row, column and grand totals — and
+the shipped renderer already shades each cell by concern. It needs no modification. The only change is to
+partition participants by arm and call it once per arm. The migration view renders its tables in severity
+order so they read in the same direction as the plot; the composite view keeps its existing pooled table
+in its existing order, so its requirement and its baseline are untouched. A test asserts that every
+cross-table cell count equals the participant count of the corresponding ribbon.
+</p>
+
+<h2 id="waterfall">6. Figure 5 — the modified ALT waterfall</h2>
+
+<p>
+Each participant is one floating bar spanning from their baseline ALT to their maximum on-treatment ALT,
+so a bar points up for a rise and down for a fall. A black line traces every participant's baseline across
+the ordered cohort. Three canvases sit in a CSS grid — a per-arm box-and-whisker panel, the main chart, a
+second box panel — matching the paper's flanking layout. This is native Chart.js: floating
+<code>[base, peak]</code> bars are a v4 feature, and the baseline trace is an ordinary line dataset drawn
+above the bars so it stays visible where bars cross it.
+</p>
+
+<h3>6.1 Maximum on-treatment, excluding baseline by identity</h3>
+
+<p>
+This is the one real correctness blocker, and it is a defect in shipped code rather than a gap. Two traps
+have to be avoided, both documented in the source:
+</p>
+
+<ol>
+  <li><strong>The absolute maximum must be taken over the raw value directly</strong>, never by reading the
+      raw value off the record that maximised the ×ULN ratio. The existing reduction takes each peak as an
+      independent maximum precisely because they can fall on different visits when the reference range
+      varies — and it does vary: the demo data carries five distinct ALT upper limits (32, 34, 35, 40 and
+      43 U/L). The ratio-maximising record is not necessarily the value-maximising record.</li>
+  <li><strong>The baseline record must be excluded by identity, not by study day.</strong> The shipped
+      code excludes it with a <code>day &gt; 0</code> test. Verified: <strong>24 of 318</strong>
+      participants in the demo data have no day-0 ALT record and fall back to an unscheduled visit at
+      visit number 1.1 to 1.3, so that test counts their own baseline as an on-treatment value. Their
+      computed peak can then never fall below their baseline — which silently erases exactly the
+      “bars dropping below baseline” signal Figure 5 is built around. The 24 break down as 10 placebo,
+      7 Xanomeline high dose and 7 Xanomeline low dose; <strong>zero are in the CLD cohort</strong>, so
+      the composite view's demo story is unchanged even though its results change for those 24.</li>
+</ol>
+
+<p>
+Both are fixed in the shared reduction, alongside an explicit <code>baseline_col</code> /
+<code>baseline_value</code> setting so real ADaM data can name its baseline through <code>ABLFL</code>
+instead of inheriting a heuristic. The reduction then surfaces, per participant: baseline and peak ALT and
+bilirubin in both absolute and ×ULN units, the peak's study day, the arm and its designated side, and the
+baseline-jaundice and new-onset-jaundice flags — one reduction, one cohort, one baseline definition,
+shared by Figures 3, 4 and 5.
+</p>
+
+<h3>6.2 Cohort, ordering and the unimodal invariant</h3>
+
+<p>
+The plotted cohort applies the paper's Table 1 rule: participants with baseline total bilirubin above the
+configured maximum are excluded, as are participants whose arm is designated neither placebo nor active.
+Both counts are reported separately in the notes — “12 participants excluded: abnormal baseline
+bilirubin (paper Table 1)” — so the applicability rule is demonstrable evidence rather than a claim.
+</p>
+
+<p>
+Ordering: placebo participants ascend left to right by baseline ALT, then active participants descend, so
+the highest baselines of both arms meet at the seam. Ties break on participant identifier so repeated
+renders are pixel-identical. The caption's two clauses contradict each other read literally; this design
+takes “the highest baselines meet in the centre” as the controlling one and pins it as a testable
+invariant — the baseline series is non-decreasing across the placebo span and non-increasing across the
+active span, so the black trace is a single mountain with its apex at the arm boundary. See
+<a href="#questions">O3</a>.
+</p>
+
+<h3>6.3 Axes, colour and the flanking panels</h3>
+
+<ul>
+  <li><strong>Absolute units with mirrored axes.</strong> The vertical axis is in the measure's own units,
+      not multiples of anything — that is the whole point of the figure for a population whose ULN varies.
+      Left and right axes take their minimum and maximum from a single domain computation. A mirrored axis
+      that is not identical is a lie, so a unit test asserts the two are equal; axis drift would never
+      show up in a screenshot diff. The axis title is the waterfall's first use of <code>unit_col</code>
+      (currently unread by <code>hep-explorer</code>), taken as the modal unit for the plotted measure,
+      falling back to U/L, with a warning when units are mixed.</li>
+  <li><strong>The upper limit of normal is a band, not a line</strong>, whenever the cohort's reference
+      range varies — labelled with its range, for example “ULN range (32–43 U/L)” — and collapses to a
+      single line when the cohort shares one limit. A setting offers a per-participant dashed trace
+      instead for cohorts where subject-level variation matters.</li>
+  <li><strong>Colour is semantic and fixed</strong>, not the library's cycling group scale, whose
+      index-based assignment would silently swap the arms if arm ordering changed: placebo blue
+      (<span class="sw" style="background:#1f78b4"></span><code>#1f78b4</code>), active bronze
+      (<span class="sw" style="background:#b5651d"></span><code>#b5651d</code>), and new-onset jaundice
+      green (<span class="sw" style="background:#2e8b3d"></span><code>#2e8b3d</code>) overriding the arm
+      colour in either arm, exactly as the caption describes. The legend states the precedence explicitly,
+      because a reader who does not know green wins will miscount arms. A vertical divider marks the arm
+      boundary, each half labelled with its arm name and count.</li>
+  <li><strong>Flanking box-and-whisker panels reuse the shipped implementation.</strong>
+      <code>boxWhiskerPlugin</code> already exists in <code>results-over-time</code> — quartile box,
+      median rule, 5th/95th whiskers, two-tone mean marker — so it is promoted to a shared
+      <code>src/box-whisker.js</code> and the donor reduced to a two-line delegation, leaving its own
+      pixels and evidence baselines untouched (guarded by its own regression requirement). Each flanking
+      canvas pins its vertical domain to the main chart's, so all three panels are vertically registered
+      and the boxes are directly comparable with the bars. Each panel shows a baseline box and a
+      maximum-on-treatment box for its arm, which makes the panel summarise the <em>shift</em>; see
+      <a href="#questions">O2</a>.</li>
+</ul>
+
+<h2 id="contract">7. Data contract and settings</h2>
+
+<p>
+<strong>The record contract is unchanged</strong> for both figures: long format, one row per participant
+per measure per visit, as <code>hep-explorer</code> already requires. There is no pipeline change. Every
+addition is a setting.
+</p>
+
+<h3>7.1 New <code>hep-explorer</code> settings</h3>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:20%">Setting</th><th style="width:16%">Default</th><th>Purpose</th></tr>
+  <tr><td><code>arm_col</code></td><td><code>'ARM'</code></td>
+      <td>Treatment arm. Structural for the migration view, since it decides left from right.
+          Deliberately <strong>not</strong> added to the schema's global required list — that would break
+          the shipped scatter and composite views for arm-less data — and enforced instead by a view-aware
+          guard. Auto-detected across <code>ARM</code>, <code>ACTARM</code>, <code>TRT01A</code> and
+          <code>TREATMENT</code> when the named column is absent.</td></tr>
+  <tr><td><code>placebo_arm</code></td><td><code>null</code></td>
+      <td>The left side. Resolution order: an explicit value present in the data, then a
+          <code>/placebo|control/i</code> auto-detect, then none.</td></tr>
+  <tr><td><code>active_arms</code></td><td><code>null</code></td>
+      <td>The right side. When null, all non-placebo arms pool right and the note names them. A sidebar
+          control lets a reviewer isolate a single dose level.</td></tr>
+  <tr><td><code>baseline_col</code></td><td><code>null</code></td>
+      <td>Optional explicit baseline flag, for example ADaM <code>ABLFL</code>. Takes precedence over the
+          day-0-else-earliest heuristic.</td></tr>
+  <tr><td><code>baseline_value</code></td><td><code>'Y'</code></td><td>The flag value marking the baseline record.</td></tr>
+  <tr><td><code>jaundice_uln</code></td><td><code>2</code></td>
+      <td>New-onset jaundice threshold in ×ULN of total bilirubin; defaults to the same constant as the
+          quadrant cut so the flag and the quadrants stay mutually consistent.</td></tr>
+  <tr><td><code>hide_unchanged</code></td><td><code>false</code></td>
+      <td>Migration view: suppress the diagonal, no-migration ribbons. The hidden count stays in the note
+          and in the cross table.</td></tr>
+  <tr><td><code>view</code></td><td><code>'scatter'</code></td>
+      <td>The enum gains <code>'migration'</code>. Selector order is scatter, migration, composite — the
+          paper's order, and the direction of the hand-off.</td></tr>
+</table>
+</div>
+
+<p>
+<strong>Cutpoints are not configurable in the migration view.</strong> Classification uses the fixed
+constants ALT 3×ULN and bilirubin 2×ULN, identical to the shipped composite view and faithful to the
+paper, rather than the scatter view's user-overridable cuts. This is a deliberate divergence, documented
+in the coverage document and the guide; see <a href="#questions">O6</a>.
+</p>
+
+<h3>7.2 <code>hep-waterfall</code> settings</h3>
+
+<p>
+The lab-mapping block is byte-identical to <code>hep-explorer</code>'s — identifier, measure, value, unit,
+reference-range, study-day and visit columns, measure value mapping, filters and groups — so a single
+settings list can drive both R widget bindings. Beyond it:
+</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:22%">Setting</th><th style="width:18%">Default</th><th>Purpose</th></tr>
+  <tr><td><code>measure</code></td><td><code>'ALT'</code></td><td>Plotted analyte. The paper uses ALT; AST and ALP are available.</td></tr>
+  <tr><td><code>arm_col</code></td><td><code>'ARM'</code></td><td><strong>In this schema's required list</strong> — a one-armed waterfall is meaningless. Matches the qt-explorer precedent.</td></tr>
+  <tr><td><code>placebo_arm</code> / <code>active_arms</code></td><td><code>null</code> / <code>null</code></td><td>Blue left half and bronze right half; same resolution rules as above.</td></tr>
+  <tr><td><code>jaundice_uln</code></td><td><code>2</code></td><td>New-onset jaundice event threshold, in ×ULN of total bilirubin.</td></tr>
+  <tr><td><code>baseline_tb_max</code></td><td><code>1</code></td><td>The Table 1 cohort rule: exclude participants with baseline bilirubin above this. Deliberately separate from the event threshold.</td></tr>
+  <tr><td><code>apply_tb_cohort</code></td><td><code>true</code></td><td>Turn the exclusion off, with a prominent note, for exploratory use.</td></tr>
+  <tr><td><code>baseline_col</code> / <code>baseline_value</code></td><td><code>null</code> / <code>'Y'</code></td><td>As above.</td></tr>
+  <tr><td><code>uln_display</code></td><td><code>'band'</code></td><td>One of band, per-participant or none.</td></tr>
+  <tr><td><code>summary</code></td><td><code>'baseline_peak'</code></td><td>Two boxes per flanking panel, or one (<a href="#questions">O2</a>).</td></tr>
+  <tr><td><code>width</code> / <code>height</code></td><td><code>'100%'</code> / <code>480</code></td><td>Carried for the R widget bindings.</td></tr>
+</table>
+</div>
+
+<h3>7.3 Definitions and degradation</h3>
+
+<p>
+An arm resolves to <em>placebo</em>, <em>active</em> or <em>undesignated</em>; undesignated participants
+are excluded from the migration view and the waterfall, with a counted note, and are unaffected in the
+scatter and composite views. New-onset jaundice requires baseline bilirubin at or below the threshold
+<em>and</em> a maximum on-treatment bilirubin above it; both clauses stay explicit even though the first
+is implied inside the waterfall's post-exclusion cohort, so the predicate stays correct when the exclusion
+is switched off. One verified plumbing gap is closed at the same time: the arm column joins the retained
+metadata columns unconditionally, because today the arm value reaches a participant record only if it
+happens to be registered as a group or a filter, and otherwise every participant collapses into a single
+“(missing)” arm.
+</p>
+
+<p>
+Failure modes degrade rather than throw. When <code>arm_col</code> is unmapped the Migration option is
+<em>disabled</em> with an explanatory tooltip rather than letting a reviewer click into an error; when
+fewer than two sides resolve, the Sankey renders unidirectionally with a warning. The failure mode being
+designed against is the current silent one, where everything collapses into one bucket and the chart
+renders confidently wrong.
+</p>
+
+<h2 id="demo">8. Demo data</h2>
+
+<h3>8.1 Figure 3 runs on the existing demo data</h3>
+
+<p>
+<code>site/data/adbds.csv</code> is the demo dataset for <strong>six</strong> available renderers
+(histogram, outlier-explorer, results-over-time, shift-plot, delta-delta and hep-explorer), so
+regenerating it would churn evidence baselines across five renderers unrelated to this work. It is not
+touched. It does not need to be: the synthetic chronic-liver-disease cohort already inside it — added for
+the composite view — produces exactly the paper's Study-2 narrative shape. Verified counts, with quadrant
+thresholds at ALT 3×ULN and bilirubin 2×ULN (strict and non-strict comparisons give an identical matrix):
+</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:40%"></th><th>CLD: Placebo (n = 32)</th><th>CLD: Study Drug (n = 32)</th></tr>
+  <tr><td>Participants who migrate</td><td>18 (56%)</td><td>23 (72%)</td></tr>
+  <tr><td>Distinct transition types</td><td>8</td><td>10</td></tr>
+  <tr><td><strong>Upward (unfavourable, pink)</strong></td><td><strong>12</strong></td><td><strong>10</strong></td></tr>
+  <tr><td><strong>Downward (favourable, green)</strong></td><td><strong>6</strong></td><td><strong>13</strong></td></tr>
+  <tr><td>Diagonal (no migration)</td><td>14</td><td>9</td></tr>
+</table>
+</div>
+
+<p>
+The drug arm shows fewer unfavourable and more than twice the favourable shifts, including
+Hy's-Law-to-normal, -to-cholestasis and -to-Temple's flows the placebo arm lacks. No new filtering
+machinery is needed — the demo simply designates the pair through the new arm settings. The 231
+undesignated pilot participants fall out as a counted note, which is itself the demonstrable evidence for
+the exclusion requirement, and the active-arm control lets a reviewer switch to a pilot dose arm and see
+what an honestly near-empty Sankey looks like.
+</p>
+
+<p>
+Scoping the demo to this cohort is mandatory rather than cosmetic: pooling all 295 eligible participants
+puts <strong>235 (80%) on the no-migration diagonal</strong> with four hairline threads and zero green
+ribbons. An unscoped demo would look broken. And all 24 participants affected by the baseline-identity
+defect are pilot-arm; <strong>zero are in the CLD cohort</strong>, so the migration demo is entirely clean
+of it.
+</p>
+
+<h3>8.2 Figure 5 demonstrably cannot run on it</h3>
+
+<p>
+Three verified findings, any one of which is fatal:
+</p>
+
+<ol>
+  <li><strong>Two green bars exist in the entire file.</strong> <code>CLD-9026</code> (study drug,
+      bilirubin 1.00 → 2.92×ULN) and <code>CLD-9056</code> (placebo, 1.00 → 2.83×ULN). One per arm, which
+      <em>actively contradicts</em> the paper's “several developed jaundice” on active drug. At a peak
+      bilirubin above 3×ULN from a normal baseline, the count is zero.</li>
+  <li><strong>The target population is empty.</strong> After the mandated baseline-bilirubin exclusion, 61
+      of 295 participants are dropped, and of the 234 survivors <strong>zero</strong> have a baseline ALT
+      at or above 3×ULN. Only 19 exceed 1×ULN and only 4 exceed 2×ULN. The figure exists for a population
+      this dataset does not contain.</li>
+  <li><strong>The baseline mountain is flat and discontinuous.</strong> 215 of the 234 survivors sit
+      between 6 and 40 U/L, then 11 CLD stragglers jump to 62–85 U/L. And the arm contrast runs backwards
+      relative to the paper: placebo has the most ALT decreases (12, against 3 for Xanomeline low
+      dose).</li>
+</ol>
+
+<p>
+Therefore Figure 5 ships with a purpose-built synthetic cohort in a <strong>new file</strong>,
+<code>site/data/adbds-abnbl.csv</code>, generated by a committed script following exactly the discipline
+of the existing composite-cohort generator: a fixed-seed PRNG so output is byte-identical on every run,
+idempotent stripping by identifier prefix so it can be re-run after the source data is rebuilt, explicit
+labelling as synthetic, and provenance recorded in <code>docs/DATA_SOURCES.md</code>. The header is the
+verified <code>adbds.csv</code> header, unchanged.
+</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:30%">Property</th><th style="width:34%">Value</th><th>Why</th></tr>
+  <tr><td>Size and labelling</td><td>≈80 participants, identifier prefix <code>ABL-</code>, site “Hepatology ABN-BL Unit (synthetic)”</td><td>Same self-naming contract as the shipped <code>CLD-</code> cohort.</td></tr>
+  <tr><td>Arms</td><td>Exactly two: <code>ABL: Placebo</code> (40) and <code>ABL: Study Drug</code> (40)</td><td>The paper's one-placebo, one-active layout.</td></tr>
+  <tr><td>Visits</td><td>A real day-0 baseline plus four on-treatment visits for every participant</td><td>The cohort must not reproduce the baseline-fallback defect it exists to exercise.</td></tr>
+  <tr><td>Analytes</td><td>ALT, AST, TB and ALP at every visit</td><td>The reduction drops any participant missing ALT or bilirubin.</td></tr>
+  <tr><td>ALT reference range</td><td>A single value, 40 U/L, cohort-wide; units uniformly U/L</td><td>Makes the absolute reference line well defined; the band collapses to a line.</td></tr>
+  <tr><td>Waterfall sub-population (≈58)</td><td>Baseline bilirubin ≤ 0.8×ULN, baseline ALT spanning 1.0–8.0×ULN (40–320 U/L) smoothly</td><td>A real monotonic mountain rather than a step. The margin below 1.0 keeps PRNG jitter from tripping the exclusion.</td></tr>
+  <tr><td>Excluded sub-population (≈22)</td><td>Baseline bilirubin 1.5–4.0×ULN</td><td>So the Table 1 exclusion note has something to report — making the applicability rule demonstrable evidence rather than a claim.</td></tr>
+  <tr><td>Direction skew</td><td>Active arm skewed to ALT decreases (≈24 of 40, against ≈10 of 40 on placebo)</td><td>The caption's large number of bronze bars dropping below baseline.</td></tr>
+  <tr><td>New-onset jaundice</td><td>6 active, 1 placebo, each with a large ALT rise and peak bilirubin 2.5–4.0×ULN</td><td>The asymmetric, drug-attributable green-bar signature; the margin above 2.0 keeps the flag unambiguous.</td></tr>
+  <tr><td>Rise tail</td><td>≈8 active participants with peak ALT 3–6× their own baseline</td><td>The substantial-increase cases the paper prioritises for review.</td></tr>
+</table>
+</div>
+
+<p class="note">
+The cohort's invariants are themselves unit-tested — two arms, a day-0 baseline for all four analytes on
+every participant, a single ALT reference range, the sub-population sizes, the jaundice counts, and the
+arm direction skew — so a regenerated file that drifts from this specification fails CI rather than
+quietly changing the figure. Whether shipping on synthetic data is the right call at all is
+<a href="#questions">O4</a>.
+</p>
+
+<h2 id="delivery">9. Delivery — three PRs</h2>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:22%">PR</th><th style="width:44%">Contents</th><th>Gate</th></tr>
+  <tr>
+    <td><a href="https://github.com/jwildfire/safety.viz/issues/91"><strong>safety.viz#91</strong></a><br>
+        <code>hep-core-split</code><br><span class="note">base <code>dev</code> · ≈4 days</span></td>
+    <td>The baseline-identity correctness fix (§6.1) as an isolated first commit with per-participant
+        proof. Then <code>src/hep-core/</code> extracted by moving code out of the composite and
+        data-structuring files; <code>composite.js</code> and the moved half of
+        <code>structureData.js</code> become <code>@deprecated</code> re-export shims;
+        <code>boxWhiskerPlugin</code> promoted to <code>src/box-whisker.js</code> with
+        <code>results-over-time</code> reduced to a delegation; the entry file split into
+        <code>views/{scatter,composite}.js</code>, <code>selection.js</code> and <code>styles.js</code>
+        against the five-method contract; arm plumbing, severity tiers, absolute-unit peaks and box
+        statistics added to <code>hep-core</code>.</td>
+    <td>Empty <code>docs/evidence/</code> diff apart from the fix commit's documented churn; no
+        pre-existing test file modified; <code>npm run docs:api</code> green (no public method leaves the
+        entry file).</td>
+  </tr>
+  <tr>
+    <td><a href="https://github.com/jwildfire/safety.viz/issues/92"><strong>safety.viz#92</strong></a><br>
+        <code>hep-migration-view</code><br><span class="note">base <code>hep-core-split</code> · ≈5.5 days</span></td>
+    <td>The pure <code>sankeyLayout.js</code> and its unit tests, then the migration view: SVG painting,
+        per-arm cross tables, ribbon and cell selection with parity tests, the two-step hand-off, the
+        Hy's-Law self-flow caution, the hide-unchanged and active-arm controls, accessibility, the
+        three-by-three view-carry matrix, the demo's arm settings, the guide section, the shared
+        hepatic-tools decision table, and the “View or module?” amendment to the view-selector
+        inventory.</td>
+    <td>Every hep-explorer page screenshot shifts by one control row (§10, R1) — stated in the PR
+        description as the only expected visual change and verified on one diff.</td>
+  </tr>
+  <tr>
+    <td><a href="https://github.com/jwildfire/safety.viz/issues/93"><strong>safety.viz#93</strong></a><br>
+        <code>hep-waterfall</code><br><span class="note">base <code>hep-core-split</code> · ≈5.5 days,
+        parallel with #92</span></td>
+    <td>The synthetic cohort generator and its invariant tests, then the module end to end: schema,
+        configuration, input checks, data structuring, scales, plugins, the flanking panels, the demo
+        page, the gallery card, the hero, the guide, the evidence page and the API reference. Also the
+        related-tools strip that renders Table 1 as an applicability chooser on both hepatic demo
+        pages.</td>
+    <td>The full renderer done-gate (below). File ownership is disjoint from #92 by construction —
+        <code>src/main.js</code>, <code>site/config.json</code> and the shell strip belong to this PR
+        alone.</td>
+  </tr>
+</table>
+</div>
+
+<p>
+A short cleanup PR follows once both have landed: re-point the unit tests at <code>src/hep-core/</code>
+and delete the shims. It changes no behaviour, so its gate is again an empty evidence diff. Total effort
+is about 14.5 working days sequential, or roughly 10–11 days of wall-clock with the two parallel lanes.
+</p>
+
+<p>
+Development is test-first throughout, from an authored requirement matrix rather than from the code: 85
+new requirement rows (47 across <code>HEP-CORE</code>, <code>HEP-MIG</code>, <code>HEP-XTAB</code>,
+<code>HEP-STEP</code>, <code>HEP-ARM</code> and <code>HEP-A11Y</code> for the migration work; 38
+<code>HWF-*</code> rows for the waterfall) are filed in <code>obot.agent/docs/requirements/</code>
+<strong>before</strong> the canonical evidence run, so the published evidence pages carry real requirement
+text rather than bare identifiers.
+</p>
+
+<p>
+CI order is unchanged: format check, build, committed-bundle check, unit tests, site build (which is also
+the API-completeness and link-validation gate), then Playwright including the shell contract and visual
+regression, then the evidence and requirements checks. For a brand-new module the evidence baselines have
+a bootstrap cycle — the module must be marked available before the site will build, but the site build is
+what an evidence run needs — resolved as qt-explorer's history already shows: seed local previews, build,
+capture the hero, then run the Linux evidence-update workflow against the feature branch to rewrite every
+screenshot as a canonical baseline. Budget two rounds per figure. The done-gate for
+<code>hep-waterfall</code> is the standard six: gallery card, live demo on committed data, shared shell
+chrome, evidence page, API reference, and a clean site build deployed before the requirement moves to
+Released.
+</p>
+
+<h2 id="risks">10. Risks</h2>
+
+<div class="tablewrap">
+<table>
+  <tr><th style="width:34%">Risk</th><th>Mitigation and residual</th></tr>
+  <tr>
+    <td><strong>R1 — A third View option reflows the sidebar and churns every hep-explorer page
+        screenshot.</strong> Evidence capture takes a page screenshot and the View list sits in the
+        controls, so a third option shifts everything below it by about one row across some 36–40
+        baselines.</td>
+    <td>Confined to the migration PR, where new captures are expected anyway; stated in the PR description
+        as the only expected visual change and verified on one diff; the split PR's zero-drift gate keeps
+        refactor churn separate from feature churn. <em>Residual: accepted.</em> This is the honest cost
+        of the view topology, and the two-step hand-off is not purchasable any other way.</td>
+  </tr>
+  <tr>
+    <td><strong>R2 — SVG text renders differently on macOS and Linux CI</strong>, and the Sankey is
+        label-dense; font metrics differ across platforms more than shape rasterisation does.</td>
+    <td>Integer-rounded geometry and a fixed <code>viewBox</code>; an explicit font family in the module
+        stylesheet rather than inheritance; short node labels; the Linux evidence-update workflow, budgeted
+        at two rounds. Most importantly, every Sankey behaviour is asserted through data attributes and
+        the stashed geometry object, so a screenshot is documentary evidence and never the correctness
+        gate. <em>Residual: bounded, not eliminated.</em></td>
+  </tr>
+  <tr>
+    <td><strong>R3 — The demo Sankey is diagonal-dominant</strong> and may read as one fat ribbon: even
+        scoped to the CLD cohort, 14 of 32 placebo and 9 of 32 drug participants sit on the diagonal, and
+        self-flows are the thickest ribbons.</td>
+    <td>The hide-unchanged toggle, off by default and one click away, with the hidden count kept in the
+        note and the table; the per-arm cross tables carry the numbers regardless, so the clinical claim
+        never depends on ribbon legibility. <em>Residual: the hero must show the diagonal to be honest,
+        and will look diagonal-dominant. Accepted.</em></td>
+  </tr>
+  <tr>
+    <td><strong>R4 — The baseline fix changes shipped results for a released renderer</strong>, and may be
+        treating a symptom: the 24 affected participants have no baseline-visit ALT row at all, so
+        “earliest record” lands on an unscheduled visit, and excluding it from the peak does not establish
+        that it was ever the right baseline.</td>
+    <td>Ship both halves — the predicate fix <em>and</em> the explicit baseline-flag setting, so real ADaM
+        names its own baseline rather than inheriting a heuristic; document the fallback semantics in the
+        guide; land it as an isolated commit with per-participant proof.</td>
+  </tr>
+  <tr>
+    <td><strong>R5 — The waterfall demos on fabricated data.</strong> Verified unavoidable (§8.2).</td>
+    <td>Self-naming identifiers and arm strings, a demo note, a deterministic re-runnable generator,
+        provenance in <code>DATA_SOURCES.md</code>, and framing the cohort in the guide as a
+        <em>specification of the population the paper targets</em> rather than as a trial. The ≈22
+        excluded-by-bilirubin participants mean the chart is continuously exercised on data designed to
+        fail its own inclusion rule. <em>Honest assessment: this is mitigation, not a fix. Authoring the
+        cohort and then demoing on it is close to circular; the real fix is a genuine abnormal-baseline
+        dataset. See <a href="#questions">O4</a>.</em></td>
+  </tr>
+  <tr>
+    <td><strong>R6 — Two hepatic products; a reviewer may never find the second, or may not know which to
+        use.</strong></td>
+    <td>Population-first gallery blurbs that answer “is this for my trial?” before naming a chart type;
+        adjacent ordering in the gallery; a related-tools strip rendering Table 1 as an applicability
+        chooser on both demo pages; a shared decision-table guide. <em>Accepted cost, stated plainly:
+        selection does not carry between the two modules — a link is all you get. That is defensible
+        because the paper assigns them to different trials.</em></td>
+  </tr>
+  <tr>
+    <td><strong>R7 — Three views sharing one selection layer enlarges the selection-carry regression
+        surface.</strong></td>
+    <td>The split is moves-only with the existing browser suite as its oracle; the five-method contract
+        means no shared widget branches on the active view again; a source-reading test forbids
+        cross-imports between view files; the migration PR adds the three-by-three carry matrix so a third
+        view cannot silently break the first two.</td>
+  </tr>
+  <tr>
+    <td><strong>R8 — Hero capture picks the wrong element for SVG-first renderers.</strong> The hero
+        locator matches a canvas or a table and takes the first.</td>
+    <td>hep-explorer's demo default view stays composite, so its hero is unaffected today; the migration
+        PR adds an <code>svg</code> branch to the locator with a comment naming the reason. One line of
+        defensive work.</td>
+  </tr>
+  <tr>
+    <td><strong>R9 — Requiring an arm column makes the two new figures reject data
+        <code>hep-explorer</code> accepts.</strong></td>
+    <td>Auto-detection across four column names; an input-check message that names the setting and lists
+        the columns actually present; the Migration option disabled with a tooltip rather than throwing;
+        single-arm degradation to a unidirectional Sankey with a warning. The failure mode being prevented
+        is the current silent one.</td>
+  </tr>
+</table>
+</div>
+
+<h2 id="questions">11. Open judgement calls</h2>
+
+<p>
+Seven decisions in this design are judgement calls rather than derivations, and each is a place where a
+reviewer's answer would change the code. They are ordered by how expensive they become if answered late.
+</p>
+
+<div class="question">
+  <strong class="qid">O1 — Should Cholestasis and Temple's Corollary really share one severity tier, or
+  does Cholestasis belong strictly above it?</strong>
+  <span class="rec">The paper does not publish its vertical node order, and the shipped concern matrix
+  deliberately marks movement between these two as neutral in both directions. This design makes them
+  sub-nodes of one tier so that geometry and colour cannot contradict each other. A hepatologist may hold
+  that high bilirubin is prognostically worse than isolated ALT elevation and should sit strictly above
+  it.
+  <strong>Recommendation:</strong> keep the shared tier. <strong>Needed before</strong> the layout work in
+  safety.viz#92 begins — it is a clinical-interpretation call, and a late change is markedly more
+  expensive than the question. If they are ranked, the node order becomes a setting, and the “neutral
+  ribbon travelling visually upward” contradiction returns and needs its own visual treatment.</span>
+</div>
+
+<div class="question">
+  <strong class="qid">O2 — Two boxes per flanking panel (baseline and peak), or one?</strong>
+  <span class="rec">The caption says only “summary box-and-whisker plots, one per arm” without stating the
+  quantity. This design reads the panel's job as summarising the <em>shift</em>, since that is what the
+  bars show, and exposes a setting for the single-box alternative.
+  <strong>Recommendation:</strong> two boxes by default. <strong>Needed before</strong> the
+  <code>hep-waterfall</code> guide is written — ideally checked against the published figure.</span>
+</div>
+
+<div class="question">
+  <strong class="qid">O3 — Which clause of the waterfall caption controls the ordering?</strong>
+  <span class="rec">“The highest baselines meet in the centre” and “active drug subjects run
+  right-to-centre highest-to-lowest” contradict each other read literally. This design takes the former as
+  the controlling invariant, which makes the black trace a single mountain peaking at the arm boundary,
+  and pins it as a test.
+  <strong>Recommendation:</strong> confirm against the published figure before safety.viz#93 implements
+  the ordering. Reversing it later inverts half the chart and every baseline screenshot.</span>
+</div>
+
+<div class="question">
+  <strong class="qid">O4 — Ship the waterfall on a synthetic cohort, or on the honest, nearly empty real
+  result?</strong>
+  <span class="rec">This design chooses the synthetic <code>ABL-</code> cohort so the figure demonstrates
+  what it is for. The alternative — ship the module against the real demo data, showing a nearly empty
+  result with a caption explaining why — is worse marketing and better science. Authoring a cohort and
+  then demoing on it is close to circular reasoning, and calling that out is more honest than mitigating
+  it quietly.
+  <strong>Recommendation:</strong> ship the synthetic cohort, framed in the guide as a specification of
+  the target population, and file the search for a genuine abnormal-baseline dataset as an explicit
+  follow-up rather than pretending it away. <strong>Worth an explicit decision</strong> rather than an
+  assumption.</span>
+</div>
+
+<div class="question">
+  <strong class="qid">O5 — Is it acceptable that Figure 3 gets no gallery card of its own?</strong>
+  <span class="rec">As a view rather than a module, the migration Sankey has no gallery entry, no hero, no
+  evidence page of its own, and no dedicated R widget: it is reached as
+  <code>hepExplorer(data, settings = list(view = "migration"))</code>. If product surface matters more
+  than the hand-off, this is the one decision in the design to reverse — and reversing it means giving up
+  the two-step hand-off requirements permanently.
+  <strong>Recommendation:</strong> keep it as a view; mitigate discoverability through the gallery blurb,
+  the related-tools strip and the shared decision-table guide (R6).</span>
+</div>
+
+<div class="question">
+  <strong class="qid">O6 — Hard-coded cutpoints in the migration view: document the divergence, or resolve
+  it?</strong>
+  <span class="rec">The migration view uses the fixed FDA constants rather than the scatter view's
+  user-overridable cuts, to stay faithful to the paper and identical to the composite view. Doing so makes
+  visible a latent inconsistency that is already in the shipped code: a user who overrides the bilirubin
+  cut today moves the scatter's quadrant lines but not the composite view's quadrant assignments.
+  <strong>Recommendation:</strong> document the divergence now and resolve the shipped inconsistency as
+  its own requirement. This is a deliberate scope decision, and worth confirming rather than
+  inheriting.</span>
+</div>
+
+<div class="question">
+  <strong class="qid">O7 — Ship <code>hep-waterfall</code> flagged experimental?</strong>
+  <span class="rec">Following the qt-explorer precedent, the gallery entry is marked experimental so the
+  settings surface is not frozen while O1 to O4 remain open, and the flag is dropped once the guide lands
+  and the clinical review passes.
+  <strong>Recommendation:</strong> yes, experimental at first release.</span>
+</div>
+
+<footer>
+  <hr style="border: none; border-top: 1px solid var(--rule); margin: 0 0 .75rem;">
+  Drafted by Claude Code using Claude Fable 5 and reviewed by @jwildfire
+</footer>
+
+</body>
+</html>
