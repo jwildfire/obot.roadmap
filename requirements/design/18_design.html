@@ -27,6 +27,8 @@
   .meta a { color: inherit; }
   .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
             padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  .done { display: inline-block; background: #dcfce7; color: #166534; border-radius: 999px;
+          padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
   h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
   h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
   a { color: var(--accent); }
@@ -57,10 +59,11 @@
 <header>
   <h1>Design #18 — autonomous obot operations: the <code>--auto</code> session and the goal layer</h1>
   <div class="meta">
-    <span class="status">DRAFT — for @jwildfire review</span> ·
+    <span class="done">APPROVED 2026-07-22</span> ·
     Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/18">obot.roadmap #18</a> ·
     Milestone 2026q3 · Stage-3 autonomy experiments (stage model, 2026-07-21) ·
-    Drafted 2026-07-22
+    Drafted 2026-07-22 · Reviewed live by @jwildfire same day — all judgement calls resolved
+    (<a href="#questions">§11</a>), grant matrix clarified (<a href="#grants">§5</a>)
   </div>
 </header>
 
@@ -77,7 +80,7 @@
     <li><a href="#lanes">Scheduling and the other v1 lanes</a></li>
     <li><a href="#implementation">Implementation plan</a></li>
     <li><a href="#risks">Dependencies and risks</a></li>
-    <li><a href="#questions">Open judgement calls</a></li>
+    <li><a href="#questions">Judgement calls — resolved 2026-07-22</a></li>
   </ol>
 </nav>
 
@@ -175,7 +178,8 @@ anything a selecting session should weigh that the issues don't say.
 
 <p>The hub stays the source of truth for the <em>work</em> (requirements, stages, sub-issues); the
 goal file only records the standing <em>direction</em> plus pointers. Pausing a goal is a one-line
-edit; retiring one is deleting the file. See <a href="#questions">O2</a> for the placement call.</p>
+edit; retiring one is deleting the file. Placement decided 2026-07-22
+(<a href="#questions">O2</a>): obot.agent.</p>
 
 <h2 id="goal-builtin">3. The <code>/goal</code> built-in, and why we need our own layer</h2>
 
@@ -217,10 +221,10 @@ claude --bg --permission-mode auto -n "🦾🤖 {date} {goal-slug}" \
 </code></pre>
 
 <ul>
-  <li><strong>Identity:</strong> autonomous sessions get their own tag — proposed
+  <li><strong>Identity:</strong> autonomous sessions get their own tag —
       <code>🦾🤖 {YYYY-MM-DD} {goal-or-increment-slug}</code>, purple in the session hub — so the
       dashboard distinguishes them from interactive leads (😺), siblings (👯), and ultracode jobs (⚡️).
-      See <a href="#questions">O4</a>.</li>
+      Decided 2026-07-22 (<a href="#questions">O4</a>).</li>
   <li><strong>Pre-flight (in the wrapper, fail-fast):</strong> auth freshness (the 07-12 login-expiry
       stall), obotclaw token mintable, workspace halt-file absent (§7), no conflicting <code>--auto</code>
       session already running, disk/worktree hygiene. Any failure aborts before a token is spent.</li>
@@ -252,7 +256,8 @@ order:</p>
 
 <p><strong>Hard skips, never selected:</strong> anything gated on @jwildfire (reviews, decisions,
 approval-tier merges); anything without a filed hub requirement (roadmap-first — the 07-12 lesson);
-anything touching a repo outside the grant matrix; releases of any kind; ultracode launches
+anything touching a repo outside the grant matrix; release <em>publishing</em> (release
+<em>prep</em> — notes draft + staged promotion PR — is allowed, §5); ultracode launches
 (⚡️ scale stays an explicit human opt-in).</p>
 
 <p>v1 works <strong>one increment per run</strong>. Multi-increment nights come later, if ever — a
@@ -304,59 +309,103 @@ review reserved for designs and releases. This is the first concrete draft of th
 to what a <code>--auto</code> session may do <strong>unattended</strong> (interactive sessions keep
 today's rules — this matrix never widens what requires approval, it narrows what autonomy may touch):</p>
 
+<p class="note">Matrix as clarified with @jwildfire live, 2026-07-22 (four decisions: issue-close
+rule, policy-file carve-out, gsm.safety standard tier, release prep-only).</p>
+
 <div class="tablewrap">
 <table>
   <tr><th>Repo</th><th>Branch + draft PR</th><th>Merge (via obot-merge only)</th><th>Issues / board</th><th>Releases</th><th>Never</th></tr>
   <tr><td>safety.viz</td><td>✅ worktree + draft PR to <code>dev</code></td>
-      <td>A0: ❌ · A1: ✅ <code>dev</code> (standard tier)</td>
-      <td>✅ file/comment/label; board adds</td><td>❌</td><td><code>main</code> (approval tier), deletes</td></tr>
+      <td>✅ <code>dev</code> (standard tier)</td>
+      <td>✅ file/comment/label/board; closes ✅</td><td>prep ✅ · publish ❌</td>
+      <td><code>main</code> merge without approval, tag/publish, deletes</td></tr>
   <tr><td>safety-histogram</td><td>✅ draft PR to <code>dev</code></td>
-      <td>A0: ❌ · A1: ✅ <code>dev</code></td>
-      <td>✅</td><td>❌</td><td><code>master</code>, deletes</td></tr>
+      <td>✅ <code>dev</code></td>
+      <td>✅ incl. closes</td><td>prep ✅ · publish ❌</td><td><code>master</code>, tag/publish, deletes</td></tr>
   <tr><td>open.gismo</td><td>✅ draft PR to <code>dev</code> <em>(after obotclaw app install)</em></td>
-      <td>A0: ❌ · A1: ✅ <code>dev</code></td>
-      <td>✅</td><td>❌</td><td><code>main</code>, deletes</td></tr>
+      <td>✅ <code>dev</code></td>
+      <td>✅ incl. closes</td><td>prep ✅ · publish ❌</td><td><code>main</code>, tag/publish, deletes</td></tr>
+  <tr><td>gsm.safety</td><td>✅ worktree + draft PR to <code>dev</code> <em>(dev branch to be created —
+      see below)</em></td>
+      <td>✅ <code>dev</code> (standard tier, once added to <code>merge-policy.json</code>)</td>
+      <td>✅ incl. closes</td><td>prep ✅ · publish ❌</td>
+      <td><code>main</code> promotion without approval, tag/publish, deletes</td></tr>
   <tr><td>obot.agent</td><td>✅ (scaffold lane)</td>
-      <td>A0: ❌ · A1: ✅ <code>main</code> (standard tier)</td>
-      <td>✅</td><td>❌</td><td>deletes</td></tr>
+      <td>✅ <code>main</code> (standard tier), <strong>except</strong> PRs touching
+      <code>scripts/merge-policy.json</code>, <code>scripts/autonomy-grants.json</code>, workspace
+      hooks, or <code>goals/</code> — those always wait for @jwildfire (the self-widening carve-out)</td>
+      <td>✅ incl. closes</td><td>prep ✅ · publish ❌</td><td>deletes</td></tr>
   <tr><td>obot.roadmap</td><td>✅ direct commits to <code>main</code> (existing standing grant)</td>
       <td>✅ own-PR merges per existing grant</td>
-      <td>✅ full standard updates; <strong>no issue closes</strong> (stays Jeremy's click)</td>
+      <td>✅ full standard updates incl. non-Requirement closes; <strong>Requirement issues are never
+      closed directly</strong> — they close via release promotion PRs that @jwildfire approves</td>
       <td>❌</td><td>deletes of any kind (files, issues, releases, history)</td></tr>
-  <tr><td>gsm.safety</td><td>❌ read-only in <code>--auto</code></td><td>❌ (absent from merge policy — fully manual)</td>
-      <td>comment-only</td><td>❌</td><td>everything else</td></tr>
   <tr><td>Anything outside the jwildfire org</td><td colspan="5">❌ hard rule — read-only, no exceptions, drafts handed to Jeremy</td></tr>
 </table>
+</div>
+
+<div class="decision">
+  <strong>Decided 2026-07-22 (grant clarifications, live review):</strong>
+  <ul>
+    <li><strong>Issue closes:</strong> <code>--auto</code> may close any portfolio issue it can
+        justify <em>except hub Requirement issues</em>. Requirements close as part of release
+        promotion PRs, which @jwildfire still approves — closing delivered requirements becomes a
+        release-train step (feeds the coming <code>release</code> skill, oa#36).</li>
+    <li><strong>Policy-file carve-out:</strong> unattended merges to obot.agent <code>main</code>
+        exclude anything touching the autonomy machinery's policy surface
+        (<code>merge-policy.json</code>, <code>autonomy-grants.json</code>, hooks,
+        <code>goals/</code>) — closes the loophole where the autonomous session could widen its own
+        grants.</li>
+    <li><strong>gsm.safety joins the standard tier:</strong> reversing the draft's read-only stance —
+        G1 chart work and the FDA static charts (#9) land there, so autonomy must reach it. Its
+        branch model mirrors safety.viz: a new <code>dev</code> integration branch becomes the
+        default, <code>main</code> is protected and release-only via promotion PRs (approval tier).
+        Also heals the Status page's DEV STATUS gap for gsm.safety
+        (<a href="https://github.com/jwildfire/obot.roadmap/issues/44">hub#44</a>).</li>
+    <li><strong>Releases — prep yes, publish never:</strong> a session may draft release notes and
+        stage the dev→main promotion PR; tagging and publishing are always human-triggered.</li>
+  </ul>
 </div>
 
 <p>Enforcement is layered, mostly already built: the <code>merge-gate-guard</code> hook + two-tier
 <code>merge-policy.json</code> (merges), auto permission mode's classifier (destructive ops), the
 no-delete rule, and obotclaw attribution. New: the matrix above ships as
 <code>obot.agent/scripts/autonomy-grants.json</code> next to the merge policy, read by the
-<code>--auto</code> init at selection time and citable in refusals — see <a href="#questions">O5</a>
-for how hard its enforcement should be at v1.</p>
+<code>--auto</code> init at selection time and citable in refusals. Per
+<a href="#questions">O5</a> (decided 2026-07-22) it ships <em>soft</em> — consulted by the session,
+not hook-enforced — since the risky writes (merges) are already hard-gated; hardening is revisited
+after the first A1 runs.</p>
 
 <h2 id="levels">6. Autonomy levels: A0 → A1 → A2</h2>
 
+<div class="decision">
+  <strong>Decided 2026-07-22 (O3, overriding the draft's recommendation):</strong> <code>--auto</code>
+  <strong>starts at A1</strong>. @jwildfire's call: A0 draft-only operation is already proven — the
+  supervised overnight ⚡️ runs since 2026-07-12 (hep-explorer, open.gismo Phase-0, abnbl-DILI) all
+  delivered clean draft PRs unattended. A0 remains defined below only as the demotion target.
+</div>
+
 <table>
-  <tr><th>Level</th><th>What changes</th><th>Gate to advance</th></tr>
-  <tr><td><strong>A0 — observed runs</strong> (start here)</td>
+  <tr><th>Level</th><th>What it means</th><th>Status</th></tr>
+  <tr><td><strong>A0 — observed runs</strong></td>
       <td>Everything in §4, but <strong>draft-PR-only</strong>: no merges anywhere except the
-      existing obot.roadmap standing grant. Jeremy triggers each run.</td>
-      <td>N clean runs (proposed N=3): increment completed or cleanly parked, digest accurate,
-      zero guardrail violations → Jeremy flips A1.</td></tr>
-  <tr><td><strong>A1 — routine merges</strong> (the K4 target)</td>
-      <td>Standard-tier <code>obot-merge</code> allowed unattended (dev branches + oa main), so an
-      increment can land end-to-end overnight. Approval-tier still never.</td>
-      <td>Sustained clean operation + Jeremy's comfort → add scheduling.</td></tr>
+      existing obot.roadmap standing grant.</td>
+      <td>Skipped as an entry level (proven by the ⚡️ overnight record); kept as the instant
+      demotion target if A1 misbehaves.</td></tr>
+  <tr><td><strong>A1 — routine merges</strong> (the K4 target — <strong>start here</strong>)</td>
+      <td>Standard-tier <code>obot-merge</code> allowed unattended (dev branches + oa main, minus the
+      policy-file carve-out), so an increment can land end-to-end overnight. Approval-tier still
+      never.</td>
+      <td>Entry level from the first run. Jeremy triggers each run.</td></tr>
   <tr><td><strong>A2 — scheduled</strong></td>
-      <td>Nightly trigger without a human launch (local cron/launchd first; GHA-hosted headless as
-      the lane matures). Same session, same rules — only the trigger changes.</td>
-      <td>Stage-3 exit / keynote-era steady state.</td></tr>
+      <td>Nightly trigger without a human launch (desktop scheduled tasks / local cron first;
+      GHA-hosted headless as the lane matures). Same session, same rules — only the trigger
+      changes.</td>
+      <td>Gate: sustained clean A1 operation + Jeremy's comfort.</td></tr>
 </table>
 
-<p>The level is a single field in <code>autonomy-grants.json</code>; promotion is a reviewed one-line
-change, demotion is instant (§7).</p>
+<p>The level is a single field in <code>autonomy-grants.json</code> (shipping value: <code>A1</code>);
+promotion is a reviewed one-line change, demotion is instant (§7).</p>
 
 <h2 id="killswitch">7. Kill switches and failure modes</h2>
 
@@ -417,8 +466,8 @@ never silent, never retry-forever, never widen scope to route around a block. Sp
       lesson).</li>
   <li><strong>Requirement-status rollup lane:</strong> scheduled GHA job on obot.roadmap posting
       sub-issue status rollups on open requirements — read-mostly, write scope = issue comments under
-      obotclaw. Small, independent, can ship before or alongside <code>--auto</code>; it exercises the
-      App identity on GHA.</li>
+      obotclaw. Sequenced <strong>after</strong> <code>--auto</code> ships (decided 2026-07-22 —
+      <a href="#questions">O6</a>): the requirement stays single-threaded on the centerpiece.</li>
   <li><strong>Event-driven responder lane:</strong> the <code>@claude</code> PR/issue responder on
       portfolio repos — triage, review-comment responses, check runs. Depends only on #3's permission
       set; specified enough by the requirement; its detailed design can ride the implementation
@@ -437,15 +486,22 @@ never silent, never retry-forever, never widen scope to route around a block. Sp
       SKILL.md gains the <code>--auto</code> mode section (§4); <code>session-wrapup</code> SKILL.md
       gains the unattended variant (§4.4, codifying the existing needs-input rule);
       <code>goals/charts.md</code> + <code>goals/app.md</code>; <code>scripts/obot-auto</code>
-      (pre-flight + launch); <code>scripts/autonomy-grants.json</code> (§5, level=A0); halt-file
-      checks documented in both skills.</li>
-  <li><strong>First A0 runs</strong> (no code): 2–3 evening launches on G1 increments, digests
-      reviewed each morning; grant-matrix and selection-rule fixes fed back as small PRs.</li>
-  <li><strong>Rollup lane</strong> (obot.roadmap workflow + small script) — parallelizable with 2.</li>
+      (pre-flight + launch); <code>scripts/autonomy-grants.json</code> (§5, level=A1);
+      <code>merge-policy.json</code> gains <code>gsm.safety</code> <code>dev</code> as a standard
+      lane and <code>main</code> in the approval tier; halt-file checks documented in both skills.
+      <span class="note">This PR touches policy files, so by its own carve-out it merges only with
+      @jwildfire's approval.</span></li>
+  <li><strong>gsm.safety branch-model adoption</strong> (repo ops, per the 2026-07-22 decision):
+      create <code>dev</code> from the v1.0.0 <code>main</code> tip, make it the default branch,
+      protect <code>main</code> as release-only via promotion PRs — mirroring safety.viz.</li>
+  <li><strong>Maiden A1 run</strong> (no code): evening launch on
+      <a href="https://github.com/jwildfire/safety.viz/issues/85">sv#85</a> (decided —
+      <a href="#questions">O1</a>); digest reviewed next morning; grant-matrix and selection-rule
+      fixes fed back as small PRs.</li>
+  <li><strong>Rollup lane</strong> (obot.roadmap workflow + small script) — after <code>--auto</code>
+      ships (O6).</li>
   <li><strong>Responder lane</strong> (workflow per target repo) — after the rollup proves the GHA
-      + App identity path.</li>
-  <li><strong>A1 flip</strong> (config change + short runbook note) when the A0 gate passes;
-      scheduling (A2) as a separate later sub-issue.</li>
+      + App identity path; scheduling (A2) as a separate later sub-issue.</li>
 </ol>
 
 <h2 id="risks">10. Dependencies and risks</h2>
@@ -453,55 +509,53 @@ never silent, never retry-forever, never widen scope to route around a block. Sp
 <ul>
   <li><strong>Dependencies:</strong> hub #3 App identity (live; §7 credential retirement still
       pending, not blocking); obot.agent session framework v0.2.0 (shipped); merge lane (shipped);
-      obotclaw app install on open.gismo (pending — blocks G2 merges, not G1);
+      gsm.safety <code>dev</code> branch + protection (implementation step 2 — gates its standard
+      lane, not the rest); obotclaw app install on open.gismo (pending — blocks G2 merges, not G1);
       <code>/goal</code> built-in availability at the pinned CLI version.</li>
   <li><strong>Wrong-increment selection:</strong> mitigated by the roadmap-first gate, the hand-off
       list as the priority source, <code>--dry-run</code>, and one-increment-per-run. Worst case at
-      A0 is a draft PR nobody wanted — cheap to close.</li>
+      A1 is an unwanted change on an integration branch — revertible, and visible in the morning
+      digest before it goes anywhere near a release.</li>
   <li><strong>Runaway cost:</strong> budgets in §7.1 + the allocation-grant cost note in every
-      digest; A0 runs are Jeremy-triggered so frequency is human-controlled.</li>
+      digest; A1 runs are Jeremy-triggered so frequency is human-controlled.</li>
   <li><strong>Unattended failure opacity:</strong> the heartbeat + Monitor + digest triad exists
       precisely for this; the 07-12 overnight runs are the evidence it works.</li>
   <li><strong>Drift between the <code>/goal</code> built-in and our layer:</strong> we depend on it
       only as an in-session stop check — if its semantics change, the session degrades to its own
       judgment plus budgets, nothing structural breaks.</li>
-  <li><strong>Trust erosion from one bad merge:</strong> the reason A0 exists; A1 only ever reaches
-      standard-tier branches where a bad merge is revertible on an integration branch.</li>
+  <li><strong>Trust erosion from one bad merge:</strong> A1 only ever reaches standard-tier
+      integration branches where a bad merge is a revert, never a release; the policy-file carve-out
+      keeps the machinery itself out of unattended reach; demotion to A0 is a one-line instant
+      response.</li>
 </ul>
 
-<h2 id="questions">11. Open judgement calls</h2>
+<h2 id="questions">11. Judgement calls — resolved 2026-07-22</h2>
 
-<div class="question"><span class="qid">O1 — Maiden run scope.</span> Which increment for the first
-A0 run? <span class="rec"><strong>Recommend:</strong> a small G1 item from the safety.viz
-improvement backlog (e.g. sv#85 axis-limit defaults — well-scoped, single-repo, no design gate), not
-nepExplorer #35 (big) or anything G2 (app-install prereq).</span></div>
+<p class="note">All six calls decided by @jwildfire in the same-day live review (plus the four
+grant-matrix clarifications recorded in §5).</p>
 
-<div class="question"><span class="qid">O2 — Where goal definitions live.</span> obot.agent
-<code>goals/</code> (versioned with the machinery, merge-policy precedent) vs the hub (roadmap
-visibility). <span class="rec"><strong>Recommend:</strong> obot.agent; the hub already shows the
-work itself, and goal edits should ride the scaffold-lane review path.</span></div>
+<div class="decision"><strong>O1 — Maiden run: sv#85</strong> (axis-limit inputs pre-filled with
+data defaults) — well-scoped, single-repo, no design gate; the first unattended
+select→build→merge-to-dev→digest cycle runs on it.</div>
 
-<div class="question"><span class="qid">O3 — Merge posture at start.</span> K4 authorizes routine
-merges for Aug–Sept; should <code>--auto</code> start there? <span class="rec"><strong>Recommend:</strong>
-no — start A0 (draft-only) with an explicit, fast A0→A1 gate (3 clean runs). The merge lane is a
-week old; let the first autonomous runs prove selection + wrapup before they land code
-unattended.</span></div>
+<div class="decision"><strong>O2 — Goal definitions live in obot.agent <code>goals/</code></strong> —
+versioned with the machinery (merge-policy precedent); goal edits ride the scaffold-lane review
+path, and per the §5 carve-out they always wait for @jwildfire.</div>
 
-<div class="question"><span class="qid">O4 — Identity tag.</span> Autonomous sessions as
-<code>🦾🤖 {date} {slug}</code>, purple in the hub? <span class="rec"><strong>Recommend:</strong>
-yes — 😺/👯/⚡️ each mark a supervision model; unattended-autonomous is a fourth and the dashboard
-should say so at a glance.</span></div>
+<div class="decision"><strong>O3 — Start at A1</strong>, overriding the draft's A0-first
+recommendation: draft-only operation is considered proven by the supervised overnight ⚡️ runs
+(2026-07-12 onward). A0 remains the demotion target only. See §6.</div>
 
-<div class="question"><span class="qid">O5 — Grant enforcement hardness.</span> Ship
-<code>autonomy-grants.json</code> as convention consulted by the session (soft) or wire it into
-hooks like the merge gate (hard)? <span class="rec"><strong>Recommend:</strong> soft at A0 (merges —
-the risky writes — are already hard-gated); revisit hardening alongside the A1 flip, reusing the
-merge-gate-guard pattern.</span></div>
+<div class="decision"><strong>O4 — Identity tag <code>🦾🤖 {date} {slug}</code>, purple</strong> in
+the session hub — unattended-autonomous is a fourth supervision model alongside 😺/👯/⚡️ and the
+dashboard says so at a glance.</div>
 
-<div class="question"><span class="qid">O6 — Rollup lane timing.</span> Build the rollup lane now in
-parallel (it exercises GHA + App identity cheaply) or hold everything behind the <code>--auto</code>
-experiments? <span class="rec"><strong>Recommend:</strong> in parallel — it is independent, tiny,
-and de-risks the eventual GHA-hosted dev lane.</span></div>
+<div class="decision"><strong>O5 — Grants ship soft at v1</strong> — <code>autonomy-grants.json</code>
+is consulted by the session, not hook-enforced; the risky writes (merges) are already hard-gated.
+Hardening revisited after the first A1 runs, reusing the merge-gate-guard pattern.</div>
+
+<div class="decision"><strong>O6 — Rollup lane after <code>--auto</code> ships</strong>, not in
+parallel — the requirement stays single-threaded on the centerpiece.</div>
 
 <footer>
   <hr style="border:none">
