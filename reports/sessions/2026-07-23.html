@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Session report 2026-07-23 · obot</title>
+<style>
+  :root {
+    --ground:#faf8f5; --panel:#fff; --panel-2:#f3f0eb; --ink:#26221c; --ink-2:#5c564c;
+    --ink-3:#8a8378; --line:#e4dfd6; --accent:#c2540a; --accent-ink:#a34406; --accent-tint:#faeadd;
+    --good:#1a7f4b; --good-tint:#e2f2e8; --warn:#8a6100; --warn-tint:#f7ecd0;
+    --idle:#6b7280; --idle-tint:#ecebe7; --bad:#b3261e; --bad-tint:#f9e4e2;
+    --agent-orange:#d97706; --agent-green:#1a7f4b; --agent-pink:#d0459b; --agent-blue:#2563eb;
+    --agent-purple:#7c3aed; --agent-none:#9a938a;
+    --shadow:0 1px 2px rgba(38,34,28,.05),0 4px 14px rgba(38,34,28,.04);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#191712; --panel:#211e18; --panel-2:#2a2620; --ink:#ece7dd; --ink-2:#b3aa9b;
+      --ink-3:#7d7568; --line:#363129; --accent:#f08c3e; --accent-ink:#f3a163; --accent-tint:#38281a;
+      --good:#58c389; --good-tint:#1d3227; --warn:#e3b341; --warn-tint:#362d17;
+      --idle:#9aa2ad; --idle-tint:#2b2925; --bad:#e5736c; --bad-tint:#3a201e;
+      --agent-orange:#f59e0b; --agent-green:#58c389; --agent-pink:#ec6cb9; --agent-blue:#60a5fa;
+      --agent-purple:#a78bfa; --agent-none:#857d71; --shadow:none;
+    }
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:14px;
+         line-height:1.5; margin:0; padding:24px 20px 48px; }
+  a { color:var(--accent-ink); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  code { font-family:var(--mono); font-size:.9em; background:var(--panel-2); border-radius:4px; padding:0 4px; }
+  .wrap { max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+  header { display:flex; flex-direction:column; gap:10px; }
+  .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); }
+  .masthead { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  h1 { font-size:26px; font-weight:650; margin:0; letter-spacing:-.01em; }
+  h1 .ws { color:var(--ink-3); font-weight:400; }
+  .header-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .mode { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden;
+          font-family:var(--mono); font-size:11.5px; }
+  .mode span { padding:4px 12px; color:var(--ink-3); }
+  .mode .on { background:var(--accent-tint); color:var(--accent-ink); font-weight:600; }
+  .stamp { font-family:var(--mono); font-size:11.5px; color:var(--ink-3); }
+  .banner { display:flex; align-items:center; gap:10px; background:var(--warn-tint); color:var(--warn);
+            border:1px solid color-mix(in srgb,var(--warn) 30%,transparent); border-radius:8px;
+            padding:9px 14px; font-size:13px; font-weight:500; }
+  .banner.ok { background:var(--good-tint); color:var(--good); border-color:color-mix(in srgb,var(--good) 30%,transparent); }
+  .banner .dot { flex:none; width:8px; height:8px; border-radius:50%; background:currentColor; }
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .tile { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
+          padding:14px 16px 12px; display:flex; flex-direction:column; gap:2px; }
+  .tile .label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+  .tile .value { font-size:27px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .tile .value small { font-size:15px; font-weight:500; color:var(--ink-3); }
+  .tile .sub { font-size:12px; color:var(--ink-2); }
+  .grid { display:grid; grid-template-columns:1.15fr 1fr; gap:16px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
+  .panel-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+                padding:12px 16px 10px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .panel-head h2 { font-size:14px; font-weight:650; margin:0; display:inline-flex; align-items:center; gap:6px; }
+  .src { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .panel-body { padding:12px 16px 14px; display:flex; flex-direction:column; gap:8px; }
+  .group-label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+                 color:var(--ink-3); padding:6px 0 2px; }
+
+  /* drill-downs */
+  summary { cursor:pointer; }
+  summary::-webkit-details-marker { display:none; }
+  summary { list-style:none; }
+  .tw { flex:none; display:inline-block; font-size:10px; color:var(--ink-3); transition:transform .12s ease; width:10px; }
+  details[open] > summary .tw { transform:rotate(90deg); }
+  .drill { padding:8px 4px 6px 26px; font-size:12.5px; color:var(--ink-2); display:flex; flex-direction:column; gap:7px; }
+
+  /* priorities */
+  details.pri > summary { display:flex; align-items:center; gap:8px; padding:4px 0; min-width:0; }
+  details.pri.is-done .crop { color:var(--ink-3); text-decoration:line-through; }
+  .box { flex:none; width:14px; height:14px; border-radius:4px; border:1.5px solid var(--ink-3); position:relative; }
+  .box.none { border-style:dotted; }
+  .box.done { background:var(--good); border-color:var(--good); }
+  .box.done::after { content:""; position:absolute; left:4px; top:1px; width:3px; height:7px;
+                     border:solid var(--panel); border-width:0 2px 2px 0; transform:rotate(40deg); }
+  .num { font-family:var(--mono); font-size:11.5px; color:var(--ink-3); flex:none; min-width:14px; text-align:right; }
+  .crop { flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; }
+  .chips { flex:none; display:inline-flex; gap:4px; max-width:45%; overflow:hidden; }
+  .prose-line { margin:0; font-size:12px; color:var(--ink-3); }
+
+  /* agent↔priority chips */
+  .agchip { font-family:var(--mono); font-size:10px; border-radius:999px; padding:1px 7px; white-space:nowrap;
+            color:var(--c); border:1px solid color-mix(in srgb, var(--c) 55%, transparent);
+            background:color-mix(in srgb, var(--c) 10%, transparent);
+            max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+  .pchip { font-family:var(--mono); font-size:10px; border-radius:999px; padding:1px 7px; white-space:nowrap;
+           color:var(--accent-ink); border:1px solid var(--line); background:var(--accent-tint); }
+
+  /* agents */
+  .agents { display:flex; flex-direction:column; gap:6px; }
+  details.agent { border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+  details.agent > summary { display:flex; align-items:center; gap:8px; padding:8px 10px; min-width:0; }
+  details.agent > .drill { padding:2px 12px 10px 28px; }
+  .agent-dot { flex:none; width:9px; height:9px; border-radius:50%; }
+  .agent-name { font-family:var(--mono); font-size:12.5px; font-weight:600; overflow:hidden;
+                text-overflow:ellipsis; white-space:nowrap; flex:1 1 auto; min-width:0; }
+  .agent-fullname { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .pill { margin-left:auto; flex:none; display:inline-flex; align-items:center; gap:5px;
+          font-size:11px; font-weight:600; border-radius:999px; padding:2px 9px; }
+  .pill i { font-style:normal; font-size:10px; }
+  .pill.working { background:var(--good-tint); color:var(--good); }
+  .pill.blocked { background:var(--warn-tint); color:var(--warn); }
+  .pill.failed { background:var(--bad-tint); color:var(--bad); }
+  .pill.done, .pill.idle { background:var(--idle-tint); color:var(--idle); }
+  .agent-detail { font-size:12px; color:var(--ink-2); }
+  .agent-meta { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:11px;
+                color:var(--ink-3); font-variant-numeric:tabular-nums; flex-wrap:wrap; }
+  .tokbar { flex:1 1 60px; min-width:50px; max-width:120px; height:4px; border-radius:2px; background:var(--panel-2); overflow:hidden; }
+  .tokbar b { display:block; height:100%; border-radius:2px; }
+  .agent-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .refchip { font-family:var(--mono); font-size:11px; white-space:nowrap; background:var(--panel-2);
+             border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--accent-ink); }
+
+  /* accomplishments */
+  .accomplish { border-color:color-mix(in srgb, var(--good) 35%, var(--line)); }
+  .acc-row { display:flex; align-items:baseline; gap:8px; font-size:13px; min-width:0; }
+  .acc-row time { font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  .crop-inline { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .closed-badge { flex:none; font-size:11px; font-weight:600; color:var(--good); background:var(--good-tint);
+                  border-radius:999px; padding:1px 8px; }
+  .ev { flex:none; font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  details.acc-more > summary { display:flex; align-items:center; gap:8px; font-size:13px; padding:2px 0; }
+
+  /* collapsed secondary panels */
+  details.fold > summary.panel-head { border-bottom:none; }
+  details.fold[open] > summary.panel-head { border-bottom:1px solid var(--line); }
+
+  ul.todo { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .todo li { display:flex; gap:10px; align-items:baseline; font-size:13px; }
+  .todo li .box { align-self:flex-start; margin-top:3px; }
+  .todo .txt { min-width:0; }
+  .todo li.is-done .txt { color:var(--ink-3); text-decoration:line-through; }
+  .todo time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; }
+  .feed { display:flex; flex-direction:column; }
+  .evt { display:flex; gap:12px; align-items:baseline; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .evt:last-child { border-bottom:none; }
+  .evt time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; width:68px; }
+  .evt .txt { min-width:0; }
+  .repo { font-family:var(--mono); font-size:10.5px; border-radius:4px; padding:1px 6px;
+          background:var(--panel-2); border:1px solid var(--line); color:var(--ink-2); white-space:nowrap; }
+  .prose { font-size:13px; color:var(--ink-2); }
+  .prose div { margin-bottom:4px; }
+  .notice { font-family:var(--mono); font-size:11.5px; color:var(--warn); margin:0; }
+  .foot { font-family:var(--mono); font-size:11px; color:var(--ink-3); text-align:center; }
+  @media (max-width:940px) { .grid { grid-template-columns:1fr; } .tiles { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">obot session hub · session report</div>
+  <div class="masthead">
+    <h1>Session 2026-07-23 <span class="ws">· obot2</span></h1>
+    <div class="header-meta">
+      <span class="mode"><span class="">● Live</span><span class="on">Report</span></span>
+      <span class="stamp">generated 8:58 AM</span>
+    </div>
+  </div>
+  <div class="banner ok"><span class="dot"></span>Session report — frozen at wrapup. 2 agents, 1487.6k tokens, 0 closures/releases.</div>
+</header>
+
+<section class="tiles">
+  <div class="tile"><span class="label">Priorities</span><span class="value">0 <small>open · 0 done</small></span><span class="sub">scratchpad kickoff list</span></div>
+  <div class="tile"><span class="label">Agents</span><span class="value">2</span><span class="sub">1 done · 1 blocked</span></div>
+  <div class="tile"><span class="label">Tokens</span><span class="value">1487.6k</span><span class="sub">across 2 reporting sessions</span></div>
+  <div class="tile"><span class="label">Closure</span><span class="value">0</span><span class="sub">0 merged · 0 closed · 0 released</span></div>
+</section>
+
+<section class="panel accomplish">
+  <div class="panel-head"><h2>Accomplishments</h2><span class="src">derived: releases + requirement issues + closures since session start</span></div>
+  <div class="panel-body"><p class="notice">no releases, requirement moves, or closures yet this session</p></div>
+</section>
+
+<div class="grid">
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Priorities</h2><span class="src">scratchpad · ## Overview — click a row for detail</span></div>
+  <div class="panel-body"></div>
+</section>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Roadmap activity</h2><span class="src">5 events · gh sweep, all events</span></summary>
+  <div class="panel-body"><div class="feed"><div class="evt"><time>1:42 AM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/101">PR #101</a> participant-profile: shared drill-down module — standalone renderer + dock, hep-explorer adopts first — <strong>opened</strong></span></div>
+<div class="evt"><time>2:53 AM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/102">PR #102</a> participant-profile rollout batch 1: outlier-explorer, shift-plot, delta-delta adopt the dock (#99) — <strong>opened</strong></span></div>
+<div class="evt"><time>3:33 AM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/99">#99</a> participant-profile: lab-family dock rollout — histogram, outlier-explorer, shift-plot, results-over-time, qt-explorer, delta-delta — <strong>updated</strong></span></div>
+<div class="evt"><time>3:37 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/41">PR #41</a> Requirements: participant-profile PPRF matrix (27 rows, sv#98) + HEP-ARM-001 TRTA fix — <strong>opened</strong></span></div>
+<div class="evt"><time>3:39 AM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/103">PR #103</a> participant-profile rollout batch 2: histogram + qt-explorer adopt the dock (#99) — <strong>opened</strong></span></div></div></div>
+</details></div>
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Agents</h2><span class="src">state.json + claude agents — P# links to the priority</span></div>
+  <div class="panel-body"><div class="agents"><details class="agent" id="agent-fe8eb621">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-none)"></span><span class="agent-name">safety-viz patient drill-down</span><span class="chips"></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">participant-profile ultracode complete — draft PR stack sv#100→103 + oa#41 shipped, all gates green; composite drill-down gap closed across six renderers, awaiting Jeremy&#39;s stacked review</div>
+    <div class="agent-meta">
+      <span>10:04 PM–3:34 AM (5h 30m)</span>
+      <span class="tokbar"><b style="width:100%;background:var(--agent-none)"></b></span><span>1273.0k tok</span>
+      <span>fable</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/safety.viz/pull/100">PR safety.viz#100</a> <a class="refchip" href="https://github.com/jwildfire/safety.viz/pull/101">PR safety.viz#101</a> <a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/41">PR obot.agent#41</a> <a class="refchip" href="https://github.com/jwildfire/safety.viz/pull/102">PR safety.viz#102</a> <a class="refchip" href="https://github.com/jwildfire/safety.viz/pull/103">PR safety.viz#103</a></div>
+    
+    
+  </div>
+</details>
+<details class="agent" id="agent-45021083">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-orange)"></span><span class="agent-name">lead</span><span class="chips"></span><span class="pill idle"><i>?</i>blocked</span></summary>
+  <div class="drill">
+    <div class="agent-detail">continue</div>
+    <div class="agent-meta">
+      <span>10:44 PM–8:57 AM (10h 12m)</span>
+      <span class="tokbar"><b style="width:54%;background:var(--agent-orange)"></b></span><span>214.7k tok</span>
+      
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/40">PR obot.agent#40</a></div>
+    <div class="agent-fullname">😺🤖 2026-07-22 2</div>
+    
+  </div>
+</details></div></div>
+</section>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Notes</h2><span class="src">0 · scratchpad · ## Notes</span></summary>
+  <div class="panel-body"><p class="notice">⚠ no ## Notes section in today’s scratchpad</p></div>
+</details>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Scaffold</h2><span class="src">0 · scratchpad · ## Scaffold</span></summary>
+  <div class="panel-body"><p class="notice">⚠ no ## Scaffold section yet — capture with &quot;scaffold: …&quot;</p></div>
+</details>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Next session</h2><span class="src">memory + last diary</span></summary>
+  <div class="panel-body"><div class="prose">Written at the end of the <strong>2026-07-22 late session</strong> (session #2, job 45021083 — #18 design approved live + implementation shipped overnight per Jeremy&#39;s sign-off; wrapup COMPLETED 07-23 morning: diary 2026-07-22-2 posted, #28→Released, release notes patched, #43/sv#98/sv#99 board-staged, sv#100 Closes-line fixed, tip CI re-run, sv#104 filed). Supersedes the 07-22 wrapup list.
+
+<strong>MORNING REVIEW (Jeremy first):</strong>
+
+1. <strong><a href="https://github.com/jwildfire/obot.agent/pull/40">oa PR#40</a> — the <code>--auto</code> core</strong> (skills, goals/, obot-auto, autonomy-grants.json A1, merge-policy + gsm.safety). In the policy-file carve-out → his approval to merge (mark ready, then obot-merge or directed). Design record: <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/18_design.html">#18 doc</a> (APPROVED badge, all decisions in §5/§11).
+2. <strong>Maiden A1 run</strong> (after #40 merges, he triggers): <code>obot.agent/scripts/obot-auto --increment jwildfire/safety.viz#85</code> — or <code>--preflight-only</code> first for a zero-cost check.
+3. <strong>Close clicks</strong> (agent closes still permission-blocked): <a href="https://github.com/jwildfire/gsm.safety/issues/44">gs#44</a> (branch model done+verified), hub#41, open-but-Released #2/#3/#21/#30. Also the participant-profile merge train: <a href="https://github.com/jwildfire/obot.agent/pull/41">oa#41</a> first, then sv#100→#103 once tip CI green (re-runs 29986442156/29988563324 triggered at wrapup); en-route decisions: stale hep-core-split branch delete, proof-file location, SSP-API-003 rewording. NOTE: the #18 closes-grant (all-but-Requirements) isn&#39;t wired into the permission scaffold yet — wiring it is a scaffold change for a reviewed session.
+
+<strong>THEN (carried, re-prioritized):</strong>
+
+4. <strong>gs v1.0.0 follow-through</strong> — <a href="https://github.com/jwildfire/obot.roadmap/issues/28">#28</a> board → Released, release-notes <code>Requirements delivered:</code> check, <strong>Diary #8 = the v1.0 ship story</strong> outline (<a href="https://github.com/jwildfire/obot.roadmap/issues/22">hub#22</a>); v1.0.0 shipped 07-22 ~22:00 EDT (<a href="https://github.com/jwildfire/gsm.safety/releases/tag/v1.0.0">release</a>).
+5. <strong>Keynote-plan report</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/10">#10</a>) — stage model → plan of record; Stage-3 kickoff (#18) is now real material.
+6. <strong>open.gismo plan rewrite app-first</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a>); prereq admin: obotclaw install on open.gismo (also gates G2 --auto increments per goals/app.md).
+7. <strong>Release skill</strong> (<a href="https://github.com/jwildfire/obot.agent/issues/36">oa#36</a>) — now includes the requirement-closes-on-release-PR step (07-22 decision).
+
+<strong>Queued:</strong> hub#45 ⚡️ launch call (sv#98/#99, D1–D5 locked) · <a href="https://github.com/jwildfire/obot.roadmap/issues/44">hub#44</a> status page (gsm.safety DEV STATUS heals next deploy; 3 repos still lack dev) · <a href="https://github.com/jwildfire/obot.agent/issues/37">oa#37</a> obot-merge hardening · hub PR#42 review + #9 D1–D4 · nep #35 · board hygiene (hub#43 not on board; sv#83–89 + oa#32/#36/#37 untracked) · qt resolvePlaceboArm FILED as <a href="https://github.com/jwildfire/safety.viz/issues/104">sv#104</a> · rollup lane (AFTER --auto ships, O6).
+
+<strong>Carried admin:</strong> obotclaw install jwildfire.github.io; Gilead PR#151; hub #3 §7; LinkedIn; deletions approval.</div>
+<div class="group-label">last diary (2026-07-22.md)</div><div class="prose"><div>1. <strong>gs PR #39 merge + tag v1.0.0</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/28">hub #28</a>, now in Review) — everything is green and current; this is the Stage-2 headline act. gsm.safety is manual-lane by policy, so the merge is @jwildfire&#39;s (or <code>--jeremy-approved</code> directed).</div><div>2. <strong>Keynote-plan report</strong> on the hub (<a href="https://github.com/jwildfire/obot.roadmap/issues/10">hub #10</a>) — write the decided stage model down as the plan of record.</div><div>3. <strong>Autonomy design</strong> — <code>--auto</code> /session-init + <code>/goal</code> for <a href="https://github.com/jwildfire/obot.roadmap/issues/18">hub #18</a>&#39;s Design section.</div><div>4. <strong>open.gismo plan rewrite, app-first</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/34">hub #34</a>) → Phase 1–4 requirements. Prereq admin: obotclaw app install on open.gismo before its first agent merge.</div><div>5. <strong><code>release</code> skill</strong> for obot (<a href="https://github.com/jwildfire/obot.agent/issues/36">oa#36</a>) — codify the request-driven train the v1.4.1 run just walked: pre-flight → obot-merge → promote → tag → release notes with <code>Requirements delivered:</code> → evidence/extracts refresh. Absorbs the queued safety.viz-release skill; today&#39;s transcript is the template.</div><div>6. <strong>Status-page follow-up</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/44">hub #44</a>): unreleased-commits-on-main view; dev-branch policy for the four repos showing &quot;Unavailable&quot;.</div><div>7. <strong>Carried:</strong> <a href="https://github.com/jwildfire/obot.roadmap/pull/42">hub PR #42</a> review + D1–D4 on <a href="https://github.com/jwildfire/obot.roadmap/issues/9">#9</a>; nep <a href="https://github.com/jwildfire/obot.roadmap/issues/35">#35</a> pre-flight → ⚡️; Diary #8 (<a href="https://github.com/jwildfire/obot.roadmap/issues/22">hub #22</a>); board hygiene G1/G5; obot-merge hardening (<a href="https://github.com/jwildfire/obot.agent/issues/37">oa#37</a>).</div></div></div>
+</details></div>
+</div>
+
+<div class="foot">frozen operational record · pairs with diary/2026-07-23.md · boundary: no marker → local midnight (12:00 AM) · session-hub (obot.agent v0.2 · <a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>)</div>
+</div>
+
+</body>
+</html>
