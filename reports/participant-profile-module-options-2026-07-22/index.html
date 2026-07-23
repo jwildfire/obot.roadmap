@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Participant profile — one drill-down module for every safety.viz chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#faf6f1;--espresso:#271810;--orange:#f97316;--amber:#fb923c;--muted:#7a6a5d;--rule:rgba(39,24,16,.14);--card:#fffdfa;--good:#166534;--goodbg:#dcfce7}
+*{box-sizing:border-box;margin:0}
+body{background:var(--paper);color:var(--espresso);font:16px/1.6 "Instrument Sans",system-ui,sans-serif}
+a{color:var(--orange)}
+.top{position:sticky;top:0;z-index:9;background:var(--espresso);color:var(--paper);padding:.65rem 1.5rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;border-top:4px solid var(--orange)}
+.top .t{font-family:"Instrument Serif",serif;font-size:1.15rem}
+.top nav{margin-left:auto;display:flex;gap:.35rem}
+.top nav a{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--paper);text-decoration:none;border:1px solid rgba(250,246,241,.35);border-radius:999px;min-width:1.7rem;height:1.7rem;display:grid;place-items:center;padding:0 .4rem}
+.top nav a:hover,.top nav a:focus-visible{background:var(--orange);border-color:var(--orange);color:var(--espresso)}
+.wrap{max-width:1150px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+h1{font-family:"Instrument Serif",serif;font-weight:400;font-size:2.5rem;line-height:1.15}
+h2{font-family:"Instrument Serif",serif;font-weight:400;font-size:1.9rem;margin:0 0 .8rem}
+h3{font-size:1.05rem;margin:1.4rem 0 .4rem}
+.standfirst{max-width:66ch;color:var(--muted);margin:.8rem 0 0}
+.standfirst b{color:var(--espresso);font-weight:600}
+blockquote.ask{margin:1.4rem 0 0;max-width:64ch;border-left:4px solid var(--orange);background:var(--card);border-radius:0 10px 10px 0;padding:1rem 1.3rem;font-family:"Instrument Serif",serif;font-style:italic;font-size:1.15rem}
+blockquote.ask footer{font-family:"Instrument Sans",system-ui,sans-serif;font-style:normal;font-size:.8rem;color:var(--muted);margin-top:.5rem}
+section.block{margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid var(--rule)}
+p.lede{max-width:72ch;margin:.4rem 0 .9rem}
+p.note{max-width:72ch;font-size:.9rem;color:var(--muted);margin:.6rem 0}
+table{border-collapse:collapse;width:100%;margin:1rem 0;font-size:.9rem;background:var(--card)}
+th,td{border:1px solid var(--rule);padding:.45rem .65rem;text-align:left;vertical-align:top}
+th{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--paper)}
+code{font-family:"IBM Plex Mono",monospace;font-size:.85em;background:rgba(39,24,16,.06);border-radius:4px;padding:.08em .35em}
+.tablewrap{overflow-x:auto}
+.pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.68rem;border-radius:999px;padding:.08rem .55rem;border:1px solid var(--rule);color:var(--muted);white-space:nowrap}
+.pill.yes{background:var(--goodbg);color:var(--good);border-color:transparent}
+.pill.gap{background:#fee2e2;color:#991b1b;border-color:transparent}
+.pill.part{background:#fef3c7;color:#92400e;border-color:transparent}
+/* option layout (homepage-options pattern) */
+.option{display:grid;grid-template-columns:280px 1fr;gap:2rem;margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid var(--rule)}
+.rail h2{font-size:1.8rem;margin:.2rem 0 .4rem}
+.plate-letter{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--paper);background:var(--espresso);border-radius:6px;padding:.15rem .55rem}
+.thesis{font-family:"Instrument Serif",serif;font-style:italic;font-size:1.12rem;margin-bottom:.7rem}
+.rail-h{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-top:1rem}
+.rail p,.rail ul{font-size:.88rem;margin:.3rem 0 .6rem}
+.rail ul{padding-left:1.1rem}
+.rail li{margin:.2rem 0}
+.trade{color:var(--muted)}
+.browser{border:1px solid var(--rule);border-radius:12px;background:var(--card);overflow:hidden;box-shadow:0 10px 30px rgba(39,24,16,.08);min-width:0;align-self:start}
+.plate{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.1em;padding:.45rem .9rem;border-bottom:1px solid var(--rule);color:var(--muted)}
+/* ------- mockup internals ------- */
+.mk{background:var(--paper);font-size:10px;line-height:1.45;padding:1.4em;display:flex;gap:1.2em}
+.mk-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:1em}
+.mk-side{width:11em;flex:none;display:flex;flex-direction:column;gap:.9em;border-right:1px solid var(--rule);padding-right:1em}
+.mk-side-h{font-family:"IBM Plex Mono",monospace;font-size:.7em;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.mk-ctl{font-size:.85em}
+.mk-ctl span{display:block;border:1px solid var(--rule);border-radius:4px;background:var(--card);padding:.15em .5em;margin-top:.15em;color:var(--muted)}
+.mk-chip{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.75em;border:1px solid var(--orange);color:#9a3412;background:#ffedd5;border-radius:999px;padding:.05em .6em;margin:.1em .15em 0 0}
+.mk-note{font-size:.85em;color:var(--muted)}
+.mk-note b{color:var(--espresso)}
+.mk-card{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:.8em}
+.mk-card-h{font-family:"IBM Plex Mono",monospace;font-size:.7em;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:.5em;display:flex;justify-content:space-between;gap:.6em;align-items:baseline}
+.mk-scatter{position:relative;height:9em;border-left:1.5px solid var(--espresso);border-bottom:1.5px solid var(--espresso);background:
+ linear-gradient(to right,transparent calc(62% - .5px),rgba(39,24,16,.22) 62%,transparent calc(62% + .5px)),
+ linear-gradient(to top,transparent calc(55% - .5px),rgba(39,24,16,.22) 55%,transparent calc(55% + .5px))}
+.mk-scatter i{position:absolute;width:.55em;height:.55em;border-radius:50%;background:#cbb9a9;border:1px solid rgba(39,24,16,.35)}
+.mk-scatter i.sel{width:.8em;height:.8em;background:var(--orange);border:2px solid var(--espresso);z-index:2}
+.mk-scatter i.dim{opacity:.4}
+.mk-scatter svg.trace{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.mk-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.8em}
+.mk-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:.6em}
+.mk-panel{height:4.5em;border:1px solid var(--rule);border-radius:4px;background:repeating-linear-gradient(45deg,transparent,transparent 7px,rgba(39,24,16,.035) 7px,rgba(39,24,16,.035) 14px);position:relative}
+.mk-panel em{position:absolute;left:.4em;top:.2em;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:.6em;color:var(--muted)}
+/* profile block */
+.mk-profile{background:var(--card);border:1.5px solid var(--espresso);border-radius:8px;padding:.8em;box-shadow:0 6px 16px rgba(39,24,16,.10)}
+.mk-profile.ghost{border-style:dashed;box-shadow:none}
+.mk-prof-h{display:flex;justify-content:space-between;align-items:baseline;gap:.8em;border-bottom:1px solid var(--rule);padding-bottom:.4em;margin-bottom:.6em}
+.mk-prof-h b{font-family:"Instrument Serif",serif;font-weight:400;font-size:1.25em}
+.mk-prof-h span{font-family:"IBM Plex Mono",monospace;font-size:.7em;color:var(--muted)}
+.mk-prof-x{font-family:"IBM Plex Mono",monospace;font-size:.75em;border:1px solid var(--rule);border-radius:999px;padding:.05em .6em;color:var(--muted)}
+.mk-demo-row{display:flex;flex-wrap:wrap;gap:.3em .9em;font-size:.8em;color:var(--muted);margin-bottom:.6em}
+.mk-demo-row b{color:var(--espresso);font-weight:600}
+.mk-prof-grid{display:grid;grid-template-columns:3fr 2fr;gap:.8em}
+.mk-spag{height:6.5em;border-left:1.5px solid var(--espresso);border-bottom:1.5px solid var(--espresso);position:relative}
+.mk-spag svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.mk-mtable{font-size:.75em;width:100%;border-collapse:collapse;background:none}
+.mk-mtable th,.mk-mtable td{border:none;border-bottom:1px solid var(--rule);padding:.25em .3em;background:none;font-size:1em}
+.mk-mtable th{font-family:"IBM Plex Mono",monospace;font-size:.85em;color:var(--muted);text-transform:none;letter-spacing:0}
+.mk-mtable svg{display:block}
+.mk-cap{font-family:"IBM Plex Mono",monospace;font-size:.62em;color:var(--muted);margin-top:.35em}
+/* drawer variant */
+.mk-stage{position:relative;overflow:hidden;border:1px solid var(--rule);border-radius:8px;background:var(--card);padding:.8em}
+.mk-drawer{position:absolute;top:0;right:0;bottom:0;width:46%;background:var(--card);border-left:1.5px solid var(--espresso);box-shadow:-8px 0 18px rgba(39,24,16,.14);padding:.8em;overflow:hidden}
+.mk-scrim{position:absolute;inset:0;background:linear-gradient(to right,transparent 40%,rgba(39,24,16,.05))}
+/* view list */
+.mk-views{display:flex;flex-direction:column;gap:.3em}
+.mk-views span{border:1px solid var(--rule);border-radius:4px;background:var(--card);padding:.2em .5em;font-size:.85em}
+.mk-views span.on{background:var(--espresso);color:var(--paper);border-color:var(--espresso)}
+/* host-composed */
+.mk-host{display:grid;grid-template-columns:1fr 1fr;gap:1em;align-items:start}
+.mk-evt{grid-column:1/-1;text-align:center;font-family:"IBM Plex Mono",monospace;font-size:.72em;color:var(--muted)}
+.mk-evt b{color:var(--orange)}
+/* stepper */
+.mk-stepper{display:flex;align-items:center;gap:.5em;font-family:"IBM Plex Mono",monospace;font-size:.75em;color:var(--muted)}
+.mk-stepper i{font-style:normal;border:1px solid var(--rule);border-radius:4px;padding:0 .45em;background:var(--card)}
+/* recommendation + decisions + footer */
+.reco{margin-top:3.5rem;padding:2rem;border:2px solid var(--espresso);border-radius:12px;background:var(--card)}
+.reco h2{margin-bottom:.6rem}
+.reco p{max-width:78ch;margin:.5rem 0}
+.decision{background:#fffbeb;border-left:4px solid var(--orange);border-radius:0 8px 8px 0;padding:.8rem 1.1rem;margin:1.1rem 0;max-width:80ch}
+.decision .qid{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:#92400e}
+.decision p{margin:.35rem 0;font-size:.94rem}
+.decision .rec{display:block;margin-top:.4rem;font-size:.9rem}
+.decision .rec b{color:#92400e}
+.answer{margin-top:2rem;background:var(--card);border:1px dashed var(--espresso);border-radius:10px;padding:1.2rem 1.4rem;max-width:80ch}
+.answer .h{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+.answer p{margin:.4rem 0;font-size:.95rem}
+footer.page{margin-top:3.5rem;border-top:1px solid var(--rule);padding-top:1rem;font-size:.85rem;color:var(--muted)}
+footer.page p{margin:.3rem 0}
+@media (max-width:900px){.option{grid-template-columns:1fr}.mk{flex-direction:column}.mk-side{width:auto;border-right:none;border-bottom:1px solid var(--rule);padding:0 0 .8em}.mk-prof-grid,.mk-host{grid-template-columns:1fr}.top nav{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="top"><span class="t">Participant profile — a shared drill-down module</span>
+<nav aria-label="Jump to section"><a href="#today">1</a><a href="#original">2</a><a href="#module">3</a><a href="#option-a">A</a><a href="#option-b">B</a><a href="#option-c">C</a><a href="#option-d">D</a><a href="#reco" title="Recommendation">★</a><a href="#decisions" title="Decisions">D?</a></nav></div>
+<div class="wrap">
+
+<h1>One participant profile, every chart</h1>
+<p class="standfirst">A collaborator hit the exact seam between the shipped <a href="https://jwildfire.github.io/safety.viz/hep-explorer/index.html">hep-explorer</a> and the original <a href="https://github.com/SafetyGraphics/hep-explorer">SafetyGraphics eDISH</a>:</p>
+
+<blockquote class="ask">“Is there a way to drill down to patient level details with the composite plots? Hovering the cursor brings up some details, but it’s not like the original eDISH that opens up multiple graphs below when you click on a patient point.”
+<footer>— collaborator feedback on the safety.viz composite view, July 2026</footer></blockquote>
+
+<p class="standfirst">They are right, and the gap is bigger than the composite view. The original eDISH answered a fourth question that none of our population views currently answer well: after <i>which arm?</i>, <i>how severe?</i>, and <i>which participants?</i> comes <b>“show me this one person’s whole story.”</b> This report proposes carving that answer out as its own module — a <b>participant profile</b> that any safety.viz chart can open — and lays out four options (A–D) for how it gets surfaced, with a recommendation. Nothing here is built yet; this is the decision artifact.</p>
+
+<!-- ============================================================ -->
+<section class="block" id="today">
+<h2>1 · What clicking a participant does today</h2>
+<p class="lede">Every selectable renderer already speaks the same event (<code>participantsSelected</code>, payload <code>{detail:{data: ids}}</code>), but what the <em>user sees</em> after a click is different in every chart — and only one view in the whole library plots labs over time for the clicked participant:</p>
+<div class="tablewrap"><table>
+<tr><th>Surface</th><th>Click today</th><th>Patient-level detail?</th></tr>
+<tr><td><b>hep-explorer · scatter (eDISH)</b></td><td>Selects one participant: visit-path trace + axis styling on the chart, sidebar select syncs, and a single lab-over-time line chart renders below (<code>drawDetail</code>)</td><td><span class="pill part">partial</span> one chart, no header, no measure table</td></tr>
+<tr><td><b>hep-explorer · composite</b></td><td>Multi-select toggle: point restyles across all panels, header count updates, event fires. <b>No drill-down renders.</b> Hover tooltip shows peak values + quadrant shift only</td><td><span class="pill gap">none</span> — the collaborator’s gap</td></tr>
+<tr><td><b>outlier-explorer / shift-plot</b></td><td>Selection overlay / brush → linked record listing below the chart</td><td><span class="pill part">partial</span> raw records, no graphs</td></tr>
+<tr><td><b>ae-timelines</b></td><td>Swaps the whole view for a per-participant AE timeline + listing, with a Back button</td><td><span class="pill yes">yes</span> (AE domain only)</td></tr>
+<tr><td><b>delta-delta</b></td><td>Highlights the point, writes “Participant X selected.”, draws a measure table. No event dispatched</td><td><span class="pill part">partial</span></td></tr>
+<tr><td><b>histogram / results-over-time / qt-explorer / ae-explorer</b></td><td>No participant selection</td><td><span class="pill gap">none</span></td></tr>
+</table></div>
+<p class="note">Planned surfaces raise the stakes: the migration Sankey (<a href="https://github.com/jwildfire/safety.viz/issues/92">sv#92</a>) deliberately ends in “Review these N in the composite plot” — a hand-off that today lands the reviewer in the one view with <em>no</em> individual drill-down. The waterfall (<a href="https://github.com/jwildfire/safety.viz/issues/93">sv#93</a>) is one bar per participant; a bar click has nowhere to go either.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="block" id="original">
+<h2>2 · What the original eDISH profile actually contained</h2>
+<p class="lede">The original’s click-to-drill-down was a four-part composition, mounted <b>below the main chart with the chart still visible</b> (verified in the <code>hep-explorer</code> source, <code>src/callbacks/onResize/customizePoints/</code>):</p>
+<div class="tablewrap"><table>
+<tr><th>Piece</th><th>Contents</th><th>safety.viz today</th></tr>
+<tr><td><b>Participant header</b></td><td>Demographics from <code>config.details</code>, computed R&nbsp;Ratio (and P_ALT), a <b>Clear</b> button, optional “Full Participant Profile” link-out</td><td>Missing (the link-out is <a href="https://github.com/jwildfire/safety.viz/issues/53">sv#53</a>)</td></tr>
+<tr><td><b>Spaghetti plot</b></td><td>“Standardized Lab Values by Study Day” — one line per key lab, ×ULN / ×baseline toggle, per-measure cut lines on hover, filled points above the cut, optional exposure strip</td><td>Scatter view has a single-participant version (<code>drawDetail</code>); no toggle, no cuts, no exposure</td></tr>
+<tr><td><b>Measure summary table</b></td><td>All lab measures (key ones first, extras behind a toggle): N / min / median / max + an inline <b>sparkline per measure</b>; clicking a sparkline expands an inset line chart with the normal-range band and population-extent guides</td><td>Missing entirely</td></tr>
+<tr><td><b>On-chart trace</b></td><td>Visit path + axis rugs drawn on the eDISH scatter itself; other points dimmed</td><td>Ported (scatter view)</td></tr>
+</table></div>
+<p class="note">Two useful limits of the original worth <em>not</em> reproducing: it was strictly single-participant (each click overwrote the last), and the profile code was welded into the eDISH renderer — which is why none of the other seven safetyGraphics charts ever got it. That welding is the thing to fix.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="block" id="module">
+<h2>3 · The module (common to every option below)</h2>
+<p class="lede">One new shared module — working name <code>participant-profile</code> — that owns the drill-down regardless of which chart opens it. The four options in the next section only disagree about <em>where it appears</em>; the module itself is the same:</p>
+<h3>Contents (v1)</h3>
+<p class="lede"><b>Header</b> (id, demographics from <code>config.details</code>, computed stats, Clear, templated profile link-out — absorbing sv#53) · <b>labs-over-time spaghetti</b> (×ULN / ×baseline toggle, per-measure reference cuts) · <b>measure summary table</b> with inline sparklines · optional <b>record listing</b> reusing the shared listing renderer. Sections are individually toggleable per chart config.</p>
+<h3>Why it is cheap now</h3>
+<p class="lede">The hard parts already exist as pure functions inside hep-explorer’s data layer: <code>participantMeasureSeries</code> (day-indexed series per measure), <code>measureSummary</code> (per-measure N/min/median/max), and the retained cleaned rows every renderer keeps after render. The planned <code>hep-core</code> extraction (<a href="https://github.com/jwildfire/safety.viz/issues/91">sv#91</a>) moves exactly these reducers into a shared layer — the profile module is their second consumer, ready-made.</p>
+<h3>Wiring</h3>
+<p class="lede">The module listens for the existing <code>participantsSelected</code> event on the chart’s outer container (which catches all current dispatch targets) and renders when the selection resolves to one focused participant. It needs no new chart APIs — though the rollout piggybacks on <a href="https://github.com/jwildfire/safety.viz/issues/88">sv#88</a>’s event-parity work (every selectable chart dispatching the same payload, including on clear). Because seven of the nine renderers ingest the same long measure-per-visit records, the same module serves the whole lab family — hep-explorer, histogram, outlier-explorer, shift-plot, results-over-time, qt-explorer, delta-delta — not just eDISH.</p>
+</section>
+
+<!-- ============================================================ -->
+<div class="option" id="option-a">
+<div class="rail">
+<span class="plate-letter">Option A</span>
+<h2>The profile dock</h2>
+<p class="thesis">“Faithful to the original: click a point, the story opens below, the chart stays put.”</p>
+<p>The shell grows a <code>sv-profile</code> slot under the chart card (above the record listing). Any renderer that opts in gets the full profile there when a single participant is focused. Chart and profile are visible together, so the on-chart trace and the labs-over-time read as one linked view — the interplay reviewers liked in the original.</p>
+<p class="rail-h">What changes</p>
+<ul>
+<li>One new shell slot + <code>profile: true</code> (or per-section config) per renderer</li>
+<li>hep scatter’s <code>drawDetail</code> is deleted in favor of the module</li>
+<li>Composite: focusing one participant (click with one selected, or via the selector) opens the dock</li>
+</ul>
+<p class="rail-h">Trade-offs</p>
+<p class="trade">Long pages on small screens — profile pushes the listing down. Multi-panel views (composite) already scroll; the dock adds more. Needs the stepper (§5) for multi-select.</p>
+<p class="rail-h">Choose when</p>
+<p>Parity with the original eDISH experience is the point, and charts are reviewed on desktop reports — which is our reviewers’ reality.</p>
+</div>
+<figure class="browser"><figcaption class="plate">A · COMPOSITE VIEW + PROFILE DOCK BELOW</figcaption>
+<div class="mk">
+<div class="mk-side">
+<span class="mk-side-h">Controls</span>
+<div class="mk-ctl">Group by<span>Treatment Arm</span></div>
+<div class="mk-ctl">Participants<span>Search ids…</span><span class="mk-chip">CLD-2013 ✕</span></div>
+</div>
+<div class="mk-col">
+<div class="mk-grid2">
+<div class="mk-card"><div class="mk-card-h">Baseline eDISH</div>
+<div class="mk-scatter"><i style="left:12%;top:70%"></i><i style="left:28%;top:55%"></i><i style="left:45%;top:62%"></i><i style="left:70%;top:30%"></i><i style="left:80%;top:64%"></i><i style="left:58%;top:76%"></i><i class="sel" style="left:66%;top:22%"></i></div></div>
+<div class="mk-card"><div class="mk-card-h">Peak on-treatment</div>
+<div class="mk-scatter"><i class="dim" style="left:15%;top:66%"></i><i class="dim" style="left:33%;top:48%"></i><i class="dim" style="left:50%;top:58%"></i><i class="dim" style="left:74%;top:26%"></i><i class="dim" style="left:83%;top:60%"></i><i class="dim" style="left:60%;top:72%"></i><i class="sel" style="left:78%;top:12%"></i></div></div>
+</div>
+<div class="mk-grid4">
+<div class="mk-panel"><em>×BLN ALT</em></div><div class="mk-panel"><em>×BLN TB</em></div><div class="mk-panel"><em>migration</em></div><div class="mk-panel"><em>by arm</em></div>
+</div>
+<div class="mk-profile">
+<div class="mk-prof-h"><b>Participant CLD-2013</b><span>Hy’s Law · R Ratio 6.2</span><span class="mk-prof-x">Clear ✕</span></div>
+<div class="mk-demo-row"><span><b>Arm</b> Active</span><span><b>Age</b> 61</span><span><b>Sex</b> F</span><span><b>Baseline quadrant</b> Temple’s</span><span style="color:var(--orange)">Full profile ↗</span></div>
+<div class="mk-prof-grid">
+<div><div class="mk-spag"><svg viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+<line x1="0" y1="18" x2="100" y2="18" stroke="rgba(39,24,16,.25)" stroke-dasharray="3 2" stroke-width=".7"/>
+<path d="M2,52 L18,48 L34,40 L50,24 L66,10 L82,20 L98,26" fill="none" stroke="#f97316" stroke-width="1.6"/>
+<path d="M2,54 L18,53 L34,50 L50,46 L66,40 L82,44 L98,47" fill="none" stroke="#8a7563" stroke-width="1.2"/>
+<path d="M2,56 L18,55 L34,55 L50,52 L66,49 L82,51 L98,52" fill="none" stroke="#c4b3a2" stroke-width="1.2"/>
+</svg></div><div class="mk-cap">standardized labs by study day · ×ULN ▾ · cut line 3×</div></div>
+<div><table class="mk-mtable">
+<tr><th>Measure</th><th>N</th><th>Max</th><th></th></tr>
+<tr><td>ALT</td><td>12</td><td>8.1×</td><td><svg width="52" height="12" aria-hidden="true"><path d="M1,10 L12,9 L24,6 L36,2 L51,5" fill="none" stroke="#f97316" stroke-width="1.3"/></svg></td></tr>
+<tr><td>TB</td><td>12</td><td>3.4×</td><td><svg width="52" height="12" aria-hidden="true"><path d="M1,10 L12,10 L24,8 L36,5 L51,6" fill="none" stroke="#8a7563" stroke-width="1.3"/></svg></td></tr>
+<tr><td>AST</td><td>12</td><td>5.0×</td><td><svg width="52" height="12" aria-hidden="true"><path d="M1,9 L12,8 L24,7 L36,4 L51,6" fill="none" stroke="#8a7563" stroke-width="1.3"/></svg></td></tr>
+<tr><td>ALP</td><td>11</td><td>1.2×</td><td><svg width="52" height="12" aria-hidden="true"><path d="M1,8 L12,8 L24,9 L36,8 L51,8" fill="none" stroke="#c4b3a2" stroke-width="1.3"/></svg></td></tr>
+</table><div class="mk-cap">+ 14 additional measures ▸</div></div>
+</div>
+</div>
+</div>
+</div>
+</figure>
+</div>
+
+<!-- ============================================================ -->
+<div class="option" id="option-b">
+<div class="rail">
+<span class="plate-letter">Option B</span>
+<h2>The drawer</h2>
+<p class="thesis">“The chart is the workspace; the profile slides in beside it and slides away.”</p>
+<p>The profile opens as a right-hand slide-over panel on top of the chart card, dismissed with ✕ or Escape. The population view stays in place at reduced width; the reviewer flicks between individuals without the page ever reflowing.</p>
+<p class="rail-h">What changes</p>
+<ul>
+<li>Same module, mounted in a shell-owned overlay panel with focus management</li>
+<li>Charts need no layout awareness — nothing below them moves</li>
+<li>On narrow screens the drawer becomes a bottom sheet</li>
+</ul>
+<p class="rail-h">Trade-offs</p>
+<p class="trade">Covers part of the chart it annotates — the dimmed-points + trace choreography loses half its audience. Sparkline-to-inset expansion gets cramped at drawer width. Overlay a11y (focus trap, scroll lock) is real new surface for the library.</p>
+<p class="rail-h">Choose when</p>
+<p>Screen economy beats chart–profile adjacency, or profiles are opened dozens of times in quick succession (triage workflows).</p>
+</div>
+<figure class="browser"><figcaption class="plate">B · PROFILE AS SLIDE-OVER DRAWER</figcaption>
+<div class="mk">
+<div class="mk-col">
+<div class="mk-stage">
+<div class="mk-card-h">Composite · peak on-treatment</div>
+<div class="mk-scatter" style="height:14em"><i class="dim" style="left:10%;top:66%"></i><i class="dim" style="left:22%;top:48%"></i><i class="dim" style="left:31%;top:58%"></i><i class="dim" style="left:40%;top:30%"></i><i class="dim" style="left:26%;top:75%"></i><i class="sel" style="left:44%;top:15%"></i><i class="dim" style="left:16%;top:38%"></i></div>
+<div class="mk-scrim"></div>
+<div class="mk-drawer">
+<div class="mk-prof-h"><b>CLD-2013</b><span class="mk-prof-x">✕</span></div>
+<div class="mk-demo-row"><span><b>Arm</b> Active</span><span><b>R</b> 6.2</span></div>
+<div class="mk-spag" style="height:5em"><svg viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+<path d="M2,52 L20,46 L40,36 L60,14 L80,22 L98,28" fill="none" stroke="#f97316" stroke-width="1.6"/>
+<path d="M2,55 L20,52 L40,48 L60,42 L80,45 L98,47" fill="none" stroke="#8a7563" stroke-width="1.2"/>
+</svg></div>
+<div class="mk-cap">labs by study day</div>
+<table class="mk-mtable"><tr><td>ALT</td><td>8.1×</td><td><svg width="40" height="10" aria-hidden="true"><path d="M1,8 L14,6 L26,2 L39,4" fill="none" stroke="#f97316" stroke-width="1.2"/></svg></td></tr>
+<tr><td>TB</td><td>3.4×</td><td><svg width="40" height="10" aria-hidden="true"><path d="M1,8 L14,7 L26,4 L39,5" fill="none" stroke="#8a7563" stroke-width="1.2"/></svg></td></tr></table>
+</div>
+</div>
+<div class="mk-note"><b>Chart never reflows</b> — the drawer overlays the right half and Escape dismisses it.</div>
+</div>
+</div>
+</figure>
+</div>
+
+<!-- ============================================================ -->
+<div class="option" id="option-c">
+<div class="rail">
+<span class="plate-letter">Option C</span>
+<h2>The profile view</h2>
+<p class="thesis">“Profile is a destination: a full view in the view selector, like Scatter and Composite.”</p>
+<p>The profile becomes another entry in each chart family’s view list (the shared view selector of <a href="https://github.com/jwildfire/obot.roadmap/issues/41">hub#41</a>). Clicking a participant — or picking one in the participant selector (<a href="https://github.com/jwildfire/safety.viz/issues/87">sv#87</a>) — switches to a full-canvas Profile view with a Back affordance, the ae-timelines pattern generalized.</p>
+<p class="rail-h">What changes</p>
+<ul>
+<li>Full width for the spaghetti, measure table <i>and</i> listing at once — the richest single-participant canvas</li>
+<li>View state, so profiles are addressable (deep-linkable) alongside scatter/composite</li>
+<li>ae-timelines’ bespoke detail swap retires into the shared pattern</li>
+</ul>
+<p class="rail-h">Trade-offs</p>
+<p class="trade">The population chart disappears while reading the profile — click, teleport, Back, re-orient. Exactly the context-break the original avoided by rendering below. Weakest match for compare-against-the-population review.</p>
+<p class="rail-h">Choose when</p>
+<p>The profile grows past what a dock can hold (AE track, exposure, conmeds) and becomes a report of its own.</p>
+</div>
+<figure class="browser"><figcaption class="plate">C · PROFILE AS A FULL VIEW</figcaption>
+<div class="mk">
+<div class="mk-side">
+<span class="mk-side-h">View</span>
+<div class="mk-views"><span>Scatter</span><span>Composite</span><span>Migration</span><span class="on">Profile · CLD-2013</span></div>
+<div class="mk-ctl">Participant<span>CLD-2013 ▾</span></div>
+</div>
+<div class="mk-col">
+<div class="mk-profile" style="border-style:solid">
+<div class="mk-prof-h"><b>Participant CLD-2013</b><span>Active · 61 F · Hy’s Law</span><span class="mk-prof-x">← Back to Composite</span></div>
+<div class="mk-spag" style="height:8em"><svg viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+<line x1="0" y1="16" x2="100" y2="16" stroke="rgba(39,24,16,.25)" stroke-dasharray="3 2" stroke-width=".7"/>
+<path d="M2,52 L15,48 L30,40 L45,24 L60,8 L75,18 L98,26" fill="none" stroke="#f97316" stroke-width="1.6"/>
+<path d="M2,54 L15,53 L30,50 L45,46 L60,40 L75,44 L98,47" fill="none" stroke="#8a7563" stroke-width="1.2"/>
+<path d="M2,56 L15,55 L30,55 L45,52 L60,49 L75,51 L98,52" fill="none" stroke="#c4b3a2" stroke-width="1.2"/>
+</svg></div>
+<div class="mk-cap">full-width labs by study day · exposure strip · measure table · record listing below</div>
+<div class="mk-grid4" style="margin-top:.6em"><div class="mk-panel"><em>measures</em></div><div class="mk-panel"><em>exposure</em></div><div class="mk-panel"><em>listing</em></div><div class="mk-panel"><em>notes</em></div></div>
+</div>
+</div>
+</div>
+</figure>
+</div>
+
+<!-- ============================================================ -->
+<div class="option" id="option-d">
+<div class="rail">
+<span class="plate-letter">Option D</span>
+<h2>Host-composed only</h2>
+<p class="thesis">“The profile is a tenth renderer; apps wire it next to any chart with one event listener.”</p>
+<p>Ship <code>SafetyViz.participantProfile(el, data, config)</code> as a standalone renderer and change the charts not at all. Host pages — the gallery demos, gsm.safety widgets in Shiny, open.gismo — mount it wherever they want and pipe <code>participantsSelected</code> into it. The library’s first linked-charts demo makes it discoverable.</p>
+<p class="rail-h">What changes</p>
+<ul>
+<li>New renderer with the full done-gate (gallery card, demo, guide, evidence, API ref)</li>
+<li>Zero changes inside existing charts; the R side gets <code>Widget_ParticipantProfile</code> with crosstalk-style wiring for free</li>
+<li>A composable primitive: one profile can serve <i>several</i> charts on the same page</li>
+</ul>
+<p class="rail-h">Trade-offs</p>
+<p class="trade">A bare chart embed still has no drill-down — the collaborator’s question stays unanswered out of the box, deferred to whoever builds the page. Two data ingests (chart + profile) unless the host shares one cleaned dataset.</p>
+<p class="rail-h">Choose when</p>
+<p>You believe composition in the host app (open.gismo) is where linked views belong, and single-chart embeds are a secondary case.</p>
+</div>
+<figure class="browser"><figcaption class="plate">D · STANDALONE RENDERER, WIRED BY THE HOST</figcaption>
+<div class="mk">
+<div class="mk-col">
+<div class="mk-host">
+<div class="mk-card"><div class="mk-card-h">SafetyViz.hepExplorer <span>host page</span></div>
+<div class="mk-scatter"><i class="dim" style="left:14%;top:60%"></i><i class="dim" style="left:30%;top:44%"></i><i class="dim" style="left:52%;top:56%"></i><i class="sel" style="left:68%;top:18%"></i><i class="dim" style="left:78%;top:58%"></i></div></div>
+<div class="mk-profile ghost"><div class="mk-prof-h"><b>SafetyViz.participantProfile</b></div>
+<div class="mk-demo-row"><span><b>CLD-2013</b></span><span>Active · 61 F</span></div>
+<div class="mk-spag" style="height:5em"><svg viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+<path d="M2,52 L25,44 L50,30 L75,12 L98,24" fill="none" stroke="#f97316" stroke-width="1.6"/>
+<path d="M2,55 L25,51 L50,46 L75,42 L98,46" fill="none" stroke="#8a7563" stroke-width="1.2"/>
+</svg></div></div>
+<div class="mk-evt">chart.addEventListener(<b>'participantsSelected'</b>, e ⇒ profile.show(e.detail.data))</div>
+</div>
+<div class="mk-note"><b>Any pairing works</b> — the same profile instance can sit beside the composite, the Sankey, the waterfall, or all three.</div>
+</div>
+</div>
+</figure>
+</div>
+
+<!-- ============================================================ -->
+<section class="reco" id="reco">
+<h2>★ Recommendation: one module, two mounts (D’s packaging, A’s default)</h2>
+<p>Build the profile <b>once, as Option D’s standalone module</b> — its own factory, data contract, evidence page, and event wiring, so gsm.safety widgets and open.gismo can compose it freely. Then give every lab-family chart <b>Option A’s dock as the built-in default</b>: a <code>profile</code> config (on by default for the hep family) that mounts that same module into a new shell slot below the chart and feeds it the chart’s own cleaned rows — no second ingest, no host wiring. A bare <code>hepExplorer(el, data)</code> embed then answers the collaborator’s question out of the box, exactly the way the original did, while the standalone form stays available for linked-page composition.</p>
+<p>The drawer (B) remains cheap to add later as <code>profile: {mode: 'drawer'}</code> if triage-style review demands it — same module, different mount. The full view (C) is the one I’d pass on for now: it breaks chart–profile adjacency, and its one real payoff (a bigger canvas) matters only after the profile grows AE/conmed/exposure tracks in v2.</p>
+<p><b>Multi-select and cohorts (§5 below):</b> the dock renders the full profile when exactly one participant is focused. With N selected, it collapses to a one-line stepper — <span class="mk-stepper" style="display:inline-flex"><i>◀</i> 3 of 12 · CLD-2013 <i>▶</i></span> — stepping through the cohort in ranked order (worst quadrant first). That makes the Sankey hand-off (sv#92) a complete chain for the first time: <b>ribbon → cohort in composite → step through individuals → record listing</b>. Population to single lab value in four clicks.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="block" id="rollout">
+<h2>4 · Where each chart picks it up</h2>
+<div class="tablewrap"><table>
+<tr><th>Surface</th><th>Entry gesture</th><th>Notes</th></tr>
+<tr><td>hep-explorer · scatter</td><td>Point click (today’s gesture)</td><td>Replaces <code>drawDetail</code>; on-chart trace + rugs stay</td></tr>
+<tr><td>hep-explorer · composite</td><td>Click with one focused; stepper when N selected</td><td><b>Closes the collaborator’s gap.</b> Points exist in baseline + peak cards and ×BLN panels — dock highlights the focused id in all of them</td></tr>
+<tr><td>migration Sankey (sv#92)</td><td>Via the composite hand-off (“Review these N…”) → stepper</td><td>Profile is the last mile of the paper’s two-step review</td></tr>
+<tr><td>hep-waterfall (sv#93)</td><td>Bar click</td><td>One bar = one participant — the most natural fit in the family</td></tr>
+<tr><td>outlier-explorer / shift-plot / histogram / results-over-time / qt-explorer / delta-delta</td><td>Existing selection gestures + the shared participant selector (sv#87)</td><td>Same long-lab contract, so the dock is config-on; rolls out with sv#88’s batches</td></tr>
+<tr><td>ae-timelines / ae-explorer</td><td>Deferred</td><td>AE-domain profile section is v2; ae-timelines keeps its detail swap until then</td></tr>
+</table></div>
+</section>
+
+<!-- ============================================================ -->
+<section class="block" id="sequencing">
+<h2>5 · Sequencing against the issues already filed</h2>
+<p class="lede">Yesterday’s filings put every prerequisite on the board; the profile module slots in without reshuffling any of them:</p>
+<div class="tablewrap"><table>
+<tr><th>Step</th><th>Work</th><th>Status</th></tr>
+<tr><td>1</td><td><a href="https://github.com/jwildfire/safety.viz/issues/91">sv#91</a> hep-core split — moves <code>participantMeasureSeries</code> / <code>measureSummary</code> / cleaned-row layer into the shared core the profile consumes</td><td>Filed, first PR of the hub#43 stack</td></tr>
+<tr><td>2</td><td><a href="https://github.com/jwildfire/safety.viz/issues/87">sv#87</a> shared participant selector — the non-click way to focus a participant; chips become the stepper’s siblings</td><td>Filed</td></tr>
+<tr><td>3</td><td><b>Profile module + dock (this report)</b> — new requirement, lands first in hep-explorer composite + scatter; absorbs <a href="https://github.com/jwildfire/safety.viz/issues/53">sv#53</a> (link-out lives in the profile header, templated by id rather than the original’s static URL)</td><td>Awaiting direction (D1–D4 below)</td></tr>
+<tr><td>4</td><td><a href="https://github.com/jwildfire/safety.viz/issues/88">sv#88</a> selection-note rollout — its event-parity work (SELN-4) is exactly the wiring the profile listens to; dock adoption rides the same per-renderer batches</td><td>Filed, depends on sv#87</td></tr>
+<tr><td>5</td><td><a href="https://github.com/jwildfire/safety.viz/issues/92">sv#92</a> migration view + <a href="https://github.com/jwildfire/safety.viz/issues/93">sv#93</a> waterfall pick the dock up on arrival</td><td>Filed, depend on sv#91</td></tr>
+</table></div>
+</section>
+
+<!-- ============================================================ -->
+<section class="block" id="decisions">
+<h2>6 · Decisions for @jwildfire</h2>
+<div class="decision"><span class="qid">D1 — Surfacing default</span>
+<p>Dock below the chart (A), drawer (B), full view (C), or host-composed only (D)?</p>
+<span class="rec"><b>Recommend:</b> the hybrid — standalone module (D packaging) with the dock (A) as the built-in default; drawer later if wanted; skip C.</span></div>
+<div class="decision"><span class="qid">D2 — v1 contents</span>
+<p>Header + spaghetti + measure table with sparklines + optional listing is proposed v1. The original’s sparkline-click inset chart, exposure strip, and AE/conmed tracks would be v2.</p>
+<span class="rec"><b>Recommend:</b> v1 as proposed — it already exceeds the original’s three blocks minus the inset expansion.</span></div>
+<div class="decision"><span class="qid">D3 — Multi-select behavior</span>
+<p>When a cohort is selected (composite multi-select, Sankey ribbon, shift-plot brush): stepper strip that pages through the cohort, or profile only when exactly one is selected?</p>
+<span class="rec"><b>Recommend:</b> the stepper — it is what makes the Sankey→composite hand-off end in individuals, per the paper’s review model.</span></div>
+<div class="decision"><span class="qid">D4 — Filing and naming</span>
+<p>File as a new hub requirement (with safety.viz sub-issues, after sv#91 lands) or fold into an existing issue? And: “participant profile” (house/CDISC style, matches <code>participantsSelected</code>) vs the collaborator’s “patient profile”?</p>
+<span class="rec"><b>Recommend:</b> new hub requirement — it is cross-renderer scope like the selector (hub#41); name it <code>participant-profile</code>.</span></div>
+</section>
+
+<!-- ============================================================ -->
+<div class="answer">
+<div class="h">Meanwhile — an answer you can send the collaborator today</div>
+<p>“Not yet in the composite view — click currently selects participants (and feeds the linked views) but doesn’t open the drill-down; the scatter view has a first slice of it (a labs-over-time chart below the plot on click). You’ve hit exactly the gap we’re closing next: we’re carving the original eDISH click-profile out as a shared module — header, standardized-labs-over-time, and the measure table with sparklines — that opens below <em>every</em> chart in the family, composite included, and steps through a selected cohort one participant at a time. Design options are drafted and it’s queued right behind the current hep-explorer refactor.”</p>
+</div>
+
+<footer class="page">
+<p><b>Provenance.</b> Behavior verified against the original <code>SafetyGraphics/hep-explorer</code> source (<code>src/callbacks/onResize/customizePoints/</code> — <code>addPointClick</code>, <code>makeParticipantHeader</code>, <code>spaghettiPlot/</code>, <code>measureTable/</code>) and current <code>safety.viz</code> source (<code>src/hep-explorer.js</code> — <code>drawDetail</code>, <code>toggleCompositeSelection</code>, <code>dispatchSelection</code>; <code>src/hep-explorer/structureData.js</code> — <code>participantMeasureSeries</code>, <code>measureSummary</code>; <code>src/shell.js</code>). Related issues: <a href="https://github.com/jwildfire/safety.viz/issues/87">sv#87</a>, <a href="https://github.com/jwildfire/safety.viz/issues/88">sv#88</a>, <a href="https://github.com/jwildfire/safety.viz/issues/53">sv#53</a>, <a href="https://github.com/jwildfire/safety.viz/issues/91">sv#91</a>–<a href="https://github.com/jwildfire/safety.viz/issues/93">#93</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/43">hub#43</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/41">hub#41</a>. Mockups are schematic sketches in the keynote theme, not renderer output.</p>
+<hr style="border:none;border-top:1px solid var(--rule);margin:.8rem 0">
+<p>This report was drafted by Claude Code using Claude Fable 5 and reviewed by @jwildfire.</p>
+</footer>
+</div>
+</body>
+</html>
