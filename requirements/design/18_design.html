@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #18 — autonomous obot operations: the --auto session and the goal layer</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .question { background: #f3f6fb; border-left: 4px solid #3b6fb6; border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1.1rem 0; }
+  .question .qid { color: #1e4e8c; font-weight: 700; }
+  .rec { display: block; margin-top: .4rem; }
+  .note { color: var(--muted); font-size: .9rem; }
+  .tablewrap { overflow-x: auto; }
+  nav.toc { background: var(--panel); border-radius: 8px; padding: 1rem 1.25rem; font-size: .92rem; }
+  nav.toc ol { margin: .25rem 0 0; padding-left: 1.25rem; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design #18 — autonomous obot operations: the <code>--auto</code> session and the goal layer</h1>
+  <div class="meta">
+    <span class="status">DRAFT — for @jwildfire review</span> ·
+    Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/18">obot.roadmap #18</a> ·
+    Milestone 2026q3 · Stage-3 autonomy experiments (stage model, 2026-07-21) ·
+    Drafted 2026-07-22
+  </div>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#context">Context and goals</a></li>
+    <li><a href="#model">The autonomy model: goals → increments → sessions</a></li>
+    <li><a href="#goal-builtin">The <code>/goal</code> built-in, and why we need our own layer</a></li>
+    <li><a href="#lifecycle">The <code>--auto</code> session lifecycle</a></li>
+    <li><a href="#grants">Guardrails and the K4 per-repo grant matrix</a></li>
+    <li><a href="#levels">Autonomy levels: A0 → A1 → A2</a></li>
+    <li><a href="#killswitch">Kill switches and failure modes</a></li>
+    <li><a href="#lanes">Scheduling and the other v1 lanes</a></li>
+    <li><a href="#implementation">Implementation plan</a></li>
+    <li><a href="#risks">Dependencies and risks</a></li>
+    <li><a href="#questions">Open judgement calls</a></li>
+  </ol>
+</nav>
+
+<h2 id="context">1. Context and goals</h2>
+
+<p>The July 2026 stage model makes autonomy the next act: <strong>Stage 2</strong> ("safety.viz
+released") closed with gsm.safety v1.0.0 shipped on 2026-07-22; <strong>Stage 3</strong> is
+"autonomy experiments" — obot picks up and completes roadmap work with @jwildfire reviewing
+outcomes rather than driving every session. Requirement
+<a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a> scoped this as a small set of
+named autonomous lanes under the <code>obotclaw</code> App identity, each with a defined human gate.</p>
+
+<p>Everything below builds on machinery that already exists and has survived production use:</p>
+
+<table>
+  <tr><th>In place</th><th>What it gives the autonomous session</th></tr>
+  <tr><td>Session framework (obot.agent v0.2.0): <code>session-init</code> / <code>session-spawn</code> /
+      <code>session-todo</code> / <code>session-wrapup</code>, scratchpad heartbeat + Stop-hook nudge,
+      session hub dashboard (hub <a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>)</td>
+      <td>The bookends and observability: hand-off in, digest out, live progress visible all night</td></tr>
+  <tr><td>Merge lane (2026-07-22): <code>obot-merge</code> + <code>merge-policy.json</code> two-tier policy;
+      raw merges hook-denied workspace-wide</td>
+      <td>The only write-path to protected integration branches — policy is enforced, not promised</td></tr>
+  <tr><td>obotclaw GitHub App (hub <a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a>):
+      <code>obot-app-token</code> helper, bot-attributed commits/PRs</td>
+      <td>Identity: unattended work is visibly bot work, auditable per the operating contract</td></tr>
+  <tr><td>Overnight ultracode runbook (proven 2026-07-12): Monitor watch on job state, 40-min stall
+      detection, morning digest, pre-flight checklist</td>
+      <td>The supervision pattern — reused as-is for <code>--auto</code> runs</td></tr>
+  <tr><td>Requirement lifecycle + roadmap-first gate</td>
+      <td>The work queue: autonomous sessions only ever work from filed hub requirements</td></tr>
+</table>
+
+<div class="decision">
+  <strong>Decided 2026-07-19 (K3 session):</strong> the v1 lane slate is <em>requirement-status
+  rollup</em> + <em>event-driven responder</em> + <em>background dev lane</em>, on GitHub Actions under
+  obotclaw. The nightly-diary lane is <strong>out</strong> (the diary stays a session-wrapup product).
+</div>
+
+<p>This design covers the whole requirement but its centerpiece is the <strong>background dev
+lane's local form</strong>: a <code>--auto</code> flag on <code>/session-init</code> that turns the
+standard session opening into a fully autonomous dev session — init, pick the next increment,
+execute it through spawned agents, wrap up, and leave a reviewable morning surface. The GHA-hosted
+lanes (rollup, responder, and eventually the dev lane itself) share the same identity and grant
+model and are specified in <a href="#lanes">§8</a>.</p>
+
+<h2 id="model">2. The autonomy model: goals → increments → sessions</h2>
+
+<p>Three layers, each with a crisp owner:</p>
+
+<table>
+  <tr><th>Layer</th><th>What it is</th><th>Who sets it</th><th>Lifetime</th></tr>
+  <tr><td><strong>Goal</strong></td><td>A standing direction of work, anchored to hub requirements</td>
+      <td>@jwildfire (design-level decision)</td><td>Weeks–months, cross-session</td></tr>
+  <tr><td><strong>Increment</strong></td><td>One session's worth of work advancing a goal: a specific
+      requirement or sub-issue in an eligible stage</td>
+      <td>Selected by the <code>--auto</code> session under fixed rules (§4.2)</td><td>One session</td></tr>
+  <tr><td><strong>Session</strong></td><td>A single <code>--auto</code> run: init → select → execute →
+      wrap up</td><td>Triggered by @jwildfire (v1) or a schedule (later)</td><td>Hours, bounded</td></tr>
+</table>
+
+<div class="decision">
+  <strong>Decided 2026-07-21 (stage model):</strong> two standing goals for Stage 3 —
+  <strong>G1 “keep adding charts”</strong> (static + interactive: nepExplorer
+  <a href="https://github.com/jwildfire/obot.roadmap/issues/35">#35</a>, QT Phase 2
+  <a href="https://github.com/jwildfire/obot.roadmap/issues/37">#37</a>, FDA static charts
+  <a href="https://github.com/jwildfire/obot.roadmap/issues/9">#9</a>, backlog #38–#40, plus the
+  safety.viz improvement backlog) and <strong>G2 “build the app”</strong> (the
+  safetyGraphics-replacement app — the open.gismo app-first arc,
+  <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a> — bringing core gsm tools
+  into the gsm.safety framework).
+</div>
+
+<h3>2.1 Goal definitions — a new, small artifact</h3>
+
+<p>Goals live as one file per goal in <code>obot.agent/goals/{slug}.md</code> — YAML frontmatter over
+prose, the same shape as skills, so they are agent-parsable, human-reviewable, and versioned next to
+the machinery that consumes them (precedent: <code>scripts/merge-policy.json</code>):</p>
+
+<pre><code>---
+name: charts
+title: "G1 — keep adding charts (static + interactive)"
+status: active            # active | paused — paused goals are never selected
+anchors:                  # hub requirements that feed this goal
+  - jwildfire/obot.roadmap#35   # nepExplorer
+  - jwildfire/obot.roadmap#37   # QT Explorer Phase 2
+  - jwildfire/obot.roadmap#9    # FDA static charts (phased)
+backlog:                  # secondary feed, worked only when no anchor is eligible
+  - jwildfire/safety.viz        # improvement backlog (e.g. #83–#89)
+grant_profile: standard   # row set in the grant matrix (§5)
+---
+Prose: intent, boundaries, what "done for the summer" looks like,
+anything a selecting session should weigh that the issues don't say.
+</code></pre>
+
+<p>The hub stays the source of truth for the <em>work</em> (requirements, stages, sub-issues); the
+goal file only records the standing <em>direction</em> plus pointers. Pausing a goal is a one-line
+edit; retiring one is deleting the file. See <a href="#questions">O2</a> for the placement call.</p>
+
+<h2 id="goal-builtin">3. The <code>/goal</code> built-in, and why we need our own layer</h2>
+
+<p>Claude Code ships a <code>/goal</code> command (v2.1.139+; facts verified against current docs
+2026-07-22): a <strong>session-scoped</strong> completion condition, implemented as a prompt-based
+Stop hook and evaluated <em>after each turn</em> by a small fast model (Haiku by default). It clears
+when the condition is met (or via <code>/goal clear</code>), survives <code>--resume</code>, and
+pairs cleanly with auto permission mode and background runs; headless one-shots
+(<code>claude -p "/goal …"</code>) run the loop to completion in a single invocation — the likely
+shape of the eventual GHA-hosted dev lane. It answers "is this session done yet?" — it does not
+persist across sessions, select work, or hold portfolio intent.</p>
+
+<p>So the division of labor is:</p>
+
+<table>
+  <tr><th>Concern</th><th>Owner</th></tr>
+  <tr><td>Standing direction across sessions ("keep adding charts")</td><td>Goal files (§2.1)</td></tr>
+  <tr><td>Which issue to work tonight</td><td>Increment selection (§4.2)</td></tr>
+  <tr><td>"Is tonight's increment complete?" checked every turn</td><td><code>/goal</code>, set at
+      session start from the increment's exit criteria</td></tr>
+  <tr><td>"Did the run behave?" after the fact</td><td>Wrapup digest + morning review (§4.4)</td></tr>
+</table>
+
+<p>The <code>--auto</code> init sets the in-session goal to the selected increment's exit criteria —
+e.g. <em>"a draft PR exists on safety.viz implementing sv#85 with CI green, the heartbeat has a
+close-out line, and the wrapup draft is written"</em> — so the built-in provides a per-turn doneness
+check and a natural stop, independent of the model's own judgment.</p>
+
+<h2 id="lifecycle">4. The <code>--auto</code> session lifecycle</h2>
+
+<h3>4.1 Launch</h3>
+
+<pre><code># v1: Jeremy-triggered, one command
+obot.agent/scripts/obot-auto [--goal charts|app] [--increment owner/repo#N] [--dry-run]
+
+# which expands to roughly:
+claude --bg --permission-mode auto -n "🦾🤖 {date} {goal-slug}" \
+  "/session-init --auto {args}"
+</code></pre>
+
+<ul>
+  <li><strong>Identity:</strong> autonomous sessions get their own tag — proposed
+      <code>🦾🤖 {YYYY-MM-DD} {goal-or-increment-slug}</code>, purple in the session hub — so the
+      dashboard distinguishes them from interactive leads (😺), siblings (👯), and ultracode jobs (⚡️).
+      See <a href="#questions">O4</a>.</li>
+  <li><strong>Pre-flight (in the wrapper, fail-fast):</strong> auth freshness (the 07-12 login-expiry
+      stall), obotclaw token mintable, workspace halt-file absent (§7), no conflicting <code>--auto</code>
+      session already running, disk/worktree hygiene. Any failure aborts before a token is spent.</li>
+  <li><strong><code>--dry-run</code>:</strong> run init + selection, print the chosen increment and
+      planned scope, and stop — the cheap way to sanity-check selection rules early.</li>
+</ul>
+
+<h3>4.2 Init and increment selection</h3>
+
+<p>The init phase is the existing lean init unchanged: read the hand-off (scratchpad Overview, diary
+loose ends, next-session memory), reconcile with one GitHub delta agent, write the prioritized list
+to the scratchpad. The flag changes what happens next: instead of presenting the list and stopping,
+the session <strong>selects the top eligible increment and proceeds</strong>. Selection rules, in
+order:</p>
+
+<ol>
+  <li><strong>Directed:</strong> <code>--increment repo#N</code> was passed → take it (still subject
+      to the eligibility checks below; refuse and stop with <code>needs input:</code> if it fails them).</li>
+  <li><strong>Resume:</strong> an unchecked agent-actionable item from a previous <code>--auto</code>
+      run's hand-off that is still eligible → continue it before starting anything new (momentum rule).</li>
+  <li><strong>Implementation-ready:</strong> highest-priority hand-off item that (a) belongs to an
+      active goal, (b) traces to a hub requirement whose Design is signed off, (c) has its repo work
+      scoped (sub-issue or equivalent), and (d) touches only repos the goal's grant profile allows.</li>
+  <li><strong>Pipeline-advancement:</strong> if nothing is implementation-ready, take the goal's next
+      requirement stuck earliest in the lifecycle and advance the <em>artifact</em>: draft the
+      requirement/design doc, publish it, and end at the review gate. The session still produces a
+      deliverable; the deliverable is the draft.</li>
+</ol>
+
+<p><strong>Hard skips, never selected:</strong> anything gated on @jwildfire (reviews, decisions,
+approval-tier merges); anything without a filed hub requirement (roadmap-first — the 07-12 lesson);
+anything touching a repo outside the grant matrix; releases of any kind; ultracode launches
+(⚡️ scale stays an explicit human opt-in).</p>
+
+<p>v1 works <strong>one increment per run</strong>. Multi-increment nights come later, if ever — a
+bounded, reviewable unit per run is the point of the experiment.</p>
+
+<h3>4.3 Execution</h3>
+
+<p>Per the orchestration vision (2026-07-12), the <code>--auto</code> lead stays thin: roadmap
+hygiene, session management, and scaffold work in its own hands; <strong>product work goes to
+spawned agents</strong> — <code>session-spawn</code> siblings carrying the standard briefing
+(heartbeat contract, merge-lane rules, deliverables-to-disk), with model/effort chosen per the
+allocation grant. The existing conventions apply unchanged, notably:</p>
+
+<ul>
+  <li><strong>TDD</strong> for code changes (the <code>tdd</code> skill), draft PRs from obotclaw
+      with the 5-section obot PR template, <code>Closes #N</code> linkage;</li>
+  <li><strong>Heartbeat:</strong> every phase transition and shipped artifact logged to the shared
+      scratchpad — the session hub is the live window into the run;</li>
+  <li><strong>Push verification</strong> by <code>headRefOid</code> comparison before trusting or
+      cleaning anything (runbook rule 4);</li>
+  <li><strong>Worktrees</strong> for all branch work; cleanup per the worktree-cleanup grant
+      (merged ⇒ remove; unmerged ⇒ leave and note).</li>
+</ul>
+
+<h3>4.4 Autonomous wrapup and the morning surface</h3>
+
+<p>The wrapup runs its normal collect + verify phases (fold the scratchpad, one GitHub delta agent),
+then hits the interactivity boundary: the checkpoint is a draft-diary review, and the standing rule
+for unattended sessions is explicit — <em>stop with <code>needs input:</code> and the full draft;
+never post without review</em>. So a <code>--auto</code> session ends by leaving, in order:</p>
+
+<ol>
+  <li>standing-grant mechanical applies done (board stage moves, issue comments, scratchpad fold);</li>
+  <li>the <strong>diary draft</strong> committed as a draft file (not posted) + rendered for morning
+      review;</li>
+  <li>a <strong>morning digest</strong> in the scratchpad: increment attempted, what shipped (links),
+      CI state, token/cost note per the allocation grant, anything skipped or failed, and a numbered
+      morning-actions queue;</li>
+  <li>the session's own job state ending in <code>needs input:</code> with the digest headline.</li>
+</ol>
+
+<p>Morning review is deliberately the same surface Jeremy already uses: draft PRs on GitHub, the
+session hub, the diary draft, the deployed hub site.</p>
+
+<h2 id="grants">5. Guardrails and the K4 per-repo grant matrix</h2>
+
+<p>K4 (2026-07-19) calls for <em>wider standing per-repo autonomy grants</em> for Aug–Sept, with
+review reserved for designs and releases. This is the first concrete draft of those grants, scoped
+to what a <code>--auto</code> session may do <strong>unattended</strong> (interactive sessions keep
+today's rules — this matrix never widens what requires approval, it narrows what autonomy may touch):</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th>Repo</th><th>Branch + draft PR</th><th>Merge (via obot-merge only)</th><th>Issues / board</th><th>Releases</th><th>Never</th></tr>
+  <tr><td>safety.viz</td><td>✅ worktree + draft PR to <code>dev</code></td>
+      <td>A0: ❌ · A1: ✅ <code>dev</code> (standard tier)</td>
+      <td>✅ file/comment/label; board adds</td><td>❌</td><td><code>main</code> (approval tier), deletes</td></tr>
+  <tr><td>safety-histogram</td><td>✅ draft PR to <code>dev</code></td>
+      <td>A0: ❌ · A1: ✅ <code>dev</code></td>
+      <td>✅</td><td>❌</td><td><code>master</code>, deletes</td></tr>
+  <tr><td>open.gismo</td><td>✅ draft PR to <code>dev</code> <em>(after obotclaw app install)</em></td>
+      <td>A0: ❌ · A1: ✅ <code>dev</code></td>
+      <td>✅</td><td>❌</td><td><code>main</code>, deletes</td></tr>
+  <tr><td>obot.agent</td><td>✅ (scaffold lane)</td>
+      <td>A0: ❌ · A1: ✅ <code>main</code> (standard tier)</td>
+      <td>✅</td><td>❌</td><td>deletes</td></tr>
+  <tr><td>obot.roadmap</td><td>✅ direct commits to <code>main</code> (existing standing grant)</td>
+      <td>✅ own-PR merges per existing grant</td>
+      <td>✅ full standard updates; <strong>no issue closes</strong> (stays Jeremy's click)</td>
+      <td>❌</td><td>deletes of any kind (files, issues, releases, history)</td></tr>
+  <tr><td>gsm.safety</td><td>❌ read-only in <code>--auto</code></td><td>❌ (absent from merge policy — fully manual)</td>
+      <td>comment-only</td><td>❌</td><td>everything else</td></tr>
+  <tr><td>Anything outside the jwildfire org</td><td colspan="5">❌ hard rule — read-only, no exceptions, drafts handed to Jeremy</td></tr>
+</table>
+</div>
+
+<p>Enforcement is layered, mostly already built: the <code>merge-gate-guard</code> hook + two-tier
+<code>merge-policy.json</code> (merges), auto permission mode's classifier (destructive ops), the
+no-delete rule, and obotclaw attribution. New: the matrix above ships as
+<code>obot.agent/scripts/autonomy-grants.json</code> next to the merge policy, read by the
+<code>--auto</code> init at selection time and citable in refusals — see <a href="#questions">O5</a>
+for how hard its enforcement should be at v1.</p>
+
+<h2 id="levels">6. Autonomy levels: A0 → A1 → A2</h2>
+
+<table>
+  <tr><th>Level</th><th>What changes</th><th>Gate to advance</th></tr>
+  <tr><td><strong>A0 — observed runs</strong> (start here)</td>
+      <td>Everything in §4, but <strong>draft-PR-only</strong>: no merges anywhere except the
+      existing obot.roadmap standing grant. Jeremy triggers each run.</td>
+      <td>N clean runs (proposed N=3): increment completed or cleanly parked, digest accurate,
+      zero guardrail violations → Jeremy flips A1.</td></tr>
+  <tr><td><strong>A1 — routine merges</strong> (the K4 target)</td>
+      <td>Standard-tier <code>obot-merge</code> allowed unattended (dev branches + oa main), so an
+      increment can land end-to-end overnight. Approval-tier still never.</td>
+      <td>Sustained clean operation + Jeremy's comfort → add scheduling.</td></tr>
+  <tr><td><strong>A2 — scheduled</strong></td>
+      <td>Nightly trigger without a human launch (local cron/launchd first; GHA-hosted headless as
+      the lane matures). Same session, same rules — only the trigger changes.</td>
+      <td>Stage-3 exit / keynote-era steady state.</td></tr>
+</table>
+
+<p>The level is a single field in <code>autonomy-grants.json</code>; promotion is a reviewed one-line
+change, demotion is instant (§7).</p>
+
+<h2 id="killswitch">7. Kill switches and failure modes</h2>
+
+<h3>7.1 Stopping it</h3>
+
+<ul>
+  <li><strong>Halt file:</strong> <code>.claude/autonomy-halt</code> in the workspace root. Checked
+      by the wrapper pre-flight and by the session at every phase boundary (init → select → execute →
+      wrapup) and between spawned-agent waves; if present, the session parks cleanly: heartbeat line,
+      digest of state so far, <code>needs input:</code>. Creating the file is the one-command stop
+      (<code>touch</code>), removable only by Jeremy's say-so.</li>
+  <li><strong>Attach and interrupt:</strong> <code>claude attach {job}</code> works on any
+      <code>--auto</code> run at any time — it is a normal background session.</li>
+  <li><strong>Capability revocation:</strong> remove a repo from <code>merge-policy.json</code> /
+      <code>autonomy-grants.json</code>, or set the level back to A0, or set a goal's
+      <code>status: paused</code> — each takes effect at the next boundary check without killing the
+      session.</li>
+  <li><strong>Budgets:</strong> hard caps per run — wall-clock (default 4h) and a token target —
+      checked at boundaries; hitting either parks the increment with a digest rather than pushing on.</li>
+  <li><strong>Built into auto mode (verified 2026-07-22):</strong> the permission classifier still
+      hard-gates ~15 categories unattended (home-directory removals, <code>git reset --hard</code>,
+      amending pushed commits, pushes to deploy-named branches, explicit <code>ask</code> rules —
+      and <em>boundaries stated in the prompt</em>, so the launch briefing's "draft PRs only" line is
+      itself enforced). If the classifier blocks 3 consecutive or 20 total actions, auto mode pauses
+      the session back into prompting — an unattended run that starts fighting its guardrails
+      self-parks into <em>needs input</em> rather than escalating.</li>
+</ul>
+
+<h3>7.2 Failure modes → one behavior</h3>
+
+<p>Every failure ends the same way: <strong>park, log, digest, <code>needs input:</code></strong> —
+never silent, never retry-forever, never widen scope to route around a block. Specifically:</p>
+
+<table>
+  <tr><th>Failure</th><th>Detection</th><th>Behavior</th></tr>
+  <tr><td>Login/token expiry mid-run (seen 07-12)</td><td>Pre-flight + API errors</td>
+      <td>Park + PushNotification (the one case that pings the phone: the run cannot even report otherwise)</td></tr>
+  <tr><td>Stall (no progress)</td><td>Monitor watch on job state, 40-min rule (runbook)</td>
+      <td>Monitor emits; morning digest flags the stall window</td></tr>
+  <tr><td>CI red on the increment's PR after honest attempts</td><td>Session's own checks</td>
+      <td>Park with the failure output in the digest; PR stays draft; no force-anything</td></tr>
+  <tr><td>Guardrail refusal (hook/permission/policy)</td><td>Denied tool call</td>
+      <td>Treat as a wall, not a puzzle: park and report — a denial in <code>--auto</code> is never
+      "find another route"</td></tr>
+  <tr><td>Selection finds nothing eligible</td><td>§4.2 exhausts</td>
+      <td>Report "no eligible increment" with why per candidate — itself useful roadmap signal</td></tr>
+</table>
+
+<h2 id="lanes">8. Scheduling and the other v1 lanes</h2>
+
+<ul>
+  <li><strong>Trigger, v1:</strong> Jeremy-manual via <code>obot-auto</code> (evening launch, morning
+      review — the proven ultracode rhythm). Scheduling is deliberately deferred to A2; when it
+      arrives, candidates in order of fit: Claude Code's desktop scheduled tasks or local
+      cron/launchd on the Mac (lid-open constraint noted), then GHA-hosted headless
+      (<code>claude -p "/goal …"</code>) once the local form is boring. Cloud routines stay out
+      until the push-identity gap is solved (still research preview; the paused diary routine's
+      lesson).</li>
+  <li><strong>Requirement-status rollup lane:</strong> scheduled GHA job on obot.roadmap posting
+      sub-issue status rollups on open requirements — read-mostly, write scope = issue comments under
+      obotclaw. Small, independent, can ship before or alongside <code>--auto</code>; it exercises the
+      App identity on GHA.</li>
+  <li><strong>Event-driven responder lane:</strong> the <code>@claude</code> PR/issue responder on
+      portfolio repos — triage, review-comment responses, check runs. Depends only on #3's permission
+      set; specified enough by the requirement; its detailed design can ride the implementation
+      sub-issue.</li>
+  <li><strong>Lane runbook:</strong> one page per lane in obot.agent (identity, trigger, scope, kill
+      switch, escalation) — the requirement's cross-cutting deliverable, kept where the machinery lives.</li>
+</ul>
+
+<h2 id="implementation">9. Implementation plan</h2>
+
+<p>Sequenced so each piece is independently reviewable (sub-issues to be filed via
+<code>requirement-tasks</code> after design sign-off):</p>
+
+<ol>
+  <li><strong>obot.agent — the <code>--auto</code> core</strong> (one PR): <code>session-init</code>
+      SKILL.md gains the <code>--auto</code> mode section (§4); <code>session-wrapup</code> SKILL.md
+      gains the unattended variant (§4.4, codifying the existing needs-input rule);
+      <code>goals/charts.md</code> + <code>goals/app.md</code>; <code>scripts/obot-auto</code>
+      (pre-flight + launch); <code>scripts/autonomy-grants.json</code> (§5, level=A0); halt-file
+      checks documented in both skills.</li>
+  <li><strong>First A0 runs</strong> (no code): 2–3 evening launches on G1 increments, digests
+      reviewed each morning; grant-matrix and selection-rule fixes fed back as small PRs.</li>
+  <li><strong>Rollup lane</strong> (obot.roadmap workflow + small script) — parallelizable with 2.</li>
+  <li><strong>Responder lane</strong> (workflow per target repo) — after the rollup proves the GHA
+      + App identity path.</li>
+  <li><strong>A1 flip</strong> (config change + short runbook note) when the A0 gate passes;
+      scheduling (A2) as a separate later sub-issue.</li>
+</ol>
+
+<h2 id="risks">10. Dependencies and risks</h2>
+
+<ul>
+  <li><strong>Dependencies:</strong> hub #3 App identity (live; §7 credential retirement still
+      pending, not blocking); obot.agent session framework v0.2.0 (shipped); merge lane (shipped);
+      obotclaw app install on open.gismo (pending — blocks G2 merges, not G1);
+      <code>/goal</code> built-in availability at the pinned CLI version.</li>
+  <li><strong>Wrong-increment selection:</strong> mitigated by the roadmap-first gate, the hand-off
+      list as the priority source, <code>--dry-run</code>, and one-increment-per-run. Worst case at
+      A0 is a draft PR nobody wanted — cheap to close.</li>
+  <li><strong>Runaway cost:</strong> budgets in §7.1 + the allocation-grant cost note in every
+      digest; A0 runs are Jeremy-triggered so frequency is human-controlled.</li>
+  <li><strong>Unattended failure opacity:</strong> the heartbeat + Monitor + digest triad exists
+      precisely for this; the 07-12 overnight runs are the evidence it works.</li>
+  <li><strong>Drift between the <code>/goal</code> built-in and our layer:</strong> we depend on it
+      only as an in-session stop check — if its semantics change, the session degrades to its own
+      judgment plus budgets, nothing structural breaks.</li>
+  <li><strong>Trust erosion from one bad merge:</strong> the reason A0 exists; A1 only ever reaches
+      standard-tier branches where a bad merge is revertible on an integration branch.</li>
+</ul>
+
+<h2 id="questions">11. Open judgement calls</h2>
+
+<div class="question"><span class="qid">O1 — Maiden run scope.</span> Which increment for the first
+A0 run? <span class="rec"><strong>Recommend:</strong> a small G1 item from the safety.viz
+improvement backlog (e.g. sv#85 axis-limit defaults — well-scoped, single-repo, no design gate), not
+nepExplorer #35 (big) or anything G2 (app-install prereq).</span></div>
+
+<div class="question"><span class="qid">O2 — Where goal definitions live.</span> obot.agent
+<code>goals/</code> (versioned with the machinery, merge-policy precedent) vs the hub (roadmap
+visibility). <span class="rec"><strong>Recommend:</strong> obot.agent; the hub already shows the
+work itself, and goal edits should ride the scaffold-lane review path.</span></div>
+
+<div class="question"><span class="qid">O3 — Merge posture at start.</span> K4 authorizes routine
+merges for Aug–Sept; should <code>--auto</code> start there? <span class="rec"><strong>Recommend:</strong>
+no — start A0 (draft-only) with an explicit, fast A0→A1 gate (3 clean runs). The merge lane is a
+week old; let the first autonomous runs prove selection + wrapup before they land code
+unattended.</span></div>
+
+<div class="question"><span class="qid">O4 — Identity tag.</span> Autonomous sessions as
+<code>🦾🤖 {date} {slug}</code>, purple in the hub? <span class="rec"><strong>Recommend:</strong>
+yes — 😺/👯/⚡️ each mark a supervision model; unattended-autonomous is a fourth and the dashboard
+should say so at a glance.</span></div>
+
+<div class="question"><span class="qid">O5 — Grant enforcement hardness.</span> Ship
+<code>autonomy-grants.json</code> as convention consulted by the session (soft) or wire it into
+hooks like the merge gate (hard)? <span class="rec"><strong>Recommend:</strong> soft at A0 (merges —
+the risky writes — are already hard-gated); revisit hardening alongside the A1 flip, reusing the
+merge-gate-guard pattern.</span></div>
+
+<div class="question"><span class="qid">O6 — Rollup lane timing.</span> Build the rollup lane now in
+parallel (it exercises GHA + App identity cheaply) or hold everything behind the <code>--auto</code>
+experiments? <span class="rec"><strong>Recommend:</strong> in parallel — it is independent, tiny,
+and de-risks the eventual GHA-hosted dev lane.</span></div>
+
+<footer>
+  <hr style="border:none">
+  <p>Design document for <a href="https://github.com/jwildfire/obot.roadmap/issues/18">obot.roadmap
+  #18</a> · lives at <code>requirements/design/18_design.html</code> · published on the
+  <a href="https://jwildfire.github.io/obot.roadmap/">hub site</a>.</p>
+  <p>This design was drafted by Claude Code using Fable 5 for @jwildfire review.</p>
+</footer>
+
+</body>
+</html>
