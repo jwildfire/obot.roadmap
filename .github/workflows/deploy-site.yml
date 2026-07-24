@@ -71,6 +71,23 @@ jobs:
       - name: Build roadmap
         run: node scripts/build_roadmap.mjs
 
+      # Standing goals on the refactored roadmap page come from obot.agent's
+      # goals/*.md — the same files --auto selects from. Public repo, so the
+      # workflow token is enough; continue-on-error because a missing checkout
+      # should degrade one section, not fail the deploy.
+      - name: Check out obot.agent (goal definitions)
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: jwildfire/obot.agent
+          path: obot.agent-src
+
+      # Staged refactor of the roadmap page (requirement #57): published beside
+      # the live page so it can be reviewed on the deployed site. At the flip it
+      # takes over roadmap.html and this step replaces the one above.
+      - name: Build roadmap (staged refactor, #57)
+        run: node scripts/build_roadmap_next.mjs
+
       - name: Build metrics
         run: python3 scripts/build_metrics.py
 
@@ -138,6 +155,8 @@ jobs:
           test -f _site/index.html
           grep -q "metric-row" _site/index.html
           test -f _site/roadmap.html
+          test -f _site/roadmap-next.html
+          grep -q "sec-requirements" _site/roadmap-next.html
           test -f _site/status.html
           test -f _site/status/index.html
           test -f _site/news.html

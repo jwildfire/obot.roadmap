@@ -239,3 +239,133 @@ dialog.audit-log form { float: right; margin: -.4rem -.6rem 0 0; }
   background: var(--card);
   margin: 1.5rem 0 0;
 }
+
+/* Roadmap page, refactored (#57) — an at-a-glance operations view.
+   Dense by intent: rows not cards, one line per item, mono meta. Everything
+   below reuses the existing tokens; no new palette, no restyling of the pages
+   that already ship. Density floor is 13px/1.35 with >=24px rows so "compact"
+   stays clickable. */
+.rm-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .4rem .75rem;
+  margin: -1rem 0 1rem;
+  padding: .5rem 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+.rm-filters { display: flex; flex-wrap: wrap; gap: .25rem; margin-left: auto; }
+.rm-chip-btn {
+  font: 500 .72rem/1.4 var(--mono);
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: .12rem .55rem;
+  cursor: pointer;
+}
+.rm-chip-btn:hover { color: var(--accent); border-color: var(--accent-bright); }
+.rm-chip-btn.current { color: var(--paper); background: var(--accent); border-color: var(--accent); }
+.rm-stamp { font-family: var(--mono); font-size: .72rem; color: var(--faint); }
+.rm-session {
+  font-family: var(--mono);
+  font-size: .74rem;
+  border-radius: 999px;
+  padding: .1rem .6rem;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: var(--muted);
+}
+.rm-session.live { background: #dcfce7; border-color: #bbf7d0; color: var(--good); }
+
+.rm-sec { margin: 0 0 1.1rem; }
+.rm-sec > h2 { font-size: 1.15rem; margin: .9rem 0 .3rem; }
+.rm-sec > h3 { font-size: .95rem; margin: .7rem 0 .25rem; }
+.rm-count {
+  font: 600 .7rem/1.5 var(--mono);
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: .02rem .45rem;
+  vertical-align: .15em;
+}
+.rm-note { margin: 0 0 .4rem; font-size: .78rem; color: var(--muted); }
+.rm-notice { margin: .2rem 0; font-family: var(--mono); font-size: .78rem; color: var(--warn); }
+.rm-empty { margin: .2rem 0; font-size: .82rem; color: var(--faint); }
+/* filtered to nothing — drop out rather than strand a header (repeated after the
+   column rules below, which would otherwise win on source order) */
+.rm-sec.rm-dim { display: none; }
+
+/* Dense rows: key · body · meta, one line each, hairline separated. */
+.rm-rows { border-top: 1px solid var(--rule); }
+.rm-row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr) auto;
+  gap: .6rem;
+  align-items: baseline;
+  padding: .22rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: .82rem;
+  line-height: 1.35;
+  min-height: 1.5rem;
+}
+.rm-row:hover { background: var(--panel); }
+.rm-key { font-family: var(--mono); font-size: .76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rm-key a { text-decoration: none; font-weight: 600; }
+.rm-main { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rm-meta { font-family: var(--mono); font-size: .72rem; color: var(--faint); white-space: nowrap; }
+.rm-none { color: var(--faint); }
+.rm-anchors { font-family: var(--mono); font-size: .74rem; }
+.rm-anchors a { text-decoration: none; }
+.rm-anchor.done { color: var(--faint); }
+.rm-goal .rm-main strong { font-family: var(--serif); font-size: 1rem; font-weight: 400; }
+
+.rm-pill, .rm-chip {
+  display: inline-block;
+  font: 600 .66rem/1.5 var(--mono);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0 .4rem;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.rm-chip { margin-right: .2rem; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.rm-pill.draft { background: #f3e8dd; border-color: #e4d2bf; color: #6b4423; }
+.rm-pill.ready { background: #ffedd5; border-color: #fed7aa; color: #c2410c; }
+.rm-pill.ok { background: #dcfce7; border-color: #bbf7d0; color: var(--good); }
+.rm-pill.warn { background: #fef3c7; border-color: #fde68a; color: var(--warn); }
+.status-pill.drift, .status-pill.unstaged { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+.rm-activity { font-family: var(--mono); font-size: .7rem; color: var(--accent); }
+
+/* Requirements table — a table earns its keep at seven columns; the rest are
+   rows. Horizontal hairlines only: vertical rules add weight without adding
+   information once the columns are this narrow. */
+table.rm-table { font-size: .82rem; margin: .25rem 0; border-color: var(--rule); }
+table.rm-table th, table.rm-table td {
+  padding: .22rem .5rem .22rem 0;
+  border-left: 0;
+  border-right: 0;
+}
+table.rm-table th { font-size: .66rem; background: none; border-top: 0; }
+table.rm-table tr:hover td { background: var(--panel); }
+table.rm-table td:first-child { font-family: var(--mono); font-size: .76rem; }
+table.rm-table td:first-child a { text-decoration: none; font-weight: 600; }
+
+/* Short sections pack two-up on wide screens. Multi-column rather than grid so a
+   two-row section does not inherit the height of a ten-row neighbour. */
+.rm-grid { columns: 2; column-gap: 1.75rem; margin-top: .4rem; }
+.rm-grid > .rm-sec { break-inside: avoid; -webkit-column-break-inside: avoid; display: block; }
+.rm-grid > .rm-sec.rm-dim, .rm-sec.rm-dim { display: none; }
+@media (max-width: 60rem) { .rm-grid { columns: 1; } .rm-row { grid-template-columns: 7rem minmax(0, 1fr) auto; } }
+
+details.rm-fold { margin: 1rem 0 0; }
+details.rm-fold summary { cursor: pointer; color: var(--muted); font-family: var(--mono); font-size: .8rem; }
+details.rm-fold summary:hover { color: var(--accent); }

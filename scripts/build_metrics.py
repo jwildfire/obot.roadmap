@@ -17,7 +17,20 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 OWNER = "jwildfire"
-REPOS = ["obot.roadmap", "safety.agent", "safety.viz", "gsm.safety", "safety-histogram"]
+
+
+def _repos() -> list[str]:
+    """Portfolio repos, read from scripts/status-repos.csv — the same file the
+    status dashboard and the JS generators use. Keeping a private copy here is
+    what left the metrics scoped to "safety.agent" after the rename."""
+    with (ROOT / "scripts" / "status-repos.csv").open() as fh:
+        rows = [line.strip() for line in fh.read().splitlines()]
+    if rows[:1] != ["repo"]:
+        raise SystemExit('metrics: status-repos.csv must start with a "repo" header')
+    return [r.split("/", 1)[1] for r in rows[1:] if r]
+
+
+REPOS = _repos()
 TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
 REPO_QUALIFIER = " ".join(f"repo:{OWNER}/{r}" for r in REPOS)
 PLACEHOLDER = "<!-- METRICS: replaced at deploy time by scripts/build_metrics.py -->"

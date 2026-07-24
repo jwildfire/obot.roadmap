@@ -10,9 +10,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+
+import { REPOS, ROOT } from './lib/repos.mjs';
+
 const OWNER = 'jwildfire';
-const REPOS = ['obot.roadmap', 'safety.agent', 'safety.viz', 'gsm.safety', 'safety-histogram'];
 const BLOG_FEED = 'https://jwildfire.github.io/feed.xml';
 const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 
@@ -151,21 +152,24 @@ async function releaseItems() {
   const items = [];
   for (const repo of REPOS) {
     try {
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${repo}/releases?per_page=30`, { headers });
+      const res = await fetch(`https://api.github.com/repos/${repo.nameWithOwner}/releases?per_page=30`, { headers });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       for (const r of await res.json()) {
         if (r.draft) continue;
-        const name = r.name && r.name !== r.tag_name ? ` — ${r.name}` : '';
+        // Release names often repeat "<repo> <tag>", which the title already
+        // carries — only append a name that adds something.
+        const extra = (r.name || '').replace(repo.name, '').replace(r.tag_name, '').replace(/[\s—·-]+/g, ' ').trim();
+        const name = extra.length > 2 ? ` — ${extra}` : '';
         items.push({
           type: 'release',
           date: day(r.published_at || r.created_at),
-          title: `${repo} ${r.tag_name}${name}`,
+          title: `${repo.name} ${r.tag_name}${name}`,
           url: r.html_url,
           summary: clip(stripTags((r.body || '').split('\n').find((l) => l.trim() && !l.startsWith('#')) || '')),
         });
       }
     } catch (err) {
-      console.warn(`news: releases unavailable for ${repo} (${err.message})`);
+      console.warn(`news: releases unavailable for ${repo.nameWithOwner} (${err.message})`);
     }
   }
   return items;
