@@ -91,7 +91,7 @@ function goalsSection(res, requirements) {
   }).join('\n');
 
   return section('goals', 'Goals', goals.length, `<div class="rm-rows">\n${rows}\n</div>`, {
-    note: `Standing direction from <a href="https://github.com/jwildfire/obot.agent/tree/main/goals"><code>obot.agent/goals</code></a> — the same files autonomous sessions select from.`,
+    note: `Standing direction from the hub's <a href="https://github.com/${HUB}/issues?q=is%3Aissue+is%3Aopen+label%3Agoal"><code>goal</code>-labeled issues</a> — the same goals autonomous sessions select from (#53/#71); per-goal detail on the <a href="goals/index.html">goal pages</a>.`,
   });
 }
 
