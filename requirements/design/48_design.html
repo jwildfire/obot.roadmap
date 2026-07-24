@@ -187,10 +187,12 @@ re-read of each thread makes the pass idempotent.
 Added 2026-07-24 (@jwildfire: "don't really want ideas sitting idle until a session"). A
 GitHub Action on this repo
 (<a href="https://github.com/jwildfire/obot.roadmap/blob/main/.github/workflows/ideas-triage.yml"><code>.github/workflows/ideas-triage.yml</code></a>)
-fires on every new Ideas discussion or comment and runs
-<code>anthropics/claude-code-action</code> in prompt mode (Sonnet 5, bounded toolset:
-<code>gh</code> only). Per run it reads the full thread, checks for an existing promotion,
-then takes exactly one action:
+fires on every new Ideas discussion or comment and runs <strong>Claude Code headless</strong>
+(<code>claude -p</code>, Sonnet 5, bounded toolset: <code>gh</code> only) on the runner —
+<code>claude-code-action</code> was the first implementation but rejects discussion events
+("Unsupported event type", found live 2026-07-24). A <code>workflow_dispatch</code> trigger
+allows manual re-runs per discussion. Per run it reads the full thread, checks for an
+existing promotion, then takes exactly one action:
 </p>
 <ul>
   <li><strong>Confident requirement</strong> → files a Requirement issue (template sections, origin link back to the thread), comments the link, closes the thread as resolved.</li>
@@ -216,8 +218,8 @@ roadmap is cleaned up or a wrapup runs, still-open Ideas threads are flagged as
   <strong>GitHub agentic workflows (gh-aw), considered:</strong> GitHub's experimental
   agentic-workflow layer (markdown specs compiled to Actions) was evaluated for this lane.
   Deferred: it adds an extension + compile step and an engine abstraction we don't need,
-  while <code>claude-code-action</code> prompt mode delivers the same watch → triage → file
-  loop on the stack the program already runs (and on the existing Claude subscription).
+  while headless Claude Code delivers the same watch → triage → file loop on the stack the
+  program already runs (and on the existing Max subscription).
   Revisit if the triage prompt grows into multi-job orchestration.
 </div>
 
