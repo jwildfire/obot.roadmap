@@ -89,10 +89,13 @@ function goalsSection(res, requirements) {
       ...g.anchors.flatMap((a) => byNumber.get(a.number)?.repos ?? []),
       ...g.backlog.filter((b) => /^[\w.-]+\/[\w.-]+$/.test(b)),
     ])];
+    // Title → the goal's own page (#53); the issue number stays the mono key, so
+    // both the narrative and the source are one click away.
+    const progress = g.progress?.total ? `${g.progress.done}/${g.progress.total} · ` : '';
     return `  <div class="rm-row rm-goal" data-repo="${repoAttr(repos.length ? repos : [HUB])}" data-hl="${goalViews()}">
-    <span class="rm-key"><a href="${g.url}">${esc(g.slug)}</a></span>
-    <span class="rm-main"><strong>${esc(g.title)}</strong> <span class="rm-anchors">${anchors}</span></span>
-    <span class="rm-meta">${live} active</span>
+    <span class="rm-key"><a href="${g.url}">#${g.number ?? ''}</a></span>
+    <span class="rm-main"><strong><a href="${g.page ?? g.url}">${esc(g.title)}</a></strong> <span class="rm-anchors">${anchors}</span></span>
+    <span class="rm-meta">${progress}${live} active</span>
   </div>`;
   }).join('\n');
 
