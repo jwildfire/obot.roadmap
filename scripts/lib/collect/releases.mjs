@@ -42,6 +42,11 @@ async function compare(nameWithOwner, base, head) {
     ahead: data.ahead_by,
     behind: data.behind_by,
     status: data.status,
+    // Newest commit in the range — the only honest "when did this work happen"
+    // signal for unreleased work (a tag date would describe the last release).
+    newestCommitAt: data.commits?.length
+      ? data.commits[data.commits.length - 1].commit.committer.date
+      : null,
     url: `https://github.com/${nameWithOwner}/compare/${base}...${head}`,
   };
 }
@@ -80,6 +85,8 @@ export async function collectReleases() {
       // commits on the release branch that no release covers yet
       unreleased: unreleasedOnRelease,
       unreleasedUrl: latest ? `https://github.com/${repo.nameWithOwner}/compare/${latest.tag}...${releaseBranch}` : null,
+      newestCommitAt: [devDrift?.newestCommitAt, sinceTag?.newestCommitAt]
+        .filter(Boolean).sort().pop() ?? null,
     });
   }
 

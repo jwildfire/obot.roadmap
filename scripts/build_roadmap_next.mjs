@@ -23,6 +23,12 @@ import { collectOpenPRs } from './lib/collect/prs.mjs';
 import { collectReleases } from './lib/collect/releases.mjs';
 import { collectIdeas } from './lib/collect/ideas.mjs';
 import { collectGoals } from './lib/collect/goals.mjs';
+import {
+  VIEWS, DEFAULT_VIEW, T, goalViews, requirementViews, prViews,
+  upcomingViews, releaseViews, openIdeaViews, promotedIdeaViews,
+} from './lib/highlights.mjs';
+
+const NOW = new Date();
 
 const OUT = process.env.ROADMAP_OUT || 'roadmap-next.html';
 const RECENT_RELEASES = 10;
@@ -83,7 +89,7 @@ function goalsSection(res, requirements) {
       ...g.anchors.flatMap((a) => byNumber.get(a.number)?.repos ?? []),
       ...g.backlog.filter((b) => /^[\w.-]+\/[\w.-]+$/.test(b)),
     ])];
-    return `  <div class="rm-row rm-goal" data-repo="${repoAttr(repos.length ? repos : [HUB])}">
+    return `  <div class="rm-row rm-goal" data-repo="${repoAttr(repos.length ? repos : [HUB])}" data-hl="${goalViews()}">
     <span class="rm-key"><a href="${g.url}">${esc(g.slug)}</a></span>
     <span class="rm-main"><strong>${esc(g.title)}</strong> <span class="rm-anchors">${anchors}</span></span>
     <span class="rm-meta">${live} active</span>
@@ -109,7 +115,7 @@ async function requirementRow(req, prsByRequirement) {
     ? `${req.tasks.done}/${req.tasks.total}${req.tasks.source === 'checklist' ? '<span class="rm-none" title="from an inline checklist, not sub-issues">*</span>' : ''}`
     : '<span class="rm-none">—</span>';
   const repos = req.repos.map((r) => `<span class="rm-chip">${esc(shortRepo(r))}</span>`).join('');
-  return `  <tr data-repo="${repoAttr(req.repos)}">
+  return `  <tr data-repo="${repoAttr(req.repos)}" data-hl="${requirementViews(req, prs, NOW)}">
     <td><a href="${req.url}">#${req.number}</a></td>
     <td>${esc(req.title)}${drift}${activity}</td>
     <td><span class="status-pill ${stageClass(req.stage)}">${esc(req.stage)}</span></td>
@@ -144,7 +150,7 @@ function prSection(res) {
     const req = pr.requirements.length
       ? ` <span class="rm-anchors">${pr.requirements.map((n) => `<a href="https://github.com/${HUB}/issues/${n}">#${n}</a>`).join(' ')}</span>`
       : '';
-    return `  <div class="rm-row" data-repo="${esc(pr.repo)}">
+    return `  <div class="rm-row" data-repo="${esc(pr.repo)}" data-hl="${prViews(pr, NOW)}">
     <span class="rm-key"><a href="${pr.url}">${esc(shortRepo(pr.repo))}#${pr.number}</a></span>
     <span class="rm-main">${state} ${esc(pr.title)}${req}</span>
     <span class="rm-meta">${age(pr.updatedAt)}</span>
@@ -166,7 +172,7 @@ function upcomingSection(res) {
     if (u.devBehind) bits.push(`<span class="rm-pill warn" title="dev is behind ${esc(u.releaseBranch)} — the branches have diverged">${u.devBehind} behind</span>`);
     if (u.unreleased) bits.push(`<a href="${u.unreleasedUrl}"><strong>${u.unreleased}</strong> since ${esc(u.latestTag)}</a>`);
     if (u.neverReleased) bits.push('<span class="rm-pill">never released</span>');
-    return `  <div class="rm-row" data-repo="${esc(u.repo)}">
+    return `  <div class="rm-row" data-repo="${esc(u.repo)}" data-hl="${upcomingViews(u, NOW)}">
     <span class="rm-key"><a href="https://github.com/${u.repo}">${esc(shortRepo(u.repo))}</a></span>
     <span class="rm-main">${bits.join(' · ')}</span>
     <span class="rm-meta">${u.latestTag ? esc(u.latestTag) : '—'}</span>
@@ -181,7 +187,7 @@ function recentSection(res) {
   if (!res.ok) return section('releases', 'Recent releases', null, '', { notice: res.notice });
   const rows = res.value.recent.slice(0, RECENT_RELEASES);
   if (!rows.length) return section('releases', 'Recent releases', 0, empty('No releases yet.'));
-  const html = rows.map((r) => `  <div class="rm-row" data-repo="${esc(r.repo)}">
+  const html = rows.map((r) => `  <div class="rm-row" data-repo="${esc(r.repo)}" data-hl="${releaseViews(r, NOW)}">
     <span class="rm-key"><a href="${r.url}">${esc(shortRepo(r.repo))} ${esc(r.tag)}</a></span>
     <span class="rm-main">${r.name ? esc(r.name) : '<span class="rm-none">—</span>'}</span>
     <span class="rm-meta">${day(r.publishedAt)}</span>
@@ -193,12 +199,12 @@ function recentSection(res) {
 function ideasSection(res) {
   if (!res.ok) return section('ideas', 'Ideas', null, '', { notice: res.notice });
   const { open, promoted, windowDays } = res.value;
-  const openRows = open.map((d) => `  <div class="rm-row" data-repo="${HUB}">
+  const openRows = open.map((d) => `  <div class="rm-row" data-repo="${HUB}" data-hl="${openIdeaViews(d, NOW)}">
     <span class="rm-key"><a href="${d.url}">#${d.number}</a></span>
     <span class="rm-main">${esc(d.title)}</span>
     <span class="rm-meta">${age(d.updatedAt)}</span>
   </div>`).join('\n');
-  const promotedRows = promoted.map((d) => `  <div class="rm-row rm-promoted" data-repo="${HUB}">
+  const promotedRows = promoted.map((d) => `  <div class="rm-row rm-promoted" data-repo="${HUB}" data-hl="${promotedIdeaViews(d, NOW)}">
     <span class="rm-key"><a href="${d.url}">#${d.number}</a></span>
     <span class="rm-main">${esc(d.title)} <span class="rm-anchors">→ <a href="${d.issue.url}">#${d.issue.number}</a></span></span>
     <span class="rm-meta">${age(d.closedAt)}</span>
@@ -207,9 +213,11 @@ function ideasSection(res) {
   const body = `<div class="rm-rows">
 ${open.length ? openRows : `  ${empty('Inbox empty.')}`}
 </div>
+<div class="rm-sub">
 <h3>Promoted · last ${windowDays} days <span class="rm-count">${promoted.length}</span></h3>
 <div class="rm-rows">
 ${promoted.length ? promotedRows : `  ${empty('None promoted in the window.')}`}
+</div>
 </div>`;
 
   return section('ideas', 'Ideas', open.length, body, {
@@ -266,6 +274,10 @@ const foldedSection = `<details class="rm-fold">
 ${await requirementTable(folded, prsByRequirement)}
 </details>`;
 
+const viewChips = VIEWS.map((v) =>
+  `<button class="rm-view-btn${v.key === DEFAULT_VIEW ? ' current' : ''}" data-view="${v.key}"` +
+  ` aria-pressed="${v.key === DEFAULT_VIEW}" title="${esc(v.blurb)}">${esc(v.label)}</button>`).join('');
+
 // data-filter, not data-repo: the filter hides every [data-repo] node, and the
 // chips must not be able to hide themselves.
 const filterChips = ['<button class="rm-chip-btn current" data-filter="all" aria-pressed="true">all</button>']
@@ -308,20 +320,19 @@ const html = `<!DOCTYPE html>
 </header>
 
 <div class="rm-bar">
+  <span class="rm-views" id="rm-views" role="group" aria-label="View">${viewChips}</span>
   <span class="rm-session" id="rm-session" hidden></span>
   <span class="rm-filters" id="rm-filters" role="group" aria-label="Filter by repo">${filterChips}</span>
-  <span class="rm-stamp">${fmtET(new Date())}</span>
 </div>
+<p class="rm-blurb" id="rm-blurb"></p>
 
 ${goalsSection(goalRes, requirements)}
 ${requirementsSection}
 
-<div class="rm-grid">
 ${prSection(prRes)}
 ${upcomingSection(relRes)}
-${recentSection(relRes)}
 ${ideasSection(ideaRes)}
-</div>
+${recentSection(relRes)}
 
 ${foldedSection}
 ${auditLogHtml}
@@ -335,7 +346,13 @@ ${auditLogHtml}
 
   // Repo filter — rows carry a space-separated data-repo list; a section with no
   // surviving rows hides itself so the page stays dense when filtered.
-  var buttons = Array.prototype.slice.call(document.querySelectorAll('.rm-chip-btn'));
+  // Two independent filters — view (what kind of row) and repo — composed into
+  // one predicate. Rows carry data-hl (the views they belong to) and data-repo.
+  var repoButtons = Array.prototype.slice.call(document.querySelectorAll('.rm-chip-btn'));
+  var viewButtons = Array.prototype.slice.call(document.querySelectorAll('.rm-view-btn'));
+  var blurbs = ${JSON.stringify(Object.fromEntries(VIEWS.map((v) => [v.key, v.blurb])))};
+  var view = ${JSON.stringify(DEFAULT_VIEW)};
+  var repo = 'all';
 
   // A count badge counts the rows of the first list or table after its heading,
   // so the numbers keep telling the truth once a filter is on.
@@ -347,34 +364,60 @@ ${auditLogHtml}
     return null;
   }
   var badges = Array.prototype.slice.call(document.querySelectorAll('.rm-count')).map(function (b) {
-    return { el: b, scope: scopeOf(b), total: b.textContent };
+    return { el: b, scope: scopeOf(b) };
   });
 
-  function apply(repo) {
+  function apply() {
     document.querySelectorAll('[data-repo]').forEach(function (row) {
-      var repos = (row.dataset.repo || '').split(/\\s+/);
-      row.hidden = repo !== 'all' && repos.indexOf(repo) === -1;
+      // split(' ') not a regex: this script is inside a template literal, where
+      // a lone backslash is eaten before it reaches the page.
+      var repoOk = repo === 'all' || (row.dataset.repo || '').split(' ').indexOf(repo) !== -1;
+      var viewOk = view === 'all' || (row.dataset.hl || '').split(' ').indexOf(view) !== -1;
+      row.hidden = !(repoOk && viewOk);
     });
     badges.forEach(function (b) {
       if (!b.scope) return;
-      if (repo === 'all') { b.el.textContent = b.total; return; }
       var rows = b.scope.querySelectorAll('[data-repo]');
       b.el.textContent = Array.prototype.filter.call(rows, function (r) { return !r.hidden; }).length;
+    });
+    // Hide a subsection, then a section, once nothing in it survives — a
+    // highlights view should be shorter, not the same page full of empty headings.
+    document.querySelectorAll('.rm-sub').forEach(function (sub) {
+      var rows = sub.querySelectorAll('[data-repo]');
+      sub.hidden = rows.length > 0 && !Array.prototype.some.call(rows, function (r) { return !r.hidden; });
     });
     document.querySelectorAll('.rm-sec').forEach(function (sec) {
       var rows = sec.querySelectorAll('[data-repo]');
       var visible = Array.prototype.some.call(rows, function (r) { return !r.hidden; });
       sec.classList.toggle('rm-dim', rows.length > 0 && !visible);
     });
-    buttons.forEach(function (b) {
+    repoButtons.forEach(function (b) {
       var on = b.dataset.filter === repo;
       b.classList.toggle('current', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    viewButtons.forEach(function (b) {
+      var on = b.dataset.view === view;
+      b.classList.toggle('current', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var blurb = document.getElementById('rm-blurb');
+    blurb.textContent = blurbs[view] || '';
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', view === ${JSON.stringify(DEFAULT_VIEW)} ? location.pathname : '#' + view);
+    }
   }
-  buttons.forEach(function (b) {
-    b.addEventListener('click', function () { apply(b.dataset.filter); });
+  repoButtons.forEach(function (b) {
+    b.addEventListener('click', function () { repo = b.dataset.filter; apply(); });
   });
+  viewButtons.forEach(function (b) {
+    b.addEventListener('click', function () { view = b.dataset.view; apply(); });
+  });
+  // A #live / #attention / #pulse / #all fragment deep-links a view, so a
+  // particular reading of the page is a shareable URL.
+  var hash = (location.hash || '').replace('#', '');
+  if (blurbs.hasOwnProperty(hash)) view = hash;
+  apply();
 
   // Session indicator — published by the session heartbeat to a branch, not by a
   // deploy, so it stays current between site builds. Renders its own timestamp
