@@ -1,24 +1,32 @@
-# ideas-triage — continuous triage of the Ideas discussion board (requirement #48).
+# ideas-triage v2 — continuous triage of the Ideas discussion board.
+# Requirements: #48 (pipeline), #58 (Opus 5 orchestrator + delegation, context pack,
+# bias-to-promote), #61 (reaction feedback + trigger reliability). Plan + approved
+# amendments: #58 comment thread.
 #
-# Fires on every new Ideas discussion or comment and runs a bounded Claude Code
-# triage pass: confident ideas become issues (requirement-shaped or plain task)
-# and the thread is closed as resolved; unclear ideas get 1-3 targeted questions
-# for @jwildfire in-thread. The session-inbox skill in obot.agent remains the
-# in-session backstop for anything this lane misses.
+# Fires on every new Ideas discussion or comment from @jwildfire and runs a bounded
+# Claude Code triage pass on Opus 5, which delegates research/drafting to cheaper
+# subagents per .github/ideas-triage-policy.md (the binding policy file — edit THAT
+# to change triage behavior). Bias-to-promote: confident ideas become issues and the
+# thread closes resolved; questions are the exception path. Reactions signal state:
+# 👀 picked up, 👍 done, 😕 failed — managed by workflow steps, never the LLM.
+# Every posted artifact gets a token-cost footer appended by the finalize step.
+#
+# Dry-run lane (workflow_dispatch with dry_run=true): fixture calibration only —
+# read-only token as a hard guarantee, no reactions, intended-actions report
+# uploaded as a run artifact. Used for Stage A of the #58 rollout.
 #
 # Setup (one-time, @jwildfire): mint a subscription token and store it —
 #   claude setup-token   →   gh secret set CLAUDE_CODE_OAUTH_TOKEN -R jwildfire/obot.roadmap
 # Until the secret exists every run skips silently (job-level guard below).
 #
-# Loop safety: both jobs hard-exclude bot actors (obotclaw[bot] posts CAN
-# re-trigger workflows, so the actor guards are the loop brake) and the pinned
-# inbox explainer (#47).
+# Loop safety: jobs hard-exclude bot actors (obotclaw[bot] posts CAN re-trigger
+# workflows, so the actor guards are the loop brake) and the pinned inbox
+# explainer (#47). Comment edits do not re-fire (types: [created]) — a new comment
+# is the retry lever.
 #
 # Access model (@jwildfire, 2026-07-24): the full agentic pipeline runs ONLY for
 # @jwildfire's posts and comments. Any other human gets a one-time courtesy note
-# (no LLM involved) saying the pipeline isn't enabled for them — @jwildfire
-# commenting on their thread is what opts it in, since his comment re-triggers
-# the triage job with the whole thread as context.
+# (no LLM involved) — @jwildfire commenting on their thread opts it in.
 
 name: ideas-triage
 
@@ -32,35 +40,50 @@ on:
       discussion:
         description: Discussion number to triage
         required: true
+      dry_run:
+        description: Dry run — read-only fixture calibration, posts nothing
+        type: boolean
+        default: false
 
 concurrency:
-  group: ideas-triage-${{ github.event.discussion.number || inputs.discussion }}
+  group: ideas-triage-${{ github.event.discussion.number || inputs.discussion }}${{ inputs.dry_run == true && '-dry' || '' }}
   cancel-in-progress: false
 
-permissions:
-  contents: read
-  issues: write
-  discussions: write
-
 # NOTE: claude-code-action@v1 rejects discussion/discussion_comment events
-# ("Unsupported event type", verified 2026-07-24), so the triage job runs
-# Claude Code headless (claude -p) on the runner instead.
+# ("Unsupported event type", verified 2026-07-24), so triage runs Claude Code
+# headless (claude -p) on the runner instead.
 
 jobs:
   triage:
     if: >
       github.actor == 'jwildfire' &&
-      (github.event_name == 'workflow_dispatch' ||
-       (github.event.discussion.category.name == 'Ideas' &&
+      ((github.event_name == 'workflow_dispatch' && inputs.dry_run != true) ||
+       (github.event_name != 'workflow_dispatch' &&
+        github.event.discussion.category.name == 'Ideas' &&
         github.event.discussion.number != 47))
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
+      - name: Log trigger
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+          NUM: ${{ github.event.discussion.number || inputs.discussion }}
+          CID: ${{ github.event.comment.id }}
+        run: |
+          echo "trigger: event=$EVENT actor=$ACTOR discussion=#$NUM comment_id=${CID:-n/a}" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Check triage token
         id: gate
         env:
           HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
-        run: echo "enabled=$HAS_TOKEN" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "enabled=$HAS_TOKEN" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "skipped: CLAUDE_CODE_OAUTH_TOKEN secret not set — no triage, no reactions" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Mint obotclaw[bot] token
         if: steps.gate.outputs.enabled == 'true'
@@ -70,61 +93,201 @@ jobs:
           app-id: ${{ secrets.OBOT_APP_ID }}
           private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
 
-      - name: Checkout
+      # 👀 lands before the slow checkout/npm setup so pickup is visible in seconds.
+      - name: Ack pickup (👀)
+        if: steps.gate.outputs.enabled == 'true'
+        id: ack
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SUBJECT: ${{ github.event.comment.node_id || github.event.discussion.node_id }}
+          NUM: ${{ github.event.discussion.number || inputs.discussion }}
+        run: |
+          set -uo pipefail
+          if [ -z "${SUBJECT:-}" ]; then
+            SUBJECT=$(gh api graphql -f query="query{repository(owner:\"jwildfire\",name:\"obot.roadmap\"){discussion(number:$NUM){id}}}" --jq '.data.repository.discussion.id' || true)
+          fi
+          if [ -n "${SUBJECT:-}" ]; then
+            gh api graphql -f query='mutation($s:ID!,$c:ReactionContent!){addReaction(input:{subjectId:$s,content:$c}){reaction{content}}}' -f s="$SUBJECT" -f c=EYES --jq '.data.addReaction.reaction.content' || true
+          fi
+          echo "subject=${SUBJECT:-}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout hub
         if: steps.gate.outputs.enabled == 'true'
         uses: actions/checkout@v4
+
+      - name: Checkout obot.agent (goals + terminology)
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: jwildfire/obot.agent
+          path: obot-agent
+
+      - name: Build context pack
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: bash scripts/build-triage-context.sh
 
       - name: Install Claude Code
         if: steps.gate.outputs.enabled == 'true'
         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Triage the discussion
+      - name: Triage the discussion (Opus 5 orchestrator)
         if: steps.gate.outputs.enabled == 'true'
+        id: triage
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           NUM: ${{ github.event.discussion.number || inputs.discussion }}
         run: |
+          : > /tmp/posted.jsonl
           cat > /tmp/triage-prompt.md <<EOF
-          You are obot's continuous idea-triage lane for the jwildfire/obot.roadmap Ideas board
-          (requirement #48; design: requirements/design/48_design.html in this checkout).
+          You are obot's continuous idea-triage lane for the jwildfire/obot.roadmap Ideas board.
           Trigger: activity on discussion #$NUM.
-
-          1. Read the FULL thread first:
-             gh api graphql -f query='query{repository(owner:"jwildfire",name:"obot.roadmap"){discussion(number:$NUM){id title body closed author{login} comments(first:50){nodes{author{login} body createdAt}}}}}'
-             If the discussion is already closed, stop without acting.
-
-          2. Check for an existing promotion: search open+closed issues for this discussion
-             (gh search issues --repo jwildfire/obot.roadmap "discussions/$NUM").
-             If one exists, reply with its link only if the thread's newest comment asks about status; otherwise stop.
-
-          3. Classify the idea using the whole thread (later comments override the opening post; ignore
-             nudge/notice comments):
-             a. CONFIDENT requirement (clear scope, clear why, you could write Business Requirement + Overview
-                without guessing): create a Requirement issue via
-                gh issue create -R jwildfire/obot.roadmap --title "Requirement: <title>" --label requirement --assignee jwildfire
-                (add one topical label — safety, infrastructure, or ai — when it clearly fits).
-                Body sections in this order: "### Business Requirement", "### Overview",
-                "### Data Requirement" (write "TBD" if unknown), "### Design" (high-level notes or "TBD"),
-                "### Tasks" (empty checklist). End the body with the origin link:
-                "Promoted from discussion #$NUM: https://github.com/jwildfire/obot.roadmap/discussions/$NUM".
-             b. CONFIDENT small concrete task (a chore, fix, or tweak — not requirement-shaped): create a plain
-                issue (no requirement label, assignee jwildfire) with a short body plus the same origin link.
-             c. NOT CONFIDENT: do not file anything. Post ONE discussion comment addressed to @jwildfire with
-                your best reading of the idea and 1-3 targeted questions (numbered, answerable in a sentence).
-
-          4. After filing (3a or 3b only): post a discussion comment linking the new issue, then close the
-             discussion as resolved:
-             gh api graphql -f query='mutation{closeDiscussion(input:{discussionId:"<the id field from the step-1 query>",reason:RESOLVED}){discussion{number}}}'
-
-          Conventions (binding): GitHub bodies use one line per paragraph or bullet — never hard-wrap.
-          Every issue or comment you post ends with a horizontal rule then exactly:
-          "This was drafted by obot ideas-triage (Claude Code headless using Sonnet 5) — review by @jwildfire".
-          Post at most one comment per run. Act only on discussion #$NUM —
-          never edit, close, or comment on anything else, and never delete or edit existing content anywhere.
+          FIRST, with the Read tool, read these two files — both are binding:
+          .github/ideas-triage-policy.md (role, delegation, disposition policy, guards, live sequence)
+          and /tmp/context-pack.md (current roadmap state).
+          Then execute the policy's live sequence for discussion #$NUM.
           EOF
-          claude -p "$(cat /tmp/triage-prompt.md)" --model claude-sonnet-5 \
-            --allowedTools "Bash(gh api:*),Bash(gh issue:*),Bash(gh search:*),Read"
+          set -o pipefail
+          claude -p "$(cat /tmp/triage-prompt.md)" --model claude-opus-5 \
+            --output-format json \
+            --allowedTools "Task,Agent,Bash(gh api:*),Bash(gh issue:*),Bash(gh search:*),Bash(gh project:*),Bash(echo:*),Read,Write" \
+            | tee /tmp/claude-out.json
+
+      # Cost footers append to artifacts the run itself recorded in /tmp/posted.jsonl —
+      # the one sanctioned edit of posted content, and it only touches this run's posts.
+      - name: Append cost footers
+        if: always() && steps.gate.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -uo pipefail
+          [ -s /tmp/claude-out.json ] || { echo "no claude output; skipping cost footers"; exit 0; }
+          FOOTER=$(python3 scripts/triage-cost-summary.py --footer-only 2>/dev/null || echo "🧮 run cost: unavailable")
+          {
+            echo "## Triage cost"
+            python3 scripts/triage-cost-summary.py 2>/dev/null || echo "$FOOTER"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ -s /tmp/posted.jsonl ] || { echo "no artifacts recorded; nothing to annotate"; exit 0; }
+          while IFS= read -r line <&3; do
+            kind=$(printf '%s' "$line" | python3 -c "import json,sys; print(json.load(sys.stdin).get('kind',''))" 2>/dev/null) || continue
+            case "$kind" in
+              issue)
+                n=$(printf '%s' "$line" | python3 -c "import json,sys; print(json.load(sys.stdin)['number'])")
+                body=$(gh api "repos/jwildfire/obot.roadmap/issues/$n" --jq .body)
+                printf '%s\n\n%s\n' "$body" "$FOOTER" | gh api -X PATCH "repos/jwildfire/obot.roadmap/issues/$n" -F body=@- --jq .number
+                ;;
+              issue_comment)
+                cid=$(printf '%s' "$line" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+                body=$(gh api "repos/jwildfire/obot.roadmap/issues/comments/$cid" --jq .body)
+                printf '%s\n\n%s\n' "$body" "$FOOTER" | gh api -X PATCH "repos/jwildfire/obot.roadmap/issues/comments/$cid" -F body=@- --jq .id
+                ;;
+              discussion_comment)
+                nid=$(printf '%s' "$line" | python3 -c "import json,sys; print(json.load(sys.stdin)['node_id'])")
+                body=$(gh api graphql -f query='query($id:ID!){node(id:$id){... on DiscussionComment{body}}}' -f id="$nid" --jq '.data.node.body')
+                gh api graphql -f query='mutation($id:ID!,$b:String!){updateDiscussionComment(input:{commentId:$id,body:$b}){comment{id}}}' -f id="$nid" -f b="$(printf '%s\n\n%s' "$body" "$FOOTER")" --jq '.data.updateDiscussionComment.comment.id'
+                ;;
+            esac || echo "footer append failed for: $line"
+          done 3< /tmp/posted.jsonl
+
+      # 👀 → 👍 on success, 😕 on failure — silence never masquerades as success (#61).
+      - name: Finalize reactions (👍/😕)
+        if: always() && steps.gate.outputs.enabled == 'true' && steps.ack.outputs.subject != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SUBJECT: ${{ steps.ack.outputs.subject }}
+          OUTCOME: ${{ steps.triage.outcome }}
+        run: |
+          set -uo pipefail
+          gh api graphql -f query='mutation($s:ID!,$c:ReactionContent!){removeReaction(input:{subjectId:$s,content:$c}){reaction{content}}}' -f s="$SUBJECT" -f c=EYES >/dev/null 2>&1 || true
+          if [ "$OUTCOME" = "success" ]; then C=THUMBS_UP; else C=CONFUSED; fi
+          gh api graphql -f query='mutation($s:ID!,$c:ReactionContent!){addReaction(input:{subjectId:$s,content:$c}){reaction{content}}}' -f s="$SUBJECT" -f c="$C" --jq '.data.addReaction.reaction.content' || true
+          echo "final reaction: $C (triage outcome: $OUTCOME)" | tee -a "$GITHUB_STEP_SUMMARY"
+
+  # Stage A calibration lane (#58 rollout): fixture assessment of a thread with a
+  # read-only token — mutations are impossible, no reactions, report as artifact.
+  triage-dry:
+    if: >
+      github.event_name == 'workflow_dispatch' && inputs.dry_run == true &&
+      github.actor == 'jwildfire'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Check triage token
+        id: gate
+        env:
+          HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        run: |
+          echo "enabled=$HAS_TOKEN" >> "$GITHUB_OUTPUT"
+          [ "$HAS_TOKEN" = "true" ] || echo "skipped: CLAUDE_CODE_OAUTH_TOKEN secret not set" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout hub
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+
+      - name: Checkout obot.agent (goals + terminology)
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: jwildfire/obot.agent
+          path: obot-agent
+
+      - name: Build context pack
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/build-triage-context.sh
+
+      - name: Install Claude Code
+        if: steps.gate.outputs.enabled == 'true'
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Dry-run triage (fixture calibration)
+        if: steps.gate.outputs.enabled == 'true'
+        id: triage
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ inputs.discussion }}
+        run: |
+          cat > /tmp/triage-prompt.md <<EOF
+          DRY RUN calibration for the jwildfire/obot.roadmap Ideas board, discussion #$NUM.
+          FIRST, with the Read tool, read these two files — both are binding:
+          .github/ideas-triage-policy.md and /tmp/context-pack.md.
+          Then follow the policy's dry-run mode for discussion #$NUM: fixture assessment
+          (ignore closed state and existing promotions), NO mutations, and write the full
+          intended-actions report to /tmp/dry-report.md.
+          EOF
+          set -o pipefail
+          claude -p "$(cat /tmp/triage-prompt.md)" --model claude-opus-5 \
+            --output-format json \
+            --allowedTools "Task,Agent,Bash(gh api:*),Bash(gh issue:*),Bash(gh search:*),Bash(gh project:*),Bash(echo:*),Read,Write" \
+            | tee /tmp/claude-out.json
+
+      - name: Assemble report artifact
+        if: always() && steps.gate.outputs.enabled == 'true'
+        env:
+          NUM: ${{ inputs.discussion }}
+        run: |
+          mkdir -p /tmp/out
+          {
+            echo "# ideas-triage v2 dry-run — discussion #$NUM"
+            echo
+            python3 scripts/triage-cost-summary.py 2>/dev/null || echo "🧮 run cost: unavailable"
+            echo
+            cat /tmp/dry-report.md 2>/dev/null || echo "(no report produced — check run logs)"
+          } > "/tmp/out/dry-report-$NUM.md"
+          python3 scripts/triage-cost-summary.py >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+      - name: Upload report
+        if: always() && steps.gate.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ideas-triage-dry-${{ inputs.discussion }}
+          path: /tmp/out
 
   access-note:
     if: >
@@ -134,6 +297,8 @@ jobs:
       !endsWith(github.actor, '[bot]')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
       - name: Mint obotclaw[bot] token
         id: app-token
