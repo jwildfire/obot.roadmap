@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+// RETIRED 2026-07-24 — superseded by scripts/build_roadmap_next.mjs, which now
+// builds roadmap.html (requirement #57). This file is no longer run by
+// deploy-site.yml and is kept only as reference for the lifecycle-lane view it
+// rendered; delete it once nobody wants that shape back (needs @jwildfire's ok).
+//
 // Generate _site/roadmap.html — one row per Requirement issue, grouped by lifecycle
 // stage, from GitHub issues + the obot Roadmap project (users/jwildfire/projects/1).
 //

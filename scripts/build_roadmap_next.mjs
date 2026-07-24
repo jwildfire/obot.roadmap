@@ -5,10 +5,11 @@
 // upcoming releases, recent releases, and the ideas queue, every row linking to
 // its GitHub source, filterable by repo.
 //
-// Staged deliberately as roadmap-next.html: Pages only deploys from main, so this
-// is how a rebuilt page gets reviewed on the real deployed site while the live
-// roadmap.html keeps working. At the flip (#57 phase 4) this generator takes over
-// the roadmap.html filename.
+// This is the roadmap page. It was built as roadmap-next.html so it could be
+// reviewed on the deployed site beside the page it replaced (Pages only deploys
+// from main, so there is no branch preview); @jwildfire approved the flip on
+// 2026-07-24 and it now writes roadmap.html. roadmap-next.html lives on as a
+// redirect — that URL was shared while the page was staged.
 //
 // Every section comes from an independent collector wrapped in settle(): a failed
 // source renders as a notice line in its own section instead of blanking a page
@@ -30,7 +31,8 @@ import {
 
 const NOW = new Date();
 
-const OUT = process.env.ROADMAP_OUT || 'roadmap-next.html';
+const OUT = process.env.ROADMAP_OUT || 'roadmap.html';
+const STAGED_ALIAS = 'roadmap-next.html'; // redirect kept for links shared during review
 const RECENT_RELEASES = 10;
 const PROJECT_URL = 'https://github.com/users/jwildfire/projects/1';
 // Heartbeat-published session state (#57 D5): a session-state branch holding one
@@ -442,14 +444,32 @@ ${auditLogHtml}
 </script>
 
 <footer class="site">Generated ${fmtET(new Date())} · regenerates via <code>deploy-site.yml</code> ·
-staged page for <a href="https://github.com/${HUB}/issues/57">requirement #57</a> — the live page is
-<a href="roadmap.html">roadmap.html</a>.</footer>
+built by <a href="https://github.com/${HUB}/blob/main/scripts/build_roadmap_next.mjs"><code>build_roadmap_next.mjs</code></a>
+for <a href="https://github.com/${HUB}/issues/57">requirement #57</a>.</footer>
 </body>
 </html>
 `;
 
 await fs.mkdir(path.join(ROOT, '_site'), { recursive: true });
 await fs.writeFile(path.join(ROOT, '_site', OUT), html);
+
+// The staged URL was shared in #57 and in review comments while the page was
+// being built; keep it resolving rather than breaking those links.
+if (OUT === 'roadmap.html') {
+  await fs.writeFile(path.join(ROOT, '_site', STAGED_ALIAS), `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Roadmap · obot</title>
+<link rel="canonical" href="roadmap.html">
+<meta http-equiv="refresh" content="0; url=roadmap.html">
+</head>
+<body>
+<p>The staged roadmap page is now the roadmap: <a href="roadmap.html">roadmap.html</a>.</p>
+</body>
+</html>
+`);
+}
 
 const degraded = [
   ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes], ['goals', goalRes],

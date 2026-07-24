@@ -68,13 +68,10 @@ jobs:
       - name: Render diary
         run: node scripts/render_diary.mjs
 
+      # The roadmap page (requirement #57). Superseded scripts/build_roadmap.mjs
+      # at the flip on 2026-07-24; that generator is retained, unwired, until
+      # @jwildfire says it can go.
       - name: Build roadmap
-        run: node scripts/build_roadmap.mjs
-
-      # Staged refactor of the roadmap page (requirement #57): published beside
-      # the live page so it can be reviewed on the deployed site. At the flip it
-      # takes over roadmap.html and this step replaces the one above.
-      - name: Build roadmap (staged refactor, #57)
         run: node scripts/build_roadmap_next.mjs
 
       # Per-goal pages + goals.json (requirement #53). Goals are the hub's own
@@ -149,8 +146,9 @@ jobs:
           test -f _site/index.html
           grep -q "metric-row" _site/index.html
           test -f _site/roadmap.html
+          grep -q "sec-requirements" _site/roadmap.html
+          grep -q "rm-view-btn" _site/roadmap.html
           test -f _site/roadmap-next.html
-          grep -q "sec-requirements" _site/roadmap-next.html
           test -f _site/goals/index.html
           test -f _site/goals/charts.html
           test -f _site/goals/goals.json
