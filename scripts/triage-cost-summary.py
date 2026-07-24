@@ -34,7 +34,7 @@ def fmt(n):
 line = f"🧮 run cost: {fmt(inp)} tokens in / {fmt(out)} out"
 if isinstance(cost, (int, float)):
     line += f" · ~${cost:.2f}"
-line += " (Fable 5 orchestrator + subagents)"
+line += " (Opus 5 orchestrator + subagents)"
 print(line)
 
 if not footer_only:

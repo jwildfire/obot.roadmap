@@ -1,10 +1,10 @@
 # ideas-triage v2 — continuous triage of the Ideas discussion board.
-# Requirements: #48 (pipeline), #58 (Fable orchestrator + delegation, context pack,
+# Requirements: #48 (pipeline), #58 (Opus 5 orchestrator + delegation, context pack,
 # bias-to-promote), #61 (reaction feedback + trigger reliability). Plan + approved
 # amendments: #58 comment thread.
 #
 # Fires on every new Ideas discussion or comment from @jwildfire and runs a bounded
-# Claude Code triage pass on Fable 5, which delegates research/drafting to cheaper
+# Claude Code triage pass on Opus 5, which delegates research/drafting to cheaper
 # subagents per .github/ideas-triage-policy.md (the binding policy file — edit THAT
 # to change triage behavior). Bias-to-promote: confident ideas become issues and the
 # thread closes resolved; questions are the exception path. Reactions signal state:
@@ -132,7 +132,7 @@ jobs:
         if: steps.gate.outputs.enabled == 'true'
         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Triage the discussion (Fable 5 orchestrator)
+      - name: Triage the discussion (Opus 5 orchestrator)
         if: steps.gate.outputs.enabled == 'true'
         id: triage
         env:
@@ -150,7 +150,7 @@ jobs:
           Then execute the policy's live sequence for discussion #$NUM.
           EOF
           set -o pipefail
-          claude -p "$(cat /tmp/triage-prompt.md)" --model claude-fable-5 \
+          claude -p "$(cat /tmp/triage-prompt.md)" --model claude-opus-5 \
             --output-format json \
             --allowedTools "Task,Agent,Bash(gh api:*),Bash(gh issue:*),Bash(gh search:*),Bash(gh project:*),Bash(echo:*),Read,Write" \
             | tee /tmp/claude-out.json
@@ -262,7 +262,7 @@ jobs:
           intended-actions report to /tmp/dry-report.md.
           EOF
           set -o pipefail
-          claude -p "$(cat /tmp/triage-prompt.md)" --model claude-fable-5 \
+          claude -p "$(cat /tmp/triage-prompt.md)" --model claude-opus-5 \
             --output-format json \
             --allowedTools "Task,Agent,Bash(gh api:*),Bash(gh issue:*),Bash(gh search:*),Bash(gh project:*),Bash(echo:*),Read,Write" \
             | tee /tmp/claude-out.json
