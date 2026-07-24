@@ -1,0 +1,98 @@
+# ideas-triage — continuous triage of the Ideas discussion board (requirement #48).
+#
+# Fires on every new Ideas discussion or comment and runs a bounded Claude Code
+# triage pass: confident ideas become issues (requirement-shaped or plain task)
+# and the thread is closed as resolved; unclear ideas get 1-3 targeted questions
+# for @jwildfire in-thread. The session-inbox skill in obot.agent remains the
+# in-session backstop for anything this lane misses.
+#
+# Setup (one-time, @jwildfire): mint a subscription token and store it —
+#   claude setup-token   →   gh secret set CLAUDE_CODE_OAUTH_TOKEN -R jwildfire/obot.roadmap
+# Until the secret exists every run skips silently (job-level guard below).
+#
+# Loop safety: runs triggered by GITHUB_TOKEN never re-trigger workflows, and the
+# job also skips bot actors and the pinned inbox explainer (#47).
+
+name: ideas-triage
+
+on:
+  discussion:
+    types: [created]
+  discussion_comment:
+    types: [created]
+
+concurrency:
+  group: ideas-triage-${{ github.event.discussion.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  discussions: write
+  id-token: write
+
+jobs:
+  triage:
+    if: >
+      github.event.discussion.category.name == 'Ideas' &&
+      github.event.discussion.number != 47 &&
+      github.actor != 'obotclaw[bot]' &&
+      github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check triage token
+        id: gate
+        env:
+          HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        run: echo "enabled=$HAS_TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+
+      - name: Triage the discussion
+        if: steps.gate.outputs.enabled == 'true'
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: '--model claude-sonnet-5 --allowedTools "Bash(gh api:*),Bash(gh issue:*),Bash(gh search:*),Read"'
+          prompt: |
+            You are obot's continuous idea-triage lane for the jwildfire/obot.roadmap Ideas board
+            (requirement #48; design: requirements/design/48_design.html in this checkout).
+            Trigger: activity on discussion #${{ github.event.discussion.number }}
+            ("${{ github.event.discussion.title }}") by @${{ github.actor }}.
+
+            1. Read the FULL thread first:
+               gh api graphql -f query='query{repository(owner:"jwildfire",name:"obot.roadmap"){discussion(number:${{ github.event.discussion.number }}){id title body closed author{login} comments(first:50){nodes{author{login} body createdAt}}}}}'
+               If the discussion is already closed, or the newest activity is a bot comment, stop without acting.
+
+            2. Check for an existing promotion: search open+closed issues for this discussion's URL
+               (gh search issues --repo jwildfire/obot.roadmap "discussions/${{ github.event.discussion.number }}").
+               If one exists, reply with its link only if the thread's newest comment asks about status; otherwise stop.
+
+            3. Classify the idea using the whole thread (later comments override the opening post):
+               a. CONFIDENT requirement (clear scope, clear why, you could write Business Requirement + Overview
+                  without guessing): create a Requirement issue via
+                  gh issue create -R jwildfire/obot.roadmap --title "Requirement: <title>" --label requirement --assignee jwildfire
+                  (add one topical label — safety, infrastructure, or ai — when it clearly fits).
+                  Body sections in this order: "### Business Requirement", "### Overview",
+                  "### Data Requirement" (write "TBD" if unknown), "### Design" (high-level notes or "TBD"),
+                  "### Tasks" (empty checklist). End the body with the origin link:
+                  "Promoted from discussion #${{ github.event.discussion.number }}: ${{ github.event.discussion.html_url }}".
+               b. CONFIDENT small concrete task (a chore, fix, or tweak — not requirement-shaped): create a plain
+                  issue (no requirement label, assignee jwildfire) with a short body plus the same origin link.
+               c. NOT CONFIDENT: do not file anything. Post ONE discussion comment addressed to @jwildfire with
+                  your best reading of the idea and 1-3 targeted questions (numbered, answerable in a sentence).
+
+            4. After filing (3a or 3b only): post a discussion comment linking the new issue, then close the
+               discussion as resolved:
+               gh api graphql -f query='mutation{closeDiscussion(input:{discussionId:"<the id field from the step-1 query>",reason:RESOLVED}){discussion{number}}}'
+
+            Conventions (binding): GitHub bodies use one line per paragraph or bullet — never hard-wrap.
+            Every issue or comment you post ends with a horizontal rule then exactly:
+            "This was drafted by obot ideas-triage (Claude Code Action using Sonnet 5) — review by @jwildfire".
+            Post at most one comment per run. Act only on discussion #${{ github.event.discussion.number }} —
+            never edit, close, or comment on anything else, and never delete or edit existing content anywhere.

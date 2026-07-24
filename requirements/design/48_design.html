@@ -80,6 +80,7 @@
     <li><a href="#capture">Capture lanes</a></li>
     <li><a href="#queue">The queue: Ideas discussions</a></li>
     <li><a href="#triage">Triage: the <code>session-inbox</code> pass</a></li>
+    <li><a href="#action">Continuous triage: the <code>ideas-triage</code> Action</a></li>
     <li><a href="#promotion">Promotion lifecycle</a></li>
     <li><a href="#cost">Cost and privacy model</a></li>
     <li><a href="#components">Components</a></li>
@@ -108,7 +109,7 @@ happening inside the existing session framework.
   <div class="arrow">→</div>
   <div class="stage q"><strong>Queue</strong>Ideas category, <a href="https://github.com/jwildfire/obot.roadmap/discussions/categories/ideas">obot.roadmap Discussions</a> — one idea per thread</div>
   <div class="arrow">→</div>
-  <div class="stage"><strong>Triage</strong><code>session-inbox</code> at session kickoff: classify, reply in-thread as obotclaw[bot]</div>
+  <div class="stage"><strong>Triage</strong><code>ideas-triage</code> Action within minutes; <code>session-inbox</code> at kickoff as backstop</div>
   <div class="arrow">→</div>
   <div class="stage"><strong>Review</strong>batch surfaces in the kickoff list; @jwildfire decides in-session or in-thread</div>
   <div class="arrow">→</div>
@@ -181,7 +182,41 @@ pass's replies actually post — an aborted pass re-lists the same threads next 
 re-read of each thread makes the pass idempotent.
 </p>
 
-<h2 id="promotion">6. Promotion lifecycle</h2>
+<h2 id="action">6. Continuous triage: the <code>ideas-triage</code> Action</h2>
+<p>
+Added 2026-07-24 (@jwildfire: "don't really want ideas sitting idle until a session"). A
+GitHub Action on this repo
+(<a href="https://github.com/jwildfire/obot.roadmap/blob/main/.github/workflows/ideas-triage.yml"><code>.github/workflows/ideas-triage.yml</code></a>)
+fires on every new Ideas discussion or comment and runs
+<code>anthropics/claude-code-action</code> in prompt mode (Sonnet 5, bounded toolset:
+<code>gh</code> only). Per run it reads the full thread, checks for an existing promotion,
+then takes exactly one action:
+</p>
+<ul>
+  <li><strong>Confident requirement</strong> → files a Requirement issue (template sections, origin link back to the thread), comments the link, closes the thread as resolved.</li>
+  <li><strong>Confident small task</strong> → files a plain issue, same link-and-close.</li>
+  <li><strong>Not confident</strong> → one comment with 1–3 targeted questions for @jwildfire; his reply re-triggers the Action, which then re-triages with the added context.</li>
+</ul>
+<p>
+Guard rails: skips until the <code>CLAUDE_CODE_OAUTH_TOKEN</code> secret exists (one-time
+<code>claude setup-token</code> by @jwildfire); skips bot actors and the pinned explainer
+#47; <code>GITHUB_TOKEN</code>-authored posts cannot re-trigger workflows, so no loops;
+one comment per run; scoped to the triggering thread only; never deletes. The
+<code>session-inbox</code> pass (§5) stays as the in-session backstop, and its watermark
+sweep treats Action-handled (closed) threads as done. Session hygiene: whenever the
+roadmap is cleaned up or a wrapup runs, still-open Ideas threads are flagged as
+"captured but not yet promoted" so nothing idles invisibly.
+</p>
+<div class="decision">
+  <strong>GitHub agentic workflows (gh-aw), considered:</strong> GitHub's experimental
+  agentic-workflow layer (markdown specs compiled to Actions) was evaluated for this lane.
+  Deferred: it adds an extension + compile step and an engine abstraction we don't need,
+  while <code>claude-code-action</code> prompt mode delivers the same watch → triage → file
+  loop on the stack the program already runs (and on the existing Claude subscription).
+  Revisit if the triage prompt grows into multi-job orchestration.
+</div>
+
+<h2 id="promotion">7. Promotion lifecycle</h2>
 <p>
 When @jwildfire approves a candidate (in-session or in-thread), obot posts the Requirement
 issue through the standard hub lifecycle, replies in the thread with the issue link, and
@@ -191,7 +226,7 @@ filing ride the standing hub grant, requirement posting follows the approval con
 and nothing merges without explicit approval.
 </p>
 
-<h2 id="cost">7. Cost and privacy model</h2>
+<h2 id="cost">8. Cost and privacy model</h2>
 <ul>
   <li><strong>Capture: zero tokens, always.</strong> Siri, Reminders, the filing script, and the sweep script contain no LLM calls.</li>
   <li><strong>Triage: one bounded pass per session</strong> over one-line ideas — no persistent session, no accumulating context. An empty sweep costs two script invocations and nothing else.</li>
@@ -199,7 +234,7 @@ and nothing merges without explicit approval.
   <li><strong>Identity:</strong> every automated post is authored by obotclaw[bot], keeping the audit trail consistent with the rest of the framework.</li>
 </ul>
 
-<h2 id="components">8. Components</h2>
+<h2 id="components">9. Components</h2>
 <div class="tablewrap">
 <table>
   <tr><th>Component</th><th>Home</th><th>Role</th></tr>
@@ -207,13 +242,15 @@ and nothing merges without explicit approval.
   <tr><td><code>scripts/reminders-to-ideas</code></td><td>obot.agent (#42)</td><td>Lane B: Reminders → Ideas discussions (no LLM; complete-after-post; <code>private:</code> divert)</td></tr>
   <tr><td><code>scripts/ideas-sweep</code></td><td>obot.agent (#42)</td><td>Watermark sweep of the Ideas category (read-only; <code>--advance</code> moves the mark)</td></tr>
   <tr><td><code>session-init</code> step 2.5</td><td>obot.agent (#42)</td><td>Runs the pass at every session kickoff</td></tr>
+  <tr><td><code>.github/workflows/ideas-triage.yml</code></td><td>obot.roadmap</td><td>Continuous triage Action (claude-code-action prompt mode; gated on the <code>CLAUDE_CODE_OAUTH_TOKEN</code> secret)</td></tr>
   <tr><td>Ideas category + <a href="https://github.com/jwildfire/obot.roadmap/discussions/47">#47</a></td><td>obot.roadmap</td><td>The queue and its explainer (live since 2026-07-23)</td></tr>
   <tr><td><code>.claude/ideas-watermark</code>, <code>.claude/private-inbox.md</code></td><td>obot2 workspace (local)</td><td>Sweep state and the never-posted private lane</td></tr>
 </table>
 </div>
 
-<h2 id="rollout">9. Rollout checklist</h2>
+<h2 id="rollout">10. Rollout checklist</h2>
 <ul>
+  <li>☐ @jwildfire: enable the triage Action — <code>claude setup-token</code>, then <code>gh secret set CLAUDE_CODE_OAUTH_TOKEN -R jwildfire/obot.roadmap</code> (the workflow skips silently until then).</li>
   <li>☐ @jwildfire: create/keep a Reminders list named <code>obot</code> (Siri targets it by name).</li>
   <li>☐ @jwildfire: approve the first supervised <code>reminders-to-ideas</code> run (never yet executed — it would file real pending items; also triggers the one-time macOS Reminders permission prompt).</li>
   <li>☐ Merge <a href="https://github.com/jwildfire/obot.agent/pull/42">obot.agent#42</a> (via <code>obot-merge</code> after approval), then add the <code>session-inbox</code> symlink in <code>obot2/.claude/skills/</code>.</li>
