@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #48 — idea queue: Siri/Reminders + Ideas Discussions intake with obot triage</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .note { color: var(--muted); font-size: .9rem; }
+  .tablewrap { overflow-x: auto; }
+  nav.toc { background: var(--panel); border-radius: 8px; padding: 1rem 1.25rem; font-size: .92rem; }
+  nav.toc ol { margin: .25rem 0 0; padding-left: 1.25rem; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           color: var(--muted); font-size: .85rem; }
+
+  /* pipeline diagram */
+  .pipe { display: flex; flex-wrap: wrap; align-items: stretch; gap: .5rem; margin: 1.25rem 0; }
+  .pipe .stage { flex: 1 1 9rem; min-width: 8.5rem; background: var(--panel); border: 1px solid var(--rule);
+                 border-radius: 10px; padding: .7rem .8rem; font-size: .88rem; }
+  .pipe .stage strong { display: block; font-size: .92rem; margin-bottom: .25rem; }
+  .pipe .arrow { align-self: center; color: var(--muted); font-size: 1.1rem; padding: 0 .1rem; }
+  .pipe .stage.q { border-color: var(--accent); border-width: 2px; }
+  .lane { border-left: 4px solid var(--accent); background: #fffbeb; border-radius: 0 8px 8px 0;
+          padding: .6rem .9rem; margin: .75rem 0; font-size: .95rem; }
+  .lane.gray { border-left-color: var(--muted); background: var(--panel); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design: idea queue — Siri/Reminders + hub Ideas Discussions intake with obot triage</h1>
+  <p class="meta">
+    Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/48">jwildfire/obot.roadmap#48</a>
+    · 2026-07-24 · <span class="status">Implemented in obot.agent#42 — awaiting review</span><br>
+    Queue front door: <a href="https://github.com/jwildfire/obot.roadmap/discussions/47">discussion #47 — Ideas inbox</a> ·
+    Implementation: <a href="https://github.com/jwildfire/obot.agent/pull/42">obot.agent#42</a> ·
+    Companion runbook: <a href="https://github.com/jwildfire/obot.agent/blob/rc-spawn-default/docs/remote-control.md"><code>docs/remote-control.md</code></a> (same PR).
+  </p>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#context">Context and goals</a></li>
+    <li><a href="#pipeline">The pipeline at a glance</a></li>
+    <li><a href="#capture">Capture lanes</a></li>
+    <li><a href="#queue">The queue: Ideas discussions</a></li>
+    <li><a href="#triage">Triage: the <code>session-inbox</code> pass</a></li>
+    <li><a href="#promotion">Promotion lifecycle</a></li>
+    <li><a href="#cost">Cost and privacy model</a></li>
+    <li><a href="#components">Components</a></li>
+    <li><a href="#rollout">Rollout checklist</a></li>
+  </ol>
+</nav>
+
+<h2 id="context">1. Context and goals</h2>
+<p>
+Ideas and todos currently accumulate in the Apple Notes app until they are pasted into a
+Claude session by hand — fragile, lossy, and dependent on remembering the paste. The goal
+(@jwildfire, 2026-07-23): a capture path measured in seconds from anywhere, especially the
+phone, feeding a queue that obot triages into the roadmap automatically, with review
+happening inside the existing session framework.
+</p>
+<div class="decision">
+  <strong>Design stance:</strong> capture never touches an LLM. A persistent Claude "ideas"
+  session was considered and rejected on context-management and cost grounds — instead the
+  queue is plain GitHub data, and tokens are spent only in one bounded triage pass per
+  session.
+</div>
+
+<h2 id="pipeline">2. The pipeline at a glance</h2>
+<div class="pipe">
+  <div class="stage"><strong>💡 Capture</strong>Siri → Reminders, or a new Ideas discussion from GitHub mobile/web</div>
+  <div class="arrow">→</div>
+  <div class="stage q"><strong>Queue</strong>Ideas category, <a href="https://github.com/jwildfire/obot.roadmap/discussions/categories/ideas">obot.roadmap Discussions</a> — one idea per thread</div>
+  <div class="arrow">→</div>
+  <div class="stage"><strong>Triage</strong><code>session-inbox</code> at session kickoff: classify, reply in-thread as obotclaw[bot]</div>
+  <div class="arrow">→</div>
+  <div class="stage"><strong>Review</strong>batch surfaces in the kickoff list; @jwildfire decides in-session or in-thread</div>
+  <div class="arrow">→</div>
+  <div class="stage"><strong>Roadmap</strong>promoted to a Requirement issue; thread closed as resolved</div>
+</div>
+<p class="note">
+Back-and-forth on any idea happens in its discussion thread — GitHub mobile notifications
+close the loop, giving the chat-like feel without a chat service.
+</p>
+
+<h2 id="capture">3. Capture lanes</h2>
+
+<div class="lane">
+  <strong>Lane A — direct.</strong> New discussion in the
+  <a href="https://github.com/jwildfire/obot.roadmap/discussions/categories/ideas">Ideas category</a>
+  from GitHub mobile or web. One idea per thread, any length, no polish. This is the canonical
+  entry; everything else funnels here.
+</div>
+
+<div class="lane">
+  <strong>Lane B — Siri/Reminders.</strong> <em>"Hey Siri, add ⟨idea⟩ to my obot list."</em>
+  The <code>reminders-to-ideas</code> script (no LLM) pulls uncompleted items from the
+  Reminders list named <code>obot</code> and files each as an Ideas discussion posted by
+  obotclaw[bot], with the capture timestamp. A reminder is marked complete <em>only after</em>
+  its discussion posts successfully, so the script is safe to re-run; failures leave the
+  reminder pending. Adapted from the proven OpenClaw-era <code>ingest-reminders.sh</code>.
+</div>
+
+<div class="lane gray">
+  <strong>Privacy lane.</strong> The hub is public. An item whose text starts with
+  <code>private:</code> is appended to a local inbox file
+  (<code>.claude/private-inbox.md</code> in the workspace) and never posted; the agent reads
+  it at the same triage moment. Half-baked is fine on the public board — sensitive is not.
+</div>
+
+<h2 id="queue">4. The queue: Ideas discussions</h2>
+<p>
+Discussions were enabled on the hub 2026-07-23; the explainer at
+<a href="https://github.com/jwildfire/obot.roadmap/discussions/47">#47</a> is the front door
+and is excluded from every sweep. Why Discussions rather than issues or a private file:
+</p>
+<ul>
+  <li><strong>Threaded back-and-forth</strong> — obotclaw[bot] replies with a proposed shape or a clarifying question; @jwildfire answers from the GitHub app whenever.</li>
+  <li><strong>Same repo as the roadmap</strong> — promotion is a first-class move, not an export.</li>
+  <li><strong>Ideas stay out of the issue tracker</strong> until they earn a Requirement, keeping the board honest.</li>
+  <li><strong>Build-in-public</strong> — raw ideas become part of the keynote-diary story the hub already tells.</li>
+</ul>
+
+<h2 id="triage">5. Triage: the <code>session-inbox</code> pass</h2>
+<p>
+Runs at session kickoff (step 2.5 of <code>session-init</code>) or on demand
+(<code>/session-inbox</code>). Sequence: ingest lane B → sweep the queue → triage → reply →
+surface → advance the watermark.
+</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Idea looks like</th><th>Triage action</th></tr>
+  <tr><td>Quick todo / chore</td><td>Added to the session todo list; deadline items offered the <code>priority</code> flow</td></tr>
+  <tr><td>Requirement candidate</td><td>Drafted via <code>requirement-drafting</code> — draft only; posting waits for @jwildfire</td></tr>
+  <tr><td>Update to existing work</td><td>Comment/edit drafted against the existing issue or PR</td></tr>
+  <tr><td>Design fragment</td><td>Attached to the relevant requirement's Design section or design doc</td></tr>
+  <tr><td>Unclear</td><td>Clarifying question posted in-thread; idea stays in the queue</td></tr>
+</table>
+</div>
+<p>
+The sweep is watermark-based (<code>ideas-sweep</code>, read-only): it lists threads new or
+<em>updated</em> since the last advance, so a reply from @jwildfire resurfaces its thread
+automatically. The watermark only advances (<code>ideas-sweep --advance</code>) after the
+pass's replies actually post — an aborted pass re-lists the same threads next time, and the
+re-read of each thread makes the pass idempotent.
+</p>
+
+<h2 id="promotion">6. Promotion lifecycle</h2>
+<p>
+When @jwildfire approves a candidate (in-session or in-thread), obot posts the Requirement
+issue through the standard hub lifecycle, replies in the thread with the issue link, and
+closes the discussion as <em>resolved</em>. Closing is the lifecycle end of a promoted idea;
+discussions are never deleted. All existing gates hold: in-thread replies and mechanical
+filing ride the standing hub grant, requirement posting follows the approval conventions,
+and nothing merges without explicit approval.
+</p>
+
+<h2 id="cost">7. Cost and privacy model</h2>
+<ul>
+  <li><strong>Capture: zero tokens, always.</strong> Siri, Reminders, the filing script, and the sweep script contain no LLM calls.</li>
+  <li><strong>Triage: one bounded pass per session</strong> over one-line ideas — no persistent session, no accumulating context. An empty sweep costs two script invocations and nothing else.</li>
+  <li><strong>Privacy: public by default, private by prefix.</strong> The <code>private:</code> lane keeps an item off the hub entirely; there is no partial exposure path.</li>
+  <li><strong>Identity:</strong> every automated post is authored by obotclaw[bot], keeping the audit trail consistent with the rest of the framework.</li>
+</ul>
+
+<h2 id="components">8. Components</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>Component</th><th>Home</th><th>Role</th></tr>
+  <tr><td><code>skills/session-inbox/SKILL.md</code></td><td>obot.agent (<a href="https://github.com/jwildfire/obot.agent/pull/42">#42</a>)</td><td>The triage pass: procedure, classification table, reply and watermark rules</td></tr>
+  <tr><td><code>scripts/reminders-to-ideas</code></td><td>obot.agent (#42)</td><td>Lane B: Reminders → Ideas discussions (no LLM; complete-after-post; <code>private:</code> divert)</td></tr>
+  <tr><td><code>scripts/ideas-sweep</code></td><td>obot.agent (#42)</td><td>Watermark sweep of the Ideas category (read-only; <code>--advance</code> moves the mark)</td></tr>
+  <tr><td><code>session-init</code> step 2.5</td><td>obot.agent (#42)</td><td>Runs the pass at every session kickoff</td></tr>
+  <tr><td>Ideas category + <a href="https://github.com/jwildfire/obot.roadmap/discussions/47">#47</a></td><td>obot.roadmap</td><td>The queue and its explainer (live since 2026-07-23)</td></tr>
+  <tr><td><code>.claude/ideas-watermark</code>, <code>.claude/private-inbox.md</code></td><td>obot2 workspace (local)</td><td>Sweep state and the never-posted private lane</td></tr>
+</table>
+</div>
+
+<h2 id="rollout">9. Rollout checklist</h2>
+<ul>
+  <li>☐ @jwildfire: create/keep a Reminders list named <code>obot</code> (Siri targets it by name).</li>
+  <li>☐ @jwildfire: approve the first supervised <code>reminders-to-ideas</code> run (never yet executed — it would file real pending items; also triggers the one-time macOS Reminders permission prompt).</li>
+  <li>☐ Merge <a href="https://github.com/jwildfire/obot.agent/pull/42">obot.agent#42</a> (via <code>obot-merge</code> after approval), then add the <code>session-inbox</code> symlink in <code>obot2/.claude/skills/</code>.</li>
+  <li>☐ Rebase note: <code>session-init</code> is also touched by <a href="https://github.com/jwildfire/obot.agent/pull/40">#40</a>; whichever merges second may need a trivial re-apply of step 2.5 / step 0.</li>
+  <li>☐ Siri → Reminders → discussion → triage end-to-end check completes requirement #48's task list.</li>
+  <li>☐ Optional: pin <a href="https://github.com/jwildfire/obot.roadmap/discussions/47">#47</a> from the UI (the GraphQL pin mutation no longer exists).</li>
+</ul>
+
+<footer>
+  <hr style="border: none; border-top: 1px solid var(--rule); margin: 0 0 .75rem;">
+  Drafted by Claude Code using Claude Fable 5 and reviewed by @jwildfire
+</footer>
+
+</body>
+</html>
