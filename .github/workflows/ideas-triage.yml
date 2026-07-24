@@ -10,8 +10,15 @@
 #   claude setup-token   →   gh secret set CLAUDE_CODE_OAUTH_TOKEN -R jwildfire/obot.roadmap
 # Until the secret exists every run skips silently (job-level guard below).
 #
-# Loop safety: runs triggered by GITHUB_TOKEN never re-trigger workflows, and the
-# job also skips bot actors and the pinned inbox explainer (#47).
+# Loop safety: both jobs hard-exclude bot actors (obotclaw[bot] posts CAN
+# re-trigger workflows, so the actor guards are the loop brake) and the pinned
+# inbox explainer (#47).
+#
+# Access model (@jwildfire, 2026-07-24): the full agentic pipeline runs ONLY for
+# @jwildfire's posts and comments. Any other human gets a one-time courtesy note
+# (no LLM involved) saying the pipeline isn't enabled for them — @jwildfire
+# commenting on their thread is what opts it in, since his comment re-triggers
+# the triage job with the whole thread as context.
 
 name: ideas-triage
 
@@ -36,8 +43,7 @@ jobs:
     if: >
       github.event.discussion.category.name == 'Ideas' &&
       github.event.discussion.number != 47 &&
-      github.actor != 'obotclaw[bot]' &&
-      github.actor != 'github-actions[bot]'
+      github.actor == 'jwildfire'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -47,6 +53,14 @@ jobs:
           HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
         run: echo "enabled=$HAS_TOKEN" >> "$GITHUB_OUTPUT"
 
+      - name: Mint obotclaw[bot] token
+        if: steps.gate.outputs.enabled == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.OBOT_APP_ID }}
+          private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
+
       - name: Checkout
         if: steps.gate.outputs.enabled == 'true'
         uses: actions/checkout@v4
@@ -55,7 +69,7 @@ jobs:
         if: steps.gate.outputs.enabled == 'true'
         uses: anthropics/claude-code-action@v1
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: '--model claude-sonnet-5 --allowedTools "Bash(gh api:*),Bash(gh issue:*),Bash(gh search:*),Read"'
@@ -96,3 +110,35 @@ jobs:
             "This was drafted by obot ideas-triage (Claude Code Action using Sonnet 5) — review by @jwildfire".
             Post at most one comment per run. Act only on discussion #${{ github.event.discussion.number }} —
             never edit, close, or comment on anything else, and never delete or edit existing content anywhere.
+
+  access-note:
+    if: >
+      github.event.discussion.category.name == 'Ideas' &&
+      github.event.discussion.number != 47 &&
+      github.actor != 'jwildfire' &&
+      !endsWith(github.actor, '[bot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Mint obotclaw[bot] token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.OBOT_APP_ID }}
+          private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
+
+      - name: Post access note (once per thread, no LLM)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NUM: ${{ github.event.discussion.number }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          data=$(gh api graphql -f query="query{repository(owner:\"jwildfire\",name:\"obot.roadmap\"){discussion(number:$NUM){id comments(last:50){nodes{body}}}}}")
+          if echo "$data" | grep -q 'ideas-triage: access-note'; then
+            echo "note already present in thread; skipping"
+            exit 0
+          fi
+          id=$(echo "$data" | jq -r '.data.repository.discussion.id')
+          body=$(printf 'Thanks for the idea, @%s! The automated triage pipeline currently runs only for posts and comments from @jwildfire — this thread stays in the queue and will be reviewed, but it will not be auto-triaged. Ping @jwildfire if you want the pipeline enabled for you (his reply here also opts the thread in).\n\n<!-- ideas-triage: access-note -->\n\n— obot ideas-triage (automated notice)' "$ACTOR")
+          gh api graphql -f query='mutation($d:ID!,$b:String!){addDiscussionComment(input:{discussionId:$d,body:$b}){comment{url}}}' -f d="$id" -f b="$body" --jq '.data.addDiscussionComment.comment.url'
