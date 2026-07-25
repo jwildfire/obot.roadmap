@@ -75,21 +75,15 @@ function goalPage(goal, stageOf) {
   const progress = goal.progress.total
     ? `<p><strong>${goal.progress.done}/${goal.progress.total}</strong> member issues closed</p>`
     : '';
-  const backlog = goal.backlog.length
-    ? `<h3>Backlog feeds</h3><ul>${goal.backlog.map((b) => /^[\w.-]+\/[\w.-]+$/.test(b)
-        ? `<li><a href="https://github.com/${esc(b)}/issues">${esc(b)}</a> <small>(repo issue backlog)</small></li>`
-        : `<li>${esc(b)}</li>`).join('')}</ul>`
-    : '';
   const body = `<p><a href="index.html">← All goals</a></p>
 <h1>${esc(goal.title)}</h1>
 <p><a href="${goal.url}">Goal issue #${goal.number}</a> · slug <code>${esc(goal.slug)}</code></p>
 ${progress}
 ${memberGroups(goal, stageOf)}
-${backlog}
 <h2>Direction</h2>
 ${marked.parse(goal.prose)}
 <hr>
-<p><small>Membership and direction live on the <a href="${goal.url}">goal issue</a>; the <code>--auto</code> policy binding (active/paused, grant profile) lives in <a href="https://github.com/jwildfire/obot.agent/blob/main/goals/registry.json">obot.agent/goals/registry.json</a>. Readiness labels: <code>auto</code> = ready for autonomous implementation, <code>draft</code> = needs @jwildfire steering (#53).</small></p>`;
+<p><small>Members are generated from the goal issue's sub-issue links at build time; priority is the selecting session's judgment, not list order (#53 v2). The <code>--auto</code> policy binding — active/paused, grant profile, repo-level backlog feeds — lives in <a href="https://github.com/jwildfire/obot.agent/blob/main/goals/registry.json">obot.agent/goals/registry.json</a>. Readiness labels: <code>auto</code> = ready for autonomous implementation, <code>draft</code> = needs @jwildfire steering.</small></p>`;
   return shell(goal.title, body);
 }
 
