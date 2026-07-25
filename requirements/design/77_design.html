@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #77 — chat with the orchestrator from the live session dashboard</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  .done { display: inline-block; background: #dcfce7; color: #166534; border-radius: 999px;
+          padding: .05rem .5rem; font-size: .78rem; font-weight: 600; }
+  .rec { display: inline-block; background: #e0e7ff; color: #3730a3; border-radius: 999px;
+         padding: .05rem .5rem; font-size: .78rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .warn { background: #fef2f2; border-left: 4px solid #b3261e; border-radius: 0 8px 8px 0;
+          padding: .75rem 1rem; margin: 1rem 0; }
+  .warn strong:first-child { color: #991b1b; }
+  .note { color: var(--muted); font-size: .9rem; }
+  nav.toc { background: var(--panel); border-radius: 8px; padding: 1rem 1.25rem; font-size: .92rem; }
+  nav.toc ol { margin: .25rem 0 0; padding-left: 1.25rem; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Design: chat with the orchestrator from the live session dashboard</h1>
+  <p class="meta">
+    Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/77">jwildfire/obot.roadmap#77</a>
+    · 2026-07-24 · <span class="status">Decisions D1–D6 open for @jwildfire</span><br>
+    Extends <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/24_design.html">#24 (session hub)</a>
+    and deliberately supersedes its <strong>D1 “static watch loop, no server”</strong> for this feature only.
+    Promoted from <a href="https://github.com/jwildfire/obot.roadmap/discussions/62">discussion #62</a>.
+    A working prototype of the recommendation below is up as a draft PR on
+    <a href="https://github.com/jwildfire/obot.agent/pulls">obot.agent</a>.
+  </p>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#context">Context, constraints, and what “chat” has to mean</a></li>
+    <li><a href="#problem">The hard part: there is no supported way to talk to a running session</a></li>
+    <li><a href="#lanes">Delivery lanes — the four candidates, measured</a></li>
+    <li><a href="#protocol">The recommended architecture: a file-based inbox + a localhost server</a></li>
+    <li><a href="#reply">Reading the reply: the transcript tail</a></li>
+    <li><a href="#ui">Dashboard UI and refresh behaviour</a></li>
+    <li><a href="#security">Security and the trust model</a></li>
+    <li><a href="#decisions">Decisions (open)</a></li>
+    <li><a href="#scope">Out of scope</a></li>
+    <li><a href="#risks">Risks</a></li>
+    <li><a href="#acceptance">Acceptance criteria</a></li>
+    <li><a href="#tasks">Task preview</a></li>
+  </ol>
+</nav>
+
+<h2 id="context">1. Context, constraints, and what “chat” has to mean</h2>
+
+<p>
+The <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/24_design.html">session hub</a> is a
+read-only page: it answers <em>“where are we?”</em> without a terminal. #77 asks for the other direction —
+@jwildfire types a prompt on the dashboard, the orchestrator receives it, and the answer streams back on the
+same page. Three constraints were fixed in triage on discussion #62 and are treated here as given:
+</p>
+
+<ul>
+  <li><strong>Target = the main orchestrator session</strong> — the orange <code>😺🤖</code> lead, not a fresh
+      throwaway agent and not the sibling fleet. A chat that spawned a new agent per message would be a
+      different (easier, less useful) product.</li>
+  <li><strong>A lightweight local server is in.</strong> #24 D1 stays intact for the <em>generated pages</em>;
+      the server is additive and carries only the chat channel — plus, as it turns out, a nicer refresh
+      (§6).</li>
+  <li><strong>v1 UX = live streaming</strong> — a thinking indicator while the agent works, then the response.
+      “Submit and check the transcript later” was explicitly rejected.</li>
+  <li><strong>Deployed Pages stay static.</strong> The hub site is public; the chat panel must be absent or
+      inert there, never a broken control (§6, §7).</li>
+</ul>
+
+<h2 id="problem">2. The hard part: there is no supported way to talk to a running session</h2>
+
+<p>
+Everything else in this requirement is easy. The difficulty is one sentence: <strong>Claude Code exposes no
+documented local API for injecting a prompt into an already-running session.</strong> Verified on CLI 2.1.220
+while drafting this design:
+</p>
+
+<ul>
+  <li><code>claude agents --json</code> <em>lists</em> sessions (and is already a session-hub collector), but has
+      no send or attach subcommand.</li>
+  <li>The background-session daemon keeps a private control plane under <code>~/.claude/daemon/</code>
+      (a <code>control.key</code>, a dispatch directory, a roster). It is undocumented, unversioned, and
+      reading it in this workspace is blocked by the permission classifier — which is the correct answer.
+      <strong>Any design that pokes the daemon socket is rejected on principle:</strong> it would break on a
+      CLI upgrade, and it would be an agent reverse-engineering its own supervisor.</li>
+  <li>The Remote Control bridge (<a href="https://github.com/jwildfire/obot.roadmap/issues/46">#46</a>) proves a
+      prompt-injection channel <em>exists</em> — every RC-enabled background session carries a
+      <code>bridgeSessionId</code> and accepts prompts from claude.ai/code — but it is Anthropic-hosted, not
+      localhost, and not scriptable from here.</li>
+</ul>
+
+<p>
+What <em>is</em> supported, documented, and already load-bearing in this workspace is the <strong>hook
+contract</strong>. A <code>Stop</code> hook may print <code>{"decision":"block","reason":"…"}</code>, and the
+<code>reason</code> becomes input the session acts on. The workspace has shipped exactly that since
+2026-07-14: <code>hooks/scratchpad-heartbeat.sh</code> nudges a stale session into logging by blocking its
+Stop with a sentence of instructions. <strong>A chat message is the same move with different text.</strong>
+That observation is the whole design.
+</p>
+
+<h2 id="lanes">3. Delivery lanes — the four candidates, measured</h2>
+
+<table>
+  <tr><th>Lane</th><th>How a prompt arrives</th><th>Verdict</th></tr>
+  <tr>
+    <td><strong>A. CLI attach / send</strong></td>
+    <td>A <code>claude</code> subcommand that writes into a live session.</td>
+    <td><span class="status">Does not exist</span> No such surface on 2.1.220. Nothing to build on.</td>
+  </tr>
+  <tr>
+    <td><strong>B. Daemon control plane</strong></td>
+    <td>Speak the private IPC protocol under <code>~/.claude/daemon/</code>.</td>
+    <td><span class="status">Rejected</span> Undocumented, unversioned, classifier-blocked. Guaranteed to
+        break; wrong on principle (§2).</td>
+  </tr>
+  <tr>
+    <td><strong>C. Remote Control bridge (#46)</strong></td>
+    <td>Reuse the existing claude.ai/code → session channel.</td>
+    <td><span class="status">Not local</span> Already works today <em>as a product</em> — if @jwildfire wants
+        to type at a session from a phone, RC is the answer and #77 is redundant. It cannot be pointed at a
+        localhost page, and the classifier blocks agent writes to RC settings. Kept as the honest
+        “do nothing” alternative in <strong>D1</strong>.</td>
+  </tr>
+  <tr>
+    <td><strong>D. File-based inbox + Stop-hook delivery</strong></td>
+    <td>The server writes a JSON message into a per-session inbox directory; a <code>Stop</code> hook claims it
+        and hands it to the agent as a blocked-stop reason.</td>
+    <td><span class="rec">Recommended</span> Built only on documented surfaces (hooks + files). Works for any
+        session — interactive, background, sibling, lead — with no per-session code. Delivery is at a
+        <em>turn boundary</em>, which is also the right queueing semantic (§4).</td>
+  </tr>
+</table>
+
+<p>
+Lane D has one gap, worth stating plainly rather than hiding: <strong>the <code>Stop</code> hook only fires when
+a turn ends.</strong> If the orchestrator is already idle and waiting for input, no Stop event is coming, and a
+queued message would sit there indefinitely. The fix is a second, opt-in lane over the <em>same</em> inbox:
+</p>
+
+<ul>
+  <li><strong>D′ — the idle lane.</strong> A session arms a persistent <code>Monitor</code> on a tiny waiter
+      script (<code>scripts/obot-chat-wait</code>) that blocks until an inbox file appears and then prints the
+      message. A monitor event wakes an idle session, so delivery is near-immediate.
+      Cost: one tool call per session, adopted in <code>session-init</code>.</li>
+</ul>
+
+<p>
+Both lanes claim messages with an atomic <code>rename()</code> into <code>delivered/</code>, so a session with
+both armed cannot double-deliver: whichever claims first wins. The combination is the design —
+<strong>hook = delivery while working, monitor = delivery while idle</strong> — and each is useful without the
+other.
+</p>
+
+<h2 id="protocol">4. The recommended architecture: a file-based inbox + a localhost server</h2>
+
+<pre><code>browser (dashboard)                    localhost server                     orchestrator session
+───────────────────                    ────────────────                     ────────────────────
+type a prompt ──POST /api/send──►  write inbox/&lt;ts&gt;-&lt;id&gt;.json  ─────────►  Stop hook claims it
+                                                                            → {"decision":"block",
+   SSE ◄──activity / text / done──  tail ~/.claude/projects/…jsonl ◄──────     "reason": &lt;message&gt;}
+                                     (assistant blocks, from a
+                                      byte offset recorded at send)</code></pre>
+
+<h3>The wire format (a protocol, not an implementation detail)</h3>
+
+<p>
+Everything lives under one directory, keyed by the session's own UUID — the same
+<code>sessionId</code> the session hub already reads from <code>state.json</code>, and the same
+<code>session_id</code> the hook payload carries. No new identifier, no mapping table:
+</p>
+
+<pre><code>&lt;workspace&gt;/.claude/session-chat/&lt;sessionId&gt;/
+  inbox/&lt;epochMs&gt;-&lt;id&gt;.json     # pending: {id, from, text, createdAt}
+  delivered/&lt;id&gt;.json           # claimed: same + {deliveredAt, lane: "hook"|"monitor"}
+  outbox/&lt;id&gt;.json              # optional explicit reply from the agent
+  log.jsonl                     # server-maintained chat log (user + agent turns)</code></pre>
+
+<ul>
+  <li><strong>Enqueue</strong> = write a file into <code>inbox/</code>. Any producer can do it: the server, a
+      script, another agent, <code>echo</code>. That is the point of a file protocol — the dashboard is the
+      first client, not the only possible one.</li>
+  <li><strong>Claim</strong> = <code>rename(inbox/x, delivered/x)</code>. Atomic on a local filesystem, so
+      concurrent claimers are safe, and “delivered” is observable on disk rather than inferred.</li>
+  <li><strong>Queueing semantics</strong> (the #77 design question, resolved in <strong>D3</strong>): messages
+      queue, they never interrupt. One is delivered per turn boundary, oldest first. If @jwildfire sends three
+      messages while the agent is mid-task they land one per turn rather than derailing the current step — and
+      the dashboard shows queue depth, so “it hasn't answered yet” is never a mystery.</li>
+  <li><strong>The delivered text is framed</strong>, not raw. The hook wraps the message so the agent knows it
+      is a live chat turn from @jwildfire (answer conversationally, in the response text, then carry on) rather
+      than a new work order. Framing is the only place chat behaviour is “taught”, and it is one string in one
+      hook.</li>
+</ul>
+
+<h3>Why not have the agent poll?</h3>
+
+<p>
+Discussion #62 floated “the dashboard writes a file the agent polls”. Polling costs a tool call per check and
+only happens when the agent chooses to look, which is exactly when it is least likely to (mid-task). Hook
+delivery costs nothing until a message exists, and the monitor lane is one armed watch rather than a loop.
+Same file, far better economics.
+</p>
+
+<h2 id="reply">5. Reading the reply: the transcript tail</h2>
+
+<p>
+The reply lane needs no cooperation from the session at all. Every session appends to
+<code>~/.claude/projects/&lt;slug&gt;/&lt;sessionId&gt;.jsonl</code>, and the useful shape was verified against live
+transcripts on 2026-07-24:
+</p>
+
+<table>
+  <tr><th>Entry</th><th>Rendered as</th></tr>
+  <tr><td><code>assistant</code> · content block <code>thinking</code></td><td>a “thinking” pulse</td></tr>
+  <tr><td><code>assistant</code> · content block <code>tool_use</code></td><td>an activity line — tool name plus its <code>description</code>/target</td></tr>
+  <tr><td><code>assistant</code> · content block <code>text</code></td><td>the reply text, appended as it lands</td></tr>
+  <tr><td><code>message.stop_reason === "end_turn"</code></td><td>turn complete — stop the spinner</td></tr>
+  <tr><td><code>isSidechain: true</code></td><td>ignored (subagent chatter, not the session speaking)</td></tr>
+</table>
+
+<p>
+The server records the transcript's byte offset at send time and streams blocks that appear after it. Two
+honest limitations:
+</p>
+
+<ul>
+  <li><strong>Granularity is per message, not per token.</strong> The JSONL is written when a block completes,
+      so text arrives in paragraph-ish chunks. That satisfies “thinking dots, then the response”; it is not a
+      token-by-token typewriter, and no local source provides one.</li>
+  <li><strong>Everything after delivery is attributed to the chat turn.</strong> If the agent answers and then
+      keeps working on its own task, that work shows in the activity feed too. Arguably a feature on an ops
+      dashboard, but it means the chat log is a <em>view of the session</em>, not an isolated conversation.
+      <strong>D4</strong> offers the stricter alternative (an explicit <code>outbox/</code> reply).</li>
+</ul>
+
+<h2 id="ui">6. Dashboard UI and refresh behaviour</h2>
+
+<ul>
+  <li><strong>Where:</strong> a Chat panel in the live view, with a target selector defaulting to the lead
+      (orange <code>😺🤖</code>) session, a scrolling log, a queue-depth line, and a composer
+      (⌘/Ctrl+Enter to send).</li>
+  <li><strong>The refresh conflict, and the payoff.</strong> The live page currently reloads itself with
+      <code>&lt;meta http-equiv="refresh" content="60"&gt;</code>, which would blow away a half-typed prompt.
+      Since chat already requires the server, the chat-enabled page drops the meta refresh and does a
+      <strong>soft refresh</strong> instead: fetch the page, swap the data region, leave the chat panel
+      untouched. This is precisely the “flicker-free partial refresh” that #24 D1 named as a server's only real
+      win — it arrives here as a side effect rather than as scope creep. Composer drafts also persist to
+      <code>sessionStorage</code>, and the log is rebuilt from the server, so even a hard reload loses
+      nothing.</li>
+  <li><strong>Serve the page from the server.</strong> Same-origin removes the CORS question entirely, and the
+      server can render on demand (short TTL cache) so the page is fresh at load without a separate
+      <code>--watch</code> process. Opening the same file from <code>file://</code> still works — the chat
+      panel detects the unreachable server and degrades to a disabled composer with an explanation.</li>
+  <li><strong>Static / published pages:</strong> chat is off unless explicitly rendered for the server, so
+      <code>reports/sessions/*.html</code> on the public site carry no chat panel at all. Nothing to degrade,
+      nothing to leak.</li>
+</ul>
+
+<h2 id="security">7. Security and the trust model</h2>
+
+<div class="warn">
+  <strong>State it plainly:</strong> this feature builds a lane that <strong>injects instructions into a
+  running agent session</strong>. That agent holds a GitHub App token path, merge tooling, and write access to
+  the workspace. Anything that can write a file into <code>.claude/session-chat/&lt;id&gt;/inbox/</code> can
+  make the orchestrator act. The inbox <em>is</em> a privilege boundary and deserves to be treated as one
+  rather than as a message queue.
+</div>
+
+<p>What follows from that:</p>
+
+<ul>
+  <li><strong>Bind 127.0.0.1, with no option to widen.</strong> The server takes a port, not a host. No LAN
+      exposure, no “just for testing” flag to leave on by accident.</li>
+  <li><strong>The threat model is local, not remote.</strong> The real exposure is any local process — or a
+      malicious page in the browser — that can reach the port or the directory. Mitigations, in order of
+      value: the loopback bind; <code>POST</code> requiring a JSON content type and passing an
+      <code>Origin</code> check, so a random web page cannot cross-site-post a prompt; and the server running
+      only while @jwildfire is looking at the dashboard (it is not a daemon and is not installed as one).</li>
+  <li><strong>A shared-secret token</strong> in the URL is the next increment if wanted — it is
+      <strong>D5</strong>, held open because it trades real friction (the bookmark carries a secret) for
+      protection against a threat the loopback bind already covers.</li>
+  <li><strong>No secrets on the page.</strong> The chat panel ships no tokens; the server reads local files and
+      never talks to GitHub. Nothing about chat changes what
+      <a href="https://github.com/jwildfire/obot.roadmap/issues/57">#57</a>'s public session pill publishes
+      (aggregate counts only — chat text is never published anywhere).</li>
+  <li><strong>Delivery is auditable.</strong> Every message exists as a file before and after delivery, with
+      timestamps and the claiming lane; the transcript records what the agent did with it. There is no
+      invisible path from browser to agent.</li>
+  <li><strong>The agent is not a confused deputy by accident.</strong> The framing text says the message comes
+      from @jwildfire via the dashboard, and standing rules — approval gates, the merge-guard hook, the
+      no-writes-outside-jwildfire rule — still apply to whatever it is asked to do. A chat message is a prompt,
+      not an elevation.</li>
+</ul>
+
+<h2 id="decisions">8. Decisions <span class="status">Open — @jwildfire</span></h2>
+
+<div class="decision">
+  <strong>D1 — Build the local lane at all, or just use Remote Control?</strong><br>
+  <strong>Recommendation: build it.</strong> RC (#46) already lets @jwildfire type at a background session
+  from claude.ai/code, so #77's marginal value is specifically <em>chat in the same view as the ops
+  picture</em> — one page for state and steering, no context switch, works offline, and the file protocol is
+  reusable by non-browser clients. If the honest answer is “RC is enough”, this is the moment to say so and
+  close #77 as won't-do; that is a cheaper outcome than a prototype nobody opens.
+</div>
+
+<div class="decision">
+  <strong>D2 — Delivery lanes: hook only, or hook + monitor?</strong><br>
+  <strong>Recommendation: both, with the hook as the floor.</strong> The hook needs no per-session action and
+  covers the common case (steering an agent that is working). The monitor lane costs one tool call in
+  <code>session-init</code> and is the only thing that reaches an <em>idle</em> session, which is exactly when
+  a human is most likely to be typing. Shipping only the hook means “I sent a message and nothing happened”
+  whenever the agent is at rest — the worst first impression available.
+</div>
+
+<div class="decision">
+  <strong>D3 — Mid-task behaviour: queue or interrupt?</strong><br>
+  <strong>Recommendation: queue, one message per turn boundary, with visible depth.</strong> Interrupting is
+  not cleanly available anyway (§2), but it is also the wrong default: derailing a running task to answer a
+  question is how work gets lost. The dashboard shows <code>n queued</code> and the age of the oldest, so the
+  wait is legible. An explicit “urgent” variant that blocks <em>every</em> Stop until the queue drains is a
+  small follow-up if queueing ever feels too slow.
+</div>
+
+<div class="decision">
+  <strong>D4 — Reply source: transcript tail, or an explicit <code>outbox/</code> reply?</strong><br>
+  <strong>Recommendation: transcript tail for v1, outbox defined but optional.</strong> The tail needs zero
+  cooperation, works for sessions that never heard of chat, and gives the activity feed for free. Its cost is
+  that unrelated post-delivery work shows in the chat log (§5). Requiring an outbox write would make the log
+  strictly conversational but adds a rule every session must remember, and a forgotten write reads as “the
+  agent ignored me”. Both are implemented; the question is which one the panel treats as canonical.
+</div>
+
+<div class="decision">
+  <strong>D5 — Loopback bind alone, or bind plus a shared-secret token?</strong><br>
+  <strong>Recommendation: loopback only for v1.</strong> The token's marginal protection is against local
+  processes and cross-origin pages; the <code>Origin</code> check plus a non-daemon lifetime covers the
+  realistic version of that, and a secret in the bookmark is friction on every open. Revisit the moment the
+  server ever wants to outlive the dashboard session or listen off-loopback — it should not.
+</div>
+
+<div class="decision">
+  <strong>D6 — Who runs the server, and when?</strong><br>
+  <strong>Recommendation: the <code>session-dashboard</code> skill starts it on demand and leaves it to the
+  session.</strong> Same shape as today's watch loop — nothing installed, nothing supervised, no launchd
+  agent. Making it a background service would mean an always-open prompt-injection port on the machine, which
+  §7 says should not exist while nobody is looking at the page.
+</div>
+
+<h2 id="scope">9. Out of scope</h2>
+
+<ul>
+  <li><strong>Answering an agent's <code>needs-input</code> from the page</strong> — the old orchestration D2,
+      still parked. Chat targets a session's normal input, not a permission prompt or a tool-approval dialog.
+      Approval gates stay in the terminal deliberately.</li>
+  <li><strong>Chatting with sibling agents</strong> — the protocol is per-session and would work, but v1 ships
+      one target (the lead) so the UI does not become a fleet console.</li>
+  <li><strong>Chat on the public Pages site</strong> — never; §6.</li>
+  <li><strong>Token-level streaming</strong> — no local source provides it (§5).</li>
+  <li><strong>Replacing the terminal</strong> — chat is a steering channel for short exchanges, not a place to
+      run a session from. Long transcripts, permission prompts, and slash commands stay where they work.</li>
+</ul>
+
+<h2 id="risks">10. Risks</h2>
+
+<table>
+  <tr><th>Risk</th><th>Mitigation</th></tr>
+  <tr>
+    <td>The transcript JSONL is a harness-internal format — the same caveat #24 already carries for
+        <code>state.json</code> — so block shapes could change on a CLI upgrade.</td>
+    <td>One parser module, pinned to the §5 field list; unknown block types are ignored rather than fatal; a
+        parse failure degrades the panel to “delivered, reply not readable” instead of crashing. Re-verify on
+        CLI upgrades, alongside the existing <code>state.json</code> check.</td>
+  </tr>
+  <tr>
+    <td>Hooks are read at session start, so a session already running when the hook is installed will never
+        deliver chat.</td>
+    <td>Documented as the adoption rule: chat reaches sessions started after installation. The dashboard marks
+        a target chat-capable only when its chat directory exists, so an unreachable session is visible as such
+        rather than silently swallowing messages.</td>
+  </tr>
+  <tr>
+    <td>Stop-hook blocks extend a session that was trying to finish — including in the autonomous
+        <a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a> lane.</td>
+    <td>One message per Stop (the <code>stop_hook_active</code> guard the workspace hooks already use), never
+        blocking twice in a row. An unattended run with an empty inbox is bit-for-bit unaffected.</td>
+  </tr>
+  <tr>
+    <td>Chat becomes a way to route around approval gates and conventions (“just tell it to merge”).</td>
+    <td>Nothing about chat changes the guards: the merge hook, the approval convention, and the
+        no-writes-outside-jwildfire rule are enforced where they already are. Chat delivers prompts; it grants
+        nothing.</td>
+  </tr>
+  <tr>
+    <td>Two records of the same conversation (chat log + transcript) drift.</td>
+    <td>The transcript is the source of truth; <code>log.jsonl</code> is a derived render cache that can be
+        deleted at any time without loss.</td>
+  </tr>
+</table>
+
+<h2 id="acceptance">11. Acceptance criteria</h2>
+
+<ol>
+  <li>With the server running and the dashboard open at <code>http://127.0.0.1:&lt;port&gt;</code>, a prompt
+      typed into the chat panel reaches the target session and its reply appears on the page without touching
+      a terminal.</li>
+  <li>Sending while the agent is <em>working</em> shows the message queued, then delivered at the next turn
+      boundary; sending while it is <em>idle</em> (monitor lane armed) is delivered within seconds.</li>
+  <li>While the agent works, the panel shows activity (thinking / tool lines); the spinner stops at
+      <code>end_turn</code>.</li>
+  <li>Every message is auditable on disk: an <code>inbox/</code> file before delivery, a
+      <code>delivered/</code> file with a timestamp and lane after.</li>
+  <li>Degradation: server down → composer disabled with a reason, rest of the dashboard unaffected; unknown
+      transcript shape → “reply not readable”, no crash; hook absent → target shown as not chat-capable.</li>
+  <li>The server listens on 127.0.0.1 only (verified with <code>lsof</code>), rejects cross-origin posts, and
+      ships no secret in the page. Published <code>reports/sessions/*.html</code> contain no chat markup.</li>
+  <li>An empty inbox changes nothing measurable: unattended <code>--auto</code> sessions behave identically
+      with the hook installed.</li>
+</ol>
+
+<h2 id="tasks">12. Task preview</h2>
+
+<p class="note">Sizing only; decomposed into sub-issues after sign-off. Everything lands in
+<strong>obot.agent</strong> — no hub or safety.viz work.</p>
+
+<table>
+  <tr><th>#</th><th>Task</th><th>Size</th></tr>
+  <tr><td>1</td><td><code>lib/chat.mjs</code> — the file protocol (enqueue, atomic claim, log) plus the transcript tail parser, with tests</td><td>S–M</td></tr>
+  <tr><td>2</td><td><code>session-chat.mjs</code> — localhost server: page hosting, <code>/api/targets</code>, <code>/api/send</code>, SSE <code>/api/events</code>, <code>/api/log</code></td><td>M</td></tr>
+  <tr><td>3</td><td>Chat panel in <code>lib/render.mjs</code> plus soft refresh, live mode only</td><td>M</td></tr>
+  <tr><td>4</td><td><code>hooks/chat-inbox-deliver.sh</code> (Stop lane) plus <code>scripts/obot-chat-wait</code> (idle lane) and installer registration</td><td>S</td></tr>
+  <tr><td>5</td><td>Docs and adoption: protocol reference, how the lead adopts the monitor lane, <code>session-dashboard</code> starts the server</td><td>S</td></tr>
+</table>
+
+<footer>
+  <hr style="border: none; border-top: 1px solid var(--rule); margin: 0 0 .75rem;">
+  This design was drafted by Claude Code using Opus 5 and reviewed by @jwildfire (D1–D6 open).
+</footer>
+
+</body>
+</html>
