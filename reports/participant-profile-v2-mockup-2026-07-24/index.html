@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Participant profile v2 — where the profile lives (mockup, obot.roadmap#75)</title>
+<meta name="description" content="Interactive UX mockup for participant profile v2: the profile in a right-hand rail, the four surfacing options side by side, expand-to-full-screen, and the AE summary + AE timeline tracks on the lab chart's study-day axis.">
+<style>
+  :root {
+    --ink: #111e26;
+    --ink-2: #3f5563;
+    --muted: #778894;
+    --rule: #d6dee2;
+    --hair: #e6ecef;
+    --plane: #edf0f1;
+    --card: #ffffff;
+    --accent: #0b62a4;
+    --accent-ink: #08456f;
+    --accent-wash: #e9f2fa;
+    --deep: #0c2630;
+    --deep-2: #17414f;
+    --open: #8a5300;
+    --open-wash: #fdf3e2;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --sev-mild: #fab219;
+    --sev-mod: #ec835a;
+    --sev-sev: #d03b3b;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--plane);
+    color: var(--ink);
+    font: 16px/1.6 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-ink); }
+  h1, h2, h3 { letter-spacing: -0.02em; }
+
+  .wrap { max-width: 1480px; margin: 0 auto; padding: 0 1.5rem; }
+  .prose { max-width: 74ch; }
+
+  /* ---------------------------------------------------------- masthead -- */
+  .masthead {
+    background: var(--deep);
+    color: #eaf1f4;
+    padding: 2.4rem 0 2.2rem;
+    border-bottom: 4px solid var(--accent);
+  }
+  .eyebrow {
+    font: 600 0.72rem/1.4 var(--mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #8fb6c6;
+    margin: 0 0 1rem;
+  }
+  .eyebrow span { color: #cfe1e8; }
+  .masthead h1 {
+    margin: 0 0 0.8rem;
+    font-size: clamp(1.9rem, 4.2vw, 3.05rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.032em;
+    max-width: 24ch;
+  }
+  .standfirst {
+    margin: 0 0 1.4rem;
+    max-width: 68ch;
+    font-size: 1.06rem;
+    color: #c3d6de;
+  }
+  .masthead-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    font: 0.82rem/1.5 var(--mono);
+    color: #8fb6c6;
+  }
+  .masthead-meta a { color: #eaf1f4; text-decoration-color: rgba(234, 241, 244, 0.4); }
+  .chip {
+    display: inline-block;
+    margin-top: 1.2rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(250, 178, 25, 0.15);
+    border: 1px solid rgba(250, 178, 25, 0.5);
+    color: #ffd98a;
+    font: 600 0.78rem/1.5 var(--mono);
+    letter-spacing: 0.04em;
+  }
+
+  /* ------------------------------------------------------- axis device -- */
+  /* Section headings sit on a rule like a labelled reference line — the
+     vernacular of the charts this page is about. */
+  .axis-head {
+    position: relative;
+    margin: 3.4rem 0 1.4rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--rule);
+  }
+  .axis-head::before {
+    content: attr(data-tick);
+    position: absolute;
+    top: -0.62rem;
+    left: 0;
+    background: var(--plane);
+    padding-right: 0.6rem;
+    font: 600 0.7rem/1 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .axis-head h2 { margin: 0; font-size: 1.42rem; font-weight: 750; }
+  .axis-head p { margin: 0.5rem 0 0; color: var(--ink-2); max-width: 74ch; }
+
+  /* ------------------------------------------------------------- bench -- */
+  .bench { padding: 1.8rem 0 0; }
+  .bench-note {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    margin: 0 0 1rem;
+    font: 0.85rem/1.5 var(--mono);
+    color: var(--ink-2);
+  }
+  .bench-note b { color: var(--ink); font-weight: 700; }
+
+  .toolbar {
+    background: var(--deep-2);
+    border-radius: 12px 12px 0 0;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .tool-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem 1.1rem; }
+  .tool-label {
+    font: 600 0.68rem/1 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8fb6c6;
+    flex: 0 0 auto;
+  }
+
+  /* the four surfacing options, drawn as miniatures of themselves */
+  .mini {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    padding: 0.45rem 0.5rem 0.4rem;
+    color: #cfe1e8;
+    font: 600 0.7rem/1.2 var(--mono);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 122px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .mini:hover { border-color: rgba(255, 255, 255, 0.42); }
+  .mini.is-active { background: #fff; border-color: #fff; color: var(--deep); }
+  .mini-art { display: flex; gap: 2px; height: 34px; }
+  .mini-art i { display: block; border-radius: 2px; background: rgba(255, 255, 255, 0.28); }
+  .mini.is-active .mini-art i { background: #c8d6dc; }
+  .mini-art .m-ctrl { flex: 0 0 14px; }
+  .mini-art .m-chart { flex: 1 1 auto; background: rgba(255, 255, 255, 0.5); }
+  .mini.is-active .mini-art .m-chart { background: var(--accent); }
+  .mini-art .m-prof { flex: 0 0 26px; background: rgba(250, 178, 25, 0.75); }
+  .mini-art.is-stacked { flex-direction: row; }
+  .mini-art .m-col { display: flex; flex-direction: column; gap: 2px; flex: 0 0 30px; }
+  .mini-art .m-col i { flex: 1 1 auto; }
+  .mini-art.is-dock { flex-direction: column; }
+  .mini-art.is-dock .m-top { display: flex; gap: 2px; flex: 1 1 auto; }
+  .mini-art.is-dock .m-top i { display: block; }
+  .mini-art.is-dock .m-dock { flex: 0 0 11px; background: rgba(250, 178, 25, 0.75); border-radius: 2px; }
+  .mini-name { text-align: left; }
+
+  .seg { display: inline-flex; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 7px; overflow: hidden; }
+  .seg button {
+    border: 0;
+    background: transparent;
+    color: #cfe1e8;
+    font: 600 0.78rem/1 var(--mono);
+    padding: 0.42rem 0.7rem;
+    cursor: pointer;
+  }
+  .seg button + button { border-left: 1px solid rgba(255, 255, 255, 0.22); }
+  .seg button.is-active { background: #fff; color: var(--deep); }
+
+  .tool-check, .tool-range { display: inline-flex; align-items: center; gap: 0.45rem; color: #cfe1e8; font: 0.8rem/1 var(--sans); }
+  .tool-range input { accent-color: #fab219; }
+  .tool-value { font: 600 0.78rem/1 var(--mono); color: #fff; min-width: 3.5em; }
+  .ghost-btn {
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: transparent;
+    color: #eaf1f4;
+    border-radius: 7px;
+    font: 600 0.78rem/1 var(--sans);
+    padding: 0.45rem 0.7rem;
+    cursor: pointer;
+  }
+  .ghost-btn:hover { border-color: #fff; }
+
+  /* -------------------------------------------------------------- stage -- */
+  .stage {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-top: 0;
+    border-radius: 0 0 12px 12px;
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+    --rail-width: 520px;
+  }
+  .stage.is-loading::after {
+    content: "Loading the safety.viz bundle and demo data…";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--card);
+    color: var(--muted);
+    font: 0.9rem/1 var(--mono);
+    z-index: 5;
+  }
+  .stage-inner { display: flex; align-items: flex-start; gap: 1rem; position: relative; }
+  .stage-chart { flex: 1 1 auto; min-width: 0; }
+
+  .rail {
+    flex: 0 0 var(--rail-width);
+    max-width: 100%;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: #fbfcfd;
+    display: flex;
+    flex-direction: column;
+    max-height: 78vh;
+    overflow: hidden;
+    transition: flex-basis 0.22s ease, box-shadow 0.22s ease;
+  }
+  .rail-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.6rem 0.7rem;
+    border-bottom: 1px solid var(--hair);
+    background: #f2f6f8;
+    flex: 0 0 auto;
+  }
+  .rail-head h2 { margin: 0; font: 700 0.95rem/1.2 var(--mono); letter-spacing: 0; }
+  .rail-head p { margin: 0.15rem 0 0; font-size: 0.76rem; color: var(--muted); }
+  .rail-actions { display: flex; gap: 0.35rem; flex: 0 0 auto; }
+  .rail-btn {
+    border: 1px solid var(--rule);
+    background: #fff;
+    color: var(--ink-2);
+    border-radius: 6px;
+    font: 600 0.73rem/1 var(--sans);
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .rail-btn:hover { border-color: var(--accent); color: var(--accent-ink); }
+  .rail-body { overflow: auto; padding: 0.7rem; flex: 1 1 auto; }
+  .rail-empty { display: none; color: var(--muted); font-size: 0.88rem; padding: 2rem 0.4rem; text-align: center; }
+  .rail.is-empty .rail-empty { display: block; }
+  .rail.is-empty #pv-profile { display: none; }
+
+  .rail-controls { padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--hair); display: flex; align-items: center; gap: 0.5rem; }
+  .rail-controls .seg { border-color: var(--rule); }
+  .rail-controls .seg button { color: var(--ink-2); }
+  .rail-controls .seg button.is-active { background: var(--accent); color: #fff; }
+  .rail-controls span { font: 600 0.68rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .rail-controls-slot:empty { display: none; }
+  .tabbar { display: flex; border-bottom: 1px solid var(--hair); }
+  .tabbar button {
+    flex: 1 1 50%;
+    border: 0;
+    background: #eef3f6;
+    color: var(--ink-2);
+    font: 600 0.8rem/1 var(--sans);
+    padding: 0.55rem 0.5rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .tabbar button.is-active { background: #fff; color: var(--accent-ink); border-bottom-color: var(--accent); }
+
+  /* layout modes */
+  .stage[data-behavior="overlay"] .rail {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: auto;
+    width: var(--rail-width);
+    z-index: 4;
+    box-shadow: -14px 0 28px rgba(17, 30, 38, 0.16);
+    background: #fff;
+  }
+  /* One rail holding both panels scrolls as one column — which is the option's
+     real cost, so the mockup reproduces it rather than clipping. */
+  .stage[data-layout="stacked"] .rail,
+  .stage[data-layout="tabbed"] .rail { overflow-y: auto; }
+  .stage[data-layout="stacked"] .rail-body,
+  .stage[data-layout="tabbed"] .rail-body { overflow: visible; }
+  .stage[data-layout="dock"] .rail { flex: 1 1 auto; max-height: none; margin-top: 1rem; }
+  .stage[data-layout="dock"] .rail-head { background: #f7fafb; }
+  .stage[data-expanded="true"] .rail {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    z-index: 6;
+    max-height: none;
+    border-radius: 10px;
+    box-shadow: 0 18px 46px rgba(17, 30, 38, 0.22);
+  }
+  .stage[data-expanded="true"] .stage-chart { filter: saturate(0.25) opacity(0.35); }
+  .stage[data-layout="tabbed"][data-tab="controls"] #pv-profile,
+  .stage[data-layout="tabbed"][data-tab="controls"] .rail-controls { display: none; }
+  .stage[data-layout="tabbed"][data-tab="participant"] #pv-rail-controls-slot { display: none; }
+
+  /* the profile module inside the rail: its own control sidebar is hidden
+     until the rail is expanded, where the standalone layout takes over. */
+  /* A rail narrower than the measure table's 455px minimum scrolls rather than
+     clipping — the reviewer should be able to see what is being lost. */
+  #pv-profile { overflow-x: auto; }
+  #pv-profile .sv-sidebar { display: none; }
+  #pv-profile .sv-notes { display: none; }
+  #pv-profile .sv-root { gap: 0; }
+  .stage[data-expanded="true"] #pv-profile .sv-sidebar { display: block; }
+  .stage[data-expanded="true"] .rail-controls { display: none; }
+  /* the chart's own control sidebar, when it is moved into the rail */
+  #pv-rail-controls-slot .sv-sidebar { position: static; max-height: none; flex: 1 1 auto; border: 0; border-radius: 0; background: #f7fafb; }
+
+  /* ---------------------------------------------------------- AE tracks -- */
+  .pv-ae { margin: 0.9rem 0 1.1rem; padding: 0.75rem 0 0.2rem; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+  .pv-ae-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+  .pv-ae-head h3 { margin: 0 0 0.55rem; font-size: 0.95rem; font-weight: 700; }
+  .pv-mock-tag {
+    font: 600 0.62rem/1 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--open);
+    background: var(--open-wash);
+    border: 1px solid #f0dcb6;
+    border-radius: 999px;
+    padding: 0.18rem 0.45rem;
+  }
+  .pv-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.6rem; }
+  .pv-tile { border: 1px solid var(--hair); border-radius: 7px; padding: 0.4rem 0.5rem; background: #fff; }
+  .pv-tile-value { font: 700 1.02rem/1.2 var(--sans); display: flex; align-items: center; gap: 0.3rem; }
+  .pv-tile-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.1rem; }
+  .pv-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; display: inline-block; }
+  .pv-mix-wrap { margin-bottom: 0.7rem; }
+  .pv-mix { display: flex; gap: 2px; height: 10px; }
+  .pv-mix-seg { border-radius: 2px; min-width: 4px; }
+  .pv-mix-legend { display: flex; flex-wrap: wrap; gap: 0.2rem 0.8rem; margin-top: 0.3rem; font-size: 0.74rem; color: var(--ink-2); }
+  .pv-legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
+  .pv-track-label { font: 600 0.66rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0.5rem 0 0.35rem; }
+  .pv-timeline { position: relative; --ax-left: 40px; --ax-right: 10px; }
+  .pv-tl-plot { position: relative; }
+  .pv-tl-row { position: relative; height: 27px; }
+  .pv-tl-term {
+    position: absolute;
+    top: 0;
+    line-height: 14px;
+    font-size: 0.7rem;
+    color: var(--ink-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pv-tl-term.is-flipped { text-align: right; }
+  .pv-tl-bar { position: absolute; top: 16px; height: 9px; border-radius: 3px; min-width: 6px; }
+  .pv-tl-bar.is-open-ended {
+    border-radius: 3px 0 0 3px;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 60%, rgba(0, 0, 0, 0.25) 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 60%, rgba(0, 0, 0, 0.25) 100%);
+  }
+  .pv-tl-bar.is-clipped::after {
+    content: "";
+    position: absolute;
+    right: -6px;
+    top: -0.5px;
+    border: 5px solid transparent;
+    border-left-color: currentColor;
+    color: inherit;
+    opacity: 0.55;
+  }
+  .pv-tl-bar.is-serious { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--sev-sev); }
+  .pv-tl-axis { position: relative; height: 20px; margin-top: 2px; border-top: 1px solid var(--hair); }
+  .pv-tl-tick { position: absolute; top: 3px; transform: translateX(-50%); font: 0.65rem/1 var(--mono); color: var(--muted); }
+  .pv-tl-axis-title { position: absolute; right: 0; top: 3px; font: 0.65rem/1 var(--mono); color: var(--muted); }
+  .pv-tl-more { margin: 0.4rem 0 0; font-size: 0.72rem; color: var(--muted); }
+  .pv-soc-wrap { margin-top: 0.7rem; }
+  .pv-soc { list-style: none; margin: 0; padding: 0; }
+  .pv-soc li { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.76rem; padding: 0.16rem 0; border-bottom: 1px dotted var(--hair); }
+  .pv-soc-name { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pv-soc-count { font: 600 0.76rem/1.5 var(--mono); color: var(--ink); }
+  .pv-empty { font-size: 0.82rem; color: var(--muted); margin: 0.3rem 0 0.8rem; }
+
+  /* -------------------------------------------------------------- cards -- */
+  .grid { display: grid; gap: 1rem; }
+  .cols-2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1rem 1.1rem 1.1rem;
+  }
+  .card h3 { margin: 0 0 0.5rem; font-size: 1.02rem; }
+  .card p { margin: 0 0 0.6rem; color: var(--ink-2); }
+  .card p:last-child { margin-bottom: 0; }
+
+  .decision { border-left: 4px solid var(--accent); }
+  .decision-id { font: 700 0.72rem/1 var(--mono); letter-spacing: 0.1em; color: var(--accent-ink); }
+  .badge-open {
+    float: right;
+    font: 600 0.64rem/1 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--open);
+    background: var(--open-wash);
+    border: 1px solid #f0dcb6;
+    border-radius: 999px;
+    padding: 0.22rem 0.5rem;
+  }
+  .opts { list-style: none; margin: 0.55rem 0 0.7rem; padding: 0; }
+  .opts li { padding: 0.4rem 0 0.4rem 1.5rem; border-top: 1px solid var(--hair); position: relative; font-size: 0.92rem; }
+  .opts li::before { content: "○"; position: absolute; left: 0.25rem; color: var(--muted); }
+  .opts li.rec::before { content: "★"; color: var(--accent); }
+  .opts li.rec { background: var(--accent-wash); border-radius: 0 6px 6px 0; }
+  .opts b { font-weight: 700; }
+  .why { font-size: 0.86rem; color: var(--ink-2); margin: 0; }
+  .why b { color: var(--ink); }
+
+  table.matrix { border-collapse: collapse; width: 100%; font-size: 0.88rem; background: var(--card); }
+  table.matrix th, table.matrix td { border: 1px solid var(--hair); padding: 0.5rem 0.6rem; text-align: left; vertical-align: top; }
+  table.matrix th { background: #f4f7f8; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
+  table.matrix td code { font-family: var(--mono); font-size: 0.82em; }
+  .scroller { overflow-x: auto; }
+
+  ol.tasks { padding-left: 1.3rem; }
+  ol.tasks li { margin-bottom: 0.5rem; color: var(--ink-2); }
+  ol.tasks b { color: var(--ink); }
+  code { font-family: var(--mono); font-size: 0.88em; background: #eef2f4; border-radius: 4px; padding: 0.08em 0.32em; }
+
+  footer.page-foot {
+    margin-top: 3.5rem;
+    background: var(--deep);
+    color: #a9c4cf;
+    padding: 2rem 0 2.4rem;
+    font-size: 0.88rem;
+  }
+  footer.page-foot a { color: #eaf1f4; }
+  footer.page-foot p { max-width: 78ch; }
+
+  :where(button, a, input, summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (max-width: 1080px) {
+    .stage-inner { flex-direction: column; }
+    .rail { flex: 1 1 auto; width: 100%; }
+    .stage[data-behavior="overlay"] .rail { position: static; box-shadow: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">obot.roadmap · <span>requirement #75</span> · design mockup · 2026-07-24</p>
+    <h1>Where the participant profile lives</h1>
+    <p class="standfirst">
+      v1 docked the profile below the chart. This page puts it in a right-hand rail, adds the two adverse-event tracks, and lets you switch between the surfacing options while the real chart and the real profile module are running — so the choice can be made by using it rather than by reading about it.
+    </p>
+    <p class="masthead-meta">
+      <span>Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/75">obot.roadmap#75</a></span>
+      <span>Idea <a href="https://github.com/jwildfire/obot.roadmap/discussions/49">discussion #49</a></span>
+      <span>v1 <a href="https://github.com/jwildfire/obot.roadmap/issues/45">#45</a> · <a href="../participant-profile-module-options-2026-07-22/">options report</a></span>
+      <span>Design doc <a href="../../requirements/design/75_design.html">75_design.html</a></span>
+    </p>
+    <span class="chip">9 decisions open for @jwildfire</span>
+  </div>
+</header>
+
+<main>
+<section class="bench">
+  <div class="wrap">
+    <p class="bench-note">
+      <span><b>Live.</b> The chart and the profile block are the real safety.viz modules.</span>
+      <span><b>Mocked.</b> The rail, the expand state, and both AE tracks.</span>
+      <span><b>Try it.</b> Click any point in the chart, then switch surfacing options.</span>
+    </p>
+
+    <div class="toolbar">
+      <div class="tool-row">
+        <span class="tool-label">Surfacing</span>
+
+        <button class="mini" type="button" data-layout-option="dock" aria-pressed="false">
+          <span class="mini-art is-dock" aria-hidden="true">
+            <span class="m-top"><i class="m-ctrl"></i><i class="m-chart"></i></span>
+            <i class="m-dock"></i>
+          </span>
+          <span class="mini-name">Dock — today</span>
+        </button>
+
+        <button class="mini" type="button" data-layout-option="rails" aria-pressed="false">
+          <span class="mini-art" aria-hidden="true">
+            <i class="m-ctrl"></i><i class="m-chart"></i><i class="m-prof"></i>
+          </span>
+          <span class="mini-name">Opposite rails</span>
+        </button>
+
+        <button class="mini" type="button" data-layout-option="stacked" aria-pressed="false">
+          <span class="mini-art is-stacked" aria-hidden="true">
+            <i class="m-chart"></i>
+            <span class="m-col"><i class="m-ctrl"></i><i class="m-prof"></i></span>
+          </span>
+          <span class="mini-name">Right, stacked</span>
+        </button>
+
+        <button class="mini" type="button" data-layout-option="tabbed" aria-pressed="false">
+          <span class="mini-art is-stacked" aria-hidden="true">
+            <i class="m-chart"></i>
+            <span class="m-col"><i class="m-prof"></i></span>
+          </span>
+          <span class="mini-name">Right, tabbed</span>
+        </button>
+      </div>
+
+      <div class="tool-row" id="pv-behavior-row">
+        <span class="tool-label">When it opens</span>
+        <span class="seg">
+          <button type="button" data-behavior-option="push" class="is-active" aria-pressed="true">Push the chart</button>
+          <button type="button" data-behavior-option="overlay" aria-pressed="false">Overlay it</button>
+        </span>
+        <label class="tool-check"><input type="checkbox" id="pv-autocollapse" checked> Collapse the chart’s controls</label>
+        <label class="tool-range">Rail width
+          <input type="range" id="pv-width" min="320" max="620" step="20" value="520">
+          <span class="tool-value" id="pv-width-value">520px</span>
+        </label>
+        <button class="ghost-btn" type="button" id="pv-cohort">Select an 8-participant cohort</button>
+      </div>
+    </div>
+
+    <div class="stage is-loading" id="pv-stage" data-layout="rails" data-behavior="push" data-expanded="false" data-tab="participant">
+      <div class="stage-inner" id="pv-stage-inner">
+        <div class="stage-chart"><div id="pv-chart"></div></div>
+
+        <aside class="rail is-empty" id="pv-rail" aria-label="Participant profile rail">
+          <div class="rail-head">
+            <div>
+              <h2 id="pv-rail-title">Participant profile</h2>
+              <p id="pv-rail-sub">Nothing selected</p>
+            </div>
+            <div class="rail-actions">
+              <button class="rail-btn" type="button" id="pv-expand" aria-pressed="false">Expand to full screen</button>
+              <button class="rail-btn" type="button" id="pv-close" aria-label="Close the profile">✕</button>
+            </div>
+          </div>
+          <div class="tabbar" id="pv-tabs" hidden>
+            <button type="button" data-tab="controls" aria-selected="false">Controls</button>
+            <button type="button" data-tab="participant" class="is-active" aria-selected="true">Participant</button>
+          </div>
+          <div id="pv-rail-controls-slot"></div>
+          <div class="rail-controls" id="pv-rail-controls" hidden>
+            <span>Standardization</span>
+            <span class="seg">
+              <button type="button" data-display="relative_uln" class="is-active">×ULN</button>
+              <button type="button" data-display="relative_baseline">×Baseline</button>
+            </span>
+          </div>
+          <div class="rail-body">
+            <p class="rail-empty">Click a participant in the chart to read their profile here.</p>
+            <div id="pv-profile"></div>
+          </div>
+        </aside>
+      </div>
+      <div id="pv-dock-slot"></div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="axis-head" data-tick="01 · what is real">
+    <h2>What you are looking at</h2>
+    <p>The mockup runs the committed <code>safety.viz-1.4.1</code> dev bundle — the same asset the demo site and gsm.safety vendor — against the CDISC Pilot ADaM demo data. That keeps the findings honest: the narrow-rail problems below are real measurements of the shipped module, not predictions.</p>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Real, from the shipped module</h3>
+      <p>The Hepatic Safety Explorer, its control sidebar, its selection event, and the whole participant-profile block: header, labs-over-time spaghetti, measure table with sparklines and insets, and the worst-first cohort stepper. Switching to “right, stacked” or “right, tabbed” <em>moves the chart’s actual sidebar element</em> into the rail — the layouts are demonstrated, not drawn.</p>
+    </div>
+    <div class="card">
+      <h3>Mocked, standing in for v2</h3>
+      <p>The rail itself, the push/overlay behaviour, the expand state, the standardization control in the rail head, and the two adverse-event tracks. The AE tracks read the real <code>adae.csv</code> for the selected participant; they are rendered by this page, not by the library. The cohort button dispatches a selection event directly so the stepper can be seen without navigating to the composite view.</p>
+    </div>
+  </div>
+
+  <div class="axis-head" data-tick="02 · the finding">
+    <h2>The controls sidebar is already on the left</h2>
+    <p>The idea asked for the profile to behave like “the right-hand controls sidebar.” In the shipped shell the control sidebar renders on the <em>left</em> — <code>renderShell</code> appends <code>aside.sv-sidebar</code> before the main column in a flex row. So there is no slot to fight over: the profile can take the right rail and the controls can stay where they are.</p>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>What that changes</h3>
+      <p>The “same slot / stacked / swap” question becomes a real choice rather than a forced one. Opposite rails costs nothing to build and reads cleanly — inputs on the left, the participant being read on the right — but it does put the chart between two panels, which on a 1280px laptop leaves the eDISH scatter about 560px wide with both open.</p>
+      <p class="why"><b>Mitigation in the mockup:</b> “Collapse the chart’s controls” collapses the control sidebar to its rail the first time a profile opens, which returns most of that width. Uncheck it in the toolbar to feel the difference.</p>
+    </div>
+    <div class="card">
+      <h3>What the rail costs the profile</h3>
+      <p>Measured on this page: the measure table will not lay out below <b>455px</b> of content width, so a rail narrower than about 500px clips its sparkline column — and at 320px it loses MAX as well. The demographics header wraps to two rows somewhere below 400px. This is the single largest piece of v2 work that is not new functionality: a narrow layout for contents designed for a full-width dock. Drag the width slider to watch it break.</p>
+    </div>
+  </div>
+
+  <div class="axis-head" data-tick="03 · contents">
+    <h2>The AE tracks, on the lab chart’s clock</h2>
+    <p>The reason to grow the profile past labs is the question a reviewer actually asks: <em>did anything happen to this person around the time their transaminases moved?</em> That question is only answerable if the two tracks share an axis — so in this mockup the AE timeline is pixel-locked to the spaghetti chart’s x-scale, reading its live <code>chartArea</code> and tick positions rather than approximating them.</p>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>AE summary — not a chart</h3>
+      <p>One participant has five to twenty events. A bar chart of counts by body system at that scale is decoration. The summary is four numbers (events, highest severity, serious, ongoing), a severity mix bar, and the top body systems as a list. Severity uses the reserved status ramp — mild, moderate, severe — and is always labelled, never colour alone.</p>
+    </div>
+    <div class="card">
+      <h3>AE timeline — one row per event</h3>
+      <p>Rows are ordered worst-first, bars run start day to end day on the shared axis, events still ongoing at the last visit run to the edge with an open cap, and serious events carry a ring plus their label. Ten rows fit the rail; the rest are counted, not hidden silently.</p>
+      <p class="why"><b>Data implication:</b> the demo lab file carries visits, not study days, so this page derives a nominal day per visit. The real requirement is a study-day column in the lab domain — without it the shared axis is an approximation.</p>
+    </div>
+  </div>
+
+  <div class="axis-head" data-tick="04 · options">
+    <h2>The four surfacing options, side by side</h2>
+    <p>Every row is live in the toolbar above — the recommendation is a starting point, not a decision.</p>
+  </div>
+
+  <div class="scroller">
+  <table class="matrix">
+    <thead>
+      <tr><th>Option</th><th>How it behaves</th><th>Argues for</th><th>Argues against</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>Dock</b><br><span style="color:var(--muted);font-size:.82rem">v1, shipped</span></td>
+        <td>Profile renders full width below the chart; the page scrolls to it.</td>
+        <td>Widest layout for the measure table and insets. Already built and evidenced. Prints and embeds without special cases.</td>
+        <td>The chart leaves the viewport as you read; the click and its answer are never on screen together.</td>
+      </tr>
+      <tr>
+        <td><b>Opposite rails</b><br><span style="color:var(--muted);font-size:.82rem">recommended</span></td>
+        <td>Controls keep the left rail, profile takes a right rail, chart between them.</td>
+        <td>No collision to resolve. Chart and profile visible together. Matches the mental model of inputs on one side, the thing being read on the other.</td>
+        <td>Two panels squeeze the chart; needs the auto-collapse to stay comfortable below ~1400px.</td>
+      </tr>
+      <tr>
+        <td><b>Right, stacked</b></td>
+        <td>Chart’s control sidebar moves to the right rail, above the profile, in one scrolling column.</td>
+        <td>Chart gets the full width. Everything a reviewer touches lives on one side.</td>
+        <td>The rail becomes long: controls must be scrolled past to reach the participant, or collapsed by hand.</td>
+      </tr>
+      <tr>
+        <td><b>Right, tabbed</b></td>
+        <td>One right rail with Controls and Participant tabs; opening a profile switches the tab.</td>
+        <td>Full-width chart with no scrolling penalty. Compact on narrow screens.</td>
+        <td>Adjusting a filter while reading a participant means losing sight of one of them — the two things reviewers most often do together.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="axis-head" data-tick="05 · decisions">
+    <h2>Nine open decisions</h2>
+    <p>Each carries a recommendation (★) and stays open until @jwildfire picks. The design doc holds the same nine with the implementation consequences spelled out.</p>
+  </div>
+
+  <div class="grid cols-2">
+
+    <div class="card decision">
+      <span class="badge-open">Open</span>
+      <span class="decision-id">D1</span>
+      <h3>Default surfacing mode</h3>
+      <ul class="opts">
+        <li class="rec"><b>Right rail, push</b> — the chart re-lays out to make room.</li>
+        <li><b>Right rail, overlay</b> — the rail floats above the chart’s right edge.</li>
+        <li><b>Dock</b> — keep v1 behaviour as the default.</li>
+      </ul>
+      <p class="why"><b>Why push:</b> in eDISH the high-ALT, high-bilirubin corner sits top-right, which is exactly what an overlay covers — and it is the region a reviewer clicks from. Overlay wins back width the auto-collapse can win back honestly.</p>
+    </div>
+
+    <div class="card decision">
+      <span class="badge-open">Open</span>
+      <span class="decision-id">D2</span>
+      <h3>Where the chart’s controls go</h3>
+      <ul class="opts">
+        <li class="rec"><b>Opposite rails</b> — controls stay left, profile takes the right.</li>
+        <li><b>Both right, stacked</b> — one rail, controls above the profile.</li>
+        <li><b>Both right, tabbed</b> — one rail, two tabs.</li>
+      </ul>
+      <p class="why"><b>Why opposite rails:</b> the controls are already on the left, so this is the only option with no migration cost for the seven adopting renderers, and it is the only one that keeps filters and the participant readable at the same time.</p>
+    </div>
+
+    <div class="card decision">
+      <span class="badge-open">Open</span>
+      <span class="decision-id">D3</span>
+      <h3>What “full screen” means</h3>
+      <ul class="opts">
+        <li class="rec"><b>Fill the renderer’s own container</b>, chart dimmed behind it.</li>
+        <li><b>Fixed overlay</b> over the whole browser viewport.</li>
+        <li><b>Native Fullscreen API</b> on the profile element.</li>
+      </ul>
+      <p class="why"><b>Why the container:</b> the same module has to work inside a gsm.safety htmlwidget and an open.gismo panel, where escaping the container is either impossible or rude. Filling the container behaves identically in all three, and the expanded state can then show the module’s own control sidebar — which is simply the standalone renderer, already built.</p>
+    </div>
+
+    <div class="card decision">
+      <span class="badge-open">Open</span>
+      <span class="decision-id">D4</span>
+      <h3>What becomes of the dock</h3>
+      <ul class="opts">
+        <li class="rec"><b>Keep it as the narrow-viewport fallback</b> and an explicit opt-in.</li>
+        <li><b>Keep it as an opt-in only</b>; never automatic.</li>
+        <li><b>Remove it</b> once the rail ships.</li>
+      </ul>
+      <p class="why"><b>Why keep:</b> the shell already collapses to a single column below 900px, where a 460px rail cannot exist. Falling back to the dock there costs nothing — it is the same module in the same slot — and it protects the evidence already recorded for the docked mounts.</p>
+    </div>
+
+    <div class="card decision">
+      <span class="badge-open">Open</span>
+      <span class="decision-id">D5</span>
+      <h3>Where the AE tracks sit in the profile</h3>
+      <ul class="opts">
+        <li class="rec"><b>Directly under the labs chart</b>, before the measure table.</li>
+        <li><b>After the measure table</b>, at the end of the block.</li>
+        <li><b>A tab per domain</b> — Labs / AEs / Records.</li>
+      </ul>
+      <p class="why"><b>Why adjacent:</b> the shared axis only pays off if the two tracks touch. Tabs would undo the entire point of one profile — a participant’s story read in one pass.</p>
+    </div>
+
+    <div class="card decision">
+      <span class="badge-open">Open</span>
+      <span class="decision-id">D6</span>
+      <h3>What the AE summary is</h3>
+      <ul class="opts">
+        <li class="rec"><b>Stat tiles + severity mix + body-system list</b> — no chart.</li>
+        <li><b>A bar chart by body system.</b></li>
+        <li><b>A table of terms only.</b></li>
+      </ul>
+      <p class="why"><b>Why no chart:</b> at one participant’s scale the counts are single digits. Four numbers and a mix bar answer “how bad, how many, anything serious” faster than any plot of the same data.</p>
+    </div>
+
+    <div class="card decision">
+      <span class="badge-open">Open</span>
+      <span class="decision-id">D7</span>
+      <h3>The shared study-day axis</h3>
+      <ul class="opts">
+        <li class="rec"><b>Union domain</b> — labs and AEs rescale together to cover both.</li>
+        <li><b>Lab domain wins</b> — AEs clip at the edge with a cap.</li>
+        <li><b>Independent axes</b> per track.</li>
+      </ul>
+      <p class="why"><b>Why union:</b> AEs routinely run past the last lab draw; clipping hides exactly the late events a reviewer is looking for. The mockup currently clips (watch the caps) so the cost of the alternative is visible. <b>Requires</b> a study-day column in the lab domain — a new data requirement for v2.</p>
+    </div>
+
+    <div class="card decision">
+      <span class="badge-open">Open</span>
+      <span class="decision-id">D8</span>
+      <h3>The cohort stepper in a rail</h3>
+      <ul class="opts">
+        <li class="rec"><b>Sticky stepper strip</b> at the rail top, expandable to the ranked list.</li>
+        <li><b>Stepper only</b>, as shipped in v1.</li>
+        <li><b>List first</b> — the rail shows the cohort, one click opens a participant.</li>
+      </ul>
+      <p class="why"><b>Why sticky:</b> in a scrolling rail the stepper leaves the viewport as soon as you read the measure table, so “next participant” becomes a scroll-up. Pinning it costs one CSS rule; the expandable list answers “which twelve am I stepping through?” without leaving the rail. Press <b>Select an 8-participant cohort</b> above to see today’s behaviour.</p>
+    </div>
+
+    <div class="card decision">
+      <span class="badge-open">Open</span>
+      <span class="decision-id">D9</span>
+      <h3>Rollout scope</h3>
+      <ul class="opts">
+        <li class="rec"><b>Lab family flips to the rail; ae-explorer and ae-timelines adopt the profile in the same pass.</b></li>
+        <li><b>Lab family only</b>; AE renderers wait for a later requirement.</li>
+        <li><b>hep-explorer first</b>, others follow per renderer.</li>
+      </ul>
+      <p class="why"><b>Why together:</b> #45 deferred ae-explorer and ae-timelines because the profile had no AE domain. Building the AE adapter removes that reason, and the two renderers already ingest exactly the records the adapter needs.</p>
+    </div>
+
+  </div>
+
+  <div class="axis-head" data-tick="06 · build">
+    <h2>How it would be built</h2>
+    <p>Ten safety.viz increments plus the requirement-matrix companion, each shippable on its own so an autonomous session can take them one at a time. The same list is drafted into the Tasks section of #75.</p>
+  </div>
+
+  <div class="card">
+    <ol class="tasks">
+      <li><b>Rail mode.</b> <code>profile: { mode: 'sidebar' }</code> plus a shell rail slot: push behaviour, configurable width, open/close, focus handling. No AE work, no rollout — hep-explorer only. <code>PPRF-RAIL-*</code></li>
+      <li><b>Narrow layout pass</b> for the v1 contents at 320–520px: header wrap, measure-table column priority, sparkline and inset behaviour.</li>
+      <li><b>Expand state</b> — fill the container, reveal the module’s own control sidebar, Escape to collapse. <code>PPRF-EXP-*</code></li>
+      <li><b>Responsive fallback</b> — rail becomes the dock below the shell’s 900px breakpoint.</li>
+      <li><b>AE domain adapter</b> — a second data contract on the module (terms, severity, seriousness, start/end day), cleaned once per <code>setData</code>, shared with ae-explorer and ae-timelines. <code>PPRF-AE-*</code></li>
+      <li><b>AE summary track.</b> <code>PPRF-AESUM-*</code></li>
+      <li><b>AE timeline track</b> including the shared-axis contract and the union domain. <code>PPRF-AXIS-*</code></li>
+      <li><b>Sticky cohort stepper</b> in rail context, with the ranked list. Updates <code>PPRF-STEP-*</code>.</li>
+      <li><b>Rollout</b> — the lab family defaults to the rail; ae-explorer and ae-timelines adopt the profile.</li>
+      <li><b>Done gate</b> — gallery demo, evidence page, API reference, coverage doc.</li>
+      <li><b>obot.agent companion</b> — v2 rows on the participant-profile matrix, and a supersession note on the v1 rows the rail replaces.</li>
+    </ol>
+  </div>
+</section>
+</main>
+
+<footer class="page-foot">
+  <div class="wrap">
+    <p><b>Provenance.</b> Built for <a href="https://github.com/jwildfire/obot.roadmap/issues/75">obot.roadmap#75</a> from <a href="https://github.com/jwildfire/obot.roadmap/discussions/49">discussion #49</a>. The live modules are the vendored <code>safety.viz</code> dev bundle 1.4.1 (built from <code>dev</code> after <a href="https://github.com/jwildfire/safety.viz/pull/105">sv#105</a>); the demo data is the CDISC Pilot 01 ADaM extract shipped with the safety.viz demo site, subset to the four liver measures, plus its adverse-event dataset. Nominal study days are derived from visit labels for this page only.</p>
+    <p>Drafted by Claude Code using Opus 5 and reviewed by @jwildfire.</p>
+  </div>
+</footer>
+
+<script src="./vendor/safety.viz-dev-1.4.1.js"></script>
+<script src="./mockup.js"></script>
+</body>
+</html>

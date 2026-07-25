@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #75 — participant profile v2: sidebar surfacing + AE domains</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1.25rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .decision ul { margin: .5rem 0 .5rem 0; padding-left: 1.2rem; }
+  .decision .rec { background: #fff; border: 1px solid #e6d4ac; border-radius: 6px; padding: .5rem .7rem; margin-top: .6rem; }
+  .callout { background: var(--panel); border-radius: 8px; padding: .8rem 1rem; margin: 1rem 0; }
+  .toc { font-size: .93rem; }
+  .toc ol { padding-left: 1.3rem; }
+  figure { margin: 1.25rem 0; }
+  figcaption { color: var(--muted); font-size: .85rem; margin-top: .4rem; }
+</style>
+</head>
+<body>
+<header>
+<h1>Design #75 — participant profile v2: sidebar surfacing + AE domains</h1>
+<p class="meta">
+  Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/75">jwildfire/obot.roadmap#75</a>
+  · follows <a href="https://github.com/jwildfire/obot.roadmap/issues/45">#45</a> (v1) and its
+  <a href="../../reports/participant-profile-module-options-2026-07-22/">options report</a>
+  · from Ideas <a href="https://github.com/jwildfire/obot.roadmap/discussions/49">discussion #49</a>
+  · <span class="status">Decisions D1–D9 open for @jwildfire</span>
+</p>
+<p class="meta"><strong>Interactive mockup:</strong> <a href="../../reports/participant-profile-v2-mockup-2026-07-24/">participant-profile-v2-mockup-2026-07-24</a> — every option below is live there against the real chart and profile modules.</p>
+</header>
+
+<nav class="toc">
+<ol>
+  <li><a href="#summary">Summary</a></li>
+  <li><a href="#baseline">What v1 shipped, and what v2 changes</a></li>
+  <li><a href="#surfacing">Surfacing: the rail (D1–D4)</a></li>
+  <li><a href="#contents">Contents: the profile grows (D5–D7)</a></li>
+  <li><a href="#stepper">The cohort stepper in a rail (D8)</a></li>
+  <li><a href="#data">Data contract for the AE domain</a></li>
+  <li><a href="#api">Module API and settings</a></li>
+  <li><a href="#rollout">Rollout and delivery (D9)</a></li>
+  <li><a href="#matrix">Requirement matrix plan</a></li>
+  <li><a href="#risks">Risks and things this design does not settle</a></li>
+</ol>
+</nav>
+
+<h2 id="summary">1. Summary</h2>
+
+<p>Participant profile v1 (<a href="https://github.com/jwildfire/obot.roadmap/issues/45">#45</a>) shipped the drill-down as a module with two mounts — a standalone renderer and a <strong>dock</strong> below the host chart. Reviewing it, @jwildfire asked for the default click to open the profile in a <strong>right-hand rail</strong> with an <strong>expand to full screen</strong> control, and for the profile to grow past labs into <strong>AE Summary</strong> and <strong>AE Timeline</strong>.</p>
+
+<p>This design does three things:</p>
+<ul>
+  <li>Promotes the deferred drawer to a first-class <code>mode: 'sidebar'</code>, with the dock retained as the narrow-viewport fallback rather than deleted. This <strong>supersedes the surfacing half of #45's D1</strong>; D1's rejection of a full <em>view</em> as the primary mode still stands — full screen becomes a <em>state</em> of the rail, not a mode of its own.</li>
+  <li>Adds an <strong>AE domain</strong> to the module — a second data contract alongside the long-lab one — feeding an AE summary block and an AE timeline whose x-axis is the same study-day scale the labs chart draws. This is exactly the "AE-domain v2" that #45's D2/D5 deferred.</li>
+  <li>Breaks the work into ten independently shippable safety.viz increments plus a matrix companion, so an autonomous session can take them one at a time.</li>
+</ul>
+
+<div class="callout">
+<p><strong>One correction to the premise, established from the code and reproduced in the mockup.</strong> The idea asks for the profile to behave like "the right-hand controls sidebar." In the shipped shell the control sidebar renders on the <em>left</em>: <code>renderShell</code> appends <code>aside.sv-sidebar</code> before the main column inside a flex row (<code>src/shell.js</code>). So there is no slot contention to resolve — the profile can take the right rail while the controls stay where they are. That turns the "same slot / stacked / swap" question from a forced choice into a real one, and it is the basis of the D2 recommendation.</p>
+</div>
+
+<h2 id="baseline">2. What v1 shipped, and what v2 changes</h2>
+
+<table>
+<thead><tr><th>Aspect</th><th>v1 (shipped, sv#98/#99)</th><th>v2 (proposed)</th></tr></thead>
+<tbody>
+<tr><td>Default surfacing</td><td>Dock — full-width block below the chart card, above the listing</td><td>Right rail beside the chart; dock becomes the fallback and an opt-in</td></tr>
+<tr><td>Expanded reading</td><td>None (the standalone renderer is a separate mount)</td><td>Expand control fills the renderer's container with the standalone layout</td></tr>
+<tr><td>Contents</td><td>Header, labs-over-time spaghetti, measure table with sparkline insets, optional record listing</td><td>Same, plus an AE block (summary + timeline) between the labs chart and the measure table</td></tr>
+<tr><td>Domains</td><td>Long-format labs only</td><td>Labs + adverse events; conmeds and exposure remain out of scope</td></tr>
+<tr><td>Cohort</td><td>Worst-first stepper at the top of the block</td><td>Same ranking, pinned so it survives scrolling the rail</td></tr>
+<tr><td>Adopters</td><td>hep-explorer, histogram, outlier-explorer, delta-delta, shift-plot, qt-explorer</td><td>Those, plus ae-explorer and ae-timelines (whose deferral reason disappears)</td></tr>
+</tbody>
+</table>
+
+<h2 id="surfacing">3. Surfacing: the rail (D1–D4)</h2>
+
+<h3>3.1 The four options, as built in the mockup</h3>
+
+<table>
+<thead><tr><th>Option</th><th>Behaviour</th><th>For</th><th>Against</th></tr></thead>
+<tbody>
+<tr><td><strong>Dock</strong> (v1)</td><td>Full width below the chart</td><td>Widest measure table; already built and evidenced; prints and embeds with no special cases</td><td>The chart leaves the viewport as you read — the click and its answer are never on screen together</td></tr>
+<tr><td><strong>Opposite rails</strong></td><td>Controls left, profile right, chart between</td><td>No collision to resolve; chart and profile visible together; inputs on one side, the thing being read on the other</td><td>Two panels squeeze the chart; needs auto-collapse below roughly 1400px</td></tr>
+<tr><td><strong>Both right, stacked</strong></td><td>Chart's control sidebar moves into the rail above the profile</td><td>Chart gets full width; everything a reviewer touches is on one side</td><td>One long scrolling column — the controls have to be scrolled past to reach the participant</td></tr>
+<tr><td><strong>Both right, tabbed</strong></td><td>One rail, Controls / Participant tabs</td><td>Full-width chart, no scrolling penalty, compact on narrow screens</td><td>Filtering while reading a participant costs sight of one of them</td></tr>
+</tbody>
+</table>
+
+<div class="decision">
+<p><strong>D1 — Default surfacing mode.</strong> Right rail with <em>push</em> (the chart re-lays out) · right rail with <em>overlay</em> (the rail floats over the chart) · keep the dock.</p>
+<p class="rec"><strong>Recommendation: right rail, push.</strong> In eDISH the interesting corner — high ALT and high bilirubin — is top-right, which is exactly what an overlay covers, and it is the region the click came from. The mockup makes this visible: switch to Overlay and the Possible Hy's Law quadrant disappears behind the rail. Push costs chart width, but auto-collapsing the controls (D2) wins most of it back honestly.</p>
+</div>
+
+<div class="decision">
+<p><strong>D2 — Where the chart's controls go.</strong> Opposite rails · both right stacked · both right tabbed.</p>
+<p class="rec"><strong>Recommendation: opposite rails, with auto-collapse.</strong> The controls are already on the left, so this is the only option with no migration cost across the seven adopting renderers, and the only one that keeps filters and the participant readable at once. When a profile opens, collapse the control sidebar to its rail (the shell's existing <code>sv-collapsed</code> state, one click of the existing toggle) and restore it when the profile closes. Auto-collapse is a setting, on by default.</p>
+</div>
+
+<div class="decision">
+<p><strong>D3 — What "full screen" means.</strong> Fill the renderer's own container · a fixed overlay over the browser viewport · the native Fullscreen API on the profile element.</p>
+<p class="rec"><strong>Recommendation: fill the renderer's container.</strong> The same module has to work inside a <code>gsm.safety</code> htmlwidget and an <code>open.gismo</code> panel, where escaping the container is either impossible or rude; filling the container behaves identically in all three and needs no <code>allow="fullscreen"</code> negotiation. The expanded state then reveals the module's own control sidebar — which is to say, the expanded profile <em>is</em> the standalone renderer that already ships. Escape collapses it back to the rail.</p>
+</div>
+
+<div class="decision">
+<p><strong>D4 — What becomes of the dock.</strong> Keep as narrow-viewport fallback and explicit opt-in · keep as opt-in only · remove.</p>
+<p class="rec"><strong>Recommendation: keep it, and make it automatic under the shell's 900px breakpoint.</strong> The shell already stacks to a single column there, where a 500px rail cannot exist. Falling back to the dock costs nothing — same module, same slot, same evidence — and it protects the PPRF-* rows already recorded for the docked mounts across six renderers.</p>
+</div>
+
+<h3 id="narrow">3.2 The narrow-rail problem, measured</h3>
+
+<p>The rail's real cost is not the layout — it is that the v1 contents were designed for a full-width dock. Measured on the mockup against the shipped module:</p>
+
+<ul>
+  <li>The measure table will not lay out below <strong>455px</strong> of content width. A rail narrower than about 500px clips its sparkline column; at 320px it loses MAX as well.</li>
+  <li>The demographics header wraps to two rows somewhere below 400px.</li>
+  <li>The sparkline <em>inset</em> chart, which expands inline under a row, has not been assessed at rail width and is the most likely second casualty.</li>
+</ul>
+
+<p>So the rail default is <strong>520px</strong>, and a narrow-layout pass is its own increment: column priority in the measure table (drop MIN before MEDIAN before MAX; never drop the sparkline), header wrapping, and an inset that reflows rather than scrolls. This is the largest piece of v2 work that adds no new functionality, and it should not be bundled with the rail mechanics.</p>
+
+<h2 id="contents">4. Contents: the profile grows (D5–D7)</h2>
+
+<h3>4.1 Section order</h3>
+
+<p>Proposed order in both the rail and the expanded state:</p>
+
+<pre><code>┌ stepper (when a cohort is selected, pinned)
+├ header — id, demographics, R Ratio, Clear, link-out
+├ labs over time — spaghetti, ×ULN / ×baseline
+├ adverse events — summary tiles + severity mix + timeline   ← new
+├ measures — table with sparklines and insets
+└ records — optional listing
+</code></pre>
+
+<div class="decision">
+<p><strong>D5 — Where the AE block sits.</strong> Directly under the labs chart · after the measure table · a tab per domain.</p>
+<p class="rec"><strong>Recommendation: directly under the labs chart.</strong> The AE timeline and the labs chart share an x-axis, and a shared axis only pays off if the two tracks touch — put the measure table between them and the reader has to hold a scale in their head. Tabs are the worst of the three: they undo the whole point of one profile, which is a participant's story read in one pass.</p>
+</div>
+
+<h3>4.2 AE summary</h3>
+
+<p>A participant has five to twenty events. At that scale a bar chart of counts by body system is decoration, so the summary is: four figures (<em>events</em>, <em>highest severity</em>, <em>serious</em>, <em>no end date</em>), a severity mix bar, and the top body systems as a counted list.</p>
+
+<p>Severity is ordinal and semantic, so it takes the reserved status ramp rather than a categorical slot — mild <code>#fab219</code>, moderate <code>#ec835a</code>, severe <code>#d03b3b</code>, not recorded <code>#c3c2b7</code> — and is always labelled, never colour alone. Seriousness is a separate channel (a ring on the bar plus the word "serious"), because an event can be mild and serious at once.</p>
+
+<p>One wording decision that matters clinically: a blank stop day means <em>unresolved</em> or <em>unrecorded</em>, and the profile cannot tell which. The tile reads <strong>"no end date"</strong>, not "ongoing", and the timeline draws those bars fading out rather than ending.</p>
+
+<div class="decision">
+<p><strong>D6 — What the AE summary is.</strong> Stat tiles + severity mix + body-system list (no chart) · a bar chart by body system · a table of terms only.</p>
+<p class="rec"><strong>Recommendation: tiles + mix + list.</strong> Four numbers and a mix bar answer "how many, how bad, anything serious" faster than any plot of the same single-digit counts.</p>
+</div>
+
+<h3>4.3 AE timeline</h3>
+
+<p>One row per event: term above, bar below, running from start day to stop day on the <em>labs chart's</em> x-scale. Rows are ordered worst-first (severity, then onset). Events with no stop day fade to the domain edge; events with no start day cannot be placed and are listed beneath the plot rather than dropped silently. Ten rows fit a rail; the remainder are counted, not hidden.</p>
+
+<p>The mockup implements the axis lock literally — it reads the live Chart.js <code>scales.x</code> from the spaghetti and places every bar and tick with the same mapping — which is the behaviour the implementation should reproduce, whether by sharing the scale or by drawing both tracks in one chart.</p>
+
+<div class="decision">
+<p><strong>D7 — The shared study-day axis.</strong> Union domain (labs and AEs rescale together) · lab domain wins, AEs clip with a cap · independent axes.</p>
+<p class="rec"><strong>Recommendation: union domain.</strong> Adverse events routinely run past the last lab draw; clipping hides exactly the late events a reviewer is hunting. The mockup deliberately clips so the cost is visible — watch the caps at the right edge.</p>
+<p><strong>Data consequence:</strong> a shared day axis requires the lab domain to carry a study day. The demo distribution set carries visits only, so the mockup derives a nominal day from the visit label. In real use the profile already accepts <code>studyday_col</code>; what changes is that it stops being optional when the AE block is on. The module should say so plainly — if <code>studyday_col</code> resolves to nothing numeric, the AE block renders the summary and suppresses the timeline with a one-line note, rather than inventing a scale.</p>
+</div>
+
+<h2 id="stepper">5. The cohort stepper in a rail (D8)</h2>
+
+<p>v1 renders the stepper at the top of the block, which in a dock is always visible because the block starts where you are looking. In a scrolling rail it leaves the viewport the moment you reach the measure table, so "next participant" becomes a scroll-up.</p>
+
+<div class="decision">
+<p><strong>D8 — Stepper in rail context.</strong> Sticky strip at the rail top, expandable to the ranked list · stepper only, as today · list first (the rail shows the cohort; one click opens a participant).</p>
+<p class="rec"><strong>Recommendation: sticky strip, expandable.</strong> Pinning costs one CSS rule. The expandable ranked list answers "which twelve am I stepping through, and where does this one sit?" without leaving the rail, and it is the same ranking <code>rankParticipants</code> already computes. List-first is a different product — it inserts a chooser between the click and the answer.</p>
+</div>
+
+<h2 id="data">6. Data contract for the AE domain</h2>
+
+<p>The AE records the profile needs are the records <code>ae-timelines</code> and <code>ae-explorer</code> already ingest. <strong>The contract should reuse their setting names verbatim</strong> rather than invent a third vocabulary:</p>
+
+<table>
+<thead><tr><th>Setting</th><th>Default</th><th>Source module</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td><code>id_col</code></td><td><code>USUBJID</code></td><td>both</td><td>Joining events to the profiled participant</td></tr>
+<tr><td><code>term_col</code></td><td><code>AETERM</code></td><td>ae-timelines</td><td>Row label (verbatim); <code>minor_col</code> preferred term when present</td></tr>
+<tr><td><code>major_col</code> / <code>minor_col</code></td><td><code>AEBODSYS</code> / <code>AEDECOD</code></td><td>ae-explorer</td><td>Body-system rollup in the summary; preferred term on the row</td></tr>
+<tr><td><code>stdy_col</code> / <code>endy_col</code></td><td><code>ASTDY</code> / <code>AENDY</code></td><td>ae-timelines</td><td>Bar extent on the study-day axis</td></tr>
+<tr><td><code>color.value_col</code> + <code>color.values</code></td><td><code>AESEV</code>, <code>[MILD, MODERATE, SEVERE]</code></td><td>ae-timelines</td><td>Severity ramp and mix bar; unmapped values render "not recorded"</td></tr>
+<tr><td><code>highlight.value_col</code> + <code>highlight.value</code></td><td><code>AESER</code>, <code>Y</code></td><td>ae-timelines</td><td>Serious marking (ring + label)</td></tr>
+</tbody>
+</table>
+
+<p><strong>Cleaning rules</strong>, following the hep-core precedent of one ingest per <code>setData</code>: records without an id drop; records with a non-numeric start day are retained but listed rather than plotted; a stop day before the start day is treated as missing; severity values outside the configured list fall to "not recorded" rather than to a colour slot.</p>
+
+<p><strong>Proposed refactor, to be confirmed at implementation:</strong> extract the shared cleaning into <code>src/ae-core/</code> the way <code>hep-core</code> was extracted for the lab family, so ae-explorer, ae-timelines and the profile share one reducer set. If that turns out to be a larger split than the increment can carry, the profile ships its own adapter first and the extraction becomes a follow-on — the same sequencing #45's D4 used for hep-core, in reverse.</p>
+
+<h2 id="api">7. Module API and settings</h2>
+
+<p>Back-compatible: <code>profile: true</code> keeps meaning "on", but now resolves to the rail; <code>profile: false</code> is unchanged. The object form carries the new settings.</p>
+
+<pre><code>SafetyViz.hepExplorer('#chart', {
+  profile: {
+    mode: 'sidebar',          // 'sidebar' | 'dock' | 'auto'   ('auto' = rail above the
+                              //   shell breakpoint, dock below it — the D4 default)
+    width: 520,               // rail width in px
+    behavior: 'push',         // 'push' | 'overlay'            (D1)
+    expandable: true,         // show the expand control       (D3)
+    collapseControls: true,   // auto-collapse the host's controls on open (D2)
+    axis: 'union',            // 'union' | 'labs' | 'independent'         (D7)
+    ae: {                     // omit to keep the v1 lab-only profile
+      data: aeRows,
+      id_col: 'USUBJID',
+      term_col: 'AETERM',
+      minor_col: 'AEDECOD',
+      major_col: 'AEBODSYS',
+      stdy_col: 'ASTDY',
+      endy_col: 'AENDY',
+      color: { value_col: 'AESEV', values: ['MILD', 'MODERATE', 'SEVERE'] },
+      highlight: { value_col: 'AESER', value: 'Y' }
+    }
+  }
+})
+</code></pre>
+
+<p>The standalone factory takes the same <code>ae</code> block: <code>SafetyViz.participantProfile(el, labRows, { ae: {...} })</code>. Hosts that already hold AE records — ae-explorer, ae-timelines — pass their own cleaned rows, keeping the one-ingest-per-setData rule the dock established.</p>
+
+<p><strong>Shell change:</strong> <code>renderShell</code> gains a rail slot beside the main column (<code>sv-rail</code>), a sibling of <code>sv-sidebar</code> on the other side. The existing <code>sv-profile</code> dock slot stays exactly where it is; which slot the module mounts into is what <code>mode</code> selects.</p>
+
+<h2 id="rollout">8. Rollout and delivery (D9)</h2>
+
+<div class="decision">
+<p><strong>D9 — Rollout scope.</strong> Lab family flips to the rail and ae-explorer / ae-timelines adopt the profile in the same pass · lab family only · hep-explorer first, others per renderer.</p>
+<p class="rec"><strong>Recommendation: together.</strong> #45's D5 deferred ae-explorer and ae-timelines because the profile had no AE domain; building the adapter removes the reason, and those two renderers already ingest exactly the records it needs. Flipping the lab family is a default change, not new code, since every adopter goes through <code>profile-host.js</code>.</p>
+</div>
+
+<h3>8.1 Increments</h3>
+
+<p>Each row is intended to be shippable on its own — a session can take one, gate it, and stop.</p>
+
+<table>
+<thead><tr><th>#</th><th>Increment</th><th>Repo</th><th>Depends on</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Rail mode: <code>profile.mode = 'sidebar'</code>, shell rail slot, push behaviour, width, open/close, focus handling — hep-explorer only</td><td>safety.viz</td><td>—</td></tr>
+<tr><td>2</td><td>Narrow-layout pass for the v1 contents at 320–520px (§3.2)</td><td>safety.viz</td><td>1</td></tr>
+<tr><td>3</td><td>Expand state: fill the container, reveal the module's control sidebar, Escape to collapse</td><td>safety.viz</td><td>1</td></tr>
+<tr><td>4</td><td>Responsive fallback: rail becomes the dock below the shell breakpoint (<code>mode: 'auto'</code>)</td><td>safety.viz</td><td>1</td></tr>
+<tr><td>5</td><td>AE domain adapter: the §6 contract, cleaned once per <code>setData</code></td><td>safety.viz</td><td>—</td></tr>
+<tr><td>6</td><td>AE summary block</td><td>safety.viz</td><td>5</td></tr>
+<tr><td>7</td><td>AE timeline block, including the shared-axis contract and the union domain</td><td>safety.viz</td><td>5</td></tr>
+<tr><td>8</td><td>Sticky cohort stepper with the ranked list</td><td>safety.viz</td><td>1</td></tr>
+<tr><td>9</td><td>Rollout: lab family defaults to the rail; ae-explorer and ae-timelines adopt the profile</td><td>safety.viz</td><td>1, 5</td></tr>
+<tr><td>10</td><td>Done gate: gallery demo, evidence page, API reference, coverage doc</td><td>safety.viz</td><td>all</td></tr>
+<tr><td>11</td><td>PPRF-* v2 matrix rows and supersession notes</td><td>obot.agent</td><td>—</td></tr>
+</tbody>
+</table>
+
+<h2 id="matrix">9. Requirement matrix plan</h2>
+
+<p><code>obot.agent/docs/requirements/participant-profile.md</code> gains v2 areas under the existing <code>PPRF-&lt;AREA&gt;-&lt;NNN&gt;</code> base-ID scheme, so the evidence pages keep resolving rows by exact base-ID match:</p>
+
+<table>
+<thead><tr><th>Area</th><th>Covers</th><th>Increment</th></tr></thead>
+<tbody>
+<tr><td><code>PPRF-RAIL-*</code></td><td>Rail mount, slot, width, push/overlay, open/close, auto-collapse, focus order</td><td>1, 2</td></tr>
+<tr><td><code>PPRF-EXP-*</code></td><td>Expand state, control surface at width, Escape, container containment</td><td>3</td></tr>
+<tr><td><code>PPRF-MODE-*</code></td><td><code>mode</code> resolution including <code>auto</code> and the breakpoint fallback; back-compat of <code>profile: true</code></td><td>4</td></tr>
+<tr><td><code>PPRF-AE-*</code></td><td>AE data contract, cleaning rules, one-ingest guarantee, empty state</td><td>5</td></tr>
+<tr><td><code>PPRF-AESUM-*</code></td><td>Summary figures, severity ramp and labelling, body-system rollup</td><td>6</td></tr>
+<tr><td><code>PPRF-AETL-*</code></td><td>Timeline rows, ordering, open-ended and unplaceable events, row cap</td><td>7</td></tr>
+<tr><td><code>PPRF-AXIS-*</code></td><td>Shared study-day domain, union rescaling, suppression when no study day resolves</td><td>7</td></tr>
+</tbody>
+</table>
+
+<p>Existing rows are amended, not deleted: <code>PPRF-CORE-003/004</code> (dock slot, standalone chrome) gain a note that the rail is the new default mount; <code>PPRF-STEP-001/002</code> gain the sticky-strip behaviour; the per-adopter rollout areas (<code>PPRF-HEP-*</code>, <code>PPRF-SH-*</code>, <code>PPRF-QT-*</code>, <code>PPRF-OE-*</code>, <code>PPRF-DD-*</code>, <code>PPRF-SSP-*</code>) gain a rail-default row each. <code>PPRF-COV-001</code>, which today records the ae-explorer / ae-timelines deferral, is superseded by their adoption rows.</p>
+
+<h2 id="risks">10. Risks and things this design does not settle</h2>
+
+<ul>
+  <li><strong>Chart width on a laptop.</strong> Opposite rails plus a 520px profile leaves roughly 560px of eDISH on a 1280px screen before auto-collapse, about 800px after. That is workable but not generous; if it reads badly in use, the fallback is D2's tabbed option, which costs a migration but no width.</li>
+  <li><strong>The inset chart at rail width</strong> is unassessed. It is the most likely place increment 2 grows.</li>
+  <li><strong>Study day is now load-bearing.</strong> Any host feeding the profile visit numbers rather than days gets a summary without a timeline. Whether that is acceptable or whether the module should offer a visit-based axis is not settled here.</li>
+  <li><strong>gsm.safety widget binding</strong> stays out of scope, as in #45 — but D3's "fill the container" choice is made specifically so the binding does not need a special case later.</li>
+  <li><strong>Print and export.</strong> The dock printed naturally; a rail does not. Nothing in v2 addresses print, and if it matters, expand-then-print is the answer rather than a print stylesheet.</li>
+</ul>
+
+<hr style="margin:2.5rem 0 1.5rem;border:0;border-top:1px solid var(--rule)">
+<p class="meta">Drafted by Claude Code using Opus 5 and reviewed by @jwildfire.</p>
+
+</body>
+</html>
