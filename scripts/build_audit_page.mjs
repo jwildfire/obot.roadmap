@@ -18,19 +18,26 @@ import { decisionUrl } from './lib/audit/render.mjs';
 const NOW = new Date();
 const OUT = path.join(ROOT, '_site', 'audit', 'index.html');
 
-const ledger = await (async () => {
+const readAudit = async (name) => {
   try {
-    return JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'audit', 'findings.json'), 'utf8'));
+    return JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'audit', name), 'utf8'));
   } catch {
     return null;
   }
-})();
+};
+const ledger = await readAudit('findings.json');
+const decisions = await readAudit('decisions.json');
 
 const shortRepo = (r) => (r ?? '').split('/')[1] ?? r ?? '';
 
+// A button carries finding ids and nothing else. The page turns them into a
+// repository_dispatch — authenticated as @jwildfire from his own browser — and the
+// lane re-derives what they mean from a fresh audit (#109). What runs is never
+// what the page said should run.
 const btn = (decision, ids, label) => {
   if (!ids.length) return '';
-  return `<a class="audit-btn ${decision}" href="${esc(decisionUrl(decision, ids))}" target="_blank" rel="noopener">${esc(label)}</a>`;
+  return `<button class="audit-btn ${decision}" data-decision="${decision}"`
+    + ` data-ids="${esc(ids.join(' '))}">${esc(label)}</button>`;
 };
 
 // ------------------------------------------------------------------- findings
@@ -79,6 +86,64 @@ function ruleBlock(ruleMeta, findings) {
 </section>`;
 }
 
+// -------------------------------------------------------------- activity log
+// The ledger is the record of every decision; rendering it here is what makes the
+// audit page the one surface (#109) — decisions are made and read in one place.
+const OUTCOME_CLASS = {
+  applied: 'released', rejected: 'design', delegated: 'development',
+  blocked: 'unstaged', failed: 'drift', stale: 'unstaged',
+};
+
+function activityLog(ledger) {
+  const decisions = [...(ledger?.decisions ?? [])].reverse();
+  if (!decisions.length) {
+    return `<section class="ap-group" id="activity">
+<h2>Activity</h2>
+<p class="ap-empty">No decisions yet. Accepting or rejecting a finding records it here.</p>
+</section>`;
+  }
+  // Group by the batch that carried it — one run, or one fallback decision issue.
+  const batches = [];
+  for (const d of decisions) {
+    const key = d.runId ? `run-${d.runId}` : d.issue ? `issue-${d.issue}` : `at-${d.at}`;
+    const last = batches[batches.length - 1];
+    if (last?.key === key) last.items.push(d);
+    else batches.push({ key, items: [d] });
+  }
+
+  const rows = batches.slice(0, 40).map((b) => {
+    const first = b.items[0];
+    const outcomes = new Map();
+    for (const d of b.items) outcomes.set(d.outcome, (outcomes.get(d.outcome) ?? 0) + 1);
+    const pills = [...outcomes.entries()]
+      .map(([o, n]) => `<span class="status-pill ${OUTCOME_CLASS[o] ?? ''}">${n} ${esc(o)}</span>`).join(' ');
+    const where = first.run
+      ? `<a href="${esc(first.run)}">run</a>`
+      : first.issue ? `<a href="https://github.com/${HUB}/issues/${first.issue}">#${first.issue}</a>` : '';
+    const detail = b.items.map((d) => {
+      const subj = d.subject?.url
+        ? `<a href="${esc(d.subject.url)}">${esc(shortRepo(d.subject.repo))}#${d.subject.number}</a>`
+        : `<code>${esc(d.id)}</code>`;
+      return `<li><span class="status-pill ${OUTCOME_CLASS[d.outcome] ?? ''}">${esc(d.outcome)}</span> ${subj} — ${esc(d.ruleTitle ?? d.rule ?? d.id)}${
+        d.detail ? ` <span class="ap-seen">${esc(d.detail)}</span>` : ''}</li>`;
+    }).join('\n');
+    return `<details class="ap-batch">
+  <summary><span class="ap-when">${esc(fmtET(first.at))}</span> <strong>${esc(first.decision)}</strong>
+    <span class="rm-count">${b.items.length}</span> ${pills} ${where}
+    <span class="ap-seen">by @${esc(first.by ?? 'unknown')}</span></summary>
+  <ul class="ap-batch-items">
+${detail}
+  </ul>
+</details>`;
+  }).join('\n');
+
+  return `<section class="ap-group" id="activity">
+<h2>Activity <span class="rm-count">${decisions.length}</span></h2>
+<p class="rm-note">Every accept and reject, newest first, from <a href="decisions.json">decisions.json</a> — the same ledger the audit reads to mute rejected findings. A rejection is recorded but changes nothing on GitHub.</p>
+${rows}
+</section>`;
+}
+
 // ---------------------------------------------------------------------- page
 const findings = ledger?.findings ?? [];
 const rules = ledger?.rules ?? [];
@@ -118,7 +183,25 @@ const body = ledger
   <label class="ap-search"><input type="search" id="ap-q" placeholder="filter text…" aria-label="Filter findings by text"></label>
   <label class="ap-toggle"><input type="checkbox" id="ap-muted"> show muted</label>
   <span class="ap-shown" id="ap-shown"></span>
+  <span class="ap-conn" id="ap-conn"></span>
 </div>
+
+<div class="ap-run" id="ap-run" hidden></div>
+
+<dialog id="ap-connect" class="audit-log">
+  <form method="dialog"><button class="audit-close" aria-label="Close">&times;</button></form>
+  <h2>Connect this browser</h2>
+  <p class="meta">Applying a finding means writing to GitHub, so the page needs a token of yours. It is stored in this browser's <code>localStorage</code> and sent only to <code>api.github.com</code> — never to any other host, and never into the repository.</p>
+  <ol>
+    <li>Create a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> scoped to <strong>only</strong> <code>jwildfire/obot.roadmap</code>, with <strong>Contents: read and write</strong> (that is what <code>repository_dispatch</code> requires). Nothing else.</li>
+    <li>Paste it below. A short expiry is fine — reconnecting is this dialog again.</li>
+  </ol>
+  <p><input type="password" id="ap-token" placeholder="github_pat_…" autocomplete="off" spellcheck="false"></p>
+  <p><button class="audit-btn accept" id="ap-save">connect</button>
+     <button class="audit-btn reject" id="ap-forget">forget this token</button></p>
+  <p class="meta" id="ap-connect-msg"></p>
+  <p class="meta">Prefer not to hold a token in a browser? Every finding can also be applied by <a href="${esc(decisionUrl('accept', ['RULE-ID:owner/repo#123']))}" target="_blank" rel="noopener">filing a decision issue</a> (edit the ids in the body) — the same lane handles both.</p>
+</dialog>
 
 ${groups.map((group) => {
     const groupRules = rules.filter((r) => (byRule.get(r.id)?.[0]?.group ?? r.group) === group);
@@ -133,6 +216,8 @@ ${quiet.map((r) => ruleBlock(r, [])).join('\n')}
 </details>` : ''}
 </section>`;
   }).join('\n')}
+
+${activityLog(decisions)}
 
 <section class="ap-group">
 <h2>Rule reference <span class="rm-count">${rules.length}</span></h2>
@@ -206,6 +291,32 @@ body.wide { max-width: 68rem; }
 .ap-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .35rem; }
 .ap-actions code { font-size: .68rem; color: var(--faint); background: none; padding: 0; margin-right: auto; }
 .ap-empty { font-size: .82rem; color: var(--faint); }
+.ap-card.settled { opacity: .45; }
+.ap-card.settled .audit-btn { display: none; }
+
+/* The run panel is the only part of this page that moves, so it is the only part
+   that gets to be loud. It sits under the sticky bar and reports one thing: what
+   the pipeline is doing with the decision just made. */
+.ap-run { position: sticky; top: 3.4rem; z-index: 4; margin: .3rem 0 .7rem;
+  padding: .45rem .8rem; border-radius: .3rem; font-size: .84rem;
+  border: 1px solid var(--rule); background: var(--card); }
+.ap-run.working { border-color: var(--accent-bright); background: #fff7ed; }
+.ap-run.done { border-color: #bbf7d0; background: #f0fdf4; }
+.ap-run.warn { border-color: #fde68a; background: #fffbeb; }
+.ap-run .ap-seen { display: inline-block; margin-top: .2rem; }
+.ap-spin { color: var(--accent-bright); animation: ap-pulse 1.1s ease-in-out infinite; }
+@keyframes ap-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .ap-spin { animation: none; } }
+.audit-btn { cursor: pointer; font-family: var(--mono); }
+.ap-conn { display: inline-flex; }
+
+details.ap-batch { border-bottom: 1px solid var(--rule); padding: .3rem 0; }
+details.ap-batch > summary { cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline;
+  gap: .4rem; font-size: .82rem; }
+details.ap-batch > summary:hover { color: var(--accent); }
+.ap-when { font-family: var(--mono); font-size: .74rem; color: var(--muted); }
+.ap-batch-items { margin: .3rem 0 .2rem; padding-left: 1.1rem; font-size: .8rem; }
+.ap-batch-items li { margin: .12rem 0; }
 @media (max-width: 40rem) { .ap-shown { margin-left: 0; } }
 </style>
 </head>
@@ -227,7 +338,7 @@ body.wide { max-width: 68rem; }
   ledger ? `Last run ${esc(fmtET(ledger.generatedAt))} — ${esc(age(ledger.generatedAt, NOW))} ago.` : ''
 }</p>
 
-<p>Every finding below is a fact about GitHub state, produced by a deterministic rule rather than a model: the same state yields the same findings. <strong>Accept</strong> opens a prefilled decision issue; the <a href="https://github.com/${HUB}/blob/main/.github/workflows/roadmap-audit-apply.yml">apply lane</a> re-validates the finding against a fresh audit, then applies it — a listed operation for a mechanical fix, a bounded agent for a judgment call. <strong>Reject</strong> changes nothing and mutes the finding for 60 days, or until its evidence changes. Nothing is applied without an explicit accept.</p>
+<p>Every finding below is a fact about GitHub state, produced by a deterministic rule rather than a model: the same state yields the same findings. <strong>Accept</strong> triggers the <a href="https://github.com/${HUB}/blob/main/.github/workflows/roadmap-audit-apply.yml">apply lane</a> from this page and reports the run above — the lane re-validates the finding against a fresh audit, then applies it, using a listed operation for a mechanical fix and a bounded agent for a judgment call. <strong>Reject</strong> changes nothing and mutes the finding for 60 days, or until its evidence changes. Every decision lands in the <a href="#activity">Activity log</a>. Nothing is applied without an explicit accept.</p>
 
 <p class="rm-note">Confidence: <strong>high</strong> — deterministic detection and an unambiguous fix · <strong>medium</strong> — detection is solid, the fix is a judgment call the proposal states outright · <strong>low</strong> — heuristic detection, or an open convention question. Machine-readable: <a href="findings.json">findings.json</a> · <a href="decisions.json">decisions.json</a>.</p>
 
@@ -281,6 +392,188 @@ ${body}
   var m = document.getElementById('ap-muted');
   if (m) m.addEventListener('change', function () { state.muted = m.checked; apply(); });
   apply();
+
+  // ---------------------------------------------------------------- the loop
+  // Click → repository_dispatch → poll the run → report here (#109). The token is
+  // @jwildfire's own, kept in this browser only; the dispatch carries finding ids
+  // and nothing else, and the lane re-validates every one of them against a fresh
+  // audit before it changes anything. A page cannot be trusted, and is not.
+  var REPO = 'jwildfire/obot.roadmap';
+  var WORKFLOW = 'roadmap-audit-apply.yml';
+  var KEY = 'obot-audit-token';
+  var runPanel = document.getElementById('ap-run');
+  var connSlot = document.getElementById('ap-conn');
+  var dialog = document.getElementById('ap-connect');
+  var busy = false;
+
+  function token() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+
+  function paintConnection() {
+    var has = Boolean(token());
+    connSlot.innerHTML = '';
+    var b = document.createElement('button');
+    b.className = 'rm-chip-btn' + (has ? ' current' : '');
+    b.textContent = has ? 'connected' : 'connect to apply';
+    b.title = has
+      ? 'This browser holds a token that can apply findings. Click to replace or forget it.'
+      : 'Findings are read-only until this browser is connected.';
+    b.addEventListener('click', function () { dialog.showModal(); });
+    connSlot.appendChild(b);
+  }
+
+  function gh(path, options) {
+    var o = options || {};
+    o.headers = Object.assign({
+      Accept: 'application/vnd.github+json',
+      Authorization: 'Bearer ' + token(),
+      'X-GitHub-Api-Version': '2022-11-28',
+    }, o.headers || {});
+    return fetch('https://api.github.com' + path, o);
+  }
+
+  function say(html, cls) {
+    runPanel.hidden = false;
+    runPanel.className = 'ap-run' + (cls ? ' ' + cls : '');
+    runPanel.innerHTML = html;
+  }
+
+  // The run is found by looking for a dispatch run created after the click; the
+  // dispatch API returns 204 with no run id of its own.
+  function findRun(since, tries) {
+    return gh('/repos/' + REPO + '/actions/workflows/' + WORKFLOW + '/runs?event=repository_dispatch&per_page=5')
+      .then(function (r) { return r.ok ? r.json() : { workflow_runs: [] }; })
+      .then(function (data) {
+        var run = (data.workflow_runs || []).filter(function (w) {
+          return new Date(w.created_at).getTime() >= since - 60000;
+        })[0];
+        if (run) return run;
+        if (tries <= 0) return null;
+        return new Promise(function (res) { setTimeout(res, 3000); }).then(function () {
+          return findRun(since, tries - 1);
+        });
+      });
+  }
+
+  function watchRun(run, label) {
+    return gh('/repos/' + REPO + '/actions/runs/' + run.id)
+      .then(function (r) { return r.json(); })
+      .then(function (w) {
+        if (w.status !== 'completed') {
+          say('<span class="ap-spin">●</span> ' + label + ' — <strong>' + w.status.replace('_', ' ')
+            + '</strong> · <a href="' + w.html_url + '" target="_blank" rel="noopener">run log</a>', 'working');
+          return new Promise(function (res) { setTimeout(res, 5000); }).then(function () { return watchRun(w, label); });
+        }
+        return w;
+      });
+  }
+
+  // What actually landed comes from the ledger the lane commits, not from the
+  // page's assumption — read through the API, since the CDN caches raw files.
+  function outcomes(runId) {
+    return gh('/repos/' + REPO + '/contents/site/audit/decisions.json?ref=main', {
+      headers: { Accept: 'application/vnd.github.raw' },
+    }).then(function (r) { return r.ok ? r.json() : null; }).then(function (led) {
+      if (!led) return null;
+      var mine = (led.decisions || []).filter(function (d) { return String(d.runId) === String(runId); });
+      if (!mine.length) return null;
+      var byOutcome = {};
+      mine.forEach(function (d) { byOutcome[d.outcome] = (byOutcome[d.outcome] || 0) + 1; });
+      return byOutcome;
+    });
+  }
+
+  function summarize(byOutcome) {
+    return Object.keys(byOutcome).map(function (k) { return byOutcome[k] + ' ' + k; }).join(' · ');
+  }
+
+  function send(decision, ids, label) {
+    if (busy) return;
+    if (!token()) { dialog.showModal(); return; }
+    busy = true;
+    var started = Date.now();
+    say('<span class="ap-spin">●</span> sending ' + ids.length + ' finding' + (ids.length === 1 ? '' : 's') + '…', 'working');
+    gh('/repos/' + REPO + '/dispatches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_type: 'audit-decision', client_payload: { decision: decision, findings: ids } }),
+    }).then(function (res) {
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('GitHub rejected the token (' + res.status + '). It may be expired, or missing Contents: read and write on this repository.');
+      }
+      if (res.status !== 204) {
+        return res.text().then(function (t) { throw new Error('dispatch failed (' + res.status + ') ' + t.slice(0, 200)); });
+      }
+      say('<span class="ap-spin">●</span> ' + label + ' — waiting for the lane to pick it up…', 'working');
+      return findRun(started, 12);
+    }).then(function (run) {
+      if (!run) {
+        say('Dispatched, but no run appeared within a minute. Check <a href="https://github.com/' + REPO
+          + '/actions/workflows/' + WORKFLOW + '" target="_blank" rel="noopener">the workflow</a> — the decision was sent, so nothing is lost.', 'warn');
+        return null;
+      }
+      return watchRun(run, label);
+    }).then(function (done) {
+      if (!done) return;
+      return outcomes(done.id).then(function (byOutcome) {
+        var ok = done.conclusion === 'success';
+        var detail = byOutcome ? summarize(byOutcome) : (ok ? 'completed' : 'see the run log');
+        say((ok ? '✓ ' : '⚠ ') + label + ' — <strong>' + detail + '</strong> · <a href="' + done.html_url
+          + '" target="_blank" rel="noopener">run log</a>'
+          + '<br><span class="ap-seen">Recorded in the Activity log below on the next deploy (a minute or two). '
+          + 'Findings already applied are dropped from this page then too.</span>',
+        ok ? 'done' : 'warn');
+        if (ok && byOutcome && byOutcome.applied) {
+          // Mark what landed immediately, rather than making him reload to believe it.
+          ids.forEach(function (id) {
+            var card = Array.prototype.filter.call(cards, function (c) {
+              return c.querySelector('.ap-actions code') && c.querySelector('.ap-actions code').textContent === id;
+            })[0];
+            if (card) { card.classList.add('settled'); card.dataset.muted = 'yes'; }
+          });
+          apply();
+        }
+      });
+    }).catch(function (err) {
+      say('⚠ ' + String(err.message || err), 'warn');
+    }).then(function () { busy = false; });
+  }
+
+  document.querySelectorAll('.audit-btn[data-ids]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var ids = b.dataset.ids.split(' ').filter(Boolean);
+      send(b.dataset.decision, ids, b.dataset.decision + ' ' + ids.length + ' finding' + (ids.length === 1 ? '' : 's'));
+    });
+  });
+
+  document.getElementById('ap-save').addEventListener('click', function (e) {
+    e.preventDefault();
+    var input = document.getElementById('ap-token');
+    var msg = document.getElementById('ap-connect-msg');
+    var value = input.value.trim();
+    if (!value) { msg.textContent = 'Paste a token first.'; return; }
+    msg.textContent = 'checking…';
+    // Verified before it is stored, so a bad paste fails here rather than on the
+    // first thing he tries to apply.
+    fetch('https://api.github.com/repos/' + REPO, {
+      headers: { Authorization: 'Bearer ' + value, Accept: 'application/vnd.github+json' },
+    }).then(function (r) {
+      if (!r.ok) throw new Error('GitHub rejected it (' + r.status + ')');
+      try { localStorage.setItem(KEY, value); } catch (err) { throw new Error('this browser refused to store it'); }
+      input.value = '';
+      msg.textContent = 'Connected. Accept and reject are live.';
+      paintConnection();
+      setTimeout(function () { dialog.close(); }, 900);
+    }).catch(function (err) { msg.textContent = String(err.message || err); });
+  });
+
+  document.getElementById('ap-forget').addEventListener('click', function (e) {
+    e.preventDefault();
+    try { localStorage.removeItem(KEY); } catch (err) { /* nothing to forget */ }
+    document.getElementById('ap-connect-msg').textContent = 'Token forgotten. The page is read-only again.';
+    paintConnection();
+  });
+
+  paintConnection();
 })();
 </script>
 
