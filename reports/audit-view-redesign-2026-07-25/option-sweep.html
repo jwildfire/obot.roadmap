@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option C · Sweep — audit view redesign</title>
+<link rel="stylesheet" href="assets/audit.css">
+<style>
+  /* Option C: the rule is the unit of work, not the finding. Its reasoning is
+     stated once at the top instead of once per row, the batch decision is the
+     primary control, and the rows below exist for the exceptions. */
+  .shell.sweep { grid-template-columns: 17rem minmax(0, 1fr); }
+  .shell.sweep.side-out { grid-template-columns: 2.4rem minmax(0, 1fr); }
+
+  .rules { margin: 0; padding: 0; list-style: none; }
+  .rules li { margin: .1rem 0; }
+  .rules button {
+    display: flex; align-items: baseline; gap: .35rem; width: 100%; text-align: left; cursor: pointer;
+    background: none; border: 1px solid transparent; border-radius: 6px; padding: .18rem .3rem;
+    font: 400 .76rem/1.35 var(--sans); color: var(--ink);
+  }
+  .rules button:hover { background: var(--card); border-color: var(--rule); }
+  .rules button[aria-current="true"] { background: var(--card); border-color: var(--accent-bright); }
+  .rules .rid { font: 500 .66rem/1.5 var(--mono); color: var(--accent); flex: 1 1 auto;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rules .rn { font: 500 .66rem/1.5 var(--mono); color: var(--muted); background: var(--card);
+    border: 1px solid var(--rule); border-radius: 999px; padding: 0 .32rem; }
+  .rules .done { color: var(--good); font: 500 .66rem/1.5 var(--mono); }
+  .rules .quiet .rid { color: var(--faint); }
+  .rules button[aria-current="true"] .rid { color: var(--ink); font-weight: 600; }
+
+  .rulehead { border-bottom: 1px solid var(--rule); padding-bottom: .6rem; margin-bottom: .5rem; }
+  .rulehead .crumb { font: 500 .68rem/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .rulehead h1 { margin: .1rem 0 .1rem; font: 400 1.5rem/1.15 var(--serif); }
+  .rulehead .rid { font: 500 .74rem/1.5 var(--mono); color: var(--accent); }
+  .rulehead .why { margin: .35rem 0 0; font-size: .86rem; color: var(--muted); max-width: 46rem; }
+  .rulehead .fix { margin: .3rem 0 0; font-size: .86rem; }
+  .rulehead .fix b { font: 600 .64rem/1.5 var(--mono); letter-spacing: .09em; text-transform: uppercase;
+    color: var(--faint); margin-right: .35rem; }
+
+  .batch {
+    display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: .6rem 0;
+    padding: .5rem .65rem; background: var(--card); border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent-bright); border-radius: 8px;
+  }
+  .batch .ask { font-size: .88rem; }
+  .batch .ask b { font-weight: 600; }
+  .batch .same { display: block; font: 400 .74rem/1.5 var(--mono); color: var(--muted); margin-top: .1rem; }
+  .batch .bt { margin-left: auto; display: flex; gap: .4rem; }
+  .batch .bt button {
+    cursor: pointer; padding: .35rem .7rem; border-radius: 6px; white-space: nowrap;
+    font: 600 .8rem/1.3 var(--sans); background: var(--card); border: 1px solid var(--rule); color: var(--muted);
+  }
+  .batch .bt button:hover { border-color: var(--accent-bright); color: var(--accent); }
+  .batch .bt .yes[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #fff; }
+  .batch .bt .no[aria-pressed="true"] { background: var(--muted); border-color: var(--muted); color: #fff; }
+  .batch.done { border-left-color: var(--good); }
+
+  .stepper { display: flex; align-items: center; gap: .6rem; margin: .9rem 0 0; padding-top: .6rem;
+    border-top: 1px solid var(--rule); }
+  .stepper button {
+    cursor: pointer; background: var(--card); border: 1px solid var(--rule); border-radius: 6px;
+    padding: .3rem .7rem; font: 500 .78rem/1.4 var(--sans); color: var(--muted);
+  }
+  .stepper button:hover { border-color: var(--accent-bright); color: var(--accent); }
+  .stepper .next { border-color: var(--accent-bright); color: var(--accent); font-weight: 600; }
+  .stepper .pos { margin-left: auto; font: 400 .72rem/1.5 var(--mono); color: var(--faint); }
+
+  .quietnote { padding: 1.4rem .2rem; color: var(--muted); font-size: .88rem; }
+  .quietnote b { display: block; font: 400 1.1rem/1.4 var(--serif); margin-bottom: .25rem; color: var(--ink); }
+
+  .tbl col.c-act { width: 4.1rem; }
+  .tbl col.c-conf { width: 5.4rem; }
+  .tbl col.c-subj { width: 8.3rem; }
+  .tbl col.c-exp { width: 1.8rem; }
+  tr.fnd .c-title { cursor: pointer; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <a class="brand" href="index.html">🍊😺 obot</a>
+  <span class="opt">Option C · Sweep</span>
+  <span class="stamp">one rule at a time · batch first, exceptions after</span>
+  <nav class="switch">
+    <a href="index.html">Overview</a>
+    <a href="option-ledger.html">A Ledger</a>
+    <a href="option-rail.html">B Rail</a>
+    <a href="option-sweep.html" class="here">C Sweep</a>
+    <a href="https://jwildfire.github.io/obot.roadmap/audit/" target="_blank" rel="noopener">live page ↗</a>
+  </nav>
+</header>
+
+<div class="proto">
+  <b>Prototype.</b> Real findings from the 2026-07-25 audit. Decisions live in this tab only — nothing reaches GitHub. <span>13 rules fired; each is one decision with exceptions.</span>
+</div>
+
+<div class="shell sweep">
+  <aside class="side" id="side">
+    <button class="side-toggle" aria-expanded="true"><span aria-hidden="true">◧</span> <span class="lbl">hide rules</span></button>
+
+    <h3>Search</h3>
+    <div class="search"><input type="search" data-q placeholder="issue, rule, evidence…" aria-label="Search findings"></div>
+
+    <h3>Confidence</h3>
+    <div class="facet" id="f-conf"></div>
+    <h3>Change kind</h3>
+    <div class="facet" id="f-kind"></div>
+    <h3>Decided</h3>
+    <div class="facet" id="f-decided"></div>
+
+    <h3>Rules firing</h3>
+    <ul class="rules" id="rulelist"></ul>
+    <h3>Quiet — checked, nothing found</h3>
+    <ul class="rules" id="quietlist"></ul>
+
+    <label class="check"><input type="checkbox" data-muted> show muted findings</label>
+    <ul class="keys">
+      <li><kbd>j</kbd> <kbd>k</kbd> move · <kbd>a</kbd> <kbd>x</kbd> decide</li>
+      <li><kbd>enter</kbd> details · <kbd>/</kbd> search</li>
+    </ul>
+  </aside>
+
+  <main class="work">
+    <div class="meter" id="meter"></div>
+    <div id="pane"></div>
+  </main>
+</div>
+
+<div class="tray" id="tray"></div>
+
+<dialog class="payload" id="payload">
+  <header><h2>What Apply would send</h2><button class="close" data-close aria-label="Close">✕</button></header>
+  <div class="body">
+    <p>The apply lane takes finding ids and re-derives the operations from a fresh audit, so a staged batch is one request per decision type — not one per finding. This prototype sends nothing.</p>
+    <pre></pre>
+  </div>
+</dialog>
+
+<script type="module">
+import * as C from './assets/core.js';
+
+const { ledger, findings, ruleById } = await C.load();
+const paneEl = document.getElementById('pane');
+const meterEl = document.getElementById('meter');
+const trayEl = document.getElementById('tray');
+
+const firingIds = [...new Set(findings.filter((f) => !f.muted).map((f) => f.rule))];
+const GROUP_ORDER = ['Board integrity', 'Hierarchy', 'Linkage', 'Conventions'];
+firingIds.sort((a, b) => GROUP_ORDER.indexOf(ruleById.get(a).group) - GROUP_ORDER.indexOf(ruleById.get(b).group)
+  || a.localeCompare(b));
+const quietIds = ledger.rules.filter((r) => !firingIds.includes(r.id)).map((r) => r.id);
+let current = firingIds[0];
+let flat = [];
+
+document.getElementById('f-conf').innerHTML = C.facetHTML('conf',
+  [{ value: 'all', label: 'all' }, { value: 'high', label: 'high' }, { value: 'medium', label: 'medium' }, { value: 'low', label: 'low' }],
+  { high: ledger.counts.high, medium: ledger.counts.medium, low: ledger.counts.low });
+document.getElementById('f-kind').innerHTML = C.facetHTML('kind',
+  [{ value: 'all', label: 'all' }, { value: 'mechanical', label: 'mechanical' }, { value: 'agentic', label: 'judgment' }],
+  { mechanical: ledger.counts.mechanical, agentic: ledger.counts.agentic });
+document.getElementById('f-decided').innerHTML = C.facetHTML('decided',
+  [{ value: 'all', label: 'all' }, { value: 'undecided', label: 'undecided' }, { value: 'accepted', label: 'accepted' }, { value: 'rejected', label: 'rejected' }]);
+
+const itemsOf = (ruleId) => findings.filter((f) => f.rule === ruleId && C.pass(f));
+
+function ruleListHTML() {
+  document.getElementById('rulelist').innerHTML = firingIds.map((id) => {
+    const r = ruleById.get(id);
+    const items = findings.filter((f) => f.rule === id && (C.state.showMuted || !f.muted));
+    const done = items.filter((f) => C.state.decisions.has(f.id)).length;
+    return `<li><button data-rule="${C.esc(id)}" aria-current="${id === current && !C.state.q}">
+      <span class="rid">${C.esc(id)}</span>
+      ${done === items.length ? '<span class="done">done</span>' : `<span class="rn">${done ? `${done}/` : ''}${items.length}</span>`}
+    </button></li>`;
+  }).join('');
+  document.getElementById('quietlist').innerHTML = quietIds.map((id) =>
+    `<li class="quiet"><button data-rule="${C.esc(id)}" aria-current="${id === current && !C.state.q}"><span class="rid">${C.esc(id)}</span></button></li>`).join('');
+}
+
+function rowHTML(f, showWhat) {
+  const d = C.state.decisions.get(f.id);
+  const open = C.state.open.has(f.id);
+  return `<tr class="fnd${d ? ` d-${d}` : ''}${f.muted ? ' is-muted' : ''}${C.state.cursor === f.id ? ' cursor' : ''}" data-id="${C.esc(f.id)}">
+    <td>${C.actsHTML(f)}</td>
+    <td>${C.confHTML(f)}</td>
+    <td>${C.subjHTML(f)}</td>
+    <td><span class="title" title="${C.esc(f.subject.title)}">${C.esc(f.subject.title)}</span></td>
+    ${showWhat ? `<td><span class="what" title="${C.esc(f.what)}">${C.esc(f.what)}</span></td>` : ''}
+    <td><button class="exp" data-exp="${C.esc(f.id)}" aria-expanded="${open}" aria-label="Details for ${C.esc(f.subjLabel)}">${open ? '▾' : '▸'}</button></td>
+  </tr>${open ? `<tr class="det"><td colspan="${showWhat ? 6 : 5}">${C.detailHTML(f)}</td></tr>` : ''}`;
+}
+
+function tableHTML(items, showWhat) {
+  return `<table class="tbl">
+    <colgroup><col class="c-act"><col class="c-conf"><col class="c-subj"><col>${showWhat ? '<col>' : ''}<col class="c-exp"></colgroup>
+    <thead><tr><th class="plain">decide</th><th class="plain">conf</th><th class="plain">which issue</th><th class="plain">title</th>${showWhat ? '<th class="plain">what changes</th>' : ''}<th class="plain"></th></tr></thead>
+    <tbody>${items.map((f) => rowHTML(f, showWhat)).join('')}</tbody>
+  </table>`;
+}
+
+function rulePaneHTML(id) {
+  const r = ruleById.get(id);
+  const items = itemsOf(id);
+  const all = findings.filter((f) => f.rule === id && (C.state.showMuted || !f.muted));
+  const idx = firingIds.indexOf(id);
+  const stepper = `<div class="stepper">
+    <button data-step="-1"${idx <= 0 ? ' disabled' : ''}>◂ previous rule</button>
+    <button class="next" data-step="1"${idx < 0 || idx >= firingIds.length - 1 ? ' disabled' : ''}>next rule ▸</button>
+    <span class="pos">${idx >= 0 ? `rule ${idx + 1} of ${firingIds.length} firing` : 'quiet rule'} · ${ledger.rules.length} rules checked</span>
+  </div>`;
+
+  if (!all.length) {
+    return `<div class="rulehead">
+      <div class="crumb">${C.esc(r.group)}</div>
+      <h1>${C.esc(r.title)}</h1>
+      <div class="rid">${C.esc(r.id)}</div>
+      <p class="why">${C.esc(r.why)}</p>
+      <p class="fix"><b>fix</b>${C.esc(r.fix)}</p>
+    </div>
+    <div class="quietnote"><b>Nothing found.</b>This rule ran on the ${ledger.generatedAt.slice(0, 10)} audit and reported no findings — which is different from not having run. Every rule the audit knows is listed in the sidebar.</div>
+    ${stepper}`;
+  }
+
+  const decided = all.filter((f) => C.state.decisions.has(f.id)).length;
+  const allA = items.length && items.every((f) => C.state.decisions.get(f.id) === 'accept');
+  const allR = items.length && items.every((f) => C.state.decisions.get(f.id) === 'reject');
+  const changes = [...new Set(all.map((f) => f.what))];
+  const same = changes.length === 1;
+  const kinds = [...new Set(all.map((f) => f.proposal.kind))];
+
+  return `<div class="rulehead">
+    <div class="crumb">${C.esc(r.group)} · ${all.length} finding${all.length === 1 ? '' : 's'} · ${kinds.map((k) => (k === 'agentic' ? 'judgment' : 'mechanical')).join(' + ')}</div>
+    <h1>${C.esc(r.title)}</h1>
+    <div class="rid">${C.esc(r.id)}</div>
+    <p class="why">${C.esc(r.why)}</p>
+    <p class="fix"><b>fix</b>${C.esc(r.fix)}</p>
+  </div>
+
+  <div class="batch${decided === all.length ? ' done' : ''}">
+    <span class="ask"><b>${same ? 'Every finding here makes the same change.' : `${changes.length} different changes under this rule.`}</b>
+      <span class="same">${same ? C.esc(changes[0]) : 'Read the rows before deciding as a batch.'}${decided ? ` — ${decided} of ${all.length} decided` : ''}</span></span>
+    <span class="bt">
+      <button class="yes" data-gact="accept" data-rule="${C.esc(id)}" aria-pressed="${allA}">✓ Accept all ${items.length}</button>
+      <button class="no" data-gact="reject" data-rule="${C.esc(id)}" aria-pressed="${allR}">✗ Reject all ${items.length}</button>
+    </span>
+  </div>
+
+  ${items.length ? tableHTML(items, !same) : '<div class="empty"><b>Every finding here is filtered out.</b>Clear a filter in the sidebar to see them.</div>'}
+  ${stepper}`;
+}
+
+function searchPaneHTML() {
+  const hits = findings.filter(C.pass);
+  return `<div class="rulehead">
+    <div class="crumb">Search</div>
+    <h1>${hits.length} finding${hits.length === 1 ? '' : 's'} match “${C.esc(C.state.q)}”</h1>
+    <p class="why">Across every rule. Clear the search to go back to sweeping rule by rule.</p>
+  </div>
+  ${hits.length ? tableHTML(hits, true) : '<div class="empty"><b>Nothing matches.</b>Try a shorter term.</div>'}`;
+}
+
+function render() {
+  const searching = !!C.state.q;
+  paneEl.innerHTML = searching ? searchPaneHTML() : rulePaneHTML(current);
+  flat = searching ? findings.filter(C.pass) : itemsOf(current);
+  if (C.state.cursor && !flat.some((f) => f.id === C.state.cursor)) C.state.cursor = null;
+  ruleListHTML();
+  meterEl.innerHTML = C.meterHTML(findings);
+  trayEl.innerHTML = C.trayHTML();
+}
+
+document.querySelector('.shell').addEventListener('click', (e) => {
+  const act = e.target.closest('[data-act]');
+  if (act) { C.setDecision(act.dataset.id, act.dataset.act); C.state.cursor = act.dataset.id; render(); return; }
+  const gact = e.target.closest('[data-gact]');
+  if (gact) { C.setGroup(itemsOf(gact.dataset.rule), gact.dataset.gact); render(); return; }
+  const rb = e.target.closest('[data-rule]:not([data-gact])');
+  if (rb) { current = rb.dataset.rule; C.state.q = ''; document.querySelector('[data-q]').value = ''; C.state.cursor = null; render(); window.scrollTo({ top: 0 }); return; }
+  const step = e.target.closest('[data-step]');
+  if (step) {
+    const i = firingIds.indexOf(current) + Number(step.dataset.step);
+    if (i >= 0 && i < firingIds.length) { current = firingIds[i]; C.state.cursor = null; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    return;
+  }
+  const exp = e.target.closest('[data-exp]');
+  const row = e.target.closest('tr.fnd');
+  const id = exp?.dataset.exp ?? (e.target.closest('a') ? null : row?.dataset.id);
+  if (id) { C.state.open.has(id) ? C.state.open.delete(id) : C.state.open.add(id); C.state.cursor = id; render(); }
+});
+
+meterEl.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-jump]');
+  if (!t) return;
+  const f = findings.find((x) => x.id === t.dataset.jump);
+  if (!f) return;
+  current = f.rule; C.state.q = ''; document.querySelector('[data-q]').value = '';
+  C.state.cursor = f.id;
+  render();
+  document.querySelector('tr.fnd.cursor')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+});
+
+C.wireSidebar(document.getElementById('side'), render);
+C.wireTray(trayEl, render);
+C.keys({
+  move(step) {
+    if (!flat.length) return;
+    const i = flat.findIndex((f) => f.id === C.state.cursor);
+    C.state.cursor = flat[Math.max(0, Math.min(flat.length - 1, i < 0 ? 0 : i + step))].id;
+    render();
+    document.querySelector('tr.fnd.cursor')?.scrollIntoView({ block: 'nearest' });
+  },
+  decide(d) { if (C.state.cursor) { C.setDecision(C.state.cursor, d); render(); this.move(1); } },
+  undo() { if (C.state.cursor) { C.state.decisions.delete(C.state.cursor); render(); } },
+  enter() {
+    if (!C.state.cursor) return;
+    C.state.open.has(C.state.cursor) ? C.state.open.delete(C.state.cursor) : C.state.open.add(C.state.cursor);
+    render();
+  },
+  escape() { C.state.open.clear(); render(); },
+});
+
+render();
+</script>
+</body>
+</html>

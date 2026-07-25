@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option B · Rail — audit view redesign</title>
+<link rel="stylesheet" href="assets/audit.css">
+<style>
+  /* Option B: the table never changes height. Whatever row is selected fills a
+     rail on the right, so arrowing down the list reads like an inbox — the
+     detail is already there rather than pushed open. */
+  .shell.rail { grid-template-columns: 14.5rem minmax(0, 1fr) 25rem; }
+  .shell.rail.side-out { grid-template-columns: 2.4rem minmax(0, 1fr) 25rem; }
+  .shell.rail.rail-out { grid-template-columns: 14.5rem minmax(0, 1fr) 2.2rem; }
+  .shell.rail.side-out.rail-out { grid-template-columns: 2.4rem minmax(0, 1fr) 2.2rem; }
+
+  .rail {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    border-left: 1px solid var(--rule); background: var(--card); padding: .6rem .8rem 5rem;
+  }
+  .rail-out .rail { padding: .6rem .3rem; overflow: hidden; }
+  .rail-out .rail > *:not(.rail-toggle) { display: none; }
+  .rail-toggle {
+    background: none; border: 0; cursor: pointer; padding: .1rem 0 .4rem;
+    font: 600 .68rem/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint);
+  }
+  .rail-out .rail-toggle { writing-mode: vertical-rl; }
+  .rail-toggle:hover { color: var(--accent); }
+  .rail .rhead { border-bottom: 1px solid var(--rule); padding-bottom: .45rem; margin-bottom: .5rem; }
+  .rail .rhead .line { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+  .rail .rhead h2 { margin: .25rem 0 0; font: 400 1.05rem/1.25 var(--serif); }
+  .rail .rhead .pos { margin-left: auto; font: 400 .7rem/1.4 var(--mono); color: var(--faint); }
+  .rail .decide { display: flex; gap: .4rem; margin: .55rem 0 .2rem; }
+  .rail .decide button {
+    flex: 1 1 0; cursor: pointer; padding: .35rem .4rem; border-radius: 6px;
+    font: 600 .78rem/1.3 var(--sans); background: var(--card); border: 1px solid var(--rule); color: var(--muted);
+  }
+  .rail .decide button:hover { border-color: var(--accent-bright); color: var(--accent); }
+  .rail .decide .yes[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #fff; }
+  .rail .decide .no[aria-pressed="true"] { background: var(--muted); border-color: var(--muted); color: #fff; }
+  .rail .step { display: flex; gap: .3rem; margin-top: .35rem; }
+  .rail .step button {
+    flex: 1 1 0; cursor: pointer; background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 6px; padding: .2rem; font: 500 .7rem/1.4 var(--mono); color: var(--muted);
+  }
+  .rail .step button:hover { color: var(--accent); border-color: var(--accent-bright); }
+  .rail .detail { font-size: .8rem; }
+  .rail .detail pre.prompt { max-width: none; }
+  .rail .idle { color: var(--faint); font-size: .85rem; padding: 2rem .2rem; text-align: center; }
+  .rail .idle b { display: block; font: 400 1.05rem/1.4 var(--serif); color: var(--muted); margin-bottom: .3rem; }
+
+  .tbl col.c-act { width: 4.1rem; }
+  .tbl col.c-conf { width: 5.4rem; }
+  .tbl col.c-subj { width: 8.3rem; }
+  .tbl col.c-title { width: 30%; }
+  .tbl col.c-kind { width: 6.2rem; }
+  tr.fnd { cursor: pointer; }
+  @media (max-width: 76rem) {
+    .shell.rail, .shell.rail.side-out, .shell.rail.rail-out { grid-template-columns: minmax(0, 1fr); }
+    .rail { position: static; height: auto; border-left: 0; border-top: 1px solid var(--rule); }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <a class="brand" href="index.html">🍊😺 obot</a>
+  <span class="opt">Option B · Rail</span>
+  <span class="stamp">compact list · detail always open beside it</span>
+  <nav class="switch">
+    <a href="index.html">Overview</a>
+    <a href="option-ledger.html">A Ledger</a>
+    <a href="option-rail.html" class="here">B Rail</a>
+    <a href="option-sweep.html">C Sweep</a>
+    <a href="https://jwildfire.github.io/obot.roadmap/audit/" target="_blank" rel="noopener">live page ↗</a>
+  </nav>
+</header>
+
+<div class="proto">
+  <b>Prototype.</b> Real findings from the 2026-07-25 audit. Decisions live in this tab only — nothing reaches GitHub. <span>Press <b>j</b> and read down the queue.</span>
+</div>
+
+<div class="shell rail">
+  <aside class="side" id="side">
+    <button class="side-toggle" aria-expanded="true"><span aria-hidden="true">◧</span> <span class="lbl">hide filters</span></button>
+
+    <h3>Search</h3>
+    <div class="search"><input type="search" data-q placeholder="issue, rule, evidence…" aria-label="Search findings"></div>
+
+    <h3>Sweeps</h3>
+    <button class="sweep" data-sweep='{"conf":"high","kind":"mechanical","decided":"undecided","group":"all","repo":"all","q":""}'><b>the safe sweep</b>high confidence, mechanical, undecided</button>
+    <button class="sweep" data-sweep='{"kind":"agentic","conf":"all","decided":"undecided","group":"all","repo":"all","q":""}'><b>needs reading</b>every judgment call still open</button>
+    <button class="sweep" data-sweep='{"conf":"all","kind":"all","repo":"all","group":"all","decided":"all","q":""}'><b>everything</b>clear all filters</button>
+
+    <h3>Confidence</h3>
+    <div class="facet" id="f-conf"></div>
+    <h3>Change kind</h3>
+    <div class="facet" id="f-kind"></div>
+    <h3>Rule group</h3>
+    <div class="facet" id="f-group"></div>
+    <h3>Repository</h3>
+    <div class="facet" id="f-repo"></div>
+    <h3>Decided</h3>
+    <div class="facet" id="f-decided"></div>
+
+    <h3>Sort</h3>
+    <select data-sort aria-label="Sort findings"></select>
+    <label class="check"><input type="checkbox" data-grouped checked> group by rule</label>
+    <label class="check"><input type="checkbox" data-muted> show muted</label>
+
+    <h3>Keys</h3>
+    <ul class="keys">
+      <li><kbd>j</kbd> <kbd>k</kbd> move</li>
+      <li><kbd>a</kbd> accept · <kbd>x</kbd> reject</li>
+      <li><kbd>u</kbd> undo · <kbd>/</kbd> search</li>
+    </ul>
+  </aside>
+
+  <main class="work">
+    <div class="workhead">
+      <h1>Roadmap audit</h1>
+      <span class="sub" id="stamp"></span>
+    </div>
+    <div class="meter" id="meter"></div>
+    <div id="table"></div>
+  </main>
+
+  <aside class="rail" id="rail"></aside>
+</div>
+
+<div class="tray" id="tray"></div>
+
+<dialog class="payload" id="payload">
+  <header><h2>What Apply would send</h2><button class="close" data-close aria-label="Close">✕</button></header>
+  <div class="body">
+    <p>The apply lane takes finding ids and re-derives the operations from a fresh audit, so a staged batch is one request per decision type — not one per finding. This prototype sends nothing.</p>
+    <pre></pre>
+  </div>
+</dialog>
+
+<script type="module">
+import * as C from './assets/core.js';
+
+const { ledger, findings } = await C.load();
+const tableEl = document.getElementById('table');
+const meterEl = document.getElementById('meter');
+const trayEl = document.getElementById('tray');
+const railEl = document.getElementById('rail');
+
+document.getElementById('stamp').textContent =
+  `${ledger.counts.total} findings · ${ledger.rules.filter(r => r.fired).length} of ${ledger.rules.length} rules firing · run ${ledger.generatedAt.slice(0, 10)}`;
+
+const count = (key, val) => findings.filter((f) => !f.muted && key(f) === val).length;
+const repos = [...new Set(findings.map((f) => f.subject.repo))].sort();
+const groups = ['Board integrity', 'Hierarchy', 'Linkage', 'Conventions'];
+document.getElementById('f-conf').innerHTML = C.facetHTML('conf',
+  [{ value: 'all', label: 'all' }, { value: 'high', label: 'high' }, { value: 'medium', label: 'medium' }, { value: 'low', label: 'low' }],
+  { high: ledger.counts.high, medium: ledger.counts.medium, low: ledger.counts.low });
+document.getElementById('f-kind').innerHTML = C.facetHTML('kind',
+  [{ value: 'all', label: 'all' }, { value: 'mechanical', label: 'mechanical' }, { value: 'agentic', label: 'judgment' }],
+  { mechanical: ledger.counts.mechanical, agentic: ledger.counts.agentic });
+document.getElementById('f-group').innerHTML = C.facetHTML('group',
+  [{ value: 'all', label: 'all' }, ...groups.map((g) => ({ value: g, label: g.toLowerCase() }))],
+  Object.fromEntries(groups.map((g) => [g, count((f) => f.group, g)])));
+document.getElementById('f-repo').innerHTML = C.facetHTML('repo',
+  [{ value: 'all', label: 'all' }, ...repos.map((r) => ({ value: r, label: r.split('/')[1] }))],
+  Object.fromEntries(repos.map((r) => [r, count((f) => f.subject.repo, r)])));
+document.getElementById('f-decided').innerHTML = C.facetHTML('decided',
+  [{ value: 'all', label: 'all' }, { value: 'undecided', label: 'undecided' }, { value: 'accepted', label: 'accepted' }, { value: 'rejected', label: 'rejected' }]);
+document.querySelector('[data-sort]').innerHTML = Object.entries(C.SORT_LABELS)
+  .map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+
+let flat = [];
+
+function rowHTML(f) {
+  const d = C.state.decisions.get(f.id);
+  const flags = [
+    f.reappeared ? '<span class="pill back" title="Applied before, and the audit reports it again">back again</span>' : '',
+    f.muted ? `<span class="pill mutedp">muted</span>` : '',
+  ].join('');
+  return `<tr class="fnd${d ? ` d-${d}` : ''}${f.muted ? ' is-muted' : ''}${C.state.cursor === f.id ? ' cursor sel' : ''}" data-id="${C.esc(f.id)}">
+    <td>${C.actsHTML(f)}</td>
+    <td>${C.confHTML(f)}</td>
+    <td>${C.subjHTML(f)}</td>
+    <td><span class="title" title="${C.esc(f.subject.title)}">${C.esc(f.subject.title)}</span></td>
+    <td><span class="what" title="${C.esc(f.what)}">${C.esc(f.what)}</span></td>
+    <td>${C.kindHTML(f)}${flags}</td>
+  </tr>`;
+}
+
+function groupHTML(g) {
+  const ids = g.items;
+  const allA = ids.every((f) => C.state.decisions.get(f.id) === 'accept');
+  const allR = ids.every((f) => C.state.decisions.get(f.id) === 'reject');
+  const done = ids.filter((f) => C.state.decisions.has(f.id)).length;
+  const collapsed = C.state.collapsed.has(g.rule);
+  return `<tr class="grp"><td colspan="6"><div class="band">
+    <button class="caret" data-collapse="${C.esc(g.rule)}" aria-expanded="${!collapsed}" aria-label="Collapse ${C.esc(g.rule)}">${collapsed ? '▸' : '▾'}</button>
+    <code>${C.esc(g.rule)}</code>
+    <span class="rt">${C.esc(g.ruleMeta.title)}</span>
+    <span class="gcount">${ids.length}</span>
+    <span class="gact">
+      ${done ? `<span class="gdone">${done}/${ids.length} decided</span>` : ''}
+      <span class="lbl">all ${ids.length}</span>
+      <button class="act yes sm" data-gact="accept" data-rule="${C.esc(g.rule)}" aria-pressed="${allA}" title="Accept all ${ids.length} shown findings of this rule">✓</button>
+      <button class="act no sm" data-gact="reject" data-rule="${C.esc(g.rule)}" aria-pressed="${allR}" title="Reject all ${ids.length} shown findings of this rule">✗</button>
+    </span>
+  </div></td></tr>${collapsed ? '' : ids.map(rowHTML).join('')}`;
+}
+
+function railHTML() {
+  const f = flat.find((x) => x.id === C.state.cursor);
+  const toggle = `<button class="rail-toggle" data-rail-toggle aria-expanded="true">detail ▸</button>`;
+  if (!f) {
+    return `${toggle}<div class="idle"><b>Nothing selected.</b>Click a row, or press <kbd>j</kbd> to start at the top of the queue.</div>`;
+  }
+  const d = C.state.decisions.get(f.id);
+  const i = flat.indexOf(f);
+  return `${toggle}
+  <div class="rhead">
+    <div class="line">${C.confHTML(f)} ${C.subjHTML(f)} ${C.kindHTML(f)}<span class="pos">${i + 1} of ${flat.length}</span></div>
+    <h2>${C.esc(f.subject.title || f.ruleTitle)}</h2>
+    <div class="decide">
+      <button class="yes" data-act="accept" data-id="${C.esc(f.id)}" aria-pressed="${d === 'accept'}">✓ Accept</button>
+      <button class="no" data-act="reject" data-id="${C.esc(f.id)}" aria-pressed="${d === 'reject'}">✗ Reject</button>
+    </div>
+    <div class="step">
+      <button data-step="-1">↑ previous</button>
+      <button data-step="1">next ↓</button>
+    </div>
+  </div>
+  ${C.detailHTML(f)}`;
+}
+
+function render() {
+  const groups = C.view(findings);
+  flat = groups.flatMap((g) => (C.state.collapsed.has(g.rule) ? [] : g.items));
+  if (C.state.cursor && !flat.some((f) => f.id === C.state.cursor)) C.state.cursor = null;
+
+  const th = (key, label, plain = false) =>
+    `<th${plain ? ' class="plain"' : ` data-sortby="${key}"`}>${label}${C.state.sort === key ? ' <span class="dir">↓</span>' : ''}</th>`;
+
+  tableEl.innerHTML = flat.length || groups.length
+    ? `<table class="tbl">
+      <colgroup><col class="c-act"><col class="c-conf"><col class="c-subj"><col class="c-title"><col><col class="c-kind"></colgroup>
+      <thead><tr>
+        ${th('', 'decide', true)}${th('confidence', 'conf')}${th('issue', 'which issue')}${th('rule', 'title')}${th('', 'what changes', true)}${th('kind', 'kind')}
+      </tr></thead>
+      <tbody>${groups.map((g) => (g.rule ? groupHTML(g) : g.items.map(rowHTML).join(''))).join('')}</tbody>
+    </table>`
+    : '<div class="empty"><b>Nothing matches.</b>Loosen a filter, or clear the search.</div>';
+
+  meterEl.innerHTML = C.meterHTML(findings);
+  trayEl.innerHTML = C.trayHTML();
+  railEl.innerHTML = railHTML();
+}
+
+function move(step) {
+  if (!flat.length) return;
+  const i = flat.findIndex((f) => f.id === C.state.cursor);
+  C.state.cursor = flat[Math.max(0, Math.min(flat.length - 1, i < 0 ? 0 : i + step))].id;
+  render();
+  document.querySelector('tr.fnd.cursor')?.scrollIntoView({ block: 'nearest' });
+}
+
+document.querySelector('.shell').addEventListener('click', (e) => {
+  const act = e.target.closest('[data-act]');
+  if (act) { C.setDecision(act.dataset.id, act.dataset.act); C.state.cursor = act.dataset.id; render(); return; }
+  const gact = e.target.closest('[data-gact]');
+  if (gact) {
+    const g = C.view(findings).find((x) => x.rule === gact.dataset.rule);
+    if (g) C.setGroup(g.items, gact.dataset.gact);
+    render(); return;
+  }
+  const col = e.target.closest('[data-collapse]');
+  if (col) {
+    const r = col.dataset.collapse;
+    C.state.collapsed.has(r) ? C.state.collapsed.delete(r) : C.state.collapsed.add(r);
+    render(); return;
+  }
+  const step = e.target.closest('[data-step]');
+  if (step) { move(+step.dataset.step); return; }
+  const rt = e.target.closest('[data-rail-toggle]');
+  if (rt) {
+    const shell = document.querySelector('.shell');
+    shell.classList.toggle('rail-out');
+    rt.textContent = shell.classList.contains('rail-out') ? 'detail ◂' : 'detail ▸';
+    return;
+  }
+  const row = e.target.closest('tr.fnd');
+  if (row && !e.target.closest('a')) { C.state.cursor = row.dataset.id; render(); return; }
+  const sortBy = e.target.closest('[data-sortby]');
+  if (sortBy) { C.state.sort = sortBy.dataset.sortby; document.querySelector('[data-sort]').value = C.state.sort; render(); }
+});
+
+meterEl.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-jump]');
+  if (!t) return;
+  C.state.cursor = t.dataset.jump;
+  render();
+  document.querySelector(`tr.fnd[data-id="${CSS.escape(t.dataset.jump)}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+});
+
+C.wireSidebar(document.getElementById('side'), render);
+C.wireTray(trayEl, render);
+C.keys({
+  move,
+  decide(d) { if (C.state.cursor) { C.setDecision(C.state.cursor, d); render(); move(1); } },
+  undo() { if (C.state.cursor) { C.state.decisions.delete(C.state.cursor); render(); } },
+  enter() { move(1); },
+  escape() { C.state.cursor = null; render(); },
+});
+
+render();
+</script>
+</body>
+</html>
