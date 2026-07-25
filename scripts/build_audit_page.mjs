@@ -446,7 +446,9 @@ tr.ap-row.settled .ap-acts { display: none; }
 tr.ap-row.working > td:first-child { box-shadow: inset 3px 0 0 var(--accent-bright); }
 .ap-clip { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ap-c-title .ap-clip { color: var(--muted); }
-.ap-subj { font: 500 .74rem/1.4 var(--mono); text-decoration: none; white-space: nowrap; }
+.ap-c-subj { overflow: hidden; }
+.ap-subj { display: block; font: 500 .74rem/1.4 var(--mono); text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ap-acts { display: flex; gap: .15rem; }
 .ap-act { width: 1.45rem; height: 1.45rem; display: grid; place-items: center; cursor: pointer; padding: 0;
   background: var(--card); border: 1px solid var(--rule); border-radius: 5px; color: var(--faint);
@@ -506,6 +508,7 @@ tr.ap-row.working > td:first-child { box-shadow: inset 3px 0 0 var(--accent-brig
 @keyframes ap-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .ap-spin { animation: none; } }
 .audit-btn { cursor: pointer; font-family: var(--mono); }
+footer.site code { background: rgba(245, 237, 228, .12); border-color: #46301f; color: var(--side-ink); }
 
 /* folds under the table: activity (D4) and the rule reference (D6) */
 .ap-fold { margin: 1.1rem 0 0; border-top: 1px solid var(--rule); padding-top: .5rem; }
