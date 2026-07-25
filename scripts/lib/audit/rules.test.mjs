@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RULES, RULE_BY_ID, hardWrapped } from './rules.mjs';
-import { boardIndex, parentIndex } from './snapshot.mjs';
+import { boardIndex, parentIndex, CONTROL_LABELS } from './snapshot.mjs';
 import { runRules, reconcile, fingerprint, MUTE_DAYS } from './engine.mjs';
 
 const HUB = 'jwildfire/obot.roadmap';
@@ -199,6 +199,21 @@ test('GOALLESS-REQUIREMENT: a requirement under a goal does not fire', () => {
   const snap = snapshot({ issues: [goal, issue(35), issue(36)] });
   const found = fire('GOALLESS-REQUIREMENT', snap);
   assert.deepEqual(found.map((f) => f.subject.number), [36]);
+});
+
+// The audit must not audit its own control plane: a decision issue is unlabelled,
+// parentless and off the board by design, so UNTRACKED-TASK would flag every
+// accept click. Caught live on decision #100.
+test('control-plane issues are excluded from the snapshot entirely', () => {
+  const decision = { id: 'I_100', number: 100, title: 'audit: accept 5 findings',
+    labels: { nodes: [{ name: 'audit-decision' }] } };
+  const real = { id: 'I_81', number: 81, title: 'Close out the fork', labels: { nodes: [] } };
+  assert.deepEqual(
+    [decision, real].filter((i) => !i.labels.nodes.some((l) => CONTROL_LABELS.includes(l.name))).map((i) => i.number),
+    [81],
+    'audit-decision issues must never reach the rules',
+  );
+  assert.ok(CONTROL_LABELS.includes('audit-decision'));
 });
 
 test('UNTRACKED-TASK: unlabelled, unparented, off-board issues only', () => {

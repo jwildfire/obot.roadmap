@@ -25,6 +25,14 @@ const [OWNER, NAME] = HUB.split('/');
 export const PROJECT_NUMBER = 1;
 export const MERGED_PR_WINDOW_DAYS = 21;
 
+// The audit's own control plane is not roadmap content. A decision issue is a
+// button press in issue form: unlabelled, parentless and off the board by design,
+// which is exactly the shape UNTRACKED-TASK is built to flag. Left in, every
+// accept click would file a finding about itself — and one that outlives its
+// decision if the apply lane ever fails before closing the issue. Excluded here
+// rather than in one rule so no future rule inherits the problem.
+export const CONTROL_LABELS = ['audit-decision'];
+
 // ------------------------------------------------------------------ hub issues
 const ISSUES_QUERY = `
 query ($owner: String!, $name: String!, $cursor: String) {
@@ -58,7 +66,7 @@ async function readIssues() {
     if (!conn.pageInfo.hasNextPage) break;
     cursor = conn.pageInfo.endCursor;
   }
-  return nodes.map((i) => ({
+  return nodes.filter((i) => !i.labels.nodes.some((l) => CONTROL_LABELS.includes(l.name))).map((i) => ({
     nodeId: i.id,
     repo: HUB,
     number: i.number,
