@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit view redesign — three ways to clear the queue (2026-07-25)</title>
+<link rel="stylesheet" href="assets/audit.css">
+<style>
+  /* The overview is a reading page; the three prototypes are the working ones. */
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 1.4rem 1.25rem 5rem; }
+  .kicker { font: 500 .72rem/1.5 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+  h1.big { margin: .25rem 0 .3rem; font: 400 2.5rem/1.06 var(--serif); letter-spacing: -.01em; }
+  .standfirst { margin: 0 0 .5rem; font-size: 1.05rem; color: var(--muted); max-width: 44rem; }
+  .byline { font: 400 .75rem/1.6 var(--mono); color: var(--faint); margin: .4rem 0 0; }
+  h2 { margin: 2.1rem 0 .5rem; font: 400 1.55rem/1.15 var(--serif); }
+  h2 + .lede { margin-top: -.2rem; color: var(--muted); }
+  h3 { margin: 1.2rem 0 .3rem; font: 400 1.15rem/1.2 var(--serif); }
+  p { max-width: 44rem; }
+  .rule-line { border: 0; border-top: 1px solid var(--rule); margin: 2.2rem 0 0; }
+
+  /* before / after */
+  .cmp { border: 1px solid var(--rule); border-radius: 10px; background: var(--card); padding: .8rem .9rem; margin: .9rem 0; }
+  .cmp .m { margin: .55rem 0; }
+  .cmp .m:first-child { margin-top: 0; }
+  .cmp .lab { font: 500 .7rem/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .bar { display: flex; align-items: center; gap: .5rem; margin: .12rem 0; }
+  .bar .fill { height: .85rem; border-radius: 0 3px 3px 0; }
+  .bar .fill.now { background: var(--faint); }
+  .bar .fill.new { background: var(--accent); }
+  .bar .v { font: 500 .74rem/1.4 var(--mono); color: var(--ink); white-space: nowrap; }
+  .bar .who { font: 400 .72rem/1.4 var(--mono); color: var(--muted); width: 7.5rem; flex: none; text-align: right; }
+  .cmp .note { margin: .5rem 0 0; font-size: .8rem; color: var(--faint); }
+
+  /* anatomy of a row */
+  .anat { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; margin: .9rem 0; background: var(--card); }
+  .anat table { margin: 0; }
+  .anat .cap { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: .1rem .8rem;
+    padding: .6rem .7rem .7rem; background: var(--panel); border-top: 1px solid var(--rule); }
+  .anat .cap div { font-size: .78rem; color: var(--muted); }
+  .anat .cap b { display: block; font: 600 .64rem/1.6 var(--mono); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent); }
+
+  /* option cards */
+  .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: .9rem; margin: 1rem 0; }
+  .opt-card { border: 1px solid var(--rule); border-radius: 12px; background: var(--card); padding: .85rem .9rem 1rem;
+    display: flex; flex-direction: column; }
+  .opt-card.pick { border-color: var(--accent-bright); box-shadow: 0 8px 24px rgba(249, 115, 22, .1); }
+  .opt-card .tag { font: 500 .66rem/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+  .opt-card h3 { margin: .1rem 0 .3rem; font-size: 1.25rem; }
+  .opt-card p { font-size: .86rem; margin: 0 0 .5rem; }
+  .opt-card dl { margin: .2rem 0 .7rem; font-size: .82rem; }
+  .opt-card dt { font: 600 .62rem/1.6 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-top: .35rem; }
+  .opt-card dd { margin: 0; color: var(--muted); }
+  .opt-card .go { margin-top: auto; display: inline-block; text-align: center; text-decoration: none;
+    background: var(--accent); color: #fff; border-radius: 7px; padding: .4rem .7rem; font: 600 .82rem/1.3 var(--sans); }
+  .opt-card .go:hover { background: var(--accent-bright); color: var(--side-bg); }
+
+  /* mini wireframes — the layout in 3 rectangles */
+  .wire { display: flex; gap: 3px; height: 4.6rem; margin: .1rem 0 .6rem; }
+  .wire div { border-radius: 3px; background: var(--panel); border: 1px solid var(--rule); }
+  .wire .s { width: 18%; background: var(--rule-soft); }
+  .wire .m { flex: 1 1 auto; background:
+    repeating-linear-gradient(to bottom, var(--card) 0 5px, var(--rule-soft) 5px 6px); }
+  .wire .d { width: 30%; background: var(--card); border-color: var(--accent-bright); }
+  .wire .m.split { background:
+    repeating-linear-gradient(to bottom, var(--card) 0 5px, var(--rule-soft) 5px 6px); }
+  .wire .m.rulehead { background:
+    linear-gradient(to bottom, var(--warn-bg) 0 42%, var(--card) 42% 100%); }
+
+  table.grid { width: 100%; border-collapse: collapse; margin: .8rem 0; background: var(--card); font-size: .84rem; }
+  table.grid th, table.grid td { border: 1px solid var(--rule); padding: .4rem .55rem; text-align: left; vertical-align: top; }
+  table.grid th { background: var(--panel); font: 600 .64rem/1.6 var(--mono); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); }
+  table.grid td.d { font: 500 .74rem/1.5 var(--mono); color: var(--accent); white-space: nowrap; }
+  table.grid tr.rec td { background: #fffdf8; }
+
+  .decided { border: 1px solid var(--good-line); background: var(--good-bg); border-radius: 10px;
+    padding: .65rem .85rem; margin: 1.1rem 0 0; max-width: 46rem; }
+  .decided .dl { font: 600 .66rem/1.6 var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--good); }
+  .decided p { margin: .15rem 0 0; font-size: .88rem; }
+  .mono { font-family: var(--mono); font-size: .88em; }
+  ul.plain { padding-left: 1.1rem; max-width: 44rem; }
+  ul.plain li { margin: .25rem 0; font-size: .92rem; }
+  .callout { border-left: 3px solid var(--accent-bright); background: var(--card); border-radius: 0 8px 8px 0;
+    padding: .6rem .8rem; margin: .9rem 0; max-width: 46rem; }
+  .callout p { margin: 0; }
+  .callout p + p { margin-top: .4rem; }
+  footer.rep { margin-top: 2.5rem; padding-top: .9rem; border-top: 1px solid var(--rule);
+    font: 400 .76rem/1.7 var(--mono); color: var(--faint); }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <a class="brand" href="index.html">🍊😺 obot</a>
+  <span class="opt">Audit view redesign</span>
+  <span class="stamp">2026-07-25 · design prototypes</span>
+  <nav class="switch">
+    <a href="index.html" class="here">Overview</a>
+    <a href="option-ledger.html">A Ledger</a>
+    <a href="option-rail.html">B Rail</a>
+    <a href="option-sweep.html">C Sweep</a>
+    <a href="https://jwildfire.github.io/obot.roadmap/audit/" target="_blank" rel="noopener">live page ↗</a>
+  </nav>
+</header>
+
+<div class="wrap">
+
+<div class="kicker">Audit view · design prototypes</div>
+<h1 class="big">Thirty-three decisions,<br>one screen</h1>
+<p class="standfirst">The audit page reads well and decides badly. Three working prototypes turn the same findings into a table you can clear in a sitting — each takes a different position on where the reasoning goes when the rows get short.</p>
+<p class="byline">Driven by the real ledger the nightly audit committed on 2026-07-25 — 33 live findings, 1 muted, 22 rules · decisions are held in the browser tab and nothing is sent to GitHub · companion to requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/109">#109</a> and PR <a href="https://github.com/jwildfire/obot.roadmap/pull/110">#110</a>, which is on hold pending this</p>
+
+<div class="decided">
+  <div class="dl">Decided 2026-07-25 by @jwildfire</div>
+  <p><b>Option B ships</b>, and <b>a click dispatches immediately</b> — the two answers that unblock <a href="https://github.com/jwildfire/obot.roadmap/pull/110">PR #110</a>. D3–D6 went to the recommendation in each case. The table below records all six. One consequence: the prototypes stage decisions and print the request; the shipped view will not — every ✓ fires a run as it is clicked, and a rule band still sends one request carrying all of its ids.</p>
+</div>
+
+<h2>What is wrong with the page today</h2>
+<p class="lede">Not the content — the format. Every finding is a card carrying its own copy of the rule's reasoning, so the page is written for a first read and paid for on every read after that.</p>
+
+<div class="cmp">
+  <div class="m">
+    <div class="lab">Height of the queue</div>
+    <div class="bar"><span class="who">live page</span><span class="fill now" style="width: 74%"></span><span class="v">7,646 px — 9.3 screens</span></div>
+    <div class="bar"><span class="who">prototype</span><span class="fill new" style="width: 16%"></span><span class="v">1,682 px — 2.0 screens</span></div>
+  </div>
+  <div class="m">
+    <div class="lab">Vertical space per finding</div>
+    <div class="bar"><span class="who">live page</span><span class="fill now" style="width: 74%"></span><span class="v">125 px card</span></div>
+    <div class="bar"><span class="who">prototype</span><span class="fill new" style="width: 18%"></span><span class="v">31 px row</span></div>
+  </div>
+  <div class="m">
+    <div class="lab">Findings you can see at once</div>
+    <div class="bar"><span class="who">live page</span><span class="fill now" style="width: 18%"></span><span class="v">4</span></div>
+    <div class="bar"><span class="who">prototype</span><span class="fill new" style="width: 74%"></span><span class="v">16</span></div>
+  </div>
+  <p class="note">Measured in Chrome at 1480 × 812 on the deployed page and on Option A with the same 33 findings. The live page also carries 2,883 words and 77 buttons before you have decided anything.</p>
+</div>
+
+<p>The deeper problem is repetition. Ten of the thirteen rules that fired propose the <em>same</em> change for every finding they produce — eight identical "Assign @jwildfire", three identical "Set board Status to Released". The page asks the question 33 times when there are really 13 questions and a handful of exceptions.</p>
+
+<h2>What all three prototypes share</h2>
+<p class="lede">The forks below are about where the <em>why</em> lives. Everything else is settled and identical across the three.</p>
+
+<div class="anat">
+  <table class="tbl">
+    <colgroup><col style="width:4.1rem"><col style="width:5.4rem"><col style="width:8.3rem"><col style="width:28%"><col><col style="width:6.2rem"><col style="width:1.8rem"></colgroup>
+    <thead><tr><th class="plain">decide</th><th class="plain">conf</th><th class="plain">which issue</th><th class="plain">title</th><th class="plain">what changes</th><th class="plain">kind</th><th class="plain"></th></tr></thead>
+    <tbody><tr class="fnd">
+      <td><span class="acts"><button class="act yes" aria-pressed="false" tabindex="-1" title="Illustration — the working table is in the options below">✓</button><button class="act no" aria-pressed="false" tabindex="-1" title="Illustration — the working table is in the options below">✗</button></span></td>
+      <td><span class="conf medium"><span class="dots" aria-hidden="true">●●○</span><span class="w">medium</span></span></td>
+      <td><a class="subj" href="https://github.com/jwildfire/obot.roadmap/issues/17">roadmap#17</a></td>
+      <td><span class="title">Requirement: rebuild safety.agent as a thin overlay…</span></td>
+      <td><span class="what">Resolve each open sub-issue: close the finished ones…</span></td>
+      <td><span class="pill judg">judgment</span></td>
+      <td><button class="exp" tabindex="-1">▸</button></td>
+    </tr></tbody>
+  </table>
+  <div class="cap">
+    <div><b>decide</b>✓ applies · ✗ mutes for 60 days</div>
+    <div><b>conf</b>rank as dots and a word, never colour alone</div>
+    <div><b>which issue</b>the subject, linked to GitHub</div>
+    <div><b>title</b>what the issue is, truncated</div>
+    <div><b>what changes</b>the proposal in the audit's own words</div>
+    <div><b>kind</b>a listed operation, or a bounded agent</div>
+    <div><b>▸</b>the why: rule, evidence, exact operation or prompt</div>
+  </div>
+</div>
+
+<ul class="plain">
+  <li><b>A rule band with ✓ / ✗ for all of it.</b> Rules group the table; the band decides every finding under it in one click, and reports <span class="mono">3/8 decided</span> when you have only touched some.</li>
+  <li><b>A collapsible sidebar</b> carrying search, sorts (confidence, rule, issue, age, runs, kind), facets for confidence / kind / rule group / repository / decided-state, and three saved sweeps — the useful one being <em>high confidence, mechanical, undecided</em>, which is the batch you can clear without reading.</li>
+  <li><b>Staged decisions and one Apply</b> — <em>superseded by D2</em>. In the prototypes nothing dispatches: the tray counts what is staged and <em>Apply</em> prints the exact <span class="mono">repository_dispatch</span> body. The shipped view fires each click instead; the tray comes out.</li>
+  <li><b>A queue meter</b> above the table: one tick per finding in table order, filled as you decide, hover to identify, click to jump. Progress and minimap in the same object.</li>
+  <li><b>Keyboard triage.</b> <span class="mono">j</span>/<span class="mono">k</span> move, <span class="mono">a</span> accept, <span class="mono">x</span> reject, <span class="mono">u</span> undo, <span class="mono">enter</span> details, <span class="mono">/</span> search. Deciding advances to the next row, so a clean sweep is <span class="mono">a a a x a</span>.</li>
+</ul>
+
+<h2>Three options</h2>
+<p class="lede">They differ on one question: when a row is 31 pixels tall, where does the reasoning go?</p>
+
+<div class="opts">
+
+  <div class="opt-card">
+    <span class="tag">Option A</span>
+    <h3>Ledger</h3>
+    <div class="wire"><div class="s"></div><div class="m"></div></div>
+    <p>One table for the whole queue, rule bands inside it, and details opening in place under the row they belong to.</p>
+    <dl>
+      <dt>best at</dt><dd>seeing the entire queue at once and deciding without moving</dd>
+      <dt>costs</dt><dd>an open detail pushes the rows below it down; reading several in a row is jumpy</dd>
+      <dt>try</dt><dd>the <em>safe sweep</em>, then ✓ on the ASSIGNEE-MISSING band</dd>
+    </dl>
+    <a class="go" href="option-ledger.html">Open Option A →</a>
+  </div>
+
+  <div class="opt-card pick">
+    <span class="tag">Option B · chosen</span>
+    <h3>Rail</h3>
+    <div class="wire"><div class="s"></div><div class="m split"></div><div class="d"></div></div>
+    <p>The same table, but it never changes shape. The selected row fills a rail on the right — arrow down the list and the reasoning follows you.</p>
+    <dl>
+      <dt>best at</dt><dd>the 15 judgment calls, where you must read a paragraph before deciding</dd>
+      <dt>costs</dt><dd>25rem of width, one finding at a time, and it collapses on a laptop screen</dd>
+      <dt>try</dt><dd>press <span class="mono">j</span> repeatedly and read down the queue</dd>
+    </dl>
+    <a class="go" href="option-rail.html">Open Option B →</a>
+  </div>
+
+  <div class="opt-card">
+    <span class="tag">Option C</span>
+    <h3>Sweep</h3>
+    <div class="wire"><div class="s"></div><div class="m rulehead"></div></div>
+    <p>The rule is the unit of work. Its reasoning is stated once, the batch decision is the primary button, and the rows underneath exist for exceptions.</p>
+    <dl>
+      <dt>best at</dt><dd>turning 33 decisions into 13, in the order the rules fired</dd>
+      <dt>costs</dt><dd>no view of the whole queue; 13 page states instead of one</dd>
+      <dt>try</dt><dd><em>Accept all 3</em>, then <em>next rule ▸</em>, four times</dd>
+    </dl>
+    <a class="go" href="option-sweep.html">Open Option C →</a>
+  </div>
+</div>
+
+<h2>What I recommended</h2>
+<p class="lede">Kept for the record. D1 went to B on its own rather than as a toggle on A.</p>
+
+<div class="callout">
+  <p><b>Option A, with B's rail as a toggle rather than a rival.</b> A and B are the same build — the same table, the same bands, the same sidebar — differing only in whether <span class="mono">detail</span> renders under the row or beside it. That is a preference, not an architecture, so it should be a control on the page and not a decision made once for you. Default to the rail on a wide screen, because 15 of 33 findings are judgment calls that need a paragraph read before they are decidable, and fall back to inline expansion below 76rem where the rail does not fit.</p>
+  <p><b>Take one idea from C immediately.</b> When every finding under a rule proposes the identical change — ten of thirteen rules today — the band should say so once: <span class="mono">all 8 · Assign @jwildfire</span>. That single line is where most of the remaining reading disappears, and it turns the band's ✓ from a bulk action into an informed one.</p>
+  <p><b>Do not ship C first.</b> Its wizard is genuinely faster on a queue like tonight's, but it hides the queue: you cannot see that 13 high-confidence findings are one click away, and a rule you never step to is a rule you never decide. Worth revisiting once the compact view has been lived with for a week — it is a mode, not a replacement.</p>
+</div>
+
+<h2>The six decisions, settled</h2>
+<p class="lede">Asked and answered on 2026-07-25. Every one went to the recommendation.</p>
+<table class="grid">
+  <tr><th>#</th><th>Question</th><th>Decided</th><th>Why</th></tr>
+  <tr class="rec"><td class="d">D1</td><td>Which view ships on <span class="mono">/audit/</span>?</td><td><b>Option B · Rail</b></td><td>The table never changes shape and the reasoning follows the selection — the 15 judgment calls are the ones that cost time</td></tr>
+  <tr class="rec"><td class="d">D2</td><td>Dispatch per click, or stage?</td><td><b>Per click</b></td><td>A decision leaves the browser when it is made; the tray and its payload preview come out. A rule band is still one request, because the payload carries a list of ids</td></tr>
+  <tr class="rec"><td class="d">D3</td><td>May ✗ at the rule band mute a whole rule?</td><td><b>Yes, confirm above 3</b></td><td>1–3 fires straight away; 4 or more names the count and the mute date first. Accept-all never confirms — an accept is visible the next morning, a mute is invisible for 60 days</td></tr>
+  <tr class="rec"><td class="d">D4</td><td>Where does #109's activity log live?</td><td><b>A fold under the table</b></td><td>Read after deciding, not during, so it never competes with the queue for vertical space</td></tr>
+  <tr class="rec"><td class="d">D5</td><td>Default sort and grouping</td><td><b>Grouped by rule, worst first</b></td><td>The prototype default, kept</td></tr>
+  <tr class="rec"><td class="d">D6</td><td>What happens to the long-form view?</td><td><b>Rule reference only</b></td><td>The per-finding cards go; the 22-rule table and the quiet-rules list stay, because an empty audit and a broken one must never look alike</td></tr>
+  <tr class="rec"><td class="d">D7</td><td>What the page shows between the click and the outcome</td><td><b>Row pill + one run panel</b></td><td>The row reads sending → queued → running → ✓ applied; a panel under the toolbar holds the run link and the outcome re-read from <span class="mono">decisions.json</span> — the page reports what the lane recorded, not what the click asked for</td></tr>
+</table>
+
+<h2>What this means for PR #110</h2>
+<p>The backend survives intact: <span class="mono">repository_dispatch</span>, the re-validation against a fresh audit, the ledger, the run polling. What changes is only the surface calling it: the card list becomes Option B’s table and rail, the accept and reject buttons move onto the row and the rule band, and the run reporting the PR already built stays as it is (D7). The connect-once token flow is untouched. D2 kept per-click dispatch, so the tray and its payload preview — the one behaviour these prototypes have that the shipped view will not — come out; a rule band sends a single request carrying all of its finding ids, which the lane already accepts.</p>
+
+<h2>What is not in the prototypes</h2>
+<ul class="plain">
+  <li><b>Nothing reaches GitHub.</b> No token, no dispatch, no run polling — <em>Apply</em> prints the request body it would send.</li>
+  <li><b>The data is a snapshot</b> of <span class="mono">site/audit/findings.json</span> as committed at 09:16 UTC on 2026-07-25, so the three options stay comparable while the nightly moves on.</li>
+  <li><b>Light theme only</b>, matching the site. Every colour is a token and no component hard-codes white or black, so a dark block can be added without touching a component.</li>
+  <li><b>The activity log is not rendered</b> — see D4. Prior decisions on a finding do appear in its detail, from the real <span class="mono">decisions.json</span>.</li>
+  <li><b>Small screens are roughed in, not designed.</b> The rail and the sidebar collapse; the table itself still wants width.</li>
+</ul>
+
+<hr class="rule-line">
+<footer class="rep">
+  Prototypes and this page written for requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/109">#109</a> ·
+  data from the nightly audit (<a href="https://github.com/jwildfire/obot.roadmap/blob/main/scripts/lib/audit/rules.mjs">rules.mjs</a>, run 30152542604) ·
+  the page being redesigned is <a href="https://jwildfire.github.io/obot.roadmap/audit/">/audit/</a>, built by <a href="https://github.com/jwildfire/obot.roadmap/blob/main/scripts/build_audit_page.mjs">build_audit_page.mjs</a> ·
+  provenance in <a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/audit-view-redesign-2026-07-25/README.md">README.md</a>
+  <br>Drafted by Claude Code using Opus 5 for @jwildfire · nothing here is filed or applied
+</footer>
+
+</div>
+</body>
+</html>
