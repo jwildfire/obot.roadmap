@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Session report 2026-07-24-3 · obot</title>
+<style>
+  :root {
+    --ground:#faf8f5; --panel:#fff; --panel-2:#f3f0eb; --ink:#26221c; --ink-2:#5c564c;
+    --ink-3:#8a8378; --line:#e4dfd6; --accent:#c2540a; --accent-ink:#a34406; --accent-tint:#faeadd;
+    --good:#1a7f4b; --good-tint:#e2f2e8; --warn:#8a6100; --warn-tint:#f7ecd0;
+    --idle:#6b7280; --idle-tint:#ecebe7; --bad:#b3261e; --bad-tint:#f9e4e2;
+    --agent-orange:#d97706; --agent-green:#1a7f4b; --agent-pink:#d0459b; --agent-blue:#2563eb;
+    --agent-purple:#7c3aed; --agent-none:#9a938a;
+    --shadow:0 1px 2px rgba(38,34,28,.05),0 4px 14px rgba(38,34,28,.04);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#191712; --panel:#211e18; --panel-2:#2a2620; --ink:#ece7dd; --ink-2:#b3aa9b;
+      --ink-3:#7d7568; --line:#363129; --accent:#f08c3e; --accent-ink:#f3a163; --accent-tint:#38281a;
+      --good:#58c389; --good-tint:#1d3227; --warn:#e3b341; --warn-tint:#362d17;
+      --idle:#9aa2ad; --idle-tint:#2b2925; --bad:#e5736c; --bad-tint:#3a201e;
+      --agent-orange:#f59e0b; --agent-green:#58c389; --agent-pink:#ec6cb9; --agent-blue:#60a5fa;
+      --agent-purple:#a78bfa; --agent-none:#857d71; --shadow:none;
+    }
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:14px;
+         line-height:1.5; margin:0; padding:24px 20px 48px; }
+  a { color:var(--accent-ink); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  code { font-family:var(--mono); font-size:.9em; background:var(--panel-2); border-radius:4px; padding:0 4px; }
+  .wrap { max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+  header { display:flex; flex-direction:column; gap:10px; }
+  .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); }
+  .masthead { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  h1 { font-size:26px; font-weight:650; margin:0; letter-spacing:-.01em; }
+  h1 .ws { color:var(--ink-3); font-weight:400; }
+  .header-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .mode { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden;
+          font-family:var(--mono); font-size:11.5px; }
+  .mode span { padding:4px 12px; color:var(--ink-3); }
+  .mode .on { background:var(--accent-tint); color:var(--accent-ink); font-weight:600; }
+  .stamp { font-family:var(--mono); font-size:11.5px; color:var(--ink-3); }
+  .banner { display:flex; align-items:center; gap:10px; background:var(--warn-tint); color:var(--warn);
+            border:1px solid color-mix(in srgb,var(--warn) 30%,transparent); border-radius:8px;
+            padding:9px 14px; font-size:13px; font-weight:500; }
+  .banner.ok { background:var(--good-tint); color:var(--good); border-color:color-mix(in srgb,var(--good) 30%,transparent); }
+  .banner .dot { flex:none; width:8px; height:8px; border-radius:50%; background:currentColor; }
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .tile { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
+          padding:14px 16px 12px; display:flex; flex-direction:column; gap:2px; }
+  .tile .label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+  .tile .value { font-size:27px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .tile .value small { font-size:15px; font-weight:500; color:var(--ink-3); }
+  .tile .sub { font-size:12px; color:var(--ink-2); }
+  .grid { display:grid; grid-template-columns:1.15fr 1fr; gap:16px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
+  .panel-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+                padding:12px 16px 10px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .panel-head h2 { font-size:14px; font-weight:650; margin:0; display:inline-flex; align-items:center; gap:6px; }
+  .src { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .panel-body { padding:12px 16px 14px; display:flex; flex-direction:column; gap:8px; }
+  .group-label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+                 color:var(--ink-3); padding:6px 0 2px; }
+
+  /* drill-downs */
+  summary { cursor:pointer; }
+  summary::-webkit-details-marker { display:none; }
+  summary { list-style:none; }
+  .tw { flex:none; display:inline-block; font-size:10px; color:var(--ink-3); transition:transform .12s ease; width:10px; }
+  details[open] > summary .tw { transform:rotate(90deg); }
+  .drill { padding:8px 4px 6px 26px; font-size:12.5px; color:var(--ink-2); display:flex; flex-direction:column; gap:7px; }
+
+  /* priorities */
+  details.pri > summary { display:flex; align-items:center; gap:8px; padding:4px 0; min-width:0; }
+  details.pri.is-done .crop { color:var(--ink-3); text-decoration:line-through; }
+  .box { flex:none; width:14px; height:14px; border-radius:4px; border:1.5px solid var(--ink-3); position:relative; }
+  .box.none { border-style:dotted; }
+  .box.done { background:var(--good); border-color:var(--good); }
+  .box.done::after { content:""; position:absolute; left:4px; top:1px; width:3px; height:7px;
+                     border:solid var(--panel); border-width:0 2px 2px 0; transform:rotate(40deg); }
+  .num { font-family:var(--mono); font-size:11.5px; color:var(--ink-3); flex:none; min-width:14px; text-align:right; }
+  .crop { flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; }
+  .chips { flex:none; display:inline-flex; gap:4px; max-width:45%; overflow:hidden; }
+  .prose-line { margin:0; font-size:12px; color:var(--ink-3); }
+
+  /* agent↔priority chips */
+  .agchip { font-family:var(--mono); font-size:10px; border-radius:999px; padding:1px 7px; white-space:nowrap;
+            color:var(--c); border:1px solid color-mix(in srgb, var(--c) 55%, transparent);
+            background:color-mix(in srgb, var(--c) 10%, transparent);
+            max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+  .pchip { font-family:var(--mono); font-size:10px; border-radius:999px; padding:1px 7px; white-space:nowrap;
+           color:var(--accent-ink); border:1px solid var(--line); background:var(--accent-tint); }
+
+  /* agents */
+  .agents { display:flex; flex-direction:column; gap:6px; }
+  details.agent { border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+  details.agent > summary { display:flex; align-items:center; gap:8px; padding:8px 10px; min-width:0; }
+  details.agent > .drill { padding:2px 12px 10px 28px; }
+  .agent-dot { flex:none; width:9px; height:9px; border-radius:50%; }
+  .agent-name { font-family:var(--mono); font-size:12.5px; font-weight:600; overflow:hidden;
+                text-overflow:ellipsis; white-space:nowrap; flex:1 1 auto; min-width:0; }
+  .agent-fullname { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .pill { margin-left:auto; flex:none; display:inline-flex; align-items:center; gap:5px;
+          font-size:11px; font-weight:600; border-radius:999px; padding:2px 9px; }
+  .pill i { font-style:normal; font-size:10px; }
+  .pill.working { background:var(--good-tint); color:var(--good); }
+  .pill.blocked { background:var(--warn-tint); color:var(--warn); }
+  .pill.failed { background:var(--bad-tint); color:var(--bad); }
+  .pill.done, .pill.idle { background:var(--idle-tint); color:var(--idle); }
+  .agent-detail { font-size:12px; color:var(--ink-2); }
+  .agent-meta { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:11px;
+                color:var(--ink-3); font-variant-numeric:tabular-nums; flex-wrap:wrap; }
+  .tokbar { flex:1 1 60px; min-width:50px; max-width:120px; height:4px; border-radius:2px; background:var(--panel-2); overflow:hidden; }
+  .tokbar b { display:block; height:100%; border-radius:2px; }
+  .agent-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .refchip { font-family:var(--mono); font-size:11px; white-space:nowrap; background:var(--panel-2);
+             border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--accent-ink); }
+
+  /* accomplishments */
+  .accomplish { border-color:color-mix(in srgb, var(--good) 35%, var(--line)); }
+  .acc-row { display:flex; align-items:baseline; gap:8px; font-size:13px; min-width:0; }
+  .acc-row time { font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  .crop-inline { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .closed-badge { flex:none; font-size:11px; font-weight:600; color:var(--good); background:var(--good-tint);
+                  border-radius:999px; padding:1px 8px; }
+  .ev { flex:none; font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  details.acc-more > summary { display:flex; align-items:center; gap:8px; font-size:13px; padding:2px 0; }
+
+  /* collapsed secondary panels */
+  details.fold > summary.panel-head { border-bottom:none; }
+  details.fold[open] > summary.panel-head { border-bottom:1px solid var(--line); }
+
+  ul.todo { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .todo li { display:flex; gap:10px; align-items:baseline; font-size:13px; }
+  .todo li .box { align-self:flex-start; margin-top:3px; }
+  .todo .txt { min-width:0; }
+  .todo li.is-done .txt { color:var(--ink-3); text-decoration:line-through; }
+  .todo time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; }
+  .feed { display:flex; flex-direction:column; }
+  .evt { display:flex; gap:12px; align-items:baseline; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .evt:last-child { border-bottom:none; }
+  .evt time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; width:68px; }
+  .evt .txt { min-width:0; }
+  .repo { font-family:var(--mono); font-size:10.5px; border-radius:4px; padding:1px 6px;
+          background:var(--panel-2); border:1px solid var(--line); color:var(--ink-2); white-space:nowrap; }
+  .prose { font-size:13px; color:var(--ink-2); }
+  .prose div { margin-bottom:4px; }
+  .notice { font-family:var(--mono); font-size:11.5px; color:var(--warn); margin:0; }
+  .foot { font-family:var(--mono); font-size:11px; color:var(--ink-3); text-align:center; }
+  @media (max-width:940px) { .grid { grid-template-columns:1fr; } .tiles { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">obot session hub · session report</div>
+  <div class="masthead">
+    <h1>Session 2026-07-24-3 <span class="ws">· obot2</span></h1>
+    <div class="header-meta">
+      <span class="mode"><span class="">● Live</span><span class="on">Report</span></span>
+      <span class="stamp">generated 10:02 PM</span>
+    </div>
+  </div>
+  <div class="banner ok"><span class="dot"></span>Session report — frozen at wrapup. 6 agents, 451.1k tokens, 17 closures/releases.</div>
+</header>
+
+<section class="tiles">
+  <div class="tile"><span class="label">Priorities</span><span class="value">4 <small>open · 6 done</small></span><span class="sub">scratchpad kickoff list</span></div>
+  <div class="tile"><span class="label">Agents</span><span class="value">6</span><span class="sub">1 working · 5 done</span></div>
+  <div class="tile"><span class="label">Tokens</span><span class="value">451.1k</span><span class="sub">across 6 reporting sessions</span></div>
+  <div class="tile"><span class="label">Closure</span><span class="value">17</span><span class="sub">7 merged · 10 closed · 0 released</span></div>
+</section>
+
+<section class="panel accomplish">
+  <div class="panel-head"><h2>Accomplishments</h2><span class="src">derived: releases + requirement issues + closures since session start</span></div>
+  <div class="panel-body"><div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/69">hub#69</a> <span class="crop-inline">Requirement: Reviewer Notes section in PR template</span> <span class="ev">opened</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/75">hub#75</a> <span class="crop-inline">Requirement: participant profile v2 — sidebar surfacing + AE domains</span> <span class="ev">opened</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/76">hub#76</a> <span class="crop-inline">Requirement: obot GitHub App avatar — Orange&#39;s photo</span> <span class="ev">opened</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/77">hub#77</a> <span class="crop-inline">Requirement: chat with the orchestrator from the live session dashboard</span> <span class="ev">opened</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/9">hub#9</a> <span class="crop-inline">Requirement: gsm.safety static safety charts from FDA ST&amp;F guidance</span> <span class="ev">updated</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/18">hub#18</a> <span class="crop-inline">Requirement: autonomous obot operations — scheduled and event-driven agent runs</span> <span class="ev">updated</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/35">hub#35</a> <span class="crop-inline">Requirement: nepExplorer migration — KDIGO kidney-safety explorer for safety.viz</span> <span class="ev">updated</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/37">hub#37</a> <span class="crop-inline">Requirement: QT Safety Explorer Phase 2 — QTcI, multi-interval, drill-down, hysteresis &amp; guided ICH-E14 workflow</span> <span class="ev">updated</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/38">hub#38</a> <span class="crop-inline">Requirement: Benefit-risk forest plot (safety-graphics suite)</span> <span class="ev">updated</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/39">hub#39</a> <span class="crop-inline">Requirement: Benefit-risk value tree (MCDA)</span> <span class="ev">updated</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/40">hub#40</a> <span class="crop-inline">Requirement: Recurrent AE analysis (beyond first occurrence)</span> <span class="ev">updated</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/74">hub#74</a> <span class="crop-inline">Requirement: keynote live demo — audience ideas implemented during the talk</span> <span class="ev">opened</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/61">hub#61</a> <span class="crop-inline">Requirement: reaction feedback and trigger reliability for the Ideas triage pipeline</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/58">hub#58</a> <span class="crop-inline">Requirement: ideas-triage v2 — stronger model, richer context, bias-to-promote</span> <span class="ev">updated</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/87">hub#87</a> <span class="crop-inline">Requirement: weekly goal review — freshness sweep proposing linkages, labels, and orphan candidates</span> <span class="ev">opened</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/71">hub#71</a> <span class="crop-inline">Requirement: goal issues — goals move from obot.agent files to hub issues</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/53">hub#53</a> <span class="crop-inline">Requirement: Goal pages in the hub</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/57">hub#57</a> <span class="crop-inline">Requirement: Roadmap homepage refactor</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/46">hub#46</a> <span class="crop-inline">Session framework: Remote Control on every agent; Claude Tag not viable</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/41">hub#41</a> <span class="crop-inline">Requirement: Shared view selector — always-visible view options across safety.viz renderers</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/36">hub#36</a> <span class="crop-inline">Requirement: QT Safety Explorer — ICH-E14 cardiac-safety renderer for safety.viz</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/28">hub#28</a> <span class="crop-inline">Requirement: gsm.safety v1.0 — full adoption of safety.viz v1.1</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/64">hub#64</a> <span class="crop-inline">Requirement: move safety.viz requirement matrix out of obot.agent</span> <span class="ev">updated</span></div>
+<details class="acc-more"><summary><span class="tw">▸</span>✅ <strong>7 PRs merged · 10 issues closed</strong></summary><div class="drill"><div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/43">obot.agent#43</a> <span class="crop-inline">Requirement matrices: AXIS rows for the axis-limit prefill (safety.viz#85)</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/safety.viz/pull/108">safety.viz#108</a> <span class="crop-inline">Axis-limit inputs load pre-filled with the data-driven defaults</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/pull/86">obot.roadmap#86</a> <span class="crop-inline">ideas-triage v2: Opus 5 orchestrator, context pack, bias-to-promote, reactions + cost footers (#58, #61)</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/44">obot.agent#44</a> <span class="crop-inline">session-hub: --emit-state + heartbeat publisher for the roadmap session indicator (#57)</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/45">obot.agent#45</a> <span class="crop-inline">Goals move to hub issues: registry.json replaces goal files (hub #53/#71)</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/46">obot.agent#46</a> <span class="crop-inline">Version the workspace hooks and add an installer</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/42">obot.agent#42</a> <span class="crop-inline">Session framework: Remote Control on every agent + idea-queue intake (session-inbox)</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/safety.viz/issues/85">safety.viz#85</a> <span class="crop-inline">Axis-limit inputs should load pre-filled with the current data-driven defaults</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/issues/61">obot.roadmap#61</a> <span class="crop-inline">Requirement: reaction feedback and trigger reliability for the Ideas triage pipeline</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/issues/85">obot.roadmap#85</a> <span class="crop-inline">Add sandbox/triage-v2-smoke.md pipeline smoke marker</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/issues/71">obot.roadmap#71</a> <span class="crop-inline">Requirement: goal issues — goals move from obot.agent files to hub issues</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/issues/53">obot.roadmap#53</a> <span class="crop-inline">Requirement: Goal pages in the hub</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/issues/57">obot.roadmap#57</a> <span class="crop-inline">Requirement: Roadmap homepage refactor</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/issues/46">obot.roadmap#46</a> <span class="crop-inline">Session framework: Remote Control on every agent; Claude Tag not viable</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/issues/41">obot.roadmap#41</a> <span class="crop-inline">Requirement: Shared view selector — always-visible view options across safety.viz renderers</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/issues/36">obot.roadmap#36</a> <span class="crop-inline">Requirement: QT Safety Explorer — ICH-E14 cardiac-safety renderer for safety.viz</span> <span class="closed-badge">✓ closed</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.roadmap/issues/28">obot.roadmap#28</a> <span class="crop-inline">Requirement: gsm.safety v1.0 — full adoption of safety.viz v1.1</span> <span class="closed-badge">✓ closed</span></div></div></details></div>
+</section>
+
+<div class="grid">
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Priorities</h2><span class="src">scratchpad · ## Overview — click a row for detail</span></div>
+  <div class="panel-body"><div class="group-label">Agent-actionable</div><details class="pri is-done" id="p1">
+  <summary><span class="tw">▸</span><span class="box done"></span><span class="num">1</span><span class="crop">DONE — #53 closed+Released: goal issues #78 (G1 charts)/#79 (G2 app) + #72/#73 retrofits, oa#45 MERGED, --auto cutover to goal issues verified, /goals/ pages + goals.json live, #18 O2 superseded, #71 auto-closed. Goals → issues (focus ①): draft requirement + design for hub#53 Goal pages in the hub — promote obot.agent/goals/{charts,app}.md to hub goal issues/pages, wire the #18 --auto selection ladder to them (goals/ is in the policy carve-out ⇒ the switchover merge stays Jeremy&#39;s)</span><span class="chips"><a class="agchip" href="#agent-66618bd3" style="--c:var(--agent-green)">goals-to-issues</a><a class="agchip" href="#agent-8da35305" style="--c:var(--agent-green)">ideas-flow</a><a class="agchip" href="#agent-f3314eef" style="--c:var(--agent-green)">homepage-refactor</a><a class="agchip" href="#agent-c0ff85f0" style="--c:var(--agent-green)">ideas-sweep</a></span></summary>
+  <div class="drill">DONE — #53 closed+Released: goal issues #78 (G1 charts)/#79 (G2 app) + #72/#73 retrofits, oa#45 MERGED, --auto cutover to goal issues verified, /goals/ pages + goals.json live, #18 O2 superseded, #71 auto-closed. Goals → issues (focus ①): draft requirement + design for <a href="https://github.com/jwildfire/obot.roadmap/issues/53">hub#53</a> Goal pages in the hub — promote obot.agent/goals/{charts,app}.md to hub goal issues/pages, wire the <a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a> --auto selection ladder to them (goals/ is in the policy carve-out ⇒ the switchover merge stays Jeremy&#39;s)</div>
+</details>
+<details class="pri is-done" id="p2">
+  <summary><span class="tw">▸</span><span class="box done"></span><span class="num">2</span><span class="crop">DONE — ideas-triage v2 shipped end-to-end (PR#86 merged, Stage A 14 runs + B sandbox + C matrix green, Opus 5 orchestrator), #61 closed+Released, #85 closed, #58 → Review (closes after first real v2 ideas). Ideas-flow improvements (focus ②): hub#58 triage v2 (model bump + context pack + bias-to-promote — the queued manual session) + NEW hub#61 reaction feedback + trigger reliability; shepherd questioned Ideas #49/#51/#52/#54/#55 (session-inbox half gated on oa#42)</span><span class="chips"><a class="agchip" href="#agent-b9d778ed" style="--c:var(--agent-orange)">lead</a><a class="agchip" href="#agent-8da35305" style="--c:var(--agent-green)">ideas-flow</a><a class="agchip" href="#agent-f3314eef" style="--c:var(--agent-green)">homepage-refactor</a><a class="agchip" href="#agent-c0ff85f0" style="--c:var(--agent-green)">ideas-sweep</a></span></summary>
+  <div class="drill">DONE — ideas-triage v2 shipped end-to-end (PR#86 merged, Stage A 14 runs + B sandbox + C matrix green, Opus 5 orchestrator), #61 closed+Released, #85 closed, #58 → Review (closes after first real v2 ideas). Ideas-flow improvements (focus ②): <a href="https://github.com/jwildfire/obot.roadmap/issues/58">hub#58</a> triage v2 (model bump + context pack + bias-to-promote — the queued manual session) + NEW <a href="https://github.com/jwildfire/obot.roadmap/issues/61">hub#61</a> reaction feedback + trigger reliability; shepherd questioned Ideas #49/#51/#52/#54/#55 (session-inbox half gated on <a href="https://github.com/jwildfire/obot.agent/pull/42">oa#42</a>)</div>
+</details>
+<details class="pri is-done" id="p3">
+  <summary><span class="tw">▸</span><span class="box done"></span><span class="num">3</span><span class="crop">DONE — #57 closed+Released: roadmap.html v2.1.0 live (4 views, drift, heartbeat pill), oa#44 + oa#46 merged, old generator deleted (approved), hub#44 re-scoped. Roadmap homepage refactor (focus ③): hub#57 — requirement/design for site/index.html; direct-commit grant applies, review on deployed Pages</span><span class="chips"><a class="agchip" href="#agent-66618bd3" style="--c:var(--agent-green)">goals-to-issues</a><a class="agchip" href="#agent-8da35305" style="--c:var(--agent-green)">ideas-flow</a><a class="agchip" href="#agent-f3314eef" style="--c:var(--agent-green)">homepage-refactor</a></span></summary>
+  <div class="drill">DONE — #57 closed+Released: roadmap.html v2.1.0 live (4 views, drift, heartbeat pill), oa#44 + oa#46 merged, old generator deleted (approved), hub#44 re-scoped. Roadmap homepage refactor (focus ③): <a href="https://github.com/jwildfire/obot.roadmap/issues/57">hub#57</a> — requirement/design for site/index.html; direct-commit grant applies, review on deployed Pages</div>
+</details>
+<details class="pri" id="p4">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">4</span><span class="crop">NEW hub#64 — move safety.viz requirement matrix out of obot.agent; requirement gathering, sequence against the oa#43 merge train</span><span class="chips"></span></summary>
+  <div class="drill">NEW <a href="https://github.com/jwildfire/obot.roadmap/issues/64">hub#64</a> — move safety.viz requirement matrix out of obot.agent; requirement gathering, sequence against the <a href="https://github.com/jwildfire/obot.agent/pull/43">oa#43</a> merge train</div>
+</details>
+<details class="pri is-done" id="p5">
+  <summary><span class="tw">▸</span><span class="box done"></span><span class="num">5</span><span class="crop">DONE — filed sv#109 (wrapup sweep). File the sv fixture-rot follow-up issue (ae-explorer + ae-timelines e2e fixtures pinned to stale dist/safety.viz-1.4.0 bundle)</span><span class="chips"></span></summary>
+  <div class="drill">DONE — filed <a href="https://github.com/jwildfire/safety.viz/issues/109">sv#109</a> (wrapup sweep). File the sv fixture-rot follow-up issue (ae-explorer + ae-timelines e2e fixtures pinned to stale dist/safety.viz-1.4.0 bundle)</div>
+</details>
+<details class="pri" id="p6">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">6</span><span class="crop">Carried: Diary #8 outline (hub#22) · keynote report #10 · og #34 app-first rewrite · release skill oa#36 · status page hub#44 · obot-merge hardening oa#37 · board hygiene</span><span class="chips"></span></summary>
+  <div class="drill">Carried: Diary #8 outline (<a href="https://github.com/jwildfire/obot.roadmap/issues/22">hub#22</a>) · keynote report <a href="https://github.com/jwildfire/obot.roadmap/issues/10">#10</a> · og <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a> app-first rewrite · release skill <a href="https://github.com/jwildfire/obot.agent/issues/36">oa#36</a> · status page <a href="https://github.com/jwildfire/obot.roadmap/issues/44">hub#44</a> · obot-merge hardening <a href="https://github.com/jwildfire/obot.agent/issues/37">oa#37</a> · board hygiene</div>
+</details>
+<div class="group-label">Waiting on @jwildfire</div><details class="pri is-done" id="p7">
+  <summary><span class="tw">▸</span><span class="box done"></span><span class="num">7</span><span class="crop">DONE (delta-verified) — Jeremy merged the train midday: sv#108 → dev 13:01Z, oa#43 → main 13:02Z, sv#85 closed. UNVERIFIED tail: npm run requirements regen on sv dev (nothing logged) → carried. Maiden-run review incl. the flagged AXIS-5 deviation call</span><span class="chips"></span></summary>
+  <div class="drill">DONE (delta-verified) — Jeremy merged the train midday: sv#108 → dev 13:01Z, oa#43 → main 13:02Z, sv#85 closed. UNVERIFIED tail: <code>npm run requirements</code> regen on sv dev (nothing logged) → carried. Maiden-run review incl. the flagged AXIS-5 deviation call</div>
+</details>
+<details class="pri is-done" id="p8">
+  <summary><span class="tw">▸</span><span class="box done"></span><span class="num">8</span><span class="crop">oa PR#42 review → merge (framework gate: RC-default spawns + session-inbox + auto-pin + --auto wrapup canon; carve-out lane) — MERGED 07-24 evening by obotclaw via obot-merge (Jeremy&#39;s in-session approval); local pull + session-inbox symlink done</span><span class="chips"><a class="agchip" href="#agent-b9d778ed" style="--c:var(--agent-orange)">lead</a></span></summary>
+  <div class="drill"><a href="https://github.com/jwildfire/obot.agent/pull/42">oa PR#42</a> review → merge (framework gate: RC-default spawns + session-inbox + auto-pin + --auto wrapup canon; carve-out lane) — MERGED 07-24 evening by obotclaw via obot-merge (Jeremy&#39;s in-session approval); local pull + session-inbox symlink done</div>
+</details>
+<details class="pri" id="p9">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">9</span><span class="crop">RC clicks (hub#46: /config toggle + /remote-control in lead) · obot Reminders list + first supervised ingest (hub#48)</span><span class="chips"><a class="agchip" href="#agent-8da35305" style="--c:var(--agent-green)">ideas-flow</a></span></summary>
+  <div class="drill">RC clicks (<a href="https://github.com/jwildfire/obot.roadmap/issues/46">hub#46</a>: /config toggle + /remote-control in lead) · obot Reminders list + first supervised ingest (<a href="https://github.com/jwildfire/obot.roadmap/issues/48">hub#48</a>)</div>
+</details>
+<details class="pri" id="p10">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">10</span><span class="crop">Close clicks &amp; admin: gs#44, hub#41, Released-but-open #2/#3/#21/#28/#30 · obotclaw installs (open.gismo, jwildfire.github.io) · unreviewed diary entries 2026-07-24 + -2</span><span class="chips"></span></summary>
+  <div class="drill">Close clicks &amp; admin: <a href="https://github.com/jwildfire/gsm.safety/issues/44">gs#44</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/41">hub#41</a>, Released-but-open #2/#3/#21/#28/#30 · obotclaw installs (open.gismo, jwildfire.github.io) · unreviewed diary entries 2026-07-24 + -2</div>
+</details>
+<p class="prose-line">Delta notes (08:57): NEW since 08:55 hand-off = hub#61 + hub#64 · promoted ideas&#39; titles confirmed: #53 = Goal pages, #57 = homepage refactor (they ARE focus ① and ③) · board-stage query capped at --limit 80, stages unfetched for hub#35–64 / sv#54–104 / gs#44.</p></div>
+</section>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Roadmap activity</h2><span class="src">43 events · gh sweep, all events</span></summary>
+  <div class="panel-body"><div class="feed"><div class="evt"><time>9:01 AM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/85">#85</a> Axis-limit inputs should load pre-filled with the current data-driven defaults — <strong>closed</strong></span></div>
+<div class="evt"><time>9:02 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/69">#69</a> Requirement: Reviewer Notes section in PR template — <strong>opened</strong></span></div>
+<div class="evt"><time>9:02 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/43">PR #43</a> Requirement matrices: AXIS rows for the axis-limit prefill (safety.viz#85) — <strong>merged</strong></span></div>
+<div class="evt"><time>9:02 AM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/pull/108">PR #108</a> Axis-limit inputs load pre-filled with the data-driven defaults — <strong>merged</strong></span></div>
+<div class="evt"><time>9:21 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/75">#75</a> Requirement: participant profile v2 — sidebar surfacing + AE domains — <strong>opened</strong></span></div>
+<div class="evt"><time>9:21 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/76">#76</a> Requirement: obot GitHub App avatar — Orange&#39;s photo — <strong>opened</strong></span></div>
+<div class="evt"><time>9:21 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/77">#77</a> Requirement: chat with the orchestrator from the live session dashboard — <strong>opened</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/81">#81</a> Close out safety-histogram fork and remove from roadmap — <strong>opened</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/9">#9</a> Requirement: gsm.safety static safety charts from FDA ST&amp;F guidance — <strong>updated</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a> Requirement: autonomous obot operations — scheduled and event-driven agent runs — <strong>updated</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a> Design discussion: GitHub&#39;s role in open.gismo v1.0 (D1/D2/D6) — <strong>updated</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/35">#35</a> Requirement: nepExplorer migration — KDIGO kidney-safety explorer for safety.viz — <strong>updated</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/37">#37</a> Requirement: QT Safety Explorer Phase 2 — QTcI, multi-interval, drill-down, hysteresis &amp; guided ICH-E14 workflow — <strong>updated</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/38">#38</a> Requirement: Benefit-risk forest plot (safety-graphics suite) — <strong>updated</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/39">#39</a> Requirement: Benefit-risk value tree (MCDA) — <strong>updated</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/40">#40</a> Requirement: Recurrent AE analysis (beyond first occurrence) — <strong>updated</strong></span></div>
+<div class="evt"><time>9:40 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/74">#74</a> Requirement: keynote live demo — audience ideas implemented during the talk — <strong>opened</strong></span></div>
+<div class="evt"><time>6:06 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/83">#83</a> Add legend and hover detail to hep-waterfall box-and-whisker panels — <strong>opened</strong></span></div>
+<div class="evt"><time>6:19 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/44">#44</a> Status page: unreleased-commits view + dev-branch policy for tracked repos — <strong>updated</strong></span></div>
+<div class="evt"><time>6:19 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/pull/86">PR #86</a> ideas-triage v2: Opus 5 orchestrator, context pack, bias-to-promote, reactions + cost footers (#58, #61) — <strong>merged</strong></span></div>
+<div class="evt"><time>6:23 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/61">#61</a> Requirement: reaction feedback and trigger reliability for the Ideas triage pipeline — <strong>closed</strong></span></div>
+<div class="evt"><time>6:24 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/58">#58</a> Requirement: ideas-triage v2 — stronger model, richer context, bias-to-promote — <strong>updated</strong></span></div>
+<div class="evt"><time>9:25 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/85">#85</a> Add sandbox/triage-v2-smoke.md pipeline smoke marker — <strong>closed</strong></span></div>
+<div class="evt"><time>9:29 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/44">PR #44</a> session-hub: --emit-state + heartbeat publisher for the roadmap session indicator (#57) — <strong>merged</strong></span></div>
+<div class="evt"><time>9:30 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/72">#72</a> Goal: R/Pharma 2026 keynote deck — <strong>opened</strong></span></div>
+<div class="evt"><time>9:30 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/73">#73</a> Goal: increased autonomy in obot.agent — <strong>opened</strong></span></div>
+<div class="evt"><time>9:30 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/66">#66</a> Add next/back navigation between safety.viz example pages — <strong>updated</strong></span></div>
+<div class="evt"><time>9:30 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/70">#70</a> Mark PRs ready for review and request @jwildfire review when ready — <strong>opened</strong></span></div>
+<div class="evt"><time>9:30 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/87">#87</a> Requirement: weekly goal review — freshness sweep proposing linkages, labels, and orphan candidates — <strong>opened</strong></span></div>
+<div class="evt"><time>9:31 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/78">#78</a> Goal:  Keep adding charts (static + interactive) — <strong>opened</strong></span></div>
+<div class="evt"><time>9:31 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/79">#79</a> Goal: Build the app (safetyGraphics replacement, open.gismo arc) — <strong>opened</strong></span></div>
+<div class="evt"><time>9:45 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/71">#71</a> Requirement: goal issues — goals move from obot.agent files to hub issues — <strong>closed</strong></span></div>
+<div class="evt"><time>9:45 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/45">PR #45</a> Goals move to hub issues: registry.json replaces goal files (hub #53/#71) — <strong>merged</strong></span></div>
+<div class="evt"><time>9:45 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/46">PR #46</a> Version the workspace hooks and add an installer — <strong>merged</strong></span></div>
+<div class="evt"><time>9:45 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/53">#53</a> Requirement: Goal pages in the hub — <strong>closed</strong></span></div>
+<div class="evt"><time>9:47 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/57">#57</a> Requirement: Roadmap homepage refactor — <strong>closed</strong></span></div>
+<div class="evt"><time>9:51 PM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/42">PR #42</a> Session framework: Remote Control on every agent + idea-queue intake (session-inbox) — <strong>merged</strong></span></div>
+<div class="evt"><time>9:51 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/46">#46</a> Session framework: Remote Control on every agent; Claude Tag not viable — <strong>closed</strong></span></div>
+<div class="evt"><time>9:54 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/41">#41</a> Requirement: Shared view selector — always-visible view options across safety.viz renderers — <strong>closed</strong></span></div>
+<div class="evt"><time>9:54 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/36">#36</a> Requirement: QT Safety Explorer — ICH-E14 cardiac-safety renderer for safety.viz — <strong>closed</strong></span></div>
+<div class="evt"><time>9:54 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/28">#28</a> Requirement: gsm.safety v1.0 — full adoption of safety.viz v1.1 — <strong>closed</strong></span></div>
+<div class="evt"><time>9:57 PM</time><span class="repo">safety.viz</span><span class="txt"><a href="https://github.com/jwildfire/safety.viz/issues/109">#109</a> e2e fixtures: ae-explorer + ae-timelines pinned to stale dist/safety.viz-1.4.0 bundle — <strong>opened</strong></span></div>
+<div class="evt"><time>9:58 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/64">#64</a> Requirement: move safety.viz requirement matrix out of obot.agent — <strong>updated</strong></span></div></div></div>
+</details></div>
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Agents</h2><span class="src">state.json + claude agents — P# links to the priority</span></div>
+  <div class="panel-body"><div class="agents"><details class="agent" id="agent-b9d778ed">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-orange)"></span><span class="agent-name">lead</span><span class="chips"><a class="pchip" href="#p2">P2</a><a class="pchip" href="#p8">P8</a></span><span class="pill working"><i>●</i>working</span></summary>
+  <div class="drill">
+    <div class="agent-detail">waiting on verification delta agent for #42 merge</div>
+    <div class="agent-meta">
+      <span>8:53 AM–10:00 PM (13h 7m)</span>
+      <span class="tokbar"><b style="width:14%;background:var(--agent-orange)"></b></span><span>54.6k tok</span>
+      <span>fable</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/42">PR obot.agent#42</a></div>
+    <div class="agent-fullname">😺🤖 2026-07-24 3</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-66618bd3">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">goals-to-issues</span><span class="chips"><a class="pchip" href="#p1">P1</a><a class="pchip" href="#p3">P3</a></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">PR oa#45 merged; goals registry live, #71 auto-closed, #53 released</div>
+    <div class="agent-meta">
+      <span>9:05 AM–9:46 PM (12h 41m)</span>
+      <span class="tokbar"><b style="width:25%;background:var(--agent-green)"></b></span><span>98.7k tok</span>
+      <span>fable</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/45">PR obot.agent#45</a></div>
+    <div class="agent-fullname">👯🤖 2026-07-24 goals-to-issues</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-8da35305">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">ideas-flow</span><span class="chips"><a class="pchip" href="#p1">P1</a><a class="pchip" href="#p2">P2</a><a class="pchip" href="#p3">P3</a><a class="pchip" href="#p9">P9</a></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">Opus 5 orchestrator + Sonnet 5 subagents live on main (Ideas triage); PR #86 merged, sandbox excluded, close #85 + #61 when ready</div>
+    <div class="agent-meta">
+      <span>9:05 AM–6:24 PM (9h 19m)</span>
+      <span class="tokbar"><b style="width:24%;background:var(--agent-green)"></b></span><span>96.9k tok</span>
+      <span>fable</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.roadmap/pull/86">PR obot.roadmap#86</a></div>
+    <div class="agent-fullname">👯🤖 2026-07-24 ideas-flow</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-f3314eef">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">homepage-refactor</span><span class="chips"><a class="pchip" href="#p1">P1</a><a class="pchip" href="#p2">P2</a><a class="pchip" href="#p3">P3</a></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">roadmap v2.1.0 live, #46/#57 closed, hook logging + staleness threshold (2h) deployed</div>
+    <div class="agent-meta">
+      <span>9:05 AM–9:48 PM (12h 43m)</span>
+      <span class="tokbar"><b style="width:31%;background:var(--agent-green)"></b></span><span>124.1k tok</span>
+      <span>opus</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/44">PR obot.agent#44</a> <a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/46">PR obot.agent#46</a></div>
+    <div class="agent-fullname">👯🤖 2026-07-24 homepage-refactor</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-c0ff85f0">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">ideas-sweep</span><span class="chips"><a class="pchip" href="#p1">P1</a><a class="pchip" href="#p2">P2</a></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">heads-up posted to hub#53 comment + shared session log for sibling to check on resume</div>
+    <div class="agent-meta">
+      <span>9:10 AM–9:48 AM (37m)</span>
+      <span class="tokbar"><b style="width:14%;background:var(--agent-green)"></b></span><span>57.1k tok</span>
+      <span>fable</span>
+      
+    </div>
+    
+    <div class="agent-fullname">👯🤖 2026-07-24 ideas-sweep</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-511a1ea0">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-none)"></span><span class="agent-name">migrate roadmap issues chart improvement</span><span class="chips"></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">obot.roadmap #88 filed under charts goal #78 carrying the 8 open hepExplorer sub-issues from #30; #30 closed as completed</div>
+    <div class="agent-meta">
+      <span>9:56 PM–10:01 PM (5m)</span>
+      <span class="tokbar"><b style="width:5%;background:var(--agent-none)"></b></span><span>19.7k tok</span>
+      <span>fable</span>
+      
+    </div>
+    
+    
+    
+  </div>
+</details></div></div>
+</section>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Notes</h2><span class="src">0 · scratchpad · ## Notes</span></summary>
+  <div class="panel-body"><p class="notice">⚠ no ## Notes section in today’s scratchpad</p></div>
+</details>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Scaffold</h2><span class="src">1 · scratchpad · ## Scaffold</span></summary>
+  <div class="panel-body"><ul class="todo"><li><span class="txt">session-init delta sweep: <code>gh project item-list --limit 80</code> now caps out (board &gt;80 items) — stages silently unfetched for high-numbered issues; bump the skill&#39;s documented limit to ~200 (2026-07-24 session 3)</span></li></ul></div>
+</details>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Next session</h2><span class="src">memory + last diary</span></summary>
+  <div class="panel-body"><div class="prose">Written at the <strong>2026-07-24 session-3 wrapup</strong> (the triple-ship day: goals-as-issues #53, homepage #57, ideas-triage v2 #58/#61 all Released; oa#42/#44/#45/#46 + hub#86 merged; maiden train sv#108/oa#43 merged by Jeremy midday, sv#85 closed). Supersedes the session-2 list and its 5b amendment.
+
+<strong>Jeremy first:</strong>
+
+1. <strong>Goal-board consistency call:</strong> #72/#73 sit on the board (Requirement Gathering) but goal issues <a href="https://github.com/jwildfire/obot.roadmap/issues/78">#78</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/79">#79</a> are off-board with no milestone — pick one convention; natural venue = designing/building the first <a href="https://github.com/jwildfire/obot.roadmap/issues/87">#87</a> weekly goal review.
+2. <strong>RC clicks</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/46">hub#46</a>): /config RC-for-all toggle (spawn-flag default live post-oa#42); restart long-lived sessions so the session-state Stop hook fires.
+3. <strong>Idea queue human steps</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/48">hub#48</a>): create the &quot;obot&quot; Reminders list + supervise the first reminders-to-ideas run.
+4. <strong>Close clicks remaining:</strong> Released-but-open #2/#3/#21/#30 (#28/#36/#41 closed 07-24 late) · <a href="https://github.com/jwildfire/gsm.safety/issues/44">gs#44</a> · obotclaw installs (open.gismo, jwildfire.github.io) · review the THREE unreviewed 2026-07-24 diary entries.
+5. <strong>#58 close</strong> once the first real v2-triaged idea lands (v2 live on hub main; #58 at Review, #61/#85 closed).
+
+<strong>Agent-actionable:</strong>
+
+6. <strong>Verify/run <code>npm run requirements</code> regen on safety.viz dev</strong> — the post-oa#43 tail step nothing logged (train merged 07-24 13:02Z).
+7. <strong>safety.viz queue:</strong> <a href="https://github.com/jwildfire/safety.viz/issues/109">sv#109</a> fixture rot (filed at wrapup) · sv#104 qt placebo-arm fix · sv#99 dock rollout · sv#87 selector rot follow-on · at next release promotion close sv#53/#91/#98 (<a href="https://github.com/jwildfire/obot.roadmap/issues/45">hub#45</a>).
+8. <strong><a href="https://github.com/jwildfire/obot.roadmap/issues/64">hub#64</a></strong> matrix-relocation requirement (boarded at wrapup: Req Gathering, backlog).
+9. <strong>Carried:</strong> Diary #8 outline (<a href="https://github.com/jwildfire/obot.roadmap/issues/22">hub#22</a>) · keynote report <a href="https://github.com/jwildfire/obot.roadmap/issues/10">#10</a> · og <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a> app-first rewrite · release skill <a href="https://github.com/jwildfire/obot.agent/issues/36">oa#36</a> · obot-merge hardening <a href="https://github.com/jwildfire/obot.agent/issues/37">oa#37</a> · status page <a href="https://github.com/jwildfire/obot.roadmap/issues/44">hub#44</a> (re-scoped gh.dash-only) · scaffold: session-init delta <code>gh project item-list</code> limit 80 → 200 (small oa PR).
+
+Related: [[goals-as-issues]], [[idea-queue-workstream]], [[remote-control-framework]], [[model-allocation-grant]], [[hub-18-autonomy-design]].</div>
+<div class="group-label">last diary (2026-07-24.md)</div><div class="prose"><div>1. <strong><a href="https://github.com/jwildfire/obot.agent/pull/42">oa PR#42</a> review → merge</strong> — the one gate in front of the whole framework bundle (RC spawns, session-inbox + symlink, auto-pin, <code>--auto</code> wrapup canon) (<a href="https://github.com/jwildfire/obot.roadmap/issues/46">#46</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/48">#48</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a>).</div><div>2. <strong>Maiden A1 run</strong> — now GO: <code>obot-auto --increment jwildfire/safety.viz#85</code> (<code>--preflight-only</code> free) (<a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a>).</div><div>3. <strong>sv post-#105 follow-through</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/45">#45</a>): dev evidence state, release-promotion closes (sv#53/#91/#98), sv#87 rot, sv#104.</div><div>4. <strong>Ideas follow-through</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/48">#48</a>): open Ideas #49/#51/#52/#54/#55; shepherd #53/#57 through Requirement Gathering; #51/#52 feed the keynote (<a href="https://github.com/jwildfire/obot.roadmap/issues/10">#10</a>).</div><div>5. <strong>Carried:</strong> Diary #8 outline (<a href="https://github.com/jwildfire/obot.roadmap/issues/22">#22</a>) · keynote report (<a href="https://github.com/jwildfire/obot.roadmap/issues/10">#10</a>) · og app-first rewrite (<a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a>) · release skill (<a href="https://github.com/jwildfire/obot.agent/issues/36">oa#36</a>) · status page (<a href="https://github.com/jwildfire/obot.roadmap/issues/44">#44</a>) · obot-merge hardening (<a href="https://github.com/jwildfire/obot.agent/issues/37">oa#37</a>) · board hygiene (sv#83–89, oa#32/36/37).</div></div></div>
+</details></div>
+</div>
+
+<div class="foot">frozen operational record · pairs with diary/2026-07-24-3.md · boundary: session-init marker @ 08:57 (8:57 AM) · session-hub (obot.agent v0.2 · <a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>)</div>
+</div>
+
+</body>
+</html>
