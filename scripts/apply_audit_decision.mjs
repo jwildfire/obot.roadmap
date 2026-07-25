@@ -11,7 +11,11 @@
 //      FRESH audit, not from the page — the dashboard can be a day stale, and a
 //      URL is user-editable input.
 //   2. A finding the current audit no longer reports is refused as stale. Someone
-//      else may have already fixed it, or the situation may have changed.
+//      else may have already fixed it, or the situation may have changed. But if
+//      the rule that found it could not RUN — an unreadable source, a token
+//      without the scope — the decision is `blocked`, not stale: "I could not
+//      look" must never be reported as "it is not there", or an accept quietly
+//      evaporates.
 //   3. Mechanical findings run their ops here. Agentic ones are written to a
 //      prompt pack for the bounded headless agent the workflow invokes; this
 //      script never runs a model.
@@ -23,6 +27,7 @@ import path from 'node:path';
 import { ROOT, HUB } from './lib/repos.mjs';
 import { runAudit, FINDINGS_PATH, DECISIONS_PATH, readJson } from './audit_roadmap.mjs';
 import { makeClient, runOps } from './lib/audit/ops.mjs';
+import { RULE_BY_ID } from './lib/audit/rules.mjs';
 
 const args = process.argv.slice(2);
 const flag = (n) => args.includes(`--${n}`);
@@ -83,10 +88,14 @@ function report({ decision, results, issueNumber, dryRun }) {
   const delegated = results.filter((r) => r.outcome === 'delegated');
   const stale = results.filter((r) => r.outcome === 'stale');
   const failed = results.filter((r) => r.outcome === 'failed');
+  const blocked = results.filter((r) => r.outcome === 'blocked');
   const rejected = results.filter((r) => r.outcome === 'rejected');
 
   lines.push(`## Audit decision — ${decision}${dryRun ? ' (dry run)' : ''}`, '');
-  lines.push(`${results.length} finding${results.length === 1 ? '' : 's'} from decision #${issueNumber ?? '—'}: ${applied.length} applied, ${delegated.length} handed to the agent, ${rejected.length} rejected, ${stale.length} refused as stale, ${failed.length} failed.`, '');
+  lines.push(`${results.length} finding${results.length === 1 ? '' : 's'} from decision #${issueNumber ?? '—'}: ${applied.length} applied, ${delegated.length} handed to the agent, ${rejected.length} rejected, ${stale.length} refused as stale, ${blocked.length} blocked, ${failed.length} failed.`, '');
+  if (blocked.length) {
+    lines.push(`**This decision was not applied and is still valid.** ${blocked.length} finding${blocked.length === 1 ? '' : 's'} could not be re-validated because a source the audit reads was unavailable on this run. Re-file the decision — the findings were not discarded.`, '');
+  }
 
   const block = (title, rows, render) => {
     if (!rows.length) return;
@@ -99,6 +108,7 @@ function report({ decision, results, issueNumber, dryRun }) {
   block('Handed to the agent', delegated, (r) => `**${r.finding.ruleTitle}** on ${link(r.finding.subject)} — ${r.finding.proposal.summary}`);
   block('Rejected (muted for 60 days, or until the evidence changes)', rejected, (r) => `**${r.id}** — ${r.detail}`);
   block('Refused as stale', stale, (r) => `**${r.id}** — ${r.detail}`);
+  block('Blocked — a source was unreadable, so nothing was re-validated', blocked, (r) => `**${r.id}** — ${r.detail}`);
   block('Failed', failed, (r) => `**${r.id}** — ${r.detail}`);
 
   lines.push('---', 'Applied by `apply_audit_decision.mjs` for [requirement #92](https://github.com/jwildfire/obot.roadmap/issues/92). Nothing runs without an explicit accept, and every accepted change is re-validated against a fresh audit before it is applied.');
@@ -156,7 +166,21 @@ async function main() {
   for (const id of ids) {
     const finding = byId.get(id);
     if (!finding) {
-      results.push({ id, outcome: 'stale', detail: 'the current audit no longer reports this finding — nothing was changed' });
+      // "I could not look" must never be reported as "it is not there". A rule
+      // whose source was unreadable on this run has no opinion about its
+      // findings, so its decisions are blocked and retryable — not discarded.
+      // (Run 30142448481 threw away five accepted findings exactly this way: the
+      // re-validation ran with a token that cannot read the project, so every
+      // board rule skipped and every board finding looked stale.)
+      const rule = RULE_BY_ID.get(id.split(':')[0]);
+      const unreadable = rule?.needs === 'board' && !snapshot.board.readable;
+      results.push(unreadable
+        ? {
+          id,
+          outcome: 'blocked',
+          detail: 'the obot Roadmap project was unreadable on this run, so the rule that found this could not be re-validated — nothing was changed. Retry once the token can read the project.',
+        }
+        : { id, outcome: 'stale', detail: 'the current audit no longer reports this finding — nothing was changed' });
       continue;
     }
     if (decision === 'reject') {
@@ -229,8 +253,10 @@ async function main() {
   if (out) await fs.writeFile(out, `${md}\n`);
   console.log(`\n${md}`);
 
-  const failed = results.filter((r) => r.outcome === 'failed');
-  if (failed.length) process.exitCode = 1;
+  // Blocked is a failure of the lane, not of the roadmap: the run must go red so
+  // a discarded decision cannot pass for a handled one.
+  const bad = results.filter((r) => r.outcome === 'failed' || r.outcome === 'blocked');
+  if (bad.length) process.exitCode = 1;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
