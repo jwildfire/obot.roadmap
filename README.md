@@ -88,7 +88,7 @@ from live GitHub state at deploy time (daily cron) and never committed; see the
 | [`site/`](site/) | Hand-authored homepage + shared stylesheet |
 | [`diary/`](diary/) | AI-written diary — one markdown file per day with activity ([conventions](diary/README.md)) |
 | [`reports/`](reports/) | AI-generated reports, one folder per report ([index](reports/README.md)) |
-| [`scripts/`](scripts/) | Site generators (`build_metrics.py`, `build_roadmap.mjs`, `render_diary.mjs`) |
+| [`scripts/`](scripts/) | Site generators (`build_roadmap_next.mjs`, `build_goals.mjs`, `build_news.mjs`, `build_metrics.py`, `render_diary.mjs`) plus their shared collectors in `scripts/lib/` |
 
 # Agentic scaffold
 

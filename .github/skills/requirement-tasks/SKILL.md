@@ -6,7 +6,7 @@ argument-hint: "Requirement issue number (or URL)"
 
 # Requirement Tasks
 
-Adapted from [gsm.roadmap's requirement-tasks skill](https://github.com/Gilead-BioStats/gsm.roadmap/blob/main/.github/skills/requirement-tasks/SKILL.md) for this hub. Canonical tracking is the GitHub sub-issue relationship; the requirement body's **Sub-issues** section mirrors the URLs so the roadmap rollup (`scripts/build_roadmap.mjs`) can count them.
+Adapted from [gsm.roadmap's requirement-tasks skill](https://github.com/Gilead-BioStats/gsm.roadmap/blob/main/.github/skills/requirement-tasks/SKILL.md) for this hub. Canonical tracking is the GitHub sub-issue relationship; the requirement body's **Sub-issues** section mirrors the URLs so the roadmap rollup (`scripts/build_roadmap_next.mjs`) can count them.
 
 ## When to Use
 
@@ -38,7 +38,7 @@ Adapted from [gsm.roadmap's requirement-tasks skill](https://github.com/Gilead-B
 
 7. **Mirror the URLs into the parent's Sub-issues section** — append one line per sub-issue URL via `gh issue edit --body-file` (draft-sync convention). This is what the roadmap generator reads; skipping it means the rollup shows no tasks.
 
-8. **Summarize** the result: parent #, list of posted sub-issues (`repo#N — title`), and links to each. The rollup refreshes on the next push to `main` (the Deploy site workflow runs `scripts/build_roadmap.mjs`); no manual trigger exists.
+8. **Summarize** the result: parent #, list of posted sub-issues (`repo#N — title`), and links to each. The rollup refreshes on the next push to `main` (the Deploy site workflow runs `scripts/build_roadmap_next.mjs`); no manual trigger exists.
 
 Implementation of each sub-issue is then a `/tdd` run in the target repo — there is no separate implementation skill.
 
