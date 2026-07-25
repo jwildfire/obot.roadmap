@@ -314,14 +314,17 @@
   // sit on the same vertical.
   function syncAxis() {
     const timeline = dom.rail.querySelector('.pv-timeline');
-    if (!timeline || !profile || !profile.spaghettiChart) return;
+    if (!timeline || !profile || !profile.spaghettiChart) return false;
     const chartInstance = profile.spaghettiChart;
     const canvas = chartInstance.canvas;
     const scale = chartInstance.scales.x;
-    if (!canvas || !scale) return;
+    if (!canvas || !scale) return false;
     const canvasBox = canvas.getBoundingClientRect();
     const timelineBox = timeline.getBoundingClientRect();
-    if (!canvasBox.width || !timelineBox.width) return;
+    // The chart's canvas is not laid out on the frame it is created — on a slow
+    // load it can still be zero-width several frames later — so the caller
+    // retries rather than silently leaving every bar unplaced.
+    if (!canvasBox.width || !timelineBox.width) return false;
     const ratio = canvasBox.width / (chartInstance.width || canvasBox.width);
     const offset = canvasBox.left - timelineBox.left;
     const left = offset + scale.left * ratio;
@@ -381,6 +384,38 @@
         axis.append(tick);
       });
     }
+    return true;
+  }
+
+  let canvasObserver = null;
+
+  /**
+   * Sync the timeline to the lab chart's axis as soon as the chart is sized,
+   * then keep it synced: retry while the canvas is still zero-width (it is not
+   * laid out on the frame it is created, and on a slow load that lasts several
+   * frames), and watch the canvas so any later resize re-places the bars.
+   */
+  function scheduleSync() {
+    // The frame budget is per-loop: several loops can be in flight at once
+    // (a render, a layout change, a resize), and a shared counter would let
+    // them exhaust each other's retries before the chart is ready.
+    let frames = 0;
+    const attempt = () => {
+      if (syncAxis()) return;
+      // Self-heal a chart created while its container had no width:
+      // re-measuring is what Chart.js's own resize does, and it is idempotent.
+      const live = profile && profile.spaghettiChart;
+      if (live && live.canvas && !live.canvas.getBoundingClientRect().width) live.resize();
+      frames += 1;
+      if (frames < 240) requestAnimationFrame(attempt);
+    };
+    requestAnimationFrame(attempt);
+
+    const canvas = profile && profile.spaghettiChart ? profile.spaghettiChart.canvas : null;
+    if (canvasObserver) canvasObserver.disconnect();
+    if (!canvas || typeof ResizeObserver === 'undefined') return;
+    canvasObserver = new ResizeObserver(() => syncAxis());
+    canvasObserver.observe(canvas);
   }
 
   // --------------------------------------------------------------- mounts ----
@@ -399,7 +434,7 @@
     if (spaghetti && spaghetti.nextSibling) root.insertBefore(section, spaghetti.nextSibling);
     else root.append(section);
     updateRailHead();
-    requestAnimationFrame(syncAxis);
+    scheduleSync();
   }
 
   function updateRailHead() {
@@ -502,10 +537,10 @@
     const observer = new ResizeObserver(() => {
       if (chart) chart.resize();
       if (profile) profile.resize();
-      requestAnimationFrame(syncAxis);
+      scheduleSync();
     });
     observer.observe(dom.stage);
-    window.addEventListener('resize', () => requestAnimationFrame(syncAxis));
+    window.addEventListener('resize', () => scheduleSync());
   }
 
   // --------------------------------------------------------------- layout ----
@@ -578,7 +613,7 @@
     requestAnimationFrame(() => {
       if (chart) chart.resize();
       if (profile) profile.resize();
-      requestAnimationFrame(syncAxis);
+      scheduleSync();
     });
   }
 
