@@ -38,7 +38,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # Minted before checkout and handed to it — see the note in
+      # roadmap-audit-apply.yml: a persisted github-actions[bot] credential
+      # overrides a token in the push URL, and the commit is denied.
+      - name: Mint obotclaw[bot] token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.OBOT_APP_ID }}
+          private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
+          owner: jwildfire
+
       - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - uses: actions/setup-node@v4
         with:
@@ -48,14 +61,6 @@ jobs:
       # not trustworthy and nothing should be published from them.
       - name: Test the rule registry
         run: node --test scripts/lib/audit/*.test.mjs
-
-      - name: Mint obotclaw[bot] token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.OBOT_APP_ID }}
-          private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
-          owner: jwildfire
 
       - name: Run the audit
         id: audit
@@ -91,5 +96,5 @@ jobs:
 
           Nightly rule sweep (#92). Accept or reject each finding from the roadmap
           page's Audit section; the apply lane re-validates before changing anything."
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+          git push origin HEAD:main
           echo "committed: $counts" | tee -a "$GITHUB_STEP_SUMMARY"

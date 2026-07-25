@@ -309,6 +309,33 @@ test('board rules are skipped, not silently passed, when the project is unreadab
   assert.match(skipped[0].skipped, /project was unreadable/);
 });
 
+// The apply lane's worst possible failure, caught on the first live decision
+// (run 30142448481): the re-validation could not read the project, every board
+// rule skipped, and five accepted findings were reported as stale — a decision
+// silently thrown away. `needs` is what tells the lane the difference between
+// "not there" and "could not look", so it has to hold for every board rule.
+test('every rule whose findings depend on the board declares needs: board', () => {
+  const boardDependent = [
+    'CLOSED-NOT-RELEASED', 'OPEN-IN-RELEASED', 'UNSTAGED-BOARD-ITEM',
+    'OFF-BOARD-REQUIREMENT', 'BOARD-DUPLICATE', 'GOAL-BOARD-INCONSISTENT',
+    'STALLED-IN-FLIGHT',
+  ];
+  for (const id of boardDependent) {
+    assert.equal(RULE_BY_ID.get(id)?.needs, 'board', `${id} must declare needs: 'board'`);
+  }
+  // …and a rule that reads the board must produce nothing when it cannot.
+  const blind = snapshot({
+    issues: [issue(46, { state: 'CLOSED' })],
+    items: [item(46, 'Development', { contentState: 'CLOSED' })],
+    boardReadable: false,
+  });
+  const { findings, rules } = runRules(blind);
+  assert.equal(findings.filter((f) => boardDependent.includes(f.rule)).length, 0);
+  for (const id of boardDependent) {
+    assert.ok(rules.find((r) => r.id === id)?.skipped, `${id} must report as skipped, not quiet`);
+  }
+});
+
 test('a rule that throws is reported in its place, and the rest still run', () => {
   const boom = { id: 'BOOM', title: 'boom', group: 'test', why: '', fix: '', check() { throw new Error('kaput'); } };
   const { findings, rules } = runRules(snapshot({ issues: [issue(9, { assignees: [] })] }), {
