@@ -141,23 +141,34 @@ jobs:
             echo "::warning title=Package status dashboard::not rendered on this run — published the placeholder"
           fi
 
+      # Names the failing assertion. A bare list of `test -f` under `bash -e`
+      # reports only "exit code 1", which on a 16-check step means reading the
+      # workflow to guess what was missing.
       - name: Validate site
         run: |
-          test -f _site/index.html
-          grep -q "metric-row" _site/index.html
-          test -f _site/roadmap.html
-          grep -q "sec-requirements" _site/roadmap.html
-          grep -q "rm-view-btn" _site/roadmap.html
-          test -f _site/roadmap-next.html
-          test -f _site/goals/index.html
-          test -f _site/goals/charts.html
-          test -f _site/goals/goals.json
-          test -f _site/status.html
-          test -f _site/status/index.html
-          test -f _site/news.html
-          test -f _site/diary/index.html
-          test -f _site/reports/index.html
-          test -f _site/reports/autonomous-agent-framework/index.html
+          fail=0
+          have() { [ -f "_site/$1" ] || { echo "::error title=Missing page::_site/$1 was not produced"; fail=1; }; }
+          says() { grep -q "$2" "_site/$1" 2>/dev/null || { echo "::error title=Unexpected page content::_site/$1 does not contain '$2'"; fail=1; }; }
+
+          have index.html;                 says index.html metric-row
+          have roadmap.html;               says roadmap.html sec-requirements
+                                           says roadmap.html rm-view-btn
+          have roadmap-next.html
+          have goals/index.html
+          have goals/goals.json
+          # Not a named page: goal filenames come from the goal issues, so
+          # asserting on one slug turns "a goal was renamed" into a failed deploy.
+          # (It already did, on 8cd5314, while #53's goals were being migrated.)
+          ls _site/goals/*.html >/dev/null 2>&1 || { echo "::error title=No goal pages::build_goals produced no goal pages"; fail=1; }
+          have status.html
+          have status/index.html
+          have news.html
+          have diary/index.html
+          have reports/index.html
+          have reports/autonomous-agent-framework/index.html
+
+          [ "$fail" = 0 ] || { echo "::error::site validation failed — see the errors above"; exit 1; }
+          echo "site validation passed"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
