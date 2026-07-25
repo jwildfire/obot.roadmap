@@ -14,6 +14,7 @@ import path from 'node:path';
 import { esc, fmtET, age } from './lib/gh.mjs';
 import { ROOT, HUB } from './lib/repos.mjs';
 import { decisionUrl } from './lib/audit/render.mjs';
+import { siteHeader } from './lib/nav.mjs';
 
 const NOW = new Date();
 const OUT = path.join(ROOT, '_site', 'audit', 'index.html');
@@ -210,17 +211,7 @@ body.wide { max-width: 68rem; }
 </style>
 </head>
 <body class="wide">
-<header class="site">
-  <a class="brand" href="../index.html">🍊😺 obot</a>
-  <nav class="site">
-    <a href="../index.html">Home</a>
-    <a href="../roadmap.html">Roadmap</a>
-    <a href="index.html" class="current" aria-current="page">Audit</a>
-    <a href="../status.html">Status</a>
-    <a href="../news.html">News</a>
-    <a href="https://github.com/${HUB}/issues/92" aria-label="Requirement #92" title="Requirement #92">#92</a>
-  </nav>
-</header>
+${siteHeader({ page: 'audit', depth: 1 })}
 
 <h1>Roadmap audit</h1>
 <p class="tagline">What the roadmap says about itself, checked against the conventions it is supposed to follow. ${

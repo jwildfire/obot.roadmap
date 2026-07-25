@@ -80,9 +80,24 @@ Each finding carries a confidence — **high** (deterministic detection, unambig
 
 Adding a rule is one exported object in `rules.mjs` with a test beside it in `rules.test.mjs` — the nightly run fails rather than publishing findings from an untested registry.
 
+## Site navigation
+
+One top row, and a second row that appears only on the pages inside the roadmap group:
+
+```
+🍊😺 obot    Home   Roadmap   News   ⌗
+            Overview · Audit · Analytics · Status
+```
+
+The brand is the "obot" link, so there is no separate nav entry for it.
+
+**The nav is defined once, in [`scripts/lib/nav.mjs`](scripts/lib/nav.mjs).** Adding a page means adding one row to its `TOP` or `SUB` array — nothing else in the site defines nav. The five page generators call `siteHeader()` directly; the two hand-written pages (`site/index.html`, `site/status.html`) carry a `<!--SITE-HEADER-->` marker that [`scripts/build_static.mjs`](scripts/build_static.mjs) substitutes at deploy time.
+
+This replaced seven hand-maintained copies that had drifted apart — Audit appeared in two navs of seven, Goals in one, and the audit page had no GitHub link at all, so which pages seemed to exist depended on which page you were standing on. `deploy-site.yml` now asserts every page carries the shared nav, that the marker never reaches a published page, and that the second row appears on the roadmap group and nowhere else.
+
 ## Cost
 
-The **Cost** section of the [roadmap page](https://jwildfire.github.io/obot.roadmap/roadmap.html#sec-usage) charts what this project has cost to build: one stacked column per day (or week, or month), one segment per agent, toggleable between dollars and tokens.
+The **Cost** section of the [analytics page](https://jwildfire.github.io/obot.roadmap/analytics/index.html#sec-usage) charts what this project has cost to build: one stacked column per day (or week, or month), one segment per agent, toggleable between dollars and tokens.
 
 Unlike every other section, it is **not** built from the GitHub API. It reads @jwildfire's local Claude Code transcript store (`~/.claude/projects/`), which exists only on that machine — so the data is a **committed artifact** and the site build just renders whatever was last committed. The chart says which day the data runs through; refresh it by re-running the generator locally:
 
@@ -97,6 +112,7 @@ git commit site/usage/usage.json -m "Refresh usage data"
 | Generator — transcripts to per-day, per-agent totals and cost | [`scripts/build_usage_data.py`](scripts/build_usage_data.py) |
 | Committed data | [`site/usage/usage.json`](site/usage/usage.json) |
 | Section + chart | [`scripts/lib/usage/render.mjs`](scripts/lib/usage/render.mjs) |
+| Page shell | [`scripts/build_analytics.mjs`](scripts/build_analytics.mjs) |
 
 Costs are list-price arithmetic over recorded token counts — what the usage would bill at API rates, not a copy of an invoice. Rates and the cache multipliers are in the generator's `PRICES` table and are shown on the page under **Models and rates**. Because this is a public site, per-agent token and dollar figures are public.
 

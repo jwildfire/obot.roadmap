@@ -65,6 +65,11 @@ jobs:
           cp -r reports _site/reports
           cp requirements/design/*.html _site/requirements/design/ 2>/dev/null || true
 
+      # The shared nav (scripts/lib/nav.mjs) into the two hand-written pages.
+      # Must run after the copy above, since it rewrites the _site copies in place.
+      - name: Inject the shared header into static pages
+        run: node scripts/build_static.mjs
+
       - name: Render diary
         run: node scripts/render_diary.mjs
 
@@ -84,6 +89,10 @@ jobs:
       # goal-labeled issues since #53/#71, so no cross-repo checkout is needed.
       - name: Build goal pages
         run: node scripts/build_goals.mjs
+
+      # The roadmap group's charts page (Cost, from the committed usage data).
+      - name: Build analytics
+        run: node scripts/build_analytics.mjs
 
       - name: Build metrics
         run: python3 scripts/build_metrics.py
@@ -163,11 +172,6 @@ jobs:
           # missing or malformed site/audit/findings.json must fail the deploy
           # rather than quietly publish a roadmap with no audit on it.
                                            says roadmap.html sec-audit
-          # The Cost section renders from a committed artifact too, so a data
-          # file that went missing must fail here rather than publish a roadmap
-          # whose cost panel silently says "not generated yet".
-                                           says roadmap.html sec-usage
-          have usage/usage.json
           have audit/findings.json
           have audit/index.html;           says audit/index.html ap-card
           have roadmap-next.html
@@ -183,6 +187,42 @@ jobs:
           have diary/index.html
           have reports/index.html
           have reports/autonomous-agent-framework/index.html
+
+          # The Cost section renders from a committed artifact, so a data file
+          # that went missing must fail here rather than publish an analytics
+          # page that silently says "not generated yet".
+          have analytics/index.html;       says analytics/index.html sec-usage
+          have usage/usage.json
+
+          # Nav consistency (@jwildfire, 2026-07-25). The nav lived in seven
+          # hand-maintained copies and drifted; it now comes from
+          # scripts/lib/nav.mjs alone. These assertions are what stops it
+          # drifting again: every page carries the top nav, no page carries a
+          # stale hand-written copy, and the roadmap group — and only the
+          # roadmap group — carries the second row.
+          for f in index.html roadmap.html news.html status.html audit/index.html \
+                   analytics/index.html diary/index.html goals/index.html; do
+            # Exactly one shared top nav — two would mean a hand-written copy
+            # survived alongside the injected one.
+            n=$(grep -c 'aria-label="Site"' "_site/$f" || true)
+            [ "$n" = 1 ] || { echo "::error title=Nav count::_site/$f has $n shared top navs, expected 1"; fail=1; }
+            for item in '>Home</a>' '>Roadmap</a>' '>News</a>'; do
+              grep -q "$item" "_site/$f" \
+                || { echo "::error title=Incomplete nav::_site/$f is missing the $item entry"; fail=1; }
+            done
+            # The marker must never reach a published page.
+            grep -q 'SITE-HEADER' "_site/$f" \
+              && { echo "::error title=Uninjected nav::_site/$f still contains the SITE-HEADER marker"; fail=1; }
+          done
+
+          for f in roadmap.html status.html audit/index.html analytics/index.html goals/index.html; do
+            grep -q 'nav class="site sub"' "_site/$f" \
+              || { echo "::error title=Missing sub-nav::_site/$f is in the roadmap group but has no second nav row"; fail=1; }
+          done
+          for f in index.html news.html diary/index.html; do
+            grep -q 'nav class="site sub"' "_site/$f" \
+              && { echo "::error title=Unexpected sub-nav::_site/$f is outside the roadmap group but shows its second nav row"; fail=1; }
+          done
 
           [ "$fail" = 0 ] || { echo "::error::site validation failed — see the errors above"; exit 1; }
           echo "site validation passed"
