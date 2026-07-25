@@ -55,6 +55,8 @@ One or more topic labels per requirement.
 | `infrastructure` | Platform / scaffold / operations investment (e.g., the obot GitHub App) |
 | `ai` | Agent workflow and automation work |
 | `blocked` | Blocked on an external dependency or decision |
+| `goal` | Standing goal — parent of requirement issues |
+| `audit-decision` | Machine-read: an accept/reject decision on audit findings, filed by the roadmap page's Audit section and consumed by the apply lane |
 
 ## Milestones
 
@@ -62,6 +64,21 @@ One or more topic labels per requirement.
 |---|---|
 | `backlog` | Step 1 holding pen; not yet prioritized for a quarter |
 | `2026q3`, `2026q4`, … | Quarterly delivery slots (Step 2+), lowercase `YYYYqN` |
+
+## Audit
+
+The lifecycle above only tells the truth if the fields are maintained, so a [nightly audit](.github/workflows/roadmap-audit.yml) checks the roadmap against its own conventions (requirement [#92](https://github.com/jwildfire/obot.roadmap/issues/92)) and publishes what it finds in the **Audit** section of the [roadmap page](https://jwildfire.github.io/obot.roadmap/roadmap.html#sec-audit).
+
+| Piece | Where |
+|---|---|
+| Rules — one object per convention, pure functions of a snapshot | [`scripts/lib/audit/rules.mjs`](scripts/lib/audit/rules.mjs) |
+| Findings ledger, published and machine-readable | [`site/audit/findings.json`](site/audit/findings.json) |
+| Accept/reject decisions, append-only | [`site/audit/decisions.json`](site/audit/decisions.json) |
+| Apply lane, triggered by an `audit-decision` issue | [`roadmap-audit-apply.yml`](.github/workflows/roadmap-audit-apply.yml) + [policy](.github/roadmap-audit-policy.md) |
+
+Each finding carries a confidence — **high** (deterministic detection, unambiguous fix), **medium** (solid detection, the fix is a judgment call the proposal states outright), **low** (heuristic detection, or an open convention question) — and one specific proposed change. Accepting a finding opens a prefilled decision issue; the apply lane re-validates it against a fresh audit before changing anything, runs mechanical fixes as a closed vocabulary of operations, and hands judgment calls to a bounded agent. Rejecting one changes nothing and mutes the finding for 60 days, or until its evidence changes. Nothing is ever applied without an explicit accept.
+
+Adding a rule is one exported object in `rules.mjs` with a test beside it in `rules.test.mjs` — the nightly run fails rather than publishing findings from an untested registry.
 
 ## Documentation
 
@@ -88,7 +105,7 @@ from live GitHub state at deploy time (daily cron) and never committed; see the
 | [`site/`](site/) | Hand-authored homepage + shared stylesheet |
 | [`diary/`](diary/) | AI-written diary — one markdown file per day with activity ([conventions](diary/README.md)) |
 | [`reports/`](reports/) | AI-generated reports, one folder per report ([index](reports/README.md)) |
-| [`scripts/`](scripts/) | Site generators (`build_roadmap_next.mjs`, `build_goals.mjs`, `build_news.mjs`, `build_metrics.py`, `render_diary.mjs`) plus their shared collectors in `scripts/lib/` |
+| [`scripts/`](scripts/) | Site generators (`build_roadmap_next.mjs`, `build_goals.mjs`, `build_news.mjs`, `build_metrics.py`, `render_diary.mjs`) plus their shared collectors in `scripts/lib/`, and the roadmap audit (`audit_roadmap.mjs`, `apply_audit_decision.mjs`, `scripts/lib/audit/`) |
 
 # Agentic scaffold
 

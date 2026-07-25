@@ -24,6 +24,7 @@ import { collectOpenPRs } from './lib/collect/prs.mjs';
 import { collectReleases } from './lib/collect/releases.mjs';
 import { collectIdeas } from './lib/collect/ideas.mjs';
 import { collectGoals } from './lib/collect/goals.mjs';
+import { auditSection } from './lib/audit/render.mjs';
 import {
   VIEWS, DEFAULT_VIEW, T, goalViews, requirementViews, prViews,
   upcomingViews, releaseViews, openIdeaViews, promotedIdeaViews,
@@ -231,18 +232,30 @@ ${promoted.length ? promotedRows : `  ${empty('None promoted in the window.')}`}
 }
 
 // ---------------------------------------------------------------- page
+// The audit ledger (#92) is a committed file, not an API read: it is written by
+// the nightly audit and by the apply lane, and read here. A missing file renders
+// as "no audit has run yet" rather than omitting the section.
+async function readAuditLedger() {
+  try {
+    return JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'audit', 'findings.json'), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 const changelog = JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'roadmap-changelog.json'), 'utf8'));
 const auditEntries = [...changelog.entries].sort((a, b) => b.date.localeCompare(a.date));
 if (!auditEntries.length) throw new Error('site/roadmap-changelog.json has no entries');
 
 if (!hasToken) console.warn('roadmap: no GITHUB_TOKEN — sections that need the API will degrade');
 
-const [reqRes, prRes, relRes, ideaRes, goalRes] = await Promise.all([
+const [reqRes, prRes, relRes, ideaRes, goalRes, auditLedger] = await Promise.all([
   settle('Requirements', collectRequirements),
   settle('Open PRs', collectOpenPRs),
   settle('Releases', collectReleases),
   settle('Ideas', collectIdeas),
   settle('Goals', collectGoals),
+  readAuditLedger(),
 ]);
 
 // The requirements section is the page's spine: if it is gone, the deploy should
@@ -316,6 +329,7 @@ const html = `<!DOCTYPE html>
   <nav class="site">
     <a href="index.html">Home</a>
     <a href="${OUT}" class="current" aria-current="page">Roadmap</a>
+    <a href="audit/index.html">Audit</a>
     <a href="status.html">Status</a>
     <a href="news.html">News</a>
     <a href="https://github.com/${HUB}" aria-label="GitHub" title="GitHub" style="display:inline-flex;align-items:center"><svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true"><title>GitHub</title><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
@@ -333,6 +347,7 @@ const html = `<!DOCTYPE html>
 
 ${goalsSection(goalRes, requirements)}
 ${requirementsSection}
+${auditSection(auditLedger, { now: NOW })}
 
 ${prSection(prRes)}
 ${upcomingSection(relRes)}
@@ -491,6 +506,7 @@ const degraded = [
 console.log(
   `roadmap-next: ${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
   `${prRes.value?.length ?? 0} PRs, ${relRes.value?.upcoming.length ?? 0} upcoming, ` +
-  `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas` +
+  `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas, ` +
+  `${auditLedger ? `${auditLedger.counts.total} audit findings` : 'no audit ledger'}` +
   (degraded.length ? ` — degraded: ${degraded.join(', ')}` : ''),
 );

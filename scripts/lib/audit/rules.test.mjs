@@ -1,0 +1,399 @@
+// node --test scripts/lib/audit/
+//
+// The rules are pure functions of a snapshot, so they are testable without the
+// API — which is the point of keeping every fetch in snapshot.mjs. These fixtures
+// are the real shapes the audit found on 2026-07-24 (a closed requirement parked
+// in Development, open requirements the board calls Released, a closed parent with
+// open sub-issues), plus the cases that must NOT fire.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+import { RULES, RULE_BY_ID, hardWrapped } from './rules.mjs';
+import { boardIndex, parentIndex } from './snapshot.mjs';
+import { runRules, reconcile, fingerprint, MUTE_DAYS } from './engine.mjs';
+
+const HUB = 'jwildfire/obot.roadmap';
+const NOW = new Date('2026-07-25T04:00:00Z');
+const ago = (d) => new Date(NOW.getTime() - d * 86400000).toISOString();
+
+function issue(number, over = {}) {
+  return {
+    nodeId: `I_${number}`,
+    repo: HUB,
+    number,
+    title: `Requirement: thing ${number}`,
+    url: `https://github.com/${HUB}/issues/${number}`,
+    state: 'OPEN',
+    stateReason: null,
+    body: '### Business Requirement\nWhy.\n\n### Design\nA design long enough that the DESIGN-MISSING rule is satisfied by it, because the rule only fires under 120 characters of prose.\n',
+    author: 'jwildfire',
+    labels: ['requirement'],
+    milestone: '2026q3',
+    assignees: ['jwildfire'],
+    subIssues: [],
+    subSummary: { total: 0, completed: 0 },
+    createdAt: ago(30),
+    updatedAt: ago(1),
+    closedAt: null,
+    ...over,
+  };
+}
+
+function item(number, status, over = {}) {
+  return {
+    itemId: `PVTI_${number}${status ?? 'none'}`,
+    status,
+    statusOptionId: status ? `opt_${status}` : null,
+    type: 'Issue',
+    repo: HUB,
+    number,
+    title: `Requirement: thing ${number}`,
+    url: `https://github.com/${HUB}/issues/${number}`,
+    contentState: 'OPEN',
+    ...over,
+  };
+}
+
+function snapshot({ issues = [], items = [], open = [], merged = [], ideas = [], design = [], boardReadable = true } = {}) {
+  return {
+    now: NOW,
+    hub: HUB,
+    repos: [HUB],
+    issues,
+    board: { readable: boardReadable, project: { id: 'P_1' }, statusField: { id: 'F_1', options: [] }, items },
+    prs: { open, merged },
+    ideas,
+    designDocs: new Set(design),
+    issueByNumber: new Map(issues.map((i) => [i.number, i])),
+    boardByKey: boardIndex(items),
+    parentOf: parentIndex(issues),
+  };
+}
+
+const fire = (ruleId, snap) => RULE_BY_ID.get(ruleId).check(snap);
+
+// ------------------------------------------------------------ board integrity
+test('CLOSED-NOT-RELEASED: closed issue parked in Development', () => {
+  const snap = snapshot({
+    issues: [issue(46, { state: 'CLOSED', closedAt: ago(3) })],
+    items: [item(46, 'Development', { contentState: 'CLOSED' })],
+  });
+  const [f] = fire('CLOSED-NOT-RELEASED', snap);
+  assert.equal(f.confidence, 'high');
+  assert.equal(f.proposal.ops[0].op, 'set-board-status');
+  assert.equal(f.proposal.ops[0].value, 'Released');
+  assert.equal(f.proposal.ops[0].itemId, 'PVTI_46Development');
+});
+
+test('CLOSED-NOT-RELEASED: stays quiet when the board already says Released', () => {
+  const snap = snapshot({
+    issues: [issue(46, { state: 'CLOSED' })],
+    items: [item(46, 'Released', { contentState: 'CLOSED' })],
+  });
+  assert.equal(fire('CLOSED-NOT-RELEASED', snap).length, 0);
+});
+
+test('OPEN-IN-RELEASED: shipped-but-unclosed proposes the close, sure only when old', () => {
+  const near = snapshot({ issues: [issue(2, { updatedAt: ago(14) })], items: [item(2, 'Released')] });
+  const [a] = fire('OPEN-IN-RELEASED', near);
+  assert.equal(a.confidence, 'medium');
+  assert.equal(a.proposal.ops[0].op, 'close-issue');
+
+  const old = snapshot({ issues: [issue(2, { updatedAt: ago(60) })], items: [item(2, 'Released')] });
+  assert.equal(fire('OPEN-IN-RELEASED', old)[0].confidence, 'high');
+});
+
+test('OPEN-IN-RELEASED: open sub-issues mean it has not shipped — go back to Review', () => {
+  const parent = issue(21, {
+    subIssues: [{ repo: 'jwildfire/safety.viz', number: 9, title: 'sub', url: 'u', state: 'OPEN' }],
+    subSummary: { total: 1, completed: 0 },
+    updatedAt: ago(40),
+  });
+  const [f] = fire('OPEN-IN-RELEASED', snapshot({ issues: [parent], items: [item(21, 'Released')] }));
+  assert.equal(f.proposal.ops[0].op, 'set-board-status');
+  assert.equal(f.proposal.ops[0].value, 'Review');
+});
+
+test('UNSTAGED-BOARD-ITEM: closed → Released at high confidence, open → inferred', () => {
+  const snap = snapshot({
+    issues: [issue(70), issue(71, { state: 'CLOSED' })],
+    items: [item(70, null), item(71, null, { contentState: 'CLOSED' })],
+    design: [70],
+  });
+  const found = fire('UNSTAGED-BOARD-ITEM', snap);
+  const closed = found.find((f) => f.subject.number === 71);
+  const openOne = found.find((f) => f.subject.number === 70);
+  assert.equal(closed.confidence, 'high');
+  assert.equal(closed.proposal.ops[0].value, 'Released');
+  assert.equal(openOne.confidence, 'medium');
+  assert.equal(openOne.proposal.ops[0].value, 'Design'); // a design doc exists for #70
+});
+
+test('OFF-BOARD-REQUIREMENT: a requirement with no board item is added, goals are left alone', () => {
+  const snap = snapshot({ issues: [issue(69), issue(78, { labels: ['goal'], title: 'Goal: charts' })] });
+  const found = fire('OFF-BOARD-REQUIREMENT', snap);
+  assert.deepEqual(found.map((f) => f.subject.number), [69]);
+  assert.equal(found[0].proposal.ops[0].op, 'add-to-board');
+});
+
+test('BOARD-DUPLICATE: keeps the item carrying a Status, removes the rest', () => {
+  const snap = snapshot({ issues: [issue(53)], items: [item(53, null), item(53, 'Development')] });
+  const [f] = fire('BOARD-DUPLICATE', snap);
+  assert.equal(f.confidence, 'high');
+  assert.equal(f.proposal.ops.length, 1);
+  assert.equal(f.proposal.ops[0].itemId, 'PVTI_53none');
+});
+
+// ------------------------------------------------------------------ hierarchy
+test('CLOSED-PARENT-OPEN-SUBS: agentic when the remaining scope is real', () => {
+  const parent = issue(17, {
+    state: 'CLOSED',
+    stateReason: 'COMPLETED',
+    subIssues: [
+      { repo: 'jwildfire/obot.agent', number: 14, title: 'a', url: 'u', state: 'OPEN' },
+      { repo: 'jwildfire/obot.agent', number: 15, title: 'b', url: 'u', state: 'OPEN' },
+    ],
+    subSummary: { total: 2, completed: 0 },
+  });
+  const [f] = fire('CLOSED-PARENT-OPEN-SUBS', snapshot({ issues: [parent] }));
+  assert.equal(f.confidence, 'medium');
+  assert.equal(f.proposal.kind, 'agentic');
+  assert.match(f.proposal.prompt, /obot\.agent#14/);
+});
+
+test('CLOSED-PARENT-OPEN-SUBS: mechanical when every open sub already has a merged PR', () => {
+  const parent = issue(30, {
+    state: 'CLOSED',
+    subIssues: [{ repo: 'jwildfire/safety.viz', number: 45, title: 'a', url: 'u', state: 'OPEN' }],
+    subSummary: { total: 1, completed: 0 },
+  });
+  const merged = [{
+    repo: 'jwildfire/safety.viz', number: 100, title: 'pr', url: 'u', isDraft: false, merged: true,
+    author: 'jwildfire', base: 'dev', reviewDecision: null, labels: [], body: '', createdAt: ago(6),
+    updatedAt: ago(5), mergedAt: ago(5), hubRefs: [],
+    closes: [{ repo: 'jwildfire/safety.viz', number: 45, title: 'a', url: 'u', state: 'OPEN' }],
+  }];
+  const [f] = fire('CLOSED-PARENT-OPEN-SUBS', snapshot({ issues: [parent], merged }));
+  assert.equal(f.confidence, 'high');
+  assert.equal(f.proposal.ops[0].op, 'close-issue');
+});
+
+test('SUBS-DONE-PARENT-OPEN: Review + all subs closed proposes closing it', () => {
+  const parent = issue(43, { subSummary: { total: 3, completed: 3 }, updatedAt: ago(2) });
+  const inReview = snapshot({ issues: [parent], items: [item(43, 'Review')] });
+  const ops = fire('SUBS-DONE-PARENT-OPEN', inReview)[0].proposal.ops.map((o) => o.op);
+  assert.deepEqual(ops, ['close-issue', 'set-board-status']);
+
+  const earlier = snapshot({ issues: [parent], items: [item(43, 'Development')] });
+  const [f] = fire('SUBS-DONE-PARENT-OPEN', earlier);
+  assert.equal(f.proposal.ops[0].value, 'Review');
+});
+
+test('GOALLESS-REQUIREMENT: a requirement under a goal does not fire', () => {
+  const goal = issue(78, {
+    labels: ['goal'],
+    title: 'Goal: charts',
+    subIssues: [{ repo: HUB, number: 35, title: 'r', url: 'u', state: 'OPEN' }],
+    subSummary: { total: 1, completed: 0 },
+  });
+  const snap = snapshot({ issues: [goal, issue(35), issue(36)] });
+  const found = fire('GOALLESS-REQUIREMENT', snap);
+  assert.deepEqual(found.map((f) => f.subject.number), [36]);
+});
+
+test('UNTRACKED-TASK: unlabelled, unparented, off-board issues only', () => {
+  const parented = issue(66, { labels: [], title: 'task' });
+  const goal = issue(78, {
+    labels: ['goal'],
+    subIssues: [{ repo: HUB, number: 66, title: 'task', url: 'u', state: 'OPEN' }],
+    subSummary: { total: 1, completed: 0 },
+  });
+  const orphan = issue(81, { labels: [], title: 'Close out the fork' });
+  const onBoard = issue(82, { labels: [], title: 'on the board' });
+  const snap = snapshot({ issues: [goal, parented, orphan, onBoard], items: [item(82, 'Backlog')] });
+  assert.deepEqual(fire('UNTRACKED-TASK', snap).map((f) => f.subject.number), [81]);
+});
+
+// -------------------------------------------------------------------- linkage
+test('MERGED-PR-OPEN-TARGET: fires for a task, never for a requirement', () => {
+  const pr = (closesNumber, repo) => ({
+    repo, number: 108, title: 'pr', url: 'u', isDraft: false, merged: true, author: 'jwildfire',
+    base: 'dev', reviewDecision: null, labels: [], body: '', createdAt: ago(9), updatedAt: ago(8),
+    mergedAt: ago(8), hubRefs: [], closes: [{ repo: HUB, number: closesNumber, title: 't', url: 'u', state: 'OPEN' }],
+  });
+  const task = issue(81, { labels: [] });
+  const req = issue(45);
+  const snap = snapshot({ issues: [task, req], merged: [pr(81, 'jwildfire/safety.viz'), pr(45, 'jwildfire/safety.viz')] });
+  const found = fire('MERGED-PR-OPEN-TARGET', snap);
+  assert.deepEqual(found.map((f) => f.subject.number), [81]);
+  assert.equal(found[0].confidence, 'high');
+});
+
+test('MERGED-PR-OPEN-TARGET: respects the auto-close grace window', () => {
+  const fresh = {
+    repo: 'jwildfire/safety.viz', number: 109, title: 'pr', url: 'u', isDraft: false, merged: true,
+    author: 'jwildfire', base: 'dev', reviewDecision: null, labels: [], body: '', createdAt: ago(1),
+    updatedAt: ago(0.5), mergedAt: new Date(NOW.getTime() - 3600_000).toISOString(), hubRefs: [],
+    closes: [{ repo: HUB, number: 81, title: 't', url: 'u', state: 'OPEN' }],
+  };
+  assert.equal(fire('MERGED-PR-OPEN-TARGET', snapshot({ issues: [issue(81, { labels: [] })], merged: [fresh] })).length, 0);
+});
+
+// ---------------------------------------------------------------- conventions
+test('REQUIREMENT-LABEL-MISSING: title says Requirement, label does not', () => {
+  const snap = snapshot({ issues: [issue(90, { labels: ['ai'] })] });
+  const [f] = fire('REQUIREMENT-LABEL-MISSING', snap);
+  assert.equal(f.proposal.ops[0].name, 'requirement');
+});
+
+test('ASSIGNEE-MISSING: open tracked issues only', () => {
+  const snap = snapshot({
+    issues: [
+      issue(9, { assignees: [] }),
+      issue(8, { assignees: [], state: 'CLOSED' }),
+      issue(7, { assignees: [], labels: [] }),
+    ],
+  });
+  assert.deepEqual(fire('ASSIGNEE-MISSING', snap).map((f) => f.subject.number), [9]);
+});
+
+test('DESIGN-MISSING: a stub Design section past the Design gate', () => {
+  const stub = issue(25, { body: '### Business Requirement\nWhy.\n\n### Design\nTBD.\n' });
+  const snap = snapshot({ issues: [stub], items: [item(25, 'Development')] });
+  assert.equal(fire('DESIGN-MISSING', snap).length, 1);
+
+  const withDoc = snapshot({ issues: [stub], items: [item(25, 'Development')], design: [25] });
+  assert.equal(fire('DESIGN-MISSING', withDoc).length, 0);
+});
+
+test('PROMOTED-IDEA-OPEN: promoted thread still open, excluding the pinned explainer', () => {
+  const idea = (number, promotedTo) => ({
+    nodeId: `D_${number}`, number, title: 'idea', url: 'u', author: 'jwildfire',
+    createdAt: ago(3), updatedAt: ago(1), closed: false, closedAt: null, stateReason: null, promotedTo,
+  });
+  const snap = snapshot({ issues: [issue(77)], ideas: [idea(76, 77), idea(47, 77), idea(80, null)] });
+  const found = fire('PROMOTED-IDEA-OPEN', snap);
+  assert.deepEqual(found.map((f) => f.subject.number), [76]);
+  assert.equal(found[0].proposal.ops[0].op, 'close-discussion');
+});
+
+test('STALLED-IN-FLIGHT: an open PR means it is not stalled', () => {
+  const req = issue(29, { updatedAt: ago(30) });
+  const stalled = snapshot({ issues: [req], items: [item(29, 'Development')] });
+  assert.equal(fire('STALLED-IN-FLIGHT', stalled).length, 1);
+
+  const pr = {
+    repo: 'jwildfire/safety.viz', number: 99, title: 'pr', url: 'u', isDraft: true, merged: false,
+    author: 'jwildfire', base: 'dev', reviewDecision: null, labels: [], body: '', createdAt: ago(4),
+    updatedAt: ago(1), mergedAt: null, hubRefs: [29], closes: [],
+  };
+  const moving = snapshot({ issues: [req], items: [item(29, 'Development')], open: [pr] });
+  assert.equal(fire('STALLED-IN-FLIGHT', moving).length, 0);
+});
+
+test('hardWrapped: catches wrapped prose, spares lists, tables and fences', () => {
+  assert.equal(hardWrapped('This is a body that someone wrapped\nat eighty columns because their\neditor told them to and it reads\nragged on GitHub'), true);
+  assert.equal(hardWrapped('One line per paragraph, as it should be, however long that line happens to run in the raw markdown.'), false);
+  assert.equal(hardWrapped('- a bullet that is short\n- another short bullet\n- a third short bullet\n- a fourth'), false);
+  assert.equal(hardWrapped('| a | b |\n| - | - |\n| 1 | 2 |\n| 3 | 4 |'), false);
+  assert.equal(hardWrapped('```\nshort\nlines\nin\na\nfence\n```'), false);
+});
+
+// ------------------------------------------------------------------- engine
+test('board rules are skipped, not silently passed, when the project is unreadable', () => {
+  const snap = snapshot({ issues: [issue(46, { state: 'CLOSED' })], boardReadable: false });
+  const { rules } = runRules(snap);
+  const skipped = rules.filter((r) => r.skipped);
+  assert.ok(skipped.length >= 5);
+  assert.ok(skipped.every((r) => r.fired === 0));
+  assert.match(skipped[0].skipped, /project was unreadable/);
+});
+
+test('a rule that throws is reported in its place, and the rest still run', () => {
+  const boom = { id: 'BOOM', title: 'boom', group: 'test', why: '', fix: '', check() { throw new Error('kaput'); } };
+  const { findings, rules } = runRules(snapshot({ issues: [issue(9, { assignees: [] })] }), {
+    rules: [boom, RULE_BY_ID.get('ASSIGNEE-MISSING')],
+  });
+  assert.equal(rules.find((r) => r.id === 'BOOM').error, 'kaput');
+  assert.equal(findings.length, 1);
+});
+
+test('reconcile: a rejection mutes the same situation and only for MUTE_DAYS', () => {
+  const snap = snapshot({ issues: [issue(9, { assignees: [] })] });
+  const { findings } = runRules(snap, { rules: [RULE_BY_ID.get('ASSIGNEE-MISSING')] });
+  const f = findings[0];
+
+  const fresh = reconcile(findings, {
+    ledger: { decisions: [{ id: f.id, decision: 'reject', at: ago(2), fingerprint: f.fingerprint }] },
+    now: NOW,
+  });
+  assert.equal(fresh.findings[0].muted, true);
+  assert.equal(fresh.muted, 1);
+
+  const expired = reconcile(findings, {
+    ledger: { decisions: [{ id: f.id, decision: 'reject', at: ago(MUTE_DAYS + 1), fingerprint: f.fingerprint }] },
+    now: NOW,
+  });
+  assert.equal(expired.findings[0].muted, false);
+
+  const changed = reconcile(findings, {
+    ledger: { decisions: [{ id: f.id, decision: 'reject', at: ago(2), fingerprint: 'somethingelse' }] },
+    now: NOW,
+  });
+  assert.equal(changed.findings[0].muted, false, 'changed evidence un-mutes the finding');
+});
+
+test('reconcile: firstSeen survives runs and an applied fix that comes back is flagged', () => {
+  const snap = snapshot({ issues: [issue(9, { assignees: [] })] });
+  const { findings } = runRules(snap, { rules: [RULE_BY_ID.get('ASSIGNEE-MISSING')] });
+  const prior = { findings: [{ id: findings[0].id, firstSeen: '2026-07-01', runs: 4 }] };
+  const out = reconcile(findings, {
+    prior,
+    ledger: { decisions: [{ id: findings[0].id, decision: 'accept', at: ago(3), outcome: 'applied', fingerprint: findings[0].fingerprint }] },
+    now: NOW,
+  });
+  assert.equal(out.findings[0].firstSeen, '2026-07-01');
+  assert.equal(out.findings[0].runs, 5);
+  assert.equal(out.findings[0].reappeared, true);
+});
+
+test('fingerprint changes with the evidence and nothing else', () => {
+  const base = { rule: 'R', subject: { repo: HUB, number: 1 }, evidence: ['a'], proposal: { summary: 's' } };
+  assert.equal(fingerprint(base), fingerprint({ ...base }));
+  assert.notEqual(fingerprint(base), fingerprint({ ...base, evidence: ['b'] }));
+});
+
+test('every rule declares the metadata the dashboard renders', () => {
+  for (const rule of RULES) {
+    assert.match(rule.id, /^[A-Z][A-Z-]+$/, `${rule.id} is not a SCREAMING-KEBAB id`);
+    assert.ok(rule.group?.length > 3, `${rule.id} is missing group`);
+    for (const field of ['title', 'why', 'fix']) {
+      assert.ok(rule[field]?.length > 10, `${rule.id} is missing ${field}`);
+    }
+    assert.equal(typeof rule.check, 'function');
+  }
+  assert.equal(new Set(RULES.map((r) => r.id)).size, RULES.length, 'rule ids must be unique');
+});
+
+test('every rule returns findings the engine and executor understand', () => {
+  // One snapshot rigged to trip as many rules as possible at once.
+  const goal = issue(78, { labels: ['goal'], title: 'Goal: charts', assignees: [], subSummary: { total: 0, completed: 0 } });
+  const snap = snapshot({
+    issues: [goal, issue(2, { updatedAt: ago(40) }), issue(46, { state: 'CLOSED' }), issue(81, { labels: [] })],
+    items: [item(2, 'Released'), item(46, 'Development', { contentState: 'CLOSED' }), item(9, null)],
+  });
+  const { findings } = runRules(snap);
+  assert.ok(findings.length > 5);
+  for (const f of findings) {
+    assert.ok(['high', 'medium', 'low'].includes(f.confidence), `${f.id} has confidence ${f.confidence}`);
+    assert.ok(['mechanical', 'agentic'].includes(f.proposal.kind), `${f.id} has kind ${f.proposal.kind}`);
+    assert.ok(f.evidence.length, `${f.id} has no evidence`);
+    assert.ok(f.proposal.summary?.length > 10, `${f.id} has no proposal summary`);
+    if (f.proposal.kind === 'mechanical') {
+      assert.ok(f.proposal.ops.length, `${f.id} is mechanical with no ops`);
+      for (const op of f.proposal.ops) assert.ok(op.op && op.label, `${f.id} has a malformed op`);
+    } else {
+      assert.ok(f.proposal.prompt?.length > 40, `${f.id} is agentic with no usable prompt`);
+    }
+  }
+});
