@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard chat — working prototype (#77)</title>
+<style>
+  :root {
+    --ink:#1a1f24; --muted:#5b6672; --accent:#b45309; --rule:#d9dee3; --panel:#f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  body { margin:0 auto; max-width:60rem; padding:2.5rem 1.5rem 5rem; color:var(--ink);
+         font:16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  header { border-bottom:3px solid var(--accent); padding-bottom:1.25rem; margin-bottom:2rem; }
+  header h1 { font-size:1.6rem; line-height:1.3; margin:0 0 .5rem; }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .meta a { color:inherit; }
+  .status { display:inline-block; background:#dcfce7; color:#166534; border-radius:999px;
+            padding:.1rem .6rem; font-size:.8rem; font-weight:600; }
+  h2 { font-size:1.2rem; margin:2.5rem 0 .75rem; padding-top:.5rem; border-top:1px solid var(--rule); }
+  h3 { font-size:1rem; margin:1.75rem 0 .4rem; }
+  a { color:var(--accent); }
+  code, pre { font-family:var(--mono); font-size:.88em; }
+  code { background:var(--panel); border-radius:4px; padding:.1em .35em; }
+  pre { background:var(--panel); border-radius:8px; padding:1rem; overflow-x:auto; line-height:1.45; }
+  pre code { background:none; padding:0; }
+  table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:.92rem; }
+  th, td { border:1px solid var(--rule); padding:.45rem .6rem; text-align:left; vertical-align:top; }
+  th { background:var(--panel); }
+  figure { margin:1.5rem 0; }
+  figure img { width:100%; border:1px solid var(--rule); border-radius:8px; display:block; }
+  figcaption { color:var(--muted); font-size:.85rem; margin-top:.5rem; }
+  .warn { background:#fef2f2; border-left:4px solid #b3261e; border-radius:0 8px 8px 0;
+          padding:.75rem 1rem; margin:1rem 0; }
+  .warn strong:first-child { color:#991b1b; }
+  .note { color:var(--muted); font-size:.9rem; }
+  footer { margin-top:3rem; border-top:1px solid var(--rule); padding-top:1rem;
+           color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Dashboard chat — working prototype</h1>
+  <p class="meta">
+    Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/77">#77</a> ·
+    design <a href="../../requirements/design/77_design.html">77_design.html</a> ·
+    prototype PR <a href="https://github.com/jwildfire/obot.agent/pull/48">obot.agent#48</a> ·
+    2026-07-25 · <span class="status">End to end, both delivery lanes verified</span><br>
+    Evidence for the overnight build. Nothing here is merged and nothing is installed in the
+    live workspace — the demo ran against two throwaway test sessions spawned for it.
+  </p>
+</header>
+
+<h2>What it does</h2>
+
+<p>
+Type a prompt into the session hub's live dashboard; it reaches a running Claude Code session,
+and that session's reply streams back onto the same page. The mechanism is a <strong>file-based
+per-session inbox</strong> delivered by a <code>Stop</code> hook (working sessions) or a persistent
+<code>Monitor</code> (idle sessions), with the session's transcript JSONL tailed as the reply
+stream. A loopback-only Node server hosts the page and carries the channel.
+</p>
+
+<figure>
+  <img src="chat-roundtrip.gif" alt="Recording: selecting a target session, typing a prompt on the dashboard, and the reply streaming back">
+  <figcaption>
+    <strong>Full round trip.</strong> Pick a target, type, send — “delivered (monitor lane) —
+    replying” with a pulsing indicator, then the reply lands in the log. The earlier exchange is
+    restored from the server's chat log, so a reload never loses the conversation.
+  </figcaption>
+</figure>
+
+<h2>Verified behaviour</h2>
+
+<table>
+  <tr><th>Claim</th><th>Evidence</th></tr>
+  <tr>
+    <td>Delivery to an <strong>idle</strong> session (Monitor lane)</td>
+    <td>Sent 04:10:55.408Z, claimed 04:10:56.324Z — <strong>0.9 s</strong>; the session replied at
+        04:10:58 and named the lane itself: “arrived via the Monitor tool event lane … not the
+        blocked-stop fallback path”.</td>
+  </tr>
+  <tr>
+    <td>Delivery to a <strong>working</strong> session (Stop-hook lane)</td>
+    <td>Sent 04:13:39Z while a 2-minute shell loop was running; claimed 04:13:52Z at the turn
+        boundary, replied 04:13:56Z: “came in via the Stop-hook lane — delivered right at a turn
+        boundary … nothing was interrupted”.</td>
+  </tr>
+  <tr>
+    <td>Exactly-once delivery across both lanes</td>
+    <td>Claiming is an atomic <code>rename()</code> into <code>delivered/</code>; the loser gets
+        nothing. Unit-tested, and every claim is a file on disk with its lane and timestamp.</td>
+  </tr>
+  <tr>
+    <td>Loopback only</td>
+    <td><code>lsof -nP -iTCP:4181</code> → <code>TCP 127.0.0.1:4181 (LISTEN)</code>. There is no
+        host flag to widen it.</td>
+  </tr>
+  <tr>
+    <td>Cross-origin and non-JSON writes refused</td>
+    <td><code>Origin: https://evil.example</code> → <strong>403</strong>; form-encoded POST →
+        <strong>415</strong>.</td>
+  </tr>
+  <tr>
+    <td>Published pages stay static</td>
+    <td>Chat renders only for a live render with a server attached; report mode drops it even when
+        a chat config is passed. Both are unit-tested.</td>
+  </tr>
+  <tr>
+    <td>Tests</td>
+    <td>77 passing (<code>node --test</code>), including one that runs the real Stop hook and
+        asserts its framing matches the JS <code>frameMessage</code>, so the Python copy in the
+        hook cannot silently drift.</td>
+  </tr>
+</table>
+
+<h2>The honest states</h2>
+
+<figure>
+  <img src="chat-queued.jpg" alt="Dashboard chat panel showing a message queued against a session with no delivery lane armed">
+  <figcaption>
+    <strong>Queued, and saying so.</strong> This target is idle with no <code>Monitor</code> armed,
+    so nothing will claim the message until its next turn — the selector shows
+    <code>(1 queued)</code> and the status line says what it is waiting for. After 90 seconds the
+    panel goes further and names the likely cause (a session that predates the hook, or no idle
+    lane). This is the gap the design's <strong>D2</strong> is about: the hook lane alone cannot
+    reach a session that has already stopped.
+    <span class="note">The reply above it is missing because that exchange predates a fix made
+    during the demo — see below.</span>
+  </figcaption>
+</figure>
+
+<p>
+The other honest state is the default one: the <strong>lead session shows as “not armed”</strong>,
+because hooks are read at session start and the lead was running before any of this existed. The
+panel says so and offers to arm it rather than pretending the message will land.
+</p>
+
+<h3>A gap the demo found</h3>
+
+<p>
+The first hook-lane reply was delivered and answered correctly but never made it into the chat
+log: the transcript tail only ran while a browser was attached to the stream. A send now
+<em>holds</em> the watcher open for up to ten minutes (released at <code>end_turn</code>), so a
+reply that lands while the page is closed still reaches <code>log.jsonl</code>. Found by running
+it, not by reading it.
+</p>
+
+<h2>The protocol, in full</h2>
+
+<pre><code>&lt;workspace&gt;/.claude/session-chat/&lt;sessionId&gt;/
+  inbox/&lt;epochMs&gt;-&lt;id&gt;.json    # pending:   {id, from, text, createdAt}
+  delivered/&lt;id&gt;.json          # claimed:   + {deliveredAt, lane: "hook"|"monitor"}
+  outbox/&lt;id&gt;.json             # optional explicit reply: {id, text}
+  log.jsonl                    # derived chat log (safe to delete)</code></pre>
+
+<p>
+Enqueue = write a file. Claim = atomic rename. Any producer works, so the dashboard is the first
+client rather than the only possible one. Messages <strong>queue, they never interrupt</strong>:
+one per turn boundary, oldest first, depth on the page.
+</p>
+
+<h2>Security — the part worth arguing about</h2>
+
+<div class="warn">
+  <strong>This is a privilege lane.</strong> Anything that can write a file into
+  <code>inbox/</code> can make the orchestrator act, and that agent holds a GitHub App token path,
+  merge tooling, and write access to the workspace. The inbox is a trust boundary, not a message
+  queue.
+</div>
+
+<p>
+What the prototype does about it: binds <code>127.0.0.1</code> with no option to widen; requires a
+JSON content type and a loopback <code>Origin</code> on writes; holds no credentials and never
+talks to GitHub; is not a daemon, so the port exists only while someone is looking at the page;
+and leaves every delivery auditable on disk. What it deliberately does <em>not</em> do is grant
+anything — the delivered text is framed as a chat turn, explicitly “not a work order” and “not
+approval for anything gated”, and the merge guard, approval gates and no-writes-outside-jwildfire
+rules apply exactly as before. A shared-secret token is the next increment if wanted
+(<strong>D5</strong>).
+</p>
+
+<h2>Try it</h2>
+
+<pre><code># from the workspace root, on the PR branch
+obot.agent/hooks/install.sh                                  # registers the Stop lane (new sessions only)
+node obot.agent/tools/session-hub/session-chat.mjs --open    # http://127.0.0.1:4181/</code></pre>
+
+<p>
+Six decisions are open in the <a href="../../requirements/design/77_design.html#decisions">design</a>
+— starting with <strong>D1</strong>, which asks whether this should exist at all given that Remote
+Control already lets you type at a background session from claude.ai/code.
+</p>
+
+<footer>
+  <hr style="border:none; border-top:1px solid var(--rule); margin:0 0 .75rem;">
+  This page was drafted by Claude Code using Opus 5 (overnight sibling session
+  <code>👯🤖 2026-07-25 dashboard-chat</code>) and reviewed by @jwildfire.
+</footer>
+
+</body>
+</html>
