@@ -156,7 +156,7 @@ ${body}
   const firing = rules.filter((r) => r.fired).length;
   const broken = rules.filter((r) => r.error);
 
-  const note = `Nightly rule sweep of the roadmap's own conventions — ${rules.length} rules, ${firing} of them firing. Accept opens a prefilled decision issue; the <a href="https://github.com/${HUB}/blob/main/.github/workflows/roadmap-audit-apply.yml">apply lane</a> re-validates it against a fresh audit before anything changes, so nothing here is applied by looking at it. Last run ${esc(fmtET(ledger.generatedAt))} (${esc(age(ledger.generatedAt, now))} ago) · <a href="audit/findings.json">findings.json</a> · <a href="https://github.com/${HUB}/issues/92">#92</a>`;
+  const note = `Nightly rule sweep of the roadmap's own conventions — ${rules.length} rules, ${firing} of them firing. Accept opens a prefilled decision issue; the <a href="https://github.com/${HUB}/blob/main/.github/workflows/roadmap-audit-apply.yml">apply lane</a> re-validates it against a fresh audit before anything changes, so nothing here is applied by looking at it. Last run ${esc(fmtET(ledger.generatedAt))} (${esc(age(ledger.generatedAt, now))} ago) · <a href="audit/index.html"><strong>full audit page</strong></a> · <a href="audit/findings.json">findings.json</a> · <a href="https://github.com/${HUB}/issues/92">#92</a>`;
 
   const boardNotice = ledger.boardReadable
     ? ''
