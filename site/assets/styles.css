@@ -448,3 +448,157 @@ details.audit-rule > summary code { font-size: .74rem; color: var(--ink); }
 .audit-btn.reject:hover { color: var(--ink); border-color: var(--faint); text-decoration: none; }
 table.rm-table.audit-rules td { vertical-align: top; padding-bottom: .4rem; }
 table.rm-table.audit-rules td:nth-child(2) { white-space: nowrap; }
+
+/* ---------------------------------------------------------------- Cost section
+   Per-agent token/dollar usage (site/usage/usage.json, scripts/lib/usage/render.mjs).
+
+   Series colors are five slots of a validated categorical palette, assigned to
+   agent ROLE in fixed order — lead, sibling, ultracode, auto, interactive. The
+   order is the CVD-safety mechanism, not cosmetic: it is the adjacency the
+   palette was validated on (worst adjacent CVD ΔE 9.1 light / 8.4 dark, worst
+   adjacent normal-vision ΔE 19.6 light / 19.3 dark). Do not reorder or recolor
+   without re-running the validator.
+
+   Three of the light steps sit below 3:1 against --paper, which the palette's
+   relief rule permits only alongside visible labels or a table view — the
+   section ships both (a value on every column cap, and a per-agent table).
+
+   The dark steps are declared under [data-theme="dark"] only, NOT under
+   prefers-color-scheme. This site has no dark theme: flipping the series colors
+   on OS-dark while the page stayed on warm paper would put dark-surface colors
+   on a light surface and break the contrast they were chosen for. The hook is
+   here so the section is correct the day the site gains a real theme toggle. */
+:root {
+  --uz-lead: #2a78d6;
+  --uz-sibling: #eb6834;
+  --uz-ultracode: #1baf7a;
+  --uz-auto: #eda100;
+  --uz-interactive: #e87ba4;
+  --uz-surface: var(--paper);
+}
+:root[data-theme="dark"] {
+  --uz-lead: #3987e5;
+  --uz-sibling: #d95926;
+  --uz-ultracode: #199e70;
+  --uz-auto: #c98500;
+  --uz-interactive: #d55181;
+}
+
+.uz-total { font: 600 .8rem/1 var(--mono); color: var(--accent); margin-left: .3rem; }
+
+/* Totals row — a compact stat strip, not a hero: this is one section of a dense
+   ops page, so the numbers stay in proportion to the roadmap tables above. */
+.uz-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: .5rem;
+  margin: .5rem 0 .7rem;
+}
+.uz-tile {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  padding: .45rem .6rem;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.uz-tile-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.uz-tile-value { font: 600 1.15rem/1.2 var(--sans); color: var(--ink); }
+.uz-tile-sub { font-family: var(--mono); font-size: .68rem; color: var(--faint); }
+
+/* Controls in one row above the chart, never inside it. */
+.uz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .3rem .9rem;
+  margin: 0 0 .3rem;
+}
+.uz-group { display: inline-flex; gap: .2rem; }
+.uz-btn {
+  font: 600 .72rem/1.6 var(--mono);
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: .05rem .6rem;
+  cursor: pointer;
+}
+.uz-btn:hover { color: var(--accent); border-color: var(--accent-bright); }
+.uz-btn.current { color: var(--side-ink); background: var(--side-bg); border-color: var(--side-bg); }
+
+/* Legend is always present — identity never rests on color alone. */
+.uz-legend { display: inline-flex; flex-wrap: wrap; gap: .1rem .7rem; font-size: .72rem; color: var(--muted); }
+.uz-legend-item { display: inline-flex; align-items: center; gap: .3rem; }
+.uz-swatch {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  flex: none;
+  display: inline-block;
+  background: var(--faint);
+}
+.uz-swatch[data-role="lead"] { background: var(--uz-lead); }
+.uz-swatch[data-role="sibling"] { background: var(--uz-sibling); }
+.uz-swatch[data-role="ultracode"] { background: var(--uz-ultracode); }
+.uz-swatch[data-role="auto"] { background: var(--uz-auto); }
+.uz-swatch[data-role="interactive"] { background: var(--uz-interactive); }
+
+.uz-caption { margin: 0 0 .2rem; font-size: .72rem; color: var(--faint); }
+
+.uz-chart-wrap { position: relative; overflow-x: auto; padding-bottom: .2rem; }
+.uz-chart { display: block; max-width: 100%; height: auto; }
+.uz-bar[data-role="lead"] { fill: var(--uz-lead); }
+.uz-bar[data-role="sibling"] { fill: var(--uz-sibling); }
+.uz-bar[data-role="ultracode"] { fill: var(--uz-ultracode); }
+.uz-bar[data-role="auto"] { fill: var(--uz-auto); }
+.uz-bar[data-role="interactive"] { fill: var(--uz-interactive); }
+/* Hover/focus lifts the mark so the reader sees it respond. */
+.uz-seg { cursor: default; }
+.uz-seg:hover .uz-bar, .uz-seg:focus-visible .uz-bar { fill-opacity: .72; }
+.uz-seg:focus { outline: none; }
+.uz-seg:focus-visible .uz-bar { stroke: var(--ink); stroke-width: 1.5; }
+/* Recessive chrome: hairline, solid, one step off the surface. */
+.uz-grid { stroke: var(--rule); stroke-width: 1; }
+.uz-axis { stroke: var(--faint); stroke-width: 1; }
+/* Text wears text tokens, never a series color. */
+.uz-tick { font-family: var(--mono); font-size: 9px; fill: var(--faint); }
+.uz-cap { font-family: var(--mono); font-size: 9px; font-weight: 600; fill: var(--muted); }
+
+.uz-tip {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: .05rem;
+  max-width: 17rem;
+  padding: .35rem .55rem;
+  background: var(--card);
+  border: 1px solid var(--faint);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(39, 24, 16, .14);
+}
+.uz-tip strong { font: 600 .9rem/1.2 var(--sans); color: var(--ink); }
+.uz-tip-share { font-family: var(--mono); font-size: .68rem; color: var(--muted); }
+.uz-tip-who { font-size: .74rem; color: var(--ink); margin-top: .15rem; }
+.uz-tip-meta { font-family: var(--mono); font-size: .66rem; color: var(--faint); }
+
+.uz-fold { margin: .5rem 0 0; }
+.uz-fold summary { font-size: .8rem; }
+table.uz-table { font-size: .76rem; }
+table.uz-table td:first-child { font-family: var(--sans); font-size: .76rem; }
+table.uz-table .uz-num { font-family: var(--mono); text-align: right; white-space: nowrap; }
+table.uz-table td .uz-swatch { margin-right: .35rem; vertical-align: -1px; }
+.uz-fine { margin: .5rem 0 0; font-size: .7rem; line-height: 1.5; color: var(--faint); }
+
+/* Description text for screen readers — the chart's aria-labelledby target. */
+.uz-sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

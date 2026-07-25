@@ -80,6 +80,26 @@ Each finding carries a confidence — **high** (deterministic detection, unambig
 
 Adding a rule is one exported object in `rules.mjs` with a test beside it in `rules.test.mjs` — the nightly run fails rather than publishing findings from an untested registry.
 
+## Cost
+
+The **Cost** section of the [roadmap page](https://jwildfire.github.io/obot.roadmap/roadmap.html#sec-usage) charts what this project has cost to build: one stacked column per day (or week, or month), one segment per agent, toggleable between dollars and tokens.
+
+Unlike every other section, it is **not** built from the GitHub API. It reads @jwildfire's local Claude Code transcript store (`~/.claude/projects/`), which exists only on that machine — so the data is a **committed artifact** and the site build just renders whatever was last committed. The chart says which day the data runs through; refresh it by re-running the generator locally:
+
+```sh
+python3 scripts/build_usage_data.py          # rewrites site/usage/usage.json
+python3 scripts/build_usage_data.py --dry-run  # print the summary, write nothing
+git commit site/usage/usage.json -m "Refresh usage data"
+```
+
+| Piece | Where |
+|---|---|
+| Generator — transcripts to per-day, per-agent totals and cost | [`scripts/build_usage_data.py`](scripts/build_usage_data.py) |
+| Committed data | [`site/usage/usage.json`](site/usage/usage.json) |
+| Section + chart | [`scripts/lib/usage/render.mjs`](scripts/lib/usage/render.mjs) |
+
+Costs are list-price arithmetic over recorded token counts — what the usage would bill at API rates, not a copy of an invoice. Rates and the cache multipliers are in the generator's `PRICES` table and are shown on the page under **Models and rates**. Because this is a public site, per-agent token and dollar figures are public.
+
 ## Documentation
 
 Formal requirement documentation lives under [`requirements/`](requirements/):
@@ -105,7 +125,7 @@ from live GitHub state at deploy time (daily cron) and never committed; see the
 | [`site/`](site/) | Hand-authored homepage + shared stylesheet |
 | [`diary/`](diary/) | AI-written diary — one markdown file per day with activity ([conventions](diary/README.md)) |
 | [`reports/`](reports/) | AI-generated reports, one folder per report ([index](reports/README.md)) |
-| [`scripts/`](scripts/) | Site generators (`build_roadmap_next.mjs`, `build_goals.mjs`, `build_news.mjs`, `build_metrics.py`, `render_diary.mjs`) plus their shared collectors in `scripts/lib/`, and the roadmap audit (`audit_roadmap.mjs`, `apply_audit_decision.mjs`, `scripts/lib/audit/`) |
+| [`scripts/`](scripts/) | Site generators (`build_roadmap_next.mjs`, `build_goals.mjs`, `build_news.mjs`, `build_metrics.py`, `render_diary.mjs`) plus their shared collectors in `scripts/lib/`, the roadmap audit (`audit_roadmap.mjs`, `apply_audit_decision.mjs`, `scripts/lib/audit/`), and the usage/cost generator (`build_usage_data.py`, `scripts/lib/usage/`) — run locally, not at deploy time |
 
 # Agentic scaffold
 

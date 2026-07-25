@@ -25,6 +25,7 @@ import { collectReleases } from './lib/collect/releases.mjs';
 import { collectIdeas } from './lib/collect/ideas.mjs';
 import { collectGoals } from './lib/collect/goals.mjs';
 import { auditSection } from './lib/audit/render.mjs';
+import { usageSection } from './lib/usage/render.mjs';
 import {
   VIEWS, DEFAULT_VIEW, T, goalViews, requirementViews, prViews,
   upcomingViews, releaseViews, openIdeaViews, promotedIdeaViews,
@@ -243,19 +244,32 @@ async function readAuditLedger() {
   }
 }
 
+// Token/dollar usage (site/usage/usage.json) is a committed artifact, not an API
+// read: it comes from @jwildfire's local Claude Code transcripts, which the site
+// build cannot see. A missing file renders the section's own "not generated yet"
+// notice rather than failing the deploy.
+async function readUsage() {
+  try {
+    return JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'usage', 'usage.json'), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 const changelog = JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'roadmap-changelog.json'), 'utf8'));
 const auditEntries = [...changelog.entries].sort((a, b) => b.date.localeCompare(a.date));
 if (!auditEntries.length) throw new Error('site/roadmap-changelog.json has no entries');
 
 if (!hasToken) console.warn('roadmap: no GITHUB_TOKEN — sections that need the API will degrade');
 
-const [reqRes, prRes, relRes, ideaRes, goalRes, auditLedger] = await Promise.all([
+const [reqRes, prRes, relRes, ideaRes, goalRes, auditLedger, usage] = await Promise.all([
   settle('Requirements', collectRequirements),
   settle('Open PRs', collectOpenPRs),
   settle('Releases', collectReleases),
   settle('Ideas', collectIdeas),
   settle('Goals', collectGoals),
   readAuditLedger(),
+  readUsage(),
 ]);
 
 // The requirements section is the page's spine: if it is gone, the deploy should
@@ -353,6 +367,7 @@ ${prSection(prRes)}
 ${upcomingSection(relRes)}
 ${ideasSection(ideaRes)}
 ${recentSection(relRes)}
+${usageSection(usage)}
 
 ${foldedSection}
 ${auditLogHtml}
@@ -507,6 +522,7 @@ console.log(
   `roadmap-next: ${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
   `${prRes.value?.length ?? 0} PRs, ${relRes.value?.upcoming.length ?? 0} upcoming, ` +
   `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas, ` +
-  `${auditLedger ? `${auditLedger.counts.total} audit findings` : 'no audit ledger'}` +
+  `${auditLedger ? `${auditLedger.counts.total} audit findings` : 'no audit ledger'}, ` +
+  `${usage ? `$${usage.totals.cost} usage over ${usage.totals.activeDays} days` : 'no usage data'}` +
   (degraded.length ? ` — degraded: ${degraded.join(', ')}` : ''),
 );
