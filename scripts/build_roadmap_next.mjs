@@ -428,15 +428,29 @@ ${auditLogHtml}
   // deploy, so it stays current between site builds. Renders its own timestamp
   // rather than claiming to be live: the raw CDN caches for up to 5 minutes.
   var pill = document.getElementById('rm-session');
+  // The publisher can only fail quietly (a Stop hook must not break a session),
+  // so the page is where a breakage becomes visible: past STALE_MINUTES the pill
+  // stops asserting a live state and says how old the reading is. Showing a
+  // confident "2 working" from a feed that died hours ago is worse than silence.
+  var STALE_MINUTES = 120;
   fetch(${JSON.stringify(SESSION_STATE_URL)}, { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (s) {
       if (!s || !s.state) return;
-      var idle = s.state === 'idle' || s.state === 'done';
       var mins = s.updatedAt ? Math.floor((Date.now() - new Date(s.updatedAt)) / 60000) : null;
-      var when = mins === null ? '' : (mins < 1 ? ' · just now' : ' · ' + mins + 'm ago');
-      pill.className = 'rm-session ' + (idle ? 'idle' : 'live');
-      pill.textContent = (idle ? '○ ' : '● ') + (s.name || 'obot') + ' — ' + (s.detail || s.state) + when;
+      var stale = mins === null || mins > STALE_MINUTES;
+      var idle = s.state === 'idle' || s.state === 'done';
+      var when = mins === null ? 'age unknown'
+        : mins < 1 ? 'just now'
+        : mins < 60 ? mins + 'm ago'
+        : Math.floor(mins / 60) + 'h ago';
+      pill.className = 'rm-session ' + (stale ? 'stale' : idle ? 'idle' : 'live');
+      pill.title = stale
+        ? 'The session feed has not updated recently — it may have stopped publishing.'
+        : 'Published by the session heartbeat.';
+      pill.textContent = stale
+        ? '○ session feed last updated ' + when
+        : (idle ? '○ ' : '● ') + (s.name || 'obot') + ' — ' + (s.detail || s.state) + ' · ' + when;
       pill.hidden = false;
     })
     .catch(function () { /* no session state published yet — stay hidden */ });
