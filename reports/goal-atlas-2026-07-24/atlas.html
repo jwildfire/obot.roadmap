@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1 · The atlas — four views of the roadmap rollup</title>
+<link rel="stylesheet" href="assets/atlas.css">
+</head>
+<body>
+<div class="wrap wide">
+
+<header class="masthead">
+  <div class="kicker">Goal Atlas · Part 1</div>
+  <h1>Four views of one graph</h1>
+  <p class="standfirst">Goals, requirements and tasks are a single hierarchy held together by GitHub sub-issue links. Each view below reads that hierarchy a different way — coverage, proportion, detail, and everything the hierarchy misses.</p>
+  <p class="byline">Every mark is clickable and opens the issue on GitHub. Hover for repo, goal, stage and state.</p>
+  <nav class="parts">
+    <a href="index.html">Overview</a>
+    <a href="atlas.html" aria-current="page">1 · The atlas</a>
+    <a href="goals.html">2 · Goal proposals</a>
+    <a href="requirements.html">3 · Requirement spike</a>
+  </nav>
+</header>
+
+<section id="v1">
+  <h2>View 1 · The coverage ridge</h2>
+  <p class="lede">One square per open issue, grouped by goal, sorted by board stage. This is the whole roadmap at its true size — and it is the only view where the unclaimed block is impossible to scroll past.</p>
+  <div class="ridge">
+    <div id="ridge-host"></div>
+    <div class="legend">
+      <span class="item"><span class="swatch" style="background:var(--g-charts)"></span> Charts</span>
+      <span class="item"><span class="swatch" style="background:var(--g-app)"></span> App</span>
+      <span class="item"><span class="swatch" style="background:var(--g-autonomy)"></span> Autonomy</span>
+      <span class="item"><span class="swatch" style="background:var(--g-keynote)"></span> Keynote</span>
+      <span class="item"><span class="swatch" style="background:var(--g-orphan)"></span> Unclaimed</span>
+      <span class="item"><span class="swatch ring"></span> not on the project board</span>
+    </div>
+  </div>
+</section>
+
+<section id="v2">
+  <h2>View 2 · Strata</h2>
+  <p class="lede">An icicle read left to right: goal, then its requirements and direct tasks, then their tasks. Every band's height is the number of open issues underneath it, so the picture is proportional — a goal with one member is one row tall, and the unclaimed block is as tall as the work it holds. Closed issues are excluded here; the point is what is live.</p>
+  <div id="strata-host"></div>
+  <div class="note">Reading it: <b>Charts</b> has real depth — ten members, one of which (<span class="mono">hub#88</span>, hepExplorer follow-ups) carries eight tasks of its own. <b>App</b> and <b>Keynote</b> are one band each. <b>Unclaimed</b> has the same internal structure as a goal — requirements with tasks under them — it simply has no goal on top.</div>
+</section>
+
+<section id="v3">
+  <h2>View 3 · The outline</h2>
+  <p class="lede">The whole graph as an indented, collapsible list — including closed issues if you ask for them. This is also the table view: every fact the colored views encode is written out here in text. Filter by goal, repo or state; search matches titles and issue numbers.</p>
+  <div id="outline-host"></div>
+</section>
+
+<section id="v4">
+  <h2>View 4 · The unclaimed, sorted into homes</h2>
+  <p class="lede">Forty-five open issues roll up to no goal. They are not a pile — they fall into five groups with clean edges. Two of the groups belong under goals that already exist; three describe workstreams the current goals were never written to hold. <a href="goals.html">Part 2</a> turns those three into draft goals.</p>
+  <div id="clusters-host"></div>
+</section>
+
+<section id="v5">
+  <h2>The same data as a table</h2>
+  <p class="lede">Open issues by goal and board stage. "Off board" means the issue is not an item on the obot Roadmap project, so it renders in no lane on the public roadmap page.</p>
+  <div id="matrix-host"></div>
+</section>
+
+<section>
+  <h2>How the views were built</h2>
+  <ul class="bullets">
+    <li><b>Membership</b> is resolved at read time by walking <span class="mono">subIssues</span> from each goal issue to any depth, exactly as the <a class="ref" href="https://github.com/jwildfire/obot.roadmap/issues/53">hub#53</a> policy defines it. An issue whose parent chain never reaches a goal is unclaimed, even if it has a parent.</li>
+    <li><b>Kind</b> is inferred: the <span class="mono">goal</span> label makes a goal; a <span class="mono">requirement</span> label or a <span class="mono">Requirement:</span> title prefix makes a requirement; everything else is a task.</li>
+    <li><b>Stage</b> comes from the Status field on the obot Roadmap project (number 1), not from labels.</li>
+    <li><b>Color</b> encodes goal identity only, in a fixed order so that every on-screen pair is one of the validated adjacent pairs. Every colored mark also carries a letter glyph or a written label, so identity is never color alone.</li>
+    <li><b>State</b> is a shape, not a hue: filled dot for open, hollow for closed, ring for not-on-the-board.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Snapshot 2026-07-25 04:00 UTC · <a href="index.html">Overview</a> · <a href="goals.html">Goal proposals</a> · <a href="requirements.html">Requirement spike</a> · <a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/goal-atlas-2026-07-24/README.md">Method</a></p>
+</footer>
+
+</div>
+<script src="data/atlas-data.js"></script>
+<script src="assets/atlas.js"></script>
+<script>
+  Atlas.ridge("#ridge-host");
+  Atlas.strata("#strata-host");
+  Atlas.outline("#outline-host");
+  Atlas.clusters("#clusters-host");
+  Atlas.matrix("#matrix-host");
+</script>
+</body>
+</html>
