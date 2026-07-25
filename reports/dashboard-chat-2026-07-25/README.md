@@ -4,7 +4,7 @@ Evidence for the overnight prototype of [hub #77](https://github.com/jwildfire/o
 — sending prompts to a running orchestrator session from the session-hub live dashboard and
 watching the reply stream back. Companion to
 [design #77](../../requirements/design/77_design.html) and prototype PR
-[obot.agent#48](https://github.com/jwildfire/obot.agent/pull/48).
+[obot.agent#50](https://github.com/jwildfire/obot.agent/pull/50).
 
 - **Sources.** The prototype itself (branch `77-dashboard-chat` in `obot.agent`), run live on
   2026-07-25 against two throwaway background sessions spawned for the demo
