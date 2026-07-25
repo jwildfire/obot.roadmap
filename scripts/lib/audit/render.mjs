@@ -1,16 +1,16 @@
 // The roadmap page's Audit section (#92) — findings and rules, collapsed by
-// default, each finding with an accept/reject control.
+// default, read-only.
 //
-// The hard constraint: GitHub Pages is static, so a button cannot call an agent.
-// What a static page CAN do is hand @jwildfire a prefilled GitHub issue. So
-// "accept" opens a decision issue labelled `audit-decision` naming the finding
-// ids; opening it fires roadmap-audit-apply.yml, which re-validates each finding
-// against a fresh audit and applies it. Two clicks, no token in a public page,
-// and the decision itself is the audit trail.
+// Decisions moved to the audit page (#109): it is the one surface that can
+// authenticate, trigger the apply lane in a click, and report the run as it
+// happens. This fold is where a finding gets noticed on the ops page; it links to
+// where findings are cleared rather than growing a second control plane, because
+// two places to accept the same thing is how the two disagree.
 //
-// The buttons carry finding IDS and never operations: a URL is user-editable
-// input, so the only thing it is trusted to say is *which* finding was accepted.
-// What that means is re-derived server-side.
+// `decisionUrl` stays exported for the documented fallback — an `audit-decision`
+// issue naming finding ids, which the same lane handles when a browser cannot be
+// connected. Both paths carry ids and never operations; what an id means is
+// re-derived from a fresh audit server-side.
 import { esc, fmtET, age } from '../gh.mjs';
 import { HUB } from '../repos.mjs';
 
@@ -48,13 +48,12 @@ export function decisionUrl(decision, ids, { title = null } = {}) {
   return `https://github.com/${HUB}/issues/new?${params.toString()}`;
 }
 
-const btn = (decision, ids, label, extra = '') => {
-  if (!ids.length) return '';
-  const url = decisionUrl(decision, ids);
-  const overflow = ids.length > MAX_BULK ? ` (first ${MAX_BULK} of ${ids.length})` : '';
-  return `<a class="audit-btn ${decision}" href="${esc(url)}" target="_blank" rel="noopener"` +
-    ` title="Opens a prefilled decision issue${overflow}. ${decision === 'accept' ? 'The apply lane re-validates before changing anything.' : 'Nothing is changed; the finding is muted.'}"${extra}>${esc(label)}${overflow}</a>`;
-};
+// Decisions are made on the audit page, which is the one surface that can
+// authenticate and report a run (#109). This fold is where findings are noticed;
+// it links to where they are cleared rather than growing a second control plane.
+const clearOn = (anchor, label) =>
+  `<a class="audit-btn accept" href="audit/index.html#${esc(anchor)}"`
+  + ` title="Accept or reject on the audit page, which triggers the apply lane and reports the run as it happens">${esc(label)}</a>`;
 
 function findingRow(f) {
   const subj = f.subject.number
@@ -82,16 +81,15 @@ function findingRow(f) {
       </div>
       <p class="audit-evidence">${f.evidence.map(esc).join(' · ')}</p>
       <p class="audit-proposal"><span class="rm-pill ${f.proposal.kind === 'agentic' ? 'ready' : 'ok'}">${esc(f.proposal.kind)}</span> ${esc(f.proposal.summary)} ${ops}</p>
-      <div class="audit-actions">${flags}<code class="audit-id">${esc(f.id)}</code>${btn('accept', [f.id], 'accept')}${btn('reject', [f.id], 'reject')}</div>
+      <div class="audit-actions">${flags}<code class="audit-id">${esc(f.id)}</code>${clearOn(`rule-${f.rule}`, 'review')}</div>
     </div>`;
 }
 
 function ruleGroup(rule, findings) {
-  const ids = findings.map((f) => f.id);
   const kinds = new Set(findings.map((f) => f.proposal.kind));
   return `  <details class="audit-rule">
     <summary><code>${esc(rule)}</code> <span class="audit-rule-title">${esc(findings[0].ruleTitle)}</span> <span class="rm-count">${findings.length}</span>${
-      findings.length > 1 ? ` <span class="audit-bulk">${btn('accept', ids, `accept all ${findings.length}`)}</span>` : ''
+      findings.length > 1 ? ` <span class="audit-bulk">${clearOn(`rule-${rule}`, `clear all ${findings.length}`)}</span>` : ''
     }</summary>
     <p class="rm-note">${esc([...kinds].join(' + '))} · <a href="#audit-rules">what this rule checks</a></p>
 ${findings.map(findingRow).join('\n')}
@@ -106,12 +104,9 @@ function tier({ key, label, blurb }, findings) {
     if (!byRule.has(f.rule)) byRule.set(f.rule, []);
     byRule.get(f.rule).push(f);
   }
-  const mechanical = mine.filter((f) => f.proposal.kind === 'mechanical').map((f) => f.id);
   return `<div class="audit-tier">
 <h3>${esc(label)} <span class="rm-count">${mine.length}</span>
-  <span class="audit-bulk">${btn('accept', mine.map((f) => f.id), `accept all ${mine.length}`)}${
-    mechanical.length && mechanical.length !== mine.length ? btn('accept', mechanical, `accept the ${mechanical.length} mechanical`) : ''
-  }</span></h3>
+  <span class="audit-bulk">${clearOn('audit-findings', 'clear on the audit page')}</span></h3>
 <p class="rm-note">${esc(blurb)}</p>
 ${[...byRule.entries()].map(([rule, fs]) => ruleGroup(rule, fs)).join('\n')}
 </div>`;
@@ -156,7 +151,7 @@ ${body}
   const firing = rules.filter((r) => r.fired).length;
   const broken = rules.filter((r) => r.error);
 
-  const note = `Nightly rule sweep of the roadmap's own conventions — ${rules.length} rules, ${firing} of them firing. Accept opens a prefilled decision issue; the <a href="https://github.com/${HUB}/blob/main/.github/workflows/roadmap-audit-apply.yml">apply lane</a> re-validates it against a fresh audit before anything changes, so nothing here is applied by looking at it. Last run ${esc(fmtET(ledger.generatedAt))} (${esc(age(ledger.generatedAt, now))} ago) · <a href="audit/index.html"><strong>full audit page</strong></a> · <a href="audit/findings.json">findings.json</a> · <a href="https://github.com/${HUB}/issues/92">#92</a>`;
+  const note = `Nightly rule sweep of the roadmap's own conventions — ${rules.length} rules, ${firing} of them firing. Decisions are made on the <a href="audit/index.html"><strong>audit page</strong></a>, which triggers the <a href="https://github.com/${HUB}/blob/main/.github/workflows/roadmap-audit-apply.yml">apply lane</a> in one click and reports the run as it happens; this fold is for noticing findings, not for clearing them. Last run ${esc(fmtET(ledger.generatedAt))} (${esc(age(ledger.generatedAt, now))} ago) · <a href="audit/index.html"><strong>full audit page</strong></a> · <a href="audit/findings.json">findings.json</a> · <a href="https://github.com/${HUB}/issues/92">#92</a>`;
 
   const boardNotice = ledger.boardReadable
     ? ''
@@ -169,8 +164,11 @@ ${body}
     ? `Findings (${live.length}) — ${counts.high} high · ${counts.medium} medium · ${counts.low} low${counts.muted ? ` · ${counts.muted} muted` : ''}`
     : `Findings (0) — the roadmap satisfies every rule${counts.muted ? `, with ${counts.muted} muted` : ''}`;
 
+  const mechanicalHigh = live.filter((f) => f.confidence === 'high' && f.proposal.kind === 'mechanical').length;
   const body = live.length
-    ? `<div class="audit-top">${btn('accept', live.filter((f) => f.confidence === 'high' && f.proposal.kind === 'mechanical').map((f) => f.id), 'accept every high-confidence mechanical fix')}</div>
+    ? `<div class="audit-top">${clearOn('audit-findings', mechanicalHigh
+      ? `clear ${mechanicalHigh} high-confidence mechanical fixes on the audit page`
+      : 'open the audit page')}</div>
 ${CONFIDENCE.map((c) => tier(c, findings)).filter(Boolean).join('\n')}`
     : '<p class="rm-empty">Nothing to review — every rule is satisfied.</p>';
 
