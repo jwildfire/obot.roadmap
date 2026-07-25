@@ -74,6 +74,10 @@
   table.grid td.d { font: 500 .74rem/1.5 var(--mono); color: var(--accent); white-space: nowrap; }
   table.grid tr.rec td { background: #fffdf8; }
 
+  .decided { border: 1px solid var(--good-line); background: var(--good-bg); border-radius: 10px;
+    padding: .65rem .85rem; margin: 1.1rem 0 0; max-width: 46rem; }
+  .decided .dl { font: 600 .66rem/1.6 var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--good); }
+  .decided p { margin: .15rem 0 0; font-size: .88rem; }
   .mono { font-family: var(--mono); font-size: .88em; }
   ul.plain { padding-left: 1.1rem; max-width: 44rem; }
   ul.plain li { margin: .25rem 0; font-size: .92rem; }
@@ -106,6 +110,11 @@
 <h1 class="big">Thirty-three decisions,<br>one screen</h1>
 <p class="standfirst">The audit page reads well and decides badly. Three working prototypes turn the same findings into a table you can clear in a sitting — each takes a different position on where the reasoning goes when the rows get short.</p>
 <p class="byline">Driven by the real ledger the nightly audit committed on 2026-07-25 — 33 live findings, 1 muted, 22 rules · decisions are held in the browser tab and nothing is sent to GitHub · companion to requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/109">#109</a> and PR <a href="https://github.com/jwildfire/obot.roadmap/pull/110">#110</a>, which is on hold pending this</p>
+
+<div class="decided">
+  <div class="dl">Decided 2026-07-25 by @jwildfire</div>
+  <p><b>Option B ships</b>, and <b>a click dispatches immediately</b> — the two answers that unblock <a href="https://github.com/jwildfire/obot.roadmap/pull/110">PR #110</a>. D3–D6 went to the recommendation in each case. The table below records all six. One consequence: the prototypes stage decisions and print the request; the shipped view will not — every ✓ fires a run as it is clicked, and a rule band still sends one request carrying all of its ids.</p>
+</div>
 
 <h2>What is wrong with the page today</h2>
 <p class="lede">Not the content — the format. Every finding is a card carrying its own copy of the rule's reasoning, so the page is written for a first read and paid for on every read after that.</p>
@@ -162,7 +171,7 @@
 <ul class="plain">
   <li><b>A rule band with ✓ / ✗ for all of it.</b> Rules group the table; the band decides every finding under it in one click, and reports <span class="mono">3/8 decided</span> when you have only touched some.</li>
   <li><b>A collapsible sidebar</b> carrying search, sorts (confidence, rule, issue, age, runs, kind), facets for confidence / kind / rule group / repository / decided-state, and three saved sweeps — the useful one being <em>high confidence, mechanical, undecided</em>, which is the batch you can clear without reading.</li>
-  <li><b>Staged decisions and one Apply.</b> Nothing dispatches per click. The tray at the bottom counts what is staged and <em>Apply</em> shows the exact <span class="mono">repository_dispatch</span> body PR #110's lane would receive — two requests for 33 decisions rather than 33.</li>
+  <li><b>Staged decisions and one Apply</b> — <em>superseded by D2</em>. In the prototypes nothing dispatches: the tray counts what is staged and <em>Apply</em> prints the exact <span class="mono">repository_dispatch</span> body. The shipped view fires each click instead; the tray comes out.</li>
   <li><b>A queue meter</b> above the table: one tick per finding in table order, filled as you decide, hover to identify, click to jump. Progress and minimap in the same object.</li>
   <li><b>Keyboard triage.</b> <span class="mono">j</span>/<span class="mono">k</span> move, <span class="mono">a</span> accept, <span class="mono">x</span> reject, <span class="mono">u</span> undo, <span class="mono">enter</span> details, <span class="mono">/</span> search. Deciding advances to the next row, so a clean sweep is <span class="mono">a a a x a</span>.</li>
 </ul>
@@ -172,8 +181,8 @@
 
 <div class="opts">
 
-  <div class="opt-card pick">
-    <span class="tag">Option A · recommended</span>
+  <div class="opt-card">
+    <span class="tag">Option A</span>
     <h3>Ledger</h3>
     <div class="wire"><div class="s"></div><div class="m"></div></div>
     <p>One table for the whole queue, rule bands inside it, and details opening in place under the row they belong to.</p>
@@ -185,8 +194,8 @@
     <a class="go" href="option-ledger.html">Open Option A →</a>
   </div>
 
-  <div class="opt-card">
-    <span class="tag">Option B</span>
+  <div class="opt-card pick">
+    <span class="tag">Option B · chosen</span>
     <h3>Rail</h3>
     <div class="wire"><div class="s"></div><div class="m split"></div><div class="d"></div></div>
     <p>The same table, but it never changes shape. The selected row fills a rail on the right — arrow down the list and the reasoning follows you.</p>
@@ -212,7 +221,8 @@
   </div>
 </div>
 
-<h2>What I would ship</h2>
+<h2>What I recommended</h2>
+<p class="lede">Kept for the record. D1 went to B on its own rather than as a toggle on A.</p>
 
 <div class="callout">
   <p><b>Option A, with B's rail as a toggle rather than a rival.</b> A and B are the same build — the same table, the same bands, the same sidebar — differing only in whether <span class="mono">detail</span> renders under the row or beside it. That is a preference, not an architecture, so it should be a control on the page and not a decision made once for you. Default to the rail on a wide screen, because 15 of 33 findings are judgment calls that need a paragraph read before they are decidable, and fall back to inline expansion below 76rem where the rail does not fit.</p>
@@ -220,19 +230,21 @@
   <p><b>Do not ship C first.</b> Its wizard is genuinely faster on a queue like tonight's, but it hides the queue: you cannot see that 13 high-confidence findings are one click away, and a rule you never step to is a rule you never decide. Worth revisiting once the compact view has been lived with for a week — it is a mode, not a replacement.</p>
 </div>
 
-<h2>Decisions I need from you</h2>
+<h2>The six decisions, settled</h2>
+<p class="lede">Asked and answered on 2026-07-25. Every one went to the recommendation.</p>
 <table class="grid">
-  <tr><th>#</th><th>Question</th><th>Options</th><th>My recommendation</th></tr>
-  <tr class="rec"><td class="d">D1</td><td>Which view ships on <span class="mono">/audit/</span>?</td><td>A · B · C · A+B as one build with a toggle</td><td><b>A+B as one build</b>, rail default on wide screens</td></tr>
-  <tr class="rec"><td class="d">D2</td><td>Does a click dispatch immediately, or stage?</td><td>Per-click dispatch (PR #110 today) · stage and Apply once</td><td><b>Stage.</b> 33 decisions become 2 runs, and a misclick is recoverable before it leaves the browser</td></tr>
-  <tr><td class="d">D3</td><td>Should ✗ at the rule band be allowed to mute a whole rule?</td><td>Yes, same as ✓ · yes with a confirm above 3 · accept-all only</td><td><b>Confirm above 3.</b> Reject mutes for 60 days, so a slip is invisible for two months</td></tr>
-  <tr><td class="d">D4</td><td>Where does #109's activity log live now that the page is a table?</td><td>Sidebar panel · a fourth nav item · a fold under the table</td><td><b>Fold under the table.</b> It is read after a decision, not during</td></tr>
-  <tr><td class="d">D5</td><td>Default sort and grouping</td><td>Grouped by rule, confidence first (prototype) · flat, confidence first · grouped, rule group order</td><td><b>Keep the prototype default</b> — grouped, worst rule first</td></tr>
-  <tr><td class="d">D6</td><td>What happens to the long-form reading view?</td><td>Replaced · kept behind a toggle · kept as the rule reference only</td><td><b>Rule reference only.</b> The 22-rule table and the quiet rules stay; the per-finding cards go</td></tr>
+  <tr><th>#</th><th>Question</th><th>Decided</th><th>Why</th></tr>
+  <tr class="rec"><td class="d">D1</td><td>Which view ships on <span class="mono">/audit/</span>?</td><td><b>Option B · Rail</b></td><td>The table never changes shape and the reasoning follows the selection — the 15 judgment calls are the ones that cost time</td></tr>
+  <tr class="rec"><td class="d">D2</td><td>Dispatch per click, or stage?</td><td><b>Per click</b></td><td>A decision leaves the browser when it is made; the tray and its payload preview come out. A rule band is still one request, because the payload carries a list of ids</td></tr>
+  <tr class="rec"><td class="d">D3</td><td>May ✗ at the rule band mute a whole rule?</td><td><b>Yes, confirm above 3</b></td><td>1–3 fires straight away; 4 or more names the count and the mute date first. Accept-all never confirms — an accept is visible the next morning, a mute is invisible for 60 days</td></tr>
+  <tr class="rec"><td class="d">D4</td><td>Where does #109's activity log live?</td><td><b>A fold under the table</b></td><td>Read after deciding, not during, so it never competes with the queue for vertical space</td></tr>
+  <tr class="rec"><td class="d">D5</td><td>Default sort and grouping</td><td><b>Grouped by rule, worst first</b></td><td>The prototype default, kept</td></tr>
+  <tr class="rec"><td class="d">D6</td><td>What happens to the long-form view?</td><td><b>Rule reference only</b></td><td>The per-finding cards go; the 22-rule table and the quiet-rules list stay, because an empty audit and a broken one must never look alike</td></tr>
+  <tr class="rec"><td class="d">D7</td><td>What the page shows between the click and the outcome</td><td><b>Row pill + one run panel</b></td><td>The row reads sending → queued → running → ✓ applied; a panel under the toolbar holds the run link and the outcome re-read from <span class="mono">decisions.json</span> — the page reports what the lane recorded, not what the click asked for</td></tr>
 </table>
 
 <h2>What this means for PR #110</h2>
-<p>The backend survives intact: <span class="mono">repository_dispatch</span>, the re-validation against a fresh audit, the ledger, the run polling. What changes is the surface calling it — and, if D2 goes to staging, that the page sends one request per decision type instead of one per finding, which the lane already supports because the payload names finding ids. The connect-once token flow is untouched. The prototypes deliberately stop at the dispatch boundary and show the request instead of sending it.</p>
+<p>The backend survives intact: <span class="mono">repository_dispatch</span>, the re-validation against a fresh audit, the ledger, the run polling. What changes is only the surface calling it: the card list becomes Option B’s table and rail, the accept and reject buttons move onto the row and the rule band, and the run reporting the PR already built stays as it is (D7). The connect-once token flow is untouched. D2 kept per-click dispatch, so the tray and its payload preview — the one behaviour these prototypes have that the shipped view will not — come out; a rule band sends a single request carrying all of its finding ids, which the lane already accepts.</p>
 
 <h2>What is not in the prototypes</h2>
 <ul class="plain">

@@ -1,6 +1,6 @@
 # Audit view redesign — three ways to clear the queue
 
-**Date:** 2026-07-25 · **Status:** Current — three interactive prototypes awaiting @jwildfire (D1–D6); nothing filed, nothing applied
+**Date:** 2026-07-25 · **Status:** Current — **Option B chosen** with per-click dispatch (D1–D7 settled the same day); implementation not started
 **Requirement:** [#109](https://github.com/jwildfire/obot.roadmap/issues/109) · **Blocked PR:** [#110](https://github.com/jwildfire/obot.roadmap/pull/110) (click-to-apply, on hold pending this design)
 **Redesigns:** [/audit/](https://jwildfire.github.io/obot.roadmap/audit/), built by [`scripts/build_audit_page.mjs`](../../scripts/build_audit_page.mjs)
 
@@ -38,16 +38,19 @@ The current page renders each finding as a card that repeats its rule's reasonin
 - **Not real:** no GitHub token, no dispatch, no run polling, no persistence. Reloading clears every decision. The data is a snapshot so the three options stay comparable while the nightly audit moves on.
 - **Not designed yet:** dark theme (every colour is a token, no component hard-codes white or black), small screens (the rail and sidebar collapse; the table still wants width), and the #109 activity log (see D4).
 
-## Decisions awaiting @jwildfire
+## Decisions — settled 2026-07-25
 
-| # | Question | Recommendation |
+| # | Question | Decided |
 |---|---|---|
-| D1 | Which view ships on `/audit/`? | A + B as one build with a detail-placement toggle; rail default on wide screens |
-| D2 | Dispatch per click, or stage and apply once? | Stage — 33 decisions become 2 runs, and a misclick is recoverable |
-| D3 | May ✗ at the rule band mute a whole rule? | Yes, with a confirm above 3 (reject mutes for 60 days) |
-| D4 | Where does #109's activity log live? | A fold under the table |
-| D5 | Default sort and grouping | Grouped by rule, confidence first (the prototype default) |
-| D6 | What happens to the long-form reading view? | Keep the rule reference and the quiet rules; drop the per-finding cards |
+| D1 | Which view ships on `/audit/`? | **Option B · Rail** |
+| D2 | Dispatch per click, or stage? | **Per click** — the tray and payload preview come out; a rule band is still one request carrying all of its ids |
+| D3 | May ✗ at the rule band mute a whole rule? | **Yes, with a confirm above 3** |
+| D4 | Where does #109's activity log live? | **A fold under the table** |
+| D5 | Default sort and grouping | **Grouped by rule, worst first** (the prototype default) |
+| D6 | What happens to the long-form reading view? | **Rule reference only** — cards go, the 22-rule table and quiet rules stay |
+| D7 | What the page shows between click and outcome | **Row pill + one run panel**, outcome re-read from `decisions.json` |
+
+All seven went to the recommendation. #110 is unblocked; what it changes is the view, not the lane.
 
 ## No external dependencies
 
