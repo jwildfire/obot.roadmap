@@ -24,6 +24,7 @@ import { collectOpenPRs } from './lib/collect/prs.mjs';
 import { collectReleases } from './lib/collect/releases.mjs';
 import { collectIdeas } from './lib/collect/ideas.mjs';
 import { collectGoals } from './lib/collect/goals.mjs';
+import { auditSection } from './lib/audit/render.mjs';
 import {
   VIEWS, DEFAULT_VIEW, T, goalViews, requirementViews, prViews,
   upcomingViews, releaseViews, openIdeaViews, promotedIdeaViews,
@@ -231,18 +232,30 @@ ${promoted.length ? promotedRows : `  ${empty('None promoted in the window.')}`}
 }
 
 // ---------------------------------------------------------------- page
+// The audit ledger (#92) is a committed file, not an API read: it is written by
+// the nightly audit and by the apply lane, and read here. A missing file renders
+// as "no audit has run yet" rather than omitting the section.
+async function readAuditLedger() {
+  try {
+    return JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'audit', 'findings.json'), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 const changelog = JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'roadmap-changelog.json'), 'utf8'));
 const auditEntries = [...changelog.entries].sort((a, b) => b.date.localeCompare(a.date));
 if (!auditEntries.length) throw new Error('site/roadmap-changelog.json has no entries');
 
 if (!hasToken) console.warn('roadmap: no GITHUB_TOKEN — sections that need the API will degrade');
 
-const [reqRes, prRes, relRes, ideaRes, goalRes] = await Promise.all([
+const [reqRes, prRes, relRes, ideaRes, goalRes, auditLedger] = await Promise.all([
   settle('Requirements', collectRequirements),
   settle('Open PRs', collectOpenPRs),
   settle('Releases', collectReleases),
   settle('Ideas', collectIdeas),
   settle('Goals', collectGoals),
+  readAuditLedger(),
 ]);
 
 // The requirements section is the page's spine: if it is gone, the deploy should
@@ -333,6 +346,7 @@ const html = `<!DOCTYPE html>
 
 ${goalsSection(goalRes, requirements)}
 ${requirementsSection}
+${auditSection(auditLedger, { now: NOW })}
 
 ${prSection(prRes)}
 ${upcomingSection(relRes)}
@@ -491,6 +505,7 @@ const degraded = [
 console.log(
   `roadmap-next: ${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
   `${prRes.value?.length ?? 0} PRs, ${relRes.value?.upcoming.length ?? 0} upcoming, ` +
-  `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas` +
+  `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas, ` +
+  `${auditLedger ? `${auditLedger.counts.total} audit findings` : 'no audit ledger'}` +
   (degraded.length ? ` — degraded: ${degraded.join(', ')}` : ''),
 );

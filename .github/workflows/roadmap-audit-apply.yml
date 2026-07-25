@@ -1,0 +1,194 @@
+# The accept/reject lane for roadmap audit findings (requirement #92).
+#
+# GitHub Pages is static, so the dashboard's Accept button cannot call an agent.
+# What it can do is open a prefilled issue: labelled `audit-decision`, naming the
+# accepted finding ids. Opening that issue is the trigger this workflow waits for.
+#
+# The safety contract, in order:
+#   1. actor must be @jwildfire, and the label must be `audit-decision`
+#   2. the run is idempotent — an already-handled decision issue exits clean
+#      (creating an issue with a label fires both `opened` and `labeled`)
+#   3. apply_audit_decision.mjs re-runs the whole audit and refuses any finding
+#      the current state no longer reports. The URL is user-editable input, so it
+#      is trusted to name findings and nothing else
+#   4. mechanical findings run a closed vocabulary of ops; judgment calls go to a
+#      bounded headless Claude Code run against .github/roadmap-audit-policy.md
+#   5. what happened is commented on the decision issue, which is then closed
+#      with 👍 or 😕 — silence never reads as success
+#
+# Rejections change nothing on GitHub; they append to site/audit/decisions.json,
+# which mutes the finding for 60 days or until its evidence changes.
+
+name: roadmap-audit-apply
+
+on:
+  issues:
+    types: [opened, labeled]
+
+concurrency:
+  group: roadmap-audit-apply-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    if: >
+      github.actor == 'jwildfire' &&
+      contains(github.event.issue.labels.*.name, 'audit-decision')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Mint obotclaw[bot] token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.OBOT_APP_ID }}
+          private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
+          owner: jwildfire
+
+      # `opened` and `labeled` both fire for an issue created with labels, and a
+      # decision must never be applied twice. The lane's own marker comment is the
+      # interlock.
+      - name: Guard against a repeat run
+        id: guard
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          state=$(gh api "repos/${GITHUB_REPOSITORY}/issues/$NUM" --jq .state)
+          handled=$(gh api "repos/${GITHUB_REPOSITORY}/issues/$NUM/comments" --jq '[.[] | select(.body | contains("<!-- audit-apply -->"))] | length')
+          if [ "$state" != "open" ] || [ "$handled" != "0" ]; then
+            echo "already handled (state=$state, marker comments=$handled) — exiting clean" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ack pickup (👀)
+        if: steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/$NUM/reactions" -f content=eyes --jq .content || true
+
+      - name: Apply the decision
+        if: steps.guard.outputs.run == 'true'
+        id: apply
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # Project mutations need the PAT; issue and discussion writes go through
+          # the app token so every change is attributed to obotclaw[bot].
+          PROJECT_TOKEN: ${{ secrets.ROADMAP_TOKEN }}
+          AUDIT_AGENTIC_PACK: /tmp/audit-agentic.md
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          set -o pipefail
+          node scripts/apply_audit_decision.mjs --issue "$NUM" --report /tmp/report.md | tee /tmp/apply.log
+
+      # The gate is the in-step `-s` test, not an `if:` on the pack file: hashFiles()
+      # only sees paths under GITHUB_WORKSPACE, so an `if:` on /tmp would be false
+      # forever and the agentic path would silently never run.
+      - name: Judgment calls — bounded headless agent
+        if: always() && steps.guard.outputs.run == 'true'
+        id: agent
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          set -uo pipefail
+          if [ ! -s /tmp/audit-agentic.md ]; then
+            echo "no agentic findings in this decision" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+            echo "::warning title=Agentic findings skipped::CLAUDE_CODE_OAUTH_TOKEN is not set"
+            echo "skipped: no CLAUDE_CODE_OAUTH_TOKEN" > /tmp/agent-summary.md
+            exit 0
+          fi
+          npm install -g @anthropic-ai/claude-code
+          set -o pipefail
+          claude -p "You are obot's roadmap-audit apply lane, working accepted findings for decision issue #$NUM. FIRST, with the Read tool, read .github/roadmap-audit-policy.md (binding) and /tmp/audit-agentic.md (the accepted findings). Then execute the policy for each finding in order. Finish by writing a short report of what you did, one line per finding, to /tmp/agent-summary.md." \
+            --model claude-opus-5 \
+            --output-format json \
+            --allowedTools "Task,Agent,Bash(gh api:*),Bash(gh issue:*),Bash(gh search:*),Bash(gh project:*),Bash(git diff:*),Bash(echo:*),Read,Write,Edit" \
+            | tee /tmp/claude-out.json
+
+      # The agent's outcome is only knowable after it runs, so the ledger records
+      # `delegated` up front and is patched here — never guessed in advance.
+      - name: Record the agent's outcome
+        if: always() && steps.guard.outputs.run == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.ROADMAP_TOKEN != '' && secrets.ROADMAP_TOKEN || steps.app-token.outputs.token }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          set -uo pipefail
+          [ -s /tmp/audit-agentic.md ] || exit 0
+          outcome=applied
+          [ "${{ steps.agent.outcome }}" = "success" ] || outcome=failed
+          node scripts/apply_audit_decision.mjs --finalize "$NUM" --outcome "$outcome"
+          # The agent changed GitHub state, so the published findings must be re-derived.
+          node scripts/audit_roadmap.mjs >/dev/null || echo "::warning title=Audit refresh failed::findings.json may be one run stale"
+
+      - name: Commit the ledger
+        if: always() && steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- site/audit; then
+            echo "no ledger change to commit" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name 'obotclaw[bot]'
+          git config user.email '299836032+obotclaw[bot]@users.noreply.github.com'
+          git add site/audit
+          git commit -m "Audit decision #$NUM applied (#92)"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+
+      - name: Report on the decision issue and close it
+        if: always() && steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          set -uo pipefail
+          {
+            if [ -s /tmp/report.md ]; then cat /tmp/report.md; else
+              echo "## Audit decision failed"
+              echo
+              echo "The apply step did not produce a report. Run log:"
+              echo
+              echo '```'
+              tail -30 /tmp/apply.log 2>/dev/null || echo "(no output captured)"
+              echo '```'
+            fi
+            if [ -s /tmp/agent-summary.md ]; then
+              echo
+              echo "### Agent report"
+              echo
+              cat /tmp/agent-summary.md
+            fi
+            echo
+            echo "[Run log](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) · [roadmap page](https://jwildfire.github.io/obot.roadmap/roadmap.html#sec-audit)"
+            echo
+            echo "<!-- audit-apply -->"
+          } > /tmp/comment.md
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/$NUM/comments" -F body=@/tmp/comment.md --jq .html_url
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/$NUM" -f state=closed -f state_reason=completed --jq .state
+          gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/$NUM/reactions/$(gh api "repos/${GITHUB_REPOSITORY}/issues/$NUM/reactions" --jq '[.[] | select(.content=="eyes")][0].id')" >/dev/null 2>&1 || true
+          if [ "${{ steps.apply.outcome }}" = "success" ]; then C=+1; else C=confused; fi
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/$NUM/reactions" -f content="$C" --jq .content || true

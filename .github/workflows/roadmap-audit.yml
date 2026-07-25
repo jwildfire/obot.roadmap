@@ -1,0 +1,95 @@
+# The nightly roadmap audit (requirement #92).
+#
+# Runs the rule registry against live GitHub state and commits site/audit/findings.json.
+# That commit touches site/**, which is a deploy-site.yml trigger path, so the
+# roadmap page's Audit section refreshes on the same push — no second schedule to
+# keep in sync.
+#
+# Deliberately model-free: scripts/lib/audit/rules.mjs is pure and deterministic,
+# so a finding on the dashboard is a fact about GitHub state that the same state
+# reproduces. The agent only enters when @jwildfire accepts a judgment call
+# (roadmap-audit-apply.yml).
+#
+# Tokens: reading the user-level obot Roadmap project needs ROADMAP_TOKEN (the
+# same PAT deploy-site.yml uses). Without it the board rules skip and the page
+# says so rather than reading as all-clear. The commit is pushed as obotclaw[bot].
+
+name: roadmap-audit
+
+on:
+  schedule:
+    - cron: "30 7 * * *" # 03:30 America/New_York — findings are waiting by morning
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Print the findings, commit nothing
+        type: boolean
+        default: false
+
+concurrency:
+  group: roadmap-audit
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The rules are the audit's judgment; if their tests fail, the findings are
+      # not trustworthy and nothing should be published from them.
+      - name: Test the rule registry
+        run: node --test scripts/lib/audit/*.test.mjs
+
+      - name: Mint obotclaw[bot] token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.OBOT_APP_ID }}
+          private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
+          owner: jwildfire
+
+      - name: Run the audit
+        id: audit
+        env:
+          # Project read needs the PAT; everything else works with either token.
+          GITHUB_TOKEN: ${{ secrets.ROADMAP_TOKEN != '' && secrets.ROADMAP_TOKEN || steps.app-token.outputs.token }}
+        run: |
+          set -o pipefail
+          node scripts/audit_roadmap.mjs ${{ inputs.dry_run == true && '--print' || '' }} | tee /tmp/audit.log
+          {
+            echo "## Roadmap audit"
+            echo
+            echo '```'
+            tail -3 /tmp/audit.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the findings
+        if: inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- site/audit/findings.json; then
+            echo "no change in site/audit/findings.json — nothing to commit" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          counts=$(node -e "const l=require('./site/audit/findings.json');const c=l.counts;console.log(\`\${c.total} findings (\${c.high} high, \${c.medium} medium, \${c.low} low)\`)")
+          git config user.name 'obotclaw[bot]'
+          git config user.email '299836032+obotclaw[bot]@users.noreply.github.com'
+          git add site/audit/findings.json
+          git commit -m "Roadmap audit $(date -u +%Y-%m-%d): $counts
+
+          Nightly rule sweep (#92). Accept or reject each finding from the roadmap
+          page's Audit section; the apply lane re-validates before changing anything."
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+          echo "committed: $counts" | tee -a "$GITHUB_STEP_SUMMARY"
