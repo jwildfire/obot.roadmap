@@ -376,7 +376,7 @@ Refresh the data by re-running the generator locally and committing
         var h = Math.max(1, full - (si < col.segs.length - 1 ? GAP : 0));
         var yTop = cursor - full;
         var isTop = si === col.segs.length - 1;
-        var g = el('g', { class: 'uz-seg', tabindex: '0', role: 'listitem' });
+        var g = el('g', { class: 'uz-seg' });
         g.appendChild(el('rect', {
           x: cx - bar / 2, y: yTop, width: bar, height: h,
           rx: isTop ? 4 : 0, ry: isTop ? 4 : 0,
@@ -390,10 +390,19 @@ Refresh the data by re-running the generator locally and committing
             'data-role': s.role, class: 'uz-bar',
           }));
         }
+        // A transparent hit target spanning the whole band, carrying the
+        // tabindex and the label. It exists for two reasons: the pointer target
+        // should be bigger than the painted mark, and Chrome ignores tabindex on
+        // an SVG <g> — a container is not focusable, so putting it on the group
+        // silently kept every segment out of the tab order. A <rect> is.
         var pct = col.total ? Math.round((s.value / col.total) * 100) : 0;
-        g.setAttribute('aria-label',
-          s.agent + ', ' + (D.roleLabels[s.role] || s.role) + ', ' +
-          fmt(s.value) + ', ' + pct + '% of ' + labelOf(col.period));
+        var hit = el('rect', {
+          x: cx - band / 2, y: yTop, width: band, height: Math.max(full, 3),
+          class: 'uz-hit', tabindex: '0', role: 'img',
+          'aria-label': s.agent + ', ' + (D.roleLabels[s.role] || s.role) + ', ' +
+            fmt(s.value) + ', ' + pct + '% of ' + labelOf(col.period),
+        });
+        g.appendChild(hit);
         g.__tip = {
           agent: s.agent, role: D.roleLabels[s.role] || s.role,
           value: fmt(s.value), pct: pct, calls: s.calls, subCalls: s.subCalls,
@@ -456,14 +465,17 @@ Refresh the data by re-running the generator locally and committing
   });
   svg.addEventListener('pointerleave', hideTip);
   // Keyboard parity: focusing a segment gives the same readout as hovering it.
-  svg.addEventListener('focusin', function (ev) {
+  // Capture phase, and 'focus' rather than 'focusin': Chrome does not fire
+  // focusin for SVG elements, so a bubbling listener never sees a focused <g>
+  // even though it really is document.activeElement. 'focus' does not bubble
+  // either, but it does capture, so a capture-phase listener on the <svg> gets it.
+  svg.addEventListener('focus', function (ev) {
     var g = ev.target.closest ? ev.target.closest('.uz-seg') : null;
     if (!g || !g.__tip) return;
     var r = g.getBoundingClientRect();
-    var box = wrap.getBoundingClientRect();
-    showTip(g.__tip, { clientX: r.left + r.width / 2, clientY: r.top - box.top + box.top });
-  });
-  svg.addEventListener('focusout', hideTip);
+    showTip(g.__tip, { clientX: r.left + r.width / 2, clientY: r.top });
+  }, true);
+  svg.addEventListener('blur', hideTip, true);
 
   function wire(attr, set) {
     var btns = Array.prototype.slice.call(svg.closest('.rm-sec').querySelectorAll('[data-' + attr + ']'));
