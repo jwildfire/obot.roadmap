@@ -396,20 +396,23 @@
    * frames), and watch the canvas so any later resize re-places the bars.
    */
   function scheduleSync() {
-    // The frame budget is per-loop: several loops can be in flight at once
-    // (a render, a layout change, a resize), and a shared counter would let
-    // them exhaust each other's retries before the chart is ready.
-    let frames = 0;
+    // The retry budget is per-loop: several loops can be in flight at once (a
+    // render, a layout change, a resize), and a shared counter would let them
+    // exhaust each other's retries before the chart is ready. Retries run on a
+    // timer rather than on animation frames because a page opened in a
+    // background tab gets no frames at all — the bars would stay unplaced for
+    // as long as the tab stayed hidden.
+    let tries = 0;
     const attempt = () => {
       if (syncAxis()) return;
       // Self-heal a chart created while its container had no width:
       // re-measuring is what Chart.js's own resize does, and it is idempotent.
       const live = profile && profile.spaghettiChart;
       if (live && live.canvas && !live.canvas.getBoundingClientRect().width) live.resize();
-      frames += 1;
-      if (frames < 240) requestAnimationFrame(attempt);
+      tries += 1;
+      if (tries < 200) setTimeout(attempt, 25);
     };
-    requestAnimationFrame(attempt);
+    attempt();
 
     const canvas = profile && profile.spaghettiChart ? profile.spaghettiChart.canvas : null;
     if (canvasObserver) canvasObserver.disconnect();
@@ -541,6 +544,11 @@
     });
     observer.observe(dom.stage);
     window.addEventListener('resize', () => scheduleSync());
+    // A tab that loads in the background renders nothing; re-sync when it is
+    // actually looked at.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) scheduleSync();
+    });
   }
 
   // --------------------------------------------------------------- layout ----
