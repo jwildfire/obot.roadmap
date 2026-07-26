@@ -149,11 +149,11 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 <header class="mast">
   <p class="eyebrow">safety.viz <span class="dot"></span> release review <span class="dot"></span> 2026-07-25</p>
   <h1>What <span class="v">v1.5.0</span> adds, annotated</h1>
-  <p class="lede">Four groups of work sit between v1.4.1 and this release. Each one below is a line on what changed, why it matters when you are reading a study, a capture of it running, and a way into the live demo to check it yourself. Every capture on this page was taken from the release candidate — the <a href="https://jwildfire.github.io/safety.viz/dev/">dev site</a> — on the afternoon of 25 July, which is before <a href="https://github.com/jwildfire/safety.viz/pull/112">sv#112</a> joined the release that evening. See the note in the first section.</p>
+  <p class="lede">Four groups of work sit between v1.4.1 and this release. Each one below is a line on what changed, why it matters when you are reading a study, a capture of it running, and a way into the live demo to check it yourself. Every capture on this page was taken from the release candidate — the <a href="https://jwildfire.github.io/safety.viz/dev/">dev site</a> — on 25 July. <a href="https://github.com/jwildfire/safety.viz/pull/112">sv#112</a> joined the release that evening and removed the profile dock; the profile captures were re-taken against the rail after it merged, and every other capture predates it and is unaffected by it.</p>
   <p class="facts">
-    <span><b>6</b> PRs, one still landing</span>
+    <span><b>6</b> PRs, all merged to dev</span>
     <span><b>2</b> new renderers</span>
-    <span><b>981</b> unit + <b>219</b> browser tests, pre-sv#112</span>
+    <span><b>1 052</b> unit + <b>219</b> browser tests</span>
     <span>promotes <b>dev → main</b></span>
   </p>
 </header>
@@ -171,8 +171,8 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
     <h2>Participant profile</h2>
     <span class="tag exp">Experimental</span>
   </div>
-  <p class="what">Drilling into one person used to mean whatever detail panel a given renderer happened to have. v1.5.0 replaces that with a single chart-agnostic module — demographics header, labs-over-time spaghetti, per-measure table — that any chart can hand a participant to. Six renderers adopted it in this release: hep-explorer, shift-plot, outlier-explorer, delta-delta, histogram and qt-explorer.</p>
-  <p class="what"><b>Read this section with one caveat.</b> You folded <a href="https://github.com/jwildfire/safety.viz/pull/112">sv#112</a> — profile v2: a right-hand rail with an expand state and an adverse-event domain — into v1.5.0 on the evening of 25 July, and its D4 <b>removes the dock</b>. sv#112 is still merging to <code>dev</code>, so the captures below show the dock form. The module itself and the <code>participantsSelected</code> contract are the same either way; only the surfacing changes.</p>
+  <p class="what">Drilling into one person used to mean whatever detail panel a given renderer happened to have. v1.5.0 replaces that with a single chart-agnostic module — demographics header, labs-over-time spaghetti, per-measure table — that any chart can hand a participant to. Six lab renderers adopted it in this release: hep-explorer, shift-plot, outlier-explorer, delta-delta, histogram and qt-explorer. <a href="https://github.com/jwildfire/safety.viz/pull/112">sv#112</a> then added a second data domain — adverse events — which let ae-explorer and ae-timelines adopt it too.</p>
+  <p class="what"><b>This section shows profile v2.</b> <a href="https://github.com/jwildfire/safety.viz/pull/112">sv#112</a> merged to <code>dev</code> on the evening of 25 July, and its D4 <b>removes the dock</b>: the profile now opens in a right-hand rail beside the chart, gains an expand state, and reads adverse events as well as labs. The captures below were re-taken against that build. The module itself and the <code>participantsSelected</code> contract are unchanged — only the surfacing and the second domain are new.</p>
 
   <h3>Click a point in one chart, read the whole lab course in another</h3>
   <p class="what">The two modules in this clip share no internals. The scatter dispatches <code>participantsSelected</code>; the standalone profile below it is listening. That event is the contract — and the part of this feature that is stable.</p>
@@ -183,7 +183,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
       </video>
     </div>
     <p class="clipnote">4 s clip · press play</p>
-    <p class="cap">The demo page runs the Hepatic Safety Explorer with its own dock <b>off</b>, and mounts the profile separately underneath. One click on the top-right point selects CLD-9045 and the profile below fills in — no shared state, just the event.</p>
+    <p class="cap">The demo page runs the Hepatic Safety Explorer with its own rail <b>off</b>, and mounts the profile separately underneath. One click on the top-right point selects CLD-9045 and the profile below fills in — no shared state, just the event.</p>
   </figure>
 
   <h3>What the profile shows</h3>
@@ -205,28 +205,38 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
     </figcaption>
   </figure>
 
-  <h3>The dock, as the dev site carries it today</h3>
-  <figure class="narrow">
+  <h3>Where it opens: the rail, beside the chart</h3>
+  <figure>
     <div class="frame">
-      <img src="media/profile-dock.jpg" alt="The same profile module docked below the Hepatic Safety Explorer, with its own Standardization and Measures controls." loading="lazy" width="2124" height="1670">
+      <img src="media/profile-rail.jpg" alt="The Hepatic Safety Explorer with the participant profile open in a right-hand rail beside the eDISH scatter: the rail head names CLD-9045 and carries Expand and close controls, and the chart has re-laid out narrower to make room." loading="lazy" width="2132" height="1984">
     </div>
-    <p class="cap">The same module, docked by hep-explorer rather than mounted standalone. The dock carries its own controls (standardization, which measures to draw) and the header narrows to what the host passes it — here, R Ratio alone. <b>This is the surface sv#112 replaces with a rail</b>, so the thing to judge here is the module, not where it sits.</p>
+    <p class="cap">The same module, opened by hep-explorer rather than mounted standalone. Note what the chart did: it <b>re-laid out narrower</b> rather than being covered, so the Hy's-Law point the click came from is still on screen and still in place. The rail head names the participant, says where the selection came from, and carries <b>Expand</b> (fills the renderer's own container, Escape collapses) and a close that clears the chart's selection. Idle, the rail takes no width at all. This replaces the dock that sat below the chart in v1 — the same module, a different surface.</p>
+  </figure>
+
+  <h3>The second domain: adverse events on the labs chart's own axis</h3>
+  <figure>
+    <div class="frame">
+      <img src="media/profile-ae-tracks.jpg" alt="A participant's labs-over-time spaghetti above an adverse-event block: four figures reading 1 event, Moderate highest severity, 0 serious, 1 with no end date; a severity mix bar; a timeline with a single open-ended hyperbilirubinaemia bar near day 19; and a hepatobiliary body-system rollup." loading="lazy" width="2132" height="1298">
+    </div>
+    <p class="cap">Participant 01-705-1186 — the worst eDISH position in this cohort that also carries adverse-event records. Four figures, a severity mix, and a timeline drawn on <b>the labs chart's own study-day axis</b>, which is the point: the two tracks share one domain, so the bar and the lab excursion above it are read against the same clock. This capture happens to show that domain doing its job — the labs stop at day 15, the event starts on day 19, and the axis extends to day 19 to keep it visible instead of cropping it. The event has no resolution date recorded, so it reads as <b>open-ended</b> and the label says so, rather than becoming a zero-length tick.</p>
   </figure>
 
   <div class="strip">
     <div class="why">
       <p class="lbl">Why it matters</p>
       <p>Every lab chart now answers “who is that point?” the same way, so a reviewer learns one surface instead of six. It also unblocks the charts that never had a drill-down at all.</p>
-      <p>It ships <b>Experimental</b> on purpose, and that licence is already being spent: <a href="https://github.com/jwildfire/obot.roadmap/issues/75">hub#75</a> — the rail — is landing inside this same release as sv#112 rather than after it. If you wire the profile into your own chart, wire the event, not the dock.</p>
+      <p>It ships <b>Experimental</b> on purpose, and that licence has already been spent once: <a href="https://github.com/jwildfire/obot.roadmap/issues/75">hub#75</a> — the rail, the expand state and the adverse-event domain — landed inside this same release as sv#112 rather than after it, which is why the surface here is not the one the earlier PRs shipped. If you wire the profile into your own chart, wire the event, not the surface.</p>
     </div>
     <div class="try">
       <p class="lbl">Try it</p>
-      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/participant-profile/index.html"><span>Open the participant-profile demo</span></a>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/hep-explorer/index.html"><span>Open the Hepatic Safety Explorer</span></a>
       <ol>
-        <li>Click any point in the scatter — the further right and up, the more interesting the case.</li>
-        <li>Scroll to the profile and click a sparkline in the measure table.</li>
-        <li>Click a second point without clearing: the profile steps to that participant.</li>
+        <li>Click any point in the scatter — the further right and up, the more interesting the case. The rail opens beside it.</li>
+        <li>Press <b>Expand</b> in the rail head, then <b>Escape</b> to come back.</li>
+        <li>Click a sparkline in the measure table to expand it into a full chart.</li>
+        <li>Drag a box across several points: the rail head becomes a stepper, worst case first.</li>
       </ol>
+      <p class="cap">For adverse events, open the <a href="https://jwildfire.github.io/safety.viz/dev/participant-profile/index.html">participant-profile demo</a> instead — it is the one wired with an AE dataset. Note that the crafted <code>CLD-*</code> Hy's-Law cases carry no AE records, so pick a point outside that cluster to see the block populated.</p>
     </div>
   </div>
 </section>
@@ -433,9 +443,9 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
     <div>
       <h3>How the captures were made</h3>
       <ul>
-        <li>Playwright drove Chromium against <a href="https://jwildfire.github.io/safety.viz/dev/">the live dev site</a> — the same build this release promotes — on 2026-07-25. Nothing was staged or mocked. The one thing the captures predate is sv#112, which joined the release that evening.</li>
+        <li>Playwright drove Chromium against <a href="https://jwildfire.github.io/safety.viz/dev/">the live dev site</a> — the same build this release promotes — on 2026-07-25. Nothing was staged or mocked. The profile section's captures were taken twice: first that afternoon, then again late that evening against the rail, after <a href="https://github.com/jwildfire/safety.viz/pull/112">sv#112</a> merged and removed the dock. Every other capture predates sv#112 and shows behaviour it did not touch.</li>
         <li>Clips are silent WebM at 7–8 fps, 4–5 s, captured frame by frame during the real interaction. Stills are 2× PNG-quality JPEG.</li>
-        <li>The demo data is the shared <code>adbds</code> cohort: 318 participants for the eDISH views, 58 for the abnormal-baseline waterfall.</li>
+        <li>The demo data is the shared <code>adbds</code> cohort: 318 participants for the eDISH views, 58 for the abnormal-baseline waterfall. The adverse-event demo reads <code>adae</code>, which covers 254 of those 318 — but <b>none</b> of the 24 crafted <code>CLD-*</code> Hy's-Law cases, so those participants' profiles report no events. That is a gap in the demo fixture, not in the module.</li>
       </ul>
     </div>
     <div>
