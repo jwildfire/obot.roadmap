@@ -32,6 +32,10 @@ Playwright (Chromium, viewport 1340–1460 px wide) drove the real demo pages on
 
 The capture scripts lived in the session's job tmp dir; the safety.viz checkout was not modified.
 
+## Known caveat: sv#112
+
+[sv#112](https://github.com/jwildfire/safety.viz/pull/112) (profile v2 — right-hand rail, expand state, adverse-event domain) was folded into v1.5.0 on the evening of 2026-07-25, after these captures were taken, and its D4 removes the dock. It is still merging to `dev`, so the dock stills on this page show what the dev site carries today, not the final v1.5.0 surface. The page says so in the first section, in the masthead lede and in the provenance block. If sv#112 lands and the dock disappears from the dev site, the two profile stills (`profile-dock.jpg`, and the standalone mount in `profile-drill.webm`) are the ones to re-take.
+
 ## Assumptions and limits
 
 - Counts and test totals (981 unit / 219 browser, 5 merged PRs) are quoted from the release plan and the promotion PR body, not re-run here.
