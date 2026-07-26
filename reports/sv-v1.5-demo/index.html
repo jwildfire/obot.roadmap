@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz v1.5.0 — annotated demo</title>
+<meta name="description" content="What v1.5.0 adds, feature by feature: annotated captures taken from the live dev site, with a way into each one.">
+<style>
+:root{
+  /* Paper matched to the dev site's own background so the captures sit flush
+     with the page instead of floating on white. */
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;        /* interactive: links, play, steps */
+  --bronze:#a95d10;      /* active-drug accent, from the charts */
+  --flag:#b83a2e;        /* Hy's Law red */
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible,button:focus-visible,video:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+
+/* ---------- masthead ---------- */
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+/* ---------- contents ---------- */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+/* ---------- the cut-line: this page's section rule ----------
+   A dashed reference line carrying its value, the way the eDISH scatter
+   carries ALT ≥ 3×ULN — the release's own visual grammar as page structure. */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.tag{font:600 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 9px;border-radius:3px;border:1px solid currentColor}
+.tag.exp{color:var(--bronze)}
+.tag.proto{color:var(--flag)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:17px;margin:34px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+/* ---------- figures ---------- */
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--panel);line-height:0}
+.frame img,.frame video{display:block;width:100%;height:auto}
+.pin{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:23px;height:23px;border-radius:50%;background:var(--ink);color:var(--paper);
+  display:grid;place-items:center;font:700 12px/1 var(--mono);
+  box-shadow:0 0 0 3px var(--paper),0 1px 4px rgba(0,0,0,.3)}
+figcaption{margin-top:12px}
+.keys{margin:0;padding:0;list-style:none;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 26px}
+.keys li{position:relative;padding-left:28px;font-size:14px;color:var(--ink2);line-height:1.45}
+.keys b{position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:50%;
+  background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font:700 11px/1 var(--mono)}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.cap b{color:var(--ink2);font-weight:600}
+.clipnote{margin:10px 0 0;font:500 11.5px/1 var(--mono);letter-spacing:.05em;
+  text-transform:uppercase;color:var(--mute)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.pair figure{margin:0}
+.pair .cap{margin-top:10px}
+.narrow{max-width:620px}
+.pair.small .frame{max-width:340px}
+
+/* ---------- read/try strip ---------- */
+.strip{display:grid;grid-template-columns:1fr 340px;gap:0;margin:34px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+/* ---------- closing ---------- */
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pair{grid-template-columns:1fr}
+  .pin{width:20px;height:20px;font-size:10px}
+  .mast{padding-top:36px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">safety.viz <span class="dot"></span> release review <span class="dot"></span> 2026-07-25</p>
+  <h1>What <span class="v">v1.5.0</span> adds, annotated</h1>
+  <p class="lede">Four groups of work sit between v1.4.1 and this release. Each one below is a line on what changed, why it matters when you are reading a study, a capture of it running, and a way into the live demo to check it yourself. Every capture on this page was taken from the release candidate — the <a href="https://jwildfire.github.io/safety.viz/dev/">dev site</a> — this afternoon.</p>
+  <p class="facts">
+    <span><b>5</b> merged PRs</span>
+    <span><b>2</b> new renderers</span>
+    <span><b>981</b> unit + <b>219</b> browser tests</span>
+    <span>promotes <b>dev → main</b></span>
+  </p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#profile"><span class="ref">sv#105</span><span class="t">Participant profile</span><span class="s">One drill-down module, six renderers</span></a>
+  <a href="#dili"><span class="ref">sv#97</span><span class="t">Migration Sankey + ALT waterfall</span><span class="s">Tools for abnormal-baseline trials</span></a>
+  <a href="#edish"><span class="ref">sv#110</span><span class="t">eDISH follow-ups</span><span class="s">Draggable cut-lines, marginals, exports</span></a>
+  <a href="#axis"><span class="ref">sv#108</span><span class="t">Axis limits pre-filled</span><span class="s">The boxes show what is in force</span></a>
+</nav>
+
+<!-- ============================================================ 1 ======= -->
+<div class="cut"><span>sv#105 <em>· hub#45</em></span></div><section id="profile">
+  <div class="hd">
+    <h2>Participant profile</h2>
+    <span class="tag exp">Experimental</span>
+  </div>
+  <p class="what">Drilling into one person used to mean whatever detail panel a given renderer happened to have. v1.5.0 replaces that with a single chart-agnostic module — demographics header, labs-over-time spaghetti, per-measure table — that any chart can hand a participant to. Six renderers adopted it in this release: hep-explorer, shift-plot, outlier-explorer, delta-delta, histogram and qt-explorer.</p>
+
+  <h3>Click a point in one chart, read the whole lab course in another</h3>
+  <p class="what">The two modules in this clip share no internals. The scatter dispatches <code>participantsSelected</code>; the standalone profile below it is listening. That event is the contract — and the part of this feature that is stable.</p>
+  <figure>
+    <div class="frame">
+      <video controls loop muted playsinline preload="none" poster="media/profile-drill-poster.jpg" width="1340" height="860" aria-label="Clicking a point in the eDISH scatter fills a standalone participant profile lower down the page">
+        <source src="media/profile-drill.webm" type="video/webm">
+      </video>
+    </div>
+    <p class="clipnote">4 s clip · press play</p>
+    <p class="cap">The demo page runs the Hepatic Safety Explorer with its own dock <b>off</b>, and mounts the profile separately underneath. One click on the top-right point selects CLD-9045 and the profile below fills in — no shared state, just the event.</p>
+  </figure>
+
+  <h3>What the profile shows</h3>
+  <figure>
+    <div class="frame">
+      <img src="media/profile-spark-inset.jpg" alt="Participant profile for CLD-9045: demographics header with R Ratio, a four-measure spaghetti chart over study day, and a measure table whose first row has expanded into a full inset chart." loading="lazy" width="2124" height="1858">
+      <b class="pin" style="--x:47%;--y:9%">1</b>
+      <b class="pin" style="--x:36%;--y:26%">2</b>
+      <b class="pin" style="--x:16%;--y:56%">3</b>
+      <b class="pin" style="--x:50%;--y:68%">4</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> Demographics header, R Ratio included, with a templated link-out to the source record</li>
+        <li><b>2</b> Labs over time, one line per measure; points fill above that lab's reference value</li>
+        <li><b>3</b> Per-measure summary — n, min, median, max — with a sparkline per row</li>
+        <li><b>4</b> Click the sparkline and it expands in place into a full chart with the normal-range band</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <h3>Or docked under the chart that raised the question</h3>
+  <figure class="narrow">
+    <div class="frame">
+      <img src="media/profile-dock.jpg" alt="The same profile module docked below the Hepatic Safety Explorer, with its own Standardization and Measures controls." loading="lazy" width="2124" height="1670">
+    </div>
+    <p class="cap">The same module, docked by hep-explorer rather than mounted standalone. The dock carries its own controls (standardization, which measures to draw) and the header narrows to what the host passes it — here, R Ratio alone.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>Every lab chart now answers “who is that point?” the same way, so a reviewer learns one surface instead of six. It also unblocks the charts that never had a drill-down at all.</p>
+      <p>It ships <b>Experimental</b> on purpose: <a href="https://github.com/jwildfire/obot.roadmap/issues/75">#75</a> moves the profile into a right-hand rail and removes this dock. If you wire it into your own chart, wire the event, not the dock.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/participant-profile/index.html"><span>Open the participant-profile demo</span></a>
+      <ol>
+        <li>Click any point in the scatter — the further right and up, the more interesting the case.</li>
+        <li>Scroll to the profile and click a sparkline in the measure table.</li>
+        <li>Click a second point without clearing: the profile steps to that participant.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 ======= -->
+<div class="cut"><span>sv#97 <em>· hub#43</em></span></div><section id="dili">
+  <div class="hd">
+    <h2>Migration Sankey and the ALT waterfall</h2>
+    <span class="tag proto">Prototypes</span>
+  </div>
+  <p class="what">Two tools for trials that enrol participants whose liver tests are already abnormal — chronic liver disease, NASH, hepatitis. In those studies the eDISH ×ULN quadrants fill with people who were there on day one, and the scatter stops discriminating. Both come from Amirzadegan et al., <i>Drug Safety</i> 2025;48:443–453.</p>
+
+  <h3>Mirrored about a pinned column of baseline quadrants</h3>
+  <figure>
+    <div class="frame">
+      <img src="media/sankey.jpg" alt="Migration Sankey mirrored about a pinned centre column of baseline eDISH quadrants, placebo flowing left and active drug right, with a hand-off bar and two migration tables below." loading="lazy" width="2124" height="2008">
+      <b class="pin" style="--x:53%;--y:21%">1</b>
+      <b class="pin" style="--x:33%;--y:44%">2</b>
+      <b class="pin" style="--x:84%;--y:63%">3</b>
+      <b class="pin" style="--x:26%;--y:82%">4</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> Baseline quadrants pinned in the centre; placebo flows left, active drug right, on one shared thickness scale so the arms compare directly</li>
+        <li><b>2</b> Ribbon colour comes from a fixed concern matrix, not the direction of travel — the geometry and the clinical reading cannot disagree</li>
+        <li><b>3</b> A shift view cannot see worsening <i>within</i> a category, so the ones that never moved are called out rather than left implied</li>
+        <li><b>4</b> The same counts as tables, most severe first, for anyone who would rather read numbers</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <h3>And built for one gesture: hand a group of participants to the composite plot</h3>
+  <figure>
+    <div class="frame">
+      <video controls loop muted playsinline preload="none" poster="media/sankey-handoff-poster.jpg" width="1340" height="900" aria-label="Hovering a Sankey ribbon, clicking it, then taking the hand-off into the composite plot where those participants arrive highlighted">
+        <source src="media/sankey-handoff.webm" type="video/webm">
+      </video>
+    </div>
+    <p class="clipnote">4 s clip · press play</p>
+    <p class="cap">Hover a ribbon to read the shift it represents, click to select it, then take <b>“Review these N in the composite plot”</b> — the composite view opens with exactly those participants carried across and ringed. That is the paper's Sankey → composite workflow, executable rather than described.</p>
+  </figure>
+
+
+  <h3>The waterfall puts the axis back in absolute U/L</h3>
+  <figure>
+    <div class="frame">
+      <img src="media/waterfall.jpg" alt="ALT waterfall: one floating bar per participant from baseline to maximum on-treatment ALT, placebo ascending on the left and study drug descending on the right, flanked by box-and-whisker panels per arm." loading="lazy" width="2124" height="960">
+      <b class="pin" style="--x:50%;--y:38%">1</b>
+      <b class="pin" style="--x:33%;--y:60%">2</b>
+      <b class="pin" style="--x:61%;--y:26%">3</b>
+      <b class="pin" style="--x:8%;--y:55%">4</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> The seam: participants are ranked by their own baseline, so the two arms' highest baselines meet in the middle</li>
+        <li><b>2</b> One floating bar per participant, from their baseline ALT to their maximum on-treatment ALT; the black line traces the baselines</li>
+        <li><b>3</b> Green overrides the arm colour — that participant developed new-onset jaundice, in either arm</li>
+        <li><b>4</b> Flanking panels summarise each arm: left box is baseline, right box is the maximum on-treatment value</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>These are the first two displays in the portfolio aimed squarely at abnormal-baseline populations, where the standard eDISH read is misleading rather than merely noisy.</p>
+      <p>Both are marked <b>prototype</b> in the gallery: the clinical judgement calls in <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/43_design.html">design #43</a> are still open, so behaviour and settings can move before they are called finished.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/hep-explorer/index.html"><span>Open hep-explorer, then switch View to Migration</span></a>
+      <ol>
+        <li>Hover a red ribbon: it names the shift and the count.</li>
+        <li>Click it, then take the “Review these N” hand-off.</li>
+        <li>Then open the <a href="https://jwildfire.github.io/safety.viz/dev/hep-waterfall/index.html">ALT waterfall</a> and hover across the seam.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 ======= -->
+<div class="cut"><span>sv#110 <em>· hub#88</em></span></div><section id="edish">
+  <div class="hd"><h2>The eDISH scatter gets its hands back</h2></div>
+  <p class="what">Four sets of features deferred from the v1.3 coordinated-core port land together: direct manipulation of the cut-lines, marginal distributions, the chart saying what it means, and traceable data handling.</p>
+
+  <h3>Drag a Hy's-Law cut-line and everything reclassifies under your hand</h3>
+  <figure>
+    <div class="frame">
+      <video controls loop muted playsinline preload="none" poster="media/cutline-drag-poster.jpg" width="1296" height="724" aria-label="Dragging the vertical ALT cut-line from 3 to 4.6 and back; quadrant percentages, corner labels, the summary table and the Reference Line input all follow">
+        <source src="media/cutline-drag.webm" type="video/webm">
+      </video>
+    </div>
+    <p class="clipnote">5 s clip · press play · watch the ALT Reference Line box on the left</p>
+    <p class="cap">Take hold of the dashed line and move it: the corner percentages, the quadrant summary table and the <b>ALT Reference Line</b> input all move with it, and the value the drag writes is the same number you would have typed. A selected participant survives the drag.</p>
+  </figure>
+
+  <h3>Marginal box plots and rugs, following the filtered view</h3>
+  <figure>
+    <div class="frame">
+      <img src="media/edish-marginals-on.jpg" alt="eDISH scatter with a marginal box plot above the x-axis, one to the right of the y-axis, and rugs along both axes." loading="lazy" width="2124" height="1068">
+      <b class="pin" style="--x:21%;--y:16%">1</b>
+      <b class="pin" style="--x:96%;--y:64%">2</b>
+      <b class="pin" style="--x:45%;--y:83%">3</b>
+      <b class="pin" style="--x:30%;--y:5%">4</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> Peak-ALT distribution across the filtered cohort</li>
+        <li><b>2</b> Peak-bilirubin distribution, same treatment</li>
+        <li><b>3</b> Rugs: one tick per participant on each axis</li>
+        <li><b>4</b> The legend now carries each arm's n and percent</li>
+      </ol>
+      <p class="cap">All four follow the <b>filtered</b> view rather than the whole cohort, so narrowing to one arm redraws them. Setting <b>Marginal Distributions</b> to Hidden takes them away again — it is a control, so whether they default on is still your call.</p>
+    </figcaption>
+  </figure>
+
+  <h3>The chart now says what it means</h3>
+  <figure>
+    <div class="frame">
+      <img src="media/quadrant-meaning.jpg" alt="Quadrant summary table: each quadrant row carries a clinical reading beneath its name, with counts and percentages." loading="lazy" width="1152" height="728">
+    </div>
+    <p class="cap">Each quadrant carries its clinical reading in the summary table — including that Possible Hy's Law is <b>a screening range, not a diagnosis</b>. Point-size encoding explains itself, and the standing “not validated for clinical use” caution sits under every view.</p>
+    <p class="cap"><b>Open sub-decision:</b> the quadrant prose is agent-drafted and flagged <code>needs-jeremy-review</code> in the merged matrix.</p>
+  </figure>
+
+  <h3>Data handling you can audit</h3>
+  <figure>
+    <div class="frame">
+      <img src="media/notes-csv-lloq.jpg" alt="Notes line under the chart: 318 of 318 participants shown, 1663 missing or non-numeric results removed, with a link to download the removed records as CSV." loading="lazy" width="2116" height="76">
+    </div>
+    <p class="cap">Dropped records download as a CSV naming, per row, which mapped column failed — so “1,663 removed” stops being a number you have to trust. Below-LLOQ results are imputed by the original renderer's documented rules, and reported rather than absorbed.</p>
+  </figure>
+
+  <h3>The waterfall's flanking panels and bars now answer a hover</h3>
+  <figure>
+    <div class="frame">
+      <video controls loop muted playsinline preload="none" poster="media/waterfall-hover-poster.jpg" width="1340" height="800" aria-label="Hovering the waterfall's flanking box panel and then individual bars, each showing a per-participant readout">
+        <source src="media/waterfall-hover.webm" type="video/webm">
+      </video>
+    </div>
+    <p class="clipnote">5 s clip · press play</p>
+    <p class="cap">Hovering a bar gives the whole case in one card: arm, baseline ALT, maximum on-treatment ALT and the day it happened, the change in both U/L and ×baseline, and peak bilirubin. The flanking panels label what they are — box is IQR with the median rule, whiskers 5th–95th, ○ the mean — which was your <a href="https://github.com/jwildfire/safety.viz/issues/83">#83</a> ask.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>The cut-lines are the argument the eDISH scatter makes. Being able to move them and watch the population reclassify is how a reviewer tests whether a signal is real or an artefact of where the line happened to sit.</p>
+      <p>Six of the eight <a href="https://github.com/jwildfire/obot.roadmap/issues/88">#88</a> gaps close here. Still open and <b>not</b> in v1.5.0: transition animation (<a href="https://github.com/jwildfire/safety.viz/issues/46">sv#46</a>), listing sparklines (<a href="https://github.com/jwildfire/safety.viz/issues/48">sv#48</a>) and the exposure track (<a href="https://github.com/jwildfire/safety.viz/issues/49">sv#49</a>, needs adex).</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/hep-explorer/index.html"><span>Open hep-explorer on the eDISH view</span></a>
+      <ol>
+        <li>Drag the vertical dashed line right, past the cluster near ALT 4.</li>
+        <li>Watch the Possible Hy's Law row in the table, and the ALT Reference Line box.</li>
+        <li>Set Marginal Distributions to Hidden and back, then filter to one treatment group.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 ======= -->
+<div class="cut"><span>sv#108 <em>· sv#85</em></span></div><section id="axis">
+  <div class="hd"><h2>Axis-limit boxes load showing the limits in force</h2></div>
+  <p class="what">The limit inputs used to sit empty until you typed into them, which made auto and override look identical. They now load carrying the data-driven values the chart actually resolved, so you can see the current limits and nudge one without having to supply both.</p>
+
+  <div class="pair small">
+    <figure>
+      <div class="frame">
+        <img src="media/axis-prefill-panel.jpg" alt="Outlier explorer Y-axis Limits control: Lower reads minus 6, Upper reads 227, with a Reset Limits button." loading="lazy" width="478" height="340">
+      </div>
+      <p class="cap"><b>Safety Outlier Explorer.</b> Lower and Upper arrive filled with the domain this render resolved. Clear a box to hand that side back to auto; Reset Limits drops both.</p>
+    </figure>
+    <figure>
+      <div class="frame">
+        <img src="media/hist-limits-one.jpg" alt="Safety Histogram controls: X-axis Limits reading 3 and 218, Bins quantity 21 and width 10.24." loading="lazy" width="486" height="618">
+      </div>
+      <p class="cap"><b>Safety Histogram</b>, with ALT selected. The same treatment reaches the bin quantity and width. The boxes seed blank only until a render has a single measure's domain to resolve — on “All Measures” there is no one domain to show.</p>
+    </figure>
+  </div>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>Small, but it removes a class of confusion: an empty box used to mean both “auto” and “I have not touched this”, and typing one limit against a blank other could send an inverted domain to the chart. The invert guard now reads the displayed value, so a crossing entry swaps the pair instead of breaking the axis.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/outlier-explorer/index.html"><span>Open the outlier explorer</span></a>
+      <ol>
+        <li>Read the Y-axis Limits boxes before touching anything.</li>
+        <li>Type a Lower above the Upper shown and tab out.</li>
+        <li>Change the measure and watch both boxes re-derive.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ end ===== -->
+<div class="cut"><span>notes</span></div><section>
+  <div class="hd"><h2>Reading this page</h2></div>
+  <div class="close">
+    <div>
+      <h3>How the captures were made</h3>
+      <ul>
+        <li>Playwright drove Chromium against <a href="https://jwildfire.github.io/safety.viz/dev/">the live dev site</a> — the same build this release promotes — on 2026-07-25. Nothing was staged or mocked.</li>
+        <li>Clips are silent WebM at 7–8 fps, 4–5 s, captured frame by frame during the real interaction. Stills are 2× PNG-quality JPEG.</li>
+        <li>The demo data is the shared <code>adbds</code> cohort: 318 participants for the eDISH views, 58 for the abnormal-baseline waterfall.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Also in the release, not shown here</h3>
+      <ul>
+        <li><b>hep-core</b> — the 2,149-line hep-explorer splits into an orchestrator plus per-view components. One behaviour change fell out: peaks now exclude the baseline record by identity rather than by study day, which had been counting 24 participants' own baselines as on-treatment.</li>
+        <li><b>Requirement matrices moved in-repo</b> (<a href="https://github.com/jwildfire/safety.viz/pull/111">sv#111</a>), so a chart's spec, tests and evidence now move in one PR.</li>
+        <li>Closed-PR preview sites redirect to the dev tier instead of 404-ing; <code>dist/safety.viz-1.4.1/</code> is restored to the bytes v1.4.1 shipped.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="strip" style="margin-top:30px">
+    <div class="why">
+      <p class="lbl">Where this fits</p>
+      <p>This page is the visual companion to the <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.5-release-plan/">v1.5.0 release plan</a>, which lists the eight items in review order and what checking <b>R1</b> sets in motion. The user-facing release notes live in the <a href="https://github.com/jwildfire/safety.viz/pull/114">promotion PR body</a>.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">The rest of the candidate</p>
+      <ol>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/">The dev gallery</a> — all eleven renderers</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/hep-waterfall/evidence.html">Evidence pages</a> — requirement-keyed test records</li>
+        <li><a href="https://github.com/jwildfire/obot.roadmap/issues/114">Review guide #114</a>, item R1</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Captured and written by Claude Code using Opus 5 (session 👯🤖 v15-demo) on 2026-07-25 against safety.viz <code>dev</code> — for @jwildfire's v1.5.0 review.</p>
+</footer>
+
+</div>
+
+<script>
+// Clips play when they scroll into view and pause when they leave, so the page
+// reads as a demo rather than a wall of play buttons. Controls stay available,
+// and a reader who asked for reduced motion is left alone.
+(function () {
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (still.matches || !('IntersectionObserver' in window)) return;
+  var seen = new WeakSet();
+  var io = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (e) {
+        var v = e.target;
+        if (e.isIntersecting) {
+          if (!seen.has(v)) { seen.add(v); v.load(); }
+          var p = v.play();
+          if (p && p.catch) p.catch(function () {});
+        } else if (!v.paused) {
+          v.pause();
+        }
+      });
+    },
+    { threshold: 0.45 }
+  );
+  document.querySelectorAll('video').forEach(function (v) { io.observe(v); });
+})();
+</script>
+
+</body></html>
