@@ -3,7 +3,9 @@
 //
 //   node scripts/apply_audit_decision.mjs --issue 93 [--dry-run] [--report out.md]
 //   node scripts/apply_audit_decision.mjs --decision accept --findings A,B
-//   node scripts/apply_audit_decision.mjs --finalize 93 --outcome applied
+//   node scripts/apply_audit_decision.mjs --decision accept --findings A,B \
+//        --by jwildfire --run <url> --run-id 123      # the page's dispatch path
+//   node scripts/apply_audit_decision.mjs --finalize-run 123 --outcome applied
 //
 // The contract that makes a one-click button safe:
 //
@@ -64,18 +66,21 @@ async function appendDecisions(entries) {
 
 // The agent's outcome is only known after the workflow's claude step, so the
 // ledger is patched rather than guessed: delegated → applied or failed.
-async function finalize(issueNumber, outcome) {
+// A decision arrives either as an issue or as a dispatch, so the entries to patch
+// are keyed by whichever identified this batch.
+async function finalize({ issue = null, runId = null }, outcome) {
   const file = path.join(ROOT, DECISIONS_PATH);
   const ledger = await readJson(DECISIONS_PATH, { version: 1, decisions: [] });
+  const mine = (d) => (issue ? d.issue === Number(issue) : String(d.runId ?? '') === String(runId));
   let patched = 0;
   for (const d of ledger.decisions) {
-    if (d.issue === Number(issueNumber) && d.outcome === 'delegated') {
+    if (mine(d) && d.outcome === 'delegated') {
       d.outcome = outcome;
       patched += 1;
     }
   }
   await fs.writeFile(file, `${JSON.stringify(ledger, null, 2)}\n`);
-  console.log(`apply: finalized ${patched} delegated decision${patched === 1 ? '' : 's'} from issue #${issueNumber} as ${outcome}`);
+  console.log(`apply: finalized ${patched} delegated decision${patched === 1 ? '' : 's'} from ${issue ? `issue #${issue}` : `run ${runId}`} as ${outcome}`);
   return patched;
 }
 
@@ -117,8 +122,11 @@ function report({ decision, results, issueNumber, dryRun }) {
 
 // ------------------------------------------------------------------------ main
 async function main() {
-  if (flag('finalize')) {
-    await finalize(value('finalize'), value('outcome') ?? 'applied');
+  if (flag('finalize') || flag('finalize-run')) {
+    await finalize(
+      { issue: value('finalize'), runId: value('finalize-run') },
+      value('outcome') ?? 'applied',
+    );
     return;
   }
 
@@ -207,8 +215,16 @@ async function main() {
       id: r.id,
       decision,
       at,
-      by: actor ?? 'session',
+      by: actor ?? value('by') ?? 'session',
       issue: issueNumber,
+      // The page's Activity log links a decision to the run that carried it out;
+      // runId is also how a dispatch batch is found again when the agent finishes.
+      run: value('run') ?? null,
+      runId: value('run-id') ?? null,
+      subject: r.finding?.subject
+        ? { repo: r.finding.subject.repo, number: r.finding.subject.number, title: r.finding.subject.title, url: r.finding.subject.url }
+        : null,
+      ruleTitle: r.finding?.ruleTitle ?? null,
       fingerprint: r.finding?.fingerprint ?? null,
       rule: r.finding?.rule ?? r.id.split(':')[0],
       outcome: r.outcome,
