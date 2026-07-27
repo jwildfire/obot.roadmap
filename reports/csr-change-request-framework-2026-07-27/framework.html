@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The framework: sign the diff, not the anecdote (2026-07-27)</title>
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">open.csr roadmap research · 2026-07-27 · Part 2</div>
+  <h1>The framework: sign the diff, not the anecdote</h1>
+  <p class="standfirst">A medical writer reading the CSR proposes a display change in plain language. An agent classifies it, documents the requirement, edits the spec, and the pipeline regenerates a draft version of the display — inserted into a preview of the document. The biostatistician reviews the computed ARD diff and signs. The writer reviews every sentence whose number moved and signs. Merge is the transaction. Everything else in this part is the discipline that makes that loop trustworthy.</p>
+  <p class="byline">Builds directly on open.csr's shipped design — D3 (spec split), D5 (owned <span class="mono">ard.json</span>), D9 (agents write source, humans approve), D10 (iteration ledger), §12 (sign-off deferral), §13 (browser editor) — and on the <a href="landscape.html">Part 1 landscape</a>. Every borrowed pattern is credited in §8.</p>
+  <nav class="parts">
+    <a href="index.html">Overview</a>
+    <a href="landscape.html">1 · The landscape</a>
+    <a href="framework.html" aria-current="page">2 · The framework</a>
+  </nav>
+</header>
+
+<section class="tldr">
+  <h2>The one-paragraph version</h2>
+  <p>The change request becomes a <b>versioned artifact</b> the moment it is made. The review it triggers is sized by the <b>computed ARD diff, not the request text</b> — a presentation change is <i>proven</i> cosmetic by an unchanged ARD; an analysis change puts the value-level diff in front of the statistician. The result is a <b>draft iteration</b> (or a fork) of the display, rendered into the document on a PR preview, watermarked, while the approved version stays live. <b>Each role signs its own competency</b>: the biostatistician signs the ARD diff, the medical writer signs the prose impact. The merge flips the draft to current, writes the ledger, and closes the request — one transaction, every artifact reproducible from the commit. This is exactly the loop no product in Part 1 owns.</p>
+</section>
+
+<section>
+  <h2>0 · The loop, end to end</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:3em">#</th><th>Step</th><th>Actor</th><th>Artifact produced</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Propose.</b> Reading the document, the writer selects a display (or a bound number in a sentence) and states the change in plain language: <i>&ldquo;split this AE table by baseline severity.&rdquo;</i> The composer captures context automatically: display slug, current iteration, E3 section, binding address.</td><td>Medical writer</td><td><span class="mono">CR-NNN</span> record (proposed)</td></tr>
+      <tr><td>2</td><td><b>Assess.</b> The agent interprets the request, classifies its tier (§2), writes testable acceptance criteria, states its assumptions, and makes the SAP-consistency call — pre-specified or post hoc, in ARS <span class="mono">AnalysisReasonEnum</span> vocabulary. An out-of-scope request (needs new source data) is escalated honestly, not attempted.</td><td>Agent</td><td>Assessment appended to the CR (assessed)</td></tr>
+      <tr><td>3</td><td><b>Draft.</b> The agent edits <span class="mono">analysis.yaml</span> / <span class="mono">display.yaml</span> / <span class="mono">custom.R</span>, adds requirement rows and tests, and the pipeline regenerates: a new draft iteration <span class="mono">vNNN+1</span> — spec snapshot, <span class="mono">ard.json</span>, rendered variants, manifest — while <span class="mono">current.json</span> stays untouched. A PR opens carrying the whole bundle.</td><td>Agent + pipeline</td><td>Draft PR: spec diff, draft iteration, ARD diff, impact report (drafted)</td></tr>
+      <tr><td>4</td><td><b>Preview.</b> The PR's <span class="mono">pr/{N}/</span> site renders the document with the draft display in place, watermarked <i>&ldquo;DRAFT v{NNN+1} · CR-{NNN} · pending sign-off&rdquo;</i>. The root and dev tiers are untouched. The Reader shows a chip on the display: <i>revision in review</i>.</td><td>CI</td><td>Draft-in-document preview</td></tr>
+      <tr><td>5</td><td><b>Review.</b> The biostatistician reviews the <b>spec diff + ARD diff</b> (rows added, removed, changed — every affected denominator and population named). The writer reviews the <b>binding impact report</b> — every sentence whose rendered value changed. Both approve on the PR; neither can approve their own proposal.</td><td>Biostatistician + writer</td><td>Recorded approvals bound to <span class="mono">{spec_hash, ard_hash}</span> (in review)</td></tr>
+      <tr><td>6</td><td><b>Promote.</b> Merge is the human act that makes the draft current: <span class="mono">current.json</span> flips, the iteration ledger records who/why/when/commit and the CR id, the CR closes as implemented. A staleness guard re-verifies the reviewed ARD still reproduces before the flip.</td><td>Human (merge)</td><td>New current iteration; ledger entry; CR (implemented)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Contrast with Part 1's as-is loop: the eleven steps collapse to six; the manual translation step (a prose comment re-keyed into a tracker) becomes the agent's assessment; the writer's re-copying of numbers into in-text tables disappears entirely, because the bindings re-resolve mechanically; and the audit trail is not a reconciliation report bolted on afterwards — it <i>is</i> the version history.</p>
+</section>
+
+<section>
+  <h2>1 · The change request is a versioned artifact</h2>
+  <p class="lede">Part 1's central negative finding: in every incumbent tool the request lives in a comment thread that dies at &ldquo;resolved.&rdquo; Here it is a file, in the repo, with a lifecycle.</p>
+  <pre class="mono" style="overflow-x:auto; padding:1em; border:1px solid rgba(128,128,128,.35); border-radius:6px;">
+# requests/CR-012.yaml
+id: CR-012
+state: in_review              # derived — see §6
+requested_by: "@medical-writer"
+requested_at: 2026-08-14T15:02:00Z
+context:                      # captured by the composer, not typed
+  display: t-ae-overview
+  iteration_at_request: v003
+  e3_section: "12.2.1"
+  binding: "t-ae-overview:any_ae:p;group=Xanomeline High Dose"
+request_text: >
+  Split the AE overview by baseline severity so the high-dose
+  imbalance in severe events is visible in the main table.
+assessment:                   # agent-written, human-checkable
+  tier: A                     # P | A | N | D — verified by CI, §2
+  reason: DATA DRIVEN         # ARS AnalysisReasonEnum vocabulary
+  interpretation: add AESEV as a second grouping level to any_ae and by_soc_pt
+  acceptance_criteria:
+    - severity levels appear as nested rows under each arm column
+    - subject denominators unchanged from v003
+  assumptions:
+    - AESEV is populated for all treatment-emergent AEs in adae
+  sap_consistency: post-hoc   # triggers the E3 §9.8 note, §2
+  provenance: { model: claude-fable-5, prompt_hash: "sha256:…" }
+disposition:                  # filled as the loop advances
+  pr: 41
+  result_iteration: t-ae-overview/v004</pre>
+  <p>Three properties do the work. <b>The verbatim request is preserved</b> — the writer's words, not the agent's paraphrase, are the record (the pattern GitHub's suggested-changes provenance uses: proposer and applier both credited). <b>The context is captured, not typed</b> — the composer knows which display, which iteration, which sentence the writer was looking at, which kills the &ldquo;which table did they mean&rdquo; ambiguity that plagues comment logs. <b>The rationale is a merge precondition</b> — a CR with an empty assessment cannot merge (GitBook's merge-rules pattern), which produces the change-control record regulators expect as a side effect of using the system. The iteration ledger already reserved a change-request field (D10); every display version now answers &ldquo;why do you exist&rdquo; with a CR id.</p>
+  <p class="note">GitHub retains its audit log ~90 days — far short of record-retention needs. The CR record and ledger are the durable, committed export of the same facts; the platform's log is corroboration, never the system of record.</p>
+</section>
+
+<section>
+  <h2>2 · The review tier is determined by the computed diff, not the request text</h2>
+  <p class="lede">The industry already runs two-tier governance — a signed SAP for analysis semantics, unsigned shells for presentation (Part 1 §4). The framework makes that asymmetry mechanical, and machine-verifiable.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Tier</th><th>What changed</th><th>Machine proof</th><th>Review required</th></tr></thead>
+    <tbody>
+      <tr><td><b>P — presentation</b></td><td><span class="mono">display.yaml</span> only: titles, footnotes, precision, row order, variant thresholds</td><td>Regenerated <span class="mono">ard.json</span> <b>byte-identical</b> (hash proof: the numbers are untouched)</td><td>Writer + statistician acknowledgement; auto-approvable by policy (open question D-CR2)</td></tr>
+      <tr><td><b>A — analysis</b></td><td><span class="mono">analysis.yaml</span> / <span class="mono">custom.R</span>: new statistics, groupings, filters, populations, denominators</td><td>ARD diff non-empty; every added/removed/changed row itemized</td><td><b>Full biostatistician sign-off on the ARD diff</b>; SAP-consistency call recorded; post-hoc changes auto-draft the E3 §9.8 note</td></tr>
+      <tr><td><b>N — new display / fork</b></td><td>New slug, or a fork of an existing display (§3)</td><td>New ARD; lineage recorded (<span class="mono">forked_from</span>)</td><td>Biostatistician sign-off + template-slot assignment; §9.8 note if post hoc</td></tr>
+      <tr><td><b>D — data</b></td><td>Request needs upstream ADaM content that does not exist</td><td>Agent classification, honestly escalated</td><td>Outside the loop — routed to a human data ticket; the CR records the escalation</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>The agent claims the tier; CI verifies it.</b> A PR labelled Tier P whose regenerated ARD hash moved fails the build — the same shape as Terraform's plan/apply discipline, where the reviewer approves the computed plan, and HCP Terraform's mandatory-vs-advisory check split: denominator and population changes <i>block</i>, formatting nits <i>warn</i>. The ITIL standard-change idea applies directly: Tier P is a pre-approved change class precisely because the system can prove nothing statistical happened.</p>
+  <p><b>The post-hoc rule is encoded, not remembered.</b> EMA's reflection paper §2.3.3.3 states that after database lock, non-prespecified modifications make results post hoc, and model changes require a SAP amendment. The framework enforces this mechanically: every Tier A/N change carries an <span class="mono">AnalysisReasonEnum</span> value; a <span class="mono">DATA DRIVEN</span> change auto-drafts a <b>generated-tier text block for E3 §9.8 (&ldquo;Changes in the Planned Analyses&rdquo;)</b> — bound to the CR id, entering the same approval gate as every generated block (D8). ICH E3 reserved that section in 1995; the loop fills it as a build artifact instead of an end-of-study archaeology exercise. The CR's verbatim request, timestamps and reviewer identities are simultaneously the defense against the &ldquo;changed the SAP because you saw the data&rdquo; charge — the change is disclosed, attributed and signed at the moment it happens.</p>
+</section>
+
+<section>
+  <h2>3 · Version or fork: the writer's intent, applied as a rule</h2>
+  <p class="lede">D10 gives every display an iteration ledger. The only new question is when a change is a <i>new version</i> and when it is a <i>new display</i>.</p>
+  <ul>
+    <li><b>Version (<span class="mono">vNNN+1</span>)</b> — same analytical question, revised answer or presentation. The draft replaces the current iteration on approval. This is the default.</li>
+    <li><b>Fork (new slug)</b> — a different or additional question, or the original must remain in the document: <span class="mono">t-ae-overview--by-severity</span>, directory of its own, <span class="mono">forked_from: t-ae-overview@v003</span> in the manifest, its own assembly slot. Both render until an editorial decision retires one (open question D-CR3). Forks are for <i>comparison and coexistence</i>; versions are for <i>succession</i> — the Sanity/Figma lesson is that long-lived divergence is the failure mode, so fork sparingly and record lineage always.</li>
+    <li><b>Not a fork:</b> in-text vs post-text variants stay what they are — two renderings of one ARD (D6). A cross-display atomic change (one CR touching several displays plus prose) is a single branch/PR, not several forks.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>4 · The draft lives in the document, honestly</h2>
+  <p class="lede">Jeremy's requirement: the new draft display is inserted into the document for review. The three-tier Pages preview system shipped in v0.2 makes this nearly free.</p>
+  <ul>
+    <li>On the PR branch, assembly points the slot at the draft iteration; the <span class="mono">pr/{N}/</span> preview renders the full document with the draft display in place, <b>watermarked</b> with version, CR id and pending-sign-off state. Root and dev tiers keep serving the approved document — tier semantics already established.</li>
+    <li>The draft state lives <b>in the artifact</b>: the iteration manifest carries <span class="mono">approval: {state: draft}</span>, exactly parallel to text blocks (D8). The assembler's existing gate generalizes: an unapproved display iteration can render only watermarked, only in previews — the same &ldquo;draft is a lifecycle state, not a failure&rdquo; convention the text layer established.</li>
+    <li><b>Staleness guard</b> (Atlantis's <span class="mono">undiverged</span>): promotion re-verifies that the reviewed ARD reproduces — same spec hash, same data manifest — before <span class="mono">current.json</span> flips. If dev moved underneath (data prep changed, upstream spec merged), the approval is void and the pipeline re-plans. Approvals bind to <span class="mono">{spec_hash, ard_hash}</span> and die when either moves (GitLab's reset-approvals-by-patch-id, made value-aware).</li>
+    <li>The Reader closes the discovery loop: displays with open CRs show a chip linking to the preview — a reviewer arriving from the document always finds the revision in flight.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>5 · Dual sign-off: each role signs its own competency</h2>
+  <p class="lede">Jeremy's flow ends &ldquo;requests review/sign-off from the biostatistician.&rdquo; The framework adds the symmetric half the closed loop makes possible — and the incumbents make impossible.</p>
+  <ul>
+    <li><b>The biostatistician signs the ARD diff</b> — rows added, removed, changed; denominators and populations named; rendered before/after beside it. The diff engine is <span class="mono">cards::compare_ard()</span> (0.8.0, experimental — wrapped and pinned), presented Datafold-style: a summary comment on the PR, drill-down to the value-level diff page in the preview. Path-scoped review requirements make this non-optional: <span class="mono">library/tfl/**/analysis.yaml</span> and <span class="mono">custom.R</span> require statistical approval (CODEOWNERS + the ruleset required-reviewer rule, GA Feb 2026); <span class="mono">display.yaml</span>-only diffs route lighter.</li>
+    <li><b>The medical writer signs the binding impact report</b> — every sentence whose rendered value changed between iterations, listed with before/after. The fidelity gate (D7) already catches orphaned bindings loudly; the impact report catches the quieter case — a binding that still resolves but to a different number. The writer who asked for the change confirms the prose still says what the study shows. No incumbent can produce this list, because no incumbent knows which sentences quote which cells.</li>
+    <li><b>Identity rules</b>, borrowed from the systems that learned them the hard way: the requester cannot be the final approver; the agent proposes and <i>never</i> approves (the Copilot precedent — its review is always a comment, never an approval); bot identities do not satisfy review requirements. Two humans close every Tier A loop.</li>
+    <li><b>Part 11 honesty.</b> A GitHub PR approval is an audit trail, not an electronic signature — §11.50 requires the signed record to carry the signature's <i>meaning</i>, §11.200 requires re-authentication, and no GitHub-native mechanism provides either (GitLab's re-auth-to-approve is the only git-native precedent that explicitly cites Part 11). The framework's v1 posture is stated, not fudged: approvals are recorded, attributed, meaning-bearing entries in the committed ledger (&ldquo;statistical review and approval of iteration v004 against CR-012&rdquo;), synchronized from PR events; a validated e-signature layer is the study-level platform's job (§12 deferral), and the ledger is designed so that layer can adopt it without rework. This mirrors where sign-off actually lives today: QC checklists and tracker columns, now versioned and attributable.</li>
+    <li><b>Regulatory placement, by construction.</b> The agent edits specs and drafts prose; every number is computed by the deterministic, tested pipeline. That keeps the AI on the &ldquo;operational efficiency&rdquo; side of FDA's draft-guidance scope line — it never generates evidence — while the dual human sign-off implements EMA §2.3.5's &ldquo;close human supervision&rdquo; and &ldquo;quality review mechanisms&rdquo; as workflow, and human editorial review is precisely the EU AI Act Art. 50(4) discharging control.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>6 · The lifecycle, derived — never parallel</h2>
+  <p class="lede">Decap CMS's documented failure is the cautionary tale: an editorial state machine that can disagree with the VCS approval it mirrors. Here the CR's state is <i>computed</i> from git and PR facts, not stored beside them.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>State</th><th>Derived from</th></tr></thead>
+    <tbody>
+      <tr><td><span class="mono">proposed</span></td><td>CR record exists; no assessment</td></tr>
+      <tr><td><span class="mono">assessed</span></td><td>Assessment present; no PR</td></tr>
+      <tr><td><span class="mono">drafted</span></td><td>Draft PR open; draft iteration + preview exist</td></tr>
+      <tr><td><span class="mono">in_review</span></td><td>PR review requested; approvals incomplete</td></tr>
+      <tr><td><span class="mono">implemented</span></td><td>PR merged; <span class="mono">current.json</span> flipped; ledger entry carries the CR id</td></tr>
+      <tr><td><span class="mono">returned</span></td><td>Changes requested on the PR; loop re-enters at assess or draft</td></tr>
+      <tr><td><span class="mono">declined</span></td><td>PR closed unmerged, or assessment rejects with rationale — recorded, never deleted</td></tr>
+      <tr><td><span class="mono">escalated</span></td><td>Tier D classification; pointer to the out-of-loop ticket</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Every transition is a commit or a PR event; the audit trail is the version history (D9). A dashboard can render the CR queue — the open.csr equivalent of the reconciliation report, except it also knows what happened <i>after</i> each comment.</p>
+</section>
+
+<section>
+  <h2>7 · Delivery increments</h2>
+  <p class="lede">Five increments, each shippable and demonstrable on its own, ordered so the writer-facing surface lands first and the platform-dependent pieces land last.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>#</th><th>Increment</th><th>What ships</th><th>Depends on</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>CR composer in the Reader</b></td><td>Select a display or bound number → structured request form → CR YAML with auto-captured context, downloadable or copyable, plus a prefilled issue link. Static-site safe — no tokens, no server — the exact pattern the text editor proved (§13): the product is an artifact a human applies.</td><td>Nothing new</td></tr>
+      <tr><td>2</td><td><b>Agent lane</b></td><td>A CR-labelled issue triggers the agent: assessment comment, then a draft PR — spec diff, regenerated draft iteration, ARD diff summary, binding impact report, tier claim. Runs bounded (CI) or rich (obot session) — open question D-CR4.</td><td>1</td></tr>
+      <tr><td>3</td><td><b>Review surface</b></td><td>ARD-diff renderer (<span class="mono">compare_ard()</span> wrapped) as a page in the PR preview + summary comment; CI tier verification (claimed tier vs computed diff); path-scoped review requirements; merge flips <span class="mono">current.json</span> + ledger.</td><td>2</td></tr>
+      <tr><td>4</td><td><b>Draft-in-document</b></td><td>Preview assembly renders draft iterations watermarked in place; Reader chips on displays with open CRs; binding impact report rendered in the preview; staleness guard on promotion.</td><td>3</td></tr>
+      <tr><td>5</td><td><b>Platform graduation</b></td><td>The §12 study-level review layer adopts the CR ledger: roles, real e-signature semantics, review plans. Deliberately last — the ledger is designed as the data that layer consumes, so nothing built in 1–4 is throwaway.</td><td>§12 platform build</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Increment 2 is where a design question from §13 gets settled by adjacency: the browser editor deliberately did not attempt the regeneration round-trip for spec edits. The agent lane <i>is</i> that round-trip — run server-side by CI on a branch, where R exists — which is why the composer (increment 1) never needs webR to be honest: it produces a request, not a result.</p>
+</section>
+
+<section>
+  <h2>8 · Credit where due: the borrowed mechanics</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Mechanic</th><th>Borrowed from</th><th>Applied as</th></tr></thead>
+    <tbody>
+      <tr><td>Approve the computed diff, not the request</td><td>Atlantis / Terraform plan-apply</td><td>Biostatistician signs the ARD diff</td></tr>
+      <tr><td>Staleness guard on apply</td><td>Atlantis <span class="mono">undiverged</span></td><td>Promotion re-verifies the reviewed ARD reproduces</td></tr>
+      <tr><td>Mandatory vs advisory checks</td><td>HCP Terraform run tasks</td><td>Denominator/population changes block; formatting warns</td></tr>
+      <tr><td>Path-scoped required approver</td><td>CODEOWNERS + ruleset required reviewer (GA 2026-02)</td><td><span class="mono">analysis.yaml</span>/<span class="mono">custom.R</span> → statistical review, non-optional</td></tr>
+      <tr><td>Approvals reset when the change changes</td><td>GitLab patch-id approval reset</td><td>Approvals bind to <span class="mono">{spec_hash, ard_hash}</span></td></tr>
+      <tr><td>Requester ≠ approver; bot never approves</td><td>GitLab SoD settings; Copilot coding agent &amp; review</td><td>Agent proposes, two humans sign Tier A</td></tr>
+      <tr><td>Data diff summarized in the PR, detailed in the app</td><td>Datafold CI</td><td>ARD diff comment + drill-down page in the preview</td></tr>
+      <tr><td>Editorial states derived from VCS facts</td><td>Decap CMS editorial workflow — and its uncoupling bug</td><td>CR lifecycle computed from git/PR events (§6)</td></tr>
+      <tr><td>Rationale as a merge precondition</td><td>GitBook merge rules</td><td>Empty assessment blocks merge</td></tr>
+      <tr><td>Version bundles, previewed stacked; fork sparingly</td><td>Sanity Content Releases; Figma branching</td><td>Ledger versions default; forks record lineage; branches short-lived</td></tr>
+      <tr><td>Two-tier change classes</td><td>ITIL standard vs normal change; the SAP/shell asymmetry itself</td><td>Tier P pre-approved because provably cosmetic</td></tr>
+      <tr><td>Classification vocabulary for &ldquo;why&rdquo;</td><td>CDISC ARS <span class="mono">AnalysisReasonEnum</span></td><td>Every CR carries the standard's own reason code</td></tr>
+      <tr><td>Shells and results as one artifact type</td><td><span class="mono">cards::mock_*()</span></td><td>A Tier N request can start as a mock-ARD shell the statistician reviews <i>before</i> implementation</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">And one deliberate non-borrowing: no incumbent's in-app sign-off is imitated. The §12 deferral stands — status is data, surfaced in the UX; the study-level platform owns roles and e-signature when it exists. Nothing in this framework preempts it; everything in this framework feeds it.</p>
+</section>
+
+<section>
+  <h2>9 · Open questions for review</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>#</th><th>Question</th><th>Draft position</th></tr></thead>
+    <tbody>
+      <tr><td>D-CR1</td><td>Where do CR records live — in-repo files, GitHub issues, or both?</td><td>In-repo (<span class="mono">requests/</span>) as the system of record; an issue mirrors each CR as the notification/inbox surface. The repo survives platform retention limits; the issue makes the queue visible.</td></tr>
+      <tr><td>D-CR2</td><td>May Tier P changes auto-approve once the ARD-unchanged proof passes, or does every display change see a statistician?</td><td>Policy-configurable; default to a lightweight statistician acknowledgement in the demo, and demonstrate the auto-approve policy as an option — the proof is the point.</td></tr>
+      <tr><td>D-CR3</td><td>Who retires a fork, and where is that recorded?</td><td>Editorial decision by the writer, recorded as a CR of its own (Tier P — assembly change, no ARD change).</td></tr>
+      <tr><td>D-CR4</td><td>Does the agent lane run in CI (bounded, reproducible, cheap) or as an obot-style session (richer judgment)?</td><td>Start in CI with a bounded assessment step; graduate complex requests to sessions. The CR record's provenance fields don't care which produced it.</td></tr>
+      <tr><td>D-CR5</td><td>Is the E3 §9.8 note auto-drafted for every post-hoc change, or only when the writer confirms?</td><td>Always drafted (it enters the normal generated-block approval gate anyway — a human still signs it); silence is the failure mode worth designing against.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer class="foot">
+  <p>Drafted by Claude Code using Fable 5, autonomous session <span class="mono">🦾🤖 2026-07-27 csr-research</span>, for review by @jwildfire.</p>
+  <p><a href="landscape.html">Back to the landscape</a> · <a href="index.html">Back to the overview</a></p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The landscape: who owns the change request? (2026-07-27)</title>
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">open.csr roadmap research · 2026-07-27 · Part 1</div>
+  <h1>The landscape: who owns the change request?</h1>
+  <p class="standfirst">Every CSR-automation product surveyed consumes tables as frozen inputs. Every review tool closes a comment without knowing whether anything changed. Between them sits the request — untracked, re-keyed by hand, and adjudicated by email. This part maps who does what, what is genuinely new since the July&nbsp;25 kickoff survey, and where the seam still is.</p>
+  <p class="byline">Deep-dive on top of the <a href="https://github.com/jwildfire/open.csr/blob/main/research/sections/01_existing-tools.md">2026-07-25 landscape survey</a> — that survey's basics are not repeated here. Sourced from vendor documentation, PHUSE/PharmaSUG proceedings, journal articles, GitHub source and press releases; AI-generated SEO aggregators were identified and excluded from every claim; unverifiable claims are marked. One archive limit: <span class="mono">lexjansen.com</span> was DNS-unreachable on the research date — conference papers were reached via publisher mirrors, and absences that depend on that archive are labelled unknown rather than absent.</p>
+  <nav class="parts">
+    <a href="index.html">Overview</a>
+    <a href="landscape.html" aria-current="page">1 · The landscape</a>
+    <a href="framework.html">2 · The framework</a>
+  </nav>
+</header>
+
+<section class="tldr">
+  <h2>The short version</h2>
+  <p>The 2025–26 commercial wave is large, funded, and <b>one-directional</b>: data&nbsp;→ tables&nbsp;→ prose, optimized for first-draft speed. Meanwhile the head of regulatory medical writing at J&amp;J puts the bottleneck elsewhere: <b>&ldquo;the majority of a 12-week CSR cycle is spent in cross-functional review.&rdquo;</b> No product surveyed treats a change request to a table as a first-class object; no product links a regenerated table to the sentences quoting it. One new competitor — <b>Clymb Clinical's Clymbr Hub</b> (February 2026) — has assembled the ingredients on the TLF side and is the one to watch. The reverse edge, a reviewer's comment becoming a spec edit that regenerates the display and the prose in one transaction, remains unclaimed by anyone. And since the kickoff survey, the substrate moved in open.csr's favour: <b><span class="mono">{cards}</span> 0.8.0 shipped a purpose-built ARD diff</b>, and CDISC ARS was verified to have <b>no lifecycle model at all</b> — the versioning layer has to be built, and nobody has built it.</p>
+</section>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">18</div><div class="l">products &amp; platforms examined in this pass</div></div>
+  <div class="kpi"><div class="n">0</div><div class="l">with a tracked TLF change-request object</div></div>
+  <div class="kpi"><div class="n">0</div><div class="l">that re-flag prose when a table's numbers change</div></div>
+  <div class="kpi"><div class="n">1</div><div class="l">near-neighbour assembling the pieces (Clymb)</div></div>
+  <div class="kpi"><div class="n">12&nbsp;wk</div><div class="l">typical CSR cycle — most of it review, not drafting</div></div>
+</div>
+
+<section>
+  <h2>1 · The authoring wave: core functionality, and where each tool stops</h2>
+  <p class="lede">The five incumbents from the kickoff survey, re-examined specifically for what happens when a reviewer wants a <i>table</i> changed. The pattern is uniform: the TLF package is an input, never an artifact the tool owns.</p>
+
+  <div class="findings">
+    <div class="finding">
+      <h3>Certara CoAuthor — refresh, not request</h3>
+      <p>Word add-in; proprietary RAG restricted to allowed sources; 275+ eCTD templates; claims &gt;90% TLF summarization accuracy. The closest it comes to the loop: teams can <i>&ldquo;refresh results at any point&rdquo;</i> — a re-import of a replaced TLF package, with no published evidence the refresh diffs numbers or flags affected prose. Certara's own webinar calls in-text tables <i>&ldquo;a significant productivity killer&rdquo;</i> — naming the pain, not solving it (<a class="ref" href="https://www.certara.com/coauthor/">product</a>, <a class="ref" href="https://www.certara.com/on-demand-webinar/streamline-table-creation-with-ai-specialized-for-regulatory-writers/">webinar</a>). Review and e-signature are delegated to Veeva Vault via the AI Partner Program (Oct 2025). Two structural notes: sibling product <b>Phoenix TFL Studio</b> ships an in-product TLF review surface (comments, audit logs) — but in the PK/PD line, disconnected from CoAuthor's CSR authoring; and Certara agreed in April 2026 to sell its regulatory-writing <i>services</i> arm to Veristat for up to $135M, keeping the software (<a class="ref" href="https://www.certara.com/pressrelease/certara-enters-definitive-agreement-for-the-sale-of-its-regulatory-and-medical-writing-business-to-veristat/">press release</a>).</p>
+    </div>
+    <div class="finding">
+      <h3>Yseop Copilot — reuse propagation, not number propagation</h3>
+      <p>Word plug-in + Vault integration; neuro-symbolic generation; the strongest traceability language in the market: <i>&ldquo;every sentence is linked to its source&rdquo;</i>, <i>&ldquo;update once, propagate everywhere.&rdquo;</i> Examined closely, the propagation is approved-content <i>reuse</i> across documents — one approved paragraph flowing into the CSR and the 2.7.4 — not numbers flowing from a regenerated table into dependent sentences. &ldquo;Validate against source changes&rdquo; is listed as a capability with no published mechanism (unverified). Best public benchmark: &lt;7% of content requiring re-authoring on a GSK CSR (<a class="ref" href="https://yseop.com/">yseop.com</a>). €10M growth funding Sept 2025; TIME Best Inventions 2025; still independent.</p>
+    </div>
+    <div class="finding">
+      <h3>TriloDocs — the photocopier, by design</h3>
+      <p>The cleanest determinism story surveyed: a rules-based layer transcribes every number (&ldquo;no probabilistic inference&rdquo;), the language model <i>&ldquo;never touches a number,&rdquo;</i> and output passes back through verification. But its part-owner describes the architecture plainly in AMWA Journal: sources are uploaded, the draft is generated, and <i>&ldquo;nothing is stored in the system… it functions much like a photocopier&rdquo;</i> (<a class="ref" href="https://trilogywriting.com/wp-content/uploads/2024/10/AMWA-Journal-Is-the-Hype-Real.pdf">AMWA Journal 2024</a>). A stateless tool cannot have a change-request concept: a revised TLF package means full regeneration and manual reconciliation against the writer's refined draft. Parent acquired by Indegene (2024); 2.7.4 and IB modules shipping mid-2026.</p>
+    </div>
+    <div class="finding">
+      <h3>Narrativa — the vendor that concedes the seam</h3>
+      <p>Web platform (not Word); TLFs and ADaM land in a knowledge graph; click a number in the narrative to jump to its source cell. That trace is a <i>read-time audit affordance</i> — no claim of staleness detection when the number underneath changes; Narrativa's own article on cross-referencing recommends <i>manual</i> periodic validation. And its TLF-automation page states the current loop plainly: writers <i>&ldquo;request changes in the output, which requires additional time to rewrite the code that produced the TLF documents&rdquo;</i> — their automation <i>&ldquo;shortens response times to medical writer change requests.&rdquo;</i> The request stays an out-of-band message to programming; the tool speeds the reply (<a class="ref" href="https://www.narrativa.com/automation-of-tlfs-medical-trials/">narrativa.com</a>).</p>
+    </div>
+    <div class="finding">
+      <h3>Clinion — section regeneration inside an EDC suite</h3>
+      <p>CSR module in a full eClinical stack; auto-populates up to 70% of an ICH E3 template from protocol, SAP and TLFs; per-section status indicators, revision history, and manual per-section regeneration. Note for the record: the widely-repeated claim that Clinion cross-checks narrative values against tables traces to an AI-generated aggregator site, not to Clinion — their own pages never claim it (misattributed; treat as unverified).</p>
+    </div>
+  </div>
+
+  <h3>New entrants, 2025–26</h3>
+  <p class="lede">The wave is growing fast — and every newcomer lands on the same side of the seam.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Product</th><th>What it does</th><th>Seam verdict</th></tr></thead>
+    <tbody>
+      <tr><td><b>Saama TLF Analyzer</b> <span class="mono">Oct 2025</span></td><td>Multi-modal GenAI over TLFs: &ldquo;Figures-to-Text&rdquo; narrating KM/forest/waterfall plots, NL search across the package, protocol+SAP grounding, cited summaries (<a class="ref" href="https://www.saama.com/news/saama-unveils-industry-first-ai-powered-tables-listings-and-figures-tlf-analyzer-to-transform-clinical-study-reporting/">launch</a>)</td><td>Reads tables beautifully; no change-request object, no regeneration linkage</td></tr>
+      <tr><td><b>Weave Bio</b> <span class="mono">$36M</span></td><td>IND/NDA authoring; Parexel partnership; the much-cited AutoIND benchmark (~97% faster) is vendor-authored, covers IND nonclinical <i>prose</i> only — no TLFs, no CSR, quality scores 69.6–77.9% (<a class="ref" href="https://arxiv.org/abs/2509.09738">arXiv</a>)</td><td>Adjacent scope; same one-directional shape</td></tr>
+      <tr><td><b>AlphaLife AuroraPrime</b></td><td>Word 365 + Veeva RIM; ingests TFLs from RTF/Excel; &ldquo;one-click batch updates&rdquo; when sources change; GenAI QC vs golden standards; Part 11 claim</td><td>Document-level refresh, not a change-request lifecycle</td></tr>
+      <tr><td><b>Assyro</b></td><td>The only vendor asserting live binding: citations are <i>&ldquo;a live link, not a static footnote… when source data updates, the citation updates with it&rdquo;</i></td><td>Scoped to Module 2.5/2.7 evidence citations, not TLF cells; no verifiable footprint</td></tr>
+      <tr><td><b>ReadoutAI</b></td><td>Expert system picks the statistic, LLM phrases it, a fact-checking layer validates prose against computed statistics — architecturally the closest to number-guarded generation after TriloDocs</td><td>No change-request or versioning story published</td></tr>
+      <tr><td><b>TrialAssure LINK AI, Telperian, ZYLiQ, Instem</b></td><td>GenAI TLF processing and CSR drafting in Word; no-code TFL generation with Part 11-ready audit trails; post-text→in-text conversion; &ldquo;80% needing only human QA&rdquo;</td><td>First-draft acceleration across the board; none touch the loop</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>The platform incumbents are elsewhere</h3>
+  <p><b>Veeva</b>'s Falcon AI agents (announced May 2026) target TMF intake, safety cases and HA interactions — no CSR, no tables; agentic authoring inside Vault + Word is scheduled <i>late 2027</i>. <b>Medidata Plus</b> (July 2026) is a data-layer play with nothing on regulatory writing. <b>IQVIA.ai</b> (March 2026) names CSR generation as a target use case — extract, author by section, separate verifier agent — with no published numbers. <b>Merck's internal iRAP</b> (PHUSE US 2026) drafts CSRs from protocol, templates and <i>&ldquo;immutable TLFs&rdquo;</i> — the adjective is the whole finding: even the most sophisticated internal build treats displays as frozen inputs (partially unverified — paper PDF not directly retrievable).</p>
+</section>
+
+<section>
+  <h2>2 · Clymb Clinical — the competitor to watch</h2>
+  <p class="lede">One company has assembled nearly the whole pipeline on the TLF side, and its announcements bracket open.csr's territory from both ends.</p>
+  <p><b>Clymbr Hub</b> (launched 17 Feb 2026) bundles <b>SAP Builder → TFL Designer → TFL Code Generators → TFL Viewer → CSR Builder</b> (<a class="ref" href="https://www.prnewswire.com/news-releases/clymb-clinical-announces-the-release-of-the-clymbr-hub---a-unified-platform-for-sap-tfl-and-csr-automation-302689230.html">press release</a>). Three pieces matter:</p>
+  <div class="findings">
+    <div class="finding">
+      <h3>TFL Designer: the spec is the artifact — and versioning is the paywall</h3>
+      <p>ARS-native shell authoring producing human-readable shells <i>and</i> machine-readable CDISC ARS v1.0 JSON simultaneously; the <span class="mono">{siera}</span> R package meta-programs one script per output from that JSON. The community tier is free and COSA-approved — but ships <b>one-time JSON/Excel export with explicitly no version control, no audit trail, no change management</b>; the Enterprise tier adds exactly those, plus &ldquo;review, approval and governance workflows&rdquo; and Part 11 claims (<a class="ref" href="https://www.clinstandards.org/blog/tfl-designer-tlfdesigner-org-the-industry-s-first-ars-native-platform-for-metadata-driven-tfl-automation-1772948177592">clinstandards.org</a>). The public GitHub repo contains a 2022 design-thinking workshop and no source. Shell versioning is precisely the thing behind the paywall — which is a market read worth taking seriously.</p>
+    </div>
+    <div class="finding">
+      <h3>TFL Viewer: the only dedicated TLF review product found</h3>
+      <p>In-platform commenting on outputs, review status, approval workflow, version tracking, e-signature, role-based access — spanning medical writing and biostatistics (launched May 2025). Its PHUSE paper states the as-is problem verbatim: <i>&ldquo;scattered RTF and PDF files, manual feedback tracking via emails and Excel spreadsheets&rdquo;</i> (<a class="ref" href="https://phuse.s3.eu-central-1.amazonaws.com/Archive/2025/Connect/US/Orlando/PAP_SD09.pdf">PHUSE SD09</a>). Claims 70% reduction in review time (vendor figure, unverified).</p>
+    </div>
+    <div class="finding">
+      <h3>The one published claim of change propagation as a mechanism</h3>
+      <p>Their ISS case study: 223 shells built in ~12 hours, 84% of programs auto-generated, and — the sentence that matters — <i>&ldquo;global changes (e.g., stat updates, additional treatment arm, precision) were applied across shells in minutes&rdquo;</i> (<a class="ref" href="https://clymbclinical.com/case-study-iss/">case study</a>, unaudited). Supporting research: their PharmaSUG 2025 paper finds GenAI CSR drafting from <b>ARD</b> beats drafting from RTF/PDF by 3–5× in processing efficiency (<a class="ref" href="https://pharmasug.org/proceedings/2025/AI/PharmaSUG-2025-AI-349.pdf">AI-349</a>) — independent confirmation of the ARD-first bet.</p>
+    </div>
+  </div>
+  <p class="note"><b>What Clymb has not shipped:</b> the propagation runs forward (spec → shells → code → outputs). Nothing describes the <i>reverse</i> edge — a TFL Viewer comment becoming a spec edit — nor CSR Builder re-flagging prose when a regenerated table's numbers move. The &ldquo;auditable link between narratives, source TFLs, and SAP specifications&rdquo; is asserted with no published mechanism. The closed loop remains unoccupied — but this is the neighbour most likely to occupy it first.</p>
+</section>
+
+<section>
+  <h2>3 · The review layer: comments that die at &ldquo;resolved&rdquo;</h2>
+  <p class="lede">Where CSR review actually happens today — and why none of it can route a table comment anywhere useful.</p>
+  <div class="findings">
+    <div class="finding">
+      <h3>PleaseReview (Ideagen) — the incumbent, and its ceiling</h3>
+      <p>Claims 85% of the top-25 pharma and four of the top-five CROs; marketed for CSRs by name. Mechanics (from the v6.4 guide): click text → propose a change, comment, and category; every contribution gets a numeric comment ID and becomes a color-coded discussion thread; participants exit with a status; the owner downloads a <b>reconciliation report</b> — participants, statuses, comment counts — as the audit trail (<a class="ref" href="https://ideagen-pleasereview-portal.s3.amazonaws.com/PleaseReview%20v6.4%20Quick%20Guide%20to%20Reviewing%20a%20Word%20Document.pdf">quick guide</a>). A table is reviewable — but only as text in a document: no cell-level anchoring, no typed change-request object, no linkage to the program or dataset that produced the table (inferred from silence across seven Ideagen sources). The lifecycle is open → reply → accept/reject → <b>closed</b>. There is no &ldquo;regenerated&rdquo; and no &ldquo;re-verified.&rdquo;</p>
+    </div>
+    <div class="finding">
+      <h3>Veeva Vault — document-scoped revision, annotations left behind</h3>
+      <p>Annotations attach to a specific document version, on the PDF rendition — not the source. Reviewers cast verdicts (<span class="mono">Ready for Approval</span> / <span class="mono">Requires Changes</span>); &ldquo;Requires Changes&rdquo; routes the envelope to a revise step where a human uploads a new version. e-Signature captures name, time and meaning at document approval. Two telling details: resolved annotations are <i>not brought forward</i> to the next version, and nothing connects an annotation on a table to the program behind it — the handoff to statistical programming is entirely out-of-band (<a class="ref" href="https://platform.veevavault.help/en/lr/9777/">annotations</a>, <a class="ref" href="https://platform.veevavault.help/en/lr/50493/">workflows</a>). Vault's own co-authoring is weak enough (&lt;100 pages, Office only, per-seat licensing) that pharma buys PleaseReview to run the review and checks the result back into Vault.</p>
+    </div>
+    <div class="finding">
+      <h3>Word, SharePoint, and the Comment Resolution Meeting</h3>
+      <p>The default process underneath everything: tracked changes, comment logs, and CRMs where writers deliberately bring <i>only</i> &ldquo;critical and at times conflicting comments&rdquo; (<a class="ref" href="https://trilogywriting.com/document/help-reviewers/">Trilogy Writing</a>). The same source documents review role-drift — statisticians rewording prose to taste, clinicians checking the abbreviation list — and every published mitigation is social, not technical: fewer reviewers, prioritized comments, someone with authority in the room.</p>
+    </div>
+    <div class="finding">
+      <h3>Docuvera — fragment-level approval, prose only</h3>
+      <p>The structured-content platform proves the review economics open.csr wants: components carry metadata, source references, approval status and lineage; &ldquo;review once, reuse everywhere&rdquo;; updates cascade. It is the closest precedent for approving a <i>fragment</i> rather than a document — and every fragment is narrative text. No Docuvera component's provenance is a statistical program.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>4 · The as-is loop: eleven steps, three artifacts, no owner</h2>
+  <p class="lede">Reconstructed from PHUSE/PharmaSUG papers, practitioner accounts and product documentation. This is the process the framework in <a href="framework.html">Part 2</a> replaces.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th style="width:3em">#</th><th>Step</th><th>Who / artifact</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Displays produced and QC'd (double programming; statistician reviews against SAP/shells)</td><td>Programmer, validator, statistician · programming tracking sheet</td></tr>
+      <tr><td>2</td><td>Package handed over as <b>hundreds of bookmarked RTF/PDF files</b></td><td>Statistician → medical writer</td></tr>
+      <tr><td>3</td><td>Reviewer forms an objection — wrong population, missing stratum, unusable footnote — and writes it <b>wherever they happen to be</b>: a PleaseReview thread, a Vault annotation, a Word comment, an Excel row, an email</td><td>Writer / clinician / statistician</td></tr>
+      <tr><td>4</td><td>Writer triages; only critical or conflicting comments reach the Comment Resolution Meeting</td><td>Medical writer · CRM agenda</td></tr>
+      <tr><td>5</td><td><b>Manual translation</b> of the prose comment into something a programmer can act on — a tracker row, a spec edit, an email. No tool carries the comment to the code</td><td>Writer or lead statistician</td></tr>
+      <tr><td>6</td><td>Scope adjudication: analysis change → signed <b>SAP amendment</b>; shell/layout change → informal (shells are typically unsigned)</td><td>Biostatistician</td></tr>
+      <tr><td>7</td><td>Program edited; double programmer re-runs and re-QCs; <b>Round Number increments</b> in the tracking sheet</td><td>Programmers · tracking sheet (the industry's change counter)</td></tr>
+      <tr><td>8</td><td>Statistician re-reviews the regenerated output against SAP and shells</td><td>Biostatistician · QC checklist (✓ / NA / P)</td></tr>
+      <tr><td>9</td><td>New RTF/PDF issued; writer <b>re-copies affected numbers into in-text tables and re-checks every downstream sentence</b></td><td>Medical writer · 100%-check QC convention</td></tr>
+      <tr><td>10</td><td>Original comment closed in the reconciliation report / Vault annotation resolved (and not carried forward)</td><td>Review owner</td></tr>
+      <tr><td>11</td><td>Document approval through Vault lifecycle states with Part 11 e-signature; E3 §16.1.5 carries the required signatures; the biostatistician appears as documented author</td><td>Sponsor signatories</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Bounding cycle times from the sources: topline tables ~1 week from lock; a full TLF (re)production round 2 weeks–1 month; a whole CSR 3–6 months, with <b>most of a 12-week cycle spent in cross-functional review</b> (Neil Garrett, Global Head of Regulatory Medical Writing, J&amp;J, AMWA 2025). No published per-change-request cycle time exists — the request is not an object anyone measures. And the sharpest practitioner statement of the problem, from a statistician's CSR-review paper: <i>&ldquo;It is cumbersome to revise the final TLFs, if medical writer provides the comments on TLFs after the database lock&rdquo;</i> (<a class="ref" href="https://pharmasug.org/proceedings/2014/IB/PharmaSUG-2014-IB09.pdf">PharmaSUG IB09</a>).</p>
+  <p><b>What actually gets signed</b> — the governance fact the framework builds on: the biostatistician's formal instrument is the <b>SAP signature</b> — &ldquo;by signing the SAP, signatories agree to the statistical analyses… and to the basic format of the TFLs&rdquo;; analysis changes thereafter require a signed amendment, while <i>&ldquo;the TLF shells… usually do not get signed, and thus can be changed without any formal amendment&rdquo;</i> (<a class="ref" href="https://beingabiostatistician.wordpress.com/during-trial-activities/sap-and-tlf-shells/">Being a Clinical Biostatistician</a>). Output-level approval today lives in QC checklists and tracker columns, not signatures. The asymmetry — formal ceremony for analysis semantics, low ceremony for presentation — is exactly the two-tier review model Part 2 makes mechanical.</p>
+</section>
+
+<section id="standards">
+  <h2>5 · Standards and open source: the substrate moved under us</h2>
+  <p class="lede">Verified against source — model YAML, NAMESPACEs, release tags — not documentation prose. Three findings change the design space.</p>
+  <div class="findings">
+    <div class="finding">
+      <h3>ARS has no lifecycle model — verified, and known upstream</h3>
+      <p>No release since v1.0.0 (April 2024); the repo is in maintenance. The model's only versioning construct is an <i>optional integer ordinal</i> on four classes — zero occurrences of status, lifecycle, amendment, approval, author, date or reason anywhere in <span class="mono">ars_ldm.yaml</span>; even <span class="mono">ReferenceDocument</span> (the SAP link) carries no version or date. The gap is a known, three-year-old open issue — <a class="ref" href="https://github.com/cdisc-org/analysis-results-standard/issues/206">#206</a> asks for exactly the timestamped result-set concept open.csr's iteration ledger implements. Conclusion: adopt ARS vocabulary for analysis semantics, and build the versioning layer above it without waiting. One construct <i>is</i> worth adopting: <span class="mono">AnalysisReasonEnum</span> — <span class="mono">SPECIFIED IN PROTOCOL / SPECIFIED IN SAP / DATA DRIVEN / REQUESTED BY REGULATORY AGENCY</span> — the standard-sanctioned vocabulary for <i>why a display exists</i>.</p>
+    </div>
+    <div class="finding">
+      <h3>The diff primitive now exists upstream: cards::compare_ard()</h3>
+      <p><span class="mono">{cards}</span> 0.8.0 (after the kickoff survey) shipped <span class="mono">compare_ard()</span> / <span class="mono">is_ard_equal()</span>: key-matched, tolerance-aware comparison returning rows-added, rows-removed, and per-statistic differences. This is the engine a display change request needs, purpose-built, maintained upstream — experimental, so wrap and pin it. Equally important: <span class="mono">cards::mock_*()</span> creates <b>empty ARDs in the results schema for table shells</b> — so a shell and a result are the same artifact type, and <i>one diff engine serves shell review, first-run review, and re-run review</i>. Still no ARD serializer upstream (verified against NAMESPACE) — open.csr's owned <span class="mono">ard.json</span> schema remains necessary, and must carry the version stamps ARS and tfrmt JSON lack.</p>
+    </div>
+    <div class="finding">
+      <h3>Nobody ships open-source shell versioning — and one vendor charges for exactly it</h3>
+      <p>Exhaustive search: no open-source TLF tracker or shell change-control tool exists — not in pharmaverse (100 repos enumerated), not at Atorus (48 repos), not anywhere on GitHub. What exists is internal and proprietary, described in papers but never released: Keymed's ATTS platform (tracker + shell library + auto-QC), Merck's A&amp;R Grid, CDARS's shell-metadata database — the last naming the unsolved problem: when programmers edit code directly, &ldquo;the challenge is how to identify and capture changes, sync back and update the metadata database.&rdquo; <span class="mono">{tfrmt}</span> remains the only open tool where the shell and the production spec are the same versionable artifact (JSON round-trip, mock-before-data), though its JSON carries no schema version. And <span class="mono">{siera}</span> 0.5.6 quietly shipped the best precedent in the ecosystem: an <span class="mono">inst/method-library/</span> self-described as <i>&ldquo;the reviewable, diff-able source of truth&rdquo;</i> with stable method IDs referenceable from ARS files — plus a caution: validating against the CDISC eTFL reference package, siera found the published AE-overview values were computed from only the first AE record per subject. Published references are not yet trustworthy oracles; committed, tested ARDs are.</p>
+    </div>
+    <div class="finding">
+      <h3>{cardinal} shipped, FDA hardened the target — and the agentic pattern is unclaimed</h3>
+      <p><span class="mono">pharmaverse/cardinal</span> cut its first release (v0.0.1, 23 Jul 2026): 26 FDA Standard Safety Tables + 4 figures — as imperative R in Quarto with a committed PNG, no declarative spec, no versioned display metadata. FDA meanwhile operationalized ST&amp;Fs in review via MAPP 6025.9 (effective Jun 2025) — they are <i>reviewer</i> tools, so a sponsor shipping them pre-empts the reviewer's own view. On the agent side: no published &ldquo;agent edits spec, human reviews diff&rdquo; pattern exists in clinical reporting — the industry vocabulary is whole-artifact human-in-the-loop sign-off. The nearest precedents: Merck's PharmaSUG 2026 paper where the LLM emits an intermediate design document and the human reviews <i>that</i>; ClinAgent's automated diff against prior released specifications; and the R Consortium's <a class="ref" href="https://github.com/RConsortium/pharma-skills">pharma-skills</a> repo (89★) with a four-phase human-reviewed lifecycle for agent skills — including a <span class="mono">statistical-reviewer</span> skill. The strongest measured result in the space says specification quality, not model sophistication, governs safety: behavior-driven specs moved AI-generated SDTM correctness from 20% to 84–90% (PharmaSUG 2026, Amazon).</p>
+    </div>
+  </div>
+  <p class="note"><b>Regulatory posture, verified primary-source:</b> FDA's AI credibility guidance is <b>still draft</b> (Federal Register API sweep; no final notice exists) and its scope <i>excludes</i> &ldquo;operational efficiencies&rdquo; that don't affect the reliability of study results — deterministic rendering of validated numbers sits outside the framework; generating evidence sits inside. EMA's reflection paper (final, Sept 2024) supplies two directly usable rules: §2.3.5 — AI-drafted regulatory text needs <i>&ldquo;close human supervision&rdquo;</i> and <i>&ldquo;quality review mechanisms&rdquo;</i> — and §2.3.3.3 — after database lock, <i>&ldquo;any non-prespecified modifications to data processing or models implies that analysis results are considered post hoc,&rdquo;</i> with model changes requiring a SAP amendment via regulatory interaction. The EU AI Act does not class CSR drafting as high-risk, and Art. 50(4) expressly treats human editorial review as the discharging control. Part 2 encodes all three as mechanical properties of the loop.</p>
+</section>
+
+<section>
+  <h2>6 · The seam, verified</h2>
+  <p class="lede">Cross-cutting findings this pass establishes, each load-bearing for the framework in Part 2.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Finding</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><b>No product has a tracked TLF change-request object.</b></td><td>Uniform across 18 products; Merck's iRAP consumes &ldquo;immutable TLFs&rdquo;; TriloDocs is stateless &ldquo;like a photocopier&rdquo; by its owner's description</td></tr>
+      <tr><td><b>No product links a regenerated table to the prose quoting it.</b></td><td>Narrativa click-to-trace and Yseop sentence-links are read-time audit affordances; neither claims staleness detection; the reverse edge is unclaimed by every vendor</td></tr>
+      <tr><td><b>Vendors themselves describe the fallback.</b></td><td>Narrativa: automation &ldquo;shortens response times to medical writer change requests&rdquo; — the request is still an out-of-band message to programming</td></tr>
+      <tr><td><b>The review loop, not the first draft, is the bottleneck.</b></td><td>J&amp;J: majority of a 12-week cycle is cross-functional review; the entire 2025–26 product wave optimizes drafting speed</td></tr>
+      <tr><td><b>Comment lifecycles terminate at closed/resolved.</b></td><td>PleaseReview reconciliation reports; Vault resolved annotations (not carried forward); no tool has a &ldquo;regenerated / re-verified&rdquo; state</td></tr>
+      <tr><td><b>Change control is process, not product.</b></td><td>Post-lock changes ride QMS paper — email, Excel trackers, Jira; the tracking sheet's Round Number column is the closest thing to a request counter</td></tr>
+      <tr><td><b>The two-tier governance already exists in practice.</b></td><td>Signed SAP for analysis semantics vs unsigned shells for presentation — the industry's own asymmetry, waiting to be made mechanical</td></tr>
+      <tr><td><b>The versioning layer must be built; nobody has.</b></td><td>ARS: no lifecycle fields (verified absence, issue #206 open 3 years); no open-source shell tracker anywhere; TFL Designer paywalls exactly this</td></tr>
+      <tr><td><b>The diff engine now exists upstream.</b></td><td><span class="mono">cards::compare_ard()</span> (0.8.0, experimental) + <span class="mono">mock_*()</span> shells in the results schema — one differ for shells and results</td></tr>
+      <tr><td><b>ARD-first drafting is independently validated.</b></td><td>Clymb's PharmaSUG 2025 paper: GenAI drafting from ARD beats RTF/PDF parsing 3–5× on processing efficiency</td></tr>
+      <tr><td><b>Number-guarded generation exists; number-<i>change</i> handling does not.</b></td><td>TriloDocs Layer-1 verification, ReadoutAI fact-checking, IQVIA verifier agent — all prevent invented numbers; none handles a number changing</td></tr>
+      <tr><td><b>Clymb is the neighbour to watch.</b></td><td>ARS-native specs + codegen + TLF review with e-signature + CSR builder announced; comment→spec edit and prose re-flagging unpublished</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The structural conclusion is unchanged from the kickoff survey but now much better evidenced: <b>the change request → spec edit → regenerated ARD → updated sentence transaction is unoccupied territory</b>, the industry's own artifacts (Round Numbers, SAP amendments, 100%-check QC) prove the demand, and the standard capable of carrying display identity across that loop (CDISC ARS) has been adopted by exactly zero CSR-authoring vendors — only by the TLF-side tools. <a href="framework.html">Part 2</a> proposes how open.csr occupies it.</p>
+</section>
+
+<footer class="foot">
+  <p>Drafted by Claude Code using Fable 5, autonomous session <span class="mono">🦾🤖 2026-07-27 csr-research</span>, for review by @jwildfire.</p>
+  <p><a href="index.html">Back to the overview</a> · <a href="framework.html">On to the framework</a></p>
+</footer>
+
+</div>
+</body>
+</html>
