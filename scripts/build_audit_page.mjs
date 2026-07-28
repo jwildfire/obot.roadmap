@@ -38,6 +38,15 @@ import { siteHeader } from './lib/nav.mjs';
 const NOW = new Date();
 const OUT = path.join(ROOT, '_site', 'audit', 'index.html');
 
+// Two builds of one page (@jwildfire, 2026-07-27). The deployed copy is the
+// read-only record — a public page holds no token and gets no write path, so
+// the whole connect-a-PAT flow is gone. Deciding happens on the local session
+// hub, whose server builds this same page with AUDIT_MODE=local: there ✓/✗
+// POST finding ids to the loopback server, which spawns a Claude Code agent to
+// run the apply lane on this machine. The lane's contract is unchanged — ids
+// only, fresh-audit re-validation, outcomes re-read from the committed ledger.
+const MODE = process.env.AUDIT_MODE === 'local' ? 'local' : 'readonly';
+
 const readAudit = async (name) => {
   try {
     return JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'audit', name), 'utf8'));
@@ -254,7 +263,9 @@ const shell = ledger
         <summary>How a decision travels <span class="ap-n">4 steps</span></summary>
         <p class="ap-note">Every finding here is a fact about GitHub state, produced by a deterministic rule rather than a model: the same state yields the same findings.</p>
         <ol class="ap-note">
-          <li><strong>✓</strong> sends the finding's id — and nothing else — to the <a href="https://github.com/${HUB}/blob/main/.github/workflows/roadmap-audit-apply.yml">apply lane</a> as a <code>repository_dispatch</code>, authenticated as you from this browser. A rule band sends one request carrying all of its ids.</li>
+          ${MODE === 'local'
+    ? `<li><strong>✓</strong> hands the finding's id — and nothing else — to the loopback hub server, which spawns a local Claude Code agent to run the <a href="https://github.com/${HUB}/blob/main/scripts/apply_audit_decision.mjs">apply lane</a> on this machine. A rule band sends one request carrying all of its ids. No token is involved: the write authority is this machine's own, never the page's.</li>`
+    : `<li>This deployed page is <strong>read-only</strong> — it holds no token and has no write path. Deciding happens on the local session hub's copy of this queue, where ✓/✗ hand finding ids to a local Claude Code agent; <a href="${esc(decisionUrl('accept', ['RULE-ID:owner/repo#123']))}" target="_blank" rel="noopener">filing a decision issue</a> naming the ids remains the fallback lane.</li>`}
           <li>The lane runs a <strong>fresh audit</strong> and re-derives what that id means. A finding the new audit no longer reports is refused as stale, and one whose source could not be read is reported blocked. What runs is never what this page said should run.</li>
           <li>A mechanical fix is applied as the operations listed in the rail; a judgment call goes to a bounded agent with the prompt shown there.</li>
           <li><strong>✗</strong> changes nothing and mutes the finding for 60 days, or until its evidence changes. Both land in the Activity fold above.</li>
@@ -335,10 +346,11 @@ body.audit footer.site { margin: 0; padding: 1.2rem 1rem 1.4rem; }
 .ap-workhead h1 { margin: 0; font: 400 1.45rem/1.1 var(--serif); }
 .ap-stamp { font: 400 .76rem/1.5 var(--mono); color: var(--faint); }
 .ap-conn { margin-left: auto; display: inline-flex; }
-.ap-conn button { font: 500 .72rem/1.4 var(--mono); color: var(--muted); cursor: pointer;
+/* A state pill, not a control: the lane is decided at build time, so there is
+   nothing here to click any more. */
+.ap-conn span { font: 500 .72rem/1.4 var(--mono); color: var(--muted); cursor: help;
   background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: .16rem .6rem; }
-.ap-conn button:hover { border-color: var(--accent-bright); color: var(--accent); }
-.ap-conn button.on { border-color: #166534; color: #166534; }
+.ap-conn span.on { border-color: #166534; color: #166534; }
 
 /* The queue meter: one tick per finding in table order — progress and minimap in
    the same object. Never colour alone; the readout beside it says the same thing
@@ -560,23 +572,6 @@ ${siteHeader({ page: 'audit', depth: 1 })}
 
 ${shell}
 
-<dialog id="ap-connect" class="ap-dlg">
-  <h2>Connect this browser</h2>
-  <p>Applying a finding means writing to GitHub, so the page needs a token of yours. It is stored in this browser's <code>localStorage</code> and sent only to <code>api.github.com</code> — never to any other host, and never into the repository.</p>
-  <ol>
-    <li>Create a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> scoped to <strong>only</strong> <code>${HUB}</code>, with <strong>Contents: read and write</strong> — what <code>repository_dispatch</code> requires. Nothing else.</li>
-    <li>Paste it below. A short expiry is fine; reconnecting is this dialog again.</li>
-  </ol>
-  <p><input type="password" id="ap-token" placeholder="github_pat_…" autocomplete="off" spellcheck="false"></p>
-  <div class="row">
-    <button class="go" id="ap-save">connect</button>
-    <button id="ap-forget">forget this token</button>
-    <button id="ap-connect-close">close</button>
-  </div>
-  <p class="ap-meta" id="ap-connect-msg"></p>
-  <p>Prefer not to hold a token in a browser? Every finding can also be applied by <a href="${esc(decisionUrl('accept', ['RULE-ID:owner/repo#123']))}" target="_blank" rel="noopener">filing a decision issue</a> — edit the ids in the body. The same lane handles both.</p>
-</dialog>
-
 <dialog id="ap-confirm" class="ap-dlg">
   <h2 id="ap-confirm-title">Are you sure?</h2>
   <p id="ap-confirm-body"></p>
@@ -595,8 +590,7 @@ ${shell}
   if (!ledger) return;
 
   var HUB = ${JSON.stringify(HUB)};
-  var WORKFLOW = 'roadmap-audit-apply.yml';
-  var KEY = 'obot-audit-token';
+  var MODE = ${JSON.stringify(MODE)}; // 'readonly' (deployed) or 'local' (hub server)
   var CONF_RANK = { high: 0, medium: 1, low: 2 };
   var GROUP_ORDER = ['Board integrity', 'Hierarchy', 'Linkage', 'Conventions'];
   var MUTE_CONFIRM_OVER = 3; // D3
@@ -750,6 +744,7 @@ ${shell}
   }
 
   function actsHTML(f, size) {
+    if (MODE !== 'local') return '';
     var m = mark(f.id);
     var lock = f.muted || settled(f) || (m && m.phase !== 'done') || busy;
     var dis = lock ? ' disabled' : '';
@@ -835,11 +830,11 @@ ${shell}
       + same
       + '<span class="gact">'
       + (done ? '<span class="gdone">' + done + '/' + items.length + ' decided</span>' : '')
-      + (open.length ? '<span class="lbl">all ' + open.length + '</span>' : '')
+      + (MODE !== 'local' ? '' : (open.length ? '<span class="lbl">all ' + open.length + '</span>' : '')
       + '<button class="act yes sm" data-gact="accept" data-rule="' + esc(g.rule) + '"' + (lock ? ' disabled' : '')
       + ' title="Accept all ' + open.length + ' shown findings of this rule — one request" aria-label="Accept all ' + open.length + ' findings of ' + esc(g.rule) + '">✓</button>'
       + '<button class="act no sm" data-gact="reject" data-rule="' + esc(g.rule) + '"' + (lock ? ' disabled' : '')
-      + ' title="Reject all ' + open.length + ' shown findings of this rule — mutes them for 60 days" aria-label="Reject all ' + open.length + ' findings of ' + esc(g.rule) + '">✗</button>'
+      + ' title="Reject all ' + open.length + ' shown findings of this rule — mutes them for 60 days" aria-label="Reject all ' + open.length + ' findings of ' + esc(g.rule) + '">✗</button>')
       + '</span></div></td></tr>'
       + (collapsed ? '' : items.map(rowHTML).join(''));
   }
@@ -885,12 +880,12 @@ ${shell}
       + '<div class="line">' + confHTML(f) + ' ' + subjHTML(f) + ' ' + kindHTML(f) + statusHTML(f)
       + '<span class="pos">' + (idx + 1) + ' of ' + flat.length + '</span></div>'
       + '<h2>' + esc(f.subject.title || f.ruleTitle) + '</h2>'
-      + '<div class="decide">'
+      + (MODE !== 'local' ? '' : '<div class="decide">'
       + '<button class="yes" data-act="accept" data-id="' + esc(f.id) + '" aria-pressed="'
       + Boolean(m && m.decision === 'accept') + '"' + (lock ? ' disabled' : '') + '>✓ Accept</button>'
       + '<button class="no" data-act="reject" data-id="' + esc(f.id) + '" aria-pressed="'
       + Boolean(m && m.decision === 'reject') + '"' + (lock ? ' disabled' : '') + '>✗ Reject</button>'
-      + '</div>'
+      + '</div>')
       + '<div class="step"><button data-step="-1">↑ previous</button><button data-step="1">next ↓</button></div>'
       + '</div>'
       + detailHTML(f);
@@ -923,7 +918,7 @@ ${shell}
       ? '<table class="ap-tbl">'
         + '<colgroup><col class="c-act"><col class="c-conf"><col class="c-subj"><col class="c-title"><col><col class="c-kind"></colgroup>'
         + '<thead><tr>'
-        + th('', 'decide', true) + th('confidence', 'conf') + th('issue', 'which issue')
+        + th('', MODE === 'local' ? 'decide' : '', true) + th('confidence', 'conf') + th('issue', 'which issue')
         + th('rule', 'title') + th('', 'what changes', true) + th('kind', 'kind / state')
         + '</tr></thead><tbody>'
         + groups.map(function (g) {
@@ -948,37 +943,27 @@ ${shell}
   }
 
   // -------------------------------------------------------------- the lane
-  // Click → repository_dispatch → poll the run → re-read the ledger (#109). The
-  // token is @jwildfire's own, kept in this browser only; the dispatch carries
-  // finding ids and nothing else, and the lane re-validates every one of them
-  // against a fresh audit before it changes anything. A page cannot be trusted,
-  // and is not.
-  var dialog = document.getElementById('ap-connect');
+  // Click → POST to the loopback hub server → a local Claude Code agent runs
+  // the apply lane on this machine → the outcome is re-read from the ledger the
+  // agent committed, never assumed (D7). The decision carries finding ids and
+  // nothing else, and the lane re-validates every one of them against a fresh
+  // audit before it changes anything. A page cannot be trusted, and is not —
+  // and it no longer holds anything worth stealing: the token flow is gone
+  // (@jwildfire, 2026-07-27), so the deployed copy is simply read-only.
   var confirmDlg = document.getElementById('ap-confirm');
 
-  function token() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
-
   function paintConnection() {
-    var has = Boolean(token());
     connSlot.innerHTML = '';
-    var b = document.createElement('button');
-    b.className = has ? 'on' : '';
-    b.textContent = has ? 'connected' : 'read-only — connect to apply';
-    b.title = has
-      ? 'This browser holds a token that can apply findings. Click to replace or forget it.'
-      : 'The queue reads fine without a token; deciding needs one.';
-    b.addEventListener('click', function () { dialog.showModal(); });
+    var b = document.createElement('span');
+    if (MODE === 'local') {
+      b.className = 'on';
+      b.textContent = 'local lane — ✓/✗ spawn the apply agent';
+      b.title = 'Decisions POST to the loopback hub server, which spawns a Claude Code agent to re-validate ids against a fresh audit and apply. No token, no remote write path.';
+    } else {
+      b.textContent = 'read-only — decide from the local hub';
+      b.title = 'The deployed page holds no token and cannot write. Open the session hub audit server locally to decide findings; filing an audit-decision issue remains the fallback.';
+    }
     connSlot.appendChild(b);
-  }
-
-  function gh(pathname, options) {
-    var o = options || {};
-    o.headers = Object.assign({
-      Accept: 'application/vnd.github+json',
-      Authorization: 'Bearer ' + token(),
-      'X-GitHub-Api-Version': '2022-11-28',
-    }, o.headers || {});
-    return fetch('https://api.github.com' + pathname, o);
   }
 
   function say(html, cls) {
@@ -996,111 +981,73 @@ ${shell}
     });
   }
 
-  // The dispatch API returns 204 with no run id of its own, so the run is found
-  // by looking for a dispatch run created after the click.
-  function findRun(since, tries) {
-    return gh('/repos/' + HUB + '/actions/workflows/' + WORKFLOW + '/runs?event=repository_dispatch&per_page=5')
-      .then(function (r) { return r.ok ? r.json() : { workflow_runs: [] }; })
-      .then(function (data) {
-        var run = (data.workflow_runs || []).filter(function (w) {
-          return new Date(w.created_at).getTime() >= since - 60000;
-        })[0];
-        if (run) return run;
-        if (tries <= 0) return null;
-        return new Promise(function (res) { setTimeout(res, 3000); }).then(function () {
-          return findRun(since, tries - 1);
-        });
-      });
-  }
-
-  function watchRun(run, ids, label) {
-    return gh('/repos/' + HUB + '/actions/runs/' + run.id)
+  // What actually landed comes from the ledger the agent commits, not from this
+  // page's assumption — the server reads site/audit/decisions.json fresh from
+  // the checkout on every poll, and reports the job's own state beside it.
+  function poll(job, decision, ids, label, started, tries) {
+    return fetch('/api/audit/state?job=' + encodeURIComponent(job || '')
+      + '&ids=' + encodeURIComponent(ids.join(',')))
       .then(function (r) { return r.json(); })
-      .then(function (w) {
-        if (w.status !== 'completed') {
-          setPhase(ids, w.status === 'queued' ? 'queued' : 'running', { run: w.html_url });
-          render();
-          say('<span class="ap-spin">●</span> ' + esc(label) + ' — <strong>' + esc(String(w.status).replace('_', ' '))
-            + '</strong> · <a href="' + esc(w.html_url) + '" target="_blank" rel="noopener">run log</a>', 'working');
+      .then(function (s) {
+        var landed = {};
+        (s.decisions || []).forEach(function (d) {
+          if (new Date(d.at).getTime() >= started - 60000) landed[d.id] = d;
+        });
+        var all = ids.every(function (id) { return landed[id]; });
+        var terminal = Boolean(s.job && s.job.terminal);
+        if (!all && !terminal && tries > 0) {
+          var word = (s.job && (s.job.detail || s.job.state)) || 'working';
+          say('<span class="ap-spin">●</span> ' + esc(label) + ' — agent <strong>' + esc(word) + '</strong>', 'working');
           return new Promise(function (res) { setTimeout(res, 5000); }).then(function () {
-            return watchRun(w, ids, label);
+            return poll(job, decision, ids, label, started, tries - 1);
           });
         }
-        return w;
+        var tally = {};
+        ids.forEach(function (id) {
+          var d = landed[id];
+          var outcome = d ? d.outcome : 'failed';
+          state.sent[id] = Object.assign(state.sent[id] || {}, {
+            phase: 'done', decision: decision, outcome: outcome,
+            detail: d ? d.detail
+              : (terminal ? 'the agent finished without recording this id — check its job output'
+                : 'timed out waiting for the agent — it may still be working; press u to clear and re-check later'),
+          });
+          tally[outcome] = (tally[outcome] || 0) + 1;
+        });
+        var ok = ids.every(function (id) { return landed[id] && LANDED[landed[id].outcome]; });
+        var summary = Object.keys(tally).map(function (k) { return tally[k] + ' ' + k; }).join(' · ');
+        say((ok ? '✓ ' : '⚠ ') + esc(label) + ' — <strong>' + esc(summary) + '</strong>'
+          + '<span class="ap-meta">Read from the ledger the agent committed. The deployed page catches up on its next deploy.</span>', ok ? 'done' : 'warn');
+        return null;
       });
-  }
-
-  // What actually landed comes from the ledger the lane commits, not from this
-  // page's assumption — read through the API, since the CDN caches raw files.
-  function outcomes(runId) {
-    return gh('/repos/' + HUB + '/contents/site/audit/decisions.json?ref=main', {
-      headers: { Accept: 'application/vnd.github.raw' },
-    }).then(function (r) { return r.ok ? r.json() : null; }).then(function (led) {
-      if (!led) return null;
-      var mine = (led.decisions || []).filter(function (d) { return String(d.runId) === String(runId); });
-      return mine.length ? mine : null;
-    }).catch(function () { return null; });
   }
 
   function dispatch(decision, ids, label) {
-    if (busy || !ids.length) return;
-    if (!token()) { dialog.showModal(); return; }
+    if (MODE !== 'local' || busy || !ids.length) return;
     busy = true;
     var started = Date.now();
     setPhase(ids, 'sending', { decision: decision, outcome: null, detail: null });
     render();
-    say('<span class="ap-spin">●</span> sending ' + ids.length + ' finding' + (ids.length === 1 ? '' : 's') + '…', 'working');
+    say('<span class="ap-spin">●</span> handing ' + ids.length + ' finding' + (ids.length === 1 ? '' : 's') + ' to the apply agent…', 'working');
 
-    gh('/repos/' + HUB + '/dispatches', {
+    fetch('/api/audit/decision', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type: 'audit-decision', client_payload: { decision: decision, findings: ids } }),
+      body: JSON.stringify({ decision: decision, findings: ids, label: label }),
     }).then(function (res) {
-      if (res.status === 401 || res.status === 403) {
-        throw new Error('GitHub rejected the token (' + res.status + '). It may be expired, or missing Contents: read and write on this repository.');
-      }
-      if (res.status !== 204) {
-        return res.text().then(function (t) { throw new Error('dispatch failed (' + res.status + ') ' + t.slice(0, 200)); });
-      }
-      setPhase(ids, 'queued');
-      render();
-      say('<span class="ap-spin">●</span> ' + esc(label) + ' — waiting for the lane to pick it up…', 'working');
-      return findRun(started, 12);
-    }).then(function (run) {
-      if (!run) {
-        setPhase(ids, 'done', { outcome: 'failed', detail: 'no run appeared within a minute' });
-        say('Dispatched, but no run appeared within a minute. Check <a href="https://github.com/' + HUB
-          + '/actions/workflows/' + WORKFLOW + '" target="_blank" rel="noopener">the workflow</a> — the decision was sent, so nothing is lost.', 'warn');
-        return null;
-      }
-      return watchRun(run, ids, label);
-    }).then(function (done) {
-      if (!done) return null;
-      return outcomes(done.id).then(function (mine) {
-        var ok = done.conclusion === 'success';
-        var landed = {};
-        (mine || []).forEach(function (d) { landed[d.id] = d; });
-        var tally = {};
-        ids.forEach(function (id) {
-          var d = landed[id];
-          var outcome = d ? d.outcome : (ok ? (decision === 'reject' ? 'rejected' : 'applied') : 'failed');
-          state.sent[id] = Object.assign(state.sent[id] || {}, {
-            phase: 'done', decision: decision, outcome: outcome,
-            detail: d ? d.detail : null, run: done.html_url,
-          });
-          tally[outcome] = (tally[outcome] || 0) + 1;
-        });
-        var summary = Object.keys(tally).map(function (k) { return tally[k] + ' ' + k; }).join(' · ');
-        say((ok ? '✓ ' : '⚠ ') + esc(label) + ' — <strong>' + esc(summary) + '</strong> · <a href="'
-          + esc(done.html_url) + '" target="_blank" rel="noopener">run log</a>'
-          + '<span class="ap-meta">Joins the Activity fold below on the next deploy, a minute or two from now. '
-          + 'Rows that landed are struck through here already.</span>', ok ? 'done' : 'warn');
-        return null;
+      return res.json().catch(function () { return {}; }).then(function (b) {
+        if (!res.ok) throw new Error(b.error || ('the hub server refused the decision (' + res.status + ')'));
+        return b;
       });
+    }).then(function (b) {
+      setPhase(ids, 'running', { job: b.job });
+      render();
+      say('<span class="ap-spin">●</span> ' + esc(label) + ' — agent <code>' + esc(b.job || '?') + '</code> spawned…', 'working');
+      return poll(b.job, decision, ids, label, started, 240); // ~20 min at 5s
     }).catch(function (err) {
       setPhase(ids, 'done', { outcome: 'failed', detail: String(err.message || err) });
       say('⚠ ' + esc(String(err.message || err))
-        + '<span class="ap-meta">Select a row and press <kbd>u</kbd> to clear its mark and try again.</span>', 'warn');
+        + '<span class="ap-meta">Is the hub audit server still running? Select a row and press <kbd>u</kbd> to clear its mark and try again.</span>', 'warn');
     }).then(function () {
       busy = false;
       render();
@@ -1302,39 +1249,6 @@ ${shell}
   document.getElementById('ap-stamp').textContent = ledger.counts.total + ' findings · '
     + ledger.rules.filter(function (r) { return r.fired; }).length + ' of ' + ledger.rules.length
     + ' rules firing · run ' + String(ledger.generatedAt).slice(0, 10);
-
-  // --------------------------------------------------------------- the token
-  document.getElementById('ap-save').addEventListener('click', function (e) {
-    e.preventDefault();
-    var input = document.getElementById('ap-token');
-    var msg = document.getElementById('ap-connect-msg');
-    var value = input.value.trim();
-    if (!value) { msg.textContent = 'Paste a token first.'; return; }
-    msg.textContent = 'checking…';
-    // Verified before it is stored, so a bad paste fails here rather than on the
-    // first thing he tries to apply.
-    fetch('https://api.github.com/repos/' + HUB, {
-      headers: { Authorization: 'Bearer ' + value, Accept: 'application/vnd.github+json' },
-    }).then(function (r) {
-      if (!r.ok) throw new Error('GitHub rejected it (' + r.status + ')');
-      try { localStorage.setItem(KEY, value); } catch (err) { throw new Error('this browser refused to store it'); }
-      input.value = '';
-      msg.textContent = 'Connected. ✓ and ✗ are live.';
-      paintConnection();
-      render();
-      setTimeout(function () { dialog.close(); }, 900);
-    }).catch(function (err) { msg.textContent = String(err.message || err); });
-  });
-  document.getElementById('ap-forget').addEventListener('click', function (e) {
-    e.preventDefault();
-    try { localStorage.removeItem(KEY); } catch (err) { /* nothing to forget */ }
-    document.getElementById('ap-connect-msg').textContent = 'Token forgotten. The page is read-only again.';
-    paintConnection();
-  });
-  document.getElementById('ap-connect-close').addEventListener('click', function (e) {
-    e.preventDefault();
-    dialog.close();
-  });
 
   // The roadmap page's Audit fold links here per rule (#rule-RULE-ID). Those
   // anchors used to be section headings; the queue has no sections, so the link
