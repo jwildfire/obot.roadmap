@@ -20,6 +20,11 @@ import { ROOT } from '../repos.mjs';
 const GENERATOR = path.join(ROOT, 'scripts', 'build_audit_page.mjs');
 const OUT = path.join(ROOT, '_site', 'audit', 'index.html');
 
+// Two builds of one page (2026-07-27): AUDIT_MODE=readonly is what the deploy
+// publishes; AUDIT_MODE=local is what the session-audit server serves. Build
+// local first so `html` — what most tests read — is the deployed artifact.
+execFileSync(process.execPath, [GENERATOR], { cwd: ROOT, stdio: 'pipe', env: { ...process.env, AUDIT_MODE: 'local' } });
+const htmlLocal = fs.readFileSync(OUT, 'utf8');
 execFileSync(process.execPath, [GENERATOR], { cwd: ROOT, stdio: 'pipe' });
 const html = fs.readFileSync(OUT, 'utf8');
 
@@ -77,25 +82,40 @@ test('D4 — the activity log is a fold, under the table', () => {
     'the activity fold must come after the queue');
 });
 
-test('D2 — decisions dispatch, and carry ids only', () => {
-  assert.match(html, /event_type: 'audit-decision'/);
-  assert.match(html, /client_payload: \{ decision: decision, findings: ids \}/);
-  assert.match(html, /\/dispatches/);
-  // No staging tray survived the decision to dispatch per click.
-  assert.doesNotMatch(html, /decisions staged/);
+test('D2 revised — the deployed page has no write path at all', () => {
+  // The dispatch lane and the token that powered it are gone (2026-07-27):
+  // a public page holds nothing that can change GitHub.
+  assert.match(html, /var MODE = "readonly"/);
+  assert.doesNotMatch(html, /event_type: 'audit-decision'/);
+  assert.doesNotMatch(html, /api\.github\.com/);
+  assert.doesNotMatch(html, /github_pat/);
 });
 
-test('D3 — a band rejection above three is confirmed, an acceptance never is', () => {
-  assert.match(html, /MUTE_CONFIRM_OVER = 3/);
-  const guard = /if \(decision === 'reject' && ids\.length > MUTE_CONFIRM_OVER\)/;
-  assert.match(html, guard, 'only reject is gated');
+test('D2 revised — the local build stages a queue and submits to the loopback server', () => {
+  assert.match(htmlLocal, /var MODE = "local"/);
+  assert.match(htmlLocal, /\/api\/audit\/decision/);
+  assert.match(htmlLocal, /\/api\/audit\/state/);
+  assert.match(htmlLocal, /id="ap-qbar"/);
+  // ids only, in the batch shape the server validates.
+  assert.match(htmlLocal, /JSON\.stringify\(\{ batch: batch, label: label \}\)/);
+  // And still nothing pointed at GitHub's API from the browser.
+  assert.doesNotMatch(htmlLocal, /api\.github\.com/);
 });
 
-test('the page stays useful without a token, and says so', () => {
-  assert.match(html, /read-only — connect to apply/);
-  assert.match(html, /localStorage/);
-  // The documented fallback survives: an audit-decision issue, for when no
-  // browser can hold a token.
+test('D3 — muting above three still confirms, now at submit time', () => {
+  assert.match(htmlLocal, /MUTE_CONFIRM_OVER = 3/);
+  const guard = /if \(rej\.length > MUTE_CONFIRM_OVER\)/;
+  assert.match(htmlLocal, guard, 'only the reject side of a submit is gated');
+});
+
+test('each build names its lane in the connection pill', () => {
+  assert.match(html, /read-only — decide from the local hub/);
+  assert.match(htmlLocal, /stage \u2713\/\u2717, submit when ready|stage ✓\/✗, submit when ready/);
+  // The connect-a-PAT dialog is gone from both.
+  assert.doesNotMatch(html, /ap-connect/);
+  assert.doesNotMatch(htmlLocal, /ap-connect/);
+  // The documented fallback survives: an audit-decision issue, for when the
+  // local server is not running.
   assert.match(html, /labels=audit-decision/);
 });
 
