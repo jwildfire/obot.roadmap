@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open.gismo app — design directions</title>
+<style>
+  /* ---------- artifact page chrome (theme-aware) ---------- */
+  :root {
+    --pg-paper: #F4F1EC;
+    --pg-card: #FDFCFA;
+    --pg-ink: #26211B;
+    --pg-muted: #6F6558;
+    --pg-faint: #9C917F;
+    --pg-line: #E2DACC;
+    --pg-accent: #B4470E;
+    --pg-accent-soft: #F4E2D2;
+    --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+    --sans: "Instrument Sans", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --pg-paper: #1A1611; --pg-card: #232019; --pg-ink: #EAE4D8; --pg-muted: #A69B89;
+      --pg-faint: #7E7462; --pg-line: #383126; --pg-accent: #E8843C; --pg-accent-soft: #3C2A18;
+    }
+  }
+  :root[data-theme="light"] {
+    --pg-paper: #F4F1EC; --pg-card: #FDFCFA; --pg-ink: #26211B; --pg-muted: #6F6558;
+    --pg-faint: #9C917F; --pg-line: #E2DACC; --pg-accent: #B4470E; --pg-accent-soft: #F4E2D2;
+  }
+  :root[data-theme="dark"] {
+    --pg-paper: #1A1611; --pg-card: #232019; --pg-ink: #EAE4D8; --pg-muted: #A69B89;
+    --pg-faint: #7E7462; --pg-line: #383126; --pg-accent: #E8843C; --pg-accent-soft: #3C2A18;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--pg-paper); color: var(--pg-ink); font-family: var(--sans); line-height: 1.55; margin: 0; padding: 3rem 1.25rem 4.5rem; }
+  .wrap { max-width: 1020px; margin: 0 auto; }
+  .prose { max-width: 68ch; }
+  a { color: var(--pg-accent); text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--pg-accent); outline-offset: 2px; }
+  code { font-family: var(--mono); font-size: 0.86em; }
+  .eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pg-accent); margin: 0 0 0.55rem; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2.1rem, 5vw, 3rem); line-height: 1.08; letter-spacing: -0.01em; margin: 0 0 1rem; text-wrap: balance; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: 1.7rem; margin: 0 0 0.9rem; letter-spacing: -0.005em; }
+  h3 { font-size: 1.02rem; margin: 1.4rem 0 0.5rem; }
+  .standfirst { font-size: 1.05rem; color: var(--pg-muted); margin: 0; }
+  .standfirst strong { color: var(--pg-ink); }
+  section { margin: 3.4rem 0 0; }
+  p { margin: 0.6rem 0; }
+  .small { font-size: 0.86rem; color: var(--pg-muted); }
+
+  /* swatch strip */
+  .swatches { display: flex; flex-wrap: wrap; gap: 0.55rem; margin: 1rem 0 0.4rem; }
+  .sw { display: flex; align-items: center; gap: 0.45rem; font-family: var(--mono); font-size: 0.72rem; color: var(--pg-muted); }
+  .sw i { width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--pg-line); display: inline-block; }
+
+  /* direction headers */
+  .dir-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 1rem; margin-bottom: 0.25rem; }
+  .dir-head .letter { font-family: var(--mono); font-size: 0.8rem; color: var(--pg-accent); letter-spacing: 0.1em; }
+  .thesis { font-size: 1.02rem; color: var(--pg-muted); font-style: italic; margin: 0 0 0.9rem; max-width: 72ch; }
+  .keeps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 1.1rem; }
+  .keeps span { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.04em; padding: 0.18rem 0.55rem; border-radius: 99px; border: 1px solid var(--pg-line); color: var(--pg-muted); }
+  .keeps span.chg { border-color: var(--pg-accent); color: var(--pg-accent); }
+
+  /* mock browser cards */
+  .shot { overflow-x: auto; margin: 0.6rem -0.25rem 0.7rem; padding: 0.25rem; }
+  .mock { min-width: 900px; max-width: 980px; border: 1px solid var(--pg-line); border-radius: 12px; overflow: hidden; background: #FAF6F1; box-shadow: 0 1px 3px rgba(30,20,10,0.07); }
+  .barlights { display: flex; align-items: center; gap: 0.5rem; background: var(--pg-card); border-bottom: 1px solid var(--pg-line); padding: 0.45rem 0.8rem; }
+  .barlights i { width: 9px; height: 9px; border-radius: 50%; background: var(--pg-line); display: inline-block; }
+  .barlights .url { font-family: var(--mono); font-size: 0.68rem; color: var(--pg-faint); margin-left: 0.5rem; }
+  .cap { font-size: 0.86rem; color: var(--pg-muted); max-width: 76ch; margin: 0.35rem 0 0; }
+  .cap b { color: var(--pg-ink); }
+
+  /* ---------- the app design system inside mocks (committed light "paper" look) ---------- */
+  .app {
+    --a-side: #271810;
+    --a-side-ink: #F3E9DD;
+    --a-side-dim: #C4AE97;
+    --a-paper: #FAF6F1;
+    --a-panel: #F5EFE7;
+    --a-ink: #2A211B;
+    --a-muted: #6F6052;
+    --a-line: #E5DCCE;
+    --a-accent: #C2410C;
+    --a-bright: #F97316;
+    --a-good: #166534;
+    --a-good-bg: #E4EFE6;
+    --a-warn: #92400E;
+    --a-warn-bg: #F6EAD8;
+    --a-bad: #B91C1C;
+    --a-bad-bg: #F8E3E1;
+    --a-s1: #0B62A4; /* series 1 — validated pair */
+    --a-s2: #C2410C; /* series 2 */
+    --ph-config: #9CA3AF; --ph-map: #60A5FA; --ph-metric: #A78BFA; --ph-report: #34D399; --ph-module: #FB923C;
+    background: var(--a-paper); color: var(--a-ink); font-family: var(--sans); font-size: 13px; line-height: 1.45;
+  }
+  .app .serif { font-family: var(--serif); font-weight: 400; }
+  .app .mono, .app .chip, .app .pill { font-family: var(--mono); }
+
+  /* shared app atoms */
+  .app .pill { font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; white-space: nowrap; }
+  .app .pill.ok   { background: var(--a-good-bg); color: var(--a-good); }
+  .app .pill.exp  { background: var(--a-warn-bg); color: var(--a-warn); }
+  .app .pill.proto{ background: var(--a-bad-bg);  color: var(--a-bad); }
+  .app .chip { font-size: 10px; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--a-line); background: #fff; color: var(--a-muted); white-space: nowrap; }
+  .app .chip.ctx { border-color: #CBBFAE; color: var(--a-ink); }
+  .app .chip.prov { border-color: var(--a-good); color: var(--a-good); }
+  .app .chip .x { color: var(--a-accent); font-weight: 700; margin-left: 3px; }
+  .app .flagtiles { display: flex; gap: 8px; }
+  .app .tile { flex: 0 0 auto; display: flex; align-items: baseline; gap: 7px; border: 1px solid var(--a-line); border-radius: 10px; background: #fff; padding: 9px 14px; }
+  .app .tile .n { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .app .tile .lbl { font-size: 10.5px; color: var(--a-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .app .tile.red  .n { color: var(--a-bad); }
+  .app .tile.amber .n { color: var(--a-warn); }
+  .app .tile.ok   .n { color: var(--a-good); }
+  .app table { border-collapse: collapse; font-size: 11.5px; }
+  .app th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--a-muted); font-weight: 500; text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--a-line); }
+  .app td { padding: 5px 10px 5px 0; border-bottom: 1px solid #EFE8DC; vertical-align: middle; }
+  .app .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .app .dot.g { background: var(--a-good); } .app .dot.a { background: var(--a-warn); } .app .dot.r { background: var(--a-bad); }
+  .app .ph { font-size: 9px; font-family: var(--mono); padding: 1.5px 6px; border-radius: 4px; color: #fff; }
+
+  /* domain nav */
+  .app .domtabs { display: flex; gap: 2px; align-items: center; }
+  .app .domtabs span { padding: 4px 12px; border-radius: 7px; font-size: 12px; color: var(--a-muted); }
+  .app .domtabs .on { background: var(--a-side); color: var(--a-side-ink); font-weight: 600; }
+  .app .domtag { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--a-accent); border: 1px solid var(--a-accent); border-radius: 4px; padding: 1px 5px; }
+  .domsplit { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px 16px 16px; }
+  @media (max-width: 700px) { .domsplit { grid-template-columns: 1fr; } }
+
+  /* topbars */
+  .app .topbar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: #fff; border-bottom: 1px solid var(--a-line); }
+  .app .wordmark { font-family: var(--serif); font-size: 16px; }
+  .app .wordmark em { font-style: normal; color: var(--a-accent); }
+  .app .spacer { flex: 1; }
+  .app .navtabs { display: flex; gap: 2px; }
+  .app .navtabs span { padding: 4px 11px; border-radius: 7px; font-size: 12px; color: var(--a-muted); }
+  .app .navtabs .on { background: var(--a-panel); color: var(--a-ink); font-weight: 600; }
+  .app .select { border: 1px solid var(--a-line); border-radius: 7px; background: #fff; padding: 3px 9px; font-size: 11.5px; color: var(--a-ink); }
+  .app .select b { font-family: var(--mono); font-weight: 600; }
+
+  /* A: monitor layout */
+  .layoutA { display: grid; grid-template-columns: 168px 1fr; min-height: 380px; }
+  .layoutA .sidenav { background: var(--a-side); color: var(--a-side-dim); padding: 14px 0; display: flex; flex-direction: column; gap: 2px; }
+  .layoutA .sidenav span { padding: 7px 18px; font-size: 12px; }
+  .layoutA .sidenav .on { color: var(--a-side-ink); background: rgba(249,115,22,0.14); border-left: 3px solid var(--a-bright); padding-left: 15px; }
+  .layoutA .sidenav .foot { margin-top: auto; font-family: var(--mono); font-size: 9.5px; padding: 7px 18px; }
+  .layoutA .content { padding: 16px 20px 20px; }
+  .layoutA h4 { margin: 0 0 10px; font-family: var(--serif); font-weight: 400; font-size: 17px; }
+  .cols2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; margin-top: 14px; }
+  .app .panelbox { border: 1px solid var(--a-line); border-radius: 10px; background: #fff; padding: 10px 14px; }
+  .app .panelbox h5 { margin: 0 0 8px; font-size: 10px; font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--a-muted); font-weight: 500; }
+  .app .changes li { margin: 0 0 7px; font-size: 11.5px; list-style: none; }
+  .app .changes { padding: 0; margin: 0; }
+  .app .changes .who { font-family: var(--mono); font-size: 10px; color: var(--a-muted); }
+
+  /* B: gallery layout */
+  .layoutB .galhead { display: flex; align-items: baseline; gap: 12px; padding: 14px 20px 4px; }
+  .layoutB .galhead h4 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 17px; }
+  .layoutB .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 12px 20px 20px; }
+  .app .card { border: 1px solid var(--a-line); border-radius: 10px; background: #fff; overflow: hidden; }
+  .app .card .thumb { height: 74px; background: var(--a-panel); border-bottom: 1px solid var(--a-line); display: flex; align-items: center; justify-content: center; }
+  .app .card .meta { padding: 8px 11px 10px; }
+  .app .card .name { font-weight: 600; font-size: 12.5px; margin-bottom: 3px; }
+  .app .card .row { display: flex; align-items: center; gap: 6px; }
+  .app .card .dom { font-family: var(--mono); font-size: 9.5px; color: var(--a-muted); }
+
+  /* C: study-site layout */
+  .layoutC .masthead { background: var(--a-side); color: var(--a-side-ink); padding: 20px 24px 16px; }
+  .layoutC .masthead .eb { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--a-bright); margin-bottom: 6px; }
+  .layoutC .masthead h4 { font-family: var(--serif); font-weight: 400; font-size: 26px; margin: 0 0 2px; }
+  .layoutC .masthead .sub { color: var(--a-side-dim); font-size: 12px; }
+  .layoutC .mastrow { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+  .layoutC .timeline { display: flex; align-items: center; gap: 0; }
+  .layoutC .snapdot { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 74px; }
+  .layoutC .snapdot i { width: 9px; height: 9px; border-radius: 50%; background: var(--a-side-dim); }
+  .layoutC .snapdot.cur i { width: 13px; height: 13px; background: var(--a-bright); box-shadow: 0 0 0 3px rgba(249,115,22,0.25); }
+  .layoutC .snapdot span { font-family: var(--mono); font-size: 8.5px; color: var(--a-side-dim); }
+  .layoutC .snapdot.cur span { color: var(--a-side-ink); }
+  .layoutC .tl-line { height: 2px; width: 30px; background: #4A362A; margin-bottom: 14px; }
+  .layoutC .chip.prov { background: rgba(255,255,255,0.06); border-color: #5A4433; color: #B8E0BE; }
+  .layoutC .bodyrow { padding: 14px 24px 20px; }
+  .layoutC .secrow { display: flex; align-items: baseline; gap: 10px; margin: 12px 0 8px; }
+  .layoutC .secrow h5 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 15px; }
+  .layoutC .secrow a { font-size: 10.5px; color: var(--a-accent); }
+  .layoutC .minicards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .layoutC .report { display: flex; align-items: center; gap: 9px; font-size: 12px; padding: 6px 0; border-bottom: 1px solid #EFE8DC; }
+  .layoutC .report .mono { font-size: 10px; color: var(--a-muted); }
+
+  /* chart-detail (worked screen) */
+  .chartpage .crumb { font-family: var(--mono); font-size: 10px; color: var(--a-muted); padding: 8px 16px 0; }
+  .chartpage .chead { display: flex; align-items: center; gap: 12px; padding: 6px 16px 10px; border-bottom: 1px solid var(--a-line); }
+  .chartpage .chead h4 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 19px; }
+  .chartpage .micro { font-family: var(--mono); font-size: 9.5px; color: var(--a-muted); }
+  .chartpage .micro b { color: var(--a-ink); font-weight: 600; }
+  .chartpage .subtabs { display: flex; gap: 2px; margin-left: auto; }
+  .chartpage .subtabs span { font-size: 11px; padding: 3px 10px; border-radius: 6px; color: var(--a-muted); }
+  .chartpage .subtabs .on { background: var(--a-panel); color: var(--a-ink); font-weight: 600; }
+  .chartbody { display: grid; grid-template-columns: 148px 1fr 190px; gap: 0; min-height: 330px; }
+  .chartbody .controls { border-right: 1px solid var(--a-line); background: var(--a-panel); padding: 10px 12px; }
+  .chartbody .controls h6 { margin: 8px 0 4px; font-size: 9px; font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--a-muted); font-weight: 500; }
+  .chartbody .controls .ctl { border: 1px solid var(--a-line); background: #fff; border-radius: 6px; font-size: 10.5px; padding: 3px 7px; margin: 2px 0; color: var(--a-ink); }
+  .chartbody .controls .seg { display: flex; gap: 0; margin: 2px 0; }
+  .chartbody .controls .seg span { border: 1px solid var(--a-line); background: #fff; font-size: 10px; padding: 3px 8px; }
+  .chartbody .controls .seg .on { background: var(--a-side); color: var(--a-side-ink); border-color: var(--a-side); }
+  .chartbody .plot { padding: 12px 16px; }
+  .chartbody .notes { display: flex; gap: 7px; margin-bottom: 8px; }
+  .chartbody .chartcard { border: 1px solid var(--a-line); border-radius: 10px; background: #fff; padding: 10px; position: relative; }
+  .chartbody .ann { position: absolute; top: 8px; right: 10px; font-family: var(--mono); font-size: 9px; color: var(--a-muted); border: 1px solid var(--a-line); border-radius: 99px; padding: 1px 7px; background: var(--a-paper); }
+  .chartbody .rail { border-left: 1px solid var(--a-line); background: #fff; padding: 10px 12px; }
+  .chartbody .rail h6 { margin: 0 0 2px; font-size: 12.5px; }
+  .chartbody .rail .demog { font-family: var(--mono); font-size: 9.5px; color: var(--a-muted); margin-bottom: 8px; }
+  .chartbody .sparkrow { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #EFE8DC; }
+  .chartbody .sparkrow .m { font-family: var(--mono); font-size: 10px; width: 34px; }
+  .chartbody .sparkrow .v { font-family: var(--mono); font-size: 10px; margin-left: auto; color: var(--a-bad); font-weight: 600; }
+  .chartbody .railfoot { margin-top: 10px; font-size: 10.5px; color: var(--a-accent); }
+  .app .legend { display: flex; gap: 14px; font-size: 10px; color: var(--a-muted); margin-top: 6px; padding-left: 4px; }
+  .app .legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+  /* snapshot compare */
+  .snapmock .comphead { display: flex; align-items: center; gap: 10px; padding: 14px 20px 8px; flex-wrap: wrap; }
+  .snapmock .comphead h4 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 17px; }
+  .snapmock .vs { font-family: var(--mono); font-size: 10px; color: var(--a-muted); }
+  .snapmock .sums { display: flex; gap: 7px; margin-left: auto; }
+  .snapmock .difftable { padding: 4px 20px 18px; }
+  .kthree { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 4px 20px 20px; }
+  .kthree .step { border: 1px solid var(--a-line); border-radius: 10px; background: #fff; padding: 11px 13px; }
+  .kthree .step .kn { font-family: var(--mono); font-size: 9px; color: var(--a-accent); letter-spacing: 0.1em; text-transform: uppercase; }
+  .kthree .step b { display: block; font-size: 12.5px; margin: 3px 0 2px; }
+  .kthree .step span { font-size: 10.5px; color: var(--a-muted); }
+
+  /* provenance anatomy */
+  .provgrid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 18px; align-items: start; }
+  @media (max-width: 760px) { .provgrid { grid-template-columns: 1fr; } .layoutB .grid { grid-template-columns: 1fr 1fr; } }
+  .provcard { border: 1px solid var(--a-line); border-radius: 10px; background: #fff; padding: 12px 14px; font-size: 11.5px; }
+  .provcard h6 { margin: 0 0 8px; font-size: 12.5px; }
+  .provcard dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+  .provcard dt { font-family: var(--mono); font-size: 9px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--a-muted); padding-top: 2px; }
+  .provcard dd { margin: 0; font-size: 11px; }
+  .provcard .mono { font-size: 10px; }
+  .provcard .cmd { background: var(--a-panel); border: 1px solid var(--a-line); border-radius: 6px; padding: 5px 8px; font-family: var(--mono); font-size: 10px; margin-top: 8px; overflow-x: auto; white-space: nowrap; }
+
+  /* recommendation + decisions */
+  .reco { border: 1.5px solid var(--pg-accent); background: var(--pg-accent-soft); border-radius: 12px; padding: 1.2rem 1.4rem; }
+  .reco h2 { margin-top: 0; }
+  .dec-scroll { overflow-x: auto; }
+  .dec { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 680px; }
+  .dec th { text-align: left; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pg-muted); font-weight: 500; padding: 0 1rem 0.45rem 0; border-bottom: 1px solid var(--pg-line); }
+  .dec td { padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid var(--pg-line); vertical-align: top; }
+  .dec td.id { font-family: var(--mono); font-size: 0.78rem; white-space: nowrap; color: var(--pg-muted); }
+  .dec .r { font-size: 0.84rem; color: var(--pg-muted); }
+  .dec .r b { color: var(--pg-accent); }
+
+  footer { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--pg-line); font-family: var(--mono); font-size: 0.76rem; color: var(--pg-faint); }
+  footer p { margin: 0.25rem 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">goal #79 · design exploration · 2026-07-28</p>
+    <h1>Three ways to frame the safetyGraphics replacement</h1>
+    <p class="standfirst prose">Shell + navigation directions for the new app (the open.gismo app-first arc), each carrying the two surfaces you picked alongside it: the <strong>chart-viewing workflow</strong> and the <strong>snapshot / demo-study surface</strong>. Directions first, a recommendation, then the recommended frame worked in detail. Everything here is a static mockup with synthetic study content — no real renderers are mounted yet; vendoring the live safety.viz bundle into the winning direction is the next step, per the participant-profile-v2 precedent.</p>
+  </header>
+
+  <section>
+    <p class="eyebrow">Design language</p>
+    <h2>One system, stated up front</h2>
+    <div class="prose">
+      <p>Today four visual languages coexist: the safety.viz docs site (espresso / paper / burnt orange, Instrument Serif), open.gismo's dark-slate Vite site, gsm.kri's Roboto-and-blue reports, and the deliberately unbranded gray-blue chart chrome. These mockups commit to the <strong>safety.viz espresso system</strong> as the app's identity — it is the only one explicitly written to be extracted as the shared portfolio stylesheet, it already carries the hub's keynote look, and it makes app and docs one continuous world. The dark-slate look isn't discarded; it becomes raw material for the app's eventual dark theme.</p>
+    </div>
+    <div class="swatches">
+      <span class="sw"><i style="background:#271810"></i>espresso</span>
+      <span class="sw"><i style="background:#FAF6F1"></i>paper</span>
+      <span class="sw"><i style="background:#F5EFE7"></i>panel</span>
+      <span class="sw"><i style="background:#C2410C"></i>accent</span>
+      <span class="sw"><i style="background:#F97316"></i>accent-bright</span>
+      <span class="sw"><i style="background:#166534"></i>good</span>
+      <span class="sw"><i style="background:#92400E"></i>warn</span>
+      <span class="sw"><i style="background:#B91C1C"></i>bad</span>
+    </div>
+    <p class="small">Type: Instrument Serif display · Instrument Sans body · IBM Plex Mono for identifiers, snapshots, and SHAs. (This page falls back to Georgia / system faces if the Instrument families aren't installed locally.) Chart marks use the validated blue–orange series pair; the good/warn/bad trio is reserved for flags and always travels with a text label.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Structure</p>
+    <h2>Domains: one study, two lenses</h2>
+    <div class="prose">
+      <p>A <strong>Domain</strong> is a top-level analytical lens on the same study — its own home view, its own chart registry, its own pipeline workflows, all sharing the study's chrome, cohort, and provenance. The app launches with two: <strong>Safety</strong> (the safety.viz renderers over mapped clinical data — LB, AE, EG) and <strong>RBQM</strong> (KRIs, flags, and the site × metric matrix, powered by the gsm.viz widgets and gsm.kri metric workflows). A third domain later — QTL, efficacy, ops — is a registry entry, not a redesign.</p>
+    </div>
+    <div class="shot"><div class="mock app" style="max-width:980px">
+      <div class="barlights"><i></i><i></i><i></i><span class="url">demo-301.study.example — domain switcher</span></div>
+      <div class="topbar">
+        <span class="wordmark">open.<em>gismo</em></span>
+        <span class="select"><b>DEMO-301</b> ▾</span>
+        <span class="domtabs"><span>Overview</span><span class="on">Safety</span><span>RBQM</span></span>
+        <span class="spacer"></span>
+        <span class="chip ctx">248 / 312 participants</span>
+        <span class="chip prov">✓ 2026-07-26</span>
+      </div>
+      <div class="domsplit">
+        <div class="panelbox">
+          <h5><span class="domtag">Safety</span> &nbsp;domain home</h5>
+          <p style="font-size:11.5px;margin:4px 0 6px">The chart gallery — 11 safety.viz renderers over the study's mapped domains, with participant drill-down and the pinned-selection chip.</p>
+          <p style="font-size:10px;color:var(--a-muted);margin:0" class="mono">charts: safety.viz · data: Mapped_LB / AE / EG · workflows: gsm.safety</p>
+        </div>
+        <div class="panelbox">
+          <h5><span class="domtag">RBQM</span> &nbsp;domain home</h5>
+          <p style="font-size:11.5px;margin:4px 0 6px">The monitor — flag tiles, the site × metric matrix, changes since last snapshot, metric drill-downs over time.</p>
+          <p style="font-size:10px;color:var(--a-muted);margin:0" class="mono">charts: gsm.viz widgets · data: Analysis_* / Flags_* · workflows: gsm.kri</p>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap"><b>What to look at:</b> the domain switcher sits in the global top bar, peer to nothing — it's the app's primary axis. Cohort badge, participant chip, and provenance chip stay put when you switch: same study, different lens. The three directions below predate this concept; the recommendation shows how it snaps them together.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Direction A</p>
+    <div class="dir-head"><h2>Monitor</h2><span class="letter">RISK-FIRST</span></div>
+    <p class="thesis">"The study's risk state is the home page; charts are drill-downs." The gsm.kri heritage — flags, the group × metric matrix, and what changed since the last snapshot — promoted from a static report to the app's front door.</p>
+    <div class="keeps">
+      <span class="chg">changes: home = KRI overview</span><span class="chg">changes: persistent left nav</span>
+      <span>keeps: cohort badge</span><span>keeps: snapshot context</span><span>keeps: espresso side band</span>
+    </div>
+    <div class="shot"><div class="mock app">
+      <div class="barlights"><i></i><i></i><i></i><span class="url">demo-301.study.example — Overview</span></div>
+      <div class="topbar">
+        <span class="wordmark">open.<em>gismo</em></span>
+        <span class="select">Study <b>DEMO-301</b> ▾</span>
+        <span class="spacer"></span>
+        <span class="chip ctx">248 / 312 participants</span>
+        <span class="chip prov">✓ snap 2026-07-26 · 9c41f2a</span>
+      </div>
+      <div class="layoutA">
+        <div class="sidenav">
+          <span class="on">Overview</span><span>Charts</span><span>Data</span><span>Snapshots</span><span>Evidence</span>
+          <span class="foot">github.com/…/demo-301</span>
+        </div>
+        <div class="content">
+          <h4>Study overview <span class="mono" style="font-size:10px;color:var(--a-muted)">· snapshot 2026-07-26</span></h4>
+          <div class="flagtiles">
+            <div class="tile red"><span class="n">2</span><span class="lbl">Red KRIs</span></div>
+            <div class="tile amber"><span class="n">5</span><span class="lbl">Amber KRIs</span></div>
+            <div class="tile ok"><span class="n">11</span><span class="lbl">On track</span></div>
+          </div>
+          <div class="cols2">
+            <div class="panelbox">
+              <h5>Sites × metrics</h5>
+              <table>
+                <thead><tr><th>Site</th><th>AE</th><th>SAE</th><th>Disc</th><th>Query</th><th>PD</th><th>Lab</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">S-0084</td><td><span class="dot r"></span></td><td><span class="dot a"></span></td><td><span class="dot g"></span></td><td><span class="dot g"></span></td><td><span class="dot a"></span></td><td><span class="dot g"></span></td></tr>
+                  <tr><td class="mono">S-0121</td><td><span class="dot a"></span></td><td><span class="dot g"></span></td><td><span class="dot g"></span></td><td><span class="dot r"></span></td><td><span class="dot g"></span></td><td><span class="dot g"></span></td></tr>
+                  <tr><td class="mono">S-0056</td><td><span class="dot g"></span></td><td><span class="dot g"></span></td><td><span class="dot a"></span></td><td><span class="dot g"></span></td><td><span class="dot g"></span></td><td><span class="dot g"></span></td></tr>
+                  <tr><td class="mono">S-0170</td><td><span class="dot g"></span></td><td><span class="dot g"></span></td><td><span class="dot g"></span></td><td><span class="dot g"></span></td><td><span class="dot g"></span></td><td><span class="dot a"></span></td></tr>
+                </tbody>
+              </table>
+              <p style="font-size:10px;color:var(--a-muted);margin:6px 0 0">Showing flagged sites · 24 total → open full matrix</p>
+            </div>
+            <div class="panelbox">
+              <h5>Since snapshot 2026-07-19</h5>
+              <ul class="changes">
+                <li><span class="dot r"></span> <b>S-0084</b> AE rate amber → red <span class="who">Δscore +1.9</span></li>
+                <li><span class="dot a"></span> <b>S-0121</b> query age new amber <span class="who">Δ +4.2 d</span></li>
+                <li><span class="dot g"></span> <b>S-0033</b> SAE rate amber → green <span class="who">resolved</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap"><b>What to look at:</b> the espresso side band carries the section nav (Overview / Charts / Data / Snapshots / Evidence — Evidence is first-class, from the safety.viz docs pattern). The top bar holds the three global context devices: study switcher, cohort badge, provenance chip. Risk tiles always carry labels, never color alone. <b>In the domain model, this whole direction survives as the RBQM domain's home.</b></p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Direction B</p>
+    <div class="dir-head"><h2>Gallery</h2><span class="letter">CHART-FIRST</span></div>
+    <p class="thesis">"The charts are the product; the app is the thinnest possible frame around them." The safetyGraphics mental model carried forward — a browsable chart library as home, one click from any card to a full-bleed renderer.</p>
+    <div class="keeps">
+      <span class="chg">changes: home = chart gallery</span><span class="chg">changes: slim top-tab nav</span>
+      <span>keeps: sv gallery cards + status pills</span><span>keeps: cohort badge</span><span>keeps: Demo/Guide/Evidence sub-tabs per chart</span>
+    </div>
+    <div class="shot"><div class="mock app">
+      <div class="barlights"><i></i><i></i><i></i><span class="url">demo-301.study.example — Charts</span></div>
+      <div class="topbar">
+        <span class="wordmark">open.<em>gismo</em></span>
+        <span class="select"><b>DEMO-301</b> ▾</span>
+        <span class="navtabs"><span class="on">Charts</span><span>Data</span><span>Snapshots</span><span>Settings</span></span>
+        <span class="spacer"></span>
+        <span class="chip ctx">248 / 312 participants</span>
+        <span class="chip prov">✓ 2026-07-26</span>
+      </div>
+      <div class="layoutB">
+        <div class="galhead"><h4>Safety charts</h4><span class="mono" style="font-size:10px;color:var(--a-muted)">9 of 11 available · queued: paneled outliers, codebook</span></div>
+        <div class="grid">
+          <div class="card">
+            <div class="thumb"><svg width="120" height="56" role="img" aria-label="eDISH scatter sketch">
+              <line x1="6" y1="50" x2="114" y2="50" stroke="#D8CDBB"/><line x1="70" y1="4" x2="70" y2="50" stroke="#D8CDBB" stroke-dasharray="3 3"/><line x1="6" y1="22" x2="114" y2="22" stroke="#D8CDBB" stroke-dasharray="3 3"/>
+              <circle cx="24" cy="44" r="3" fill="#0B62A4"/><circle cx="38" cy="40" r="3" fill="#0B62A4"/><circle cx="48" cy="36" r="3" fill="#C2410C"/><circle cx="58" cy="42" r="3" fill="#0B62A4"/><circle cx="63" cy="30" r="3" fill="#C2410C"/><circle cx="82" cy="16" r="3.5" fill="#C2410C"/><circle cx="93" cy="12" r="3.5" fill="#0B62A4"/>
+            </svg></div>
+            <div class="meta"><div class="name">Hepatic Explorer</div><div class="row"><span class="dom">LB · eDISH</span><span class="pill ok">Available</span></div></div>
+          </div>
+          <div class="card">
+            <div class="thumb"><svg width="120" height="56" role="img" aria-label="histogram sketch">
+              <line x1="6" y1="50" x2="114" y2="50" stroke="#D8CDBB"/>
+              <rect x="12" y="38" width="9" height="12" rx="2" fill="#0B62A4"/><rect x="24" y="28" width="9" height="22" rx="2" fill="#0B62A4"/><rect x="36" y="14" width="9" height="36" rx="2" fill="#0B62A4"/><rect x="48" y="20" width="9" height="30" rx="2" fill="#0B62A4"/><rect x="60" y="32" width="9" height="18" rx="2" fill="#0B62A4"/><rect x="72" y="42" width="9" height="8" rx="2" fill="#0B62A4"/><rect x="84" y="46" width="9" height="4" rx="2" fill="#0B62A4"/>
+            </svg></div>
+            <div class="meta"><div class="name">Safety Histogram</div><div class="row"><span class="dom">LB · distribution</span><span class="pill ok">Available</span></div></div>
+          </div>
+          <div class="card">
+            <div class="thumb"><svg width="120" height="56" role="img" aria-label="table sketch">
+              <rect x="10" y="8" width="100" height="7" rx="2" fill="#D8CDBB"/><rect x="10" y="20" width="72" height="6" rx="2" fill="#E5DCCE"/><rect x="10" y="31" width="86" height="6" rx="2" fill="#E5DCCE"/><rect x="10" y="42" width="64" height="6" rx="2" fill="#E5DCCE"/>
+              <circle cx="100" cy="23" r="3" fill="#0B62A4"/><circle cx="104" cy="34" r="3" fill="#C2410C"/><circle cx="96" cy="45" r="3" fill="#0B62A4"/>
+            </svg></div>
+            <div class="meta"><div class="name">AE Explorer</div><div class="row"><span class="dom">AE · table-first</span><span class="pill ok">Available</span></div></div>
+          </div>
+          <div class="card">
+            <div class="thumb"><svg width="120" height="56" role="img" aria-label="QT central tendency sketch">
+              <line x1="6" y1="50" x2="114" y2="50" stroke="#D8CDBB"/><line x1="6" y1="18" x2="114" y2="18" stroke="#D8CDBB" stroke-dasharray="3 3"/>
+              <polyline points="10,42 30,38 50,30 70,26 90,28 110,24" fill="none" stroke="#0B62A4" stroke-width="2"/>
+              <polyline points="10,44 30,43 50,40 70,41 90,39 110,40" fill="none" stroke="#C2410C" stroke-width="2"/>
+            </svg></div>
+            <div class="meta"><div class="name">QT Explorer</div><div class="row"><span class="dom">EG · 3 views</span><span class="pill exp">Experimental</span></div></div>
+          </div>
+          <div class="card">
+            <div class="thumb"><svg width="120" height="56" role="img" aria-label="profile sketch">
+              <circle cx="22" cy="18" r="8" fill="#D8CDBB"/><rect x="38" y="12" width="60" height="5" rx="2" fill="#D8CDBB"/><rect x="38" y="21" width="42" height="4" rx="2" fill="#E5DCCE"/>
+              <polyline points="14,46 34,42 54,44 74,36 94,40 110,34" fill="none" stroke="#0B62A4" stroke-width="2"/>
+            </svg></div>
+            <div class="meta"><div class="name">Participant Profile</div><div class="row"><span class="dom">multi · drill-down</span><span class="pill exp">Experimental</span></div></div>
+          </div>
+          <div class="card">
+            <div class="thumb"><svg width="120" height="56" role="img" aria-label="waterfall sketch">
+              <line x1="6" y1="34" x2="114" y2="34" stroke="#D8CDBB"/>
+              <rect x="14" y="12" width="7" height="22" rx="2" fill="#C2410C"/><rect x="25" y="18" width="7" height="16" rx="2" fill="#C2410C"/><rect x="36" y="24" width="7" height="10" rx="2" fill="#C2410C"/><rect x="47" y="29" width="7" height="5" rx="2" fill="#C2410C"/>
+              <rect x="64" y="34" width="7" height="6" rx="2" fill="#0B62A4"/><rect x="75" y="34" width="7" height="11" rx="2" fill="#0B62A4"/><rect x="86" y="34" width="7" height="16" rx="2" fill="#0B62A4"/><rect x="97" y="34" width="7" height="20" rx="2" fill="#0B62A4"/>
+            </svg></div>
+            <div class="meta"><div class="name">Hep Waterfall</div><div class="row"><span class="dom">LB · abnormal-baseline</span><span class="pill proto">Prototype</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap"><b>What to look at:</b> the cards are the safety.viz docs gallery, re-homed inside the app — same status vocabulary (Available / Experimental / Prototype), same thumbnails, plus the study's own data behind every card instead of demo data. The frame adds nothing but context: study switcher, four tabs, cohort badge, provenance chip. <b>In the domain model, this gallery is the Safety domain's home.</b></p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Direction C</p>
+    <div class="dir-head"><h2>Study site</h2><span class="letter">PUBLICATION-FIRST</span></div>
+    <p class="thesis">"Every view is a published, versioned artifact — the app is a living study report with history." The most GitHub-native reading of D1: Actions run the pipeline, and this site is what they publish. Snapshots aren't a feature tab; they're the masthead.</p>
+    <div class="keeps">
+      <span class="chg">changes: masthead = study title page</span><span class="chg">changes: snapshot timeline is global chrome</span>
+      <span>keeps: gallery cards</span><span>keeps: flag tiles</span><span>keeps: static-files-only contract</span>
+    </div>
+    <div class="shot"><div class="mock app">
+      <div class="barlights"><i></i><i></i><i></i><span class="url">jwildfire.github.io/demo-301</span></div>
+      <div class="layoutC">
+        <div class="masthead">
+          <div class="eb">gsm.datasim synthetic study · published by GitHub Actions</div>
+          <h4 class="serif">DEMO-301 — Safety Review</h4>
+          <div class="sub">Phase 2 · 312 participants · 24 sites · two arms</div>
+          <div class="mastrow">
+            <div class="timeline">
+              <div class="snapdot"><i></i><span>07-05</span></div><div class="tl-line"></div>
+              <div class="snapdot"><i></i><span>07-12</span></div><div class="tl-line"></div>
+              <div class="snapdot"><i></i><span>07-19</span></div><div class="tl-line"></div>
+              <div class="snapdot cur"><i></i><span>07-26 · current</span></div>
+            </div>
+            <span class="spacer"></span>
+            <span class="chip prov">✓ 9c41f2a · reproducible</span>
+          </div>
+        </div>
+        <div class="bodyrow">
+          <div class="domtabs" style="border-bottom:1px solid var(--a-line);padding-bottom:8px;margin-bottom:12px"><span class="on">Overview</span><span>Safety</span><span>RBQM</span></div>
+          <div class="secrow"><h5><span class="domtag">RBQM</span> &nbsp;Flags at this snapshot</h5><a>open domain →</a></div>
+          <div class="flagtiles">
+            <div class="tile red"><span class="n">2</span><span class="lbl">Red KRIs</span></div>
+            <div class="tile amber"><span class="n">5</span><span class="lbl">Amber</span></div>
+            <div class="tile ok"><span class="n">11</span><span class="lbl">On track</span></div>
+          </div>
+          <div class="secrow"><h5><span class="domtag">Safety</span> &nbsp;Charts</h5><a>open domain →</a></div>
+          <div class="minicards">
+            <div class="card"><div class="meta"><div class="name">Hepatic Explorer</div><div class="row"><span class="dom">LB</span><span class="pill ok">Available</span></div></div></div>
+            <div class="card"><div class="meta"><div class="name">AE Timelines</div><div class="row"><span class="dom">AE</span><span class="pill ok">Available</span></div></div></div>
+            <div class="card"><div class="meta"><div class="name">Results Over Time</div><div class="row"><span class="dom">LB</span><span class="pill ok">Available</span></div></div></div>
+            <div class="card"><div class="meta"><div class="name">QT Explorer</div><div class="row"><span class="dom">EG</span><span class="pill exp">Experimental</span></div></div></div>
+          </div>
+          <div class="secrow"><h5>Reports</h5><a>history →</a></div>
+          <div class="report">📄 KRI Report — site-level <span class="mono">html · built 2026-07-26 06:12</span></div>
+          <div class="report">📄 Safety charts bundle — self-contained widgets <span class="mono">html · built 2026-07-26 06:14</span></div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap"><b>What to look at:</b> the masthead is a living title page — study identity in Instrument Serif over espresso, with the <b>snapshot timeline as global chrome</b>: every dot is a published pipeline run, and picking one re-renders the whole site "as of" that snapshot. The Overview interleaves each domain's headline (RBQM flags, Safety charts) with a link into its full home. This is also exactly what a forked K3 demo-study repo publishes, unchanged.</p>
+  </section>
+
+  <section class="reco">
+    <p class="eyebrow">★ Recommendation</p>
+    <h2>C's frame, B's gallery, A's tiles</h2>
+    <div class="prose">
+      <p><strong>Winner: Direction C (Study site)</strong> — and the Domain concept makes the graft structural rather than cosmetic: <strong>C is the frame, the Safety domain is B's gallery, the RBQM domain is A's monitor</strong>, and the study Overview interleaves each domain's headline. Two reasons. First, alignment: the locked decisions all point here — D1 makes GitHub the acceptance path, D6 puts snapshots in v1 and in the keynote demo, K3 makes the demo a forkable study repo that publishes a live site. C is the only direction where those aren't features bolted onto an app; they're the app. Second, differentiation: safetyGraphics already exists as "a frame around charts" — B alone would be a prettier reimplementation. The versioned, provenance-forward study site is what the gsm substrate makes newly possible.</p>
+      <p><strong>Runner-up: B (Gallery)</strong> — the fallback if v1 scope tightens, since it's the smallest step from what exists. <strong>A (Monitor)</strong> shouldn't lead — gsm.kri's report already serves the monitoring loop — but as the RBQM domain's home it gets a first-class seat without owning the frame.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Worked surface 1</p>
+    <h2>The chart-viewing workflow</h2>
+    <p class="prose">The loop, in the recommended frame: <strong>home → chart → participant</strong>. From the masthead, a gallery card opens the chart page below. The shell must host four content shapes — canvas chart, table-first (AE Explorer), chart + docked rail (below), and small multiples — so the chrome commits to a three-zone grid: controls left, content center, drill-down rail right, any zone collapsible.</p>
+    <div class="shot"><div class="mock app chartpage">
+      <div class="barlights"><i></i><i></i><i></i><span class="url">…/demo-301/safety/hep-explorer</span></div>
+      <div class="topbar">
+        <span class="wordmark">open.<em>gismo</em></span>
+        <span class="crumb" style="padding:0">DEMO-301 / <span class="domtag">Safety</span> / Hepatic Explorer</span>
+        <span class="spacer"></span>
+        <span class="chip ctx">248 / 312 participants</span>
+        <span class="chip ctx">S-0084-011 <span class="x">×</span></span>
+        <span class="chip prov">✓ 2026-07-26</span>
+      </div>
+      <div class="chead">
+        <h4 class="serif">Hepatic Explorer</h4>
+        <span class="micro">Type <b>eDISH scatter</b> · Domain <b>LB</b> · Evidence <b style="color:var(--a-good)">✓ 41/41</b></span>
+        <div class="subtabs"><span class="on">Chart</span><span>Guide</span><span>Evidence</span></div>
+      </div>
+      <div class="chartbody">
+        <div class="controls">
+          <h6>View</h6>
+          <div class="seg"><span class="on">eDISH</span><span>mDISH</span></div>
+          <h6>Measures</h6>
+          <div class="ctl">ALT ×ULN ▾</div>
+          <div class="ctl">Total Bilirubin ×ULN ▾</div>
+          <h6>Cut lines</h6>
+          <div class="ctl">3×ULN / 2×ULN ▾</div>
+          <h6>Group by</h6>
+          <div class="ctl">Treatment arm ▾</div>
+        </div>
+        <div class="plot">
+          <div class="notes">
+            <span class="chip">248 participants shown</span>
+            <span class="chip" style="border-color:var(--a-warn);color:var(--a-warn)">4 possible Hy's Law</span>
+          </div>
+          <div class="chartcard">
+            <span class="ann">peak values · ×ULN</span>
+            <svg width="100%" height="230" viewBox="0 0 520 230" role="img" aria-label="eDISH scatter placeholder: peak ALT versus peak bilirubin with Hy's Law quadrants">
+              <line x1="40" y1="200" x2="500" y2="200" stroke="#D8CDBB"/>
+              <line x1="40" y1="200" x2="40" y2="14" stroke="#D8CDBB"/>
+              <line x1="300" y1="200" x2="300" y2="14" stroke="#C9BBA5" stroke-dasharray="4 4"/>
+              <line x1="40" y1="80" x2="500" y2="80" stroke="#C9BBA5" stroke-dasharray="4 4"/>
+              <text x="470" y="34" font-size="10" fill="#92400E" font-family="ui-monospace,monospace" text-anchor="end">Hy's Law</text>
+              <text x="270" y="216" font-size="9" fill="#8A7B68" font-family="ui-monospace,monospace">peak ALT ×ULN →</text>
+              <circle cx="90" cy="182" r="4" fill="#0B62A4"/><circle cx="120" cy="170" r="4" fill="#C2410C"/><circle cx="140" cy="186" r="4" fill="#0B62A4"/><circle cx="165" cy="160" r="4" fill="#0B62A4"/><circle cx="188" cy="176" r="4" fill="#C2410C"/><circle cx="205" cy="150" r="4" fill="#0B62A4"/><circle cx="228" cy="166" r="4" fill="#C2410C"/><circle cx="252" cy="140" r="4" fill="#0B62A4"/><circle cx="275" cy="158" r="4" fill="#C2410C"/><circle cx="120" cy="120" r="4" fill="#0B62A4"/><circle cx="180" cy="104" r="4" fill="#C2410C"/><circle cx="240" cy="112" r="4" fill="#0B62A4"/><circle cx="330" cy="150" r="4" fill="#C2410C"/><circle cx="365" cy="170" r="4" fill="#0B62A4"/><circle cx="410" cy="140" r="4" fill="#0B62A4"/>
+              <circle cx="340" cy="56" r="5" fill="#C2410C" stroke="#B91C1C" stroke-width="2"/>
+              <circle cx="382" cy="40" r="5" fill="#0B62A4" stroke="#B91C1C" stroke-width="2"/>
+              <circle cx="428" cy="62" r="5" fill="#C2410C" stroke="#B91C1C" stroke-width="2"/>
+              <circle cx="455" cy="30" r="6" fill="#C2410C" stroke="#2A211B" stroke-width="2"/>
+              <text x="447" y="20" font-size="9" fill="#2A211B" font-family="ui-monospace,monospace" text-anchor="end">S-0084-011</text>
+            </svg>
+            <div class="legend"><span><i style="background:#0B62A4"></i>Placebo</span><span><i style="background:#C2410C"></i>ABC-123 40 mg</span><span><i style="background:#fff;border:2px solid #B91C1C;width:6px;height:6px"></i>possible Hy's Law</span></div>
+          </div>
+        </div>
+        <div class="rail">
+          <h6>S-0084-011</h6>
+          <div class="demog">F · 61 y · ABC-123 40 mg · S-0084</div>
+          <div class="sparkrow"><span class="m">ALT</span><svg width="70" height="18"><polyline points="2,14 14,13 26,11 38,12 50,6 68,3" fill="none" stroke="#0B62A4" stroke-width="1.5"/></svg><span class="v">8.2×</span></div>
+          <div class="sparkrow"><span class="m">AST</span><svg width="70" height="18"><polyline points="2,14 14,12 26,12 38,10 50,8 68,5" fill="none" stroke="#0B62A4" stroke-width="1.5"/></svg><span class="v">5.1×</span></div>
+          <div class="sparkrow"><span class="m">BILI</span><svg width="70" height="18"><polyline points="2,15 14,14 26,13 38,13 50,9 68,4" fill="none" stroke="#0B62A4" stroke-width="1.5"/></svg><span class="v">2.4×</span></div>
+          <div class="sparkrow"><span class="m">ALP</span><svg width="70" height="18"><polyline points="2,10 14,11 26,10 38,11 50,10 68,11" fill="none" stroke="#0B62A4" stroke-width="1.5"/></svg><span class="v" style="color:var(--a-good)">1.1×</span></div>
+          <div class="railfoot">Open full profile →</div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap"><b>What to look at:</b> the per-chart header keeps safetyGraphics' micro-labeled summary (name / type / domain) and adds the evidence count as a trust signal, with the docs site's <b>Chart | Guide | Evidence</b> sub-tabs in-app. Clicking a flagged point docks the participant rail (safety.viz's existing 520px pattern) and pins the participant as a global chip in the top bar — safetyGraphics' best navigation device, kept. The selection chip follows you to any other chart.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Worked surface 2</p>
+    <h2>Snapshots &amp; the demo study</h2>
+    <p class="prose">D6 makes snapshots v1 scope; the deferred <em>Project Snapshot Comparison</em> from open.gismo's todo is the natural centerpiece. Two selectors, a change summary, and a per-artifact diff — phase-tagged with open.gismo's existing color ramp, the one piece of its current vocabulary these mockups keep.</p>
+    <div class="shot"><div class="mock app snapmock">
+      <div class="barlights"><i></i><i></i><i></i><span class="url">…/demo-301/snapshots/compare</span></div>
+      <div class="comphead">
+        <h4 class="serif">Compare snapshots</h4>
+        <span class="select"><b>2026-07-26</b> · 9c41f2a ▾</span><span class="vs">vs</span><span class="select"><b>2026-07-19</b> · e17d04b ▾</span>
+        <div class="sums">
+          <span class="chip" style="border-color:var(--a-good);color:var(--a-good)">3 added</span>
+          <span class="chip" style="border-color:var(--a-warn);color:var(--a-warn)">14 changed</span>
+          <span class="chip">0 removed</span>
+        </div>
+      </div>
+      <div class="difftable">
+        <table style="width:100%">
+          <thead><tr><th>Artifact</th><th>Phase</th><th>Change</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">Flags_Site.csv</td><td><span class="ph" style="background:var(--ph-report)">Reporting</span></td><td>2 flags changed</td><td>S-0084 AE rate amber → red · S-0033 SAE resolved</td></tr>
+            <tr><td class="mono">Analysis_ALT.csv</td><td><span class="ph" style="background:var(--ph-metric)">Metrics</span></td><td>+12 rows · 3 changed</td><td>new visit-8 labs, S-0084-011 peak updated</td></tr>
+            <tr><td class="mono">Mapped_AE.csv</td><td><span class="ph" style="background:var(--ph-map);color:#1a2a44">Mappings</span></td><td>+38 rows</td><td>new cycle of AE data in dv-2026-07-25</td></tr>
+            <tr><td class="mono">manifest.csv</td><td><span class="ph" style="background:var(--ph-config);color:#22262b">Config</span></td><td>1 pin bumped</td><td>gsm.kri 1.2.3 → 1.2.4</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:10px;color:var(--a-muted);margin:7px 0 0">Row-level diff opens in the data viewer · every value links to its artifact in both snapshots</p>
+      </div>
+      <div class="kthree">
+        <div class="step"><span class="kn">K3 · step 1</span><b>Fork the demo-study repo</b><span>gsm.datasim data + workr workflows + this site, one template.</span></div>
+        <div class="step"><span class="kn">K3 · step 2</span><b>Actions run the pipeline</b><span>Scheduled runs produce a new Project Snapshot as static files.</span></div>
+        <div class="step"><span class="kn">K3 · step 3</span><b>Your study site publishes itself</b><span>Pages serves the app; the timeline grows a dot; nothing else to host.</span></div>
+      </div>
+    </div></div>
+    <p class="cap"><b>What to look at:</b> comparison respects the static-files contract — it's a client-side diff of two published snapshot trees, no server. The K3 strip is the demo-study story told as product copy; in direction C it doubles as the app's own onboarding page.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Signature component</p>
+    <h2>The provenance chip</h2>
+    <p class="prose">No provenance badge exists anywhere in the ecosystem today, yet every ingredient does — snapshot id and date, input data version, the gsm.library manifest pins, engine versions, the CI run. This component composes them: a quiet chip in the global chrome of every direction, expanding to the full reproducibility record. It's the one element that says what this app is about — <em>numbers you can trace</em>.</p>
+    <div class="provgrid">
+      <div class="mock app" style="min-width:0;padding:16px">
+        <p style="margin:0 0 8px;font-family:var(--mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--a-muted)">Collapsed — global chrome</p>
+        <span class="chip prov">✓ snap 2026-07-26 · 9c41f2a</span>
+        <p style="margin:14px 0 0;font-size:10.5px;color:var(--a-muted)">Green check = CI run passed and every pin resolves. A changed or unverifiable state turns the chip amber with a label — never color alone.</p>
+      </div>
+      <div class="mock app" style="min-width:0;padding:16px">
+        <p style="margin:0 0 8px;font-family:var(--mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--a-muted)">Expanded — the reproducibility record</p>
+        <div class="provcard">
+          <h6>Snapshot 2026-07-26 <span class="mono" style="color:var(--a-muted)">· 9c41f2a</span></h6>
+          <dl>
+            <dt>Input data</dt><dd class="mono">dv-2026-07-25 · gsm.datasim 1.4.2</dd>
+            <dt>Packages</dt><dd class="mono">gsm.library pin release-summer · 12 pkgs · SHAs ↗</dd>
+            <dt>Engine</dt><dd class="mono">R 4.4.1 · workr 0.9.2</dd>
+            <dt>Pipeline run</dt><dd class="mono" style="color:var(--a-good)">Actions #412 ✓ · 6 m 12 s · log ↗</dd>
+          </dl>
+          <div class="cmd">og_run(snapshot = "9c41f2a")   # reproduce locally</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Open decisions</p>
+    <h2>What this exploration puts on the table</h2>
+    <div class="dec-scroll">
+      <table class="dec">
+        <thead><tr><th>ID</th><th>Decision</th><th>Recommendation</th></tr></thead>
+        <tbody>
+          <tr><td class="id">D-APP0</td><td>The app needs a name. Mocks show the <code>open.gismo</code> wordmark (repo reality), but the safetyGraphics successor deserves a product name of its own.</td><td class="r"><b>Decide before requirements</b> — the name lands in Phase 1 scope, the plan rewrite, and the keynote.</td></tr>
+          <tr><td class="id">D-APP1</td><td>Adopt the safety.viz espresso tokens as the app design system (vs open.gismo's dark slate, vs something new).</td><td class="r"><b>Yes — espresso.</b> One portfolio language; dark slate becomes the dark theme's starting material.</td></tr>
+          <tr><td class="id">D-APP2</td><td>Shell frame: C (study site) hosting B's gallery and A's overview strip.</td><td class="r"><b>As recommended above</b> — most aligned with D1/D6/K3, most differentiated from safetyGraphics.</td></tr>
+          <tr><td class="id">D-APP3</td><td>The chart chrome (<code>sv-*</code> shell) is theme-agnostic with no CSS hook, so charts will sit visually apart from any app frame.</td><td class="r"><b>Add CSS-variable hooks to the sv shell</b> — this is safety.viz#41's scope; the app becomes its first consumer.</td></tr>
+          <tr><td class="id">D-APP4</td><td>One maturity vocabulary across app and charts (safety.viz has status pills + in-chart banners; R packages have lifecycle badges).</td><td class="r"><b>Adopt safety.viz's trio</b> (Available / Experimental / Prototype) app-wide; add "Legacy-hosted" for Shiny-shimmed widgets.</td></tr>
+          <tr><td class="id">D-APP5</td><td>Provenance chip as global chrome in every direction.</td><td class="r"><b>Yes</b> — net-new signature component; composes only data that already exists in the snapshot tree.</td></tr>
+          <tr><td class="id">D-APP6</td><td>Mapping/readiness surface: safetyGraphics' gating step, reduced to red/green borders there. Static-files contract means the app can't edit mappings — only show their state.</td><td class="r"><b>v1 = read-only readiness panel</b> per domain (mapped / missing / defaulted), linking to the workflow YAML that fixes it.</td></tr>
+          <tr><td class="id">D-APP7</td><td>The Domain model: Safety + RBQM at launch, each a registry entry binding a home view, a chart set (safety.viz / gsm.viz), and a workflow family (gsm.safety / gsm.kri). How extensible, and where is the registry defined?</td><td class="r"><b>Registry-driven, defined in study config</b> — a domain is data, not code; the data/config framework doc carries the details.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Next steps</p>
+    <div class="prose">
+      <p>If a direction (or the graft) holds after your pass: ① vendor the real safety.viz dist bundle + synthetic data into the chosen frame so the chart page runs live, per the participant-profile-v2 mockup precedent; ② promote the chosen direction into the app-first plan rewrite on <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a> as its UI headline; ③ publish the exploration to the hub's <code>reports/</code> for the permanent record. Comments on any D-APP item work like the #130 review — one-liners are enough. The <a href="framework.html">data &amp; config framework</a> companion doc carries the D-FW ledger for everything below the UI.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Design exploration for goal #79 · compiled 2026-07-28 by the 😺🤖 session · all screens are static mockups with synthetic study content (DEMO-301 does not exist).</p>
+    <p>Grounded in: safety.viz v1.5.0 shell + docs site · open.gismo site/ + todo.md · safetyGraphics v2.1.1 source · gsm.kri report + gsm.viz widgets · decisions on <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a>.</p>
+  </footer>
+</div>
+
+</body>
+</html>

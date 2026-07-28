@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open.gismo — data &amp; config framework</title>
+<style>
+  :root {
+    --pg-paper: #F4F1EC;
+    --pg-card: #FDFCFA;
+    --pg-ink: #26211B;
+    --pg-muted: #6F6558;
+    --pg-faint: #9C917F;
+    --pg-line: #E2DACC;
+    --pg-accent: #B4470E;
+    --pg-accent-soft: #F4E2D2;
+    --pg-good: #3E7C4F;
+    --pg-warn: #96701C;
+    --pg-bad: #A8432F;
+    --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+    --sans: "Instrument Sans", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --pg-paper: #1A1611; --pg-card: #232019; --pg-ink: #EAE4D8; --pg-muted: #A69B89;
+      --pg-faint: #7E7462; --pg-line: #383126; --pg-accent: #E8843C; --pg-accent-soft: #3C2A18;
+      --pg-good: #82B58F; --pg-warn: #CFA84D; --pg-bad: #D07A64;
+    }
+  }
+  :root[data-theme="light"] {
+    --pg-paper: #F4F1EC; --pg-card: #FDFCFA; --pg-ink: #26211B; --pg-muted: #6F6558;
+    --pg-faint: #9C917F; --pg-line: #E2DACC; --pg-accent: #B4470E; --pg-accent-soft: #F4E2D2;
+    --pg-good: #3E7C4F; --pg-warn: #96701C; --pg-bad: #A8432F;
+  }
+  :root[data-theme="dark"] {
+    --pg-paper: #1A1611; --pg-card: #232019; --pg-ink: #EAE4D8; --pg-muted: #A69B89;
+    --pg-faint: #7E7462; --pg-line: #383126; --pg-accent: #E8843C; --pg-accent-soft: #3C2A18;
+    --pg-good: #82B58F; --pg-warn: #CFA84D; --pg-bad: #D07A64;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--pg-paper); color: var(--pg-ink); font-family: var(--sans); line-height: 1.55; margin: 0; padding: 3rem 1.25rem 4.5rem; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  .prose { max-width: 68ch; }
+  a { color: var(--pg-accent); text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--pg-accent); outline-offset: 2px; }
+  code { font-family: var(--mono); font-size: 0.85em; background: var(--pg-accent-soft); padding: 0.05em 0.3em; border-radius: 4px; }
+  pre { background: var(--pg-card); border: 1px solid var(--pg-line); border-radius: 10px; padding: 0.9rem 1.1rem; overflow-x: auto; font-family: var(--mono); font-size: 0.78rem; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pg-accent); margin: 0 0 0.55rem; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 4.5vw, 2.8rem); line-height: 1.1; margin: 0 0 1rem; text-wrap: balance; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin: 0 0 0.9rem; }
+  h3 { font-size: 1rem; margin: 1.5rem 0 0.5rem; }
+  .standfirst { font-size: 1.05rem; color: var(--pg-muted); margin: 0; }
+  .standfirst strong { color: var(--pg-ink); }
+  section { margin: 3.2rem 0 0; }
+  p { margin: 0.6rem 0; }
+  .small { font-size: 0.85rem; color: var(--pg-muted); }
+
+  /* layer stack */
+  .stack { display: grid; gap: 0.5rem; margin: 1.2rem 0 0.5rem; }
+  .layer { display: grid; grid-template-columns: 150px 1fr; gap: 1rem; border: 1px solid var(--pg-line); border-radius: 10px; background: var(--pg-card); padding: 0.85rem 1.1rem; }
+  .layer .who { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pg-accent); padding-top: 0.2rem; }
+  .layer b { display: block; margin-bottom: 0.15rem; }
+  .layer p { margin: 0; font-size: 0.9rem; color: var(--pg-muted); }
+  .layer p code { font-size: 0.78em; }
+  .arrow { text-align: center; color: var(--pg-faint); font-size: 0.85rem; margin: -0.15rem 0; }
+
+  /* tables */
+  .tbl-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; min-width: 620px; }
+  th { text-align: left; font-family: var(--mono); font-size: 0.67rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pg-muted); font-weight: 500; padding: 0 1rem 0.45rem 0; border-bottom: 1px solid var(--pg-line); }
+  td { padding: 0.55rem 1rem 0.55rem 0; border-bottom: 1px solid var(--pg-line); vertical-align: top; }
+  td.id { font-family: var(--mono); font-size: 0.78rem; white-space: nowrap; color: var(--pg-muted); }
+  .r { font-size: 0.84rem; color: var(--pg-muted); }
+  .r b { color: var(--pg-accent); }
+  .seam td:first-child { font-family: var(--mono); font-size: 0.76rem; white-space: nowrap; }
+  .pill { display: inline-block; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.07em; text-transform: uppercase; padding: 0.1rem 0.5rem; border-radius: 99px; white-space: nowrap; }
+  .pill.real { background: var(--pg-accent-soft); color: var(--pg-accent); }
+  .pill.gap  { border: 1px solid var(--pg-bad); color: var(--pg-bad); }
+  .pill.prop { border: 1px solid var(--pg-line); color: var(--pg-muted); }
+
+  .callout { border: 1.5px solid var(--pg-accent); background: var(--pg-accent-soft); border-radius: 12px; padding: 1.1rem 1.3rem; margin: 1.4rem 0; }
+  .callout p { margin: 0.3rem 0; }
+
+  footer { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--pg-line); font-family: var(--mono); font-size: 0.76rem; color: var(--pg-faint); }
+  footer p { margin: 0.25rem 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">goal #79 · design doc · companion to the design directions · 2026-07-28</p>
+    <h1>Data &amp; config framework: workr pipelines, config in a study repo</h1>
+    <p class="standfirst prose">How the app gets its data and configuration. The direction you named — <strong>Gilead-BioStats/workr pipelines with config saved to a GitHub repo</strong> — is not just viable, it's nearly assembled: every mechanism below exists in-tree today. This doc states the framework in four layers, shows where Domains bind to it, inventories what's real versus aspirational, and puts the seams on the table as decisions.</p>
+  </header>
+
+  <section>
+    <p class="eyebrow">The core finding</p>
+    <div class="callout prose">
+      <p><strong>A project folder and a published snapshot are the same shape.</strong> <code>og_run()</code> on a laptop writes the identical static tree (<code>_index.json</code>, <code>status.json</code>, <code>manifest.csv</code>, <code>output/…</code>) that the GitHub Actions lane publishes to Pages — and the deploy workflow literally ships a branch's root, verbatim, after asserting exactly those files exist. Local runs are the dev loop; Actions runs are the acceptance path (D1); the app can't tell them apart and never needs to.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Architecture</p>
+    <h2>Four layers, one direction of flow</h2>
+    <div class="stack">
+      <div class="layer">
+        <span class="who">1 · Study repo</span>
+        <div><b>Config as code — the forkable study repo</b>
+        <p><code>config/study-config.yaml</code> (identity + domain registry) · <code>config/data-config.yaml</code> (where inputs live) · <code>config/packages.yaml</code> + <code>manifest.csv</code> / <code>rproject.toml</code> (SHA-pinned environment) · <code>workflows/{phase}/</code> — workr YAMLs materialized from each package's <code>inst/workflow/</code> at the pinned SHA · <code>input/</code> data. One study, one repo, one approval trail (the hub#131 principle, generalized).</p></div>
+      </div>
+      <p class="arrow">▼ GitHub Actions on schedule / dispatch — or <code>og_run()</code> locally</p>
+      <div class="layer">
+        <span class="who">2 · Engine</span>
+        <div><b>workr runs the YAML, packages supply the functions</b>
+        <p><code>MakeWorkflowList()</code> loads and sorts a phase directory; <code>RunWorkflows()</code> / <code>RunProject()</code> execute with shared state flowing forward; <code>RunStep()</code> resolves every param by one five-rule lookup. Storage is a two-hook contract — <code>LoadData</code> / <code>SaveData</code> on <code>lConfig</code> — with <code>fs_*</code> (local) and <code>gh_*</code> (GitHub) implementations already written.</p></div>
+      </div>
+      <p class="arrow">▼ writes a Project Snapshot</p>
+      <div class="layer">
+        <span class="who">3 · Snapshot</span>
+        <div><b>An immutable static tree — the only data interface</b>
+        <p><code>ps-NNN/</code>: <code>output/{phase}/{workflow}/{artifact}.csv</code> + <code>status.json</code> + <code>manifest.csv</code> + <code>reports.json</code>, indexed by <code>snapshots.json</code> and <code>_index.json</code>. Published by pushing the branch to Pages — the branch <em>is</em> the artifact; there is no build step and no server.</p></div>
+      </div>
+      <p class="arrow">▼ fetch only — no API, no compute</p>
+      <div class="layer">
+        <span class="who">4 · App</span>
+        <div><b>The app reads static files, full stop</b>
+        <p>Gallery, monitor, snapshot compare, and the provenance chip are all views over the snapshot tree. Provenance is not a feature bolted on: it's the snapshot's own metadata (<code>snapshot_id</code>, <code>input_data_version</code>, manifest SHAs, run status) surfaced in chrome.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Engine anatomy</p>
+    <h2>Why workr is the right substrate</h2>
+    <p class="prose">A workflow is three YAML keys. <code>meta</code> is identity plus <em>arbitrary study-tunable values</em>; <code>spec</code> declares the input domains and columns (validated before the run, and the hook that tells <code>LoadData</code> what to fetch); <code>steps</code> is an ordered list of <code>{name, output, params}</code>. The whole config-as-code story rests on one mechanism — <code>RunStep()</code> resolves each string param through five rules in order:</p>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>#</th><th>Rule</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td class="id">1</td><td><code>"lMeta"</code> / <code>"lData"</code> / <code>"lSpec"</code></td><td>pass the whole object</td></tr>
+        <tr><td class="id">2</td><td>name found in <code>meta</code></td><td><strong>study config flows into the function call</strong> — thresholds, group levels, widget settings</td></tr>
+        <tr><td class="id">3</td><td>name found in <code>lData</code></td><td>pipeline state flows forward — a prior step's output by name</td></tr>
+        <tr><td class="id">4</td><td>looks like <code>expr(…)</code></td><td>parsed as an expression</td></tr>
+        <tr><td class="id">5</td><td>otherwise</td><td>literal string</td></tr>
+      </tbody>
+    </table></div>
+    <p class="prose">Rule 2 is the payoff: <em>changing a KRI's threshold, a chart's grouping, or a flag scheme is a <code>meta</code> edit in the study repo — a reviewable one-line PR, no code.</em> gsm.kri's <code>kri0001.yaml</code> carries <code>Threshold: -2,-1,2,3</code>, <code>GroupLevel: Site</code>, <code>AccrualThreshold: 30</code> in meta; a chart workflow carries the entire safetyGraphics-shaped settings object the same way:</p>
+<pre><code># gsm.safety/inst/workflow/3_reports/safety_histogram.yaml (abridged)
+meta:
+  Type: Report
+  ID: safety_histogram
+  domains:                    # logical slot -> pipeline domain
+    labs: Mapped_LB
+  widgetName: safetyHistogram
+  widgetSettings:             # the chart's settings object, verbatim
+    id_col: subjid
+    measure_col: measure
+    value_col: value
+    group_by: sex
+spec:
+  Mapped_LB:
+    subjid:  {type: character}
+    measure: {type: character}
+    value:   {type: numeric}
+steps:
+  - {output: InitializedWidget, name: list,
+     params: {data: Mapped_LB, settings: widgetSettings}}
+  - {output: strOutputDir, name: getwd}
+  - {output: Report, name: gsm.safety::RenderSafetyChartsWidget,
+     params: {lInitialized: InitializedWidget, strWidgetName: widgetName,
+              strOutputDir: strOutputDir, strOutputFile: ID}}</code></pre>
+    <p class="prose small">Every chart workflow is this same three-step wrapper: collect <code>{data, settings}</code>, name an output dir, render. <code>meta.domains</code> is currently declarative only — the natural hook for the app's readiness panel (D-APP6) and domain wiring (below).</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Domains × framework</p>
+    <h2>A domain is a config entry, not code</h2>
+    <p class="prose">The two launch domains from the design directions bind cleanly to existing workflow families — each domain names the phases it runs and the chart library that renders it. The registry lives in study config (D-APP7), which makes "add a domain" a study-repo PR:</p>
+<pre><code># config/study-config.yaml (proposed)
+study:
+  id: DEMO-301
+  label: "DEMO-301 — Safety Review"
+domains:
+  safety:
+    label: Safety
+    charts: safety.viz            # renderer bundle
+    workflows: [1_mappings, 3_reports]     # gsm.mapping + gsm.safety
+  rbqm:
+    label: RBQM
+    charts: gsm.viz               # widget bundle
+    workflows: [1_mappings, 2_metrics, 3_reporting, 4_modules]
+                                  # gsm.mapping + gsm.kri + gsm.reporting</code></pre>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Domain</th><th>Workflow source (inst/workflow)</th><th>Outputs consumed by the app</th><th>Charts</th></tr></thead>
+      <tbody>
+        <tr><td><b>Safety</b></td><td>gsm.mapping <code>1_mappings</code> · gsm.safety <code>3_reports</code> (9 chart workflows)</td><td><code>Mapped_LB/AE/SUBJ</code> + rendered widget HTML (<code>reports.json</code>)</td><td>safety.viz (11 renderers)</td></tr>
+        <tr><td><b>RBQM</b></td><td>gsm.mapping <code>1_mappings</code> · gsm.kri <code>2_metrics</code> (32 metric YAMLs) + <code>4_modules</code> · gsm.reporting <code>3_reporting</code></td><td><code>Analysis_*</code>, <code>Reporting_*</code>, <code>Flags_*</code> CSVs</td><td>gsm.viz widgets (7 modules)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="prose small">Both domains share <code>1_mappings</code> — mapping is study-level, domains are lenses over the mapped data. That's also why the readiness panel is per <em>data</em> domain (LB, AE, SUBJ), not per app Domain.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">The study repo</p>
+    <h2>Proposed layout — the K3 fork target</h2>
+<pre><code>demo-301/
+├── config/
+│   ├── study-config.yaml        # identity + domain registry (proposed)
+│   ├── data-config.yaml         # domain -> input location overrides
+│   └── packages.yaml            # human-edited package list
+├── manifest.csv                 # org,package,version,repository,url,sha  (generated)
+├── rproject.toml                # rv-format, SHA-pinned                   (generated)
+├── workflows/                   # materialized from packages at pinned SHAs
+│   ├── 1_mappings/  2_metrics/  3_reporting/  3_reports/  4_modules/
+├── input/                       # study data (synthetic for the demo)
+├── .github/workflows/
+│   ├── run-pipeline.yaml        # schedule + dispatch -> new ps-NNN
+│   ├── create-snapshot.yaml
+│   └── build-site.yaml          # publish branch root -> Pages
+└── ps-NNN/… + snapshots.json    # on the publish branch: the app's whole backend</code></pre>
+    <p class="prose">Everything above the <code>.github/</code> line already has a producer: <code>og_init()</code> scaffolds the folder, workr's <code>pkgManifest()</code> writes the pins and pulls <code>workflows/</code> from each package at the pinned SHA (the gsm.library pattern), and the three Actions exist in open.gismo today. The forkable-K3 increment is essentially <em>joining the two halves that already work</em>: <code>run-study.yaml</code>'s install-and-run with <code>build-site.yaml</code>'s validate-and-publish. hub#131 asks the same questions for the CSR study repo — name/layout, engine pinning, PR previews — and the answers should be shared: <strong>"set up a study repo" must be a command, not an artisanal clone</strong>; <code>og_init()</code> plus an Actions template is that command.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Ground truth</p>
+    <h2>What's real, what's aspirational, what's inconsistent</h2>
+    <p class="prose">Read from source this morning (workr v1.0.0 at <code>~/Documents/github/workr</code>, both open.gismo lines, gsm.kri/gsm.safety workflow dirs, the four Actions). The framework holds; these are the seams a plan rewrite has to close rather than discover later:</p>
+    <div class="tbl-scroll"><table class="seam">
+      <thead><tr><th>Seam</th><th>State</th><th>What's true today</th></tr></thead>
+      <tbody>
+        <tr><td>engine fork</td><td><span class="pill gap">unmerged</span></td><td>The <code>og_*</code>/<code>fs_*</code> local-first engine (v0.2.0) lives only on <code>feat/local-first-prototype</code>; <code>dev</code> (v0.1.0) has the <code>gh_*</code> lane only. Which is the base is a decision, not a fact.</td></tr>
+        <tr><td>artifact paths</td><td><span class="pill gap">3-way split</span></td><td><code>gh_SaveData</code> writes <code>output/{wf}/…</code> (no phase segment); the local writer and design.md write <code>output/{phase}/{wf}/…</code>. One contract must win.</td></tr>
+        <tr><td>phase naming</td><td><span class="pill gap">divergent</span></td><td>gsm.safety uses <code>3_reports</code>; gsm.reporting/open.gismo use <code>3_reporting</code>. Literal-path loading means the mismatch silently yields an empty phase.</td></tr>
+        <tr><td>status.json</td><td><span class="pill gap">inferred</span></td><td>Local lane derives status from <em>file presence</em> — a step that ran and produced nothing is indistinguishable from one that never ran; <code>failed</code>/<code>error</code> are unreachable. The Actions lane records incrementally but races on concurrent runs.</td></tr>
+        <tr><td>log.json</td><td><span class="pill gap">stub</span></td><td>The Action writes an empty <code>workflows: {}</code>; the local lane writes nothing. If the app shows logs, something must actually produce them.</td></tr>
+        <tr><td>snapshot ids</td><td><span class="pill real">works</span></td><td><code>ps-NNN</code> allocated by read-modify-write on <code>snapshots.json</code> — fine single-writer, races if two runs start together. The local lane has no id at all (flat folder, overwritten in place).</td></tr>
+        <tr><td>pins</td><td><span class="pill gap">3 models</span></td><td>SHA pins (manifest/rproject.toml), branch pins (<code>@main</code> Remotes — and one workflow installs workr <code>@dev</code>), and full vendoring (<code>run-study.yaml</code>) all coexist. The study must name the engine version that produced each snapshot.</td></tr>
+        <tr><td>branches.json</td><td><span class="pill prop">design-only</span></td><td>Multi-branch indirection exists in design.md but no code fetches it; the site reads a flat root. Same for the <code>snapshots.json</code> fetch — the selector component exists but isn't fed.</td></tr>
+        <tr><td>gsm.library</td><td><span class="pill prop">unverified</span></td><td>The central-config precedent (nightly dev/main → <code>release-{name}</code> → <code>prod</code>) is documented but not cloned locally; the upstream demo-study repo (<code>AA-AA-000-0000</code>) likewise. Verify both before requirements assert them.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Decisions</p>
+    <h2>The D-FW ledger</h2>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>ID</th><th>Decision</th><th>Recommendation</th></tr></thead>
+      <tbody>
+        <tr><td class="id">D-FW1</td><td>Config home: per-study GitHub repo (forkable), vs central config repo, vs in-engine demo.</td><td class="r"><b>Per-study repo</b> — your lean, and the hub#131 principle: one study, one repo, one approval trail. The engine keeps only a minimal CI fixture.</td></tr>
+        <tr><td class="id">D-FW2</td><td>Engine dependency: Gilead-BioStats/workr upstream, forked, or vendored?</td><td class="r"><b>Upstream dependency, SHA-pinned</b> via manifest/rproject.toml; contribute fixes upstream (the CompileWorkflow lane already exists). Kill the <code>@main</code>/<code>@dev</code> pin inconsistency.</td></tr>
+        <tr><td class="id">D-FW3</td><td>Resolve the engine fork: local-first <code>og_*</code>/<code>fs_*</code> (v0.2 branch) vs GitHub-lane <code>gh_*</code> (dev).</td><td class="r"><b>Merge to one engine, two lConfigs</b> — same tree from both lanes (the core finding). Local = dev loop; Actions + <code>gh_*</code> = the D1 acceptance path.</td></tr>
+        <tr><td class="id">D-FW4</td><td>Snapshot publishing: branch-root-as-artifact to Pages (current), vs releases, vs generated site build.</td><td class="r"><b>Keep branch-as-artifact</b> — no build step is a feature. Fix id allocation with an Actions concurrency group or run-id suffix.</td></tr>
+        <tr><td class="id">D-FW5</td><td>One artifact-path contract and one phase vocabulary.</td><td class="r"><b><code>output/{phase}/{wf}/{artifact}.csv</code> everywhere</b> (fix <code>gh_SaveData</code>); align <code>3_reports</code> → <code>3_reporting</code> or map explicitly in domain config — pick at requirements time.</td></tr>
+        <tr><td class="id">D-FW6</td><td>Status/log truth: derive from file presence vs record from execution.</td><td class="r"><b>Record execution</b> (workr's <code>bContinueOnError</code> summary has it all: results/status/failures); keep <code>log.json</code> minimal but real, or drop it from the v1 contract honestly.</td></tr>
+        <tr><td class="id">D-FW7</td><td>Domain registry location and shape (companion to D-APP7).</td><td class="r"><b><code>config/study-config.yaml</code></b> as sketched — domain = label + chart bundle + workflow phases. Adding a domain is a study-repo PR.</td></tr>
+        <tr><td class="id">D-FW8</td><td>Environment record: what does the provenance chip cite?</td><td class="r"><b><code>manifest.csv</code> (six columns, SHA-filled) + <code>rproject.toml</code></b> as the per-snapshot environment record; normalize the three producers that currently write slightly different manifests.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Next steps</p>
+    <div class="prose">
+      <p>① Your pass on D-FW1–8 (one-liners fine, same as the D-APP ledger). ② Verify the two unverified precedents — gsm.library's branch model and the upstream <code>AA-AA-000-0000</code> demo-study repo — before requirements assert them. ③ Fold this framework plus the design directions into the app-first plan rewrite on <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a>; the Phase 1–4 requirements then have both a UI headline and a data contract to cite. ④ Coordinate with <a href="https://github.com/jwildfire/obot.roadmap/issues/131">hub#131</a> so the CSR and gsm study repos answer the shared questions (layout, pinning, previews, scaffold command) the same way.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Design doc for goal #79 · compiled 2026-07-28 by the 😺🤖 session · companion to the <a href="directions.html">design directions</a>.</p>
+    <p>Read from source: workr v1.0.0 (~/Documents/github/workr) · open.gismo dev + feat/local-first-prototype · gsm.kri/gsm.safety inst/workflow · open.gismo .github/workflows · site/src fetch layer. Reconstructed (flagged): gsm.library branch model, upstream demo-study repo.</p>
+  </footer>
+</div>
+
+</body>
+</html>
