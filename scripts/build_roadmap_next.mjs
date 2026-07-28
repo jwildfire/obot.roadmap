@@ -24,6 +24,8 @@ import { collectOpenPRs } from './lib/collect/prs.mjs';
 import { collectReleases } from './lib/collect/releases.mjs';
 import { collectIdeas } from './lib/collect/ideas.mjs';
 import { collectGoals } from './lib/collect/goals.mjs';
+import { collectHierarchy } from './lib/collect/hierarchy.mjs';
+import { hierarchySection } from './lib/hierarchy/render.mjs';
 import { auditSection } from './lib/audit/render.mjs';
 import { siteHeader } from './lib/nav.mjs';
 import {
@@ -250,13 +252,26 @@ if (!auditEntries.length) throw new Error('site/roadmap-changelog.json has no en
 
 if (!hasToken) console.warn('roadmap: no GITHUB_TOKEN — sections that need the API will degrade');
 
-const [reqRes, prRes, relRes, ideaRes, goalRes, auditLedger] = await Promise.all([
+// The hierarchy proposal (Current vs Proposed views) is a committed file like
+// the changelog: absent or unparseable renders an empty proposal, not a broken
+// section — the Current tree is still the truth worth publishing.
+async function readProposal() {
+  try {
+    return JSON.parse(await fs.readFile(path.join(ROOT, 'scripts', 'roadmap-proposal.json'), 'utf8'));
+  } catch {
+    return { links: [], flags: [] };
+  }
+}
+
+const [reqRes, prRes, relRes, ideaRes, goalRes, hierRes, auditLedger, proposal] = await Promise.all([
   settle('Requirements', collectRequirements),
   settle('Open PRs', collectOpenPRs),
   settle('Releases', collectReleases),
   settle('Ideas', collectIdeas),
   settle('Goals', collectGoals),
+  settle('Hierarchy', collectHierarchy),
   readAuditLedger(),
+  readProposal(),
 ]);
 
 // The requirements section is the page's spine: if it is gone, the deploy should
@@ -339,6 +354,7 @@ ${siteHeader({
 <p class="rm-blurb" id="rm-blurb"></p>
 
 ${goalsSection(goalRes, requirements)}
+${hierarchySection(hierRes, { requirements, proposal })}
 ${requirementsSection}
 ${auditSection(auditLedger, { now: NOW })}
 
@@ -494,7 +510,7 @@ if (OUT === 'roadmap.html') {
 }
 
 const degraded = [
-  ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes], ['goals', goalRes],
+  ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes], ['goals', goalRes], ['hierarchy', hierRes],
 ].filter(([, r]) => !r.ok).map(([n]) => n);
 console.log(
   `roadmap-next: ${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
