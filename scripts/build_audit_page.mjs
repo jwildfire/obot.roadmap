@@ -252,6 +252,7 @@ const shell = ledger
     </div>
     ${boardNotice}${brokenNotice}
     <div class="ap-run" id="ap-run" hidden></div>
+    <div class="ap-qbar" id="ap-qbar" hidden></div>
     <div class="ap-meter" id="ap-meter"></div>
     <div id="ap-queue"></div>
     ${noscriptList(findings)}
@@ -264,7 +265,7 @@ const shell = ledger
         <p class="ap-note">Every finding here is a fact about GitHub state, produced by a deterministic rule rather than a model: the same state yields the same findings.</p>
         <ol class="ap-note">
           ${MODE === 'local'
-    ? `<li><strong>✓</strong> hands the finding's id — and nothing else — to the loopback hub server, which spawns a local Claude Code agent to run the <a href="https://github.com/${HUB}/blob/main/scripts/apply_audit_decision.mjs">apply lane</a> on this machine. A rule band sends one request carrying all of its ids. No token is involved: the write authority is this machine's own, never the page's.</li>`
+    ? `<li><strong>✓/✗ stage a decision into a local queue</strong> — click again to unstage, and the queue survives reloads. Nothing runs until <strong>submit</strong>, which hands the batch (finding ids and nothing else) to the loopback hub server; it spawns a local Claude Code agent to run the <a href="https://github.com/${HUB}/blob/main/scripts/apply_audit_decision.mjs">apply lane</a> on this machine. No token is involved: the write authority is this machine's own, never the page's.</li>`
     : `<li>This deployed page is <strong>read-only</strong> — it holds no token and has no write path. Deciding happens on the local session hub's copy of this queue, where ✓/✗ hand finding ids to a local Claude Code agent; <a href="${esc(decisionUrl('accept', ['RULE-ID:owner/repo#123']))}" target="_blank" rel="noopener">filing a decision issue</a> naming the ids remains the fallback lane.</li>`}
           <li>The lane runs a <strong>fresh audit</strong> and re-derives what that id means. A finding the new audit no longer reports is refused as stale, and one whose source could not be read is reported blocked. What runs is never what this page said should run.</li>
           <li>A mechanical fix is applied as the operations listed in the rail; a judgment call goes to a bounded agent with the prompt shown there.</li>
@@ -517,6 +518,24 @@ tr.ap-fnd.is-muted { opacity: .62; }
 .ap-run.done { border-color: #bbf7d0; background: #ecfdf3; }
 .ap-run.warn { border-color: #fde68a; background: #fffbeb; }
 .ap-run .ap-meta { display: block; margin-top: .2rem; }
+.ap-run .ap-lane + .ap-lane { border-top: 1px dashed var(--rule); margin-top: .3rem; padding-top: .3rem; }
+.ap-lane.done { color: #166534; }
+.ap-lane.warn { color: #92400e; }
+
+/* The queue bar — staged decisions waiting for an explicit submit
+   (@jwildfire, 2026-07-27: "a queue of approved actions that i can submit
+   whenever i want"). */
+.ap-qbar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: .2rem 0 .5rem;
+  padding: .45rem .8rem; border: 1px solid var(--accent-bright); border-radius: 6px;
+  background: #fff7ed; font-size: .84rem; }
+.ap-qbar .q-split { color: var(--muted); font-family: var(--mono); font-size: .76rem; }
+.ap-qbar button { cursor: pointer; font: 600 .78rem/1.3 var(--sans); border-radius: 6px;
+  padding: .3rem .7rem; border: 1px solid var(--rule); background: var(--card); color: var(--ink); }
+.ap-qbar button.go { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ap-qbar button:hover { border-color: var(--accent-bright); }
+.ap-qbar .ap-meta { flex-basis: 100%; margin: 0; }
+.pill.q-accept { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
+.pill.q-reject { background: #f3e8dd; border-color: #e4d2bf; color: #6b4423; }
 
 /* ------------------------------------------------------------- the folds */
 .ap-folds { margin-top: 1.6rem; }
@@ -630,14 +649,21 @@ ${shell}
     q: '', conf: 'all', kind: 'all', repo: 'all', group: 'all', decided: 'all',
     sort: 'confidence', grouped: true, showMuted: false,
     collapsed: {}, cursor: null,
-    // D2 — decisions dispatch on click, so this is not a staging area. It is what
-    // the page knows about decisions it has already sent: one entry per finding,
-    // carrying the phase its run is in and, once the ledger has been re-read, the
-    // outcome that actually landed.
+    // D2 revised (@jwildfire, 2026-07-27): in the local lane this IS a staging
+    // area — ✓/✗ queue a decision, and nothing runs until submit hands the
+    // batch to the agent. "queued" is the staged intent (persisted across
+    // reloads); "sent" is what has actually gone to an agent: one entry per
+    // finding, carrying the phase its run is in and, once the ledger has been
+    // re-read, the outcome that actually landed.
+    queued: {},
     sent: {},
   };
 
-  var busy = false;
+  // Decisions run concurrently (@jwildfire, 2026-07-27 follow-up: the lock is
+  // per FINDING, never global — a row in flight disables itself and nothing
+  // else). Each dispatch owns one line in the run panel until it lands.
+  var lanes = {};
+  var laneSeq = 0;
   var flat = [];
 
   function mark(id) { return state.sent[id] || null; }
@@ -651,6 +677,25 @@ ${shell}
     return Boolean(m && m.phase === 'done' && LANDED[m.outcome]);
   }
   function actionable(f) { return !f.muted && !settled(f); }
+  function inFlight(f) { var m = mark(f.id); return Boolean(m && m.phase !== 'done'); }
+
+  // The queue survives a reload (the page regenerates whenever the ledger
+  // moves) — staged intent is cheap to hold and annoying to lose. Ids that no
+  // longer exist in the ledger are dropped on load.
+  var QKEY = 'obot-audit-queue';
+  function loadQueue() {
+    if (MODE !== 'local') return;
+    try {
+      var q = JSON.parse(localStorage.getItem(QKEY) || '{}');
+      Object.keys(q).forEach(function (id) {
+        if (byId[id] && (q[id] === 'accept' || q[id] === 'reject')) state.queued[id] = q[id];
+      });
+    } catch (e) { /* fresh start */ }
+  }
+  function saveQueue() {
+    if (MODE !== 'local') return;
+    try { localStorage.setItem(QKEY, JSON.stringify(state.queued)); } catch (e) { /* unstored */ }
+  }
 
   // --------------------------------------------------------------- filtering
   function pass(f) {
@@ -734,7 +779,10 @@ ${shell}
   var PHASE_WORD = { sending: 'sending', queued: 'queued', running: 'running' };
   function statusHTML(f) {
     var m = mark(f.id);
-    if (!m) return '';
+    if (!m) {
+      var q = state.queued[f.id];
+      return q ? '<span class="pill q-' + q + '">queued ' + (q === 'accept' ? '\u2713' : '\u2717') + '</span>' : '';
+    }
     if (m.phase !== 'done') {
       return '<span class="pill st-working"><span class="ap-spin">●</span> '
         + esc(PHASE_WORD[m.phase] || m.phase) + '</span>';
@@ -746,15 +794,15 @@ ${shell}
   function actsHTML(f, size) {
     if (MODE !== 'local') return '';
     var m = mark(f.id);
-    var lock = f.muted || settled(f) || (m && m.phase !== 'done') || busy;
+    var lock = f.muted || settled(f) || (m && m.phase !== 'done');
     var dis = lock ? ' disabled' : '';
     return '<span class="acts">'
       + '<button class="act yes ' + (size || '') + '" data-act="accept" data-id="' + esc(f.id) + '"'
-      + ' aria-pressed="' + Boolean(m && m.decision === 'accept') + '"' + dis
-      + ' title="Accept — send this finding to the apply lane (a)" aria-label="Accept ' + esc(f.subjLabel) + '">✓</button>'
+      + ' aria-pressed="' + Boolean((m && m.decision === 'accept') || state.queued[f.id] === 'accept') + '"' + dis
+      + ' title="Accept — queue this finding for the apply agent (a)" aria-label="Accept ' + esc(f.subjLabel) + '">✓</button>'
       + '<button class="act no ' + (size || '') + '" data-act="reject" data-id="' + esc(f.id) + '"'
-      + ' aria-pressed="' + Boolean(m && m.decision === 'reject') + '"' + dis
-      + ' title="Reject — change nothing, mute for 60 days (x)" aria-label="Reject ' + esc(f.subjLabel) + '">✗</button>'
+      + ' aria-pressed="' + Boolean((m && m.decision === 'reject') || state.queued[f.id] === 'reject') + '"' + dis
+      + ' title="Reject — queue a 60-day mute (x)" aria-label="Reject ' + esc(f.subjLabel) + '">✗</button>'
       + '</span>';
   }
 
@@ -802,13 +850,13 @@ ${shell}
       + '<td>' + subjHTML(f) + '</td>'
       + '<td><span class="title" title="' + esc(f.subject.title) + '">' + esc(f.subject.title || f.ruleTitle) + '</span></td>'
       + '<td><span class="what" title="' + esc(f.what) + '">' + esc(f.what) + '</span></td>'
-      + '<td>' + (m ? statusHTML(f) : kindHTML(f)) + flags + '</td>'
+      + '<td>' + (m || state.queued[f.id] ? statusHTML(f) : kindHTML(f)) + flags + '</td>'
       + '</tr>';
   }
 
   function bandHTML(g) {
     var items = g.items;
-    var open = items.filter(actionable);
+    var open = items.filter(function (f) { return actionable(f) && !inFlight(f); });
     var done = items.length - open.length;
     var collapsed = Boolean(state.collapsed[g.rule]);
     // C's contribution to this build: when every finding under a rule proposes
@@ -820,7 +868,7 @@ ${shell}
     var same = only.length === 1
       ? '<span class="same" title="' + esc(only[0]) + '"><b>all ' + items.length + ' ·</b> ' + esc(only[0]) + '</span>'
       : '';
-    var lock = !open.length || busy;
+    var lock = !open.length;
     return '<tr class="ap-grp"><td colspan="6"><div class="band">'
       + '<button class="caret" data-collapse="' + esc(g.rule) + '" aria-expanded="' + !collapsed
       + '" aria-label="' + (collapsed ? 'Expand' : 'Collapse') + ' ' + esc(g.rule) + '">' + (collapsed ? '▸' : '▾') + '</button>'
@@ -860,8 +908,10 @@ ${shell}
       if (m.decision === 'accept') a++; else r++;
     });
     var left = findings.filter(function (f) { return actionable(f) && !mark(f.id); }).length;
+    var q = Object.keys(state.queued).length;
     return '<div class="ticks" role="group" aria-label="Decision queue">' + ticks + '</div>'
-      + '<span class="read"><span class="on">' + a + ' accepted</span> · ' + r + ' rejected · '
+      + '<span class="read">' + (q ? '<span class="on">' + q + ' queued</span> · ' : '')
+      + '<span class="on">' + a + ' accepted</span> · ' + r + ' rejected · '
       + (lost ? lost + ' did not land · ' : '') + left + ' to go</span>';
   }
 
@@ -873,7 +923,7 @@ ${shell}
       return toggle + '<div class="idle"><b>Nothing selected.</b>Click a row, or press <kbd>j</kbd> to start at the top of the queue.</div>';
     }
     var m = mark(f.id);
-    var lock = f.muted || settled(f) || (m && m.phase !== 'done') || busy;
+    var lock = f.muted || settled(f) || (m && m.phase !== 'done');
     var idx = flat.indexOf(f);
     return toggle
       + '<div class="rhead">'
@@ -896,6 +946,7 @@ ${shell}
   var meterEl = document.getElementById('ap-meter');
   var railEl = document.getElementById('ap-rail');
   var runPanel = document.getElementById('ap-run');
+  var qbarEl = document.getElementById('ap-qbar');
   var connSlot = document.getElementById('ap-conn');
   var shellEl = document.getElementById('ap-shell');
 
@@ -929,6 +980,17 @@ ${shell}
 
     meterEl.innerHTML = meterHTML();
     railEl.innerHTML = railHTML();
+
+    var qIds = Object.keys(state.queued);
+    qbarEl.hidden = !qIds.length;
+    if (qIds.length) {
+      var qa = qIds.filter(function (id) { return state.queued[id] === 'accept'; }).length;
+      qbarEl.innerHTML = '<b>' + qIds.length + ' queued</b><span class="q-split">'
+        + (qa ? qa + ' accept' : '') + (qa && qIds.length - qa ? ' · ' : '') + (qIds.length - qa ? (qIds.length - qa) + ' reject' : '')
+        + '</span><button class="go" id="ap-submit">submit to the agent</button>'
+        + '<button id="ap-qclear">clear queue</button>'
+        + '<span class="ap-meta">Nothing runs until you submit. The queue survives reloads.</span>';
+    } else { qbarEl.innerHTML = ''; }
   }
 
   function move(step) {
@@ -957,7 +1019,7 @@ ${shell}
     var b = document.createElement('span');
     if (MODE === 'local') {
       b.className = 'on';
-      b.textContent = 'local lane — ✓/✗ spawn the apply agent';
+      b.textContent = 'local lane — stage ✓/✗, submit when ready';
       b.title = 'Decisions POST to the loopback hub server, which spawns a Claude Code agent to re-validate ids against a fresh audit and apply. No token, no remote write path.';
     } else {
       b.textContent = 'read-only — decide from the local hub';
@@ -966,10 +1028,14 @@ ${shell}
     connSlot.appendChild(b);
   }
 
-  function say(html, cls) {
-    runPanel.hidden = false;
-    runPanel.className = 'ap-run' + (cls ? ' ' + cls : '');
-    runPanel.innerHTML = html;
+  function say(key, html, cls) {
+    lanes[key] = { html: html, cls: cls || '' };
+    var keys = Object.keys(lanes);
+    runPanel.hidden = !keys.length;
+    runPanel.className = 'ap-run';
+    runPanel.innerHTML = keys.map(function (k) {
+      return '<div class="ap-lane ' + lanes[k].cls + '">' + lanes[k].html + '</div>';
+    }).join('');
   }
 
   function setPhase(ids, phase, extra) {
@@ -984,7 +1050,8 @@ ${shell}
   // What actually landed comes from the ledger the agent commits, not from this
   // page's assumption — the server reads site/audit/decisions.json fresh from
   // the checkout on every poll, and reports the job's own state beside it.
-  function poll(job, decision, ids, label, started, tries) {
+  // Lane-keyed: several submits can be in flight, each with its own line.
+  function poll(key, job, decisionOf, ids, label, started, tries) {
     return fetch('/api/audit/state?job=' + encodeURIComponent(job || '')
       + '&ids=' + encodeURIComponent(ids.join(',')))
       .then(function (r) { return r.json(); })
@@ -997,9 +1064,9 @@ ${shell}
         var terminal = Boolean(s.job && s.job.terminal);
         if (!all && !terminal && tries > 0) {
           var word = (s.job && (s.job.detail || s.job.state)) || 'working';
-          say('<span class="ap-spin">●</span> ' + esc(label) + ' — agent <strong>' + esc(word) + '</strong>', 'working');
+          say(key, '<span class="ap-spin">●</span> ' + esc(label) + ' — agent <strong>' + esc(word) + '</strong>', 'working');
           return new Promise(function (res) { setTimeout(res, 5000); }).then(function () {
-            return poll(job, decision, ids, label, started, tries - 1);
+            return poll(key, job, decisionOf, ids, label, started, tries - 1);
           });
         }
         var tally = {};
@@ -1007,7 +1074,7 @@ ${shell}
           var d = landed[id];
           var outcome = d ? d.outcome : 'failed';
           state.sent[id] = Object.assign(state.sent[id] || {}, {
-            phase: 'done', decision: decision, outcome: outcome,
+            phase: 'done', decision: decisionOf[id], outcome: outcome,
             detail: d ? d.detail
               : (terminal ? 'the agent finished without recording this id — check its job output'
                 : 'timed out waiting for the agent — it may still be working; press u to clear and re-check later'),
@@ -1016,42 +1083,73 @@ ${shell}
         });
         var ok = ids.every(function (id) { return landed[id] && LANDED[landed[id].outcome]; });
         var summary = Object.keys(tally).map(function (k) { return tally[k] + ' ' + k; }).join(' · ');
-        say((ok ? '✓ ' : '⚠ ') + esc(label) + ' — <strong>' + esc(summary) + '</strong>'
+        say(key, (ok ? '\u2713 ' : '\u26a0 ') + esc(label) + ' — <strong>' + esc(summary) + '</strong>'
           + '<span class="ap-meta">Read from the ledger the agent committed. The deployed page catches up on its next deploy.</span>', ok ? 'done' : 'warn');
         return null;
       });
   }
 
-  function dispatch(decision, ids, label) {
-    if (MODE !== 'local' || busy || !ids.length) return;
-    busy = true;
+  function send(batch, ids, label) {
+    if (MODE !== 'local' || !ids.length) return;
+    var key = 'd' + (++laneSeq);
     var started = Date.now();
-    setPhase(ids, 'sending', { decision: decision, outcome: null, detail: null });
+    var decisionOf = {};
+    batch.forEach(function (b) { b.findings.forEach(function (id) { decisionOf[id] = b.decision; }); });
+    ids.forEach(function (id) {
+      state.sent[id] = { phase: 'sending', decision: decisionOf[id], outcome: null, detail: null };
+    });
     render();
-    say('<span class="ap-spin">●</span> handing ' + ids.length + ' finding' + (ids.length === 1 ? '' : 's') + ' to the apply agent…', 'working');
+    say(key, '<span class="ap-spin">●</span> handing ' + ids.length + ' finding' + (ids.length === 1 ? '' : 's') + ' to the apply agent…', 'working');
 
     fetch('/api/audit/decision', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ decision: decision, findings: ids, label: label }),
+      body: JSON.stringify({ batch: batch, label: label }),
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (b) {
         if (!res.ok) throw new Error(b.error || ('the hub server refused the decision (' + res.status + ')'));
         return b;
       });
     }).then(function (b) {
-      setPhase(ids, 'running', { job: b.job });
+      ids.forEach(function (id) { state.sent[id].phase = 'running'; state.sent[id].job = b.job; });
       render();
-      say('<span class="ap-spin">●</span> ' + esc(label) + ' — agent <code>' + esc(b.job || '?') + '</code> spawned…', 'working');
-      return poll(b.job, decision, ids, label, started, 240); // ~20 min at 5s
+      say(key, '<span class="ap-spin">●</span> ' + esc(label) + ' — agent <code>' + esc(b.job || '?') + '</code> spawned…', 'working');
+      return poll(key, b.job, decisionOf, ids, label, started, 240); // ~20 min at 5s
     }).catch(function (err) {
-      setPhase(ids, 'done', { outcome: 'failed', detail: String(err.message || err) });
-      say('⚠ ' + esc(String(err.message || err))
-        + '<span class="ap-meta">Is the hub audit server still running? Select a row and press <kbd>u</kbd> to clear its mark and try again.</span>', 'warn');
-    }).then(function () {
-      busy = false;
-      render();
-    });
+      ids.forEach(function (id) {
+        state.sent[id] = { phase: 'done', decision: decisionOf[id], outcome: 'failed', detail: String(err.message || err) };
+      });
+      say(key, '\u26a0 ' + esc(String(err.message || err))
+        + '<span class="ap-meta">Is the hub audit server still running? Press <kbd>u</kbd> on a row to clear its mark and re-queue.</span>', 'warn');
+    }).then(function () { render(); });
+  }
+
+  // Submit hands the whole queue over at once: one agent, one fresh audit, one
+  // commit. Rejects above the D3 threshold still confirm — a mute is invisible
+  // for 60 days, so the deliberate step survives the queue model.
+  function submit() {
+    var qIds = Object.keys(state.queued);
+    if (!qIds.length) return;
+    var acc = qIds.filter(function (id) { return state.queued[id] === 'accept'; });
+    var rej = qIds.filter(function (id) { return state.queued[id] === 'reject'; });
+    var go = function () {
+      var batch = [];
+      if (acc.length) batch.push({ decision: 'accept', findings: acc });
+      if (rej.length) batch.push({ decision: 'reject', findings: rej });
+      var label = 'submit ' + qIds.length + ' decision' + (qIds.length === 1 ? '' : 's')
+        + (acc.length ? ' · ' + acc.length + ' accept' : '') + (rej.length ? ' · ' + rej.length + ' reject' : '');
+      qIds.forEach(function (id) { delete state.queued[id]; });
+      saveQueue();
+      send(batch, qIds, label);
+    };
+    if (rej.length > MUTE_CONFIRM_OVER) {
+      ask('Mute ' + rej.length + ' findings?',
+        'This submit mutes ' + rej.length + ' findings for 60 days, or until their evidence changes'
+        + (acc.length ? ', and applies ' + acc.length + ' accept' + (acc.length === 1 ? '' : 's') : '') + '.',
+        go);
+      return;
+    }
+    go();
   }
 
   function ask(title, body, onYes) {
@@ -1073,28 +1171,27 @@ ${shell}
 
   function decideOne(id, decision) {
     var f = byId[id];
-    if (!f || !actionable(f)) return;
-    dispatch(decision, [id], decision + ' ' + f.subjLabel);
+    if (MODE !== 'local' || !f || !actionable(f) || inFlight(f)) return;
+    if (state.queued[id] === decision) delete state.queued[id];
+    else state.queued[id] = decision;
+    saveQueue();
+    render();
   }
 
-  // D3 — ✗ on a band mutes the whole rule, and above three that is confirmed. ✓
-  // never confirms: an accept shows up in the roadmap the next morning, a mute is
-  // invisible for 60 days.
+  // A band click stages every decidable finding under the rule; clicking the
+  // same button again unstages them. The D3 mute-confirm moved to submit time —
+  // staging is free and reversible, the submit is the deliberate act.
   function decideBand(rule, decision) {
+    if (MODE !== 'local') return;
     var g = null;
     view().forEach(function (x) { if (x.rule === rule) g = x; });
     if (!g) return;
-    var ids = g.items.filter(actionable).map(function (f) { return f.id; });
+    var ids = g.items.filter(function (f) { return actionable(f) && !inFlight(f); }).map(function (f) { return f.id; });
     if (!ids.length) return;
-    var label = decision + ' all ' + ids.length + ' · ' + rule;
-    if (decision === 'reject' && ids.length > MUTE_CONFIRM_OVER) {
-      ask('Mute ' + ids.length + ' findings?',
-        'Rejecting the whole ' + rule + ' band mutes ' + ids.length
-        + ' findings for 60 days, or until their evidence changes. Nothing on GitHub changes, and they will not appear in this queue again in that time.',
-        function () { dispatch(decision, ids, label); });
-      return;
-    }
-    dispatch(decision, ids, label);
+    var allSet = ids.every(function (id) { return state.queued[id] === decision; });
+    ids.forEach(function (id) { if (allSet) delete state.queued[id]; else state.queued[id] = decision; });
+    saveQueue();
+    render();
   }
 
   // ------------------------------------------------------------------ wiring
@@ -1190,7 +1287,7 @@ ${shell}
       k: function () { move(-1); }, ArrowUp: function () { move(-1); },
       a: function () { if (state.cursor) decideOne(state.cursor, 'accept'); },
       x: function () { if (state.cursor) decideOne(state.cursor, 'reject'); },
-      u: function () { if (state.cursor) { delete state.sent[state.cursor]; render(); } },
+      u: function () { if (!state.cursor) return; if (state.queued[state.cursor]) { delete state.queued[state.cursor]; saveQueue(); } else { delete state.sent[state.cursor]; } render(); },
       Enter: function () { move(1); },
       Escape: function () { state.cursor = null; render(); },
     };
@@ -1260,6 +1357,12 @@ ${shell}
     if (deepBox) deepBox.value = state.q;
   }
 
+  qbarEl.addEventListener('click', function (e) {
+    if (e.target.id === 'ap-submit') submit();
+    else if (e.target.id === 'ap-qclear') { state.queued = {}; saveQueue(); render(); }
+  });
+
+  loadQueue();
   paintFacets();
   paintConnection();
   render();
