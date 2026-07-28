@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #35 — nepExplorer migration: the KDIGO kidney-safety explorer</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1.25rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .decision ul { margin: .5rem 0 .5rem 0; padding-left: 1.2rem; }
+  .decision .rec { background: #fff; border: 1px solid #e6d4ac; border-radius: 6px; padding: .5rem .7rem; margin-top: .6rem; }
+  .settled { background: #f0fdf4; border-left-color: #15803d; }
+  .settled strong:first-child { color: #15803d; }
+  .callout { background: var(--panel); border-radius: 8px; padding: .8rem 1rem; margin: 1rem 0; }
+  .toc { font-size: .93rem; }
+  .toc ol { padding-left: 1.3rem; }
+  figure { margin: 1.25rem 0; }
+  figcaption { color: var(--muted); font-size: .85rem; margin-top: .4rem; }
+  .zone { font-family: var(--mono); font-size: .8rem; line-height: 1.35; white-space: pre; overflow-x: auto;
+          background: var(--panel); border-radius: 8px; padding: 1rem; }
+</style>
+</head>
+<body>
+<header>
+<h1>Design #35 — nepExplorer migration: the KDIGO kidney-safety explorer</h1>
+<p class="meta">
+  Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/35">jwildfire/obot.roadmap#35</a>
+  · follows the <a href="../../reports/nepexplorer-migration-assessment-2026-07-15/">migration assessment</a> (2026-07-15)
+  · sibling of <a href="https://github.com/jwildfire/obot.roadmap/issues/30">#30</a> (hep-explorer) and
+  <a href="https://github.com/jwildfire/obot.roadmap/issues/36">#36</a> (qt-explorer)
+  · demo data folds into <a href="https://github.com/jwildfire/obot.roadmap/issues/25">#25</a>
+  · <span class="status">D4–D9 open for @jwildfire</span>
+</p>
+<p class="meta"><strong>Source of truth:</strong> the <a href="https://github.com/SafetyGraphics/nepExplorer">SafetyGraphics/nepExplorer</a> Shiny app, v1.0.0 (<code>master</code>). The <code>deprecated-js</code> branch is a UX reference only — it is the Webcharts stack safety.viz replaces.</p>
+</header>
+
+<nav class="toc">
+<ol>
+  <li><a href="#summary">Summary</a></li>
+  <li><a href="#settled">What is already decided (D1–D3)</a></li>
+  <li><a href="#logic">The clinical logic, re-derived</a></li>
+  <li><a href="#units">Units: the mg/dL contract</a></li>
+  <li><a href="#data">Data requirement</a></li>
+  <li><a href="#module">Module design — Phase 1</a></li>
+  <li><a href="#phase2">Phase 2 preview — the patient profile</a></li>
+  <li><a href="#delivery">Delivery and the done gate</a></li>
+  <li><a href="#matrix">Requirement matrix plan</a></li>
+  <li><a href="#risks">Risks and what this design does not settle</a></li>
+</ol>
+</nav>
+
+<h2 id="summary">1. Summary</h2>
+
+<p>nepExplorer screens trial lab data for acute declines in renal function using the <strong>KDIGO</strong> acute-kidney-injury staging criteria. Its main object is a scatter — one point per participant, maximum <em>fold</em> change in serum creatinine on x against maximum <em>absolute</em> change on y, over coloured L-shaped stage zones — paired with a stage summary table and a click-through patient profile. That is the same shape as hep-explorer's eDISH quadrant plot, one organ over, so the architecture question was settled by the assessment: it is a canvas-first safety.viz module on the proven lifecycle, and the stage zones are a Chart.js background plugin like <code>quadrantPlugin</code>.</p>
+
+<p>This design does four things:</p>
+<ul>
+  <li><strong>Re-derives the staging from KDIGO intent</strong> rather than porting the R implementation, and pins down exactly where the source disagrees with itself (§3). The known <code>DELTA_STAGE</code> trap turns out to have a sharper form than "an ordering bug": <em>the R app's chart and its own table stage the same participant differently</em>.</li>
+  <li><strong>Makes the module unit-aware</strong> with an explicit mg/dL contract and a refuse-to-guess fallback, because the fold axis is unit-safe and the absolute axis is not (§4).</li>
+  <li><strong>Settles the demo data</strong>, which is the part of this requirement that actually moved. Measured on the real files, <strong>today's pharmaverseadam demo cannot demonstrate this chart</strong> — not one of its 208 stageable participants crosses the Stage-1 line. The RhoInc renderer-specific set that D1 already approved for Phase 2 does populate all four stages, and it carries the <code>AGE</code> and <code>DY</code> columns the vendored copy dropped. The recommendation is to bring that dataset forward into Phase 1 (§5).</li>
+  <li><strong>Breaks Phase 1 into eight increments</strong>, the last two being the done gate and the requirement matrix, each small enough that one session can take it and stop (§8).</li>
+</ul>
+
+<div class="callout">
+<p><strong>Every number in §5 was computed from the files themselves</strong> — <code>safety.viz/site/data/adbds.csv</code> at <code>dev</code>, and <code>RhoInc/data-library</code>'s <code>data/clinical-trials/renderer-specific/adbds.csv</code> — with baseline taken as the participant's baseline-flagged visit (<code>Baseline</code> / <code>Screening</code>), maximum fold and maximum delta taken over that participant's post-baseline records, and µmol/L converted at 88.4. It is a scoping calculation done outside the module, not module output; the implementation will reproduce it under test.</p>
+</div>
+
+<h2 id="settled">2. What is already decided (D1–D3)</h2>
+
+<div class="decision settled">
+<p><strong>D1 — Phase-2 demo data · DECIDED 2026-07-19.</strong> Derive creatinine-based eGFR (CKD-EPI) <em>and</em> retain the RhoInc renderer-specific dataset as a nep-specific demo. Folds into <a href="https://github.com/jwildfire/obot.roadmap/issues/25">#25</a>.</p>
+</div>
+<div class="decision settled">
+<p><strong>D2 — Phasing · DECIDED 2026-07-19.</strong> Ship Phase 1 (the KDIGO creatinine scatter) as a standalone renderer at the standard done gate; Phase 2 (the patient profile) starts once D1's data lands.</p>
+</div>
+<div class="decision settled">
+<p><strong>D3 — Visit animation · DECIDED 2026-07-19.</strong> The scatter's plotly time animation is deferred to a follow-up enhancement; not part of v1.</p>
+</div>
+
+<p>D8–D7 below are new and open. D8 and D9 are refinements of D1 in light of §5's measurements; D4–D7 are the clinical-logic calls the port has to make and the source does not answer cleanly.</p>
+
+<h2 id="logic">3. The clinical logic, re-derived</h2>
+
+<h3>3.1 What KDIGO actually says about creatinine</h3>
+
+<p>The KDIGO AKI criteria stage a participant on serum creatinine three ways:</p>
+
+<table>
+<thead><tr><th>Stage</th><th>Fold change (value ÷ baseline)</th><th>Absolute criteria</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>1.5 – 1.9×</td><td>or an increase of ≥ 0.3 mg/dL</td></tr>
+<tr><td>2</td><td>2.0 – 2.9×</td><td>—</td></tr>
+<tr><td>3</td><td>≥ 3.0×</td><td>or an increase <em>to</em> ≥ 4.0 mg/dL (or initiation of renal replacement therapy — out of scope, it is not a lab value)</td></tr>
+</tbody>
+</table>
+
+<p>Two consequences the port has to respect. First, <strong>the absolute-change axis carries exactly one KDIGO cut-point</strong> — 0.3 mg/dL, and it only ever produces Stage 1. There is no KDIGO Stage 2 or Stage 3 defined on absolute <em>change</em>. Second, the ≥ 4.0 mg/dL rule is about the absolute <em>value</em> reached, not a change, so it is not a region of the (fold, delta) plane at all.</p>
+
+<h3>3.2 Where the R source disagrees with itself</h3>
+
+<p>Reading <a href="https://github.com/SafetyGraphics/nepExplorer/blob/master/R/creatinine_data_fcn.R"><code>R/creatinine_data_fcn.R</code></a> and <a href="https://github.com/SafetyGraphics/nepExplorer/blob/master/R/creatinine_scatter_charts.R"><code>R/creatinine_scatter_charts.R</code></a> side by side:</p>
+
+<p>The <strong>table</strong> stages absolute change with</p>
+<pre><code>DELTA_STAGE = case_when(
+  DELTA_C &gt; .3  ~ "Stage 1",
+  DELTA_C &gt; 1.5 ~ "Stage 2",
+  DELTA_C &gt; 2.5 ~ "Stage 3",
+  TRUE ~ "Did not trigger Delta Creatinine Stage"
+)</code></pre>
+
+<p>and because <code>case_when</code> returns the <em>first</em> match, every delta above 0.3 is labelled Stage 1 — the Stage 2 and Stage 3 branches are unreachable. That much was already flagged on #35. The sharper finding is what the <strong>chart</strong> does with the same numbers: <code>draw_creatinine_scatter</code> paints nested rectangles, largest first, so the visible zone boundaries are <em>descending</em> — Stage 3 fills the panel, Stage 2 is overpainted at x&lt;3 ∧ y&lt;2.5, Stage 1 at x&lt;2 ∧ y&lt;1.5, and white at x&lt;1.5 ∧ y&lt;0.3.</p>
+
+<p>So in the shipped app, <strong>a participant with a 2.0 mg/dL rise and no fold change plots inside the orange Stage-2 zone and is labelled "Stage 1" in the table beside it.</strong> The chart geometry is right and the table is wrong; they were written from the same cut-points in opposite order. Porting either one alone would carry the disagreement forward.</p>
+
+<p>Two smaller fidelity notes from the same file, offered as observations rather than defects to fix upstream:</p>
+<ul>
+  <li><strong>Baseline is positional.</strong> The baseline value is <code>value[1L]</code> after <code>arrange(desc(baseline_flag))</code> — it works because "Y" sorts before "N", but it silently picks an arbitrary record when a participant has two flagged rows, and it depends on the flag's coding. The port takes an explicit baseline setting instead (D7).</li>
+  <li><strong>Negative deltas leave the plot.</strong> <code>scale_y_continuous(limits = c(0, max_delta))</code> starts the axis at zero, so a participant whose creatinine only ever fell — max delta &lt; 0 — is dropped by ggplot rather than drawn at the floor. In the RhoInc data that is a real population: the minimum per-participant max-delta is −0.71 mg/dL (D6).</li>
+</ul>
+
+<div class="decision">
+<p><strong>D4 — What the stage zones encode.</strong> Faithful-to-source (the four nested rectangles above, with the table's ordering corrected to match the chart) · KDIGO-proper (a fold-change ladder at 1.5/2/3 plus a single 0.3 mg/dL Stage-1 trigger on the delta axis) · parameterized cut-points with KDIGO-proper defaults.</p>
+<p class="rec"><strong>Recommendation: parameterized, KDIGO-proper defaults.</strong> The 1.5 and 2.5 mg/dL absolute cut-points in the source are not KDIGO criteria and are not in nepExplorer's own <code>outline.md</code> either (which proposed 0.7/1.2 alongside eGFR percent declines) — three different ladders across two files and a spec. Rather than pick one of the three and inherit the argument, the module takes the KDIGO ladder as its default and exposes the cut-points as a <code>stages</code> setting, exactly as hep-explorer exposes <code>cuts</code>. A sponsor who wants the original rectangles back sets three numbers.</p>
+<p>Under the default, the zone under a point is the <strong>worse of the two axes</strong>, which keeps the L-shaped silhouette a nepExplorer reader recognises:</p>
+<div class="zone">Δ (mg/dL)
+   │  Stage 1  │ Stage 2 │  Stage 3
+   │           │         │
+0.3├───────────┤         │
+   │ no stage  │         │
+  0└───────────┴─────────┴──────────  fold ×
+   0          1.5        2    3</div>
+<p>Stage 1 is everything at or above 0.3 mg/dL up to 2× fold, plus the 1.5–2× band at any delta; the no-stage box is the one region where <em>both</em> criteria are clear.</p>
+</div>
+
+<div class="decision">
+<p><strong>D5 — The ≥ 4.0 mg/dL Stage-3 rule.</strong> It is a property of the participant's maximum value, not a region of the plane. Draw it as a mark property (distinct symbol + tooltip line, counted as Stage 3 in the table) · drop the rule · give the y-axis a second mode showing absolute value.</p>
+<p class="rec"><strong>Recommendation: mark property.</strong> A ringed point plus an explicit tooltip row keeps the rule visible without distorting the axes, and the summary table's Stage-3 count stays clinically complete. The rule fires on <em>zero</em> participants in either demo dataset (the RhoInc maximum creatinine is 1.93 mg/dL), so its evidence has to be a unit test on synthetic input — noted in §8 so it does not get quietly skipped for want of a demo case.</p>
+</div>
+
+<div class="decision">
+<p><strong>D6 — Participants whose creatinine only fell.</strong> Faithful (y-axis floors at 0, those participants leave the chart) · clamp them to the floor · extend the domain below zero when the data has them.</p>
+<p class="rec"><strong>Recommendation: extend the domain, and never drop silently.</strong> 58 of 110 stageable participants in the RhoInc data sit below the 0.3 mg/dL trigger and <strong>21 of them are negative</strong> — a fifth of the cohort would leave the plot under the source's y-limits, unannounced. They are the reference cloud that makes the flagged corner readable. Where a record genuinely cannot be plotted, it goes through the shell's existing dropped-records path (<code>HEP-DROP-*</code>'s counted note plus CSV download), which is the house convention for this.</p>
+</div>
+
+<div class="decision">
+<p><strong>D7 — How baseline is identified.</strong> An explicit baseline-flag setting with a fallback · earliest study day · lowest visit number.</p>
+<p class="rec"><strong>Recommendation: <code>baseline_col</code> / <code>baseline_value</code>, falling back to the earliest post-sort record.</strong> hep-explorer already carries exactly this pair (<code>baseline_col: null, baseline_value: 'Y'</code>), so nep-explorer inherits a vocabulary reviewers know. When no baseline column is configured or a participant has no flagged record, fall back to the earliest record by study day, then visit number, then input order — and count participants resolved by fallback so the number is visible rather than assumed. Neither demo dataset ships a baseline flag (the RhoInc set's is derived downstream, in nepExplorer's own <code>adlb</code>), so the fallback is the path the demo actually exercises.</p>
+</div>
+
+<h2 id="units">4. Units: the mg/dL contract</h2>
+
+<p>The fold-change axis is a ratio and therefore unit-free. Everything else on this chart is not: 0.3 mg/dL and 4.0 mg/dL are absolute quantities, and creatinine is reported in µmol/L across most of the world — including in both demo datasets. The conversion is 1 mg/dL = 88.4 µmol/L.</p>
+
+<p>Three requirements follow:</p>
+
+<ul>
+  <li><strong>Convert per record, not per dataset.</strong> Mixed units within one measure are not hypothetical: the current demo BDS file carries bilirubin in <em>both</em> mg/dL (256 records) and µmol/L (1654). Creatinine happens to be single-unit in both demo sets today, which is exactly why a per-dataset shortcut would pass review and then fail on a real study.</li>
+  <li><strong>Normalize the unit string before matching.</strong> The RhoInc set writes <code>μmol/L</code> with U+03BC (Greek small mu); pharmaverseadam writes <code>umol/L</code>. Match case-insensitively after folding µ/μ/u and trimming whitespace.</li>
+  <li><strong>Refuse to guess.</strong> When a record's unit is absent or unrecognised, the module does not assume mg/dL. It keeps the fold-change axis (always valid), suppresses the absolute cut-lines, the ≥ 4.0 mg/dL rule and the delta staging, labels the y-axis in the native unit, and says so in one line above the chart. A wrong staging is worse than an incomplete one.</li>
+</ul>
+
+<pre><code>units: {
+  target: 'mg/dL',
+  factors: { 'mg/dl': 1, 'umol/l': 1 / 88.4 }   // keys are normalized before lookup
+}</code></pre>
+
+<p>Sponsor-specific factors vary, which nepExplorer itself warns about, so <code>factors</code> is a setting rather than a constant.</p>
+
+<h2 id="data">5. Data requirement</h2>
+
+<h3>5.1 The record contract</h3>
+
+<p>Phase 1 needs one tall lab domain and nothing else. Phase 2 adds vitals (blood pressure) and the kidney-specialized measures.</p>
+
+<table>
+<thead><tr><th>Setting</th><th>Default</th><th>Phase</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td><code>id_col</code></td><td><code>USUBJID</code></td><td>1</td><td>One point per participant; the selection key</td></tr>
+<tr><td><code>measure_col</code></td><td><code>TEST</code></td><td>1</td><td>Matching the creatinine records via <code>measure_values.CREAT</code></td></tr>
+<tr><td><code>value_col</code></td><td><code>STRESN</code></td><td>1</td><td>The numeric result; non-numeric rows drop with a counted note</td></tr>
+<tr><td><code>unit_col</code></td><td><code>STRESU</code></td><td>1</td><td>Per-record conversion to mg/dL (§4)</td></tr>
+<tr><td><code>baseline_col</code> / <code>baseline_value</code></td><td><code>null</code> / <code>'Y'</code></td><td>1</td><td>Baseline identification, with the D7 fallback</td></tr>
+<tr><td><code>visit_col</code> / <code>visitn_col</code></td><td><code>VISIT</code> / <code>VISITNUM</code></td><td>1</td><td>Ordering; the baseline fallback; the tooltip's "max at visit"</td></tr>
+<tr><td><code>studyday_col</code></td><td><code>DY</code></td><td>1 (optional)</td><td>The tooltip's "max on study day"; ordering preference</td></tr>
+<tr><td><code>measure_values</code></td><td><code>{ CREAT: 'Creatinine' }</code></td><td>1</td><td>The measure map; grows to the profile panel in Phase 2</td></tr>
+<tr><td><code>arm_col</code>, <code>filters</code>, <code>details</code></td><td><code>ARM</code>, <code>[]</code>, <code>null</code></td><td>1</td><td>Shell filters and the listing columns, per the house pattern</td></tr>
+<tr><td><code>age_col</code> / <code>sex_col</code></td><td><code>AGE</code> / <code>SEX</code></td><td>2</td><td>CKD-EPI eGFR derivation</td></tr>
+</tbody>
+</table>
+
+<p>Phase 1 requires only <code>id</code>, <code>measure</code>, <code>value</code>, <code>unit</code> and a way to find baseline. That is a deliberately small contract — it is what makes the KDIGO scatter portable to a study that has nothing but a chemistry panel.</p>
+
+<h3 id="finding">5.2 The finding: pharmaverseadam cannot demonstrate this chart</h3>
+
+<p>The assessment recorded Phase 1 as "demoable on today's data" because creatinine is present. It is present, and the chart renders — but it does not <em>demonstrate</em>. Computed over the current <code>site/data/adbds.csv</code>:</p>
+
+<table>
+<thead><tr><th></th><th>pharmaverseadam (current demo)</th><th>RhoInc renderer-specific</th></tr></thead>
+<tbody>
+<tr><td>Participants with baseline + post-baseline creatinine</td><td>208</td><td>110</td></tr>
+<tr><td>Maximum fold change observed</td><td><strong>1.45×</strong></td><td>5.60×</td></tr>
+<tr><td>Fold-change stages populated (0 / 1 / 2 / 3)</td><td><strong>208 / 0 / 0 / 0</strong></td><td>73 / 24 / 10 / 3</td></tr>
+<tr><td>Participants above the 0.3 mg/dL trigger</td><td>9 of 208</td><td>52 of 110</td></tr>
+<tr><td>Maximum absolute change</td><td>0.60 mg/dL</td><td>1.14 mg/dL</td></tr>
+</tbody>
+</table>
+
+<p>On the current demo data every point lands in the white no-stage box, the three coloured zones stay empty, and the summary table reads 208 / 0 / 0 / 0. The renderer would ship with a gallery hero that shows a blob in a corner and an evidence page that cannot exercise the staging at all — the same "the demo has no signal" problem already filed for the hepatic data as <a href="https://github.com/jwildfire/safety.viz/issues/89">safety.viz#89</a>, but total rather than partial.</p>
+
+<p>The RhoInc renderer-specific dataset — <a href="https://github.com/RhoInc/data-library">RhoInc/data-library</a>, MIT-licensed, and safety.viz's own demo data before the v1.1.0 pharmaverse migration — populates all four fold stages. It is the dataset D1 already approved for Phase 2. Three further facts about it, checked against the source file rather than the vendored copy:</p>
+
+<ul>
+  <li>The <strong>upstream file carries <code>AGE</code> and <code>DY</code></strong>, which the v1.0.0 vendored projection dropped. That matters twice over: CKD-EPI needs age and sex, and the Phase-2 profile needs a study-day axis. Rebuilding from the upstream source rather than restoring the old vendored file is therefore the right move.</li>
+  <li>It carries <strong>every measure the patient profile wants</strong> — creatinine, cystatin C, eGFR, eGFRcys, urine albumin/creatinine, bicarbonate, BUN, sodium, potassium, chloride, phosphorus, calcium, and systolic/diastolic blood pressure. That is the gap the assessment identified in pharmaverseadam, closed.</li>
+  <li>It is <strong>internally inconsistent</strong> in a way that matters for Phase 2 (§5.4).</li>
+</ul>
+
+<div class="decision">
+<p><strong>D8 — Which dataset backs the Phase-1 demo.</strong> Keep pharmaverseadam <code>adbds.csv</code> as the assessment assumed · build a nep-specific <code>site/data/adnep.csv</code> from the RhoInc source · inject a deterministic synthetic AKI cohort into the shared <code>adbds.csv</code>, the way <code>build-hep-composite-cohort.mjs</code> injects the <code>CLD-*</code> chronic-liver-disease cohort.</p>
+<p>The first option is out on §5.2's measurement: a KDIGO renderer whose demo cannot reach Stage 1 is not demonstrable, and the done gate is a gallery demo and an evidence page, not just a passing test. The third is a real contender — it is the house mechanism, and it is precisely what <a href="https://github.com/jwildfire/safety.viz/issues/89">safety.viz#89</a>'s DEMO-3 asks for across every under-fed demo, while DEMO-4 argues for <em>one</em> versioned extract downstream repos can vendor. A fifth vendored CSV cuts against that.</p>
+<p class="rec"><strong>Recommendation: build <code>adnep.csv</code>, and bring it forward from Phase 2 into Phase 1.</strong> Three reasons it wins over the injected cohort. It is <strong>real data, not simulated AKI</strong> — for a chart whose whole claim is clinical staging, that matters. It is <strong>the dataset D1 already approved</strong> and the only source of Phase 2's cystatin C, urine ACR and bicarbonate, so the demo-data question gets answered once instead of twice. And it <strong>keeps the Phase-1 PR off everyone else's evidence</strong>: touching the shared <code>adbds.csv</code> regenerates canonical baselines for ten renderers inside a PR that is supposed to be about the kidney. Precedent is already set twice — qt-explorer ships <code>adeg.csv</code>, hep-waterfall ships <code>adbds-abnbl.csv</code> — each because the general BDS file could not carry that renderer's story.</p>
+<p>This does not foreclose #89. If its audit later injects an AKI cohort into the shared file, the nep demo can point at it by changing one line in <code>site/demo/nep-explorer.js</code> — the dataset is a demo-page choice, never a module property.</p>
+</div>
+
+<h3>5.3 The nep demo dataset</h3>
+
+<p><code>site/data/adnep.csv</code>, generated by a new branch of <code>scripts/build-demo-data.mjs</code> reading the RhoInc CSV, projected to the safety.viz measure contract plus the two columns the profile needs:</p>
+
+<pre><code>USUBJID, SITE, SITEID, AGE, SEX, RACE, ARM, VISIT, VISITNUM, DY,
+CAT, TEST, STRESU, STRESN, STNRLO, STNRHI</code></pre>
+
+<p>Cleaning rules, following the house precedent of doing it in the generator and documenting it rather than escalating upstream:</p>
+<ul>
+  <li>Drop the 15 all-blank records in the source file.</li>
+  <li>Keep the vital-sign rows (<code>CAT = "Vital Signs"</code>) — the profile's blood-pressure panel needs them, and stacking labs and vitals into one BDS file is what <code>adbds.csv</code> already does.</li>
+  <li>Normalize the unit strings (µ/μ/u) at generation time, so the fixture exercises the runtime's normalizer rather than hiding behind it. The <code>eGFR</code> / <code>eGFRcys</code> unit is corrected from <code>μmol/L</code> to <code>mL/min/1.73m²</code> if those columns are kept at all (D9).</li>
+  <li>No baseline flag is derived. The demo runs on the D7 fallback, which is what most real studies handed to this renderer will do too.</li>
+</ul>
+
+<p>Provenance goes in <code>docs/DATA_SOURCES.md</code> alongside the pharmaverseadam and synthetic-cohort sections: source URL, MIT licence, retrieval date, and the cleaning list above.</p>
+
+<h3 id="coherence">5.4 The Phase-2 problem: the demo's kidney measures are mutually independent</h3>
+
+<p>The RhoInc set solves the <em>availability</em> gap and exposes a <em>coherence</em> gap. Pairing every measure by participant and visit:</p>
+
+<table>
+<thead><tr><th>Pair</th><th>n</th><th>Pearson r</th><th>Expected in a real cohort</th></tr></thead>
+<tbody>
+<tr><td>Creatinine vs eGFR</td><td>517</td><td><strong>0.005</strong></td><td>strongly negative — eGFR is a function of creatinine</td></tr>
+<tr><td>Cystatin C vs eGFRcys</td><td>582</td><td><strong>−0.023</strong></td><td>strongly negative, same reason</td></tr>
+<tr><td>Creatinine vs cystatin C</td><td>577</td><td><strong>−0.054</strong></td><td>positive — two markers of the same filtration</td></tr>
+<tr><td>eGFR vs eGFRcys</td><td>523</td><td><strong>−0.023</strong></td><td>strongly positive</td></tr>
+</tbody>
+</table>
+
+<p>The measures were simulated independently. The medians are plausible — the shipped eGFR has median 88.8, a CKD-EPI-2021 recomputation from the same file's creatinine gives 85.5 — which is exactly why this needed checking per record rather than by summary. And the unit column confirms the columns were never derived: it labels eGFR <code>μmol/L</code>, which is not a filtration rate at all; the values (median 88.9, range 21–186) are mL/min/1.73m².</p>
+
+<p>The Phase-1 scatter is untouched by this — it reads creatinine and nothing else. The Phase-2 profile is not: as shipped, it would show a participant whose creatinine tripled beside a flat eGFR panel and an unrelated cystatin C trace. That is a demo that teaches the wrong thing.</p>
+
+<div class="decision">
+<p><strong>D9 — eGFR in the nep demo (refines D1).</strong> Derive eGFR and eGFRcys with CKD-EPI 2021 from the file's own creatinine / cystatin C, age and sex, and drop the incoherent shipped columns · ship the source columns as they are with a caveat on the demo page · regenerate the whole kidney panel synthetically from one underlying filtration trajectory.</p>
+<p class="rec"><strong>Recommendation: derive and drop, for Phase 2; nothing needed for Phase 1.</strong> Deriving makes eGFR coherent with the creatinine the scatter stages, by construction, and it is what D1 already chose — this only adds "and therefore the shipped columns go". It does <em>not</em> fix creatinine vs cystatin C, which stays near zero and would need the third option to repair; that is a bigger piece of work than Phase 2 should carry, and the honest interim is a line on the demo page saying the cystatin C panel is illustrative. Worth confirming at the Phase-2 gate rather than now, since Phase 1 does not depend on it.</p>
+</div>
+
+<h2 id="module">6. Module design — Phase 1</h2>
+
+<h3>6.1 Shape</h3>
+
+<p><code>src/nep-explorer.js</code> plus <code>src/nep-explorer/</code>, following the delta-delta / hep-explorer layout exactly: <code>checkInputs → configure → structureData → getScales / getPlugins → new Chart</code>, over the shared shell, with the standard lifecycle (<code>init / setData / setSettings / render / resize / destroy</code>) and registration in <code>src/main.js</code> as <code>nepExplorer</code>.</p>
+
+<pre><code>src/nep-explorer.js          public factory + lifecycle + shell wiring
+src/nep-explorer/
+  configure.js               DEFAULT_SETTINGS, syncSettings, the stages + units settings
+  checkInputs.js             required columns, the creatinine measure, unit resolvability
+  structureData.js           records → one staged participant per point
+  getScales.js               axis domains, the 3.5× / 0.3-visible floors, tick labels
+  getPlugins.js              stageZonesPlugin, the ≥4 mg/dL mark, selection borders
+src/data/schema/nep-explorer.json   the data schema, per the house convention</code></pre>
+
+<h3>6.2 structureData</h3>
+
+<p>One reduce per <code>setData</code>, producing one row per participant:</p>
+
+<pre><code>{ id, baseline, baselineVisit, max, maxVisit, maxDay,
+  fold, delta,            // delta in mg/dL, or null when the unit is unknown
+  foldStage, deltaStage, stage,   // stage = worse of the two, plus the ≥4 rule
+  absoluteRule }          // true when max ≥ 4.0 mg/dL</code></pre>
+
+<p>Records drop, counted and exportable, when: the value is non-numeric; the participant has no resolvable baseline; the participant has no post-baseline record. The unit is resolved per record before any comparison (§4).</p>
+
+<h3>6.3 The chart</h3>
+
+<ul>
+  <li><strong>Axes.</strong> x = fold change, domain <code>[0, max(3.5, observed)]</code> so all three fold cut-points are always on screen — the R chart's floor, worth keeping because it is what makes an all-Stage-0 study readable as "nothing here" rather than "nothing plotted". y = absolute change in mg/dL, domain <code>[min(0, observed), max(0.4, observed)]</code> per D6. Ticks are labelled at the cut-points (<code>1.5×</code>, <code>2.0×</code>, <code>3.0×</code>; <code>0.3 mg/dL</code>).</li>
+  <li><strong><code>stageZonesPlugin</code></strong> — a <code>beforeDatasetsDraw</code> plugin painting the zones from §3's geometry, largest stage first, so points are always drawn on top. Same hook and the same "read the live scales, paint in pixel space" technique as hep-explorer's <code>quadrantPlugin</code> and outlier-explorer's normal-range band; the difference is filled regions rather than cut-lines. Zone labels sit in the left margin of each band and can be hidden, as <code>quadrant_labels</code> already does.</li>
+  <li><strong>Colours.</strong> The source uses ColorBrewer YlOrRd (<code>#ffeda0</code> / <code>#feb24c</code> / <code>#f03b20</code>). Stage is ordinal severity, so it takes the house status ramp rather than a categorical slot, at a background-appropriate opacity, and every zone is labelled — never colour alone.</li>
+  <li><strong>Marks.</strong> One point per participant. The ≥ 4.0 mg/dL rule gets a distinct marker (D5). Click selects, dispatching the shell's <code>participantsSelected</code> event — which is the seam Phase 2 mounts onto, so Phase 1 wires it even though the profile is not built yet.</li>
+  <li><strong>Tooltip.</strong> The source's seven lines, kept: participant, KDIGO stage, fold change, delta stage, absolute change, baseline, maximum, and the visit/day the maximum came from.</li>
+</ul>
+
+<h3>6.4 The summary table</h3>
+
+<p>The R app's table is not a cross-tabulation, as the assessment described it — it is two marginal distributions sharing a stage row label: Stage 0–3 down the side, then <em>N</em> and <em>%</em> for the fold-change staging and <em>N</em> and <em>%</em> for the delta staging. Keep that shape, in the shell's listing area, with a third pair for the combined stage (the one the zones show), because with D4's ladder the combined column is what a reviewer reads off the chart.</p>
+
+<h2 id="phase2">7. Phase 2 preview — the patient profile</h2>
+
+<p>Not in scope for Phase 1 and gated on D9, but two things belong on the record now because they change what Phase 1 should leave behind.</p>
+
+<p><strong>It should be the participant-profile module, not a bespoke panel.</strong> <a href="https://github.com/jwildfire/obot.roadmap/issues/75">#75</a> shipped the shared profile as a right rail with a labs-over-time chart, a measure table and an AE block, adopted by eight renderers. nepExplorer's profile is five small-multiple panels grouped by measure family (creatinine + cystatin C, eGFR + eGFRcys, related electrolytes, blood pressure, urine ACR) with KDIGO reference lines. The right question at the Phase-2 gate is whether that becomes a <em>measure-group</em> option on the shared profile rather than a second profile implementation. Phase 1 keeps the seam open by dispatching the standard selection event.</p>
+
+<p><strong>A third source trap, for whoever picks Phase 2 up.</strong> <code>drawPercentChange</code> plots <code>(value − baseline) / baseline</code> — a percent change, where a 1.5× rise is 0.5 — and then draws its KDIGO reference lines at y = 1.5, 2 and 3, which on that scale are 2.5×, 3× and 4×. The "KDIGO Stage 1" line is drawn where Stage 2 nearly begins. Whichever scale Phase 2 picks, the thresholds have to be expressed on the same one.</p>
+
+<h2 id="delivery">8. Delivery and the done gate</h2>
+
+<p>Each row is meant to be shippable on its own. The whole of Phase 1 is one safety.viz implementation issue (drafted, awaiting the design gate) and, per the one-PR-per-session convention, likely one PR to <code>dev</code>.</p>
+
+<table>
+<thead><tr><th>#</th><th>Increment</th><th>Depends on</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>adnep.csv</code> generator branch + <code>DATA_SOURCES.md</code> section (D8)</td><td>—</td></tr>
+<tr><td>2</td><td>Module skeleton: settings, <code>checkInputs</code>, schema, shell, registration in <code>main.js</code></td><td>—</td></tr>
+<tr><td>3</td><td>Unit resolution and the mg/dL contract, including the refuse-to-guess path (§4)</td><td>2</td></tr>
+<tr><td>4</td><td><code>structureData</code>: baseline resolution (D7), per-participant maxima, staging (D4, D5), dropped-record accounting (D6)</td><td>3</td></tr>
+<tr><td>5</td><td>Scales, <code>stageZonesPlugin</code>, marks, tooltip, selection dispatch</td><td>4</td></tr>
+<tr><td>6</td><td>Summary table in the listing area (§6.4)</td><td>4</td></tr>
+<tr><td>7</td><td><code>requirements/nep-explorer.md</code> matrix (§9)</td><td>—</td></tr>
+<tr><td>8</td><td>Done gate: gallery demo + guide page, evidence page with Linux baselines, API reference, coverage doc</td><td>all</td></tr>
+</tbody>
+</table>
+
+<p>Two evidence notes. The ≥ 4.0 mg/dL rule fires on no participant in either dataset, so it needs a unit test on synthetic input (D5). And the unknown-unit fallback cannot be reached from a demo whose units are all known, so it needs one too — both are the kind of branch that ships untested precisely because the demo looks complete.</p>
+
+<h2 id="matrix">9. Requirement matrix plan</h2>
+
+<p><code>safety.viz/requirements/nep-explorer.md</code>, on the <code>NEP-&lt;AREA&gt;-&lt;NNN&gt;</code> base-ID scheme so the evidence pages resolve each row by exact ID, structured like <code>qt-explorer.md</code> — the closest precedent, being the other phased port of a SafetyGraphics Shiny app.</p>
+
+<table>
+<thead><tr><th>Area</th><th>Covers</th><th>Increment</th></tr></thead>
+<tbody>
+<tr><td><code>NEP-CFG-*</code></td><td>Settings, defaults, the <code>stages</code> and <code>units</code> objects, <code>measure_values</code> resolution</td><td>2, 3</td></tr>
+<tr><td><code>NEP-UNIT-*</code></td><td>Per-record conversion, string normalization, the unknown-unit suppression path</td><td>3</td></tr>
+<tr><td><code>NEP-DATA-*</code></td><td>Baseline resolution and fallback, per-participant maxima, dropped records and their export</td><td>4</td></tr>
+<tr><td><code>NEP-STAGE-*</code></td><td>Fold ladder, the 0.3 mg/dL trigger, the ≥ 4.0 mg/dL rule, the combined stage</td><td>4</td></tr>
+<tr><td><code>NEP-ZONE-*</code></td><td>Zone geometry and paint order, labels, the axis floors, colour and labelling rules</td><td>5</td></tr>
+<tr><td><code>NEP-SCAT-*</code></td><td>Marks, tooltip contents, selection and the dispatched event</td><td>5</td></tr>
+<tr><td><code>NEP-TBL-*</code></td><td>Summary table rows, the three N/% pairs, empty-stage rows</td><td>6</td></tr>
+</tbody>
+</table>
+
+<p>Where a row exists because the port <em>diverges</em> from the R source — the staging ladder, the negative-delta domain, the mark-based ≥ 4 rule — the matrix row says so in its Notes, with §3 as the citation. That is the record that keeps "we fixed their bug" from reading like "we got it wrong" at review time three months from now.</p>
+
+<h2 id="risks">10. Risks and what this design does not settle</h2>
+
+<ul>
+  <li><strong>A fifth demo dataset is a real cost, and it pulls against <a href="https://github.com/jwildfire/safety.viz/issues/89">#89</a>.</strong> That issue's DEMO-4 wants the extracts published as one versioned, checksummed artifact for downstream repos to vendor; every renderer-specific CSV makes that contract wider. D8 accepts the cost for the reasons given, but the fourth exception should not be granted without a plan — and whoever picks up #89 should treat <code>adnep.csv</code> as in scope for the artifact definition, not outside it.</li>
+  <li><strong>The KDIGO time window is not implemented, here or upstream.</strong> KDIGO stages an acute injury — the 0.3 mg/dL rise is defined <em>within 48 hours</em>, the fold change within 7 days. Neither the R app nor this design applies a window; both take the maximum over the whole study. That is a screening simplification, not the criteria, and the guide page has to say so plainly, the way the QT guide says its ΔΔ CI is not the regulatory bound.</li>
+  <li><strong>Clinical sign-off on the ladder.</strong> D4 changes the staging a nepExplorer user sees. It is defensible from the criteria and from the source's own chart, but it is a clinical call presented by an agent reading R code, and it should be confirmed by someone who owns the clinical content before the evidence page claims KDIGO conformance.</li>
+  <li><strong>Cystatin C coherence stays broken</strong> under D9's recommendation, and Phase 2's profile will show it. The fix is a synthetic regeneration nobody has scoped.</li>
+  <li><strong>The gsm.safety widget binding</strong> is out of scope for both phases, on that package's own cadence, as with every renderer so far.</li>
+</ul>
+
+<hr style="margin:2.5rem 0 1.5rem;border:0;border-top:1px solid var(--rule)">
+<p class="meta">Drafted by Claude Code using Opus 5 and reviewed by @jwildfire.</p>
+
+</body>
+</html>
