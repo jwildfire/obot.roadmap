@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Session report 2026-07-28-2 · obot</title>
+<style>
+  :root {
+    --ground:#faf8f5; --panel:#fff; --panel-2:#f3f0eb; --ink:#26221c; --ink-2:#5c564c;
+    --ink-3:#8a8378; --line:#e4dfd6; --accent:#c2540a; --accent-ink:#a34406; --accent-tint:#faeadd;
+    --good:#1a7f4b; --good-tint:#e2f2e8; --warn:#8a6100; --warn-tint:#f7ecd0;
+    --idle:#6b7280; --idle-tint:#ecebe7; --bad:#b3261e; --bad-tint:#f9e4e2;
+    --agent-orange:#d97706; --agent-green:#1a7f4b; --agent-pink:#d0459b; --agent-blue:#2563eb;
+    --agent-purple:#7c3aed; --agent-none:#9a938a;
+    --shadow:0 1px 2px rgba(38,34,28,.05),0 4px 14px rgba(38,34,28,.04);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#191712; --panel:#211e18; --panel-2:#2a2620; --ink:#ece7dd; --ink-2:#b3aa9b;
+      --ink-3:#7d7568; --line:#363129; --accent:#f08c3e; --accent-ink:#f3a163; --accent-tint:#38281a;
+      --good:#58c389; --good-tint:#1d3227; --warn:#e3b341; --warn-tint:#362d17;
+      --idle:#9aa2ad; --idle-tint:#2b2925; --bad:#e5736c; --bad-tint:#3a201e;
+      --agent-orange:#f59e0b; --agent-green:#58c389; --agent-pink:#ec6cb9; --agent-blue:#60a5fa;
+      --agent-purple:#a78bfa; --agent-none:#857d71; --shadow:none;
+    }
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:14px;
+         line-height:1.5; margin:0; padding:24px 20px 48px; }
+  a { color:var(--accent-ink); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  code { font-family:var(--mono); font-size:.9em; background:var(--panel-2); border-radius:4px; padding:0 4px; }
+  .wrap { max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+  header { display:flex; flex-direction:column; gap:10px; }
+  .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); }
+  .masthead { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  h1 { font-size:26px; font-weight:650; margin:0; letter-spacing:-.01em; }
+  h1 .ws { color:var(--ink-3); font-weight:400; }
+  .header-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .mode { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden;
+          font-family:var(--mono); font-size:11.5px; }
+  .mode span { padding:4px 12px; color:var(--ink-3); }
+  .mode .on { background:var(--accent-tint); color:var(--accent-ink); font-weight:600; }
+  .stamp { font-family:var(--mono); font-size:11.5px; color:var(--ink-3); }
+  .banner { display:flex; align-items:center; gap:10px; background:var(--warn-tint); color:var(--warn);
+            border:1px solid color-mix(in srgb,var(--warn) 30%,transparent); border-radius:8px;
+            padding:9px 14px; font-size:13px; font-weight:500; }
+  .banner.ok { background:var(--good-tint); color:var(--good); border-color:color-mix(in srgb,var(--good) 30%,transparent); }
+  .banner .dot { flex:none; width:8px; height:8px; border-radius:50%; background:currentColor; }
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .tile { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
+          padding:14px 16px 12px; display:flex; flex-direction:column; gap:2px; }
+  .tile .label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+  .tile .value { font-size:27px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .tile .value small { font-size:15px; font-weight:500; color:var(--ink-3); }
+  .tile .sub { font-size:12px; color:var(--ink-2); }
+  .grid { display:grid; grid-template-columns:1.15fr 1fr; gap:16px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
+  .panel-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+                padding:12px 16px 10px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .panel-head h2 { font-size:14px; font-weight:650; margin:0; display:inline-flex; align-items:center; gap:6px; }
+  .src { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .panel-body { padding:12px 16px 14px; display:flex; flex-direction:column; gap:8px; }
+  .group-label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+                 color:var(--ink-3); padding:6px 0 2px; }
+
+  /* drill-downs */
+  summary { cursor:pointer; }
+  summary::-webkit-details-marker { display:none; }
+  summary { list-style:none; }
+  .tw { flex:none; display:inline-block; font-size:10px; color:var(--ink-3); transition:transform .12s ease; width:10px; }
+  details[open] > summary .tw { transform:rotate(90deg); }
+  .drill { padding:8px 4px 6px 26px; font-size:12.5px; color:var(--ink-2); display:flex; flex-direction:column; gap:7px; }
+
+  /* priorities */
+  details.pri > summary { display:flex; align-items:center; gap:8px; padding:4px 0; min-width:0; }
+  details.pri.is-done .crop { color:var(--ink-3); text-decoration:line-through; }
+  .box { flex:none; width:14px; height:14px; border-radius:4px; border:1.5px solid var(--ink-3); position:relative; }
+  .box.none { border-style:dotted; }
+  .box.done { background:var(--good); border-color:var(--good); }
+  .box.done::after { content:""; position:absolute; left:4px; top:1px; width:3px; height:7px;
+                     border:solid var(--panel); border-width:0 2px 2px 0; transform:rotate(40deg); }
+  .num { font-family:var(--mono); font-size:11.5px; color:var(--ink-3); flex:none; min-width:14px; text-align:right; }
+  .crop { flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; }
+  .chips { flex:none; display:inline-flex; gap:4px; max-width:45%; overflow:hidden; }
+  .prose-line { margin:0; font-size:12px; color:var(--ink-3); }
+
+  /* agent↔priority chips */
+  .agchip { font-family:var(--mono); font-size:10px; border-radius:999px; padding:1px 7px; white-space:nowrap;
+            color:var(--c); border:1px solid color-mix(in srgb, var(--c) 55%, transparent);
+            background:color-mix(in srgb, var(--c) 10%, transparent);
+            max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+  .pchip { font-family:var(--mono); font-size:10px; border-radius:999px; padding:1px 7px; white-space:nowrap;
+           color:var(--accent-ink); border:1px solid var(--line); background:var(--accent-tint); }
+
+  /* agents */
+  .agents { display:flex; flex-direction:column; gap:6px; }
+  details.agent { border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+  details.agent > summary { display:flex; align-items:center; gap:8px; padding:8px 10px; min-width:0; }
+  details.agent > .drill { padding:2px 12px 10px 28px; }
+  .agent-dot { flex:none; width:9px; height:9px; border-radius:50%; }
+  .agent-name { font-family:var(--mono); font-size:12.5px; font-weight:600; overflow:hidden;
+                text-overflow:ellipsis; white-space:nowrap; flex:1 1 auto; min-width:0; }
+  .agent-fullname { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .pill { margin-left:auto; flex:none; display:inline-flex; align-items:center; gap:5px;
+          font-size:11px; font-weight:600; border-radius:999px; padding:2px 9px; }
+  .pill i { font-style:normal; font-size:10px; }
+  .pill.working { background:var(--good-tint); color:var(--good); }
+  .pill.blocked { background:var(--warn-tint); color:var(--warn); }
+  .pill.failed { background:var(--bad-tint); color:var(--bad); }
+  .pill.done, .pill.idle { background:var(--idle-tint); color:var(--idle); }
+  .agent-detail { font-size:12px; color:var(--ink-2); }
+  .agent-meta { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:11px;
+                color:var(--ink-3); font-variant-numeric:tabular-nums; flex-wrap:wrap; }
+  .tokbar { flex:1 1 60px; min-width:50px; max-width:120px; height:4px; border-radius:2px; background:var(--panel-2); overflow:hidden; }
+  .tokbar b { display:block; height:100%; border-radius:2px; }
+  .agent-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .refchip { font-family:var(--mono); font-size:11px; white-space:nowrap; background:var(--panel-2);
+             border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--accent-ink); }
+
+  /* accomplishments */
+  .accomplish { border-color:color-mix(in srgb, var(--good) 35%, var(--line)); }
+  .acc-row { display:flex; align-items:baseline; gap:8px; font-size:13px; min-width:0; }
+  .acc-row time { font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  .crop-inline { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .closed-badge { flex:none; font-size:11px; font-weight:600; color:var(--good); background:var(--good-tint);
+                  border-radius:999px; padding:1px 8px; }
+  .ev { flex:none; font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  details.acc-more > summary { display:flex; align-items:center; gap:8px; font-size:13px; padding:2px 0; }
+
+  /* collapsed secondary panels */
+  details.fold > summary.panel-head { border-bottom:none; }
+  details.fold[open] > summary.panel-head { border-bottom:1px solid var(--line); }
+
+  ul.todo { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .todo li { display:flex; gap:10px; align-items:baseline; font-size:13px; }
+  .todo li .box { align-self:flex-start; margin-top:3px; }
+  .todo .txt { min-width:0; }
+  .todo li.is-done .txt { color:var(--ink-3); text-decoration:line-through; }
+  .todo time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; }
+  .feed { display:flex; flex-direction:column; }
+  .evt { display:flex; gap:12px; align-items:baseline; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .evt:last-child { border-bottom:none; }
+  .evt time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; width:68px; }
+  .evt .txt { min-width:0; }
+  .repo { font-family:var(--mono); font-size:10.5px; border-radius:4px; padding:1px 6px;
+          background:var(--panel-2); border:1px solid var(--line); color:var(--ink-2); white-space:nowrap; }
+  .prose { font-size:13px; color:var(--ink-2); }
+  .prose div { margin-bottom:4px; }
+  .notice { font-family:var(--mono); font-size:11.5px; color:var(--warn); margin:0; }
+  .foot { font-family:var(--mono); font-size:11px; color:var(--ink-3); text-align:center; }
+
+  /* chat panel (#77) — live mode with the session-chat server only */
+  .chat .panel-body { gap:10px; }
+  .chat-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .chat-bar select { font-family:var(--mono); font-size:11.5px; color:var(--ink); background:var(--panel-2);
+                     border:1px solid var(--line); border-radius:6px; padding:4px 8px; max-width:min(100%,30rem); }
+  .chat-bar button { font:inherit; font-size:11.5px; color:var(--accent-ink); background:var(--accent-tint);
+                     border:1px solid color-mix(in srgb,var(--accent) 30%,transparent); border-radius:6px;
+                     padding:4px 10px; cursor:pointer; }
+  .chat-state { font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  .chat-dot { width:7px; height:7px; border-radius:50%; background:var(--idle); display:inline-block; }
+  .chat-dot.live { background:var(--good); animation:chatpulse 1.1s ease-in-out infinite; }
+  .chat-dot.wait { background:var(--warn); }
+  .chat-dot.off { background:var(--bad); }
+  @keyframes chatpulse { 0%,100% { opacity:1; } 50% { opacity:.25; } }
+  .chat-log { display:flex; flex-direction:column; gap:8px; max-height:22rem; overflow-y:auto;
+              background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .chat-empty { margin:0; font-size:12.5px; color:var(--ink-3); }
+  .chat-msg { display:flex; flex-direction:column; gap:2px; font-size:13px; }
+  .chat-msg .chat-who { font-family:var(--mono); font-size:10.5px; letter-spacing:.08em;
+                        text-transform:uppercase; color:var(--ink-3); }
+  .chat-msg .chat-text { white-space:pre-wrap; word-break:break-word; }
+  .chat-msg.user .chat-text { border-left:2px solid var(--accent); padding-left:8px; }
+  .chat-msg.agent .chat-text { border-left:2px solid var(--line); padding-left:8px; color:var(--ink); }
+  .chat-activity { font-family:var(--mono); font-size:11px; color:var(--ink-3); white-space:nowrap;
+                   overflow:hidden; text-overflow:ellipsis; }
+  .chat-compose { display:flex; gap:8px; align-items:flex-end; }
+  .chat-compose textarea { flex:1; font:inherit; font-size:13px; color:var(--ink); background:var(--panel);
+                           border:1px solid var(--line); border-radius:8px; padding:8px 10px; resize:vertical; }
+  .chat-compose textarea:focus { outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent); outline-offset:-1px; }
+  .chat-compose button { font:inherit; font-size:13px; font-weight:600; color:#fff; background:var(--accent);
+                         border:none; border-radius:8px; padding:9px 18px; cursor:pointer; }
+  .chat-compose button:disabled { background:var(--idle); cursor:not-allowed; }
+
+  @media (max-width:940px) { .grid { grid-template-columns:1fr; } .tiles { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">obot session hub · session report</div>
+  <div class="masthead">
+    <h1>Session 2026-07-28-2 <span class="ws">· obot2</span></h1>
+    <div class="header-meta">
+      <span class="mode"><span class="">● Live</span><span class="on">Report</span></span>
+      <span class="stamp">generated 12:27 PM</span>
+    </div>
+  </div>
+  <div class="banner ok"><span class="dot"></span>Session report — frozen at wrapup. 2 agents, 163.8k tokens, 0 closures/releases.</div>
+</header>
+
+
+
+<section class="tiles hub-live" id="hub-tiles">
+  <div class="tile"><span class="label">Priorities</span><span class="value">8 <small>open · 1 done</small></span><span class="sub">scratchpad kickoff list</span></div>
+  <div class="tile"><span class="label">Agents</span><span class="value">2</span><span class="sub">1 working · 1 done</span></div>
+  <div class="tile"><span class="label">Tokens</span><span class="value">163.8k</span><span class="sub">across 2 reporting sessions</span></div>
+  <div class="tile"><span class="label">Closure</span><span class="value">0</span><span class="sub">0 merged · 0 closed · 0 released</span></div>
+</section>
+
+<div class="hub-live" id="hub-main">
+<section class="panel accomplish">
+  <div class="panel-head"><h2>Accomplishments</h2><span class="src">derived: releases + requirement issues + closures since session start</span></div>
+  <div class="panel-body"><div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/35">hub#35</a> <span class="crop-inline">Requirement: nepExplorer migration — KDIGO kidney-safety explorer for safety.viz</span> <span class="ev">updated</span></div></div>
+</section>
+
+<div class="grid">
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Priorities</h2><span class="src">scratchpad · ## Overview — click a row for detail</span></div>
+  <div class="panel-body"><p class="prose-line">🦾🤖 Autonomous session (<code>--auto</code>) — directed focus: <strong>build the nep-explorer in safety.viz</strong> → selected increment = pipeline-advancement on <a href="https://github.com/jwildfire/obot.roadmap/issues/35">hub#35</a> (goal <a href="https://github.com/jwildfire/obot.roadmap/issues/78">#78</a> <code>charts</code>): Data Requirement + <code>35_design.html</code> + sv implementation-issue draft, publish to site, end at review gate. Implementation ineligible (design unsigned; ultracode launch = hard skip). Exit criteria: #35 Data Requirement + Design sections filled, design doc live on Pages, sv issue drafted (not posted), review-gate comment on #35, heartbeat close-out + unattended wrapup draft.</p>
+<div class="group-label">Agent-actionable</div><details class="pri is-done" id="p1">
+  <summary><span class="tw">▸</span><span class="box done"></span><span class="num">1</span><span class="crop">DIRECTED (done — at review gate): hub#35 nepExplorer pipeline-advancement (D1–D3 locked 07-19; assessment = phased GO; no sv issue exists yet — confirmed by delta)</span><span class="chips"><a class="agchip" href="#agent-b92354cc" style="--c:var(--agent-green)">nep-design</a></span></summary>
+  <div class="drill"><strong>DIRECTED (done — at review gate):</strong> <a href="https://github.com/jwildfire/obot.roadmap/issues/35">hub#35</a> nepExplorer pipeline-advancement (D1–D3 locked 07-19; assessment = phased GO; no sv issue exists yet — confirmed by delta)</div>
+</details>
+<details class="pri" id="p2">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">2</span><span class="crop">hub#132 tail — apply proposal repo-issue edges, place #44/#94/#83/#81, retire applied entries (Development)</span><span class="chips"></span></summary>
+  <div class="drill"><a href="https://github.com/jwildfire/obot.roadmap/issues/132">hub#132</a> tail — apply proposal repo-issue edges, place #44/#94/#83/#81, retire applied entries (Development)</div>
+</details>
+<details class="pri" id="p3">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">3</span><span class="crop">hub#133 — GOALLESS transitive-ancestor walk + rule test (auto)</span><span class="chips"></span></summary>
+  <div class="drill"><a href="https://github.com/jwildfire/obot.roadmap/issues/133">hub#133</a> — GOALLESS transitive-ancestor walk + rule test (<code>auto</code>)</div>
+</details>
+<details class="pri" id="p4">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">4</span><span class="crop">CSR arc: hub#131 study-repo design Qs → open.csr#22 CR composer (goal #112; siblings csr#23–25 filed 07-27)</span><span class="chips"></span></summary>
+  <div class="drill">CSR arc: <a href="https://github.com/jwildfire/obot.roadmap/issues/131">hub#131</a> study-repo design Qs → <a href="https://github.com/jwildfire/open.csr/issues/22">open.csr#22</a> CR composer (goal #112; siblings csr#23–25 filed 07-27)</div>
+</details>
+<details class="pri" id="p5">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">5</span><span class="crop">Carried: open.csr#14 pages race · sv#54/#55 · hub#122/#123 drafting · oa#32/#36/#37/#54</span><span class="chips"></span></summary>
+  <div class="drill">Carried: open.csr#14 pages race · sv#54/#55 · hub#122/#123 drafting · oa#32/#36/#37/#54</div>
+</details>
+<div class="group-label">Waiting on @jwildfire</div><details class="pri" id="p6">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">6</span><span class="crop">Drive the audit queue (node obot.agent/tools/session-hub/session-audit.mjs --open) — OPEN-IN-RELEASED closes #2/#3/#21/#129 (delta re-confirmed all four)</span><span class="chips"></span></summary>
+  <div class="drill">Drive the audit queue (<code>node obot.agent/tools/session-hub/session-audit.mjs --open</code>) — OPEN-IN-RELEASED closes <a href="https://github.com/jwildfire/obot.roadmap/issues/2">#2</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/21">#21</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/129">#129</a> (delta re-confirmed all four)</div>
+</details>
+<details class="pri" id="p7">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">7</span><span class="crop">Reviews: sv#119 draft · oa#52 ready · #127/#128 · #114 D3/D4/D5 · #58 close · unreviewed 07-27 --auto diary · NEW: 07-28 design-directions artifact (goal #79, at review gate from the morning session)</span><span class="chips"></span></summary>
+  <div class="drill">Reviews: <a href="https://github.com/jwildfire/safety.viz/pull/119">sv#119</a> draft · <a href="https://github.com/jwildfire/obot.agent/pull/52">oa#52</a> ready · <a href="https://github.com/jwildfire/obot.roadmap/issues/127">#127</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/128">#128</a> · #114 D3/D4/D5 · #58 close · unreviewed 07-27 <code>--auto</code> diary · NEW: 07-28 <a href="https://claude.ai/code/artifact/78fa9d02-7066-4685-98e4-e972fa00d0be">design-directions artifact</a> (goal #79, at review gate from the morning session)</div>
+</details>
+<details class="pri" id="p8">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">8</span><span class="crop">App-goal blocker: obotclaw App install on jwildfire/open.gismo</span><span class="chips"></span></summary>
+  <div class="drill">App-goal blocker: obotclaw App install on <code>jwildfire/open.gismo</code></div>
+</details>
+<details class="pri" id="p9">
+  <summary><span class="tw">▸</span><span class="box"></span><span class="num">9</span><span class="crop">Confirm keynote goal #72 stays registry-less (display-only per 07-25)</span><span class="chips"></span></summary>
+  <div class="drill">Confirm keynote goal #72 stays registry-less (display-only per 07-25)</div>
+</details></div>
+</section>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Roadmap activity</h2><span class="src">1 events · gh sweep, all events</span></summary>
+  <div class="panel-body"><div class="feed"><div class="evt"><time>12:20 PM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/35">#35</a> Requirement: nepExplorer migration — KDIGO kidney-safety explorer for safety.viz — <strong>updated</strong></span></div></div></div>
+</details></div>
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Agents</h2><span class="src">state.json + claude agents — P# links to the priority</span></div>
+  <div class="panel-body"><div class="agents"><details class="agent" id="agent-f1e062e6">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-purple)"></span><span class="agent-name">nep-explorer</span><span class="chips"></span><span class="pill working"><i>●</i>working</span></summary>
+  <div class="drill">
+    <div class="agent-detail">delta agent verifying findings; composing final report</div>
+    <div class="agent-meta">
+      <span>11:33 AM–12:26 PM (54m)</span>
+      <span class="tokbar"><b style="width:18%;background:var(--agent-purple)"></b></span><span>73.3k tok</span>
+      <span>opus-5</span>
+      
+    </div>
+    
+    <div class="agent-fullname">🦾🤖 2026-07-28 nep-explorer</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-b92354cc">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">nep-design</span><span class="chips"><a class="pchip" href="#p1">P1</a></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">Phase 1 readiness report: D1 RhoInc dataset ready (73/24/10/3 stages), kidney measures independent (r=0.005), DELTA_STAGE label bug identified, 6 decisions blocking scope (D4–D9) drafted in <code>.github/drafts/safety.viz/ISSUE_N_nep-phase1.md</code></div>
+    <div class="agent-meta">
+      <span>11:42 AM–12:20 PM (39m)</span>
+      <span class="tokbar"><b style="width:23%;background:var(--agent-green)"></b></span><span>90.5k tok</span>
+      <span>opus</span>
+      
+    </div>
+    
+    <div class="agent-fullname">👯🤖 2026-07-28 nep-design</div>
+    
+  </div>
+</details></div></div>
+</section>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Notes</h2><span class="src">0 · scratchpad · ## Notes</span></summary>
+  <div class="panel-body"><p class="notice">⚠ no ## Notes section in today’s scratchpad</p></div>
+</details>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Scaffold</h2><span class="src">2 · scratchpad · ## Scaffold</span></summary>
+  <div class="panel-body"><ul class="todo"><li><span class="txt">👯🤖 sibling heartbeat lines land at EOF (under ## Scaffold) because the session-spawn contract says append via shell <code>&gt;&gt;</code>. Second occurrence — flagged at the 07-27 wrapup, still unfixed. Fix = have the heartbeat insert above <code>## Todo</code>, or give siblings a helper script instead of raw <code>&gt;&gt;</code>.</span></li>
+<li><span class="txt">merge-gate-guard matches its trigger phrase anywhere in a Bash command string, including inside quoted briefing text describing the policy. Blocked a spawn today. Fix = scope the match to the command position.</span></li></ul></div>
+</details>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Next session</h2><span class="src">memory + last diary</span></summary>
+  <div class="panel-body"><div class="prose">Written at the <strong>2026-07-27 session-2 wrapup</strong> (job dba06e09; roadmap-cleanup → live audit-lane iteration night; diary <code>2026-07-27-2</code>). Supersedes the csr-research list — its review gate cleared same-day (framework approved in-session, #130 decomposed to open.csr#22–25 + hub#131; hub#118 token paste is DEAD — the no-token rework replaced it; worktree allowlist DONE as blanket settings rules).
+
+<strong>Agent-actionable:</strong>
+
+1. <strong><a href="https://github.com/jwildfire/obot.roadmap/issues/132">hub#132</a> tail</strong> (Development, under goal #73): apply the proposal&#39;s repo-issue edges (open.csr#1/#2→#111, open.csr#14→#113, sv#89→#25, sv#104→#37, oa#32→#24, oa#36→#123, oa#37/#54→#18), place #44/#94→#31, #83→#88, #81→#2 (requirement parents — out of GOALLESS scope), retire applied entries from <code>scripts/roadmap-proposal.json</code>, decide-with-Jeremy the flags (sv#83–88 UX batch new requirement under #78?).
+2. <strong><a href="https://github.com/jwildfire/obot.roadmap/issues/133">hub#133</a></strong> GOALLESS transitive-ancestor walk + rule test (<code>auto</code> — autonomous-eligible).
+3. <strong>CSR arc:</strong> hub#131 study-repo design questions → open.csr#22 CR composer (implementable, no new infra) — goal #112, parent #130.
+4. Carried: open.csr#14 pages race (→#113) · sv#54/#55 · hub#122/#123 drafting · oa#36/#37/#54 · oa#32 (--date flag — bit again at this wrapup, symlink workaround used).
+
+<strong>Jeremy&#39;s queue:</strong>
+
+1. <strong>Drive the audit queue</strong> (127.0.0.1:4182/audit — start server: <code>node obot.agent/tools/session-hub/session-audit.mjs --open</code>): OPEN-IN-RELEASED ×4 = the #2/#3/#21/#129 close calls; queue+submit is his surface now.
+2. Reviews: sv#119 draft · oa#52 ready · #127/#128 requirements · #114 D3/D4/D5 · #58 close · unreviewed 07-27 <code>--auto</code> diary.
+3. Confirm keynote goal #72 stays registry-less (display-only per 07-25).
+
+<strong>Scaffold flagged, not applied:</strong> scratchpad heartbeat blind-appends to EOF — session-2 log lines landed under <code>## Scaffold</code> after the morning session&#39;s Digest; proposed fix = insert above <code>## Todo</code> in the hook.
+
+Related: [[roadmap-audit-framework]] (no-token queue lane), [[goals-as-issues]] (population status), [[open-csr-workstream]], [[keynote-plan]].</div>
+<div class="group-label">last diary (2026-07-27.md)</div><div class="prose"><div>1. <strong>@jwildfire review gate:</strong> the <a href="https://jwildfire.github.io/obot.roadmap/reports/csr-change-request-framework-2026-07-27/framework.html">framework</a> direction + D-CR1–D-CR5 (each has a draft position) · <a href="https://github.com/jwildfire/obot.roadmap/issues/130">#130</a> assumptions · the goal-#112 sub-issue click.</div><div>2. <strong>On design sign-off:</strong> decompose #130 into the five increment sub-issues; increment 1 (CR composer) is implementable immediately with no new infrastructure.</div><div>3. <strong>Carried:</strong> open.csr#14 pages race (fix → port to safety.viz) · sv#119 draft PR · oa#52 review · hub#127/#128 triage-filed requirements · hub#129 close (board already Released) · worktree allowlist paste (still missing from settings) · the 07-25 roadmap-day directive.</div></div></div>
+</details></div>
+</div>
+
+<div class="foot">frozen operational record · pairs with diary/2026-07-28-2.md · boundary: session-init marker @ 11:40 (11:40 AM) · session-hub (obot.agent v0.2 · <a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>)</div>
+</div>
+</div>
+
+
+</body>
+</html>
