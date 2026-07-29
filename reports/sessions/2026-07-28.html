@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Session report 2026-07-28 · obot</title>
+<style>
+  :root {
+    --ground:#faf8f5; --panel:#fff; --panel-2:#f3f0eb; --ink:#26221c; --ink-2:#5c564c;
+    --ink-3:#8a8378; --line:#e4dfd6; --accent:#c2540a; --accent-ink:#a34406; --accent-tint:#faeadd;
+    --good:#1a7f4b; --good-tint:#e2f2e8; --warn:#8a6100; --warn-tint:#f7ecd0;
+    --idle:#6b7280; --idle-tint:#ecebe7; --bad:#b3261e; --bad-tint:#f9e4e2;
+    --agent-orange:#d97706; --agent-green:#1a7f4b; --agent-pink:#d0459b; --agent-blue:#2563eb;
+    --agent-purple:#7c3aed; --agent-none:#9a938a;
+    --shadow:0 1px 2px rgba(38,34,28,.05),0 4px 14px rgba(38,34,28,.04);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#191712; --panel:#211e18; --panel-2:#2a2620; --ink:#ece7dd; --ink-2:#b3aa9b;
+      --ink-3:#7d7568; --line:#363129; --accent:#f08c3e; --accent-ink:#f3a163; --accent-tint:#38281a;
+      --good:#58c389; --good-tint:#1d3227; --warn:#e3b341; --warn-tint:#362d17;
+      --idle:#9aa2ad; --idle-tint:#2b2925; --bad:#e5736c; --bad-tint:#3a201e;
+      --agent-orange:#f59e0b; --agent-green:#58c389; --agent-pink:#ec6cb9; --agent-blue:#60a5fa;
+      --agent-purple:#a78bfa; --agent-none:#857d71; --shadow:none;
+    }
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:14px;
+         line-height:1.5; margin:0; padding:24px 20px 48px; }
+  a { color:var(--accent-ink); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  code { font-family:var(--mono); font-size:.9em; background:var(--panel-2); border-radius:4px; padding:0 4px; }
+  .wrap { max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+  header { display:flex; flex-direction:column; gap:10px; }
+  .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); }
+  .masthead { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  h1 { font-size:26px; font-weight:650; margin:0; letter-spacing:-.01em; }
+  h1 .ws { color:var(--ink-3); font-weight:400; }
+  .header-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .mode { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden;
+          font-family:var(--mono); font-size:11.5px; }
+  .mode span { padding:4px 12px; color:var(--ink-3); }
+  .mode .on { background:var(--accent-tint); color:var(--accent-ink); font-weight:600; }
+  .stamp { font-family:var(--mono); font-size:11.5px; color:var(--ink-3); }
+  .banner { display:flex; align-items:center; gap:10px; background:var(--warn-tint); color:var(--warn);
+            border:1px solid color-mix(in srgb,var(--warn) 30%,transparent); border-radius:8px;
+            padding:9px 14px; font-size:13px; font-weight:500; }
+  .banner.ok { background:var(--good-tint); color:var(--good); border-color:color-mix(in srgb,var(--good) 30%,transparent); }
+  .banner .dot { flex:none; width:8px; height:8px; border-radius:50%; background:currentColor; }
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .tile { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
+          padding:14px 16px 12px; display:flex; flex-direction:column; gap:2px; }
+  .tile .label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+  .tile .value { font-size:27px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .tile .value small { font-size:15px; font-weight:500; color:var(--ink-3); }
+  .tile .sub { font-size:12px; color:var(--ink-2); }
+  .grid { display:grid; grid-template-columns:1.15fr 1fr; gap:16px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
+  .panel-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+                padding:12px 16px 10px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .panel-head h2 { font-size:14px; font-weight:650; margin:0; display:inline-flex; align-items:center; gap:6px; }
+  .src { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .panel-body { padding:12px 16px 14px; display:flex; flex-direction:column; gap:8px; }
+  .group-label { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+                 color:var(--ink-3); padding:6px 0 2px; }
+
+  /* drill-downs */
+  summary { cursor:pointer; }
+  summary::-webkit-details-marker { display:none; }
+  summary { list-style:none; }
+  .tw { flex:none; display:inline-block; font-size:10px; color:var(--ink-3); transition:transform .12s ease; width:10px; }
+  details[open] > summary .tw { transform:rotate(90deg); }
+  .drill { padding:8px 4px 6px 26px; font-size:12.5px; color:var(--ink-2); display:flex; flex-direction:column; gap:7px; }
+
+  /* priorities */
+  details.pri > summary { display:flex; align-items:center; gap:8px; padding:4px 0; min-width:0; }
+  details.pri.is-done .crop { color:var(--ink-3); text-decoration:line-through; }
+  .box { flex:none; width:14px; height:14px; border-radius:4px; border:1.5px solid var(--ink-3); position:relative; }
+  .box.none { border-style:dotted; }
+  .box.done { background:var(--good); border-color:var(--good); }
+  .box.done::after { content:""; position:absolute; left:4px; top:1px; width:3px; height:7px;
+                     border:solid var(--panel); border-width:0 2px 2px 0; transform:rotate(40deg); }
+  .num { font-family:var(--mono); font-size:11.5px; color:var(--ink-3); flex:none; min-width:14px; text-align:right; }
+  .crop { flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; }
+  .chips { flex:none; display:inline-flex; gap:4px; max-width:45%; overflow:hidden; }
+  .prose-line { margin:0; font-size:12px; color:var(--ink-3); }
+
+  /* agent↔priority chips */
+  .agchip { font-family:var(--mono); font-size:10px; border-radius:999px; padding:1px 7px; white-space:nowrap;
+            color:var(--c); border:1px solid color-mix(in srgb, var(--c) 55%, transparent);
+            background:color-mix(in srgb, var(--c) 10%, transparent);
+            max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+  .pchip { font-family:var(--mono); font-size:10px; border-radius:999px; padding:1px 7px; white-space:nowrap;
+           color:var(--accent-ink); border:1px solid var(--line); background:var(--accent-tint); }
+
+  /* agents */
+  .agents { display:flex; flex-direction:column; gap:6px; }
+  details.agent { border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+  details.agent > summary { display:flex; align-items:center; gap:8px; padding:8px 10px; min-width:0; }
+  details.agent > .drill { padding:2px 12px 10px 28px; }
+  .agent-dot { flex:none; width:9px; height:9px; border-radius:50%; }
+  .agent-name { font-family:var(--mono); font-size:12.5px; font-weight:600; overflow:hidden;
+                text-overflow:ellipsis; white-space:nowrap; flex:1 1 auto; min-width:0; }
+  .agent-fullname { font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .pill { margin-left:auto; flex:none; display:inline-flex; align-items:center; gap:5px;
+          font-size:11px; font-weight:600; border-radius:999px; padding:2px 9px; }
+  .pill i { font-style:normal; font-size:10px; }
+  .pill.working { background:var(--good-tint); color:var(--good); }
+  .pill.blocked { background:var(--warn-tint); color:var(--warn); }
+  .pill.failed { background:var(--bad-tint); color:var(--bad); }
+  .pill.done, .pill.idle { background:var(--idle-tint); color:var(--idle); }
+  .agent-detail { font-size:12px; color:var(--ink-2); }
+  .agent-meta { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:11px;
+                color:var(--ink-3); font-variant-numeric:tabular-nums; flex-wrap:wrap; }
+  .tokbar { flex:1 1 60px; min-width:50px; max-width:120px; height:4px; border-radius:2px; background:var(--panel-2); overflow:hidden; }
+  .tokbar b { display:block; height:100%; border-radius:2px; }
+  .agent-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .refchip { font-family:var(--mono); font-size:11px; white-space:nowrap; background:var(--panel-2);
+             border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--accent-ink); }
+
+  /* accomplishments */
+  .accomplish { border-color:color-mix(in srgb, var(--good) 35%, var(--line)); }
+  .acc-row { display:flex; align-items:baseline; gap:8px; font-size:13px; min-width:0; }
+  .acc-row time { font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  .crop-inline { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .closed-badge { flex:none; font-size:11px; font-weight:600; color:var(--good); background:var(--good-tint);
+                  border-radius:999px; padding:1px 8px; }
+  .ev { flex:none; font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  details.acc-more > summary { display:flex; align-items:center; gap:8px; font-size:13px; padding:2px 0; }
+
+  /* collapsed secondary panels */
+  details.fold > summary.panel-head { border-bottom:none; }
+  details.fold[open] > summary.panel-head { border-bottom:1px solid var(--line); }
+
+  ul.todo { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .todo li { display:flex; gap:10px; align-items:baseline; font-size:13px; }
+  .todo li .box { align-self:flex-start; margin-top:3px; }
+  .todo .txt { min-width:0; }
+  .todo li.is-done .txt { color:var(--ink-3); text-decoration:line-through; }
+  .todo time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; }
+  .feed { display:flex; flex-direction:column; }
+  .evt { display:flex; gap:12px; align-items:baseline; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .evt:last-child { border-bottom:none; }
+  .evt time { font-family:var(--mono); font-size:11px; color:var(--ink-3); flex:none; width:68px; }
+  .evt .txt { min-width:0; }
+  .repo { font-family:var(--mono); font-size:10.5px; border-radius:4px; padding:1px 6px;
+          background:var(--panel-2); border:1px solid var(--line); color:var(--ink-2); white-space:nowrap; }
+  .prose { font-size:13px; color:var(--ink-2); }
+  .prose div { margin-bottom:4px; }
+  .notice { font-family:var(--mono); font-size:11.5px; color:var(--warn); margin:0; }
+  .foot { font-family:var(--mono); font-size:11px; color:var(--ink-3); text-align:center; }
+
+  /* chat panel (#77) — live mode with the session-chat server only */
+  .chat .panel-body { gap:10px; }
+  .chat-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .chat-bar select { font-family:var(--mono); font-size:11.5px; color:var(--ink); background:var(--panel-2);
+                     border:1px solid var(--line); border-radius:6px; padding:4px 8px; max-width:min(100%,30rem); }
+  .chat-bar button { font:inherit; font-size:11.5px; color:var(--accent-ink); background:var(--accent-tint);
+                     border:1px solid color-mix(in srgb,var(--accent) 30%,transparent); border-radius:6px;
+                     padding:4px 10px; cursor:pointer; }
+  .chat-state { font-family:var(--mono); font-size:11px; color:var(--ink-3); }
+  .chat-dot { width:7px; height:7px; border-radius:50%; background:var(--idle); display:inline-block; }
+  .chat-dot.live { background:var(--good); animation:chatpulse 1.1s ease-in-out infinite; }
+  .chat-dot.wait { background:var(--warn); }
+  .chat-dot.off { background:var(--bad); }
+  @keyframes chatpulse { 0%,100% { opacity:1; } 50% { opacity:.25; } }
+  .chat-log { display:flex; flex-direction:column; gap:8px; max-height:22rem; overflow-y:auto;
+              background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .chat-empty { margin:0; font-size:12.5px; color:var(--ink-3); }
+  .chat-msg { display:flex; flex-direction:column; gap:2px; font-size:13px; }
+  .chat-msg .chat-who { font-family:var(--mono); font-size:10.5px; letter-spacing:.08em;
+                        text-transform:uppercase; color:var(--ink-3); }
+  .chat-msg .chat-text { white-space:pre-wrap; word-break:break-word; }
+  .chat-msg.user .chat-text { border-left:2px solid var(--accent); padding-left:8px; }
+  .chat-msg.agent .chat-text { border-left:2px solid var(--line); padding-left:8px; color:var(--ink); }
+  .chat-activity { font-family:var(--mono); font-size:11px; color:var(--ink-3); white-space:nowrap;
+                   overflow:hidden; text-overflow:ellipsis; }
+  .chat-compose { display:flex; gap:8px; align-items:flex-end; }
+  .chat-compose textarea { flex:1; font:inherit; font-size:13px; color:var(--ink); background:var(--panel);
+                           border:1px solid var(--line); border-radius:8px; padding:8px 10px; resize:vertical; }
+  .chat-compose textarea:focus { outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent); outline-offset:-1px; }
+  .chat-compose button { font:inherit; font-size:13px; font-weight:600; color:#fff; background:var(--accent);
+                         border:none; border-radius:8px; padding:9px 18px; cursor:pointer; }
+  .chat-compose button:disabled { background:var(--idle); cursor:not-allowed; }
+
+  @media (max-width:940px) { .grid { grid-template-columns:1fr; } .tiles { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">obot session hub · session report</div>
+  <div class="masthead">
+    <h1>Session 2026-07-28 <span class="ws">· obot2</span></h1>
+    <div class="header-meta">
+      <span class="mode"><span class="">● Live</span><span class="on">Report</span></span>
+      <span class="stamp">generated 7:45 AM</span>
+    </div>
+  </div>
+  <div class="banner ok"><span class="dot"></span>Session report — frozen at wrapup. 9 agents, 2828.5k tokens, 7 closures/releases.</div>
+</header>
+
+
+
+<section class="tiles hub-live" id="hub-tiles">
+  <div class="tile"><span class="label">Priorities</span><span class="value">0 <small>open · 0 done</small></span><span class="sub">scratchpad kickoff list</span></div>
+  <div class="tile"><span class="label">Agents</span><span class="value">9</span><span class="sub">1 blocked · 7 done · 1 working</span></div>
+  <div class="tile"><span class="label">Tokens</span><span class="value">2828.5k</span><span class="sub">across 9 reporting sessions</span></div>
+  <div class="tile"><span class="label">Closure</span><span class="value">7</span><span class="sub">6 merged · 1 closed · 0 released</span></div>
+</section>
+
+<div class="hub-live" id="hub-main">
+<section class="panel accomplish">
+  <div class="panel-head"><h2>Accomplishments</h2><span class="src">derived: releases + requirement issues + closures since session start</span></div>
+  <div class="panel-body"><div class="acc-row">📋 <a href="https://github.com/jwildfire/obot.roadmap/issues/140">hub#140</a> <span class="crop-inline">Requirement: one write-policy decision per repo — unify merge tiers and autonomy grants into profiles</span> <span class="ev">opened</span></div>
+<details class="acc-more"><summary><span class="tw">▸</span>✅ <strong>6 PRs merged · 1 issues closed</strong></summary><div class="drill"><div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/59">obot.agent#59</a> <span class="crop-inline">Add demo-301 to merge-policy.json at the standard tier</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/demo-301/pull/1">demo-301#1</a> <span class="crop-inline">Run the safety metrics, and merge the chart phase into 4_modules</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/61">obot.agent#61</a> <span class="crop-inline">One write-policy decision per repo: unify merge tiers and autonomy grants into profiles</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/64">obot.agent#64</a> <span class="crop-inline">Add /session-idea and /session-reviews, and short /s-* aliases for the session-command family</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/71">obot.agent#71</a> <span class="crop-inline">session-wrapup: file actionable blockers and risks as tracked issues</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/pull/72">obot.agent#72</a> <span class="crop-inline">session-wrapup: every documented risk carries a proposed mitigation</span> <span class="closed-badge">✓ merged</span></div>
+<div class="acc-row"><a href="https://github.com/jwildfire/obot.agent/issues/60">obot.agent#60</a> <span class="crop-inline">obot-auto: the autonomy-halt kill switch is not found when run from a linked worktree</span> <span class="closed-badge">✓ closed</span></div></div></details></div>
+</section>
+
+<div class="grid">
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Priorities</h2><span class="src">scratchpad · ## Overview — click a row for detail</span></div>
+  <div class="panel-body"></div>
+</section>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Roadmap activity</h2><span class="src">21 events · gh sweep, all events</span></summary>
+  <div class="panel-body"><div class="feed"><div class="evt"><time>5:44 AM</time><span class="repo">open.gismo</span><span class="txt"><a href="https://github.com/jwildfire/open.gismo/pull/4">PR #4</a> Lead RBQM with the sites that need attention, and give the study real QTLs — <strong>updated</strong></span></div>
+<div class="evt"><time>5:48 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/59">PR #59</a> Add demo-301 to merge-policy.json at the standard tier — <strong>merged</strong></span></div>
+<div class="evt"><time>5:48 AM</time><span class="repo">demo-301</span><span class="txt"><a href="https://github.com/jwildfire/demo-301/pull/1">PR #1</a> Run the safety metrics, and merge the chart phase into 4_modules — <strong>merged</strong></span></div>
+<div class="evt"><time>6:16 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/62">PR #62</a> Add gsm.qtl report_qtl.yaml upstream audit drafts — <strong>opened</strong></span></div>
+<div class="evt"><time>6:34 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/63">PR #63</a> Remote Control: fix the obot-auto lane, verify the global setting, document the lane that was actually broken — <strong>opened</strong></span></div>
+<div class="evt"><time>6:35 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/54">#54</a> obot-auto: spawn the --auto lead with --remote-control — <strong>updated</strong></span></div>
+<div class="evt"><time>6:35 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/61">PR #61</a> One write-policy decision per repo: unify merge tiers and autonomy grants into profiles — <strong>merged</strong></span></div>
+<div class="evt"><time>6:35 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/60">#60</a> obot-auto: the autonomy-halt kill switch is not found when run from a linked worktree — <strong>closed</strong></span></div>
+<div class="evt"><time>6:42 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/65">#65</a> obot-merge does not enforce the policy carve-out: a PR rewriting policy.json merges on the standard lane — <strong>opened</strong></span></div>
+<div class="evt"><time>6:48 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/64">PR #64</a> Add /session-idea and /session-reviews, and short /s-* aliases for the session-command family — <strong>merged</strong></span></div>
+<div class="evt"><time>7:17 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/66">#66</a> session-wrapup: refresh the analytics usage data at post time — <strong>opened</strong></span></div>
+<div class="evt"><time>7:18 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/67">PR #67</a> session-wrapup: refresh the analytics usage data at post time — <strong>opened</strong></span></div>
+<div class="evt"><time>7:25 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/68">#68</a> Worktree layout: sibling {repo}-worktrees/ dirs trigger permission-root prompts in unattended sessions — <strong>opened</strong></span></div>
+<div class="evt"><time>7:26 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/69">PR #69</a> Relocate linked worktrees to {repo}/.claude/worktrees/ (ends permission-root prompts) — <strong>opened</strong></span></div>
+<div class="evt"><time>7:28 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/140">#140</a> Requirement: one write-policy decision per repo — unify merge tiers and autonomy grants into profiles — <strong>opened</strong></span></div>
+<div class="evt"><time>7:30 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/71">PR #71</a> session-wrapup: file actionable blockers and risks as tracked issues — <strong>merged</strong></span></div>
+<div class="evt"><time>7:36 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/144">#144</a> Blinding is a per-module property, not an app-wide one — <strong>opened</strong></span></div>
+<div class="evt"><time>7:36 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/142">#142</a> Agent-derived clinical thresholds need human sign-off before we claim conformance — <strong>opened</strong></span></div>
+<div class="evt"><time>7:37 AM</time><span class="repo">obot.roadmap</span><span class="txt"><a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a> demo-301&#39;s published site branch is ~302MB — revisit before it is the fork template — <strong>opened</strong></span></div>
+<div class="evt"><time>7:37 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/issues/70">#70</a> Parallel siblings share one R library and silently clobber each other&#39;s installs — <strong>opened</strong></span></div>
+<div class="evt"><time>7:38 AM</time><span class="repo">obot.agent</span><span class="txt"><a href="https://github.com/jwildfire/obot.agent/pull/72">PR #72</a> session-wrapup: every documented risk carries a proposed mitigation — <strong>merged</strong></span></div></div></div>
+</details></div>
+  <div class="col"><section class="panel">
+  <div class="panel-head"><h2>Agents</h2><span class="src">state.json + claude agents — P# links to the priority</span></div>
+  <div class="panel-body"><div class="agents"><details class="agent" id="agent-96636d0f">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-orange)"></span><span class="agent-name">lead</span><span class="chips"></span><span class="pill idle"><i>?</i>blocked</span></summary>
+  <div class="drill">
+    <div class="agent-detail">approved. post.</div>
+    <div class="agent-meta">
+      <span>9:26 AM–7:45 AM (22h 18m)</span>
+      <span class="tokbar"><b style="width:100%;background:var(--agent-orange)"></b></span><span>1984.9k tok</span>
+      <span>opus-5</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://claude.ai/code/artifact/22e57954-56b9-4fb4-8441-5effea89978f">claude.ai/code/artifact/22e57954-56b9-4fb4-8441-5effea89978f</a> <a class="refchip" href="https://claude.ai/code/artifact/dc1042d1-12b9-447e-a10c-2d4dd00801e8">claude.ai/code/artifact/dc1042d1-12b9-447e-a10c-2d4dd00801e8</a> <a class="refchip" href="https://claude.ai/code/artifact/78fa9d02-7066-4685-98e4-e972fa00d0be">claude.ai/code/artifact/78fa9d02-7066-4685-98e4-e972fa00d0be</a> <a class="refchip" href="https://github.com/jwildfire/open.gismo/pull/1">PR open.gismo#1</a> <a class="refchip" href="https://github.com/jwildfire/open.gismo/pull/2">PR open.gismo#2</a> <a class="refchip" href="https://github.com/jwildfire/open.gismo/pull/3">PR open.gismo#3</a> <a class="refchip" href="https://claude.ai/code/artifact/f7688476-6a4c-498a-81ff-785a75a71205">claude.ai/code/artifact/f7688476-6a4c-498a-81ff-785a75a71205</a> <a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/71">PR obot.agent#71</a> <a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/72">PR obot.agent#72</a></div>
+    <div class="agent-fullname">😺🤖 2026-07-28</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-b87941fa">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">rbqm-overview</span><span class="chips"></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">open.gismo PR #4 merged; demo-301 live at jwildfire.github.io/demo-301; obot.agent #63 (remote-control fix) ready to review; #62 (gsm.qtl audit) draft awaiting filing</div>
+    <div class="agent-meta">
+      <span>10:26 PM–6:58 AM (8h 33m)</span>
+      <span class="tokbar"><b style="width:56%;background:var(--agent-green)"></b></span><span>222.9k tok</span>
+      <span>opus</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/open.gismo/pull/4">PR open.gismo#4</a></div>
+    <div class="agent-fullname">👯🤖 2026-07-28 rbqm-overview</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-adb4fd6b">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">safety-metrics</span><span class="chips"></span><span class="pill working"><i>●</i>working</span></summary>
+  <div class="drill">
+    <div class="agent-detail">snapshots published (cut 1+2); policy-unify job running at approval gate</div>
+    <div class="agent-meta">
+      <span>10:26 PM–6:41 AM (8h 16m)</span>
+      <span class="tokbar"><b style="width:58%;background:var(--agent-green)"></b></span><span>231.1k tok</span>
+      <span>opus</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/gsm.safety/pull/47">PR gsm.safety#47</a> <a class="refchip" href="https://github.com/jwildfire/open.gismo/pull/5">PR open.gismo#5</a> <a class="refchip" href="https://github.com/jwildfire/demo-301/pull/1">PR demo-301#1</a> <a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/59">PR obot.agent#59</a></div>
+    <div class="agent-fullname">👯🤖 2026-07-28 safety-metrics</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-18793f41">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">qtl-upstream-audit</span><span class="chips"></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">GSM QTL audit report shipped: hub live, PR #62 draft with findings + repro scripts + logs</div>
+    <div class="agent-meta">
+      <span>5:51 AM–6:56 AM (1h 5m)</span>
+      <span class="tokbar"><b style="width:27%;background:var(--agent-green)"></b></span><span>106.3k tok</span>
+      <span>opus</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://claude.ai/code/artifact/291bf61c-d669-460a-9a5d-025374a296c8">claude.ai/code/artifact/291bf61c-d669-460a-9a5d-025374a296c8</a> <a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/62">PR obot.agent#62</a></div>
+    <div class="agent-fullname">👯🤖 2026-07-29 qtl-upstream-audit</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-7a6ba17e">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">policy-unify</span><span class="chips"></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">migration complete (80/80 verdicts identical, drift repos promoted to auto, obot.agent#65 filed)</div>
+    <div class="agent-meta">
+      <span>5:55 AM–6:44 AM (49m)</span>
+      <span class="tokbar"><b style="width:22%;background:var(--agent-green)"></b></span><span>87.1k tok</span>
+      <span>opus</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/61">PR obot.agent#61</a></div>
+    <div class="agent-fullname">👯🤖 2026-07-29 policy-unify</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-62c329ba">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">rc-debug</span><span class="chips"></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">PR #63: added --remote-control flag to obot-auto; elevated spawn bridge check to step 5 + triage table in remote-control.md</div>
+    <div class="agent-meta">
+      <span>6:06 AM–6:42 AM (36m)</span>
+      <span class="tokbar"><b style="width:13%;background:var(--agent-green)"></b></span><span>50.9k tok</span>
+      <span>opus</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/63">PR obot.agent#63</a></div>
+    <div class="agent-fullname">👯🤖 2026-07-29 rc-debug</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-b6850733">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-green)"></span><span class="agent-name">session-commands</span><span class="chips"></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">PR #64 merged to obot.agent main; s-* aliases and session-idea/session-reviews skills now available</div>
+    <div class="agent-meta">
+      <span>6:11 AM–6:48 AM (37m)</span>
+      <span class="tokbar"><b style="width:24%;background:var(--agent-green)"></b></span><span>94.2k tok</span>
+      <span>opus</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/64">PR obot.agent#64</a></div>
+    <div class="agent-fullname">👯🤖 2026-07-29 session-commands</div>
+    
+  </div>
+</details>
+<details class="agent" id="agent-8ca03560">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-none)"></span><span class="agent-name">analytics page refresh schedule</span><span class="chips"></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">Analytics page refreshed through 07-29 (deploy green); wrapup-as-heartbeat shipped as obot.agent#66 + draft PR#67 awaiting Jeremy&#39;s merge approval.</div>
+    <div class="agent-meta">
+      <span>6:58 AM–7:19 AM (20m)</span>
+      <span class="tokbar"><b style="width:6%;background:var(--agent-none)"></b></span><span>22.3k tok</span>
+      <span>fable</span>
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/67">PR obot.agent#67</a></div>
+    
+    
+  </div>
+</details>
+<details class="agent" id="agent-ea373d9e">
+  <summary><span class="tw">▸</span><span class="agent-dot" style="background:var(--agent-none)"></span><span class="agent-name">worktree permission standardization</span><span class="chips"></span><span class="pill done"><i>✓</i>done</span></summary>
+  <div class="drill">
+    <div class="agent-detail">Worktree layout standardized on {repo}/.claude/worktrees/ (CLAUDE.md override live now + obot.agent PR #69 draft, issue #68) — ends the recurring permission-root relocation clicks in unattended sessions.</div>
+    <div class="agent-meta">
+      <span>7:19 AM–7:26 AM (8m)</span>
+      <span class="tokbar"><b style="width:7%;background:var(--agent-none)"></b></span><span>28.8k tok</span>
+      
+      
+    </div>
+    <div class="agent-chips"><a class="refchip" href="https://github.com/jwildfire/obot.agent/pull/69">PR obot.agent#69</a></div>
+    
+    
+  </div>
+</details></div></div>
+</section>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Notes</h2><span class="src">0 · scratchpad · ## Notes</span></summary>
+  <div class="panel-body"><p class="notice">⚠ no ## Notes section in today’s scratchpad</p></div>
+</details>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Scaffold</h2><span class="src">0 · scratchpad · ## Scaffold</span></summary>
+  <div class="panel-body"><p class="notice">⚠ no ## Scaffold section yet — capture with &quot;scaffold: …&quot;</p></div>
+</details>
+<details class="panel fold">
+  <summary class="panel-head"><h2><span class="tw">▸</span>Next session</h2><span class="src">memory + last diary</span></summary>
+  <div class="panel-body"><div class="prose">Written at the <strong>2026-07-28 session-2 wrapup</strong> (job f1e062e6; autonomous <code>--auto</code> run, directed focus &quot;build the nep-explorer&quot;; diary <code>2026-07-28-2</code>). Supersedes the 07-27 session-2 list — its agent items (#132 tail, #133, open.csr#22) were <strong>not</strong> worked and carry forward unchanged.
+
+<strong>The new blocker, and the session&#39;s main output:</strong> <a href="https://github.com/jwildfire/obot.roadmap/issues/35">hub#35</a> (nepExplorer) advanced through Data Requirement + Design and now sits at Jeremy&#39;s review gate with <strong>D4–D9 open</strong>. Nothing else about nepExplorer can move until those are signed: the drafted safety.viz Phase-1 issue is held local-only (<code>.github/drafts/safety.viz/ISSUE_N_nep-phase1.md</code>) because three of the six decisions change its scope. Design doc: &lt;https://jwildfire.github.io/obot.roadmap/requirements/design/35_design.html&gt;. See [[nep-explorer-workstream]] for the measured findings — the headline is that current demo data <strong>cannot</strong> demo the chart (max fold change 1.455×, zero above the 1.5× line), which is what D8 turns on, and D8 collides with safety.viz#89&#39;s one-dataset goal.
+
+<strong>Agent-actionable:</strong>
+
+1. <strong><a href="https://github.com/jwildfire/obot.roadmap/issues/132">hub#132</a> tail</strong> (Development, under goal #73): apply the proposal&#39;s repo-issue edges (open.csr#1/#2→#111, open.csr#14→#113, sv#89→#25, sv#104→#37, oa#32→#24, oa#36→#123, oa#37/#54→#18), place #44/#94→#31, #83→#88, #81→#2, retire applied entries from <code>scripts/roadmap-proposal.json</code>.
+2. <strong><a href="https://github.com/jwildfire/obot.roadmap/issues/133">hub#133</a></strong> GOALLESS transitive-ancestor walk + rule test (<code>auto</code> — autonomous-eligible).
+3. <strong>CSR arc:</strong> hub#131 study-repo design questions → open.csr#22 CR composer — goal #112, parent #130.
+4. <strong>New scaffold issues, both small:</strong> <a href="https://github.com/jwildfire/obot.agent/issues/57">oa#57</a> sibling heartbeat lines land at EOF under <code>## Scaffold</code> instead of <code>## Session log</code> (second occurrence; fix = a helper that inserts above <code>## Todo</code> and stamps its own time) · <a href="https://github.com/jwildfire/obot.agent/issues/58">oa#58</a> <code>merge-gate-guard</code> matches its trigger phrase inside quoted prose, blocking spawns whose briefing merely describes the policy.
+5. Carried: open.csr#14 pages race · sv#54/#55 · hub#122/#123 drafting · oa#32/#36/#37/#54.
+
+<strong>Jeremy&#39;s queue:</strong>
+
+1. <strong>Sign off #35 D4–D9</strong> — unblocks a clean one-session nepExplorer Phase-1 build. D8 (which demo dataset) needs his judgment most.
+2. <strong>Drive the audit queue</strong> (<code>node obot.agent/tools/session-hub/session-audit.mjs --open</code>): OPEN-IN-RELEASED ×4 = the #2/#3/#21/#129 close calls.
+3. Reviews: the two 07-28 app-design artifacts (goal #79, from the morning session) · sv#119 draft · oa#52 · #127/#128 · #114 D3/D4/D5 · #58 close · unreviewed 07-27 <strong>and</strong> 07-28-2 <code>--auto</code> diaries.
+4. Confirm keynote goal #72 stays registry-less (display-only per 07-25).
+
+<strong>Known gaps from this session:</strong> the morning session (job 96636d0f) ended without a wrapup, so today has no <code>2026-07-28.md</code> diary — its two artifacts live only in the shared scratchpad. A Pages deploy hung ~15 min on <code>r-lib/actions/setup-r@v2</code> and had to be cancelled (bot token lacks Actions write; user token needed) — watch for a repeat.
+
+Related: [[nep-explorer-workstream]], [[roadmap-audit-framework]], [[goals-as-issues]], [[open-csr-workstream]], [[keynote-plan]].</div>
+<div class="group-label">last diary (2026-07-28.md)</div><div class="prose"><div>1. <strong>Review the overnight build in Chrome</strong> — the RBQM overview, the Safety page and the case-review queue are all live but unreviewed; the three-state acceptable-ranges panel is the piece most worth a look.</div><div>2. <strong>Triage the four new risk trackers</strong> (<a href="https://github.com/jwildfire/obot.roadmap/issues/142">#142</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/144">#144</a>/<a href="https://github.com/jwildfire/obot.agent/issues/70">obot.agent#70</a>), all filed to Backlog; and <strong><a href="https://github.com/jwildfire/obot.roadmap/issues/134">#134</a></strong>&#39;s stage move is @jwildfire&#39;s call now that demo-301 v0 has substantially shipped.</div><div>3. <strong>Finish the gsm.qtl upstream hand-off</strong> — <a href="https://github.com/jwildfire/obot.agent/pull/62">obot.agent#62</a> carries the audit drafts for the three genuine defects (two of the original five were retracted after re-measuring); the drafts still need to reach Gilead-BioStats, which is outside the org and therefore yours to post.</div><div>4. <strong><a href="https://github.com/jwildfire/obot.roadmap/issues/139">#139</a> action log</strong> — filed to backlog; D1 (where mutable review state persists without breaking snapshot immutability) is the question that unlocks it.</div><div>5. <strong>Carried from before:</strong> <a href="https://github.com/jwildfire/safety.viz/pull/121">safety.viz#121</a> nep-explorer Phase 1 draft PR · <a href="https://github.com/jwildfire/safety.viz/pull/119">sv#119</a> · <a href="https://github.com/jwildfire/obot.agent/pull/52">oa#52</a> · hub <a href="https://github.com/jwildfire/obot.roadmap/issues/127">#127</a>/<a href="https://github.com/jwildfire/obot.roadmap/issues/128">#128</a> · the OPEN-IN-RELEASED close calls (#2/#3/#21/#129).</div></div></div>
+</details></div>
+</div>
+
+<div class="foot">frozen operational record · pairs with diary/2026-07-28.md · boundary: no marker → local midnight (12:00 AM) · session-hub (obot.agent v0.2 · <a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>)</div>
+</div>
+</div>
+
+
+</body>
+</html>
