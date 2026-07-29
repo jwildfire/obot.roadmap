@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview &amp; domain dashboards — design (2026-07-28)</title>
+<style>
+  :root {
+    --pg-paper: #F4F1EC; --pg-card: #FDFCFA; --pg-ink: #26211B; --pg-muted: #6F6558;
+    --pg-faint: #9C917F; --pg-line: #E2DACC; --pg-accent: #B4470E; --pg-accent-soft: #F4E2D2;
+    --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+    --sans: "Instrument Sans", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+      --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18; }
+  }
+  :root[data-theme="light"] { --pg-paper:#F4F1EC; --pg-card:#FDFCFA; --pg-ink:#26211B; --pg-muted:#6F6558;
+    --pg-faint:#9C917F; --pg-line:#E2DACC; --pg-accent:#B4470E; --pg-accent-soft:#F4E2D2; }
+  :root[data-theme="dark"] { --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+    --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18; }
+  * { box-sizing: border-box; }
+  body { background: var(--pg-paper); color: var(--pg-ink); font-family: var(--sans); line-height:1.55; margin:0; padding:3rem 1.25rem 4.5rem; }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  .prose { max-width: 68ch; }
+  a { color: var(--pg-accent); text-underline-offset:2px; }
+  a:focus-visible { outline:2px solid var(--pg-accent); outline-offset:2px; }
+  code { font-family: var(--mono); font-size:0.85em; background: var(--pg-accent-soft); padding:0.05em 0.3em; border-radius:4px; }
+  .eyebrow { font-family: var(--mono); font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color: var(--pg-accent); margin:0 0 0.55rem; }
+  h1 { font-family: var(--serif); font-weight:400; font-size:clamp(2rem,4.6vw,2.9rem); line-height:1.08; margin:0 0 1rem; text-wrap:balance; }
+  h2 { font-family: var(--serif); font-weight:400; font-size:1.65rem; margin:0 0 0.8rem; }
+  h3 { font-size:1rem; margin:1.5rem 0 0.45rem; }
+  .standfirst { font-size:1.05rem; color: var(--pg-muted); margin:0; }
+  .standfirst strong { color: var(--pg-ink); }
+  section { margin:3.3rem 0 0; }
+  p { margin:0.6rem 0; }
+  .small { font-size:0.86rem; color: var(--pg-muted); }
+  .cap { font-size:0.86rem; color: var(--pg-muted); max-width:78ch; margin:0.4rem 0 0; }
+  .cap b { color: var(--pg-ink); }
+
+  .callout { border:1.5px solid var(--pg-accent); background: var(--pg-accent-soft); border-radius:12px; padding:1.05rem 1.25rem; margin:1.3rem 0; }
+  .callout p { margin:0.3rem 0; }
+  .warn { border:1.5px solid #A8432F; background:rgba(168,67,47,0.07); border-radius:12px; padding:1.05rem 1.25rem; margin:1.3rem 0; }
+  .warn p { margin:0.3rem 0; }
+
+  .tbl-scroll { overflow-x:auto; }
+  table.doc { border-collapse:collapse; width:100%; font-size:0.89rem; min-width:600px; }
+  table.doc th { text-align:left; font-family:var(--mono); font-size:0.67rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--pg-muted); font-weight:500; padding:0 1rem 0.45rem 0; border-bottom:1px solid var(--pg-line); }
+  table.doc td { padding:0.55rem 1rem 0.55rem 0; border-bottom:1px solid var(--pg-line); vertical-align:top; }
+  table.doc td.id { font-family:var(--mono); font-size:0.78rem; white-space:nowrap; color:var(--pg-muted); }
+  .r { font-size:0.85rem; color:var(--pg-muted); }
+  .r b { color: var(--pg-accent); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:0.63rem; letter-spacing:0.07em; text-transform:uppercase; padding:0.1rem 0.45rem; border-radius:99px; white-space:nowrap; }
+  .tag.now { background:#E4EFE6; color:#166534; }
+  .tag.pipe { border:1px solid #92400E; color:#92400E; }
+  .tag.no { border:1px solid #A8432F; color:#A8432F; }
+  @media (prefers-color-scheme: dark) {
+    .tag.now { background:#23301F; color:#82B58F; }
+    .tag.pipe { border-color:#CFA84D; color:#CFA84D; }
+    .tag.no { border-color:#D07A64; color:#D07A64; }
+  }
+
+  /* ---------- app mock ---------- */
+  .shot { overflow-x:auto; margin:0.7rem -0.25rem 0.6rem; padding:0.25rem; }
+  .mock { min-width:880px; max-width:960px; border:1px solid var(--pg-line); border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(30,20,10,0.07); }
+  .app {
+    --a-side:#271810; --a-side-ink:#F3E9DD; --a-side-dim:#C4AE97;
+    --a-paper:#FAF6F1; --a-panel:#F5EFE7; --a-ink:#2A211B; --a-muted:#6F6052; --a-line:#E5DCCE;
+    --a-accent:#C2410C; --a-bright:#F97316;
+    --a-good:#166534; --a-good-bg:#E4EFE6; --a-warn:#92400E; --a-warn-bg:#F6EAD8; --a-bad:#B91C1C; --a-bad-bg:#F8E3E1;
+    --a-blue:#0072B2; --a-verm:#D55E00;
+    background:var(--a-paper); color:var(--a-ink); font-family:var(--sans); font-size:12.5px; line-height:1.42; display:grid; grid-template-columns:150px 1fr;
+  }
+  .app .serif { font-family:var(--serif); font-weight:400; }
+  .mono { font-family:var(--mono); }
+  .app .side { background:var(--a-side); color:var(--a-side-dim); padding:10px 0; display:flex; flex-direction:column; gap:1px; }
+  .app .side .brand { font-family:var(--serif); font-size:15px; color:var(--a-side-ink); padding:2px 14px 10px; }
+  .app .side .brand em { font-style:normal; color:var(--a-bright); }
+  .app .side span.nav { padding:6px 14px; font-size:11.5px; }
+  .app .side span.on { color:var(--a-side-ink); background:rgba(249,115,22,0.15); border-left:3px solid var(--a-bright); padding-left:11px; font-weight:600; }
+  .app .side .foot { margin-top:auto; font-family:var(--mono); font-size:8.5px; padding:8px 14px 0; color:#7E6553; }
+  .app .main { min-width:0; }
+  .app .head { display:flex; align-items:center; gap:9px; flex-wrap:wrap; padding:7px 14px; background:#fff; border-bottom:1px solid var(--a-line); }
+  .app .head h4 { margin:0; font-family:var(--serif); font-weight:400; font-size:15px; }
+  .app .head .facts { font-family:var(--mono); font-size:9px; color:var(--a-muted); }
+  .app .spacer { flex:1; }
+  .app .chip { font-family:var(--mono); font-size:9px; padding:2px 7px; border-radius:99px; border:1px solid var(--a-line); background:#fff; color:var(--a-muted); white-space:nowrap; }
+  .app .chip.prov { border-color:var(--a-good); color:var(--a-good); }
+  .app .chip.period { border-color:var(--a-accent); color:var(--a-accent); }
+  .app .tl { display:flex; align-items:center; gap:3px; }
+  .app .tl i { width:6px; height:6px; border-radius:50%; background:#CBBFAE; display:inline-block; }
+  .app .tl i.cur { width:9px; height:9px; background:var(--a-bright); }
+  .app .body { padding:11px 14px 14px; }
+  .app h5 { margin:0 0 6px; font-size:9px; font-family:var(--mono); letter-spacing:0.09em; text-transform:uppercase; color:var(--a-muted); font-weight:500; }
+  .app h5 .aside { text-transform:none; letter-spacing:0; font-family:var(--sans); color:var(--a-faint); }
+  .app .secrow { display:flex; align-items:baseline; gap:8px; margin:13px 0 6px; }
+  .app .secrow h6 { margin:0; font-family:var(--serif); font-weight:400; font-size:14px; }
+  .app .secrow a { font-size:10px; color:var(--a-accent); }
+  .app .panel { border:1px solid var(--a-line); border-radius:9px; background:#fff; padding:9px 11px; }
+  .grid2 { display:grid; grid-template-columns:1.25fr 1fr; gap:11px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+  @media (max-width:700px){ .grid2,.grid3,.grid4{grid-template-columns:1fr;} }
+
+  /* tiles */
+  .tiles { display:flex; gap:7px; flex-wrap:wrap; }
+  .tile { border:1px solid var(--a-line); border-radius:9px; background:#fff; padding:7px 11px; display:flex; align-items:baseline; gap:6px; }
+  .tile .n { font-size:19px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .tile .lbl { font-size:9.5px; color:var(--a-muted); text-transform:uppercase; letter-spacing:0.05em; }
+  .tile.red .n{color:var(--a-bad);} .tile.amber .n{color:var(--a-warn);} .tile.ok .n{color:var(--a-good);}
+  .tile .delta { font-family:var(--mono); font-size:9px; }
+
+  /* change chips */
+  .cchip { display:inline-flex; align-items:center; gap:3px; font-family:var(--mono); font-size:9px; padding:1px 6px; border-radius:99px; white-space:nowrap; }
+  .cchip.bad { background:#F8E3E1; color:#8F2B1A; }
+  .cchip.good { background:#E4EFE6; color:#155E34; }
+  .cchip.flat { background:#EFE9DF; color:#6F6052; }
+  .cchip.new { background:#F6EAD8; color:#7A3A0B; }
+
+  /* change ledger */
+  .ledger { font-size:11px; }
+  .ledger .grp { font-family:var(--mono); font-size:9px; letter-spacing:0.07em; text-transform:uppercase; color:var(--a-muted); margin:8px 0 3px; }
+  .ledger .row { display:flex; align-items:center; gap:7px; padding:4px 0; border-bottom:1px solid #EFE8DC; }
+  .ledger .site { font-family:var(--mono); font-size:10px; width:74px; }
+  .ledger .metric { flex:1; min-width:0; }
+  .ledger .st { font-family:var(--mono); font-size:9px; color:var(--a-muted); }
+  .ledger .rev { font-family:var(--mono); font-size:8.5px; border:1px solid var(--a-line); border-radius:4px; padding:0 4px; color:var(--a-muted); }
+
+  /* table */
+  .app table.t { border-collapse:collapse; width:100%; font-size:10.5px; }
+  .app table.t th { text-align:left; font-family:var(--mono); font-size:8.5px; letter-spacing:0.07em; text-transform:uppercase; color:var(--a-muted); font-weight:500; padding:0 8px 3px 0; border-bottom:1px solid var(--a-line); }
+  .app table.t td { padding:4px 8px 4px 0; border-bottom:1px solid #EFE8DC; vertical-align:middle; font-variant-numeric:tabular-nums; }
+  .app .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .dot.r{background:#B91C1C;} .dot.a{background:#92400E;} .dot.g{background:#166534;}
+  .glyph { font-family:var(--mono); font-size:10px; }
+
+  /* legend */
+  .leg { display:flex; gap:12px; flex-wrap:wrap; font-size:9px; color:var(--a-muted); margin-top:5px; }
+  .leg span i { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:3px; }
+
+  /* option cards */
+  .opts { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:1rem; }
+  @media (max-width:800px){ .opts{grid-template-columns:1fr;} }
+  .opt { border:1px solid var(--pg-line); border-radius:11px; background:var(--pg-card); padding:0.9rem 1.05rem; }
+  .opt.pick { border-color:var(--pg-accent); border-width:1.5px; }
+  .opt .kn { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--pg-accent); }
+  .opt h4 { margin:0.2rem 0 0.35rem; font-size:1rem; }
+  .opt p { margin:0.3rem 0; font-size:0.85rem; color:var(--pg-muted); }
+  .opt .fp { font-size:0.78rem; color:var(--pg-faint); margin-top:0.5rem; display:block; }
+
+  footer { margin-top:3.4rem; padding-top:1rem; border-top:1px solid var(--pg-line); font-family:var(--mono); font-size:0.75rem; color:var(--pg-faint); }
+  footer p { margin:0.25rem 0; }
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important;} }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">goal #79 · dashboard design session · 2026-07-28</p>
+    <h1>Overview and domain dashboards: what the study is doing, and what just changed</h1>
+    <p class="standfirst prose">Mockups and open questions for the four top-level pages. Grounded in two research passes: a survey of ~20 commercial and open-source clinical dashboards plus the primary regulatory texts (ICH E6(R3), E8(R1), E9, TransCelerate QTL, FDA RBM Q&amp;A, DMC, DILI and Standard Safety Tables &amp; Figures), and an inventory of what demo-301's snapshots can actually draw today. <strong>Every number in these mockups is real data from the live demo.</strong> Where a panel needs pipeline work that isn't built, it says so on the panel.</p>
+  </header>
+
+  <section>
+    <p class="eyebrow">The thesis</p>
+    <h2>"What changed since last review" is the product</h2>
+    <div class="callout prose">
+      <p>Across roughly twenty products surveyed, <strong>almost nobody ships a since-last-review frame</strong>. The market leads with "real-time, updates automatically" — which structurally <em>precludes</em> the question, because a live view has no stored point to compare against. The exceptions are narrow and instructive: gsm.kri's own flag-transition list, EMA's eRMR (a change column with exactly three values), and Oracle Empirica's since-last-refresh counts.</p>
+      <p>We publish immutable snapshots. That is not a limitation to apologize for — it is the one architecture that answers the question a periodic reviewer actually asks. <strong>So the change frame should be the spine of the Study Overview, not a section inside it</strong>, and a review-period control should sit in the global chrome and re-scope every page beneath it. The closest working model outside clinical software is SonarQube's "new code period": an explicit, user-selectable reference point, with the quality gate scoped to the delta.</p>
+    </div>
+    <p class="cap"><b>Second finding worth naming:</b> funnel plots — the standard statistical answer to "is this site really an outlier" — appear in <b>zero</b> commercial RBQM products. They are purely academic today. That is a cheap, citable differentiator, and it happens to solve our worst data problem (see RBQM below).</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Page 1</p>
+    <h2>Study Overview</h2>
+    <p class="prose">Two jobs, in this order: <strong>what changed since the snapshot you last reviewed</strong>, then <strong>is the study broadly on track</strong>. The review-period control at the top is the page's organizing device — it names the comparison in words, and everything below is scoped to it.</p>
+    <div class="shot"><div class="mock app">
+      <div class="side">
+        <span class="brand">open.<em>gismo</em></span>
+        <span class="nav on">Study Overview</span><span class="nav">RBQM</span><span class="nav">Safety</span><span class="nav">Data Explorer</span>
+        <span class="foot">DEMO-301</span>
+      </div>
+      <div class="main">
+        <div class="head">
+          <h4 class="serif">DEMO-301 — Safety Review</h4>
+          <span class="facts">Phase 2 · 765/1000 participants · 148/150 sites</span>
+          <span class="spacer"></span>
+          <span class="chip period">Comparing ps-001 → ps-002 ▾</span>
+          <span class="tl"><i></i><i class="cur"></i></span>
+          <span class="chip prov">✓ 9c41f2a</span>
+        </div>
+        <div class="body">
+          <div class="grid2">
+            <div class="panel">
+              <h5>Since ps-001 <span class="aside">— 11 changes across 2 domains</span></h5>
+              <div class="ledger">
+                <div class="grp">New — needs review (4)</div>
+                <div class="row"><span class="site">SITE4323</span><span class="metric">AE Rate · Smith, Newtown Square</span><span class="cchip bad">▲ on track → amber</span><span class="rev">review</span></div>
+                <div class="row"><span class="site">SITE7983</span><span class="metric">Query Age</span><span class="cchip bad">▲ amber → red</span><span class="rev">review</span></div>
+                <div class="row"><span class="site">SITE8091</span><span class="metric">Risk Score 21.1 → 28.9</span><span class="cchip bad">▲ worse</span><span class="rev">review</span></div>
+                <div class="row"><span class="site">—</span><span class="metric">Serious AEs 500 → 506</span><span class="cchip flat">within expectation</span><span class="st">no action</span></div>
+                <div class="grp">Persisting — already acknowledged (5)</div>
+                <div class="row"><span class="site">SITE7838</span><span class="metric">Lab Grade 3+ Rate</span><span class="cchip flat">→ red, unchanged</span><span class="st">ack. 07-21 JW</span></div>
+                <div class="grp">Resolved (2)</div>
+                <div class="row"><span class="site">SITE3311</span><span class="metric">SAE Rate · amber → on track</span><span class="cchip good">▼ better</span><span class="st">closed</span></div>
+              </div>
+            </div>
+            <div>
+              <div class="panel" style="margin-bottom:11px">
+                <h5>Study health at ps-002</h5>
+                <div class="tiles">
+                  <div class="tile red"><span class="n">2</span><span class="lbl">Red sites</span><span class="delta cchip flat">= 2</span></div>
+                  <div class="tile amber"><span class="n">39</span><span class="lbl">Amber</span><span class="delta cchip bad">▲ +3</span></div>
+                  <div class="tile ok"><span class="n">109</span><span class="lbl">On track</span></div>
+                </div>
+                <p style="font-size:9.5px;color:var(--a-muted);margin:6px 0 0">617 site × metric cells below accrual threshold — not evaluated.</p>
+              </div>
+              <div class="panel">
+                <h5>Enrolment vs plan <span class="aside">— real curve, drawable today</span></h5>
+                <svg width="100%" height="86" viewBox="0 0 320 86" role="img" aria-label="Cumulative enrolment curve reaching 765 of a 1000 participant target">
+                  <line x1="26" y1="70" x2="312" y2="70" stroke="#D8CDBB"/>
+                  <line x1="26" y1="10" x2="26" y2="70" stroke="#D8CDBB"/>
+                  <line x1="26" y1="14" x2="312" y2="14" stroke="#C9BBA5" stroke-dasharray="3 3"/>
+                  <text x="308" y="11" font-size="7.5" fill="#8A7B68" font-family="ui-monospace,monospace" text-anchor="end">target 1000</text>
+                  <polyline points="26,70 60,66 92,58 124,47 156,38 188,31 220,27 252,25 284,24 300,24" fill="none" stroke="#0072B2" stroke-width="2"/>
+                  <circle cx="300" cy="24" r="3" fill="#0072B2"/>
+                  <text x="296" y="19" font-size="7.5" fill="#2A211B" font-family="ui-monospace,monospace" text-anchor="end">765</text>
+                  <text x="26" y="80" font-size="7" fill="#8A7B68" font-family="ui-monospace,monospace">Jan 2012</text>
+                  <text x="300" y="80" font-size="7" fill="#8A7B68" font-family="ui-monospace,monospace" text-anchor="end">Mar 29</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="secrow"><h6 class="serif">Acceptable ranges (trial level)</h6><a>needs pipeline work →</a></div>
+          <div class="grid3">
+            <div class="panel"><h5>Screen-failure rate</h5><p style="margin:0;font-size:11px"><b>24.0%</b> <span class="cchip flat">within range</span></p><p style="font-size:9px;color:var(--a-muted);margin:3px 0 0">limit 30% · secondary 26%</p></div>
+            <div class="panel"><h5>Withdrawal of consent</h5><p style="margin:0;font-size:11px"><b>2.1%</b> <span class="cchip flat">within range</span></p><p style="font-size:9px;color:var(--a-muted);margin:3px 0 0">limit 5% · secondary 4%</p></div>
+            <div class="panel" style="border-color:#92400E"><h5>Important deviations</h5><p style="margin:0;font-size:11px"><b>7.8%</b> <span class="cchip new">trending to limit</span></p><p style="font-size:9px;color:var(--a-muted);margin:3px 0 0">limit 10% · secondary 8%</p></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap"><b>What's real:</b> the flag tiles, the eleven change rows, and the enrolment curve (765 participants over 87 days against the 1000 target) are all computed from the live snapshots today. <b>What isn't:</b> the acceptable-ranges strip is drawn from ICH E6(R3)'s three states (within range / trending toward limit / breached) but <b>no QTL workflow runs in the demo</b> — see the RBQM section. <b>The review-state column</b> ("review", "ack. 07-21 JW", "closed") is the single biggest gap in the open-source ecosystem and the hardest question in this document — Q3.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Page 2</p>
+    <h2>RBQM</h2>
+    <p class="prose">You asked for the riskiest sites by SRS plus QTL charts. Both are here — but each comes with a finding you should see before we build it.</p>
+
+    <div class="warn prose">
+      <p><strong>A ranked "riskiest sites" list is the one thing the statistics literature explicitly warns against.</strong> Spiegelhalter's 2005 <em>Statistics in Medicine</em> paper proposes funnel plots specifically to "avoid spurious ranking of institutions into league tables"; Goldstein and Spiegelhalter showed that once uncertainty is accounted for, ranks largely dissolve. Our data makes the case concretely: <strong>110 of 143 sites score exactly zero</strong>, the top-five includes sites with <strong>2 and 3 enrolled participants</strong>, and there is a four-way tie at rank 3. A league table would put a 2-subject site at the top of the page.</p>
+      <p>So the mockup shows both: the ranked table you asked for, <em>with the denominator beside every score</em>, and a funnel plot that puts the same sites against their precision. Which one leads is Q4.</p>
+    </div>
+
+    <div class="shot"><div class="mock app">
+      <div class="side">
+        <span class="brand">open.<em>gismo</em></span>
+        <span class="nav">Study Overview</span><span class="nav on">RBQM</span><span class="nav">Safety</span><span class="nav">Data Explorer</span>
+        <span class="foot">DEMO-301</span>
+      </div>
+      <div class="main">
+        <div class="head">
+          <h4 class="serif">RBQM</h4>
+          <span class="facts">12 site KRIs · 143 sites scored · gsm.kri</span>
+          <span class="spacer"></span>
+          <span class="chip period">vs ps-001 ▾</span>
+          <span class="chip prov">✓ ps-002</span>
+        </div>
+        <div class="body">
+          <div class="tiles" style="margin-bottom:11px">
+            <div class="tile red"><span class="n">2</span><span class="lbl">Red sites</span></div>
+            <div class="tile amber"><span class="n">39</span><span class="lbl">Amber</span></div>
+            <div class="tile ok"><span class="n">109</span><span class="lbl">On track</span></div>
+            <div class="tile"><span class="n">7</span><span class="lbl">Score movers</span></div>
+          </div>
+          <div class="grid2">
+            <div class="panel">
+              <h5>Sites needing attention <span class="aside">— risk score, with denominator</span></h5>
+              <table class="t">
+                <thead><tr><th>Site</th><th>N</th><th>Score</th><th>Since ps-001</th><th>Drivers</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">SITE8091</td><td>28</td><td><b>28.9</b></td><td><span class="cchip bad">▲ +7.9</span></td><td><span class="dot r"></span> IPD <span class="dot a"></span> AE</td></tr>
+                  <tr><td class="mono">SITE7983</td><td>31</td><td><b>28.1</b></td><td><span class="cchip bad">▲ +14.0</span></td><td><span class="dot r"></span> QRY</td></tr>
+                  <tr><td class="mono">SITE7838</td><td>24</td><td>28.1</td><td><span class="cchip flat">= 0.0</span></td><td><span class="dot r"></span> LB</td></tr>
+                  <tr style="opacity:.62"><td class="mono">SITE5444</td><td><b>2</b></td><td>14.9</td><td><span class="cchip flat">— low precision</span></td><td><span class="dot a"></span> AE</td></tr>
+                  <tr style="opacity:.62"><td class="mono">SITE0531</td><td><b>3</b></td><td>14.9</td><td><span class="cchip flat">— low precision</span></td><td><span class="dot a"></span> SDSC</td></tr>
+                </tbody>
+              </table>
+              <p style="font-size:9px;color:var(--a-muted);margin:6px 0 0">Sites below the precision floor are dimmed, not ranked. Score is a weighted sum ÷ maximum ×100 — <b>hover any score to see the contributing flags and their weights</b>.</p>
+            </div>
+            <div class="panel">
+              <h5>Same sites, against precision <span class="aside">— funnel plot</span></h5>
+              <svg width="100%" height="150" viewBox="0 0 330 150" role="img" aria-label="Funnel plot of site risk score against number enrolled, with 95 and 99.8 percent control limits">
+                <line x1="30" y1="126" x2="322" y2="126" stroke="#D8CDBB"/>
+                <line x1="30" y1="10" x2="30" y2="126" stroke="#D8CDBB"/>
+                <line x1="30" y1="96" x2="322" y2="96" stroke="#8A7B68" stroke-dasharray="4 3"/>
+                <text x="318" y="93" font-size="7" fill="#8A7B68" font-family="ui-monospace,monospace" text-anchor="end">study mean</text>
+                <path d="M32,20 C90,64 180,84 322,90" fill="none" stroke="#C9BBA5" stroke-dasharray="3 3"/>
+                <path d="M32,54 C90,78 180,90 322,93" fill="none" stroke="#C9BBA5" stroke-dasharray="2 2"/>
+                <circle cx="44" cy="70" r="3.5" fill="#9C917F"/><circle cx="52" cy="78" r="3.5" fill="#9C917F"/>
+                <circle cx="66" cy="88" r="3.5" fill="#9C917F"/><circle cx="88" cy="92" r="3.5" fill="#9C917F"/>
+                <circle cx="112" cy="97" r="3.5" fill="#9C917F"/><circle cx="140" cy="99" r="3.5" fill="#9C917F"/>
+                <circle cx="176" cy="95" r="3.5" fill="#9C917F"/><circle cx="210" cy="98" r="3.5" fill="#9C917F"/>
+                <circle cx="246" cy="100" r="3.5" fill="#9C917F"/><circle cx="286" cy="97" r="3.5" fill="#9C917F"/>
+                <circle cx="46" cy="46" r="4" fill="#9C917F" stroke="#fff" stroke-width="1.5"/>
+                <text x="52" y="44" font-size="7" fill="#6F6052" font-family="ui-monospace,monospace">SITE5444 · n=2 · inside</text>
+                <circle cx="196" cy="40" r="4.5" fill="#D55E00" stroke="#fff" stroke-width="1.5"/>
+                <text x="204" y="38" font-size="7" fill="#8F2B1A" font-family="ui-monospace,monospace">SITE8091 · n=28</text>
+                <circle cx="152" cy="52" r="4.5" fill="#D55E00" stroke="#fff" stroke-width="1.5"/>
+                <text x="160" y="50" font-size="7" fill="#8F2B1A" font-family="ui-monospace,monospace">SITE7983 · n=31</text>
+                <text x="150" y="140" font-size="7.5" fill="#8A7B68" font-family="ui-monospace,monospace">participants enrolled →</text>
+              </svg>
+              <p style="font-size:9px;color:var(--a-muted);margin:5px 0 0">The 2-participant site sits <b>inside</b> the wide end of the funnel — high score, no evidence. Only out-of-funnel sites are labelled.</p>
+            </div>
+          </div>
+          <div class="secrow"><h6 class="serif">Quality tolerance limits</h6><a class="mono" style="color:#92400E">not built — needs gsm.qtl</a></div>
+          <div class="panel" style="border-style:dashed">
+            <p style="margin:0;font-size:11px;color:var(--a-muted)">A trial-level acceptable-range chart (metric over time with the tolerance band and a secondary limit) would go here. <b>gsm.qtl is not installed anywhere in the workspace and demo-301 runs zero QTL workflows</b>; the QTLs also need an eligibility domain the demo never extracted. Scope: install gsm.qtl, copy its metric workflows, add an IE mapping + input extract, re-run. Roughly a four-repo change.</p>
+          </div>
+          <div class="secrow"><h6 class="serif">Available charts</h6><a>all →</a></div>
+          <div class="grid4">
+            <div class="panel"><b style="font-size:11px">Site KRI report</b><p style="margin:2px 0 0;font-size:9.5px;color:var(--a-muted)">gsm.kri · HTML</p></div>
+            <div class="panel"><b style="font-size:11px">Country KRI report</b><p style="margin:2px 0 0;font-size:9.5px;color:var(--a-muted)">gsm.kri · HTML</p></div>
+            <div class="panel"><b style="font-size:11px">KRI scatter + bounds</b><p style="margin:2px 0 0;font-size:9.5px;color:var(--a-muted)">gsm.viz · 22k bounds rows</p></div>
+            <div class="panel"><b style="font-size:11px">Static metric charts</b><p style="margin:2px 0 0;font-size:9.5px;color:var(--a-muted)">25 PNG · incl. srs0001</p></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="warn prose">
+      <p><strong>A real defect in the risk score, found while inventorying:</strong> the SRS denominator in our data is <strong>114, not the 178</strong> you'd get from summing all twelve site-KRI maximum weights. Two KRIs — study discontinuation and treatment discontinuation, both weighted 32, the joint-heaviest in the model — are all-NA in this dataset, so their rows are dropped by the weight join and they vanish from the denominator entirely. <strong>Two of the three heaviest KRIs contribute nothing to the published score</strong>, and any tooltip claiming "out of 178" would be wrong. Q6 asks whether we fix the data or expose the effective denominator in the UI.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Page 3 · your open question</p>
+    <h2>Safety — three shapes, and a recommendation</h2>
+    <p class="prose">You said you weren't sure about a safety overview. The research turned up an unusually clean answer to "what belongs here," and one firm answer to "what doesn't."</p>
+    <div class="callout prose">
+      <p><strong>There is a regulator-authored information architecture available for free.</strong> FDA's <em>Standard Safety Tables and Figures: Integrated Guide</em> (60 tables, 22 figures) is organized as: trials analyzed and exposure → AE overview → serious AEs → AEs leading to discontinuation → AEs of special interest → subgroups → <strong>data availability</strong> → laboratory → DILI screening → vital signs. Two things in that order we would otherwise get wrong: <strong>missing-data analysis comes before the lab results</strong> (differential data availability is a safety display, not a data-quality footnote — a low event rate at a site with 40% missing labs is not reassurance), and <strong>every screening plot ships paired with the listing of subjects in the quadrant of interest</strong>.</p>
+      <p>And the firm answer: <strong>there should be no safety composite score, ever.</strong> Nothing in any regulatory text supports collapsing heterogeneous safety signals into one number, and FDA says it will inspect the sponsor's <em>reasoning</em> — which is exactly what a weighted composite launders. RBQM composites work because KRIs proxy process quality; safety signals proxy causation, where the weighting <em>is</em> the scientific claim.</p>
+    </div>
+    <div class="opts">
+      <div class="opt">
+        <span class="kn">Option A</span>
+        <h4>Exposure &amp; census</h4>
+        <p>Lead with denominators: randomized, on-treatment, cumulative person-time, disposition and discontinuations, follow-up completeness, lab coverage. Charts below.</p>
+        <p>Safest and fully drawable today. Honest but undramatic — it answers "can I trust the rates" rather than "is anything wrong."</p>
+        <span class="fp">Drawable now</span>
+      </div>
+      <div class="opt pick">
+        <span class="kn">Option B · recommended</span>
+        <h4>Observed vs expected</h4>
+        <p>Headline row of prespecified events — serious AEs, deaths, AESIs, possible Hy's Law cases — each showing the observed rate against a predicted rate with uncertainty, plus a review-worthiness queue of participants needing case review.</p>
+        <p>This is FDA's explicitly recommended pattern for <em>blinded</em> aggregate safety review, and crossing a trigger produces a handoff, not an in-app analysis.</p>
+        <span class="fp">Mostly drawable; needs a predicted-rate source and a Hy's Law summary emitter</span>
+      </div>
+      <div class="opt">
+        <span class="kn">Option C</span>
+        <h4>Chart index</h4>
+        <p>The nine safety renderers as a gallery with a thin summary strip — essentially today's page, tidied.</p>
+        <p>Cheapest. But FDA's DMC guidance is blunt that listings without context "are rarely useful," and safetyGraphics already does this — every chart a domain deep dive, no synthesis layer. Matching the incumbent isn't the goal.</p>
+        <span class="fp">Drawable now</span>
+      </div>
+    </div>
+
+    <div class="shot" style="margin-top:1.3rem"><div class="mock app">
+      <div class="side">
+        <span class="brand">open.<em>gismo</em></span>
+        <span class="nav">Study Overview</span><span class="nav">RBQM</span><span class="nav on">Safety</span><span class="nav">Data Explorer</span>
+        <span class="foot">DEMO-301</span>
+      </div>
+      <div class="main">
+        <div class="head">
+          <h4 class="serif">Safety</h4>
+          <span class="facts">765 participants · 21,840 participant-days on treatment</span>
+          <span class="spacer"></span>
+          <span class="chip period">vs ps-001 ▾</span>
+          <span class="chip prov">✓ ps-002</span>
+        </div>
+        <div class="body">
+          <div class="panel" style="margin-bottom:11px">
+            <h5>Prespecified events — observed vs expected <span class="aside">— pooled across arms (blinded view)</span></h5>
+            <table class="t">
+              <thead><tr><th>Event</th><th>Observed</th><th>Rate</th><th>Expected</th><th></th><th>Since ps-001</th></tr></thead>
+              <tbody>
+                <tr><td>Serious adverse events</td><td>506</td><td>19.6%</td><td>18–24%</td><td><span class="cchip flat">within</span></td><td><span class="cchip flat">▲ +6 events</span></td></tr>
+                <tr><td>Grade 3+ laboratory</td><td>807</td><td>1.4%</td><td>0.8–1.2%</td><td><span class="cchip bad">above</span></td><td><span class="cchip bad">▲ +235</span></td></tr>
+                <tr><td>Possible Hy's Law cases</td><td><b>22</b></td><td>2.9%</td><td>&lt;1%</td><td><span class="cchip bad">above</span></td><td><span class="cchip bad">▲ +3</span></td></tr>
+                <tr><td>Deaths</td><td>1</td><td>0.1%</td><td>—</td><td><span class="cchip flat">count only</span></td><td><span class="cchip flat">= 0</span></td></tr>
+                <tr><td>Discontinuations for AE</td><td>19</td><td>2.5%</td><td>—</td><td><span class="cchip flat">context</span></td><td><span class="cchip flat">= 0</span></td></tr>
+              </tbody>
+            </table>
+            <p style="font-size:9px;color:var(--a-muted);margin:6px 0 0">Expected ranges are illustrative here — a real deployment sources them from placebo databases, historical data or registries, and FDA asks that the comparison account for uncertainty rather than compare two point values.</p>
+          </div>
+          <div class="grid2">
+            <div class="panel">
+              <h5>Needs case review <span class="aside">— ordered by review-worthiness, not risk</span></h5>
+              <table class="t">
+                <thead><tr><th>Participant</th><th>Finding</th><th>Why now</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">S4323-011</td><td>ALT 8.2× · TB 2.4×</td><td>Hy's Law quadrant, new</td><td><span class="rev mono" style="border:1px solid var(--a-line);border-radius:4px;padding:0 4px;font-size:8.5px">open</span></td></tr>
+                  <tr><td class="mono">S7983-004</td><td>ALT 5.1× rising</td><td>2 consecutive visits</td><td><span class="rev mono" style="border:1px solid var(--a-line);border-radius:4px;padding:0 4px;font-size:8.5px">open</span></td></tr>
+                  <tr><td class="mono">S7838-002</td><td>Grade 4 neutropenia</td><td>severity + serious</td><td><span class="mono" style="font-size:8.5px;color:var(--a-muted)">ack 07-21</span></td></tr>
+                </tbody>
+              </table>
+              <p style="font-size:9px;color:var(--a-muted);margin:6px 0 0">Ordered by severity, recency, spread across sites, data completeness and narrative availability — the vigiRank pattern. It claims only "look at this next," never "this is how dangerous the drug is."</p>
+            </div>
+            <div class="panel">
+              <h5>Who is under-observed <span class="aside">— FDA puts this before the lab results</span></h5>
+              <svg width="100%" height="96" viewBox="0 0 320 96" role="img" aria-label="Proportion of participants with liver chemistry results available at each visit, declining from 100 percent at baseline to 36 percent at week 12">
+                <line x1="26" y1="76" x2="312" y2="76" stroke="#D8CDBB"/>
+                <line x1="26" y1="8" x2="26" y2="76" stroke="#D8CDBB"/>
+                <polyline points="30,12 68,15 106,20 144,27 182,36 220,48 258,60 296,66" fill="none" stroke="#0072B2" stroke-width="2"/>
+                <circle cx="296" cy="66" r="3" fill="#0072B2"/>
+                <text x="292" y="61" font-size="7" fill="#2A211B" font-family="ui-monospace,monospace" text-anchor="end">36%</text>
+                <text x="30" y="88" font-size="7" fill="#8A7B68" font-family="ui-monospace,monospace">Baseline</text>
+                <text x="300" y="88" font-size="7" fill="#8A7B68" font-family="ui-monospace,monospace" text-anchor="end">Week 12</text>
+              </svg>
+              <p style="font-size:9px;color:var(--a-muted);margin:5px 0 0">Lab coverage by visit, from the real mapped data (12,160 baseline records falling to 272 at week 12). Reassurance from a late visit is worth what its denominator is worth.</p>
+            </div>
+          </div>
+          <div class="secrow"><h6 class="serif">Available charts</h6><a>all 9 →</a></div>
+          <div class="grid4">
+            <div class="panel"><b style="font-size:11px">Hepatic Explorer</b><p style="margin:2px 0 0;font-size:9.5px;color:var(--a-muted)">eDISH · 765 participants</p></div>
+            <div class="panel"><b style="font-size:11px">AE Explorer</b><p style="margin:2px 0 0;font-size:9.5px;color:var(--a-muted)">10 SOCs · 2,583 events</p></div>
+            <div class="panel"><b style="font-size:11px">Safety Histogram</b><p style="margin:2px 0 0;font-size:9.5px;color:var(--a-muted)">16 analytes</p></div>
+            <div class="panel"><b style="font-size:11px">QT Explorer</b><p style="margin:2px 0 0;font-size:9.5px;color:var(--a-muted)">ECG · 8,130 records</p></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap"><b>Every number above is real</b> except the expected-rate column: 506 serious AEs, 807 grade 3+ labs, 22 participants in the Hy's Law quadrant, 1 death, and the lab-coverage curve all come from the unified data that went live this evening. <b>One caveat the mockup embodies:</b> the Hy's Law count currently exists only inside a 10MB rendered HTML file — surfacing it as a tile needs gsm.safety to emit a summary alongside the chart.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Components</p>
+    <h2>Three conventions to settle once</h2>
+    <div class="tbl-scroll">
+      <table class="doc">
+        <thead><tr><th>Component</th><th>Proposal</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>Change chip</b></td>
+            <td>Three values — <span class="cchip new">new</span> <span class="cchip bad">worsened</span> <span class="cchip good">resolved</span> — plus a neutral <span class="cchip flat">no meaningful change</span>. Arrow glyph and a word, never colour alone. Direction of "bad" comes from metric metadata, not the sign of the delta.</td>
+            <td class="r">EMA's eRMR uses exactly three change values. IBCS (now an ISO standard) classifies variances as <b>good and bad, not positive and negative</b> — for many KRIs neither direction is inherently good, only "outside expectation". Colour-only status fails WCAG 1.4.1, and red/green is the worst possible pair for colour vision deficiency.</td>
+          </tr>
+          <tr>
+            <td><b>Suppression rule</b></td>
+            <td>Compute every delta; <b>render a directional chip only when the change clears a noise threshold</b>, otherwise a neutral glyph with the number still on hover. Drop uninteresting transitions entirely (gsm already drops NA → green).</td>
+            <td class="r">This is what keeps the change list short enough to read. Clinical decision support gives us the cautionary base rate: <b>49–96% of alerts are overridden</b>, and acceptance drops ~30% for each additional repeated alert. The empirical RBQM flag rate is ~2.4% of sites — treat materially more as a defect.</td>
+          </tr>
+          <tr>
+            <td><b>Review state</b></td>
+            <td>Per row: unreviewed / acknowledged (with reason and reviewer) / resolved. Resolved is demoted but retrievable. A row that <em>changes</em> reverts to unreviewed.</td>
+            <td class="r">The largest gap in the open-source ecosystem — only ClinSight has it. Empirica's headline tile is literally "percentage of tracked alerts reviewed". The most-reported RBQM failure in practice is dashboards whose findings never become actions. <b>But this breaks static-snapshot purity — see Q3.</b></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap"><b>Deliberately not used, with reasons:</b> gauges and traffic lights (angle and area are the least accurate encodings, and NHS England ran a national programme to replace RAG reporting with something better); dual axes; bare percentages without denominators; and sparklines as the primary trend read — with two snapshots a sparkline is a two-point line, and process-behaviour charts need roughly 12–25 points before their limits mean anything.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Decisions</p>
+    <h2>Questions for you</h2>
+    <div class="tbl-scroll">
+      <table class="doc">
+        <thead><tr><th>ID</th><th>Question</th><th>My recommendation</th></tr></thead>
+        <tbody>
+          <tr><td class="id">Q1</td><td><b>Safety overview shape</b> — A exposure &amp; census, B observed-vs-expected with a review queue, or C chart index?</td><td class="r"><b>B</b>, with A's denominators as its second row. It is the only shape FDA actually prescribes for blinded aggregate review, and it gives the page a job beyond hosting charts.</td></tr>
+          <tr><td class="id">Q2</td><td><b>Treatment arm.</b> The unified demo data now carries arm (Placebo / 40mg / 80mg) and the safety charts can split by it. FDA has stated twice that reviewing data by treatment group — <em>including coded A/B/C labels</em> — counts as unblinded. Does the study-team view ever split by arm?</td><td class="r"><b>No arm anywhere in the study-team view</b> — not a toggle, not a colour, not hidden behind a role, and ideally absent from the payload. Declare the product ICH E9 Type-1 monitoring. If a DMC mode is ever wanted, make it a separate deployment, not a role flag. ICH E9 §4.5 goes further than data: staff must stay blind "because of the possibility that their attitudes to the trial will be modified" — so a view must not telegraph a direction even without showing the numbers. <b>This is the most consequential question here.</b></td></tr>
+          <tr><td class="id">Q3</td><td><b>Review state</b> — do we ship per-row "reviewed / acknowledged / resolved" that persists across snapshots? It is the biggest gap in the ecosystem and the one thing that turns a viewer into a workflow. But review state is mutable and lives <em>outside</em> the immutable snapshot.</td><td class="r"><b>Yes, in the study repo</b> — a side-channel JSON committed by a PR, so the audit trail is the git history and the snapshot stays pure. That also makes review a reviewable artifact, which suits a GxP setting. Alternative: stay a stateless viewer and let review live in the meeting, as some vendors deliberately choose.</td></tr>
+          <tr><td class="id">Q4</td><td><b>Riskiest sites</b> — ranked table (your ask) or funnel plot as the primary widget?</td><td class="r"><b>Ranked table leads, funnel plot beside it</b>, with denominators always visible and low-precision sites dimmed rather than ranked. You get the scannability you asked for; the funnel keeps us honest and is a genuine differentiator.</td></tr>
+          <tr><td class="id">Q5</td><td><b>QTL / acceptable ranges</b> — build now or defer? It needs gsm.qtl installed, its workflows copied, an eligibility domain added and a re-run.</td><td class="r"><b>Build it, but as its own requirement.</b> ICH E6(R3) makes pre-specified acceptable ranges a sponsor obligation and gsm.kri has no QTL surface at all — it is our clearest regulatory gap. Keep it strictly separate from site KRIs; conflating levels is the named failure mode in TransCelerate's guidance.</td></tr>
+          <tr><td class="id">Q6</td><td><b>The SRS denominator defect</b> — two 32-weight KRIs are all-NA and silently drop out, so scores are out of 114 rather than 178. Fix the data, or expose the effective denominator?</td><td class="r"><b>Both.</b> Populate the discontinuation flags in the demo data so the score means what it says, and show "33 of 114 possible" in the tooltip regardless — a score whose denominator moves silently is not auditable.</td></tr>
+          <tr><td class="id">Q7</td><td><b>Trend axis.</b> Snapshot-over-snapshot trends are blocked by a bug — <code>og_run</code> stamps every snapshot with today's date, so both cuts share a date and the longitudinal accumulation path is fed NULL. Fix now?</td><td class="r"><b>Fix it — it is small and it unblocks everything.</b> Until then, trends on these pages are calendar-time curves (enrolment, AE onset, lab coverage), which are real and drawable today. Index the snapshot axis by review cycle rather than date, as one vendor does; with irregular cadence it matches how a reviewer experiences the study.</td></tr>
+          <tr><td class="id">Q8</td><td><b>Audience</b> — is Study Overview for the study team, or a portfolio reader one level up? We already have a cross-study risk score widget.</td><td class="r"><b>Study team for v1.</b> A portfolio grid is a different product; the cross-study widget can seed it later.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">One more thing</p>
+    <div class="prose">
+      <p><strong>safetyGraphics and safetyCharts were archived on CRAN on 2026-03-25</strong> — the reference implementation is no longer installable. It is the cleanest possible statement of why this project exists, and it is a verifiable fact rather than a competitive claim. It also names a project you co-authored, so how loudly we say it is your call.</p>
+      <p class="small">Research notes: ~20 products surveyed (four major vendors' marketing sites blocked automated fetch — those claims rest on vendor self-description and are flagged as such in the underlying report). Primary regulatory texts were read in full. The one gap worth knowing: no guidance sets a numeric minimum cell size for site-level cross-tabs, so any k-anonymity floor we apply is engineering judgment without a citation behind it.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Design session for goal #79 · compiled 2026-07-28 by the 😺🤖 session · mockups are static, with real values from demo-301 snapshots ps-001 and ps-002.</p>
+    <p>Companions: <a href="../app-design-2026-07-28/directions.html">design directions</a> · <a href="../app-design-2026-07-28/framework.html">data &amp; config framework</a> · live demo <a href="https://jwildfire.github.io/demo-301/">jwildfire.github.io/demo-301</a> · requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/134">hub#134</a></p>
+  </footer>
+</div>
+
+</body>
+</html>
