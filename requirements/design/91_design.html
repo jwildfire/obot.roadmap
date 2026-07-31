@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #91 — responsive session startup: render first, reconcile after</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  td.num { text-align: right; font-family: var(--mono); white-space: nowrap; }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .measured { background: #ecfdf5; border-left: 4px solid #059669; border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .measured strong:first-child { color: #065f46; }
+  .tier { background: var(--panel); border-radius: 8px; padding: .9rem 1.1rem; margin: 1rem 0;
+          border: 1px solid var(--rule); }
+  .tier h3 { margin-top: 0; }
+  .tag { display: inline-block; border-radius: 4px; padding: .05rem .4rem; font-size: .78rem;
+         font-weight: 600; font-family: var(--mono); }
+  .tag-m { background: #d1fae5; color: #065f46; }
+  .tag-e { background: #e5e7eb; color: #374151; }
+  ul.tight li { margin: .2rem 0; }
+</style>
+</head>
+<body>
+<header>
+<h1>Design #91 — responsive session startup: render first, reconcile after</h1>
+<p class="meta">
+  Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/91">jwildfire/obot.roadmap#91</a>
+  · goal <a href="https://github.com/jwildfire/obot.roadmap/issues/73">#73 (increased autonomy)</a>
+  · related <a href="https://github.com/jwildfire/obot.roadmap/issues/127">#127 (/oneoff lane)</a>,
+  <a href="https://github.com/jwildfire/obot.agent/issues/29">obot.agent#29 (lean bookends)</a>
+  · <span class="status">Draft — awaiting @jwildfire review</span>
+</p>
+<p class="meta">Drafted 2026-07-31 with fresh measurements of the current init path (§3). The requirement's original bar was “sub-30-second”; @jwildfire retargeted it to <strong>under 10 seconds</strong> on 2026-07-31, which is what this design is built against.</p>
+</header>
+
+<h2 id="summary">1. Summary</h2>
+
+<p>Today <code>/session-init</code> takes roughly ten minutes to produce a prioritized list. The instinct is to blame the network — three <code>gh</code> searches, a project-board query, a GraphQL Ideas sweep. <strong>The measurements say otherwise.</strong> Every network call the init makes, run cold and serially, totals about <strong>4 seconds</strong>; with the cache the workspace already maintains, it totals <strong>2 milliseconds</strong>. Essentially the entire ten minutes is language-model work: a subagent spawn, a digest, per-idea triage reasoning, and the synthesis of a fresh list.</p>
+
+<p>That reframes the problem. You cannot reach a 10-second bar by making the API calls faster, batching them harder, or fanning them out — they are already noise. You reach it only by <strong>removing generated tokens from the critical path</strong>.</p>
+
+<p>The design is therefore <strong>render first, reconcile after</strong>, in three tiers:</p>
+
+<ul class="tight">
+  <li><strong>Tier 0 — render (target ≤ 5 s).</strong> A deterministic script prints the list the <em>previous</em> wrapup already wrote down. No synthesis, no judgment, no subagent. This is the thing that has to be fast, and it is the deliverable @jwildfire sees.</li>
+  <li><strong>Tier 1 — mechanical reconciliation (target ≤ 10 s total).</strong> The same script annotates that list from a pre-warmed GitHub delta cache: carried items GitHub shows closed or merged get struck; items that appeared since the hand-off get appended. String matching, not judgment.</li>
+  <li><strong>Tier 2 — the judgment pass (async, minutes).</strong> The delta subagent and the ideas-inbox triage run <em>after</em> the list is on screen and revise it in place. The session is already working by then.</li>
+</ul>
+
+<p>The enabling insight is that the machinery for Tiers 0 and 1 <strong>already exists and is tested</strong>: <code>obot.agent/tools/session-hub/lib/collect.mjs</code> ships <code>collectScratchpad()</code>, <code>collectNextSession()</code>, and <code>collectGhSweep()</code> — exactly the three hand-off sources plus the cached delta. What is missing is a terminal-shaped, non-LLM entry point over them.</p>
+
+<h2 id="target">2. What “responsive” means here</h2>
+
+<p>The bar is <strong>time-to-first-actionable-output</strong>: from @jwildfire typing <code>/session-init</code> to a usable, link-bearing, prioritized list being on screen. Under 10 seconds.</p>
+
+<p>Three clarifications the target needs to survive contact with reality:</p>
+
+<ul class="tight">
+  <li><strong>The first paint may be provisional, and must say so.</strong> A list stamped “carried from the 2026-07-30 wrapup; delta cache 4 minutes old; judgment pass running” is honest and useful. A list that silently omits something that changed overnight is not.</li>
+  <li><strong>The clock stops at the first paint, not at the last revision.</strong> Tier 2 continues afterwards and is allowed to take minutes; it just is not allowed to block.</li>
+  <li><strong>This tightens obot.agent#29 rather than replacing it.</strong> The ~2-minute end-to-end budget and the “well under 10% of context” budget from #29 still hold for the <em>whole</em> init including Tier 2. The new number is a latency bar on the first paint.</li>
+</ul>
+
+<h2 id="measurements">3. Where the time actually goes</h2>
+
+<p>Measured on @jwildfire's Mac, 2026-07-31, against the live workspace. Every row marked <span class="tag tag-m">measured</span> is a real wall-clock timing of the exact command the skill runs today; rows marked <span class="tag tag-e">estimated</span> are attribution by subtraction and remain to be instrumented.</p>
+
+<table>
+  <tr><th>Init step</th><th>What it does</th><th class="num">Wall clock</th><th>Basis</th></tr>
+  <tr>
+    <td>1. Hand-off read</td>
+    <td>3 local file reads — today's scratchpad, latest diary loose ends, <code>next-session-todo</code> memory (~26 KB total)</td>
+    <td class="num">38 ms</td><td><span class="tag tag-m">measured</span></td>
+  </tr>
+  <tr>
+    <td>2a. Delta — issues</td>
+    <td><code>gh search issues --owner jwildfire --limit 100</code></td>
+    <td class="num">919 ms</td><td><span class="tag tag-m">measured</span></td>
+  </tr>
+  <tr>
+    <td>2b. Delta — PRs</td>
+    <td><code>gh search prs --owner jwildfire --limit 100</code></td>
+    <td class="num">689 ms</td><td><span class="tag tag-m">measured</span></td>
+  </tr>
+  <tr>
+    <td>2c. Delta — board</td>
+    <td><code>gh project item-list 1 --limit 80</code> (the slowest single call in the init)</td>
+    <td class="num">2 385 ms</td><td><span class="tag tag-m">measured</span></td>
+  </tr>
+  <tr>
+    <td>2d. Delta — subagent</td>
+    <td>Explore-agent spawn, three calls, digest to one line per item</td>
+    <td class="num">~2 min</td><td><span class="tag tag-e">estimated</span></td>
+  </tr>
+  <tr>
+    <td>2.5a. Inbox — sweep</td>
+    <td><code>scripts/ideas-sweep</code> (GraphQL, read-only, no LLM)</td>
+    <td class="num">579 ms</td><td><span class="tag tag-m">measured</span></td>
+  </tr>
+  <tr>
+    <td>2.5b. Inbox — reminders</td>
+    <td><code>scripts/reminders-to-ideas</code> (osascript + GraphQL)</td>
+    <td class="num">971 ms</td><td><span class="tag tag-m">measured</span></td>
+  </tr>
+  <tr>
+    <td>2.5c. Inbox — triage</td>
+    <td>Per-idea classification and in-thread replies; cost scales with inbox size, unbounded</td>
+    <td class="num">minutes</td><td><span class="tag tag-e">estimated</span></td>
+  </tr>
+  <tr>
+    <td>3–4. Prioritize + present</td>
+    <td>Model reads ~26 KB of hand-off, merges three sources, generates a fresh ~40-line list</td>
+    <td class="num">tens of s</td><td><span class="tag tag-e">estimated</span></td>
+  </tr>
+  <tr>
+    <td>5. Persist</td>
+    <td>Rewrite the scratchpad <code>## Overview</code> section</td>
+    <td class="num">&lt; 1 s</td><td><span class="tag tag-e">estimated</span></td>
+  </tr>
+</table>
+
+<div class="measured">
+<strong>The headline measurement.</strong> The session-hub collector <code>collectGhSweep()</code> — the same three batched searches plus a release poll across five repos — runs in <strong>3 767 ms cold</strong> and <strong>2 ms warm</strong> (5-minute TTL disk cache at <code>.claude/session-hub/cache/gh-sweep.json</code>). Composing all three hand-off collectors plus the sweep in one Node process: <strong>3 995 ms cold, 1–2 ms warm.</strong>
+</div>
+
+<p>So: <strong>the entire data-gathering surface of <code>/session-init</code> is ~4 seconds cold and ~0 warm.</strong> Against a ~10-minute observed init, that is under 1% of the time. The other 99% is model work — spawning, digesting, triaging, and writing prose. Optimizations aimed at the network are rounding error; the only lever that moves the number is what the model is asked to generate before @jwildfire sees anything.</p>
+
+<h2 id="design">4. The design: three tiers</h2>
+
+<div class="tier">
+<h3>Tier 0 — deterministic render (the ≤ 5 s deliverable)</h3>
+<p>A new non-LLM entry point — <code>session-hub.mjs --brief</code>, or a thin <code>scripts/session-brief</code> wrapper over the same library — reads the three hand-off sources and prints the carried list <strong>verbatim</strong>: the scratchpad's <code>## Overview</code> with its check state and grouping (Agent-actionable / Waiting on @jwildfire), plus any unchecked <code>## Todo</code> stragglers, plus the diary's “Next session: loose ends” and the <code>next-session-todo</code> memory where they add items the scratchpad lacks.</p>
+<p>It also prints a <strong>freshness header</strong>: hand-off source and age, delta-cache age, and whether Tier 2 is running. That header is what makes a provisional list trustworthy rather than misleading.</p>
+<p>Crucially, <strong>nothing here is synthesized.</strong> The previous wrapup already did the prioritization work — that is the entire point of the lean-bookends contract. Init's job at first paint is to <em>show</em> that list, not to re-derive it.</p>
+</div>
+
+<div class="tier">
+<h3>Tier 1 — mechanical reconciliation (inside the ≤ 10 s bar)</h3>
+<p>The same script reads <code>gh-sweep.json</code> and annotates the rendered list without judgment:</p>
+<ul class="tight">
+  <li>A carried item naming <code>repo#N</code> that the sweep reports <code>closed</code> or <code>merged</code> is struck through and moved below the fold.</li>
+  <li>Items in the sweep that the hand-off does not mention are appended under <strong>“New since the hand-off”</strong>, unranked, with their event (opened / merged / closed / released).</li>
+  <li>A one-line count of pending Ideas threads comes from <code>ideas-sweep</code>'s exit output — the number, not the triage.</li>
+</ul>
+<p>Matching is on <code>repo#N</code> tokens already present in the carried lines, so it is exact string work. When the sweep cache is warm this costs ~2 ms; cold it costs ~4 s, which still fits the bar but leaves no margin — hence pre-warming (§5).</p>
+</div>
+
+<div class="tier">
+<h3>Tier 2 — the judgment pass (async, unbounded, non-blocking)</h3>
+<p>Everything that needs a model runs after the first paint: the delta subagent's drill-downs and “what does this actually mean” digest, the ideas-inbox triage with its in-thread replies and watermark advance, and any re-ranking of the carried list against what the delta found. Its output is a <strong>revision</strong>, not a list: a short “since the first paint” message plus a rewrite of the scratchpad <code>## Overview</code>.</p>
+<p>If Tier 2 finds nothing — the common case on a morning after a clean wrapup — it says so in one line and the session never notices it ran.</p>
+</div>
+
+<h2 id="prewarm">5. Pre-warming the delta cache</h2>
+
+<p>Tier 1 is 2 ms warm and 4 s cold, and the cache TTL is 5 minutes — so at a typical session start the cache is cold and the whole latency budget goes to one <code>gh project item-list</code> call. Three ways to keep it warm, in increasing order of infrastructure:</p>
+
+<table>
+  <tr><th>Option</th><th>Mechanism</th><th>Cost</th><th>Notes</th></tr>
+  <tr><td><strong>A — accept cold</strong></td><td>Nothing; pay ~4 s when the cache is stale</td><td>none</td><td>Still inside the 10 s bar, but with no headroom and a visible pause</td></tr>
+  <tr><td><strong>B — launchd tick</strong></td><td>A local agent refreshes <code>gh-sweep.json</code> every N minutes</td><td>one plist; N API calls/hour</td><td>Mac-local, matches the lid-open constraint already noted in <a href="https://github.com/jwildfire/obot.roadmap/issues/122">#122</a></td></tr>
+  <tr><td><strong>C — session-hub watch</strong></td><td>The existing <code>--watch</code> loop already refreshes this cache while running</td><td>zero new code</td><td>Only warm when the dashboard is up; free when it is</td></tr>
+</table>
+
+<p>The pragmatic answer is <strong>C now, B if the pause is still felt</strong> — C is already built, and the cache write is best-effort and self-healing either way. A GitHub Action writing a committed snapshot is deliberately <em>not</em> proposed: the sweep is derived state and the session-hub design already ruled that it is never committed.</p>
+
+<h2 id="skips">6. What leaves the critical path — and what that costs</h2>
+
+<table>
+  <tr><th>Step</th><th>New placement</th><th>Why it is safe</th></tr>
+  <tr><td>Delta subagent digest</td><td>Tier 2</td><td>Tier 1 already marks closed/merged carried items mechanically; the subagent adds interpretation, which can arrive late</td></tr>
+  <tr><td>Ideas-inbox triage</td><td>Tier 2, or out of init entirely</td><td>The <code>ideas-triage</code> Action already files most inbox items within minutes of capture; init's sweep is a backstop, not the primary lane (see D4)</td></tr>
+  <tr><td>Prioritization prose</td><td>Removed</td><td>The wrapup already ranked the list; re-ranking at init duplicates it. Tier 2 re-ranks only if the delta changed something material</td></tr>
+  <tr><td>Session identity (step 0)</td><td>Unchanged</td><td>Local file writes, already sub-second</td></tr>
+  <tr><td>Fallback full sweep</td><td>Unchanged</td><td>Fires only when there is no usable hand-off; when it fires there is nothing to render, so the bar does not apply — it should say so explicitly</td></tr>
+</table>
+
+<p><strong>The honest cost:</strong> with the judgment pass deferred, the first list @jwildfire sees can be wrong in one specific way — an item whose <em>meaning</em> changed without its state changing (a PR that went red, a review comment that reframes the work). Tier 1 catches state; only Tier 2 catches meaning. The freshness header is what keeps that from being a silent failure.</p>
+
+<h2 id="auto">7. What this means for <code>--auto</code></h2>
+
+<p>An unattended session has no human to present to, so the latency bar does not apply to it — but the tiering still helps, because an <code>--auto</code> run currently spends its first minutes on the same delta agent before it can select an increment.</p>
+
+<p>The rule should be asymmetric and explicit: <strong>an interactive session presents at Tier 1 and lets Tier 2 revise; an <code>--auto</code> session waits for Tier 2 before selecting.</strong> Selection eligibility depends on judgment the mechanical tier cannot supply — whether a design is signed off, whether a repo is inside the grant matrix, whether an item is gated on @jwildfire. Selecting from a provisional list would let an unattended session start work on something that closed overnight. The tiering makes <code>--auto</code>'s init no slower and no faster; it just stops it from being the design's driving constraint.</p>
+
+<h2 id="oneoff">8. Relationship to #127 (<code>/oneoff</code>)</h2>
+
+<p><a href="https://github.com/jwildfire/obot.roadmap/issues/127">#127</a> proposes a separate lane that skips session startup entirely for quick bounded work, and its own Business Requirement names this issue as the tension: “if <code>/session-init</code> were genuinely fast, some of this need would shrink.”</p>
+
+<p>If Tier 0 lands, most of it does shrink. A 3-second render of a list @jwildfire was going to want anyway is not a tax worth building a bypass around. What survives of #127 is the <em>other</em> half of its ask — a durable trace for work done outside a full session — which is about the closing bookend, not the opening one.</p>
+
+<div class="decision"><strong>Proposed position (D6):</strong> land Tier 0/1 first, then re-scope #127 to its wrapup half (“a bounded durable write for short work”) rather than a parallel startup lane. Decided together, per #127's own framing — not silently.</div>
+
+<h2 id="instrumentation">9. Instrumentation and the acceptance test</h2>
+
+<p>The requirement asks for per-step timing before any optimization merges. §3 satisfies part of that for the mechanical steps; three gaps remain, and they are exactly the steps this design moves off the critical path:</p>
+
+<ul class="tight">
+  <li>Delta-subagent round trip (spawn → digest returned).</li>
+  <li>Inbox triage, correlated against pending-thread count.</li>
+  <li>Prioritize-and-present generation time, and its context cost against the #29 ~10% budget.</li>
+</ul>
+
+<p>The implementation should emit a small timing ledger per init — one JSON line per step to <code>.claude/session-hub/cache/init-timings.jsonl</code>, appended, never committed — so the claim “first paint under 10 seconds” is a fact the next session can check rather than a target nobody re-measures. Suggested acceptance test, run three times on a warm workspace and three times cold:</p>
+
+<pre><code>t0  /session-init typed
+t1  first paint (Tier 0 + Tier 1 rendered)     — assert t1 - t0 &lt; 10 s
+t2  Tier 2 revision posted (or "no changes")   — assert t2 - t0 &lt; 2 min  (obot.agent#29)
+    context consumed at t2                     — assert &lt; 10% (obot.agent#29)</code></pre>
+
+<h2 id="decisions">10. Decisions for @jwildfire</h2>
+
+<div class="decision"><strong>D1 — the bar's meaning.</strong> “Under 10 seconds” = first paint of the carried, mechanically-reconciled list <em>(proposed)</em>, with the judgment pass arriving after. The alternative reading — 10 seconds to a fully reconciled list — is not reachable with a subagent in the loop, and would mean cutting the judgment pass entirely rather than deferring it.</div>
+
+<div class="decision"><strong>D2 — who renders the first paint.</strong> A deterministic script whose output is relayed verbatim <em>(proposed)</em> · the model reading the three files and writing the list itself (today's behaviour; the measurements say this is what costs the time) · the script writing the existing session-hub HTML view and opening it in Chrome, so the terminal is not the surface at all.</div>
+
+<div class="decision"><strong>D3 — pre-warming.</strong> Rely on the session-hub <code>--watch</code> loop when it is running and accept ~4 s otherwise <em>(proposed: option C)</em> · add a launchd tick (option B) · accept cold always (option A).</div>
+
+<div class="decision"><strong>D4 — the ideas inbox.</strong> Move the sweep to Tier 2 <em>(proposed)</em> · remove it from init entirely and rely on the <code>ideas-triage</code> Action, with init printing only a pending count · leave it on the critical path. Note that <a href="https://github.com/jwildfire/obot.agent/issues/74">obot.agent#74</a> currently degrades the unattended posting lane to a no-op, which is an argument for the Action being the primary lane regardless.</div>
+
+<div class="decision"><strong>D5 — how revisions surface.</strong> A short “since the first paint” message plus a silent scratchpad rewrite <em>(proposed)</em> · re-print the whole list · scratchpad only, with nothing said in chat.</div>
+
+<div class="decision"><strong>D6 — #127.</strong> Re-scope <code>/oneoff</code> to its durable-write half once Tier 0 lands <em>(proposed)</em> · keep it as a full parallel lane · close it into this requirement.</div>
+
+<div class="decision"><strong>D7 — where the code lives.</strong> Extend <code>tools/session-hub</code> with a <code>--brief</code> mode, reusing its tested collectors <em>(proposed)</em> · a standalone <code>scripts/session-brief</code> · inline the logic in the skill as bash. The first keeps one parser for the scratchpad format; the last has no home for tests.</div>
+
+<h2 id="risks">11. Risks and non-goals</h2>
+
+<ul class="tight">
+  <li><strong>A provisional list read as final.</strong> The mitigation is the freshness header and nothing else; if the header is dropped for tidiness the design becomes a liability. It is load-bearing.</li>
+  <li><strong>Tier 2 quietly never running.</strong> A deferred pass that nobody notices missing is worse than a slow one that always runs. The timing ledger plus an explicit “no changes” line are the backstop.</li>
+  <li><strong>Wrapup quality becomes the latency budget.</strong> Render-first makes the first paint only as good as the last wrapup's list. That is the correct incentive — it is the lean-bookends contract — but it does mean a session that ends without a wrapup starts slow, via the fallback path.</li>
+  <li><strong>Non-goal:</strong> <code>claude</code> CLI process boot, MCP server startup, and machine-level factors stay out of scope, unchanged from the requirement's assumption 1.</li>
+  <li><strong>Non-goal:</strong> no change to what the wrapup writes. This design consumes the existing hand-off format; if the durable-todo-list work changes that format, this render follows it rather than the reverse.</li>
+</ul>
+
+<h2 id="rollout">12. Rollout</h2>
+
+<table>
+  <tr><th>Phase</th><th>What</th><th>Where</th><th>Gate</th></tr>
+  <tr><td>1 — instrument</td><td>Timing ledger for all init steps; close the three gaps in §3 with real numbers</td><td>obot.agent</td><td>Numbers posted on #91</td></tr>
+  <tr><td>2 — render</td><td><code>--brief</code> mode over the existing collectors: Tier 0 + Tier 1, freshness header, tests against the shipped scratchpad parser</td><td>obot.agent PR</td><td>@jwildfire review + <code>obot-merge</code></td></tr>
+  <tr><td>3 — retier the skill</td><td><code>session-init</code> rewritten around the three tiers; <code>--auto</code> pinned to wait for Tier 2 (§7)</td><td>obot.agent PR</td><td>@jwildfire review; measured first paint reported in the PR</td></tr>
+  <tr><td>4 — settle the neighbours</td><td>D4 (inbox placement) and D6 (#127 re-scope) applied; obot.agent#29 contract text updated to carry both numbers</td><td>obot.agent + hub</td><td>@jwildfire</td></tr>
+</table>
+
+<hr>
+<p class="meta">This design document was drafted by Claude Code using Opus 5 and reviewed by @jwildfire.</p>
+</body>
+</html>
