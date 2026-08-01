@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #140 — one write-policy decision per repo: enforcing the carve-out, and telling the truth about mergeability</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  td.num { text-align: right; font-family: var(--mono); white-space: nowrap; }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .measured { background: #ecfdf5; border-left: 4px solid #059669; border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1rem 0; }
+  .measured strong:first-child { color: #065f46; }
+  .hole { background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 0 8px 8px 0;
+          padding: .75rem 1rem; margin: 1rem 0; }
+  .hole strong:first-child { color: #991b1b; }
+  .tier { background: var(--panel); border-radius: 8px; padding: .9rem 1.1rem; margin: 1rem 0;
+          border: 1px solid var(--rule); }
+  .tier h3 { margin-top: 0; }
+  .tag { display: inline-block; border-radius: 4px; padding: .05rem .4rem; font-size: .78rem;
+         font-weight: 600; font-family: var(--mono); }
+  .tag-m { background: #d1fae5; color: #065f46; }
+  .tag-s { background: #ede9fe; color: #5b21b6; }
+  .tag-e { background: #e5e7eb; color: #374151; }
+  ul.tight li { margin: .2rem 0; }
+  ol.tight li { margin: .2rem 0; }
+</style>
+</head>
+<body>
+<header>
+<h1>Design #140 — one write-policy decision per repo: enforcing the carve-out, and telling the truth about mergeability</h1>
+<p class="meta">
+  Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/140">jwildfire/obot.roadmap#140</a>
+  · goal <a href="https://github.com/jwildfire/obot.roadmap/issues/73">#73 (increased autonomy)</a>
+  · shipped in <a href="https://github.com/jwildfire/obot.agent/pull/61">obot.agent#61</a> (merged 2026-07-29)
+  · open children <a href="https://github.com/jwildfire/obot.agent/issues/65">obot.agent#65</a>,
+  <a href="https://github.com/jwildfire/obot.roadmap/discussions/141">discussion #141</a>
+  · adjacent <a href="https://github.com/jwildfire/obot.agent/issues/37">obot.agent#37</a>
+  · <span class="status">Draft — awaiting @jwildfire review</span>
+</p>
+<p class="meta">Drafted 2026-08-01 against the live artifacts — <code>obot.agent/scripts/policy.json</code> (v2), <code>scripts/obot-policy</code>, <code>scripts/obot-merge</code> — plus two facts measured today against real PRs (§4.3, §6.1). The requirement's own Design section describes the profile model that already shipped; <strong>this document covers what is left</strong>: making the carve-out mechanical, and making <code>--check</code> stop implying a merge will succeed.</p>
+</header>
+
+<h2 id="summary">1. Summary</h2>
+
+<p>The profile model shipped on 2026-07-29: one decision per repo, <code>protected</code> by default, <code>auto</code> by explicit promotion, branches declared by role. Two children stayed open behind it, and they are the same story told twice — <strong>a guardrail that is written down but not executed.</strong></p>
+
+<ul class="tight">
+  <li><strong><a href="https://github.com/jwildfire/obot.agent/issues/65">#65</a> — the carve-out is prose.</strong> <code>policy.json</code> declares that PRs touching the guardrail files merge only with @jwildfire's approval. <code>obot-merge</code> never looks at a PR's changed files, so that sentence has never been enforced by anything but a session choosing to read a comment and stop. The PR that shipped the whole policy merged on the standard lane with no attestation.</li>
+  <li><strong><a href="https://github.com/jwildfire/obot.roadmap/discussions/141">#141</a> — <code>--check</code> overstates itself.</strong> It answers <code>CHECK PASSED — policy permits merging</code> on a PR that cannot merge at all, which is the wrong impression to give in the seconds right after @jwildfire approves something.</li>
+</ul>
+
+<p>The design closes both, and adds one hole found while designing them:</p>
+
+<ul class="tight">
+  <li><strong>Gate A (§4)</strong> — repo-qualify <code>carveOut.paths</code>, fetch the PR's changed files, and force the <code>attested</code> lane when they intersect. Which requires a schema change, because today the governed repo is <em>implied</em> and two of the six paths are not reachable by any PR at all.</li>
+  <li><strong>Gate B (§5)</strong> — <code>obot-merge</code> reads the policy file sitting next to itself, so a session working in a linked worktree resolves the lane from <em>its own branch's</em> copy of the guardrail. Declare an authority ref and refuse to trust a local copy that differs from it. This is the third instance of the family that produced <a href="https://github.com/jwildfire/obot.agent/issues/60">#60</a> (halt file resolved relative to the invoking worktree).</li>
+  <li><strong>Truthful <code>--check</code> (§6)</strong> — two independent verdicts, policy and mergeability, neither dressed as the other; and mergeability checked <em>before</em> the audit comment is posted, not after.</li>
+</ul>
+
+<p>Nothing here is implemented yet — no <code>obot.agent</code> code changed in this pass. §8 lists eight decisions (D1–D8) for review; §10 is the single follow-up PR that lands the answers.</p>
+
+<h2 id="shipped">2. Where this design starts: what v2 already does</h2>
+
+<p><code>scripts/policy.json</code> v2 replaced the <code>merge-policy.json</code> + <code>autonomy-grants.json</code> pair. Both axes now come off one per-repo <em>profile</em>:</p>
+
+<table>
+  <tr><th></th><th><code>protected</code> (default)</th><th><code>auto</code> (promoted per repo)</th></tr>
+  <tr><td>merge into <strong>integration</strong> branch</td><td>attested</td><td>standard lane</td></tr>
+  <tr><td>merge into <strong>release</strong> branch(es)</td><td>attested</td><td>attested</td></tr>
+  <tr><td>merge into any other branch</td><td>refused</td><td>refused</td></tr>
+  <tr><td><code>--auto</code> branch / draft PR</td><td>no</td><td>yes, draft PR into integration</td></tr>
+  <tr><td><code>--auto</code> unattended merge</td><td>none</td><td>integration branch only</td></tr>
+  <tr><td><code>--auto</code> issues</td><td>read-only</td><td>full + closes</td></tr>
+</table>
+
+<ul class="tight">
+  <li><strong>Eight repos declared</strong>, all on <code>auto</code>: <code>safety.viz</code>, <code>open.gismo</code>, <code>safety-histogram</code>, <code>gsm.safety</code>, <code>open.csr</code>, <code>demo-301</code>, <code>obot.roadmap</code>, <code>obot.agent</code>. A repo absent from the file is refused outright; a branch with no declared role is refused under every profile.</li>
+  <li><strong><code>scripts/obot-policy</code> is the single resolver</strong> — <code>resolve</code> (called by <code>obot-merge</code>), <code>explain</code>, <code>matrix</code>, <code>validate</code> (gated on by <code>obot-auto</code>), <code>diff-legacy</code>, <code>add</code>, <code>promote</code>. <code>obot-merge</code> carries no copy of the rules and fails closed if the file or resolver is missing.</li>
+  <li><strong>Approvals are fields, not prose</strong>: every repo carries <code>approved: {by, date, where}</code>, and <code>validate</code> fails an <code>auto</code> repo whose record is incomplete.</li>
+  <li><strong>Migration was verified by running, not reading</strong>: 80 repo × branch verdicts byte-identical through the real <code>obot-merge --check</code> (stub <code>gh</code>, synthetic PR JSON); <code>diff-legacy</code> reported 14 declared verdicts as 12 unchanged / 0 narrowed / 2 WIDENED, both widenings on the unattended axis only and both declared approved on the command line.</li>
+</ul>
+
+<div class="measured">
+<strong>One correction to the requirement text.</strong> #140's <em>Migration</em> section still describes the pre-decision draft, in which <code>open.csr</code> <code>dev</code> and <code>demo-301</code> <code>main</code> were written as <code>protected</code> (standard → attested, the strictly-narrowing choice). @jwildfire chose <code>auto</code> for both in the 2026-07-29 decision prompt, and the merged file records that: the two rows are <strong>widenings on the unattended axis</strong>, not narrowings on the merge lane. The shipped file is the authority; the issue body's paragraph is stale.
+</div>
+
+<h2 id="hole">3. The hole in the middle of it (#65)</h2>
+
+<p><code>policy.json</code> says this, under <code>carveOut</code>:</p>
+
+<pre><code>"PRs touching any of these merge only with @jwildfire's approval, even on a
+ standard-lane branch in an 'auto' repo."</code></pre>
+
+<p>Nothing enforces it. The decision path in <code>obot-merge</code> is: fetch the PR, take <code>baseRefName</code>, ask <code>obot-policy resolve &lt;repo&gt; &lt;base&gt;</code>, apply the lane. The PR JSON it fetches is <code>baseRefName,isDraft,state,mergeable,headRefOid,url,title</code> — <strong>no file list</strong>. A changed path has never entered the decision, under v2 or under the pair it replaced.</p>
+
+<div class="hole">
+<strong>Demonstrated, not theorised.</strong> <a href="https://github.com/jwildfire/obot.agent/pull/61">obot.agent#61</a> — the PR that rewrote the entire write policy — merged on 2026-07-29 via <code>obot-merge 61 -R jwildfire/obot.agent</code> with no <code>--jeremy-approved</code> and no refusal. <code>obot.agent</code>/<code>main</code> is an <code>auto</code>-profile integration branch, so the standard lane applied and the tool offered no resistance. It would have offered none to an unattended session either.
+</div>
+
+<p>Why this particular gap matters more than its size suggests: an <code>--auto</code> session is instructed never to merge a carve-out PR, but that instruction lives in <code>skills/session-init/SKILL.md</code> prose. The design's whole claim to safety is that <em>the risky writes are hard-gated by <code>obot-merge</code></em> — and the one class of PR that can disable every other gate is the class the hard gate does not cover.</p>
+
+<h2 id="gatea">4. Gate A — changed paths against a repo-qualified carve-out</h2>
+
+<h3>4.1 The schema change (v2 → v3)</h3>
+
+<p>Today's list cannot be checked, because the repo it governs is implied by a comment:</p>
+
+<pre><code>"carveOut": {
+  "_note": "... Paths are relative to jwildfire/obot.agent unless prefixed 'workspace'.",
+  "paths": [
+    "scripts/policy.json", "scripts/merge-policy.json", "scripts/autonomy-grants.json",
+    "goals/", "workspace .claude/hooks/", "workspace .claude/settings.json"
+  ]
+}</code></pre>
+
+<p>Working out what each entry means for a PR check exposes something more interesting than a syntax problem. <strong>Two of the six paths cannot be touched by any PR in any repo</strong> — the workspace <code>.claude/</code> directory is not a git repository (that is precisely why <code>hooks/install.sh</code> exists). Their PR-visible source of truth is elsewhere:</p>
+
+<table>
+  <tr><th>v2 entry</th><th>Repo-qualified equivalent</th><th>Note</th></tr>
+  <tr><td><code>scripts/policy.json</code></td><td><code>jwildfire/obot.agent</code> → <code>scripts/policy.json</code></td><td>the guardrail guarding itself</td></tr>
+  <tr><td><code>scripts/merge-policy.json</code><br><code>scripts/autonomy-grants.json</code></td><td><code>jwildfire/obot.agent</code> → same paths</td><td>tombstones: the files are deleted, and a PR resurrecting either should still stop</td></tr>
+  <tr><td><code>goals/</code></td><td><code>jwildfire/obot.agent</code> → <code>goals/</code></td><td>the goal registry <code>--auto</code> selects from</td></tr>
+  <tr><td><code>workspace .claude/hooks/</code></td><td><code>jwildfire/obot.agent</code> → <code>hooks/</code></td><td>the workspace copy is installed from here; the installed copy is in no repo</td></tr>
+  <tr><td><code>workspace .claude/settings.json</code></td><td><code>jwildfire/obot.agent</code> → <code>hooks/install.sh</code></td><td>the installer is what writes hook registrations into settings; the file itself is unversioned</td></tr>
+</table>
+
+<p>Also worth adding while the schema is open: <code>scripts/obot-merge</code> and <code>scripts/obot-policy</code> themselves. A PR that edits the enforcement code is exactly as consequential as one that edits the policy data, and today neither is gated.</p>
+
+<p>Proposed v3 shape — a repo-keyed map, so the check is a lookup and the whole guardrail still reads as one block:</p>
+
+<pre><code>"carveOut": {
+  "_note": "PRs touching these paths merge only with @jwildfire's approval, on any
+            lane, in any profile. Keys are repos; a path ending in '/' matches by
+            prefix, anything else matches exactly. obot-merge forces the attested
+            lane when a PR's changed files intersect its repo's list.",
+  "repos": {
+    "jwildfire/obot.agent": [
+      "scripts/policy.json",
+      "scripts/merge-policy.json",
+      "scripts/autonomy-grants.json",
+      "scripts/obot-merge",
+      "scripts/obot-policy",
+      "goals/",
+      "hooks/"
+    ]
+  },
+  "unversioned": {
+    "_note": "Governed surfaces that live outside every repo — no PR can touch them,
+              so they are documented here and enforced through their sources above.",
+    "workspace .claude/hooks/":     "installed from jwildfire/obot.agent hooks/",
+    "workspace .claude/settings.json": "hook registrations written by hooks/install.sh"
+  }
+}</code></pre>
+
+<p><code>obot-policy validate</code> gains matching assertions: <code>carveOut.repos</code> must exist and must include <code>scripts/policy.json</code> under <code>jwildfire/obot.agent</code> (v2 already asserts the flat-list version of this); every carve-out repo key must be a declared repo or a validation error; every path must be relative, with no <code>..</code> and no leading <code>/</code>.</p>
+
+<h3>4.2 Matching semantics</h3>
+
+<ul class="tight">
+  <li><strong>Trailing <code>/</code> = directory prefix</strong> (<code>goals/</code> matches <code>goals/registry.json</code>). No trailing slash = exact path equality.</li>
+  <li><strong>No globs.</strong> A guardrail is the wrong place for a pattern dialect whose edge cases have to be remembered under pressure; prefix-or-exact is fully described in one sentence.</li>
+  <li><strong>Case-sensitive</strong>, as git is. Paths compare as GitHub returns them, repo-root-relative.</li>
+  <li><strong>Repo-scoped.</strong> A <code>scripts/policy.json</code> in <code>safety.viz</code> is an ordinary file and must not trip the gate — the carve-out governs the repo that owns the guardrail, not a filename everywhere.</li>
+  <li><strong>Renames count as touches</strong> on both sides: the REST files endpoint reports <code>filename</code> plus <code>previous_filename</code> for renames, and both are checked, so moving <code>policy.json</code> out of the way is not an escape.</li>
+</ul>
+
+<h3>4.3 Getting the changed paths — and the trap in the obvious way to do it</h3>
+
+<p>#65 suggests <code>gh pr view &lt;n&gt; --json files</code>. That command silently truncates.</p>
+
+<div class="measured">
+<strong>Measured 2026-08-01, live PRs.</strong> <code>gh pr view --json files</code> returns at most <strong>100</strong> entries, with no error and no truncation flag:
+<pre><code>safety.viz#114   changedFiles=318   --json files -> 100   REST --paginate -> 318
+safety.viz#112   changedFiles=122   --json files -> 100   REST --paginate -> 122
+safety.viz#105   changedFiles=130   --json files -> 100   REST --paginate -> 130</code></pre>
+A carve-out path sitting at position 101 of a large PR would pass the gate unseen — a guardrail that works on small PRs and quietly fails on big ones is worse than none, because it is trusted.
+</div>
+
+<p>So the fetch is the paginated REST endpoint, with an explicit completeness assertion:</p>
+
+<pre><code>gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, .previous_filename'
+# then: count(distinct filenames) == changedFiles from the PR JSON, or fail closed (exit 1)</code></pre>
+
+<ul class="tight">
+  <li><strong>Fail closed on any fetch error</strong> — an unreachable file list is an operational failure (exit 1), never a pass. Same stance as the missing-policy-file check already in <code>obot-merge</code>.</li>
+  <li><strong>Skip the call entirely when the repo has no carve-out list.</strong> Seven of the eight declared repos carry no carve-out list at all, so this adds nothing to the common merge path; the cost lands only where the guardrail lives.</li>
+  <li><strong>GitHub's own cap is 3 000 files</strong> per PR on that endpoint. A PR that large in <code>obot.agent</code> is not a real scenario, but the completeness assertion turns it into a refusal rather than a silent pass.</li>
+</ul>
+
+<h3>4.4 What the gate does, and what it says</h3>
+
+<p>Placement: after the lane resolves, before the refusal/allow decision. The gate can only make the outcome stricter — it never turns a refusal into a merge.</p>
+
+<pre><code>standard + carve-out path touched   ->  attested   (this is the whole point)
+attested + carve-out path touched   ->  attested   (unchanged, reason line names the path)
+refused  + carve-out path touched   ->  refused    (refusal wins)</code></pre>
+
+<p>The verdict line follows #65's wording, so the reason is visible in the same glance as the lane:</p>
+
+<pre><code>policy: profile auto, role integration — carve-out path touched, attested lane forced
+        (scripts/policy.json)</code></pre>
+
+<p>And the refusal, when the flag is absent:</p>
+
+<pre><code>obot-merge: REFUSED - PR #NN touches a carve-out path in jwildfire/obot.agent
+  (scripts/policy.json, hooks/install.sh) - this is a guardrail file. Merge only with
+  @jwildfire's explicit in-session approval, then re-run with --jeremy-approved '&lt;where/when&gt;'.</code></pre>
+
+<p>The audit comment that the attested lane already posts gains the matched paths, so the PR itself records <em>which</em> guardrail was changed under whose approval — the thing that is currently reconstructable only from the diff.</p>
+
+<h3>4.5 The unattended path</h3>
+
+<p>No new rule is needed: <code>attested</code> is never available to an unattended session (there is no in-session approval to attest), so forcing <code>attested</code> <em>is</em> the unattended refusal. The invariant already written in the file — “merge any PR touching a carveOut path unattended, on any lane, in any repo” — becomes true for the first time.</p>
+
+<p>Optional refinement: have <code>obot-auto</code>'s pre-flight print the carve-out list for the goal's repo, so an unattended run knows the shape of the fence before it walks into it rather than at the merge step.</p>
+
+<h2 id="gateb">5. Gate B — whose copy of the policy is the tool reading?</h2>
+
+<p><code>obot-merge</code> resolves <code>POLICY_FILE="$SCRIPT_DIR/policy.json"</code>, where <code>SCRIPT_DIR</code> is the directory of the invoked script. In a workspace whose convention is one linked worktree per branch (<code>{repo}/.claude/worktrees/{branch}</code>), a session working on a policy change and invoking <code>./scripts/obot-merge</code> from its own worktree resolves the lane <strong>from the branch under review</strong>.</p>
+
+<div class="hole">
+<strong>The consequence.</strong> A PR that widens the policy — or deletes <code>carveOut</code> outright — is evaluated by a tool reading that PR's own version of the rules. Gate A closes the “no one looks at the files” hole; without Gate B, Gate A can be removed by the same PR it is supposed to stop, in the same session, with no flag.
+</div>
+
+<p>This is the third member of a family. <a href="https://github.com/jwildfire/obot.agent/issues/60">#60</a> was the halt-file kill switch resolving relative to the invoking worktree and therefore silently not firing; <a href="https://github.com/jwildfire/obot.agent/issues/68">#68</a>/the worktree-location override is the same ambiguity in the permission layer. <strong>Guardrails must resolve to the governed state, not to the caller's working copy.</strong></p>
+
+<p>Proposed minimal form — declare the authority in the file, and compare:</p>
+
+<pre><code>"authority": {
+  "repo": "jwildfire/obot.agent",
+  "ref":  "main",
+  "path": "scripts/policy.json",
+  "_note": "The governed copy. obot-merge compares the local file's blob sha against
+            this ref; a mismatch means the guardrail under the tool's feet is not the
+            one in force, so the attested lane is forced and the mismatch is stated."
+}</code></pre>
+
+<ul class="tight">
+  <li><strong>The check is cheap and offline-computable on one side</strong>: <code>git hash-object scripts/policy.json</code> locally, versus the blob sha from <code>gh api repos/{repo}/contents/{path}?ref={ref}</code>. No file content is transferred.</li>
+  <li><strong>Mismatch → force <code>attested</code></strong>, with the reason said out loud (<code>policy: local policy.json differs from jwildfire/obot.agent@main — attested lane forced</code>). Not a refusal: a session legitimately holds a modified copy while working on a policy PR, and that case should stop at @jwildfire's approval, which is exactly what <code>attested</code> means.</li>
+  <li><strong>Unreachable authority → force <code>attested</code> too</strong> (network down, token expired). An attended session can still merge with the flag; an unattended one cannot merge at all, which is the correct failure direction.</li>
+  <li><strong>Deliberately <em>not</em> proposed:</strong> resolving every merge from the remote copy. That puts a network call and a new failure mode in front of every merge in every repo to close a hole that only exists for the repo holding the guardrail. The sha comparison gets the same protection for the cost of one API call in one repo.</li>
+</ul>
+
+<h2 id="mergeability">6. <code>--check</code> tells the truth (#141)</h2>
+
+<h3>6.1 What it does today, and a measurement that makes it worse</h3>
+
+<p><code>--check</code> prints <code>CHECK PASSED - policy permits merging PR #N in R</code>. Correct by design — it is a policy gate — but read aloud at the moment @jwildfire says “merge it”, it means “this will merge”. It answered exactly that for <code>obot.agent#52</code> while that PR was <code>CONFLICTING</code>/<code>DIRTY</code>.</p>
+
+<p><code>obot-merge</code> does already fetch and print <code>mergeable</code> in its header line. That is not the mitigation it looks like:</p>
+
+<div class="measured">
+<strong>Measured 2026-08-01, <code>obot.agent#52</code>.</strong> GitHub computes mergeability lazily, on demand:
+<pre><code>first query:   mergeable=UNKNOWN      mergeStateStatus=UNKNOWN
++2 s:          mergeable=CONFLICTING  mergeStateStatus=DIRTY
++4 s:          mergeable=CONFLICTING  mergeStateStatus=DIRTY</code></pre>
+The single query <code>obot-merge</code> makes today is the one most likely to return <code>UNKNOWN</code> — the header line prints a value that is frequently meaningless, on a PR that in fact cannot merge. A poll is not optional; it is what makes the field usable.
+</div>
+
+<h3>6.2 Two verdicts, neither dressed as the other</h3>
+
+<p><code>--check</code> reports <strong>policy</strong> and <strong>mergeability</strong> as separate lines with separate verbs, so a pass on one never reads as a pass on both:</p>
+
+<pre><code>PR #63 https://github.com/jwildfire/obot.agent/pull/63
+  title: Remote Control: fix the obot-auto lane
+  base:  main   state: OPEN   draft: false
+  head:  9f2c1ab…
+  policy:      PASS — profile auto, role integration, standard lane
+  mergeability: BLOCKED — GitHub will not merge this as it stands: conflicts with main (DIRTY).
+                Rebase or resolve, then re-check.
+obot-merge: CHECK — policy permits merging PR #63; GitHub does not. Nothing was merged.</code></pre>
+
+<p>The mapping from GitHub's state to a plain sentence:</p>
+
+<table>
+  <tr><th><code>mergeStateStatus</code></th><th>Reported as</th><th>Who acts</th></tr>
+  <tr><td><code>CLEAN</code></td><td>ready — GitHub will merge this now</td><td>nobody</td></tr>
+  <tr><td><code>UNSTABLE</code></td><td>mergeable, but checks are failing or still running</td><td>see <a href="https://github.com/jwildfire/obot.agent/issues/37">#37</a> (D7)</td></tr>
+  <tr><td><code>BEHIND</code></td><td>base branch moved ahead; the branch must be updated first</td><td>agent</td></tr>
+  <tr><td><code>DIRTY</code></td><td>conflicts with the base branch</td><td>agent</td></tr>
+  <tr><td><code>BLOCKED</code></td><td>branch protection: a required review or check is missing</td><td>@jwildfire or agent</td></tr>
+  <tr><td><code>DRAFT</code></td><td>draft — <code>obot-merge</code> already refuses these; <code>gh pr ready</code> first</td><td>agent</td></tr>
+  <tr><td><code>HAS_HOOKS</code></td><td>mergeable, server-side hooks will run</td><td>nobody</td></tr>
+  <tr><td><code>UNKNOWN</code> after polling</td><td>GitHub has not computed mergeability yet — re-check in a moment</td><td>re-run</td></tr>
+</table>
+
+<ul class="tight">
+  <li><strong>Polling</strong>: up to 3 attempts, ~2 s apart (the measured settling time), stopping at the first non-<code>UNKNOWN</code> answer. Bounded, so <code>--check</code> stays a fast interactive command.</li>
+  <li><strong>Same fields <code>reviews-queue</code> already reads</strong> (<code>mergeable</code>, <code>mergeStateStatus</code>, <code>statusCheckRollup</code>), and the same bucketing vocabulary, so the reviews walkthrough and the merge lane describe a PR the same way.</li>
+  <li><strong><code>mergeStateStatus</code> requires push access</strong> on the repo — true for every repo in the policy, and the <code>UNKNOWN</code> path covers the case where it is not.</li>
+</ul>
+
+<h3>6.3 The real merge path has a related defect</h3>
+
+<p>On the attested lane, <code>obot-merge</code> posts the audit comment <em>before</em> attempting the merge. On a conflicting PR the sequence today is: refuse nothing, mint a token, <strong>post “🔒 Protected-branch merge … explicitly approved by @jwildfire”</strong>, attempt the merge, fail with <code>merge command failed</code>. The audit trail then records an approved merge that never happened.</p>
+
+<p>So the mergeability check belongs on the real path too, ordered before the side effects: resolve policy → check mergeability → mint token → post audit → merge. A PR that cannot merge is refused with the reason, having posted nothing.</p>
+
+<h2 id="verification">7. Verification — what “done” means</h2>
+
+<p>The migration sweep that made #61 trustworthy (stub <code>gh</code> on <code>PATH</code>, synthetic PR JSON, the real <code>obot-merge</code> binary, 80 repo × branch pairs) exists only as evidence pasted into that PR's body. <strong>It was never committed</strong>, so “add the case to the verification sweep” (#65, step 4) means first giving the sweep a home: <code>scripts/test/policy-sweep</code>, runnable locally and from CI, which is the only way these gates stay closed after the next refactor.</p>
+
+<p>Cases the sweep must carry — <span class="tag tag-s">new</span> marks what this design adds:</p>
+
+<table>
+  <tr><th>Case</th><th>Expected</th><th></th></tr>
+  <tr><td>80 repo × branch verdicts, all profiles and roles</td><td>byte-identical to the recorded baseline</td><td><span class="tag tag-m">exists</span></td></tr>
+  <tr><td>Refusal precedence: unknown repo &gt; draft &gt; state &gt; lane</td><td>unchanged</td><td><span class="tag tag-m">exists</span></td></tr>
+  <tr><td>Synthetic PR touching <code>scripts/policy.json</code> on <code>obot.agent</code>/<code>main</code></td><td>REFUSED without <code>--jeremy-approved</code>; verdict names the path</td><td><span class="tag tag-s">new</span></td></tr>
+  <tr><td>Same PR with <code>--jeremy-approved</code></td><td>merges; audit comment lists the matched paths</td><td><span class="tag tag-s">new</span></td></tr>
+  <tr><td>PR touching <code>scripts/policy.json</code> in <strong><code>safety.viz</code></strong></td><td>unaffected — standard lane, no forcing</td><td><span class="tag tag-s">new</span></td></tr>
+  <tr><td>318-file PR whose carve-out path is at position 101+</td><td>REFUSED — the truncation regression, pinned</td><td><span class="tag tag-s">new</span></td></tr>
+  <tr><td>File-list fetch fails</td><td>exit 1, no merge, no token minted</td><td><span class="tag tag-s">new</span></td></tr>
+  <tr><td>Local <code>policy.json</code> differs from the authority ref</td><td>attested forced, mismatch stated</td><td><span class="tag tag-s">new</span></td></tr>
+  <tr><td><code>--check</code> on a <code>CONFLICTING</code>/<code>DIRTY</code> PR</td><td>policy PASS + mergeability BLOCKED, in that order, in one output</td><td><span class="tag tag-s">new</span></td></tr>
+  <tr><td><code>--check</code> when the first mergeability query is <code>UNKNOWN</code></td><td>polls, then reports the settled state</td><td><span class="tag tag-s">new</span></td></tr>
+  <tr><td>Attested merge attempt on a conflicting PR</td><td>refused before the audit comment is posted</td><td><span class="tag tag-s">new</span></td></tr>
+  <tr><td><code>obot-policy validate</code> on a v3 file with an unqualified carve-out</td><td>exit 1</td><td><span class="tag tag-s">new</span></td></tr>
+</table>
+
+<p>Plus the live confirmation that costs nothing to run: <code>obot-merge --check</code> against the real open PRs (one per profile and role) before and after, verdicts and exit codes compared.</p>
+
+<h2 id="decisions">8. Decisions for @jwildfire</h2>
+
+<div class="decision"><strong>D1 — carve-out schema shape.</strong> Repo-keyed map under <code>carveOut.repos</code> <em>(proposed)</em> · a flat list of <code>{repo, path}</code> objects · a per-repo <code>carveOut</code> array inside each <code>repos</code> entry. The proposal keeps the whole guardrail legible as one block and makes the check a dictionary lookup; the third option scatters it across eight entries, which is the drift that #140 exists to end.</div>
+
+<div class="decision"><strong>D2 — the two unversioned paths.</strong> Map them to their in-repo sources (<code>hooks/</code>, <code>hooks/install.sh</code>) and keep the originals as documented <code>unversioned</code> entries <em>(proposed)</em> · drop them from the file as unenforceable · keep them as-is and accept that they match nothing. The proposal is the only one where changing a hook actually trips the gate.</div>
+
+<div class="decision"><strong>D3 — does the carve-out grow?</strong> Add <code>scripts/obot-merge</code> and <code>scripts/obot-policy</code> — the enforcement code, as consequential as the data <em>(proposed)</em>. Open question beyond that: <code>jwildfire/obot.roadmap</code> → <code>.github/workflows/</code>, since <code>ideas-triage</code> and <code>roadmap-audit-apply</code> post and commit as the bot unattended. <strong>Wrinkle worth your call:</strong> the hub holds a <code>custom.directCommits</code> grant, so its routine changes never pass through <code>obot-merge</code> at all — a carve-out there would only bite PRs, and covering direct commits needs a different mechanism (a <code>PreToolUse</code> guard on the workspace, like the merge gate). Options: add the hub workflows entry now and accept partial coverage · leave the hub out until the guard exists · file the guard as a separate issue under #73.</div>
+
+<div class="decision"><strong>D4 — how strong is the forcing?</strong> Force the existing <code>attested</code> lane and reuse <code>--jeremy-approved</code>, naming the matched paths in the refusal and the audit comment <em>(proposed)</em> · require a distinct <code>--carve-out-approved '&lt;path&gt;: &lt;where/when&gt;'</code> flag that must name the path, so the approval cannot be given without seeing what was touched. The second is stricter and more ceremony; the first reuses one gate you already know and records the same facts.</div>
+
+<div class="decision"><strong>D5 — Gate B (§5) in this pass?</strong> Fold in the minimal sha-comparison form <em>(proposed)</em> · file it as its own issue and ship Gate A alone · skip it. Ship-Gate-A-alone is a defensible increment, but Gate A is removable by the PR it governs until Gate B exists, so the pair is worth landing together.</div>
+
+<div class="decision"><strong>D6 — <code>--check</code> exit codes.</strong> Keep exit 0 whenever policy permits, with mergeability reported as a clearly separate line <em>(proposed)</em> · introduce exit 3 for “policy OK, GitHub will not merge”. The proposal is backward-compatible for anything scripted around <code>--check</code>; exit 3 is machine-readable but changes a documented contract, and the only consumers today are skills that read the text.</div>
+
+<div class="decision"><strong>D7 — the CI gate (<a href="https://github.com/jwildfire/obot.agent/issues/37">#37</a>).</strong> This design <em>reports</em> failing and pending checks in <code>--check</code> and stops there; #37 asks <code>obot-merge</code> to <em>refuse</em> while required checks are pending, with a logged <code>--force-ci</code> override. Options: report now, refuse under #37 later <em>(proposed)</em> · fold #37's CI gate into this same PR, since both live in the same handful of lines · defer both. #37 also carries <code>--head</code>/<code>--url</code> PR-identity resolution, which is a separate concern and stays with #37 regardless.</div>
+
+<div class="decision"><strong>D8 — where the sweep lives.</strong> Commit it as <code>scripts/test/policy-sweep</code> and run it in CI on every PR touching <code>scripts/</code> <em>(proposed)</em> · commit it but run it only by hand before a policy PR · keep it ad-hoc per-PR evidence. Ad-hoc is what we have; it produced excellent evidence once and protects nothing tomorrow.</div>
+
+<h2 id="risks">9. Risks and non-goals</h2>
+
+<ul class="tight">
+  <li><strong>This is a floor, not a fence.</strong> Every gate here runs inside a tool a session can read and edit. A session that rewrites <code>obot-merge</code> locally and runs it is not stopped by <code>obot-merge</code>. The gates raise the floor for well-behaved and unattended sessions — which is where the actual risk lives — and they do not make the lane adversarially safe.</li>
+  <li><strong>The only true enforcement is server-side</strong>: a GitHub ruleset or <code>CODEOWNERS</code> requiring @jwildfire's review on the carve-out paths, which no local tool can bypass. Explicitly out of scope here (it changes how <em>he</em> merges too, not just the agent), but it is the honest end state and worth its own decision later.</li>
+  <li><strong>One more API call per merge, in one repo.</strong> Repos with no carve-out list skip the file fetch entirely; <code>obot.agent</code> pays a paginated call and a contents call. Immaterial next to the merge itself.</li>
+  <li><strong>Mergeability is a snapshot.</strong> <code>CLEAN</code> at check time can be <code>BEHIND</code> ninety seconds later. The report says what GitHub thinks now; it is not a promise, and the merge step re-checks.</li>
+  <li><strong>Not in scope:</strong> new profiles or a third tier; changes to any repo's profile assignment; the dead <code>grant_profile</code> field in <code>goals/registry.json</code> (noted in #61, still unread by anything); the <code>merge-gate-guard</code> quoted-prose false positive (<a href="https://github.com/jwildfire/obot.agent/issues/58">#58</a>); <code>--head</code>/<code>--url</code> PR identity (<a href="https://github.com/jwildfire/obot.agent/issues/37">#37</a>).</li>
+</ul>
+
+<h2 id="rollout">10. Rollout</h2>
+
+<ol class="tight">
+  <li><strong>One PR in <code>jwildfire/obot.agent</code></strong>, closing <a href="https://github.com/jwildfire/obot.agent/issues/65">#65</a> and <a href="https://github.com/jwildfire/obot.roadmap/discussions/141">#141</a>: <code>policy.json</code> → v3 (repo-qualified <code>carveOut</code>, <code>authority</code> block), <code>obot-policy</code> (validate rules, a <code>carve-out &lt;repo&gt; &lt;path&gt;…</code> query subcommand for the resolver's callers), <code>obot-merge</code> (Gate A, Gate B, mergeability in <code>--check</code> and before the audit comment), <code>scripts/test/policy-sweep</code>, and the doc updates in <code>README.md</code> plus the <code>session-reviews</code> / <code>session-init</code> skills whose prose currently carries the caveats this makes untrue.</li>
+  <li><strong>Its own first test.</strong> That PR touches <code>scripts/policy.json</code>, so the gate it adds must refuse it without <code>--jeremy-approved</code> — a real end-to-end confirmation, run on the actual PR rather than a fixture, and the mirror image of what happened with #61.</li>
+  <li><strong>#140 closes on that merge</strong>, with the profile model (already shipped) and its enforcement both in place. Board: <em>Requirement Gathering</em> → <em>Design</em> now, <em>In Progress</em> when the PR opens.</li>
+</ol>
+
+<p class="meta">This design document was drafted by Claude Code using Opus 5 and reviewed by @jwildfire.</p>
+</body>
+</html>
