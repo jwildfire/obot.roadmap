@@ -20,7 +20,14 @@ and site navigation stripped).
   each entry links its frozen operational record in
   [`reports/sessions/`](../reports/sessions/) — same slug as the entry — with a
   "📊 Session report" line under the meta block, added by the wrapup's report step.
-- Section format follows the hub entries: what was completed, issues/PRs touched,
-  blockers/risks, and items needing @jwildfire.
+- **Section format leads with what needs @jwildfire**: `## 🚦 Release candidates
+  needing review`, then `## 🧭 Decisions needed` — each a bulleted list of
+  one-line items linking their PR or draft release and their hub demo or
+  decision artifact — and only then the record (what was completed, issues/PRs
+  touched, blockers/risks, scaffold changes, next-session loose ends, and the
+  mechanical `## 🙋 ToDo` remainder). Both headline lists are **cumulative**: an
+  RC he has not reviewed and a decision he has not made stay at the top of every
+  subsequent entry until he closes them. Composition rules live in the
+  [`session-wrapup` skill](https://github.com/jwildfire/obot.agent/blob/main/skills/session-wrapup/SKILL.md#the-two-headlines).
 - Entries are rendered to the site by `scripts/render_diary.mjs` at deploy time;
   the markdown here is the source of truth.
