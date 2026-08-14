@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — which repos are operational, which are clinical</title>
+<meta name="description" content="The operational-vs-clinical governing principle keys on a per-repo classification @jwildfire never enumerated. The clear cases recorded, the three ambiguous repos put to him as numbered options, and the CI precondition stated plainly.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:940px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:66ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:70ch}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--go);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--go)}
+.verdict p{margin:10px 0 0;font-size:17px}
+.verdict p:first-of-type{font-family:var(--display);font-weight:600;font-size:19px;color:var(--ink);letter-spacing:-.012em}
+.warn{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.warn .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.warn p{margin:10px 0 0}
+table{border-collapse:collapse;width:100%;margin:20px 0 0;font-size:14.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  border-bottom:1px solid var(--rule2)}
+td.n{font-family:var(--mono);white-space:nowrap}
+tr.bad td{background:rgba(184,58,46,.055)}
+tr.bad td.n{color:var(--flag);font-weight:600}
+tr.good td.n{color:var(--go);font-weight:600}
+.scroll{overflow-x:auto}
+.opts{margin:24px 0 0;display:grid;gap:16px}
+.opt{border:1px solid var(--rule);border-radius:5px;background:var(--panel);padding:18px 20px}
+.opt.rec{border-color:var(--go);box-shadow:inset 3px 0 0 var(--go)}
+.opt .hd{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.opt h3{margin:0;font-size:17px}
+.badge{font:600 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;
+  border-radius:3px;border:1px solid currentColor}
+.badge.rec{color:var(--go)}
+.badge.no{color:var(--mute)}
+.opt dl{margin:12px 0 0;display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;font-size:14.5px}
+.opt dt{font:600 11px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding-top:2px}
+.opt dd{margin:0;color:var(--ink2)}
+ul{max-width:70ch;padding-left:22px}
+li{margin:7px 0}
+.foot{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;font-size:13.5px;color:var(--mute)}
+.foot a{color:var(--mute)}
+@media (max-width:640px){.opt dl{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-15</span><span class="dot"></span><span>Goal #73 · autonomy</span></div>
+  <h1>Which repos are operational, and which are clinical</h1>
+  <p class="lede">Your governing principle (<a href="https://github.com/jwildfire/obot.roadmap/discussions/155#discussioncomment-18022829">recorded 2026-08-15</a>) keys everything on one distinction: agents get wide latitude to self-improve on <em>operational</em> work — automatic merges to production, weekly <code>stable</code> releases — while <em>user-facing clinical</em> work is reviewed by you before it reaches prod. You did not enumerate which repo is which. The clear cases are recorded below; the three ambiguous repos are your call, not an agent's, because classifying a clinical repo as operational is the failure mode with real cost.</p>
+  <div class="facts">
+    <span><b>Clear</b> 5 repos recorded</span>
+    <span><b>Your call</b> C1 (open.csr) · G1 (open.gismo) · D1 (demo-301)</span>
+    <span><b>Plus</b> M1 — where the classification lives</span>
+    <span><b>Precondition</b> CI on every auto-merge repo</span>
+    <span><b>Answer in</b> <a href="https://github.com/jwildfire/obot.roadmap/discussions/160">Q&amp;A</a></span>
+  </div>
+</header>
+
+<div class="cut"><span>The situation</span></div>
+<section>
+  <h2>Three sentences</h2>
+  <p>Every repo already has a merge profile in <code>policy.json</code>, and by luck of earlier decisions the mechanics mostly match your principle: clinical-looking repos land work on <code>dev</code> and can only reach <code>main</code> with your attested approval, while the harness repos integrate straight on <code>main</code>. What no file records is <em>why</em> — which repos are operational (so agents may keep merging to production automatically, batch the record into a weekly <code>stable</code> release, and fix issues as they appear) and which are clinical (so nothing reaches prod without you). Until that classification is written down and machine-readable, every future policy change re-litigates it from scratch, and an agent could widen an ambiguous repo by assumption.</p>
+
+  <h3>The clear cases — recorded, not asked</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Repo</th><th>Class</th><th>Why it is clear</th><th>What changes mechanically</th></tr></thead>
+    <tbody>
+      <tr><td class="n">obot.agent</td><td class="n">operational</td><td>The agent harness itself: skills, session tooling, merge policy. No clinical content.</td><td>Nothing — <code>main</code> already integrates on the standard lane. Releases become <code>main → stable</code> RC PRs (R2); weekly cadence reconciled in <a href="https://github.com/jwildfire/obot.roadmap/discussions/158">#158</a>.</td></tr>
+      <tr><td class="n">obot.roadmap</td><td class="n">operational</td><td>The program hub: requirements, reports, diary. Direct-commit grant since 2026-07-04.</td><td>Nothing.</td></tr>
+      <tr><td class="n">safety.viz</td><td class="n">clinical</td><td>Renderers of clinical-trial safety data — the program's core user-facing clinical surface.</td><td>Nothing — <code>dev</code> standard, <code>main</code> attested is already review-before-prod.</td></tr>
+      <tr><td class="n">gsm.safety</td><td class="n">clinical</td><td>R package for clinical safety monitoring; ships the widget bindings.</td><td>Nothing — same shape.</td></tr>
+      <tr><td class="n">safety-histogram</td><td class="n">clinical</td><td>P004 pilot clinical renderer.</td><td>Nothing — <code>dev</code> standard, <code>master</code> attested.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="margin-top:14px">Reference-only clones (gsm.kri, rbm-viz, gsm.roadmap, gh.dash, the archived obot-claw site) are outside <code>policy.json</code> and therefore refused entirely — no classification needed.</p>
+</section>
+
+<div class="cut"><span>The precondition</span></div>
+<section>
+  <h2>Auto-merge to prod requires CI, and one repo had none</h2>
+  <div class="warn">
+    <div class="k">Stated plainly</div>
+    <p>"Fixing issues as they appear" assumes something makes them appear.</p>
+    <p>obot.agent — the repo that runs every session — had <b>no CI at all</b> until tonight: no workflows, nothing running its 112-test suite, on a repo whose merges to production are automatic. Breakage on <code>main</code> would have been discovered by the next session tripping over it. That gap is closed in <a href="https://github.com/jwildfire/obot.agent/pull/98">obot.agent#98</a> (suite + policy-file validator on every push and PR) — and the workflow's <em>first run</em> caught a real defect: a test that silently assumed macOS filesystem semantics and fails on Linux. The gate earns its keep on day one.</p>
+  </div>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Repo</th><th>CI today</th><th>Verdict for auto-merge</th></tr></thead>
+    <tbody>
+      <tr class="good"><td class="n">obot.agent</td><td>None → <a href="https://github.com/jwildfire/obot.agent/pull/98">#98</a> adds the 112-test suite + <code>obot-policy validate</code></td><td>Gate in place once #98 merges</td></tr>
+      <tr><td class="n">obot.roadmap</td><td>Site deploy + automation workflows; no test suite (content repo — a failed deploy is visible in Actions)</td><td>Acceptable; a broken page never merges silently into data</td></tr>
+      <tr><td class="n">demo-301</td><td><code>build-site</code> + <code>run-pipeline</code></td><td>Build gate exists — adequate if classified operational</td></tr>
+      <tr><td class="n">open.csr / open.gismo / safety.viz / gsm.safety</td><td>Real CI (ci.yml / R-CMD-check + site-tests / qcthat)</td><td>Gated regardless of classification</td></tr>
+      <tr class="bad"><td class="n">safety-histogram</td><td><code>test-driver.yml</code> on <code>dev</code> only; nothing on <code>master</code></td><td>Fine while clinical (attested release); revisit if ever widened</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<div class="cut"><span>Your call</span></div>
+<section>
+  <h2>The three ambiguous repos</h2>
+  <p>Each choice below is binary: <b>operational</b> means agents merge to production automatically and you see a weekly-ish <code>stable</code>/release RC for the record; <b>clinical</b> means nothing reaches the released surface without your attested approval. Default on no answer: all three stay exactly as <code>policy.json</code> has them today, which is the clinical-shaped conservative reading.</p>
+
+  <div class="opts">
+
+    <div class="opt rec">
+      <div class="hd"><h3>C1 — open.csr: <b>clinical</b></h3><span class="badge rec">Recommended</span></div>
+      <p style="margin-top:10px">It builds Clinical Study Reports — regulatory clinical documents are the product. The app is young and the workflow is operational-feeling, but its entire output is user-facing clinical content, and "releases formally documented as soon as they go live" is exactly your clinical clause.</p>
+      <dl>
+        <dt>If clinical</dt><dd>No change: <code>dev</code> standard, <code>main</code> (the deployed app) attested. You review every release, as you did v0.2.0.</dd>
+        <dt>If operational</dt><dd>Agents ship the live CSR-builder app to <code>main</code> unreviewed and you learn about it from the weekly release. Cheap iteration, but a defective display change-request loop or numeric regression goes live first, gets caught second.</dd>
+      </dl>
+    </div>
+
+    <div class="opt rec">
+      <div class="hd"><h3>G1 — open.gismo: <b>clinical</b></h3><span class="badge rec">Recommended</span></div>
+      <p style="margin-top:10px">End-to-end RBQM analytics on trial data; the demo runs on synthetic data today, but the platform's purpose is clinical monitoring and its site presents analytics results as findings. The line you drew for gsm ecosystems — operational tooling around a clinical core — puts the core on the clinical side.</p>
+      <dl>
+        <dt>If clinical</dt><dd>No change: <code>dev</code> standard, <code>main</code> attested. R-CMD-check + site-tests keep the dev lane honest.</dd>
+        <dt>If operational</dt><dd>The v1.0 arc (workr 4-layer, og_run) iterates to <code>main</code> without your review — faster toward the demo, but the RBQM analytics surface changes without a gate, and reclassifying later is a narrowing you would have to enforce mid-arc.</dd>
+      </dl>
+    </div>
+
+    <div class="opt rec">
+      <div class="hd"><h3>D1 — demo-301: <b>operational</b></h3><span class="badge rec">Recommended</span></div>
+      <p style="margin-top:10px">A forkable demo study repo on synthetic data, existing to show open.gismo moving. It is publicly visible, which is the one reason to hesitate — but nothing in it is real clinical content, and it already runs the operational shape (<code>main</code> is its integration branch, agents merge there on the standard lane today).</p>
+      <dl>
+        <dt>If operational</dt><dd>Records what already happens; <code>site</code> (the live Pages surface) stays a release role, so pushing the public page remains an RC PR you approve — the weekly-housekeeping shape.</dd>
+        <dt>If clinical</dt><dd><code>main</code> would need to narrow to attested — every demo iteration lands in your queue, which contradicts the RC-only rule for a synthetic-data demo.</dd>
+      </dl>
+    </div>
+
+    <div class="opt">
+      <div class="hd"><h3>M1 — where the classification lives</h3><span class="badge rec">Recommended: policy.json</span></div>
+      <p style="margin-top:10px">Machine-readable home: a <code>"class": "operational" | "clinical"</code> field on each repo entry in <code>scripts/policy.json</code> — the file every merge already consults, inside its own carve-out so the classification can never drift without your sign-off. <code>obot-policy explain/matrix</code> print it; <code>validate</code> warns on a repo with no class. The alternative (a standalone doc) reads well and enforces nothing.</p>
+      <dl>
+        <dt>On your answer</dt><dd>One PR adds the field for all eight repos — the five clear ones plus your three calls — with this artifact as the approval record. Until then no <code>class</code> field is written: the ambiguous three must not be classified by an agent, even as a default.</dd>
+      </dl>
+    </div>
+
+  </div>
+</section>
+
+<div class="cut"><span>Recommendation</span></div>
+<section>
+  <h2>C1 + G1 clinical, D1 operational, M1 in policy.json</h2>
+  <div class="verdict">
+    <div class="k">Recommended</div>
+    <p>open.csr and open.gismo are clinical; demo-301 is operational; the classification is a <code>class</code> field in policy.json.</p>
+    <p>The recommendation changes no merge mechanics anywhere — today's policy.json already behaves this way — so the whole decision is about writing down intent before latitude widens, not about granting or revoking anything tonight. The one repo where the classifications genuinely diverge in consequence is open.gismo during its v1.0 arc; if iteration speed there starts to hurt, the right move is a scoped custom grant you approve, not a reclassification.</p>
+  </div>
+  <h3>What unblocks on each answer</h3>
+  <ul>
+    <li><b>As recommended</b> — the <code>class</code> field lands for all eight repos in one carve-out PR; the weekly operational release cadence goes to the session-model design (<a href="https://github.com/jwildfire/obot.roadmap/discussions/158">#158</a>) to pick its trigger.</li>
+    <li><b>Any repo flipped operational</b> — its release lane widens only with a separate, explicit policy change you approve; CI on that repo becomes a precondition, per the table above.</li>
+    <li><b>No answer</b> — everything stays as it is; only the classification record is missing.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Sources: @jwildfire's 2026-08-15 governing principle (verbatim in the <a href="https://github.com/jwildfire/obot.roadmap/discussions/155#discussioncomment-18022829">Q&amp;A #155 decision record</a>); <code>obot.agent/scripts/policy.json</code> v2 (all eight repo entries); the GitHub API workflow listings for all eight repos taken 2026-08-15; <code>docs/rc-framework.md</code>; the workspace CLAUDE.md repo roster.</p>
+  <p style="margin-top:14px"><a href="../">All decisions</a> · <a href="https://github.com/jwildfire/obot.roadmap/issues/73">Goal #73 — autonomy</a> · <a href="https://github.com/jwildfire/obot.agent/pull/98">obot.agent#98 (CI gate)</a></p>
+  <hr style="border:0;border-top:1px solid var(--rule);margin:22px 0">
+  <p>This artifact was drafted by Claude Code using Fable 5 (👯🤖 gov sibling session) and awaits @jwildfire's decision</p>
+</footer>
+
+</div>
+</body></html>
