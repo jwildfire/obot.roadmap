@@ -4,6 +4,8 @@
 
 **Decide here:** [Q&A discussion #149](https://github.com/jwildfire/obot.roadmap/discussions/149) — the thread where @jwildfire records the calls.
 
+**Status:** Partially decided 2026-08-15 — A1 and A2 accepted as recommended; A3 and A4 held open (deferred pending a structured elicitation exercise on goal #79's real scope, not rejected). @jwildfire's verdict, relayed from chat, is recorded on discussion #149.
+
 ## Why it exists
 
 Goal #79's own Boundaries block selection: *"until the app-first plan update lands on #34 and the Phase 1–4 requirements are filed and designed, every increment here is pipeline-advancement; there is nothing implementation-ready to select."* That blocker is a decision @jwildfire has to make, not work a session can do — so per the [release-candidate framework](https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md), it goes to a decision artifact rather than a PR. **The app goal produced no release candidate on 2026-08-14, deliberately.**
