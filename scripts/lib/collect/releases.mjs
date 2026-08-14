@@ -21,7 +21,7 @@ async function repoReleases(repo) {
     return stripped.length > 2 ? name : null;
   };
 
-  return list
+  const published = list
     .filter((r) => !r.draft)
     .map((r) => ({
       repo: repo.nameWithOwner,
@@ -32,6 +32,22 @@ async function repoReleases(repo) {
       publishedAt: r.published_at || r.created_at,
     }))
     .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+
+  // Draft releases are release candidates for repos whose integration branch IS
+  // the release branch (rc-framework: obot.agent, obot.roadmap, demo-301) —
+  // proposed, awaiting @jwildfire's publish. The API only returns drafts when
+  // the token has push access; without it this is simply empty, never an error.
+  const drafts = list
+    .filter((r) => r.draft)
+    .map((r) => ({
+      repo: repo.nameWithOwner,
+      tag: r.tag_name || null,
+      name: r.name || r.tag_name || 'untitled draft',
+      url: r.html_url,
+      createdAt: r.created_at,
+    }));
+
+  return { published, drafts };
 }
 
 async function compare(nameWithOwner, base, head) {
@@ -54,12 +70,14 @@ async function compare(nameWithOwner, base, head) {
 export async function collectReleases() {
   const recent = [];
   const upcoming = [];
+  const drafts = [];
 
   for (const repo of REPOS) {
     const meta = await rest(`/repos/${repo.nameWithOwner}`);
     const releaseBranch = meta.default_branch === 'dev' ? 'main' : meta.default_branch;
-    const releases = await repoReleases(repo);
+    const { published: releases, drafts: repoDrafts } = await repoReleases(repo);
     recent.push(...releases);
+    drafts.push(...repoDrafts);
 
     const latest = releases.find((r) => !r.prerelease) ?? releases[0] ?? null;
     // `dev` drift is only meaningful when the repo actually keeps one; a 404 from
@@ -92,5 +110,6 @@ export async function collectReleases() {
 
   recent.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
   upcoming.sort((a, b) => (b.devAhead ?? 0) + (b.unreleased ?? 0) - ((a.devAhead ?? 0) + (a.unreleased ?? 0)));
-  return { recent, upcoming };
+  drafts.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  return { recent, upcoming, drafts };
 }

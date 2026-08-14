@@ -14,6 +14,7 @@ fragment prFields on Repository {
       number title url isDraft createdAt updatedAt body
       author { login }
       baseRefName headRefName reviewDecision
+      reviewRequests(first: 10) { nodes { requestedReviewer { ... on User { login } } } }
       labels(first: 6) { nodes { name } }
     }
   }
@@ -55,6 +56,10 @@ ${FRAGMENT}`;
         base: pr.baseRefName,
         head: pr.headRefName,
         reviewDecision: pr.reviewDecision,
+        // Requested reviewers by login. Per the RC framework, review is only ever
+        // requested from @jwildfire, and only on release-candidate PRs — this is
+        // the discriminator the roadmap's Todo section filters on.
+        reviewRequested: pr.reviewRequests.nodes.map((n) => n.requestedReviewer?.login).filter(Boolean),
         labels: pr.labels.nodes.map((l) => l.name),
         createdAt: pr.createdAt,
         updatedAt: pr.updatedAt,

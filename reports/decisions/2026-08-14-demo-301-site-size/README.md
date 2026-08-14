@@ -2,6 +2,8 @@
 
 **Decision artifact** for hub [#143](https://github.com/jwildfire/obot.roadmap/issues/143), written 2026-08-14 in an unattended session. Companion to [the app plan-rewrite decisions](../2026-08-14-app-plan-rewrite/), whose A4 decides whether demo-301 is the fork template at all.
 
+**Decide here:** [Q&A discussion #150](https://github.com/jwildfire/obot.roadmap/discussions/150) — the thread where @jwildfire records the call.
+
 ## Why it exists
 
 #143 says the size call must be made "before demo-301 is used as the fork template in the keynote". It proposes four mitigations and a recommendation, but its framing rests on a clone cost that had not been measured. This page measures it and reframes the issue: there are two problems under one number.

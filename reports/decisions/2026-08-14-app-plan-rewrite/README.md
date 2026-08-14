@@ -2,6 +2,8 @@
 
 **Decision artifact** for goal [#79](https://github.com/jwildfire/obot.roadmap/issues/79) (the app / open.gismo arc), written 2026-08-14 in an unattended session. Linked from [#34](https://github.com/jwildfire/obot.roadmap/issues/34).
 
+**Decide here:** [Q&A discussion #149](https://github.com/jwildfire/obot.roadmap/discussions/149) — the thread where @jwildfire records the calls.
+
 ## Why it exists
 
 Goal #79's own Boundaries block selection: *"until the app-first plan update lands on #34 and the Phase 1–4 requirements are filed and designed, every increment here is pipeline-advancement; there is nothing implementation-ready to select."* That blocker is a decision @jwildfire has to make, not work a session can do — so per the [release-candidate framework](https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md), it goes to a decision artifact rather than a PR. **The app goal produced no release candidate on 2026-08-14, deliberately.**

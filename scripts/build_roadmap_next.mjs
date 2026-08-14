@@ -17,11 +17,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { esc, fmtET, age, settle, hasToken, day } from './lib/gh.mjs';
+import { esc, fmtET, age, settle, hasToken, day, clip } from './lib/gh.mjs';
 import { REPOS, ROOT, HUB } from './lib/repos.mjs';
 import { collectRequirements } from './lib/collect/requirements.mjs';
 import { collectOpenPRs } from './lib/collect/prs.mjs';
 import { collectReleases } from './lib/collect/releases.mjs';
+import { collectDecisions } from './lib/collect/decisions.mjs';
 import { collectIdeas } from './lib/collect/ideas.mjs';
 import { collectGoals } from './lib/collect/goals.mjs';
 import { collectHierarchy } from './lib/collect/hierarchy.mjs';
@@ -62,17 +63,76 @@ async function designLink(number) {
 }
 
 // ---------------------------------------------------------------- section shell
-function section(id, title, count, body, { notice = null, note = null } = {}) {
+function section(id, title, count, body, { notice = null, note = null, cls = '' } = {}) {
   const badge = count === null ? '' : ` <span class="rm-count">${count}</span>`;
   const sub = note ? `<p class="rm-note">${note}</p>` : '';
   const inner = notice ? `<p class="rm-notice">${esc(notice)}</p>` : body;
-  return `<section class="rm-sec" id="sec-${id}">
+  return `<section class="rm-sec${cls ? ` ${cls}` : ''}" id="sec-${id}">
 <h2>${title}${badge}</h2>
 ${sub}${inner}
 </section>`;
 }
 
 const empty = (text) => `<p class="rm-empty">${text}</p>`;
+
+// ---------------------------------------------------------------- todo
+// What is waiting on @jwildfire, always first. Per the RC framework
+// (obot.agent docs/rc-framework.md) he reviews exactly two kinds of thing:
+// release candidates — review-requested PRs, plus draft releases where the
+// integration branch IS the release branch — and decision artifacts, each
+// answered in its hub Q&A thread. Rows carry every view tag so no filter can
+// push the queue below the fold.
+const REVIEWER = 'jwildfire';
+const TODO_HL = 'live attention pulse';
+
+function todoSection(prRes, relRes, decRes) {
+  const rcPrs = (prRes.value ?? []).filter((pr) => pr.reviewRequested?.includes(REVIEWER));
+  const rcDrafts = relRes.value?.drafts ?? [];
+  const awaiting = decRes.ok ? decRes.value.awaiting : [];
+
+  const prRows = rcPrs.map((pr) => `  <div class="rm-row" data-repo="${esc(pr.repo)}" data-hl="${TODO_HL}">
+    <span class="rm-key"><a href="${pr.url}">${esc(shortRepo(pr.repo))}#${pr.number}</a></span>
+    <span class="rm-main"><span class="rm-pill rc">rc pr</span> ${esc(pr.title)}</span>
+    <span class="rm-meta">${age(pr.updatedAt)}</span>
+  </div>`);
+  const draftRows = rcDrafts.map((d) => `  <div class="rm-row" data-repo="${esc(d.repo)}" data-hl="${TODO_HL}" data-draft>
+    <span class="rm-key"><a href="${d.url}">${esc(shortRepo(d.repo))}${d.tag ? ` ${esc(d.tag)}` : ''}</a></span>
+    <span class="rm-main"><span class="rm-pill rc">draft release</span> ${esc(d.name)}</span>
+    <span class="rm-meta">${age(d.createdAt)}</span>
+  </div>`);
+  const decRows = awaiting.map((d) => `  <div class="rm-row" data-repo="${HUB}" data-hl="${TODO_HL}">
+    <span class="rm-key">${esc(d.date)}</span>
+    <span class="rm-main"><span class="rm-pill decision">decide</span> <a href="${d.path ?? 'reports/decisions/'}">${esc(d.title.replace(/\x60/g, ''))}</a>${
+    d.goal ? ` <span class="rm-anchors"><a href="${d.goal.url}">${esc(d.goal.label)}</a></span>` : ''
+  }${d.discussion ? ` · <a href="${d.discussion.url}"><strong>answer in Q&amp;A ${esc(d.discussion.label)}</strong></a>` : ''}</span>
+    <span class="rm-meta">${esc(clip(d.statusPlain, 44))}</span>
+  </div>`);
+
+  const rcList = prRows.concat(draftRows);
+  const rcNotice = !prRes.ok ? `<p class="rm-notice">${esc(prRes.notice)}</p>` : '';
+  const decNotice = !decRes.ok ? `<p class="rm-notice">${esc(decRes.notice)}</p>` : '';
+
+  const body = `<div class="rm-sub">
+<h3>🚦 Release candidates needing review <span class="rm-count">${rcList.length}</span></h3>
+${rcNotice}<div class="rm-rows" id="todo-rc-rows">
+${rcList.length ? rcList.join('\n') : `  ${empty('No release candidates are waiting.')}`}
+</div>
+</div>
+<div class="rm-sub">
+<h3>🧭 Decisions needed <span class="rm-count">${decRows.length}</span></h3>
+${decNotice}<div class="rm-rows">
+${decRows.length ? decRows.join('\n') : `  ${empty('No open decisions.')}`}
+</div>
+</div>`;
+
+  return section('todo', 'Todo', rcList.length + decRows.length, body, {
+    cls: 'rm-todo',
+    note: `Everything waiting on @jwildfire, per the <a href="https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md">RC framework</a>: ` +
+      `release candidates (review-requested PRs and draft releases) and <a href="reports/decisions/">decision artifacts</a>, ` +
+      `each decided in its <a href="https://github.com/${HUB}/discussions/categories/q-a">Q&amp;A thread</a>. ` +
+      `The PR list re-checks GitHub on page load; drafts and decisions are as of the last deploy.`,
+  });
+}
 
 // ---------------------------------------------------------------- goals
 function goalsSection(res, requirements) {
@@ -263,13 +323,14 @@ async function readProposal() {
   }
 }
 
-const [reqRes, prRes, relRes, ideaRes, goalRes, hierRes, auditLedger, proposal] = await Promise.all([
+const [reqRes, prRes, relRes, ideaRes, goalRes, hierRes, decRes, auditLedger, proposal] = await Promise.all([
   settle('Requirements', collectRequirements),
   settle('Open PRs', collectOpenPRs),
   settle('Releases', collectReleases),
   settle('Ideas', collectIdeas),
   settle('Goals', collectGoals),
   settle('Hierarchy', collectHierarchy),
+  settle('Decisions', collectDecisions),
   readAuditLedger(),
   readProposal(),
 ]);
@@ -353,6 +414,7 @@ ${siteHeader({
 </div>
 <p class="rm-blurb" id="rm-blurb"></p>
 
+${todoSection(prRes, relRes, decRes)}
 ${goalsSection(goalRes, requirements)}
 ${hierarchySection(hierRes, { requirements, proposal })}
 ${requirementsSection}
@@ -478,6 +540,45 @@ ${auditLogHtml}
       pill.hidden = false;
     })
     .catch(function () { /* no session state published yet — stay hidden */ });
+
+  // Todo live refresh — the RC PR list re-checks GitHub on load, because PRs
+  // open and close without a push to this repo and the section's whole job is
+  // "always know what is waiting". One unauthenticated search per page view;
+  // a failure just leaves the build-time list standing. Draft-release rows
+  // (data-draft) are kept as built: drafts are invisible without a token.
+  var rcRows = document.getElementById('todo-rc-rows');
+  if (rcRows) {
+    var rcQuery = 'is:pr is:open archived:false user:jwildfire review-requested:jwildfire';
+    fetch('https://api.github.com/search/issues?per_page=30&q=' + encodeURIComponent(rcQuery))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.items)) return;
+        var escape = function (s) {
+          return String(s).replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+          });
+        };
+        var freshAge = function (iso) {
+          var mins = Math.floor((Date.now() - new Date(iso)) / 60000);
+          if (mins < 60) return mins <= 1 ? 'just now' : mins + 'm';
+          if (mins < 1440) return Math.floor(mins / 60) + 'h';
+          return Math.floor(mins / 1440) + 'd';
+        };
+        var fresh = data.items.map(function (it) {
+          var repo = it.repository_url.replace('https://api.github.com/repos/', '');
+          return '<div class="rm-row" data-repo="' + escape(repo) + '" data-hl="live attention pulse">' +
+            '<span class="rm-key"><a href="' + escape(it.html_url) + '">' + escape(repo.split('/')[1]) + '#' + it.number + '</a></span>' +
+            '<span class="rm-main"><span class="rm-pill rc">rc pr</span> ' + escape(it.title) + '</span>' +
+            '<span class="rm-meta">' + freshAge(it.updated_at) + '</span></div>';
+        });
+        var drafts = Array.prototype.filter.call(rcRows.children, function (el) { return el.hasAttribute && el.hasAttribute('data-draft'); })
+          .map(function (el) { return el.outerHTML; });
+        var all = fresh.concat(drafts);
+        rcRows.innerHTML = all.length ? all.join('') : '<p class="rm-empty">No release candidates are waiting.</p>';
+        apply(); // recount badges and re-apply active filters over the fresh rows
+      })
+      .catch(function () { /* offline or rate-limited — the build-time list stands */ });
+  }
 })();
 </script>
 
@@ -511,9 +612,13 @@ if (OUT === 'roadmap.html') {
 
 const degraded = [
   ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes], ['goals', goalRes], ['hierarchy', hierRes],
+  ['decisions', decRes],
 ].filter(([, r]) => !r.ok).map(([n]) => n);
+const todoRcCount = (prRes.value ?? []).filter((pr) => pr.reviewRequested?.includes(REVIEWER)).length
+  + (relRes.value?.drafts.length ?? 0);
 console.log(
-  `roadmap-next: ${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
+  `roadmap-next: todo ${todoRcCount} RCs + ${decRes.value?.awaiting.length ?? 0} decisions, ` +
+  `${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
   `${prRes.value?.length ?? 0} PRs, ${relRes.value?.upcoming.length ?? 0} upcoming, ` +
   `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas, ` +
   `${auditLedger ? `${auditLedger.counts.total} audit findings` : 'no audit ledger'}` +

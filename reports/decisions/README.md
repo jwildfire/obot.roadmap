@@ -19,14 +19,20 @@ PRs, and these.
   and **what unblocks** on each choice.
 - Linked from the blocked goal's hub issue, and surfaced in that night's executive
   summary under *Critical blockers*.
+- **Posted to the hub's [Q&A discussions](https://github.com/jwildfire/obot.roadmap/discussions/categories/q-a)**
+  (@jwildfire, 2026-08-14): a *brief* executive summary — the open question, the
+  options in a line each, and the recommendation — linking the artifact for the
+  full argument, never restating it in markdown. The discussion thread is the
+  *place*: @jwildfire documents his decision there, and the thread link goes in
+  the Index below and in the roadmap page's Todo section.
 - **One artifact per decision topic.** Bundling unrelated questions into one page
   defeats the purpose; a single page may carry several decisions only when they gate
   each other and must be answered in one sitting.
 
 ## Index
 
-| Decision | Date | Goal | Status |
-|---|---|---|---|
-| [The app plan rewrite — four calls to make](2026-08-14-app-plan-rewrite/) | 2026-08-14 | [#79](https://github.com/jwildfire/obot.roadmap/issues/79) | Awaiting @jwildfire |
-| [demo-301's `site` branch — what the fork actually costs](2026-08-14-demo-301-site-size/) | 2026-08-14 | [#79](https://github.com/jwildfire/obot.roadmap/issues/79) | Awaiting @jwildfire — S1–S6 on [#143](https://github.com/jwildfire/obot.roadmap/issues/143) |
-| [The merge lane is not broken — one invocation form is](2026-08-14-merge-lane-classifier-denials/) | 2026-08-14 | [#73](https://github.com/jwildfire/obot.roadmap/issues/73) | Decided 2026-08-14 — approved; the permission rule is @jwildfire's edit to make |
+| Decision | Date | Goal | Discussion | Status |
+|---|---|---|---|---|
+| [The app plan rewrite — four calls to make](2026-08-14-app-plan-rewrite/) | 2026-08-14 | [#79](https://github.com/jwildfire/obot.roadmap/issues/79) | [#149](https://github.com/jwildfire/obot.roadmap/discussions/149) | Awaiting @jwildfire |
+| [demo-301's `site` branch — what the fork actually costs](2026-08-14-demo-301-site-size/) | 2026-08-14 | [#79](https://github.com/jwildfire/obot.roadmap/issues/79) | [#150](https://github.com/jwildfire/obot.roadmap/discussions/150) | Awaiting @jwildfire — S1–S6 on [#143](https://github.com/jwildfire/obot.roadmap/issues/143) |
+| [The merge lane is not broken — one invocation form is](2026-08-14-merge-lane-classifier-denials/) | 2026-08-14 | [#73](https://github.com/jwildfire/obot.roadmap/issues/73) | — | Decided 2026-08-14 — approved; the permission rule is @jwildfire's edit to make |
