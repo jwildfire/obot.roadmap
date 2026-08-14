@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #161 — Kaplan–Meier time-to-event family: the interactive renderer</title>
+<style>
+  :root {
+    --ink: #1a1f24;
+    --muted: #5b6672;
+    --accent: #b45309;
+    --rule: #d9dee3;
+    --panel: #f6f7f9;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0 auto;
+    max-width: 52rem;
+    padding: 2.5rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  header h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .meta a { color: inherit; }
+  .status { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px;
+            padding: .1rem .6rem; font-size: .8rem; font-weight: 600; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+  a { color: var(--accent); }
+  code, pre { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--panel); border-radius: 4px; padding: .1em .35em; }
+  pre { background: var(--panel); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); }
+  .decision { background: #fffbeb; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+              padding: .75rem 1rem; margin: 1.25rem 0; }
+  .decision strong:first-child { color: #92400e; }
+  .decision ul { margin: .5rem 0 .5rem 0; padding-left: 1.2rem; }
+  .decision .rec { background: #fff; border: 1px solid #e6d4ac; border-radius: 6px; padding: .5rem .7rem; margin-top: .6rem; }
+  .callout { background: var(--panel); border-radius: 8px; padding: .8rem 1rem; margin: 1rem 0; }
+  .warn { background: #fef2f2; border-left: 4px solid #b91c1c; border-radius: 0 8px 8px 0; padding: .75rem 1rem; margin: 1.25rem 0; }
+  .toc { font-size: .93rem; }
+  .toc ol { padding-left: 1.3rem; }
+</style>
+</head>
+<body>
+<header>
+<h1>Design #161 — Kaplan–Meier time-to-event family: the interactive renderer</h1>
+<p class="meta">
+  Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/161">jwildfire/obot.roadmap#161</a>
+  · Goal <a href="https://github.com/jwildfire/obot.roadmap/issues/78">#78 — keep adding charts</a>
+  · Drafted 2026-08-15 by Claude Code (Fable 5), unattended session
+  · <span class="status">Decisions adopted provisionally — awaiting @jwildfire review</span>
+</p>
+<p class="meta">Every measured number in this document was computed 2026-08-15 against the live
+<a href="https://github.com/pharmaverse/pharmaverseadam">pharmaverseadam</a> extracts
+(<code>adsl.csv</code>, <code>adae.csv</code>) and is reproducible from the derivation stated in §5.</p>
+</header>
+
+<nav class="toc">
+<ol>
+  <li><a href="#summary">Summary</a></li>
+  <li><a href="#provenance">Provenance and scope</a></li>
+  <li><a href="#stats">The statistics, stated exactly</a></li>
+  <li><a href="#contract">Data contract</a></li>
+  <li><a href="#demo">Demo dataset</a></li>
+  <li><a href="#module">Module design — Phase 1</a></li>
+  <li><a href="#verify">Verification plan</a></li>
+  <li><a href="#matrix">Requirement matrix plan</a></li>
+  <li><a href="#delivery">Delivery and the done gate</a></li>
+  <li><a href="#risks">Risks and what this design does not settle</a></li>
+</ol>
+</nav>
+
+<h2 id="summary">1. Summary</h2>
+
+<p>safety.viz gains a <strong>time-to-event</strong> module: Kaplan–Meier curves by treatment group with
+censoring tick marks, pointwise 95% confidence bands, and the at-risk / cumulative-events strip table the
+FDA ST&amp;F guide mandates beneath every time-to-event plot. The module consumes an
+<strong>ADTTE-shaped analysis dataset</strong> (one row per participant per endpoint: id, group, endpoint,
+time in days, censor flag) and computes the product-limit estimator itself; which events qualify and how
+censoring dates are chosen stay upstream in the analysis dataset, exactly as in regulated practice.</p>
+
+<p>The organizing principle is a single derivation: <strong>one estimator pass produces the curve, the
+confidence band, the censor marks, and every number in the risk table</strong>. The classic KM defect — a
+risk table that disagrees with its own curve — is made structurally impossible rather than tested away.</p>
+
+<p>Phase 1 is one renderer at the standard done-gate (gallery demo, requirement-keyed evidence, API
+reference) on the standard module lifecycle. No new architecture: the CI ribbon uses qt-explorer's canvas
+plugin technique, the risk table uses the same in-canvas drawing approach as qt-explorer's threshold
+labels, and the shell, filters, and selection event follow the house pattern.</p>
+
+<h2 id="provenance">2. Provenance and scope</h2>
+
+<p>The mandate chain: the
+<a href="https://jwildfire.github.io/obot.roadmap/reports/fda-stf-static-displays-plan-2026-07-21/">FDA ST&amp;F
+static-displays assessment</a> (2026-07-21) found that five of the guide's figures — F1, F4, F11, F13, F14 —
+collapse onto one Kaplan-Meier engine, the largest figure group in the guidance with no credible open-source
+implementation. The <a href="https://jwildfire.github.io/obot.roadmap/reports/goal-atlas-2026-07-24/requirements.html">goal
+atlas</a> (2026-07-24) carried it forward as candidate <strong>C3, size L</strong>. Requirement
+<a href="https://github.com/jwildfire/obot.roadmap/issues/161">#161</a> (2026-08-15) is the issue behind both facts.</p>
+
+<p><strong>What is in scope here: the interactive half only.</strong> The ST&amp;F plan's Phase 2 verdict for the
+static KM family is "wrap, don't build" — <code>ggsurvfit</code> / <code>tern::g_km</code> in
+<code>gsm.safety</code>, under <a href="https://github.com/jwildfire/obot.roadmap/issues/9">#9</a>. That verdict is
+about static R figures and does not transfer: no JavaScript KM implementation exists anywhere in the portfolio's
+reference stack, so the interactive renderer computes its own estimator. The furniture the ST&amp;F plan says the
+existing R templates lack — at-risk and cumulative-event strip tables, pointwise 95% CI, earliest-qualifying-event
+semantics — is exactly the furniture this module treats as first-class requirements.</p>
+
+<p><strong>Out of scope for Phase 1</strong> (each needs its own decision before it ships): Aalen–Johansen
+cumulative incidence for competing risks, landmark analyses, hazard-ratio or log-rank annotation, median-time
+annotation, in-browser derivation of time-to-event from raw AE + disposition domains, and the
+<code>gsm.safety</code> widget binding.</p>
+
+<h2 id="stats">3. The statistics, stated exactly</h2>
+
+<p>This section is the normative spec for <code>src/time-to-event/km.js</code>, the pure estimation module.
+Every formula here is asserted by unit tests against hand-computed values and cross-validated against R's
+<code>survival::survfit</code> (§7).</p>
+
+<h3>3.1 Estimator</h3>
+
+<p>Input per group: pairs (tᵢ, cᵢ) with tᵢ &gt; 0 the participant's time in days and cᵢ the censor flag
+(ADaM semantics: 0 = event, ≥ 1 = censored). At each distinct <em>event</em> time t₍ⱼ₎ with dⱼ events and
+nⱼ participants at risk:</p>
+
+<pre>S(t) = ∏ over event times t₍ⱼ₎ ≤ t of (1 − dⱼ / nⱼ)</pre>
+
+<p><strong>At risk</strong> at time t means observed time ≥ t — so a participant censored at exactly t₍ⱼ₎ is
+still in nⱼ (the standard convention: at tied times, events are processed before censorings, matching
+<code>survival::survfit</code>). S(t) = 1 for t before the first event. If the largest observed time is an
+event, S reaches its final value there; if it is a censoring, the curve extends flat to that time and the
+censor mark shows why it does not drop.</p>
+
+<h3>3.2 Variance and confidence band</h3>
+
+<p>Greenwood's formula for the variance, and the <strong>log-log (complementary log-log) transformation</strong>
+for the pointwise interval — the <code>survfit</code> <code>conf.type = "log-log"</code> default family choice
+that keeps bounds inside [0, 1] without truncation:</p>
+
+<pre>Var[S(t)] = S(t)² · Σⱼ dⱼ / (nⱼ (nⱼ − dⱼ))          (event times ≤ t)
+θ(t) = log(−log S(t)),  Var[θ] = Var[S] / (S log S)²
+CI(t) = S(t)^exp(±z₀.₉₇₅ √Var[θ])</pre>
+
+<p>Where the transform is undefined the band is not drawn rather than faked: before the first event
+(S = 1) there is no interval; where S(t) = 0 the band ends. Where nⱼ − dⱼ = 0 mid-curve the Greenwood sum is
+undefined from that point on and the band stops there, matching <code>survfit</code>. The band is labelled
+<strong>"pointwise 95% CI"</strong> in the legend — pointwise, not simultaneous, and the clinical guide says
+what the difference means.</p>
+
+<h3>3.3 Risk table</h3>
+
+<p>At each x-axis tick time t: <strong>n at risk</strong> = #{observed time ≥ t} and <strong>cumulative
+events</strong> = Σ dⱼ over event times ≤ t, per group. Both numbers come from the same sorted arrays the
+estimator walked — there is no second derivation to disagree with the first. The FDA guide's mandated
+furniture is exactly these two strips.</p>
+
+<h3>3.4 Orientation</h3>
+
+<p>Default display is <strong>cumulative incidence, 1 − S(t)</strong> — the safety convention (curves rise;
+the arm with more events sits higher), and the orientation of ST&amp;F figures F1/F4/F11/F13/F14. A
+<code>direction</code> setting flips to survival orientation. The y-axis label always names the estimator:
+"Cumulative incidence (1 − KM)" or "Event-free probability (KM)" — never a bare percentage.</p>
+
+<div class="warn">
+<strong>Competing-risks honesty.</strong> 1 − KM answers "what fraction would have had the event by day t
+<em>if censoring were non-informative and nothing else could intervene</em>." When competing events (death,
+discontinuation for another reason) are present, 1 − KM <strong>overestimates</strong> absolute risk; the
+correct absolute-risk estimator is Aalen–Johansen, which is Phase 2. Phase 1's obligations: the y-axis and
+tooltip name the estimator, the clinical guide states this limitation plainly with the standard reference
+points, and nothing in the display language claims "risk of event" as an absolute probability. This is a
+requirement row (TTE-GUIDE), not a docs nicety.
+</div>
+
+<h3>3.5 Degenerate inputs</h3>
+
+<p>A group with zero rows is dropped with a console warning. A group that is entirely censored draws a flat
+line at S = 1 with its censor marks — true, and visibly different from "no data". Zero usable rows overall,
+or an endpoint value that matches nothing, renders the standard empty-state message rather than an empty
+confident chart. Rows with non-positive or non-numeric time, or an unparseable censor flag, are excluded and
+counted, and the exclusion count is surfaced in the notes line beneath the chart (the nep-explorer
+nothing-dropped-silently pattern).</p>
+
+<h2 id="contract">4. Data contract</h2>
+
+<p>One tall ADTTE-shaped dataset; every settings key names a column (house pattern, JSON schema in
+<code>src/data/schema/time-to-event.json</code>):</p>
+
+<table>
+<tr><th>Setting</th><th>Default</th><th>Meaning</th></tr>
+<tr><td><code>id_col</code></td><td><code>USUBJID</code></td><td>Participant id — one row per participant per endpoint.</td></tr>
+<tr><td><code>group_col</code></td><td><code>ARM</code></td><td>Curve grouping (treatment arm). Optional: absent → one pooled curve.</td></tr>
+<tr><td><code>param_col</code></td><td><code>PARAM</code></td><td>Endpoint label, feeds the endpoint picker.</td></tr>
+<tr><td><code>paramcd_col</code></td><td><code>PARAMCD</code></td><td>Endpoint short code; <code>param_value</code> selects the initially shown endpoint (default: first by data order).</td></tr>
+<tr><td><code>time_col</code></td><td><code>AVAL</code></td><td>Time in days since the analysis time origin (day 1 = first dose, per upstream derivation).</td></tr>
+<tr><td><code>censor_col</code></td><td><code>CNSR</code></td><td>ADaM semantics: 0 = event, ≥ 1 = censored. Anything else → row excluded and counted.</td></tr>
+<tr><td><code>event_desc_col</code></td><td><code>EVNTDESC</code></td><td>Optional; tooltip detail for event rows.</td></tr>
+<tr><td><code>censor_desc_col</code></td><td><code>CNSDTDSC</code></td><td>Optional; tooltip detail for censored rows.</td></tr>
+<tr><td><code>direction</code></td><td><code>incidence</code></td><td><code>incidence</code> (1 − KM, rising) or <code>survival</code> (falling).</td></tr>
+<tr><td><code>ci</code></td><td><code>true</code></td><td>Draw the pointwise 95% band.</td></tr>
+<tr><td><code>time_unit</code></td><td><code>day</code></td><td>Axis label unit; display only, no rescaling.</td></tr>
+<tr><td><code>filters</code></td><td><code>[]</code></td><td>House field-list filters over the analysis rows.</td></tr>
+</table>
+
+<div class="decision">
+<strong>D1 — ADTTE contract, not raw-domain derivation.</strong> The alternative — deriving time-to-first-event
+in the browser from AE + population domains — was rejected for Phase 1.
+<ul>
+<li>The censoring date hierarchy, treatment-emergence rules, and event baskets are clinical analysis decisions;
+in regulated practice they live in the ADTTE derivation with the data owner, not in chart code.</li>
+<li>The vendored <code>adae.csv</code> proves the point: it has no follow-up-end for anyone, and inventing
+censoring from last observed activity biases curves (participants stop contributing exactly when their data
+stops, which is not when their risk stopped).</li>
+<li>A browser-side convenience derivation remains a Phase-2 candidate with its own decision.</li>
+</ul>
+<div class="rec">Adopted provisionally 2026-08-15 (unattended). Overturnable at review before any RC.</div>
+</div>
+
+<h2 id="demo">5. Demo dataset</h2>
+
+<p><code>site/data/adtte.csv</code>, derived deterministically in <code>scripts/build-demo-data.mjs</code>
+from pharmaverseadam <code>adae</code> + <code>adsl</code> (the house mechanism, obot.roadmap#25), with
+provenance in <code>docs/DATA_SOURCES.md</code>. pharmaverseadam ships no safety ADTTE
+(<code>adtte_onco.csv</code> is OS/PFS on a simulated oncology arm set — the wrong story for a safety demo),
+so the derivation lives in the build script, mirroring what admiral's own ADTTE template does with this same
+study.</p>
+
+<h3>5.1 Derivation, exactly</h3>
+
+<ul>
+<li><strong>Population:</strong> <code>adsl</code> rows with <code>SAFFL = 'Y'</code> and a non-missing
+<code>TRTSDT</code> — measured: <strong>254 participants</strong> (Placebo 86, Xanomeline Low Dose 96,
+Xanomeline High Dose 72). All 254 carry complete <code>EOSDT</code>.</li>
+<li><strong>Origin:</strong> day 1 = <code>TRTSDT</code> (the <code>ASTDY</code> convention the source file
+already uses).</li>
+<li><strong>Qualifying events per endpoint</strong>, over treatment-emergent (<code>TRTEMFL = 'Y'</code>)
+AE rows with usable <code>ASTDY</code> (measured: all 1,122 such rows have <code>ASTDY</code> ≥ 1 — no
+missing, no pre-dose):
+  <table>
+  <tr><th>PARAMCD</th><th>PARAM</th><th>Basket</th><th>Measured events / censored</th></tr>
+  <tr><td><code>TTDE</code></td><td>Time to First Dermatologic Event</td><td><code>AEBODSYS = 'SKIN AND
+  SUBCUTANEOUS TISSUE DISORDERS'</code> or <code>AEDECOD</code> starts with <code>'APPLICATION SITE '</code>
+  (the study drug is a transdermal patch; application-site reactions code to the General Disorders SOC)</td>
+  <td>156 / 98 — events by arm: Placebo 30/86, Low 65/96, High 61/72. The arms genuinely separate.</td></tr>
+  <tr><td><code>TTSAE</code></td><td>Time to First Serious Adverse Event</td><td><code>AESER = 'Y'</code></td>
+  <td>3 / 251 — deliberately kept: a sparse-event endpoint whose wide, early-terminating band is the honest
+  display this module must produce, not a failure case to hide.</td></tr>
+  <tr><td><code>TTAE</code></td><td>Time to First Treatment-Emergent AE</td><td>any TEAE</td>
+  <td>217 / 37.</td></tr>
+  </table></li>
+<li><strong>AVAL:</strong> event rows: min qualifying <code>ASTDY</code>; censored rows:
+<code>EOSDT − TRTSDT + 1</code> (measured range 1–213 days, median 140.5). Measured: no qualifying AE starts
+after its participant's end-of-study day, so AVAL is always ≤ the censor horizon.</li>
+<li><strong>CNSR:</strong> 0 = event, 1 = censored at end of study. <code>EVNTDESC</code> carries the first
+qualifying <code>AEDECOD</code>; <code>CNSDTDSC</code> = <code>"END OF STUDY"</code>.</li>
+<li><strong>Columns written:</strong> <code>USUBJID, ARM, PARAMCD, PARAM, AVAL, CNSR, EVNTDESC,
+CNSDTDSC</code>. Roughly 762 rows (254 × 3), ~40 KB.</li>
+</ul>
+
+<div class="callout">
+<strong>Death is a real competing event in this data</strong> (the pilot study has on-study deaths in
+<code>adsl.DTHDT</code>), and this derivation censors non-event participants at end of study regardless of
+reason — which is precisely the situation §3.4's caveat describes. The demo page's clinical guide uses this
+fact as its worked example of why 1 − KM is an upper bound on absolute risk here.
+</div>
+
+<div class="decision">
+<strong>D5 — demo endpoints TTDE / TTSAE / TTAE, derived in the build script.</strong> TTDE is the study's
+actual safety concern (a dermal patch trial) and the endpoint admiral's ADTTE vignette derives from this very
+study; TTSAE exercises the sparse-event display honestly; TTAE exercises a high-event-rate curve. Three params
+exercise the endpoint picker.
+<div class="rec">Adopted provisionally 2026-08-15. The basket rule is stated above and lives as a named
+constant in the build script with a unit test.</div>
+</div>
+
+<h2 id="module">6. Module design — Phase 1</h2>
+
+<h3>6.1 Files and lifecycle</h3>
+
+<pre>src/time-to-event.js            entrypoint: class + default-export factory (hep/nep orchestrator shape)
+src/time-to-event/configure.js  DEFAULT_SETTINGS + syncSettings
+src/time-to-event/checkInputs.js  schema-driven required-column check (ae-explorer pattern)
+src/time-to-event/km.js         PURE estimation: kmEstimate(times, censors) → steps, Greenwood, log-log CI,
+                                riskTableAt(ticks) — no Chart.js, no DOM; the normative implementation of §3
+src/time-to-event/structureData.js  rows → per-group (tᵢ, cᵢ) arrays → km.js → Chart.js datasets
+src/time-to-event/getScales.js  linear x (days), linear y ([0,1] or percent), tick generation
+src/time-to-event/getPlugins.js ciBandPlugin (qt-explorer ribbon technique), riskTablePlugin (in-canvas,
+                                tick-aligned via x.getPixelForValue), tooltip callbacks
+src/data/schema/time-to-event.json  data contract schema
+</pre>
+
+<p>Registered in <code>src/main.js</code> as <code>timeToEvent</code>; site entry in
+<code>site/config.json</code> (title <strong>"Time-to-Event Explorer"</strong>, matrix
+<code>time-to-event.md</code>); demo page <code>site/demo/time-to-event.js</code>.</p>
+
+<h3>6.2 Chart composition</h3>
+
+<ul>
+<li><strong>Curves:</strong> one Chart.js line dataset per group, <code>stepped: 'after'</code> (the value
+holds until the next event — the only correct KM interpolation), points hidden except at event steps.</li>
+<li><strong>Censor marks:</strong> a paired scatter dataset per group — the conventional small vertical tick
+at each censored time on the curve, using a custom point style; toggleable with its group.</li>
+<li><strong>CI band:</strong> <code>ciBandPlugin</code> fills between the lo/hi step arrays per group
+(qt-explorer's ribbon: <code>beforeDatasetsDraw</code>, α ≈ 0.14 of the group color), drawn only where §3.2
+defines the interval.</li>
+<li><strong>Risk table:</strong> <code>riskTablePlugin</code> reserves bottom layout padding and draws
+"n at risk" and "cum. events" rows per group under the axis, each number centered on
+<code>x.getPixelForValue(tick)</code> — so the table columns are aligned to the ticks by construction, and
+the numbers come from <code>km.js</code>'s <code>riskTableAt()</code> on the same pass that drew the curve.</li>
+<li><strong>Tooltip:</strong> at an event step: time, groups' S(t) / 1−S(t) with CI, dⱼ and nⱼ at that time,
+and <code>EVNTDESC</code> values when singular; on a censor mark: time, count censored, <code>CNSDTDSC</code>.</li>
+<li><strong>Selection:</strong> clicking an event step dispatches the shared <code>participantsSelected</code>
+event with the ids whose event occurred at that time (structureData retains ids per event time) — the same
+profile-drill-down seam every explorer keeps open.</li>
+<li><strong>Colors:</strong> the house group palette as used by qt-explorer's per-arm styles; the
+<code>dataviz</code> design pass runs before chart code is written.</li>
+</ul>
+
+<h3>6.3 Shell controls</h3>
+
+<p>House shell: endpoint picker (from <code>param_col</code>, when &gt; 1), direction toggle
+(incidence / survival), CI band toggle, configured filters, and the standard notes line (population count,
+exclusion count, estimator name). Group show/hide via the Chart.js legend.</p>
+
+<div class="decision">
+<strong>D2 — default orientation is cumulative incidence (1 − KM).</strong> Safety convention and the ST&amp;F
+figures' orientation; survival orientation stays one setting away. The y-axis always names the estimator.
+<div class="rec">Adopted provisionally 2026-08-15.</div>
+</div>
+
+<div class="decision">
+<strong>D3 — pointwise 95% CI via Greenwood + log-log, on by default.</strong> Matches
+<code>survival::survfit conf.type="log-log"</code>; bounds respect [0,1] structurally; band gaps where the
+transform is undefined instead of extrapolating.
+<div class="rec">Adopted provisionally 2026-08-15.</div>
+</div>
+
+<div class="decision">
+<strong>D4 — the risk table is drawn in-canvas, tick-aligned, from the same estimator pass.</strong> An HTML
+table below the canvas cannot stay aligned with the axis across resizes; a second derivation could disagree
+with the curve. Both failure modes are removed by construction.
+<div class="rec">Adopted provisionally 2026-08-15.</div>
+</div>
+
+<div class="decision">
+<strong>D6 — event-step click dispatches <code>participantsSelected</code>.</strong> The ids at that event
+time, nothing more — keeps the profile seam open without inventing per-participant marks on an aggregate
+display.
+<div class="rec">Adopted provisionally 2026-08-15.</div>
+</div>
+
+<h2 id="verify">7. Verification plan</h2>
+
+<p>TDD per the house skill; the estimator is the clinically loaded part and gets three independent checks:</p>
+
+<ol>
+<li><strong>Hand-computed unit tests.</strong> A small worked example (≤ 10 participants, ties of every kind:
+event-with-event, event-with-censor, censor-after-last-event) with S(t), Greenwood SE, log-log CI, n-at-risk
+and cumulative events computed by hand in the test file's comments, asserted digit-for-digit.</li>
+<li><strong>Cross-validation against R <code>survival::survfit</code>.</strong>
+<code>scripts/build-tte-fixture.R</code> runs <code>survfit(Surv(AVAL, 1 - CNSR) ~ ARM, conf.type =
+"log-log")</code> per endpoint over the derived demo dataset and writes
+<code>tests/unit/time-to-event/fixtures/survfit-reference.json</code> (times, n.risk, n.event, surv, lower,
+upper — full precision). A unit test replays the same inputs through <code>km.js</code> and asserts agreement
+to 1e-12. The fixture is committed with a provenance header (R version, survival version, generation date);
+the R script is regeneration-only, like the demo-data fetch. Verified available locally: R 4.x +
+survival 3.5.8.</li>
+<li><strong>Derivation tests.</strong> The adtte build derivation is unit-tested in
+<code>tests/unit/demo-data/</code> against the measured facts in §5.1 (254 / 156 / 3 / 217, arm splits,
+censor-day range) so a silent upstream data change breaks loudly.</li>
+</ol>
+
+<p>Then the house layers: unit suites per module file; Playwright e2e
+(<code>tests/e2e/time-to-event.spec.js</code>) for shell controls, endpoint switching, direction toggle,
+tooltip content, empty states, selection dispatch, and the evidence screenshots; requirement-keyed evidence
+via <code>npm run evidence</code> with the canonical-Linux-baseline bootstrap cycle from the done-gate
+convention.</p>
+
+<h2 id="matrix">8. Requirement matrix plan</h2>
+
+<p><code>requirements/time-to-event.md</code>, condensed <code>TTE-*</code> scheme, base-ID form for the
+evidence-page resolver:</p>
+
+<table>
+<tr><th>Area</th><th>Covers</th><th>≈ rows</th></tr>
+<tr><td><code>TTE-CFG-*</code></td><td>Default mapping, settings sync, direction/ci/param_value validation</td><td>5–7</td></tr>
+<tr><td><code>TTE-DATA-*</code></td><td>Contract checks, CNSR semantics, exclusion counting, group drop warnings</td><td>4–6</td></tr>
+<tr><td><code>TTE-STAT-*</code></td><td>§3 line by line: estimator, ties, Greenwood, log-log CI, band-undefined rules, risk-table numbers, single-derivation guarantee, survfit cross-validation</td><td>8–10</td></tr>
+<tr><td><code>TTE-CURV-*</code></td><td>Step rendering, censor marks, CI ribbon, orientation, axis labelling naming the estimator</td><td>5–7</td></tr>
+<tr><td><code>TTE-RISK-*</code></td><td>Strip table content, tick alignment, group rows, resize behavior</td><td>3–4</td></tr>
+<tr><td><code>TTE-USER-*</code></td><td>Endpoint picker, toggles, filters, legend show/hide, tooltip, selection event, empty states</td><td>6–8</td></tr>
+<tr><td><code>TTE-GUIDE-*</code></td><td>Clinical guide: estimator naming, pointwise-vs-simultaneous, competing-risks limitation with the demo's death example, censoring assumptions</td><td>3–4</td></tr>
+<tr><td><code>TTE-DEMO-*</code></td><td>adtte derivation facts (§5.1), determinism, provenance doc</td><td>4–5</td></tr>
+</table>
+
+<h2 id="delivery">9. Delivery and the done gate</h2>
+
+<p>Increments, sized so one session can take one and stop; one PR to <code>dev</code> per the
+single-PR-per-session convention:</p>
+
+<ol>
+<li><code>adtte.csv</code> derivation + tests + <code>DATA_SOURCES.md</code></li>
+<li><code>km.js</code> with hand-computed tests + the survfit fixture cross-validation</li>
+<li>Schema, configure, checkInputs, structureData (TDD)</li>
+<li>Chart: steps, censor marks, CI ribbon, orientation</li>
+<li>Risk-table plugin</li>
+<li>Shell controls, tooltip, selection, empty states, e2e suite</li>
+<li>Matrix + evidence + API reference + gallery entry + demo page</li>
+<li>NEWS.md under <code>vNEXT (Upcoming)</code>; PR to <code>dev</code></li>
+</ol>
+
+<p><strong>The prod gate is @jwildfire's.</strong> Merging to <code>dev</code> on the standard lane ends this
+work; no RC, no tag, no release from this session. The RC that eventually ships this must carry: his review of
+D1–D6, the <code>TTE-GUIDE</code> language, and the matrix sign-off (rows land as <code>ai-reviewed</code>).
+Like nep-explorer, the module ships marked <strong>Experimental</strong> until that review happens.</p>
+
+<h2 id="risks">10. Risks and what this design does not settle</h2>
+
+<ul>
+<li><strong>Competing risks (the big one).</strong> Phase 1 labels and documents; it does not solve. If review
+concludes labelling is not enough for the safety audience, Aalen–Johansen moves from Phase 2 to a blocker —
+that call is @jwildfire's.</li>
+<li><strong>Sparse-event bands.</strong> TTSAE (3 events) will draw a nearly flat curve with a wide, early
+band. The design treats this as the honest display; review may prefer a minimum-events warning threshold.</li>
+<li><strong>Simultaneous bands</strong> (Hall–Wellner) are not offered; pointwise is labelled. </li>
+<li><strong>No median / quantile annotation</strong> in Phase 1 — for cumulative-incidence safety displays the
+median is usually not reached and a half-drawn annotation misleads more than it informs.</li>
+<li><strong>The static twin</strong> (gsm.safety, wrap ggsurvfit/tern) is a separate effort under #9; nothing
+here blocks or is blocked by it, but the two must eventually agree on demo data and endpoint naming.</li>
+<li><strong>Tick-time choice</strong> for the risk table follows the axis tick generator; a sponsor-fixed
+interval (e.g., every 28 days) is a plausible setting that Phase 1 omits.</li>
+</ul>
+
+<hr>
+<p class="meta">This design was drafted by Claude Code using Fable 5 in an unattended session — not yet
+reviewed by @jwildfire. Decisions D1–D6 are adopted provisionally and are overturnable at review before any
+release candidate.</p>
+
+</body>
+</html>
