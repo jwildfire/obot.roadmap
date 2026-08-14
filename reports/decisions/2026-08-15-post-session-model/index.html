@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — the session model after obot-prime</title>
+<meta name="description" content="A standing prime has no session start and no session end, so the bookend-built scaffold needs a verdict per piece, a new trigger for the wrapup's duties, and a morning briefing designed from why the last one failed. Five calls, M1–M5.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--go);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--go)}
+.verdict p{margin:10px 0 0;font-size:16.5px}
+.verdict p:first-of-type{font-family:var(--display);font-weight:600;font-size:19px;color:var(--ink);letter-spacing:-.012em}
+table{border-collapse:collapse;width:100%;margin:20px 0 0;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  border-bottom:1px solid var(--rule2)}
+td.n{font-family:var(--mono);white-space:nowrap;font-size:13px}
+.v-keep{color:var(--go);font-weight:600}
+.v-move{color:var(--bronze);font-weight:600}
+.v-merge{color:var(--blue);font-weight:600}
+.v-ret{color:var(--flag);font-weight:600}
+.scroll{overflow-x:auto}
+.opts{margin:24px 0 0;display:grid;gap:16px}
+.opt{border:1px solid var(--rule);border-radius:5px;background:var(--panel);padding:18px 20px}
+.opt.rec{border-color:var(--go);box-shadow:inset 3px 0 0 var(--go)}
+.opt .hd{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.opt h3{margin:0;font-size:17px}
+.badge{font:600 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;
+  border-radius:3px;border:1px solid currentColor}
+.badge.rec{color:var(--go)}
+.badge.no{color:var(--mute)}
+.badge.warn{color:var(--flag)}
+.opt dl{margin:12px 0 0;display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;font-size:14.5px}
+.opt dt{font:600 11px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding-top:2px}
+.opt dd{margin:0;color:var(--ink2)}
+ul{max-width:72ch;padding-left:22px}
+li{margin:7px 0}
+.phone{margin:24px auto 0;max-width:430px;border:1px solid var(--rule2);border-radius:14px;background:#fff;
+  box-shadow:0 8px 28px rgba(23,25,28,.08);overflow:hidden}
+.phone .bar{background:#f2efe8;border-bottom:1px solid var(--rule);padding:9px 16px;font:600 11px/1 var(--mono);
+  letter-spacing:.08em;color:var(--mute);text-transform:uppercase}
+.phone .body{padding:16px 20px 20px;font-size:14.5px;line-height:1.55}
+.phone .body .sec{font:600 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--bronze);margin:14px 0 4px}
+.phone .body .sec:first-child{margin-top:0}
+.phone .body ol,.phone .body ul{margin:4px 0 0;padding-left:20px}
+.phone .body li{margin:4px 0}
+.phone .body .quiet{color:var(--mute);font-size:13px}
+.push{margin:18px auto 0;max-width:430px;border:1px solid var(--rule);border-radius:10px;background:#1c1e22;color:#e6e3dc;
+  padding:12px 16px;font:13.5px/1.5 var(--body)}
+.push .app{font:600 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#8f959f;margin-bottom:4px}
+.foot{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;font-size:13.5px;color:var(--mute)}
+.foot a{color:var(--mute)}
+@media (max-width:640px){.opt dl{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-15</span><span class="dot"></span><span>Session framework · 🎩🤖 obot-prime</span></div>
+  <h1>The session model after obot-prime</h1>
+  <p class="lede">You said it yourself last night: the standing prime breaks the session model. Every bookend assumes a session that starts and ends — prime does neither, so init has nothing to open, the wrapup has nothing to fire on, and the concepts underneath them each need a verdict rather than a vibe. You also gave a provisional lean — a tight daily briefing with headlines and todos, maybe audio, plus a detailed weekly — and asked for honest suggestions. This page gives a verdict per concept (M1), a trigger model for the wrapup's orphaned duties (M2), a briefing designed from the measured reasons the openclaw one failed (M3), the weekly (M4), and the audio question researched properly (M5).</p>
+  <div class="facts">
+    <span><b>Calls</b> M1–M5</span>
+    <span><b>Inventory</b> 17 concepts: 9 keep · 6 re-home · 1 merge · 1 retire</span>
+    <span><b>Trigger</b> content-gated morning fold + event push</span>
+    <span><b>Audio</b> later, gated — Spotify verified impossible</span>
+    <span><b>Answer in</b> <a href="https://github.com/jwildfire/obot.roadmap/discussions/158">Q&amp;A discussion</a></span>
+  </div>
+</header>
+
+<div class="cut"><span>The situation</span></div>
+<section>
+  <h2>Three sentences</h2>
+  <p>The whole session scaffold — init, wrapup, todo, the scratchpad heartbeat, the diary, the reports — was built around a unit of work that has a beginning and an end, and 🎩🤖 obot-prime is a session that has neither, so the two bookends have lost their trigger while everything they used to guarantee (clean roadmap, captured todos, a written record, a hand-off) still needs guaranteeing. You found the session wrapups useful and you explicitly like the dashboard's news feed, but the last time this program ran a <em>daily</em> summary — the openclaw era — you mostly ignored it, and nobody had diagnosed why before proposing its successor. This artifact does the diagnosis first, then makes five calls; nothing is retired or rebuilt tonight — every change below is a recommendation for you to answer in the Q&amp;A thread.</p>
+
+  <blockquote>"I really like the news feed on the dashboard page, and did find the session wrap-ups helpful, but not sure how/when to trigger them. We used 'daily summaries' back in open-claw era and i mostly ignored them, so not sure that is a good alternative… I guess if I had to pick right now, I'd go with a very tight daily briefing with just 'headlines' and 'todos' (maybe both text and audio?…) and then a more detailed weekly briefing." — @jwildfire, 2026-08-14</blockquote>
+
+  <h3>What already exists on this map — so we don't invent it twice</h3>
+  <ul>
+    <li><a href="https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md">rc-framework.md</a> already specifies a "nightly executive summary" (RCs → blockers → shipped → next → cost) that has <b>never been built</b> — no <code>reports/exec/</code> exists. M3 is that summary, redesigned against the evidence below; on approval the framework doc gets amended, not duplicated.</li>
+    <li>The Navigator (<a href="https://github.com/jwildfire/obot.roadmap/issues/157">#157</a>, filed last night, 2026q3) already owns <em>verification</em> — one of the wrapup's five duties. M2 does not re-decide it.</li>
+    <li>Scheduled autonomous sessions (A2, <a href="https://github.com/jwildfire/obot.roadmap/issues/122">#122</a>, 2026q3) keep the <code>--auto</code> bookends alive regardless of what happens to the interactive ones — several verdicts in M1 turn on that distinction.</li>
+  </ul>
+</section>
+
+<div class="cut"><span>The evidence</span></div>
+<section>
+  <h2>Why the openclaw summaries died — measured, not remembered</h2>
+  <p>The corpus survives: 32 entries, 2026-05-11 → 06-11, in <code>obot-claw.github.io/daily/</code> (mirrored into this hub's diary). 18,760 words total, ~570 per entry. The git log shows an <b>unconditional cron committing at 23:31–23:35 ET every night</b>, including zero-activity days, to a Pages site you had to navigate to, with no notification lane of any kind.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Specimen</th><th>Words</th><th>Where the ask sat</th></tr></thead>
+    <tbody>
+      <tr><td class="n">2026-05-12</td><td>136</td><td>No ask anywhere — narrative recap, 2 bare URLs</td></tr>
+      <tr><td class="n">2026-05-25</td><td>559</td><td>No ask — a self-described quiet day: 559 words to say nothing changed, re-listing 8 unchanged draft PRs</td></tr>
+      <tr><td class="n">2026-06-08</td><td>865</td><td>7 real decision asks — starting at line 38, after ~500 words of recap</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="margin-top:14px">The decision-asks section (🙋 ToDo) existed in only the <b>last 7 of 32 entries</b>; word count grew monotonically 136 → 865 as template sections accreted. Three failure causes, each with a design consequence:</p>
+  <ul>
+    <li><b>It recapped a day you lived, after it ended.</b> Published at the one hour you weren't working, up to ~23h stale, and unconditionally — quiet days still produced 500+ words, which trained you that opening it usually paid nothing. <em>Consequence: gate on content; never publish filler.</em></li>
+    <li><b>The asks were absent or buried.</b> No decision section at all for the first 25 of 32 entries; once added, it sat fourth of six sections, below ~500 words of recap. The one thing that needed your eyes never led. <em>Consequence: the briefing IS the ask list; the record lives elsewhere.</em></li>
+    <li><b>It was an errand shaped like a document.</b> A separate site trip to a fixed six-section template whose length tracked the template, not the signal, and nothing gated on reading it — every ask was also on GitHub. <em>Consequence: push a one-liner to the phone; make skipping it free.</em></li>
+  </ul>
+
+  <h3>What the news feed you like does differently</h3>
+  <p>The dashboard's "Roadmap activity" panel (<code>session-hub/lib/render.mjs</code>): one line per event, ~15–20 words, every line linked, verb bolded (<span class="mono" style="font-size:13px">12:02 AM · obot.agent · PR #91 … — <b>merged</b></span>); a 5-minute sweep TTL and 60-second refresh, so items appear minutes after they happen; a collapsed panel showing "N events" inside a tab you already have open — reading it is a glance, not an errand; and it never editorializes, because curation lives in the Priorities panel beside it. Every one of those properties is the inverse of a diagnosed failure above. M3 inherits all of them.</p>
+</section>
+
+<div class="cut"><span>M1 — the inventory</span></div>
+<section>
+  <h2>Seventeen concepts, one verdict each</h2>
+  <p>The test applied to each: <em>what did the session boundary actually provide it, and does anything else now provide that?</em> Prime replaces the interactive lead, but the <code>--auto</code> autonomous session (obot-auto today, A2/#122 when scheduled) still starts and ends — so "the bookends retire" would be wrong; they narrow to the lane that still has boundaries.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Concept</th><th>Verdict</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td class="n">session-update</td><td class="v-keep">survives as-is</td><td>Mid-work capture has nothing to do with boundaries; prime and every sibling still need the door.</td></tr>
+      <tr><td class="n">session-note</td><td class="v-keep">survives as-is</td><td>Feeds the record wherever the record is written; capture stays cheap.</td></tr>
+      <tr><td class="n">session-idea</td><td class="v-keep">survives as-is</td><td>Already session-independent — files to hub Ideas, triaged by the Action.</td></tr>
+      <tr><td class="n">session-scaffold</td><td class="v-keep">survives as-is</td><td>Capture-at-friction stands; only its <em>sweep</em> moves (to the weekly, M4).</td></tr>
+      <tr><td class="n">session-spawn</td><td class="v-keep">survives as-is</td><td>More central than ever — it is prime's only way of doing anything.</td></tr>
+      <tr><td class="n">session-reviews</td><td class="v-keep">survives as-is</td><td>On-demand by design; with the RC-only rule it is <em>the</em> review front door.</td></tr>
+      <tr><td class="n">session-dashboard</td><td class="v-keep">survives as-is</td><td>The pull channel you like. One change: the watch loop should become standing (launchd or prime-armed) instead of dying with the session that started it.</td></tr>
+      <tr><td class="n">the scratchpad</td><td class="v-keep">survives as-is</td><td>Promoted, in fact: it is the program's event stream — heartbeats in, briefing and news feed out. Its midnight-boundary hazard already bit prime once and was fixed in <a href="https://github.com/jwildfire/obot.agent/pull/94">oa#94</a>; the fold inherits that two-day read.</td></tr>
+      <tr><td class="n">live hub + news feed</td><td class="v-keep">survives as-is</td><td>The exemplar everything else inherits from. Untouched.</td></tr>
+      <tr><td class="n">session-init (+ --auto)</td><td class="v-move">survives re-homed</td><td>Interactive init's job — "what should we work on?" — is now a question you ask prime. The skill narrows to the <code>--auto</code> selection lane (obot-auto, then A2/#122), where it is load-bearing and unchanged.</td></tr>
+      <tr><td class="n">session-wrapup</td><td class="v-move">survives re-homed</td><td>The crux — see M2. Its five duties get four homes: hygiene → event-time (the shipping sibling's definition of done), verification → Navigator #157, record + capture sweep → the morning fold, hand-off → prime-state (continuous). The <code>--auto</code> variant survives verbatim for autonomous sessions.</td></tr>
+      <tr><td class="n">session-inbox</td><td class="v-move">survives re-homed</td><td>Its trigger lived inside init's recon sibling. The backstop sweep moves into the morning fold; on-demand invocation unchanged. (The ideas-triage Action stays the front line either way.)</td></tr>
+      <tr><td class="n">handoff.sh</td><td class="v-move">survives re-homed</td><td>The Tier-0 bundle only matters where a session cold-starts: the <code>--auto</code> lane and <code>/s-init</code>. Prime already has its own (<code>prime-rehydrate</code>).</td></tr>
+      <tr><td class="n">the diary entry</td><td class="v-move">survives re-homed</td><td>Cadence moves from per-session (D2) to per-day-with-activity, written by the fold. The no-filler rule is the openclaw lesson — it stays absolute. The diary is also the R/Pharma keynote's raw material, which is a reason to keep its quality independent of whether you read it daily.</td></tr>
+      <tr><td class="n">the timing ledger</td><td class="v-move">survives re-homed</td><td>Bookend rows end with interactive bookends; the schema stays for <code>--auto</code> runs and gains a <code>fold</code> bookend so the briefing SLA is checkable too.</td></tr>
+      <tr><td class="n">the session report</td><td class="v-merge">merges</td><td>The frozen per-session operational page becomes the fold's per-day record — same renderer, day-scoped window, linked from the diary entry as today.</td></tr>
+      <tr><td class="n">session-todo</td><td class="v-ret">retires</td><td>A render-only skill whose two outputs are now both covered: the dashboard renders the same sections live every 60s, and "what's left?" is a question prime answers. Retire only after the watch loop is standing (migration, below) — and retiring means a deprecation note in the skill file, never deletion.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="verdict">
+    <div class="k">M1 — Recommended</div>
+    <p>Adopt this disposition: 9 keep, 6 re-home, 1 merge, 1 retire.</p>
+    <p>Nothing is executed tonight. The one genuine retirement (session-todo) waits for its replacement to be standing, and every re-homed skill keeps its file with a note pointing at the new trigger — the cross-reference web (12 skills, the framework doc, obot-auto, the Stop hook) makes deletion the only actually destructive move here.</p>
+  </div>
+</section>
+
+<div class="cut"><span>M2 — the trigger</span></div>
+<section>
+  <h2>What fires the wrapup's duties when nothing ends</h2>
+  <p>The wrapup was never one thing — it bundled five duties (clean roadmap, everything captured, scaffold reviewed, summary posted, next session prepped), and the session boundary was merely a convenient moment to do all five at once. With the boundary gone, each duty needs its own trigger. The models on the table, and what each produces:</p>
+
+  <div class="opts">
+    <div class="opt">
+      <div class="hd"><h3>T1 — Wall-clock, unconditional (the openclaw model)</h3><span class="badge warn">Proven failure</span></div>
+      <p style="margin-top:10px">A cron fires nightly and publishes whatever exists. Produces a complete, evenly-spaced record — and the measured behavior above: 559 words on a quiet day, asks at line 38, a reader trained to skip. The record was fine; the reading died. Rejected as the sole model, kept only as the <em>clock</em> inside the recommendation.</p>
+    </div>
+    <div class="opt">
+      <div class="hd"><h3>T2 — Pure event-based</h3><span class="badge no">Fragments</span></div>
+      <p style="margin-top:10px">Fold whenever a defined event lands: an RC files, a decision is answered, N delegates close out, a release ships. Produces maximally fresh, minimally batched output — and a day of drips: five small folds on a busy day is five interruptions, and the diary shatters into fragments no keynote can quote. Right for the two genuinely urgent event classes, wrong for the record.</p>
+    </div>
+    <div class="opt">
+      <div class="hd"><h3>T3 — Threshold-based</h3><span class="badge no">Unpredictable</span></div>
+      <p style="margin-top:10px">Fold when unreported events accumulate past a bound (say, 15 scratchpad lines, or any RC unreported &gt;12h). Produces output proportional to activity — at unpredictable times, which is exactly wrong for a habit: a briefing that arrives at 07:00 some days and 15:40 others never becomes "the thing I glance at over coffee". The <em>gate</em> is right; the <em>clock</em> is wrong.</p>
+    </div>
+    <div class="opt">
+      <div class="hd"><h3>T4 — On-demand only</h3><span class="badge no">No record</span></div>
+      <p style="margin-top:10px">Nothing fires; you ask prime when you want the picture. Produces zero unread artifacts — and zero record: the diary (and the keynote diary with it) stops accruing, hygiene never runs, and the queue is only as visible as your memory to ask. This is what exists by default since prime launched, and it is why last night needed a milestone audit to reconstruct a release.</p>
+    </div>
+    <div class="opt rec">
+      <div class="hd"><h3>T5 — Composite: content-gated morning fold + event push + event-time hygiene</h3><span class="badge rec">Recommended</span></div>
+      <p style="margin-top:10px">Split the duties by their real latency needs:</p>
+      <dl>
+        <dt>07:00 fold</dt><dd>A cron-spawned 👯🤖 fold sibling (independent of prime, so the record survives prime's retirement) reads the scratchpads since the last fold + the gh sweep, then — <b>only if there is content</b> — writes the diary entry for a day with activity, renders the briefing (M3), runs the inbox backstop sweep, and checks off captured items. A zero-activity night produces nothing at all: no page, no push, no filler. It fires at 07:00, not 23:30 — the briefing describes the queue you're waking to, not the day you already lived.</dd>
+        <dt>Event push</dt><dd>Exactly two classes interrupt you, immediately, via a one-line phone push (the harness's PushNotification reaches desktop + phone over Remote Control, which prime and siblings hold; verify the bg-job path at build time): <b>an RC goes ready with its demo</b>, and <b>every active goal is blocked at once</b> (the escalation case rc-framework already names). Everything else waits for the fold.</dd>
+        <dt>Hygiene</dt><dd>Moves to event time, into the shipping sibling's definition of done — milestones at pickup (your rule, already live), <code>Closes</code> lines, stage moves, close-out heartbeat lines. Most of this migrated already; M2 just names it as the wrapup's successor instead of a nightly batch repair.</dd>
+        <dt>Verification</dt><dd>Navigator, #157 — decided last night, not re-decided here. Until it exists, the fold does a light verify (URLs 200, claimed PRs real) inherited from wrapup-verify.</dd>
+        <dt>Hand-off</dt><dd>Already continuous: prime-state.md + the scratchpad. No fold step needed.</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="verdict">
+    <div class="k">M2 — Recommended</div>
+    <p>T5: a content-gated 07:00 fold for the record and the briefing, push for the two urgent event classes, hygiene at event time, Navigator for truth.</p>
+    <p>This is the wall-clock's predictability with the threshold's gate and the event model's urgency, each applied only where it wins. A standing prime (or any cron) can hold the clock and push — the thing no previous session could do — and the fold sibling is deliberately <em>not</em> prime, so the record never depends on one long-lived session staying alive.</p>
+  </div>
+</section>
+
+<div class="cut"><span>M3 — the daily briefing</span></div>
+<section>
+  <h2>Headlines and todos — designed from the autopsy</h2>
+  <p>Your lean, taken seriously. Five rules, each the inverse of a measured failure:</p>
+  <ul>
+    <li><b>State-shaped, not delta-shaped.</b> The briefing is today's <em>queue</em> — the cumulative 🚦 RCs and 🧭 decisions (the wrapup's two headlines, which already carry until you close them) plus the 🙋 mechanical todos. Skip a week and the next briefing is still complete; the openclaw summaries were newspapers, where a missed day was gone. This is the single most important property: <b>the design must survive you not reading it</b>, because that is the documented failure mode.</li>
+    <li><b>≤ 10 lines, every line linked, asks first.</b> News-feed idiom: one line per item, ~15–20 words, the ask or verb up front. The record (what shipped overnight) is one trailing line, not the body — the diary holds the prose.</li>
+    <li><b>Content-gated.</b> Empty queue + no overnight events → no briefing, no push. Silence means "nothing needs you", and it stays credible only if it is true.</li>
+    <li><b>Pushed, with a free skip.</b> One PushNotification line ("1 RC · 3 decisions — briefing →") linking one <b>stable URL</b> — <code>reports/briefing/</code> on the hub, always the current state, phone-bookmarkable. No dated pages to catch up on; the diary is the archive.</li>
+    <li><b>Composed mechanically.</b> Bullets derive from prime-state's Open section, the gh sweep, and the scratchpad — the same union the wrapup headlines already use. The model writes nothing but the overnight line, so the briefing cannot bloat the way the 136→865-word template did.</li>
+  </ul>
+
+  <h3>The example — this morning's briefing, composed from tonight's real queue</h3>
+  <div class="push">
+    <div class="app">obot · 7:00 AM</div>
+    1 RC · 3 decisions · 2 todos — briefing: jwildfire.github.io/obot.roadmap/reports/briefing/
+  </div>
+  <div class="phone">
+    <div class="bar">☀️ obot briefing — Fri Aug 15</div>
+    <div class="body">
+      <div class="sec">🚦 Release candidates (1)</div>
+      <ol>
+        <li><b>obot.agent v0.4.0</b> — prepped, blocked on your R1–R4 call (rec: R2) → <a href="https://github.com/jwildfire/obot.roadmap/discussions/155">Q&amp;A #155</a></li>
+      </ol>
+      <div class="sec">🧭 Decisions (3)</div>
+      <ol>
+        <li><b>demo-301 site size</b> S1–S3 — blocks #143 → <a href="https://github.com/jwildfire/obot.roadmap/discussions/150">Q&amp;A #150</a></li>
+        <li><b>hub#140 reframe</b> — 13 days open, now ≤3 calls → <a href="https://github.com/jwildfire/obot.roadmap/issues/140">#140</a></li>
+        <li><b>sv#126 KDIGO staging</b> — your v1.6.0 note, not blocking → <a href="https://github.com/jwildfire/safety.viz/issues/126">sv#126</a></li>
+      </ol>
+      <div class="sec">🙋 Todos (2)</div>
+      <ul>
+        <li>Allowlist line for <code>scratchpad-log</code> in workspace settings</li>
+        <li>A3/A4 app-plan follow-up when you're ready to discuss</li>
+      </ul>
+      <div class="sec">Overnight</div>
+      <p class="quiet" style="margin:2px 0 0">sv v1.6.0 released · oa#91 merged (prime durable state) · 4 non-RC PRs self-merged · <a href="https://jwildfire.github.io/obot.roadmap/">diary</a></p>
+    </div>
+  </div>
+  <p style="margin-top:16px;font-size:14px;color:var(--mute)">93 words, 9 lines, ~20 seconds to read. Every line is a link you can act on from the phone. That is the whole thing — anything longer is the openclaw failure restarting.</p>
+
+  <div class="verdict">
+    <div class="k">M3 — Recommended</div>
+    <p>Build this as the rc-framework's "nightly executive summary", replacing that spec's five-section page with the two-queue shape above.</p>
+    <p>Amend rc-framework.md on approval rather than shipping a competitor to an unbuilt spec. Build cost is small — the fold composes from surfaces that already exist (prime-state, gh-sweep, scratchpad, the cumulative headline rules) — roughly one evening increment, filed as a hub requirement (2026q3) through the normal lifecycle once you answer.</p>
+  </div>
+
+  <h3>What you have to do to keep it alive — stated plainly</h3>
+  <ul>
+    <li><b>Minimum: nothing.</b> The queue is cumulative and the push is skippable; ignoring it for a week costs nothing and the briefing does not degrade. That is deliberate — your openclaw experience says "read a thing every morning" is exactly the commitment that fails.</li>
+    <li><b>For it to be useful: one tap on the push, ~20 seconds, on mornings you have them.</b> The bet is that shrinking the read from a 570-word site errand to a 9-line pushed card moves it under your threshold — and if after three weeks the pushes go untapped, the honest response is to kill the push and keep the fold (the record still matters for the keynote), not to make the briefing longer.</li>
+  </ul>
+</section>
+
+<div class="cut"><span>M4 — the weekly</span></div>
+<section>
+  <h2>The detailed weekly briefing</h2>
+  <p>Recommended, with one job: <b>be the sink that keeps the daily at 9 lines.</b> A Sunday-evening fold (same machinery, weekly flavor) composes from the week's daily folds: goal-by-goal progress against the keynote plan, the scaffold-candidate sweep (re-homed from wrapup step 6), the cost/usage note, carried-item staleness ("hub#140 is now 20 days open"), and a short week narrative — which is, not incidentally, the R/Pharma diary's raw material. It publishes as a dated hub page and one push line. Unlike the daily it is <em>not</em> gated to nothing — a quiet week is itself a finding — but it skips sections rather than padding them; the 136→865-word template creep is the failure mode it must never repeat. If you read one artifact a week, this is the one; if you read neither, the keynote diary still accrues.</p>
+  <div class="verdict">
+    <div class="k">M4 — Recommended</div>
+    <p>Yes — weekly detail, Sunday evening, built by the same fold machinery; the daily stays headlines-and-todos only.</p>
+    <p>Ship it in the same requirement as M3 but a phase later: the weekly needs daily folds to fold, so it cannot come first.</p>
+  </div>
+</section>
+
+<div class="cut"><span>M5 — audio</span></div>
+<section>
+  <h2>Audio, researched rather than hand-waved</h2>
+  <p>The facts, web-verified 2026-08-15 (full research with source URLs: <a href="sources/audio-research.md">sources/audio-research.md</a>):</p>
+  <ul>
+    <li><b>Spotify: no.</b> A listener still cannot add an arbitrary or private RSS URL to Spotify — no such setting exists; it remains an open community feature request, and every current guide routes private feeds to other apps. Your half-memory is almost certainly Spotify's <em>paid-podcast</em> private feeds, which flow the other direction (out of Spotify into other apps). The only road in is public-catalog submission — wrong for a personal briefing.</li>
+    <li><b>Apple Podcasts: yes.</b> Library → "…" → <em>Follow a Show by URL</em> takes a plain unlisted RSS URL; one-time setup, then episodes auto-download like any show (CarPlay, watch, speed controls). Overcast and Pocket Casts likewise.</li>
+    <li><b>Hosting: trivial.</b> A static <code>feed.xml</code> + mp3s on the existing Pages deploy; a 2–3 min briefing ≈ 1–1.5 MB/day, ~0.5 GB/yr — inside limits with the feed pruned to the last ~60 episodes. (A tiny dedicated repo would keep mp3 blobs out of the hub's git history.)</li>
+    <li><b>Voice: ~$1/month.</b> OpenAI <code>gpt-4o-mini-tts</code> at ~$0.03/briefing is the pick; macOS <code>say</code> (Ava Premium, already installed) is the $0-but-flat fallback; Kokoro-82M local is the $0 upgrade path; ElevenLabs needs $22/mo for daily use — overkill.</li>
+    <li><b>Build: ~4–5 hours</b> for the full pipeline (TTS call → mp3 → RSS regen → deploy → one-time phone follow). A <b>~1-hour, $0 alternative</b> skips all infrastructure: an iOS Shortcut that speaks the briefing text on "Hey Siri, obot briefing" — it tests the actual listen-over-coffee hypothesis with nothing to maintain.</li>
+  </ul>
+  <div class="verdict">
+    <div class="k">M5 — Recommended</div>
+    <p>Later, gated: run the text briefing for 2–3 weeks first; build the podcast pipeline only if you're actually reading it and want it in your ears instead.</p>
+    <p>Every technical question resolves cleanly — the risk is purely audience. Audio is a renderer for a habit that does not exist yet, and a podcast queue of unplayed episodes is the ignored-summary problem with extra infrastructure. If you want to test audio <em>now</em>, take the 1-hour Shortcut, not the 5-hour pipeline; its usage decides whether the pipeline is ever worth building. And since your listening life may be Spotify-centric: that is an argument <em>for</em> the Shortcut/HomePod lane, because a private feed can never reach Spotify.</p>
+  </div>
+</section>
+
+<div class="cut"><span>Migration</span></div>
+<section>
+  <h2>What changes first, what waits, what breaks</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Phase</th><th>When</th><th>What lands</th></tr></thead>
+    <tbody>
+      <tr><td class="n">0 — unblock</td><td>on your answer</td><td>File the fold/briefing requirement (2026q3); amend rc-framework's nightly-summary section to the M3 shape. (The prime-rehydrate midnight defect that would have bitten the fold is already fixed — <a href="https://github.com/jwildfire/obot.agent/pull/94">oa#94</a>, last night.)</td></tr>
+      <tr><td class="n">1 — the fold</td><td>first increment</td><td>Fold script + briefing page + push + diary-entry composition; cron at 07:00; light verify inherited from wrapup-verify. Interactive wrapup stays available throughout — nothing retires while the fold is unproven.</td></tr>
+      <tr><td class="n">2 — re-homes</td><td>fold proven (~2 wks)</td><td>Inbox sweep moves into the fold; dashboard watch loop becomes standing; weekly fold ships; deprecation notes into session-init and session-wrapup (interactive paths) pointing at prime + the fold; session-todo retires.</td></tr>
+      <tr><td class="n">3 — audio?</td><td>~3 wks of read briefings</td><td>Your call per M5 — Shortcut, pipeline, or neither.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>Named breakage if a skill retires while things still reference it</h3>
+  <ul>
+    <li><b><code>findSessionMarker()</code></b> in session-hub scopes the dashboard's Agents and Roadmap-activity panels by the <code>&lt;!-- session-init --&gt;</code> marker init writes into the scratchpad. If interactive init stops running, the fold must write an equivalent day-boundary marker or the dashboard's scoping silently degrades to whole-file. This is the one genuinely silent break on the list.</li>
+    <li><b>obot-auto requires both bookends</b> — session-init <code>--auto</code> and session-wrapup <code>--auto</code> are its opening and closing phases. They are exempt from every retirement above; A2 (#122) inherits them.</li>
+    <li><b><code>/s-init</code> preprocessing</b> pre-runs handoff.sh at load; the alias should gain a one-line "you probably want prime" note rather than being removed.</li>
+    <li><b>The Stop hook</b> (scratchpad-heartbeat) nudges quiet sessions and stays — the scratchpad matters more under this model, not less.</li>
+    <li><b>Cross-references:</b> the 12 session skills, the framework doc, and the briefing template link each other densely. Retirement = a deprecation header in the file; deletion would leave dangling references in a dozen places and needs your explicit approval anyway.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Sources, all read for this artifact: the 12 <code>session-*</code> skills and <code>docs/session-framework.md</code> / <code>docs/rc-framework.md</code> in obot.agent; the openclaw corpus in <code>obot-claw.github.io/daily/</code> (32 entries; word counts and git-log cadence measured — <a href="sources/openclaw-summaries.md">archaeology notes</a>); <code>session-hub</code> source (<code>render.mjs</code>, <code>collect.mjs</code>) and the rendered live page; <code>prime-state.md</code> and the <a href="../2026-08-14-prime-context-management/">context-management artifact</a>; hub issues <a href="https://github.com/jwildfire/obot.roadmap/issues/157">#157</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/122">#122</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/123">#123</a>; and web research on TTS, RSS hosting and podcast-app feed support (<a href="sources/audio-research.md">audio notes</a>, every external claim URL-cited).</p>
+  <p style="margin-top:14px"><a href="../">All decisions</a> · <a href="https://github.com/jwildfire/obot.roadmap/discussions/158">Answer in Q&amp;A</a> · <a href="https://github.com/jwildfire/obot.roadmap/issues/157">Navigator #157</a> · <a href="https://jwildfire.github.io/obot.roadmap/">the hub</a></p>
+  <hr style="border:0;border-top:1px solid var(--rule);margin:22px 0">
+  <p>This artifact was drafted by Claude Code using Fable 5 (👯🤖 sessmodel sibling session) from @jwildfire's 2026-08-14 direction, and awaits his decision. His daily-briefing lean was treated as provisional per his own framing; M2/M3 adopt it where the evidence supports it and tighten it where it does not.</p>
+</footer>
+
+</div>
+</body></html>
