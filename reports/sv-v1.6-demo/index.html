@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz v1.6.0 — annotated demo</title>
+<meta name="description" content="What v1.6.0 adds, feature by feature: annotated captures from the release-candidate build, with a way into each one.">
+<style>
+:root{
+  /* Paper matched to the dev site's own background so the captures sit flush
+     with the page instead of floating on white. */
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;        /* interactive: links, play, steps */
+  --bronze:#a95d10;      /* accent, from the charts */
+  --flag:#b83a2e;        /* stage-3 red */
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible,button:focus-visible,video:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+
+/* ---------- masthead ---------- */
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+/* ---------- contents ---------- */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+/* ---------- the cut-line: this page's section rule ----------
+   A dashed reference line carrying its value, the way the KDIGO zones carry
+   their stage labels — the release's own visual grammar as page structure. */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.tag{font:600 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 9px;border-radius:3px;border:1px solid currentColor}
+.tag.exp{color:var(--bronze)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:17px;margin:34px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+/* ---------- figures ---------- */
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--panel);line-height:0}
+.frame img,.frame video{display:block;width:100%;height:auto}
+.pin{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:23px;height:23px;border-radius:50%;background:var(--ink);color:var(--paper);
+  display:grid;place-items:center;font:700 12px/1 var(--mono);
+  box-shadow:0 0 0 3px var(--paper),0 1px 4px rgba(0,0,0,.3)}
+figcaption{margin-top:12px}
+.keys{margin:0;padding:0;list-style:none;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 26px}
+.keys li{position:relative;padding-left:28px;font-size:14px;color:var(--ink2);line-height:1.45}
+.keys b{position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:50%;
+  background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font:700 11px/1 var(--mono)}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.cap b{color:var(--ink2);font-weight:600}
+.clipnote{margin:10px 0 0;font:500 11.5px/1 var(--mono);letter-spacing:.05em;
+  text-transform:uppercase;color:var(--mute)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.pair figure{margin:0}
+.pair .cap{margin-top:10px}
+.narrow{max-width:620px}
+.pair.small .frame{max-width:340px}
+.pair.rail{grid-template-columns:340px 1fr;align-items:start}
+
+/* ---------- read/try strip ---------- */
+.strip{display:grid;grid-template-columns:1fr 340px;gap:0;margin:34px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+/* ---------- closing ---------- */
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+  .pair.rail{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pair{grid-template-columns:1fr}
+  .pin{width:20px;height:20px;font-size:10px}
+  .mast{padding-top:36px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">safety.viz <span class="dot"></span> release review <span class="dot"></span> 2026-08-14</p>
+  <h1>What <span class="v">v1.6.0</span> adds, annotated</h1>
+  <p class="lede">The gallery crosses into nephrotoxicity, and the Hepatic Safety Explorer gets back the feature the original renderer was best known for. Each section below is a line on what changed, why it matters when you are reading a study, a capture of it running, and a way into the live demo to check it yourself. Every capture was taken on 14 August from the release candidate — the build this cut promotes, the same bytes the <a href="https://jwildfire.github.io/safety.viz/dev/">dev site</a> deploys.</p>
+  <p class="facts">
+    <span><b>5</b> PRs, all merged to dev</span>
+    <span><b>1</b> new renderer — <b>12</b> in the gallery</span>
+    <span><b>1 178</b> unit + <b>236</b> browser tests</span>
+    <span>promotes <b>dev → main</b> via <a href="https://github.com/jwildfire/safety.viz/pull/124">sv#124</a></span>
+  </p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#nep"><span class="ref">sv#121</span><span class="t">Nephrotoxicity Explorer</span><span class="s">KDIGO creatinine scatter, renderer twelve</span></a>
+  <a href="#playback"><span class="ref">sv#118</span><span class="t">Study-day playback</span><span class="s">The eDISH cloud in motion, with trails</span></a>
+  <a href="#palt"><span class="ref">sv#118</span><span class="t">P_ALT estimate</span><span class="s">Opt-in hepatocyte-loss figure</span></a>
+  <a href="#polish"><span class="ref">sv#122</span><span class="t">eDISH polish closeout</span><span class="s">Log base, axis limits, full names</span></a>
+</nav>
+
+<!-- ============================================================ 1 ======= -->
+<div class="cut"><span>sv#121 <em>· hub#35</em></span></div><section id="nep">
+  <div class="hd">
+    <h2>Nephrotoxicity Explorer</h2>
+    <span class="tag exp">Experimental</span>
+  </div>
+  <p class="what">The twelfth renderer, ported from <a href="https://github.com/SafetyGraphics/nepExplorer">SafetyGraphics/nepExplorer</a>: KDIGO acute-kidney-injury screening as one point per participant, at their maximum post-baseline <b>fold change</b> in serum creatinine against their maximum <b>absolute change</b>, over the KDIGO stage zones. Kidney sibling of the eDISH scatter, on the same shell, the same lifecycle, the same evidence discipline. Design decisions D1–D9 are signed in <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/35_design.html">design #35</a>; Phase 1 implements them.</p>
+
+  <h3>The zones are an L, not nested boxes</h3>
+  <p class="what">Stage 1 is the 1.5–2× fold band at any absolute change, <i>plus</i> everything at or above 0.3 mg/dL below 1.5× fold. The unpainted box in the lower left is the one region where both KDIGO criteria are clear — and participants whose creatinine only fell keep their place on the chart below zero rather than being dropped.</p>
+  <figure>
+    <div class="frame">
+      <img src="media/nep-hero.jpg" alt="Nephrotoxicity Explorer: creatinine scatter over L-shaped KDIGO stage zones with two triangular absolute-rule marks, data-handling notes above the chart, and a stage summary table below." loading="lazy" width="2028" height="1784">
+      <b class="pin" style="--x:41%;--y:4%">1</b>
+      <b class="pin" style="--x:43%;--y:47%">2</b>
+      <b class="pin" style="--x:57%;--y:30%">3</b>
+      <b class="pin" style="--x:56%;--y:81%">4</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> Nothing vanishes silently: plotted count, baseline-fallback count, and a CSV download beside the 24 dropped participants</li>
+        <li><b>2</b> The L: the ≥ 0.3 mg/dL arm reaches left of the 1.5× fold line; the clear box below it stays unpainted</li>
+        <li><b>3</b> Triangles are the ≥ 4.0 mg/dL rule — two sit inside the Stage-1 band and are Stage 3 anyway</li>
+        <li><b>4</b> The summary counts three ways: fold, absolute, and the combined KDIGO stage the zones show</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <h3>The mark that overrides the plane</h3>
+  <p class="what">KDIGO's third Stage-3 criterion is a <i>value</i>, not a change: creatinine reaching 4.0 mg/dL. That cannot be a region of a change-vs-change plane, so it is a property of the mark instead (design D5) — larger, triangular, with its own tooltip line.</p>
+  <figure>
+    <div class="frame">
+      <img src="media/nep-abs-rule-tooltip.jpg" alt="Tooltip on a triangular mark inside the Stage 1 zone: participant AKI-9027, KDIGO stage Stage 3, fold change 1.7× (Stage 1), absolute change +1.89 mg/dL (Stage 1), baseline 2.71, maximum 4.6 — Stage 3 by the absolute-value rule." loading="lazy" width="1420" height="854">
+    </div>
+    <p class="cap">The case the mark exists for. <b>AKI-9027</b> starts at 2.71 mg/dL — a high chronic-kidney-disease baseline — and rises 1.7×: Stage 1 on either change axis. But the maximum reached 4.6 mg/dL, so the participant is <b>Stage 3 by the absolute-value rule</b>, and the tooltip says which rule staged them. In the original renderer this participant would read as mild.</p>
+  </figure>
+
+  <h3>Dashes where KDIGO defines no stage</h3>
+  <figure class="narrow">
+    <div class="frame">
+      <img src="media/nep-table.jpg" alt="KDIGO stage summary table: fold change, absolute change and combined KDIGO stage columns; the absolute-change column shows dashes rather than zeroes for Stage 2 and Stage 3." loading="lazy" width="1488" height="658">
+    </div>
+    <p class="cap">The first two column pairs are separate marginal distributions — the shape the R app's table has; the third is the combined stage the zones show. The absolute-change column's Stage 2 and 3 cells are <b>dashes, not zeroes</b>: KDIGO defines no such stages on absolute change, and a zero would read as "nobody qualified".</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>This is the portfolio's first renal display, and it ships with the data honesty the KDIGO criteria demand: per-record mg/dL ↔ µmol/L unit resolution (one unresolvable record suppresses absolute-change staging chart-wide rather than guessing), a baseline fallback that is counted and disclosed, and every dropped record downloadable with its reason.</p>
+      <p>It ships <b>Experimental</b> on purpose: the staging ladder is defensible from the KDIGO criteria and from the source's own chart geometry, but it should be confirmed by someone who owns the clinical content before the evidence page claims KDIGO conformance — that call is flagged in <a href="https://github.com/jwildfire/safety.viz/pull/121">sv#121</a>. Phase 2 (profile drill-down, CKD-EPI eGFR) is scoped in the design and unfiled.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/nep-explorer/index.html"><span>Open the Nephrotoxicity Explorer</span></a>
+      <ol>
+        <li>Hover the two triangles inside the Stage-1 band and read which rule staged them.</li>
+        <li>Filter Treatment Group to the <b>AKI:</b> arms — the injected cohort — and watch the counts re-derive.</li>
+        <li>Click <b>Download participants</b> next to the dropped count and open the CSV: every row names its reason.</li>
+        <li>Then read the <a href="https://jwildfire.github.io/safety.viz/dev/nep-explorer/evidence.html">evidence page</a> — every NEP-* row traces to a named test.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 ======= -->
+<div class="cut"><span>sv#118 <em>· hub#88</em></span></div><section id="playback">
+  <div class="hd"><h2>Study-day playback, with motion trails</h2></div>
+  <p class="what">The animation the original hep-explorer was best known for, restored to the eDISH scatter. Press play and every participant walks their own lab trajectory against the Hy's-Law quadrants, trails accumulating behind the moving points; the population's story stops being a single peak-values snapshot.</p>
+
+  <figure>
+    <div class="frame">
+      <video controls loop muted playsinline preload="none" poster="media/hep-playback-poster.jpg" width="1340" height="900" aria-label="The eDISH scatter playing through study days: points move along their trajectories leaving motion trails, then the day slider is scrubbed and playback stops on the chosen day">
+        <source src="media/hep-playback.webm" type="video/webm">
+      </video>
+    </div>
+    <p class="clipnote">7 s clip · press play</p>
+    <p class="cap">Four drawing rules are ported verbatim from the original: a point sits on its most recent result at or before the shown day, holds at its first result before it is measured at all, shrinks outside its own measured span, and is not drawn before its participant's first record. At the end of the clip the slider is scrubbed — <b>the playback yields to the reader</b> rather than fighting for the day. That behaviour is <code>HEP-ANIM-008</code>, and it has its own story: it shipped implemented but unevidenced, and <a href="https://github.com/jwildfire/safety.viz/pull/119">sv#119</a> closed that gap with a named browser test — under the done-gate, a requirement row is only as good as the evidence it points at.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>A peak-values scatter cannot distinguish a participant who drifted into the Hy's-Law quadrant over twelve weeks from one who arrived in three days. Watching the walk — and the trail it leaves — is the fastest read of temporal pattern the display offers, and it was the loudest gap left from the v1.3 port.</p>
+      <p>On the public demo the day axis runs over the <b>visit sequence</b>, because the vendored dataset carries no study-day column — the label says so. With real <code>ADY</code> data the same control plays calendar study days.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/hep-explorer/index.html"><span>Open hep-explorer, switch View to the eDISH scatter</span></a>
+      <ol>
+        <li>Press <b>▶</b> under the chart and watch the trails accumulate.</li>
+        <li>While it plays, drag the day slider — playback stops and lands on your day.</li>
+        <li>Change any control mid-play: the play-through stops rather than writing into a redrawn chart.</li>
+        <li><b>Reset</b> returns to peak values (all days).</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 ======= -->
+<div class="cut"><span>sv#118 <em>· hub#88</em></span></div><section id="palt">
+  <div class="hd">
+    <h2>The P_ALT estimate, opt-in</h2>
+    <span class="tag exp">Opt-in</span>
+  </div>
+  <p class="what">With <code>calculate_palt: true</code>, the participant profile header carries an estimate of the fraction of hepatocytes lost — the quantitative companion to the eDISH read — with the arithmetic behind it shown, not just the figure.</p>
+
+  <figure class="narrow">
+    <div class="frame">
+      <img src="media/HEP-PALT-001-palt-estimate.png" alt="Participant profile header showing the P_ALT hepatocyte-loss estimate alongside R Ratio, with the calculation's inputs displayed." loading="lazy" width="1280" height="800">
+    </div>
+    <p class="cap">The canonical evidence capture (<code>HEP-PALT-001</code>, Linux CI environment). This one is <i>not</i> on the public demo, deliberately: the estimate integrates ALT over study day × 24 hours, and the demo dataset's visit sequence cannot stand in for that clock — so the demo leaves it off rather than showing a number built on the wrong axis. The <a href="https://jwildfire.github.io/safety.viz/dev/hep-explorer/evidence.html">evidence page</a> carries the assertions (<code>HEP-PALT-001…003</code>), including that it stays off unless the caller opts in.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>It is the first quantitative injury estimate in the portfolio, and its gating is the point: unit and sampling assumptions belong to the data owner, so the module refuses to guess them by default. The EX exposure half of <a href="https://github.com/jwildfire/safety.viz/issues/49">sv#49</a> stays open for a dataset that can feed it.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/hep-explorer/evidence.html"><span>Read the HEP-PALT evidence rows</span></a>
+      <ol>
+        <li>Find <code>HEP-PALT-001</code>–<code>003</code> and open the capture.</li>
+        <li>In your own call, pass <code>calculate_palt: true</code> with real study-day data.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 ======= -->
+<div class="cut"><span>sv#122 <em>· hub#88</em></span></div><section id="polish">
+  <div class="hd"><h2>The eDISH axes finish their polish list</h2></div>
+  <p class="what">Four items migrated from the upstream backlog close out the v1.2 UI-polish list (<a href="https://github.com/jwildfire/safety.viz/issues/54">sv#54</a>): a log-base choice, manual axis limits, full measure names in the drill-down, and the R/nR primary sources in the Clinical guide.</p>
+
+  <h3>Doublings, if that is how you read fold changes</h3>
+  <figure>
+    <div class="frame">
+      <img src="media/hep-logbase.jpg" alt="The eDISH scatter on log axes with gridlines at 0.125, 0.25, 0.5, 1, 2, 4 and 8 — every doubling — with marginal box plots and rugs." loading="lazy" width="1856" height="852">
+    </div>
+    <p class="cap">Axis Type <code>log</code> now offers a <b>Log Base</b> picker: <code>log10 (decades)</code> or <code>log2 (doublings)</code>. Here the gridlines sit on every doubling — 0.25 / 0.5 / 1 / 2 / 4 / 8 ×ULN. The base is a <b>tick generator, not a transform</b>: log positions are base-independent, so choosing doublings moves the gridlines and never the cloud. A base whose powers cannot span the domain is not offered.</p>
+  </figure>
+
+  <h3>Limits you can see, names you can read</h3>
+  <div class="pair rail">
+    <figure>
+      <div class="frame">
+        <img src="media/hep-axis-limits.jpg" alt="X-axis Limits and Y-axis Limits sections: Lower and Upper boxes pre-filled with 0/5.72 and 0/6.24, each with its own Reset Limits button." loading="lazy" width="478" height="574">
+      </div>
+      <p class="cap"><b>Manual limits on both eDISH axes</b>, and the boxes arrive filled with the limit actually in force — not blank. Type an upper bound and that axis follows while the other keeps re-deriving; <b>Reset Limits</b> hands one axis back to auto; changing the measure or Display Type returns both, since a limit typed for ALT ×ULN says nothing about ALP.</p>
+    </figure>
+    <figure>
+      <div class="frame">
+        <img src="media/hep-rail-names.jpg" alt="The participant rail for CLD-9045: R Ratio 3.08, a labs-over-time chart whose legend names each measure in full — Alanine Aminotransferase, Aspartate Aminotransferase, Bilirubin, Alkaline Phosphatase — with each line's short key written at its last point, and the per-measure summary table below." loading="lazy" width="1040" height="1950">
+      </div>
+      <p class="cap"><b>The drill-down names its measures in full.</b> Click a point, and the rail's labs chart legend reads <i>Alanine Aminotransferase</i>, not <i>ALT</i> — while each line still carries its short key at its own last point, in the line's colour, pushed apart when two lines end at the same height. The <a href="https://jwildfire.github.io/safety.viz/dev/hep-explorer/guide.html">Clinical guide</a> now links the R / nR primary sources and states the nR formula rather than only naming it.</p>
+    </figure>
+  </div>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>Each item is small; together they close the list, and <a href="https://github.com/jwildfire/safety.viz/issues/54">sv#54</a> — open since the v1.2 port — closes with them. The upstream asks these migrate from (<a href="https://github.com/SafetyGraphics/hep-explorer/issues/112">#112</a>, <a href="https://github.com/SafetyGraphics/hep-explorer/issues/238">#238</a>, <a href="https://github.com/SafetyGraphics/hep-explorer/issues/290">#290</a>, <a href="https://github.com/SafetyGraphics/hep-explorer/issues/335">#335</a>) date back years in the original repo.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/hep-explorer/index.html"><span>Open hep-explorer on the eDISH view</span></a>
+      <ol>
+        <li>Set <b>Axis Type</b> to log; a Log Base picker appears. Choose doublings and watch the gridlines, not the cloud.</li>
+        <li>Read the X/Y-axis Limits boxes before touching anything, then nudge one.</li>
+        <li>Click a point and read the rail's legend and line-end keys.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ end ===== -->
+<div class="cut"><span>notes</span></div><section>
+  <div class="hd"><h2>Reading this page</h2></div>
+  <div class="close">
+    <div>
+      <h3>How the captures were made</h3>
+      <ul>
+        <li>Playwright drove Chromium against the <b>release-candidate build</b> — the site as built from the commit <a href="https://github.com/jwildfire/safety.viz/pull/124">sv#124</a> promotes, byte-identical to the <a href="https://jwildfire.github.io/safety.viz/dev/">dev deploy</a> — on 2026-08-14. Nothing was staged or mocked. The one exception is the P_ALT still, which is the canonical Linux evidence capture (<code>HEP-PALT-001</code>), because the public demo deliberately leaves that estimate off.</li>
+        <li>The clip is silent WebM, ~7 s, recorded during the real interaction. Stills are 2× JPEG.</li>
+        <li>The demo data is the shared <code>adbds</code> extract, now carrying two injected cohorts: 24 crafted <code>CLD-*</code> Hy's-Law cases for the hepatic views and 46 synthetic <code>AKI-*</code> participants for the KDIGO zones (design #35 D8). The nep demo plots 276 participants and reports 24 it could not plot, with reasons.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Also in the release, not shown here</h3>
+      <ul>
+        <li><b><code>HEP-ANIM-008</code> evidence</b> (<a href="https://github.com/jwildfire/safety.viz/pull/119">sv#119</a>) — the scrub-stops-playback rule gains its named test; the clip above shows the behaviour itself.</li>
+        <li><b>Release prep</b> (<a href="https://github.com/jwildfire/safety.viz/pull/123">sv#123</a>) — <code>dist/safety.viz-1.5.0/</code> frozen back to the tag's bytes, <code>dist/safety.viz-1.6.0/</code> vendored, fixtures repointed.</li>
+        <li>Every module's <code>evidence.json</code> was refreshed on the canonical Linux environment on 14 August as part of the nep-explorer landing.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="strip" style="margin-top:30px">
+    <div class="why">
+      <p class="lbl">Where this fits</p>
+      <p>This page is the review surface for <a href="https://github.com/jwildfire/safety.viz/pull/124">RC sv#124</a> (dev → main). The user-facing release notes live in that PR's body and publish on the <code>v1.6.0</code> tag when it merges — on your approval, via the attested lane, and not before.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">The rest of the candidate</p>
+      <ol>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/">The dev gallery</a> — all twelve renderers</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/nep-explorer/evidence.html">nep-explorer evidence</a> — requirement-keyed test records</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/nep-explorer/guide.html">nep-explorer clinical guide</a> — the KDIGO reading, stated</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Captured and written by Claude Code using Fable 5 (session 👯🤖 charts-rc) on 2026-08-14 against the safety.viz v1.6.0 release candidate — for @jwildfire's review of <a href="https://github.com/jwildfire/safety.viz/pull/124">sv#124</a>.</p>
+</footer>
+
+</div>
+
+<script>
+// Clips play when they scroll into view and pause when they leave, so the page
+// reads as a demo rather than a wall of play buttons. Controls stay available,
+// and a reader who asked for reduced motion is left alone.
+(function () {
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (still.matches || !('IntersectionObserver' in window)) return;
+  var seen = new WeakSet();
+  var io = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (e) {
+        var v = e.target;
+        if (e.isIntersecting) {
+          if (!seen.has(v)) { seen.add(v); v.load(); }
+          var p = v.play();
+          if (p && p.catch) p.catch(function () {});
+        } else if (!v.paused) {
+          v.pause();
+        }
+      });
+    },
+    { threshold: 0.45 }
+  );
+  document.querySelectorAll('video').forEach(function (v) { io.observe(v); });
+})();
+</script>
+
+</body></html>
