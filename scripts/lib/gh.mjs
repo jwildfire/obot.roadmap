@@ -32,10 +32,10 @@ export async function graphql(query, variables = {}) {
   return body.data;
 }
 
-export async function rest(path, { tolerate404 = false } = {}) {
+export async function rest(path, { tolerate404 = false, token = TOKEN } = {}) {
   const url = path.startsWith('http') ? path : `https://api.github.com${path}`;
   const headers = { Accept: 'application/vnd.github+json', 'User-Agent': UA };
-  if (TOKEN) headers.Authorization = `Bearer ${TOKEN}`;
+  if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(url, { headers });
   if (res.status === 404 && tolerate404) return null;
   if (!res.ok) throw new Error(`REST ${res.status} on ${url.replace('https://api.github.com', '')}`);

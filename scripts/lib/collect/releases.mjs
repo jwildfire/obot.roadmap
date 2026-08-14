@@ -11,7 +11,17 @@ import { rest } from '../gh.mjs';
 import { REPOS } from '../repos.mjs';
 
 async function repoReleases(repo) {
-  const list = (await rest(`/repos/${repo.nameWithOwner}/releases?per_page=30`)) ?? [];
+  // RC_TOKEN (deploy-site.yml mints it from the obot app) has push access to the
+  // installed portfolio repos, so with it the list includes draft releases. A repo
+  // outside the app installation 404s on the app token — fall back to the default
+  // token and live without its drafts rather than losing its releases.
+  let list = null;
+  if (process.env.RC_TOKEN) {
+    try {
+      list = await rest(`/repos/${repo.nameWithOwner}/releases?per_page=30`, { token: process.env.RC_TOKEN });
+    } catch { /* not in the installation — default-token path below */ }
+  }
+  if (!list) list = (await rest(`/repos/${repo.nameWithOwner}/releases?per_page=30`)) ?? [];
   // Release names are often just "<repo> <tag>" or the tag again — that is noise
   // next to a column already showing both, so only a name that says something
   // else survives.

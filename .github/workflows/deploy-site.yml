@@ -73,10 +73,27 @@ jobs:
       - name: Render diary
         run: node scripts/render_diary.mjs
 
+      # Draft releases are release candidates (rc-framework) and only visible to
+      # a token with push access, which neither the workflow token nor a
+      # project-read PAT has. The obot app does (Contents RW on the installed
+      # portfolio repos), so mint its token for the release reads. Optional by
+      # design: on failure the roadmap's Todo section simply shows no drafts.
+      - name: Mint obot app token for draft-release reads
+        id: obot-token
+        continue-on-error: true
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.OBOT_APP_ID }}
+          private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
+          owner: jwildfire
+          repositories: obot.roadmap,obot.agent,safety.viz,gsm.safety,safety-histogram
+
       # The roadmap page (requirement #57). Replaced the lifecycle-lane generator
       # (scripts/build_roadmap.mjs) at the flip on 2026-07-24; that file was
       # deleted once the flip proved out — see git history if the shape is wanted.
       - name: Build roadmap
+        env:
+          RC_TOKEN: ${{ steps.obot-token.outputs.token }}
         run: node scripts/build_roadmap_next.mjs
 
       # The audit reading view (_site/audit/index.html, requirement #92) — the
