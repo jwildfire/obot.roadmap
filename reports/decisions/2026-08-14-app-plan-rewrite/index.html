@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The app plan rewrite — four calls to make (2026-08-14)</title>
+<style>
+  :root {
+    --pg-paper:#F4F1EC; --pg-card:#FDFCFA; --pg-ink:#26211B; --pg-muted:#6F6558;
+    --pg-faint:#9C917F; --pg-line:#E2DACC; --pg-accent:#B4470E; --pg-accent-soft:#F4E2D2;
+    --pg-good:#2F6B4F; --pg-good-soft:#E2EFE7;
+    --serif:"Instrument Serif","Iowan Old Style",Georgia,serif;
+    --sans:"Instrument Sans","Avenir Next","Segoe UI",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+    --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18;
+    --pg-good:#7FBF9B; --pg-good-soft:#1E2E25;
+  } }
+  :root[data-theme="dark"] {
+    --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+    --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18;
+    --pg-good:#7FBF9B; --pg-good-soft:#1E2E25;
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--pg-paper); color:var(--pg-ink); font-family:var(--sans); line-height:1.55; margin:0; padding:3rem 1.25rem 4.5rem; }
+  .wrap { max-width:940px; margin:0 auto; }
+  .prose { max-width:70ch; }
+  a { color:var(--pg-accent); text-underline-offset:2px; }
+  a:focus-visible { outline:2px solid var(--pg-accent); outline-offset:2px; }
+  code { font-family:var(--mono); font-size:0.85em; background:var(--pg-accent-soft); padding:0.05em 0.3em; border-radius:4px; }
+  .eyebrow { font-family:var(--mono); font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--pg-accent); margin:0 0 0.55rem; }
+  h1 { font-family:var(--serif); font-weight:400; font-size:clamp(2rem,4.5vw,2.8rem); line-height:1.1; margin:0 0 1rem; text-wrap:balance; }
+  h2 { font-family:var(--serif); font-weight:400; font-size:1.65rem; margin:0 0 0.9rem; }
+  h3 { font-family:var(--serif); font-weight:400; font-size:1.25rem; margin:1.6rem 0 0.5rem; }
+  .standfirst { font-size:1.05rem; color:var(--pg-muted); margin:0; }
+  .standfirst strong { color:var(--pg-ink); }
+  section { margin:3.2rem 0 0; }
+  p { margin:0.6rem 0; }
+  .small { font-size:0.85rem; color:var(--pg-muted); }
+  ul, ol { max-width:70ch; padding-left:1.15rem; }
+  li { margin:0.4rem 0; }
+
+  .decision { border:1px solid var(--pg-line); border-radius:14px; background:var(--pg-card); padding:1.5rem 1.6rem; margin:1.6rem 0 0; }
+  .decision > .k { font-family:var(--mono); font-size:0.68rem; letter-spacing:0.11em; text-transform:uppercase; color:var(--pg-accent); }
+  .decision h2 { margin:0.35rem 0 0.6rem; font-size:1.5rem; }
+  .opts { display:grid; gap:0.9rem; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin:1.2rem 0 0; }
+  .opt { border:1px solid var(--pg-line); border-radius:10px; padding:0.9rem 1rem; background:var(--pg-paper); }
+  .opt.pick { border-color:var(--pg-good); background:var(--pg-good-soft); }
+  .opt h4 { font-family:var(--sans); font-size:0.95rem; margin:0 0 0.45rem; }
+  .opt .tag { display:inline-block; font-family:var(--mono); font-size:0.6rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--pg-good); border:1px solid var(--pg-good); border-radius:99px; padding:0.05em 0.45em; margin-left:0.35rem; vertical-align:1px; }
+  .opt dl { margin:0.5rem 0 0; font-size:0.86rem; }
+  .opt dt { font-family:var(--mono); font-size:0.63rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--pg-faint); margin-top:0.5rem; }
+  .opt dd { margin:0.1rem 0 0; color:var(--pg-muted); }
+  .rec { border-left:3px solid var(--pg-accent); background:var(--pg-accent-soft); border-radius:0 10px 10px 0; padding:0.9rem 1.1rem; margin:1.3rem 0 0; }
+  .rec p { margin:0.3rem 0; }
+  .rec .k { font-family:var(--mono); font-size:0.64rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--pg-accent); display:block; margin-bottom:0.2rem; }
+  .unblocks { margin:1rem 0 0; font-size:0.9rem; }
+  .unblocks .k { font-family:var(--mono); font-size:0.64rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--pg-faint); }
+
+  table { border-collapse:collapse; width:100%; font-size:0.88rem; margin:1rem 0 0; }
+  .scroll { overflow-x:auto; }
+  th, td { text-align:left; padding:0.5rem 0.7rem; border-bottom:1px solid var(--pg-line); vertical-align:top; }
+  th { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--pg-faint); font-weight:400; }
+  .callout { border:1.5px solid var(--pg-accent); background:var(--pg-accent-soft); border-radius:12px; padding:1.1rem 1.3rem; margin:1.6rem 0 0; }
+  .callout p { margin:0.3rem 0; }
+  .ask { display:grid; gap:0.6rem; margin:1.2rem 0 0; }
+  .ask .row { display:grid; grid-template-columns:4.5rem 1fr; gap:0.8rem; align-items:baseline; border-bottom:1px solid var(--pg-line); padding-bottom:0.6rem; }
+  .ask .id { font-family:var(--mono); font-size:0.78rem; color:var(--pg-accent); }
+  footer { margin-top:3.5rem; padding-top:1rem; border-top:1px solid var(--pg-line); font-family:var(--mono); font-size:0.76rem; color:var(--pg-faint); }
+  footer p { margin:0.25rem 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">goal #79 · decision artifact · 2026-08-14</p>
+    <h1>The app plan rewrite: four calls, and what each one unblocks</h1>
+    <p class="standfirst prose">Goal <a href="https://github.com/jwildfire/obot.roadmap/issues/79">#79</a> says of itself that <em>“until the app-first plan update lands on #34 and the Phase 1–4 requirements are filed and designed, every increment here is pipeline-advancement; there is nothing implementation-ready to select.”</em> That has been true for 33 days and it is now self-fulfilling: the artifact the goal is waiting for was overtaken by the work it was meant to sequence. <strong>This page converts “the plan rewrite is pending” into four decisions with recommendations.</strong> Nothing here needs a session to research further — the calls are @jwildfire's.</p>
+  </header>
+
+  <section>
+    <h2>The ask, in one screen</h2>
+    <div class="ask">
+      <div class="row"><span class="id">A1</span><span><strong>What replaces the 2026-07-12 v1.0 plan report, and does <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a> close?</strong><br><span class="small">→ Recommend <b>retire and anchor</b>: supersession header on the old report, ratification comment on #34, close it, and let the two 2026-07-28 design reports plus shipped demo-301 v0 be the record the requirements cite.</span></span></div>
+      <div class="row"><span class="id">A2</span><span><strong>What is the requirement set, given demo-301 already demonstrates most of “Phase 1”?</strong><br><span class="small">→ Recommend <b>surface-anchored, not phase-named</b>: four requirements written against surfaces that exist, with acceptance criteria measurable on the published snapshots — plus adopt the five goalless app issues into #79.</span></span></div>
+      <div class="row"><span class="id">A3</span><span><strong>What is in v1.0 of the safetyGraphics replacement, and what is deferred in writing?</strong><br><span class="small">→ Recommend <b>acceptance-path v1.0</b>: a scheduled Actions run publishes a snapshot end-to-end from a forked study repo. Name the app (D-APP0). Defer the action log, blinding enforcement, mapping UI and upstreaming, explicitly.</span></span></div>
+      <div class="row"><span class="id">A4</span><span><strong>Is demo-301 the canonical fork template — and therefore a goal repo whose <code>site</code> branch must be bounded?</strong><br><span class="small">→ Recommend <b>yes, and bind it</b>: add demo-301 to #79's backlog in <code>goals/registry.json</code>, fix its Actions lane, and take the free 34% off the branch. Sizing options: <a href="../2026-08-14-demo-301-site-size/">the companion artifact</a>.</span></span></div>
+    </div>
+    <p class="small" style="margin-top:1rem">A1 gates A2 gates A3. A4 is independent and can be answered on its own. <strong>If only two get answered, make them A1 and A2</strong> — they are what makes the goal selectable at all.</p>
+  </section>
+
+  <section>
+    <h2>The situation</h2>
+    <p class="prose">Between 28 and 29 July the app arc shipped ahead of its own governance: five PRs merged into open.gismo <code>dev</code> (local-first engine, espresso study-site shell, sidebar and the real gsm.viz overview table, the RBQM domain, the Safety domain) and demo-301 published two Project Snapshots to a live Pages site, while the documents meant to sequence that work never moved.</p>
+    <p class="prose">The 2026-07-12 v1.0 plan report is still written local-first even though @jwildfire reversed exactly that premise on 2026-07-19 (D1 — the <code>gh_*</code> GitHub lane is <em>the</em> acceptance path), <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a> has sat untouched since 2026-07-24 at milestone <code>backlog</code>, and <a href="https://github.com/jwildfire/obot.roadmap/issues/79">#79</a>'s body still tells a selecting session there is nothing implementation-ready to pick.</p>
+    <p class="prose">The result is sixteen idle days: no Phase 1–4 requirement was ever filed, five live app issues sit under no goal, demo-301 is bound to no goal in <code>goals/registry.json</code> at all, and its weekly pipeline has failed silently on 3 and 10 August without anyone being able to pick the fix up.</p>
+
+    <div class="callout">
+      <p><b>The one fact that reframes everything below.</b> D1 made the GitHub Actions lane the acceptance path for v1.0 on 2026-07-19. <strong>That lane has never once produced a published snapshot.</strong> Both snapshots on the live site record <code>package_snapshot: local-2026-07-29</code> — they came off a laptop. <code>build-site.yaml</code> has zero runs in its history. <code>run-pipeline.yaml</code> has fired twice on schedule and failed both times at package install. Pages is being served by GitHub's legacy branch builder, not by the repo's own deploy lane. The demo works; the mechanism the demo is <em>about</em> has never run.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What changed underneath #34</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Date</th><th>Event</th><th>Effect on #34</th></tr></thead>
+      <tbody>
+        <tr><td>2026-07-12</td><td>v1.0 plan report published; D1 proposed as “C+” — local-first, GitHub demoted to optional publisher. #34 opened to dispute it.</td><td>Issue's reason for existing</td></tr>
+        <tr><td>2026-07-19</td><td>@jwildfire ratifies <b>D1 = GitHub prerequisite</b> (reversing C+), <b>D2 = stay on the jwildfire fork</b>, <b>D6 = Snapshots in v1</b>. Sequencing set (D5): rewrite the plan first, then file Phase 1–4 requirements.</td><td>Decided — but the plan was never rewritten</td></tr>
+        <tr><td>2026-07-21</td><td>Ruling: Stage-3 Goal 2 (safetyGraphics replacement) and open.gismo v1.0 are the <b>same arc</b>; the rewrite must lead app-first.</td><td>Rewrite scope grew</td></tr>
+        <tr><td>2026-07-28</td><td>A design pass runs <em>instead of</em> the rewrite: two design reports published (directions D-APP0–7, framework D-FW1–8), direction C approved in session, the Domain concept added by @jwildfire, and requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/134">#134</a> filed and built the same evening.</td><td>Overtaken — better record now exists</td></tr>
+        <tr><td>2026-07-28/29</td><td>open.gismo PRs #1–#5 merge to <code>dev</code>; demo-301 publishes ps-001 and ps-002; <a href="https://jwildfire.github.io/demo-301/">the site goes live</a>.</td><td>Overtaken — the plan's Phases 1–2 are largely built</td></tr>
+        <tr><td>2026-07-29</td><td><code>policy.json</code> promotes demo-301 and open.csr to <code>auto</code> and <b>clears the open.gismo obotclaw App blocker</b> (obot.agent <code>ac613bf</code>).</td><td>#79's stated prerequisite goes stale</td></tr>
+        <tr><td>2026-08-03 / 08-10</td><td>demo-301's scheduled <code>Run Pipeline</code> fails at package install, twice, unattended.</td><td>The D1 acceptance path is broken and unowned</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small">#34's own gating clause — <em>“the prototype PR stays a draft and no open.gismo requirements are filed until D1 lands”</em> — is doubly stale: D1 landed on 2026-07-19 and PR #1 merged on 2026-07-28. The issue is holding a gate that reality already walked around.</p>
+  </section>
+
+  <section>
+    <h2>What in the 2026-07-12 plan is now wrong</h2>
+    <p class="prose">This matters because A1 is a question about whether that document is worth rewriting. The research pass read it line by line against what shipped:</p>
+    <ul>
+      <li><strong>The lede and the keynote arc line</strong> — “local-first compute … with GitHub demoted from backbone to optional publisher”, “your data never leaves your laptop”. Reversed by D1.</li>
+      <li><strong>All of §3, “The architecture decision”</strong> — the three candidate cards, the 33/22/16 judge table, the “C+ — C's engine, B's face” paragraph and both pull quotes. Its UX judge's killer argument was <em>“any architecture whose primary loop is repo-plus-Action is disqualified”</em> — which disqualifies the shape that actually shipped. K3's forkable-study-repo demo is architecturally the plan's <em>last-place</em> candidate.</li>
+      <li><strong>The load-bearing premise of §2</strong> — “many target users cannot push clinical trial data to GitHub at all”. This sentence is what killed that candidate; it was overruled, so every conclusion resting on it is void.</li>
+      <li><strong>The README caveat</strong> that the <code>gh_*</code> lane is “deliberately still unproven end-to-end (Phase 3)”. Under D1 that Action <em>is</em> the acceptance gate — and it is still unproven, which is now a defect rather than a plan.</li>
+      <li><strong>Phase ordering, not just phase prose.</strong> Phase 1 “CI green on both lanes” treats the backends as co-equal; Phase 3's “proving the never-run Action end-to-end” cannot sit third when it is the acceptance gate.</li>
+      <li><strong>Phase 2's “decide the ps-NNN fate (D6)”</strong> — superseded twice: D6 ratified snapshots into v1, and demo-301 has published <code>ps-001</code>/<code>ps-002</code> with a <code>snapshots.json</code> index since 2026-07-29.</li>
+      <li><strong>“Thin app face” and D4's “keep Shiny as the local shell”.</strong> The reader-facing surface is now a vanilla-JS Vite SPA bundled to a single-file <code>inst/site/index.html</code>; <code>og_app.R</code> has not been touched since PR #1. D4's question no longer describes the choice.</li>
+      <li><strong>The calendar and the build state</strong> — “Phase 1: late July”, “draft PR #1”, “prototype, not release”. PR #1 merged; no phase requirement was ever filed; the arc has been idle since 2026-07-29.</li>
+      <li><strong>A structural defect not to inherit:</strong> the plan defines five timeline entries with <em>no per-phase acceptance criteria</em>. The only acceptance artifact in the whole document is Phase 0's five-step journey.</li>
+    </ul>
+    <p class="prose">What survives: §4 “What was built” is evidence and still accurate, and the two 2026-07-28 design reports are source-grounded and current.</p>
+  </section>
+
+  <section>
+    <h2>The four decisions</h2>
+
+    <div class="decision">
+      <span class="k">A1 · gates A2</span>
+      <h2>What replaces the 2026-07-12 v1.0 plan report — and does #34 close on it?</h2>
+      <p class="prose"><b>Why now:</b> #34 has been the named gate on everything downstream for 33 days. Its sequencing said rewrite the plan first, then file requirements. The build overtook it 16 days ago, so the gate now only blocks the paperwork.</p>
+      <div class="opts">
+        <div class="opt">
+          <h4>A1-a · Rewrite the report app-first</h4>
+          <dl>
+            <dt>What</dt><dd>Execute the 2026-07-19 sequencing literally: rewrite the report app-first with D1/D2/D6 folded in, land D3 and D4 inside that draft, then close #34 and file requirements.</dd>
+            <dt>Costs</dt><dd>A full session re-deriving design already published twice on 2026-07-28; §4 would be re-typed; requirements slip another session; the rewrite would be describing shipped code as a plan.</dd>
+            <dt>Forecloses</dt><dd>Nothing permanent — but it spends the arc's next session on narrative rather than on the Actions lane D1 made the acceptance gate.</dd>
+          </dl>
+        </div>
+        <div class="opt pick">
+          <h4>A1-b · Retire and anchor<span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd>Supersession header on the 07-12 report naming D1's reversal and the 07-21 app-first ruling; close-out comment on #34 recording D1/D2/D6 as ratified and D3/D4 as re-sited; close #34. The two 2026-07-28 design reports plus demo-301 v0 become the app-first record the requirement set cites.</dd>
+            <dt>Costs</dt><dd>No single narrative “plan” document exists for the keynote. D3 (data-mapping ambition) and D4 (Shiny long-term) lose their home and must be explicitly re-sited onto issues or they vanish. The old report stays publicly deployed with a wrong §3 unless the header is unmissable.</dd>
+            <dt>Forecloses</dt><dd>The plan-report genre for this arc: from here the requirement set <em>is</em> the plan, and readers get design records plus requirements rather than a roadmap essay.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>A1-c · Header only, leave #34 open</h4>
+          <dl>
+            <dt>What</dt><dd>Add the supersession header and comment, but keep #34 open as the arc's design thread.</dd>
+            <dt>Costs</dt><dd>#34 stays a backlog placeholder that #79's body cites as a blocker, so “nothing is implementation-ready” stays technically true by its own text.</dd>
+            <dt>Forecloses</dt><dd>Little — but it preserves exactly the ambiguity that has held the arc for a month.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>A1-b — retire the plan report, close #34, anchor on what shipped.</strong></p>
+        <p>The report's reusable half and its void half separate cleanly. §4 “What was built” is evidence and survives; §3's entire architecture decision rests on the premise D1 reversed, and its own pull quote disqualifies the repo-plus-Action shape that K3 and demo-301 then built. Rewriting would mean re-deriving design that already exists in better form — <code>framework.html</code>'s next step ③ asked for exactly this fold-in, its four-layer model is source-grounded and current, and <code>directions.html</code>'s shell direction was not merely approved but implemented: espresso masthead, Domain switcher, provenance chip, snapshot timeline are all on the live site.</p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>Closing #34 removes the only stated precondition on filing requirements, so drafting can start in the same session — and #79's boundary prose can be corrected in the same pass, which is what makes the goal selectable by an unattended session at all.</p>
+    </div>
+
+    <div class="decision">
+      <span class="k">A2 · the actual unblocker</span>
+      <h2>What is the requirement set, given demo-301 already demonstrates most of “Phase 1”?</h2>
+      <p class="prose"><b>Why now:</b> goal #79 has exactly three sub-issues (#34, #134, #139), none closed, while five real app issues filed on 2026-07-29 — <a href="https://github.com/jwildfire/obot.roadmap/issues/136">#136</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/138">#138</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/142">#142</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/144">#144</a> — sit under no goal at all. The goal under-counts its own arc by five, so a session selecting <code>app</code> finds nothing to do.</p>
+      <div class="opts">
+        <div class="opt">
+          <h4>A2-a · Faithful Phase 1–4</h4>
+          <dl>
+            <dt>What</dt><dd>File four requirements named and scoped as the 07-12 report defines them (Local core hardening / Settings &amp; data UX / Publish &amp; share / v1.0 release), amended to GitHub-prerequisite.</dd>
+            <dt>Costs</dt><dd>Phases 1 and 2 are substantially built, so the text would describe the past; the acceptance gate sits third; and the phases carry no acceptance criteria in the source, so that defect is imported wholesale.</dd>
+            <dt>Forecloses</dt><dd>Framing the set around what the app now is — the phase names commit the arc to the engine-first vocabulary the 07-21 ruling rejected.</dd>
+          </dl>
+        </div>
+        <div class="opt pick">
+          <h4>A2-b · Surface-anchored set, and adopt the orphans<span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd>Four requirements named for surfaces and contracts that exist: <b>(1)</b> the Actions publish lane green end-to-end, <b>(2)</b> Safety domain completion (folding #138's metric cut and #136's phase rename), <b>(3)</b> fork-template hardening, <b>(4)</b> the v1.0 release itself — each with acceptance criteria measurable against demo-301's published snapshots. Plus: a baseline comment on #134 declaring demo-301 v0 the accepted baseline, and #136/#138/#142/#143/#144 linked as sub-issues of #79.</dd>
+            <dt>Costs</dt><dd>Requires @jwildfire to edit #79 or approve a membership proposal (the goal is his to maintain); a short retro-documentation pass so shipped surfaces get the acceptance criteria they were never given; “Phase N” references in older documents need translating.</dd>
+            <dt>Forecloses</dt><dd>The “Phase N” vocabulary — future conversation happens in surface terms.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>A2-c · One umbrella v1.0 requirement</h4>
+          <dl>
+            <dt>What</dt><dd>A single “open.gismo v1.0” requirement under #79 with cross-repo sub-issues in open.gismo, gsm.safety and demo-301.</dd>
+            <dt>Costs</dt><dd>One requirement cannot carry per-surface acceptance criteria without becoming a plan document again; sub-issues without requirement text are hard to review at the gate actually in use.</dd>
+            <dt>Forecloses</dt><dd>Per-surface approval — the whole arc is approved or rejected at once.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>A2-b — surface-anchored requirements with acceptance criteria measured on the published snapshots, plus adopt the five goalless issues.</strong></p>
+        <p>The built-ahead-of-spec problem is real but small: the shipped surfaces are testable artifacts, not sketches — two published snapshots with per-workflow and per-step <code>status.json</code>, a five-file publish contract already written into <code>build-site.yaml</code>, and a config-driven domain registry in demo-301's <code>study-config.yaml</code>. Writing acceptance criteria against them is a documentation pass, not a re-derivation. Filing the original phase names instead would import the plan's missing-acceptance-criteria defect and put the D1 gate third in the queue. The membership fix matters as much as the text: #144 and #136 both cite #79 in their bodies and are parented to nothing, so the goal reads as three-issues-idle when the live arc is seven issues wide.</p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>Makes #79 selectable. <code>registry.json</code> already binds it to open.gismo and gsm.safety, and <code>policy.json</code> gives both repos the <code>auto</code> profile — so the moment a requirement carries acceptance criteria, an unattended session can take an increment. The two most immediately implementation-ready: <b>#138's metric cut</b> (blocked only on @jwildfire choosing from five candidates) and <b>#136's phase rename</b> (one open question — whether the published <code>output/3_reports/</code> path renames alongside the workflow directory).</p>
+    </div>
+
+    <div class="decision">
+      <span class="k">A3 · scope</span>
+      <h2>What is in v1.0 of the safetyGraphics replacement — and what is deferred, in writing?</h2>
+      <p class="prose"><b>Why now:</b> D1 made the GitHub lane the acceptance path on 2026-07-19, and it has never run to completion. Both published snapshots carry <code>package_snapshot: local-2026-07-29</code>; <code>build-site.yaml</code> has zero runs; <code>run-pipeline.yaml</code> failed its last two scheduled attempts. Whatever v1.0 means, this is the gap.</p>
+      <div class="opts">
+        <div class="opt pick">
+          <h4>A3-a · Acceptance-path v1.0<span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd>v1.0 = a forkable study repo whose <em>scheduled Actions run</em> publishes a snapshot to Pages end-to-end, with Safety and RBQM as shipped, the phase/path contract settled (#136), and the app named (D-APP0). Deferred <em>and stated as deferred</em>: the action log (#139), payload-level blinding enforcement (#144), QTL depth beyond the current qtl0001/qtl0002, the full mapping UI (old D3), and the milestone upstream PR to Gilead-BioStats.</dd>
+            <dt>Costs</dt><dd>The release headline is a publishing capability rather than new analytics. It requires fixing the Actions install lane — unestimated work of unknown depth (the hand-rolled clone-and-install lane exists because of the SAML/pak constraint, and it does not resolve transitive deps). D-APP0 must be decided now rather than parked as #134 parked it.</dd>
+            <dt>Forecloses</dt><dd>Shipping v1.0 on a locally-produced demo — which D1 already forecloses in principle; this makes it operational.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>A3-b · Feature-complete v1.0</h4>
+          <dl>
+            <dt>What</dt><dd>Add the action log (#139), per-module blinding enforcement (#144) and gsm.safety's new <code>2_metrics</code> phase (#138) to the v1.0 line.</dd>
+            <dt>Costs</dt><dd>#139 has seven undecided design questions and a real architectural tension (review state is mutable and must live outside the immutable snapshot); #144 needs payloads built without treatment-arm columns and possibly separate artifact trees. Both are net-new subsystems. September is already slipped without them.</dd>
+            <dt>Forecloses</dt><dd>A September v1.0 in any realistic reading.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>A3-c · Freeze and name</h4>
+          <dl>
+            <dt>What</dt><dd>Tag what is on open.gismo <code>dev</code>, declare the locally-produced demo the release, leave the Actions lane unproven.</dd>
+            <dt>Costs</dt><dd>Directly contradicts D1. demo-301's README promise — fork it and your study site publishes itself — stays false. The K3 three-step keynote story cannot be demonstrated live.</dd>
+            <dt>Forecloses</dt><dd>The K3 demo narrative, and with it the strongest differentiator the design pass identified.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>A3-a — scope v1.0 to the acceptance path, and put the deferrals in writing.</strong></p>
+        <p>This is the only scope that makes v1.0 mean what was already decided it means. D1 named the <code>gh_*</code> lane the acceptance path; that lane has never once produced a published snapshot. Everything else on the candidate list is either already demonstrably working (both domain pages, the provenance chip, snapshot compare) or is a new subsystem with unanswered design questions. D-APP0 belongs in scope because <code>directions.html</code>'s own recommendation was “decide before requirements — the name lands in Phase 1 scope, the plan rewrite, and the keynote”, and it is now the last unmade call that touches all three.</p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>Turns the Actions install failure into requirement #1 with an unambiguous pass condition — <em>a scheduled run publishes ps-003 without a local <code>og_run()</code></em> — which is a well-scoped, testable increment an unattended session can take. Explicitly parking #139 and #144 also stops them reading as blockers, which is part of what makes the arc look impassable today.</p>
+    </div>
+
+    <div class="decision">
+      <span class="k">A4 · independent of A1–A3</span>
+      <h2>Is demo-301 the canonical fork template — and therefore a goal repo whose <code>site</code> branch must be bounded?</h2>
+      <p class="prose"><b>Why now:</b> demo-301 is the only place the D1 acceptance path can be proved, and it holds the keynote's K3 story — yet it is bound to no goal in <code>goals/registry.json</code>, so no autonomous session can reach it. Its weekly cron has been failing since 3 August and nobody could pick it up. Separately, <a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a> says the size call must be made “before demo-301 is used as the fork template in the keynote”.</p>
+      <div class="opts">
+        <div class="opt pick">
+          <h4>A4-a · Canonical, and bound<span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd>Declare demo-301 the fork template: add it to goal #79's backlog in <code>goals/registry.json</code>, fix the Actions install lane there, and bound the <code>site</code> branch — starting with the free lever in <a href="../2026-08-14-demo-301-site-size/">the companion artifact</a>.</dd>
+            <dt>Costs</dt><dd>The <code>registry.json</code> edit sits inside the policy carve-out, so its PR needs explicit approval even though demo-301 is an <code>auto</code> repo. Bounding the branch means real work in the publish script and a small change to how the app shell resolves snapshot paths.</dd>
+            <dt>Forecloses</dt><dd>Little — old snapshots survive in git history, and the packed cost is already small.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>A4-b · Generated template</h4>
+          <dl>
+            <dt>What</dt><dd>Make <code>og_init()</code> plus an Actions template the fork story — “setting up a study repo is a command, not an artisanal clone” — and keep demo-301 as a scratch demo nobody forks.</dd>
+            <dt>Costs</dt><dd>The keynote's “fork this repo” demo then points at something that does not exist yet; more engine work before anything is demonstrable; the live site people have already been shown becomes a throwaway.</dd>
+            <dt>Forecloses</dt><dd>Using the artifact that already works as the demo, in exchange for a cleaner story later.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>A4-c · Accept for the demo <span class="small">(the de facto state)</span></h4>
+          <dl>
+            <dt>What</dt><dd>#143's mitigation 4 — accept the ceiling for the demo, solve it at first real-study onboarding — and leave demo-301 unbound.</dd>
+            <dt>Costs</dt><dd>The moment the install step is fixed, the weekly cron resumes growing the branch by roughly 100 MB of checkout per run. <code>PUBLISHING.md</code>'s own precondition (“a retention policy belongs in this branch's contract before the schedule is switched on”) was already violated when the schedule went live. demo-301 stays unreachable by goal selection, so the Actions fix never gets picked up autonomously.</dd>
+            <dt>Forecloses</dt><dd>Nothing technically — but it keeps the acceptance-path work permanently outside the autonomy lane.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>A4-a — name demo-301 the canonical fork template, bind it to #79 in the registry, fix its Actions lane, and take the free 34% off the branch.</strong></p>
+        <p>The measured facts reframe #143 rather than confirming its urgency. The ~302 MB figure is exact — 317,274,322 bytes across 689 files — but <strong>103.41 MiB of it is a byte-identical duplicate</strong>: the branch root <code>output/</code> and <code>ps-002/output/</code> are the same git tree object, <code>d2f3ae3</code>. That is 34% of the checkout, and #143 does not mention it. The genuinely gating half is the other one: full merge grants on demo-301 (<code>auto</code>, integration <code>main</code>, release <code>site</code>, approved 2026-07-29) with zero goal reachability is why two consecutive cron failures went unattended for eleven days.</p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>Makes demo-301 work selectable, which turns the Actions install failure from an unowned defect into a takeable increment; gives #143 a decision instead of an open ceiling; and lets A2's fork-template requirement carry a concrete acceptance test — fork the repo, let the scheduled run fire, get a published snapshot.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Two corrections that need no decision</h2>
+    <p class="prose">Both are stale facts in goal bodies, and sessions never edit a goal issue — so they are proposed as comments and applied by @jwildfire.</p>
+    <ul>
+      <li><strong>#79's Boundaries still say the obotclaw App is not installed on <code>jwildfire/open.gismo</code>, “until it is, no merge increment may target that repo”.</strong> Cleared 2026-07-29 (<code>policy.json</code>, obot.agent <code>ac613bf</code>) and re-verified tonight against <code>GET /installation/repositories</code>: the installation covers 12 repos including open.gismo. Five PRs have since merged there as obotclaw[bot]. A session reading that line today refuses a merge it is fully granted to make. Proposed on <a href="https://github.com/jwildfire/obot.roadmap/issues/79">#79</a>.</li>
+      <li><strong>The same stale line sits in the paused csr goal <a href="https://github.com/jwildfire/obot.roadmap/issues/112">#112</a></strong> (“the obotclaw App is not yet installed on <code>jwildfire/open.csr</code>”). Tonight's installation check lists open.csr too, and <code>policy.json</code> promoted it to <code>auto</code> in the same 2026-07-29 commit. Flagged, not acted on — it is a paused goal.</li>
+    </ul>
+    <p class="small">Noted in passing, not proposed: <code>goals/registry.json</code> lists <code>csr</code> with <code>status: "active"</code>, while tonight's goal review treats it as paused. Worth reconciling whenever the registry is next touched.</p>
+  </section>
+
+  <section>
+    <h2>What this session did not do</h2>
+    <ul>
+      <li><strong>No release candidate for the app goal, deliberately.</strong> Its blocker is a decision, not an increment: with no requirement filed and no acceptance criteria written, any PR tonight would have been pipeline-advancement dressed as a release. Per the <a href="https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md">release-candidate framework</a>, a blocker goes to a decision artifact, not to a review queue.</li>
+      <li><strong>No surgery on demo-301's <code>site</code> branch.</strong> Nothing was deleted or rewritten; the branch was measured read-only.</li>
+      <li><strong>No edits to any goal issue body.</strong> Both corrections above are comments.</li>
+      <li><strong>The demo-301 Actions failure was diagnosed, not fixed.</strong> It belongs to whichever requirement A2 and A3 produce.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Evidence</h2>
+    <p class="prose">Re-run directly on 2026-08-14 for this page:</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Claim</th><th>How it was checked</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>demo-301's scheduled pipeline is failing</td><td><code>gh run list -R jwildfire/demo-301</code></td><td>Run Pipeline / schedule → <b>failure</b> on 2026-08-10 and 2026-08-03; <code>Build Site</code> has <b>zero</b> runs; every success in history is <code>pages build and deployment</code> (GitHub's legacy branch builder), last on 2026-07-29</td></tr>
+        <tr><td><code>site</code> branch is ~302 MB</td><td><code>git ls-tree -r -l origin/site</code></td><td><b>689 files, 317,274,322 bytes = 302.58 MiB.</b> #143's figure is exact</td></tr>
+        <tr><td>A third of it is duplicated</td><td><code>git rev-parse origin/site:output</code> vs <code>:ps-002/output</code></td><td>Both resolve to tree <b><code>d2f3ae3cefb8296212dedc628dd8134e8d4a4f50</code></b> — byte-identical. <code>output/</code> 103.41 MiB · <code>ps-002/</code> 103.45 MiB · <code>ps-001/</code> 95.36 MiB</td></tr>
+        <tr><td>The obotclaw App is installed on open.gismo and open.csr</td><td><code>GET /installation/repositories</code> with an App token</td><td>12 repositories, including <b>jwildfire/open.gismo</b>, <b>jwildfire/open.csr</b> and <b>jwildfire/demo-301</b></td></tr>
+        <tr><td>#79 under-counts its arc</td><td><code>GET /issues/79/sub_issues</code> + issue sweep</td><td>Sub-issues: <b>#34, #134, #139</b> (three, none closed). Goalless app issues: <b>#136, #138, #142, #143, #144</b></td></tr>
+        <tr><td>demo-301 is bound to no goal</td><td><code>obot.agent/goals/registry.json</code></td><td><code>app</code> backlog = <code>jwildfire/open.gismo</code>, <code>jwildfire/gsm.safety</code>. demo-301 appears in <b>no</b> goal's backlog</td></tr>
+        <tr><td>The App blocker was cleared</td><td><code>obot.agent</code> git log on <code>scripts/policy.json</code></td><td>Commit <b><code>ac613bf</code></b>, 2026-07-29 — “Apply @jwildfire's decisions: promote open.csr + demo-301, clear the open.gismo blocker”</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small">Everything else on this page — the plan report's stale sections, the design-report decision ledgers, the open.gismo <code>dev</code> build state, snapshot contents and test counts — was read from source by a parallel research pass over the two 2026-07-28 design reports, the 2026-07-12 plan report, the open.gismo and demo-301 working trees, <code>policy.json</code>, <code>registry.json</code> and the hub issue set. Where a source was thin, the page says so rather than filling the gap.</p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <ul>
+      <li>Hub <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a> — GitHub's role in open.gismo v1.0, with the 2026-07-19 ratification and 2026-07-21 app-first ruling in its comments</li>
+      <li>Goal <a href="https://github.com/jwildfire/obot.roadmap/issues/79">#79</a> (app) · requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/134">#134</a> (demo-301 v0) · <a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a> (site-branch size)</li>
+      <li><a href="../../app-design-2026-07-28/">The app — design record</a> (<a href="../../app-design-2026-07-28/directions.html">directions</a>, D-APP0–7 · <a href="../../app-design-2026-07-28/framework.html">framework</a>, D-FW1–8) and <a href="../../app-dashboard-design-2026-07-28/">the dashboard design pass</a></li>
+      <li><a href="../../open-gismo-v1-plan-2026-07-12/">open.gismo v1.0 — design &amp; roadmap</a> (2026-07-12), the report A1 is about</li>
+      <li>The shipped baseline: <a href="https://jwildfire.github.io/demo-301/">jwildfire.github.io/demo-301</a> · open.gismo <code>dev</code> PRs #1–#5</li>
+      <li><a href="https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md">The release-candidate framework</a> — why this is a decision artifact and not a PR</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Decision artifact for goal <a href="https://github.com/jwildfire/obot.roadmap/issues/79">#79</a> · written 2026-08-14 by an unattended 👯🤖 session · linked from <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a>.</p>
+    <p>Drafted by Claude Code using Opus 5 in an unattended session and not yet reviewed by @jwildfire.</p>
+  </footer>
+
+</div>
+</body>
+</html>

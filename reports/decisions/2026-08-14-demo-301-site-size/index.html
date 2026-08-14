@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>demo-301's site branch — what the fork actually costs (2026-08-14)</title>
+<style>
+  :root {
+    --pg-paper:#F4F1EC; --pg-card:#FDFCFA; --pg-ink:#26211B; --pg-muted:#6F6558;
+    --pg-faint:#9C917F; --pg-line:#E2DACC; --pg-accent:#B4470E; --pg-accent-soft:#F4E2D2;
+    --pg-good:#2F6B4F; --pg-good-soft:#E2EFE7;
+    --serif:"Instrument Serif","Iowan Old Style",Georgia,serif;
+    --sans:"Instrument Sans","Avenir Next","Segoe UI",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+    --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18;
+    --pg-good:#7FBF9B; --pg-good-soft:#1E2E25;
+  } }
+  :root[data-theme="dark"] {
+    --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+    --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18;
+    --pg-good:#7FBF9B; --pg-good-soft:#1E2E25;
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--pg-paper); color:var(--pg-ink); font-family:var(--sans); line-height:1.55; margin:0; padding:3rem 1.25rem 4.5rem; }
+  .wrap { max-width:940px; margin:0 auto; }
+  .prose { max-width:70ch; }
+  a { color:var(--pg-accent); text-underline-offset:2px; }
+  a:focus-visible { outline:2px solid var(--pg-accent); outline-offset:2px; }
+  code { font-family:var(--mono); font-size:0.85em; background:var(--pg-accent-soft); padding:0.05em 0.3em; border-radius:4px; }
+  .eyebrow { font-family:var(--mono); font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--pg-accent); margin:0 0 0.55rem; }
+  h1 { font-family:var(--serif); font-weight:400; font-size:clamp(2rem,4.5vw,2.8rem); line-height:1.1; margin:0 0 1rem; text-wrap:balance; }
+  h2 { font-family:var(--serif); font-weight:400; font-size:1.65rem; margin:0 0 0.9rem; }
+  h3 { font-family:var(--serif); font-weight:400; font-size:1.25rem; margin:1.6rem 0 0.5rem; }
+  .standfirst { font-size:1.05rem; color:var(--pg-muted); margin:0; }
+  .standfirst strong { color:var(--pg-ink); }
+  section { margin:3.2rem 0 0; }
+  p { margin:0.6rem 0; }
+  .small { font-size:0.85rem; color:var(--pg-muted); }
+  ul, ol { max-width:70ch; padding-left:1.15rem; }
+  li { margin:0.4rem 0; }
+
+  .decision { border:1px solid var(--pg-line); border-radius:14px; background:var(--pg-card); padding:1.5rem 1.6rem; margin:1.6rem 0 0; }
+  .decision > .k { font-family:var(--mono); font-size:0.68rem; letter-spacing:0.11em; text-transform:uppercase; color:var(--pg-accent); }
+  .decision h2 { margin:0.35rem 0 0.6rem; font-size:1.5rem; }
+  .opts { display:grid; gap:0.9rem; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin:1.2rem 0 0; }
+  .opt { border:1px solid var(--pg-line); border-radius:10px; padding:0.9rem 1rem; background:var(--pg-paper); }
+  .opt.pick { border-color:var(--pg-good); background:var(--pg-good-soft); }
+  .opt h4 { font-family:var(--sans); font-size:0.95rem; margin:0 0 0.45rem; }
+  .opt .tag { display:inline-block; font-family:var(--mono); font-size:0.6rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--pg-good); border:1px solid var(--pg-good); border-radius:99px; padding:0.05em 0.45em; margin-left:0.35rem; vertical-align:1px; }
+  .opt dl { margin:0.5rem 0 0; font-size:0.86rem; }
+  .opt dt { font-family:var(--mono); font-size:0.63rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--pg-faint); margin-top:0.5rem; }
+  .opt dd { margin:0.1rem 0 0; color:var(--pg-muted); }
+  .rec { border-left:3px solid var(--pg-accent); background:var(--pg-accent-soft); border-radius:0 10px 10px 0; padding:0.9rem 1.1rem; margin:1.3rem 0 0; }
+  .rec p { margin:0.3rem 0; }
+  .rec .k { font-family:var(--mono); font-size:0.64rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--pg-accent); display:block; margin-bottom:0.2rem; }
+  .unblocks { margin:1rem 0 0; font-size:0.9rem; }
+  .unblocks .k { font-family:var(--mono); font-size:0.64rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--pg-faint); }
+
+  table { border-collapse:collapse; width:100%; font-size:0.88rem; margin:1rem 0 0; }
+  .scroll { overflow-x:auto; }
+  th, td { text-align:left; padding:0.5rem 0.7rem; border-bottom:1px solid var(--pg-line); vertical-align:top; }
+  th { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--pg-faint); font-weight:400; }
+  .callout { border:1.5px solid var(--pg-accent); background:var(--pg-accent-soft); border-radius:12px; padding:1.1rem 1.3rem; margin:1.6rem 0 0; }
+  .callout p { margin:0.3rem 0; }
+  .ask { display:grid; gap:0.6rem; margin:1.2rem 0 0; }
+  .ask .row { display:grid; grid-template-columns:4.5rem 1fr; gap:0.8rem; align-items:baseline; border-bottom:1px solid var(--pg-line); padding-bottom:0.6rem; }
+  .ask .id { font-family:var(--mono); font-size:0.78rem; color:var(--pg-accent); }
+  footer { margin-top:3.5rem; padding-top:1rem; border-top:1px solid var(--pg-line); font-family:var(--mono); font-size:0.76rem; color:var(--pg-faint); }
+  footer p { margin:0.25rem 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">hub #143 · decision artifact · 2026-08-14</p>
+    <h1>demo-301's site branch: what a fork actually costs</h1>
+    <p class="standfirst prose"><a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a> asks whether a ~302 MB published branch is the right shape for a repo whose whole purpose is to be forked, and says the call must be made before demo-301 is used as the keynote's fork template. <strong>The 302 MB figure is exact. It is also not what a fork downloads.</strong> This page reports what was measured, and recommends two cheap changes plus one growth bound. Companion to <a href="../2026-08-14-app-plan-rewrite/">the app plan-rewrite decisions</a> (A4 decides whether demo-301 is the template at all — this page decides what to do about its size either way).</p>
+  </header>
+
+  <section>
+    <h2>The situation</h2>
+    <p class="prose">demo-301's <code>site</code> branch — the static tree GitHub Pages serves and the app reads — checks out to <strong>302.58 MiB across 689 files</strong>, exactly as #143 reported, and every republish pushes on the order of 500 paths.</p>
+    <p class="prose">But #143's framing (“cloning the demo means pulling hundreds of megabytes”) does not match what a fork does: a default clone downloads <strong>~91 MiB compressed</strong> for all branches and checks out <code>main</code>, landing <strong>~125 MiB on disk</strong> — of which <strong>124.48 MiB is <code>input/</code></strong>, and 103 MiB of <em>that</em> is two synthetic data-management CSVs. The <code>site</code> branch's 302 MiB is only materialised by whoever checks that branch out, which in a fork is the Actions runner.</p>
+    <p class="prose">So there are two separate problems wearing one issue number: a <strong>publish-branch problem</strong> (302 MiB, growing by roughly one snapshot per scheduled run, with no retention policy even though <code>PUBLISHING.md</code> says one belongs in the branch contract) and a <strong>fork-cost problem</strong> that lives on <code>main</code> and that #143 does not mention.</p>
+    <div class="callout">
+      <p><b>The free lever nobody has taken.</b> The branch root <code>output/</code> and <code>ps-002/output/</code> are <em>the same git tree object</em> — <code>d2f3ae3cefb8296212dedc628dd8134e8d4a4f50</code>. That is <b>103.41 MiB, 34% of the checkout</b>, duplicated with zero information content. Git already stores it once; the cost is purely in checkout size and path count. #143 does not mention it.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What was measured</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Measure</th><th>Value</th><th>Command</th></tr></thead>
+      <tbody>
+        <tr><td><code>site</code> branch checkout</td><td><b>302.58 MiB</b> · 689 files · 317,274,322 bytes</td><td><code>git ls-tree -r -l origin/site</code></td></tr>
+        <tr><td><code>site</code> compressed objects</td><td><b>72.17 MiB</b> (1,228 objects)</td><td><code>git rev-list --objects | git cat-file --batch-check='%(objectsize:disk)'</code></td></tr>
+        <tr><td><code>main</code> checkout</td><td><b>124.67 MiB</b> · 91 files</td><td><code>git ls-tree -r -l origin/main</code></td></tr>
+        <tr><td><code>main</code> compressed objects</td><td><b>18.83 MiB</b></td><td>as above</td></tr>
+        <tr><td><b>Both branches, deduplicated</b> — what a clone transfers</td><td><b>90.91 MiB</b></td><td>as above, <code>sort -u</code></td></tr>
+        <tr><td><code>site</code> by directory</td><td><code>ps-002/</code> 103.45 · <code>output/</code> 103.41 · <code>ps-001/</code> 95.36 MiB</td><td><code>git ls-tree</code> + awk</td></tr>
+        <tr><td>Root <code>output/</code> vs <code>ps-002/output/</code></td><td><b>identical tree <code>d2f3ae3</code></b> — 103.41 MiB duplicated</td><td><code>git rev-parse origin/site:output</code></td></tr>
+        <tr><td>Heaviest files (each present twice)</td><td><code>kri_report_…html</code> 10.98 · <code>safety_outlier_explorer.html</code> 9.66 · <code>hep_explorer.html</code> 9.55 MiB</td><td><code>git ls-tree -r -l | sort -k4 -rn</code></td></tr>
+        <tr><td><code>main/input/</code></td><td><b>124.48 MiB</b> — <code>Raw_DATACHG.csv</code> 57.98 + <code>Raw_DATAENT.csv</code> 45.25 + <code>Raw_QUERY.csv</code> 11.74 = <b>83%</b></td><td><code>git ls-tree -r -l origin/main -- input</code></td></tr>
+        <tr><td>Largest chart, over the wire</td><td>10,015,826 bytes → <b>417,963 gzipped</b> (24×)</td><td><code>curl -H 'Accept-Encoding: gzip'</code></td></tr>
+        <tr><td>Growth today</td><td><b>None</b> — the scheduled pipeline has failed on 2026-08-03 and 2026-08-10</td><td><code>gh run list -R jwildfire/demo-301</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small">All measured 2026-08-14 against <code>origin/site</code> and <code>origin/main</code>, read-only. Nothing on the branch was modified.</p>
+  </section>
+
+  <section>
+    <h2>The options</h2>
+    <div class="opts">
+      <div class="opt pick">
+        <h4>S1 · Drop the root <code>output/</code> duplicate<span class="tag">recommended</span></h4>
+        <dl>
+          <dt>What</dt><dd>Stop writing the current snapshot's tree twice. The publish script keeps <code>ps-NNN/</code> and a pointer (<code>snapshots.json</code> already indexes them); the app shell resolves the current snapshot through that pointer instead of assuming a flat root.</dd>
+          <dt>Gains</dt><dd><b>103.41 MiB — 34% of the checkout</b>, and roughly a third of the path count per republish. No information lost: the identical tree remains at <code>ps-002/output/</code>.</dd>
+          <dt>Costs</dt><dd>Breaks the deliberate flat-root shape (“the branch root <em>is</em> the site, no build step”) — the shell must stop assuming it. A contained change in the publish script plus the site's path resolution.</dd>
+          <dt>Forecloses</dt><dd>Serving the current snapshot from bare root paths. Anything linking to <code>/output/…</code> would need redirecting.</dd>
+        </dl>
+      </div>
+      <div class="opt pick">
+        <h4>S2 · Shrink <code>input/</code> on main<span class="tag">recommended</span></h4>
+        <dl>
+          <dt>What</dt><dd>Cut or downsample the two data-management CSVs (<code>Raw_DATACHG</code> 57.98 MiB, <code>Raw_DATAENT</code> 45.25 MiB) that no Safety or RBQM view in the demo reads at full size. Regenerate at a fraction of the row count, or move them behind a fetch step.</dd>
+          <dt>Gains</dt><dd>Up to <b>~103 MiB</b> off the disk cost of every fork — the part a forker actually feels, since <code>main</code> is what a clone checks out.</dd>
+          <dt>Costs</dt><dd>Requires checking which workflows consume them at what fidelity; downsampling changes demo numbers, so published snapshots would need regenerating for consistency.</dd>
+          <dt>Forecloses</dt><dd>Demonstrating the pipeline at that data volume, unless a large-data variant is kept elsewhere.</dd>
+        </dl>
+      </div>
+      <div class="opt pick">
+        <h4>S3 · Snapshot retention<span class="tag">recommended — the growth bound</span></h4>
+        <dl>
+          <dt>What</dt><dd>#143's mitigation 1: keep the last N snapshots in <code>ps-NNN/</code> and expire older ones (they survive in git history). Write the policy into the branch contract, as <code>PUBLISHING.md</code> already says it should be.</dd>
+          <dt>Gains</dt><dd>Bounds growth permanently. Without it, the branch gains ~95–103 MiB of checkout per scheduled run the moment the pipeline is fixed.</dd>
+          <dt>Costs</dt><dd>Real work in the publish script. N must be ≥ 2 or the compare view loses its second snapshot.</dd>
+          <dt>Forecloses</dt><dd>A complete published history on the branch itself — deliberately, since git history retains it.</dd>
+        </dl>
+      </div>
+      <div class="opt">
+        <h4>S4 · Stop committing rendered charts</h4>
+        <dl>
+          <dt>What</dt><dd>#143's mitigation 2: publish the large self-contained chart HTML as build artifacts referenced by the snapshot rather than stored in it.</dd>
+          <dt>Costs</dt><dd>Breaks the property the whole demo narrative rests on — the branch root is the site, served with no build step. Also the weakest case on the numbers: those files gzip 24× on the wire, so they are a checkout cost, not a visitor cost.</dd>
+          <dt>Forecloses</dt><dd>Offline/forked reproducibility of a snapshot as one self-contained tree.</dd>
+        </dl>
+      </div>
+      <div class="opt">
+        <h4>S5 · Orphan-branch publishing</h4>
+        <dl>
+          <dt>What</dt><dd>#143's mitigation 3: rewrite <code>site</code> as a single-commit orphan branch on each publish.</dd>
+          <dt>Costs</dt><dd>Loses published history, which is the provenance story's backbone — the provenance chip traces a number to its snapshot and run. Cheapest to implement, most expensive in narrative.</dd>
+          <dt>Forecloses</dt><dd>Any claim that a published number can be traced back through the branch.</dd>
+        </dl>
+      </div>
+      <div class="opt">
+        <h4>S6 · Accept for the demo</h4>
+        <dl>
+          <dt>What</dt><dd>#143's mitigation 4: document the ceiling, revisit at first real-study onboarding.</dd>
+          <dt>Costs</dt><dd>The retention precondition in <code>PUBLISHING.md</code> was already violated when the schedule went live; growth resumes the moment the pipeline is fixed. The fork-cost half is never addressed.</dd>
+          <dt>Forecloses</dt><dd>Nothing technically — it defers.</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Recommendation</h2>
+    <div class="rec">
+      <span class="k">Recommendation</span>
+      <p><strong>S1 + S2 now, S3 with the pipeline fix. Not S4, not S5.</strong></p>
+      <p>S1 is free in information terms — 34% of the checkout is a byte-identical duplicate tree, and the only real work is teaching the shell to resolve the current snapshot through <code>snapshots.json</code> instead of assuming a flat root. S2 attacks the number a forker actually experiences: <code>main</code> is what a clone checks out, and 83% of its 124.48 MiB is two synthetic data-management CSVs that the Safety and RBQM views do not need at that size. S3 is the only option that stops the problem recurring, and it should land in the same change as the Actions install fix — because the day that pipeline goes green is the day the branch starts growing ~100 MiB a week again.</p>
+      <p>S4 and S5 both trade away a load-bearing property for a benefit the measurements do not support. The rendered charts gzip 24× on the wire (10.0 MB → 418 KB), so they cost checkout space, not visitor bandwidth; and orphan-branch publishing would erase exactly the published history the provenance chip is built to trace.</p>
+    </div>
+    <p class="unblocks" style="margin-top:1.4rem"><span class="k">What unblocks</span><br>Taking S1+S2+S3 lets the fork-template hardening requirement carry a measurable acceptance test — <em>fork the repo, clone it, and the working tree is under X MiB; run the pipeline twice and the branch does not grow without bound</em>. Choosing S6 instead leaves #143 open as a ceiling with no owner, which is its current state. Either way this is decidable tonight; none of it requires further research.</p>
+    <p class="prose"><b>Nothing has been changed.</b> No branch was rewritten, no file deleted, no history touched — #143's surgery waits on this decision, per the standing rule that nothing is deleted without approval.</p>
+  </section>
+
+  <footer>
+    <p>Decision artifact for <a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a> · written 2026-08-14 by an unattended 👯🤖 session · companion to <a href="../2026-08-14-app-plan-rewrite/">the app plan-rewrite decisions</a> (goal <a href="https://github.com/jwildfire/obot.roadmap/issues/79">#79</a>).</p>
+    <p>Drafted by Claude Code using Opus 5 in an unattended session and not yet reviewed by @jwildfire.</p>
+  </footer>
+
+</div>
+</body>
+</html>

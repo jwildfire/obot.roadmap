@@ -49,6 +49,15 @@ requirement [#7](https://github.com/jwildfire/obot.roadmap/issues/7).
 Superseded versions are retained deliberately (design decision D3) — the memory
 philosophy favors preserving the decision trail.
 
+## Decision artifacts
+
+[`decisions/`](decisions/) holds the pages an autonomous session writes when it hits a call
+it cannot make — situation, options with what each costs and forecloses, a plain
+recommendation, and what unblocks on each choice. One folder per decision, dated. These and
+release-candidate PRs are the only two things @jwildfire reviews, per the
+[release-candidate framework](https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md);
+the contract is documented in [`decisions/README.md`](decisions/README.md).
+
 ## Session reports
 
 [`sessions/`](sessions/) holds the frozen per-session operational records produced at
