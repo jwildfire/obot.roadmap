@@ -2,7 +2,9 @@
 
 **Decision artifact** for the obot-prime concierge (session framework, [obot.agent docs/session-framework.md](https://github.com/jwildfire/obot.agent/blob/main/docs/session-framework.md)), written 2026-08-14 in an unattended sibling session at @jwildfire's direct request: *"How are we going to handle context management in a long running agent like this? … Do some research and make a recommendation. Again, primary goal for everything this agent does is to keep responses quick."* Mid-drafting, @jwildfire added the **Navigator** proposal (a standing roadmap bot keeping state current for prime), relayed by obot-prime; it is evaluated head-to-head as C2.
 
-**Decide here:** the linked Q&A discussion — @jwildfire records C1–C6 there.
+**Decide here:** [Q&A discussion #154](https://github.com/jwildfire/obot.roadmap/discussions/154) — @jwildfire records C1–C6 there.
+
+**Status: DECIDED 2026-08-14 — approved.** @jwildfire (relayed via obot-prime): "I'm good with your recommendations." Implemented 2026-08-15 in [obot.agent#91](https://github.com/jwildfire/obot.agent/pull/91) (merged, standard lane, closes [oa#90](https://github.com/jwildfire/obot.agent/issues/90)); the Navigator (C2) is filed as requirement [#157](https://github.com/jwildfire/obot.roadmap/issues/157) under goal #73.
 
 ## Why it exists
 
