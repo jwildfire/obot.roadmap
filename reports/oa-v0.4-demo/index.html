@@ -38,14 +38,15 @@ h1 .v{color:var(--bronze)}
 
 /* contents */
 .toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:32px 0 0;
-  display:grid;grid-template-columns:repeat(4,1fr)}
+  display:grid;grid-template-columns:repeat(5,1fr)}
 .toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
 .toc a:first-child{border-left:0}
 .toc a:hover{background:var(--panel)}
 .toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
 .toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
 .toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
-@media (max-width:860px){.toc{grid-template-columns:repeat(2,1fr)}.toc a:nth-child(3){border-left:0}}
+@media (max-width:1000px){.toc{grid-template-columns:repeat(3,1fr)}.toc a:nth-child(4){border-left:0}}
+@media (max-width:860px){.toc{grid-template-columns:repeat(2,1fr)}.toc a:nth-child(odd){border-left:0}}
 @media (max-width:520px){.toc{grid-template-columns:1fr}.toc a{border-left:0;border-top:1px solid var(--rule)}.toc a:first-child{border-top:0}}
 
 /* section rule */
@@ -105,7 +106,7 @@ li{margin:7px 0}
   <div class="facts">
     <span><b>Release</b> v0.4.0 (draft)</span>
     <span><b>Since</b> v0.3.0 · 2026-07-26</span>
-    <span><b>Merged</b> 16 pull requests</span>
+    <span><b>Merged</b> 21 pull requests</span>
     <span><b>Tests</b> 104 / 104 passing</span>
     <span><b>Goal</b> #73 autonomy</span>
   </div>
@@ -115,6 +116,7 @@ li{margin:7px 0}
     <a href="#hub"><span class="ref">02</span><span class="t">One click to the hub</span><span class="s">The status line carries a live link</span></a>
     <a href="#policy"><span class="ref">03</span><span class="t">One policy file per repo</span><span class="s">Two drifting files became one profile</span></a>
     <a href="#unattended"><span class="ref">04</span><span class="t">Runs stop stalling</span><span class="s">Worktrees, Remote Control, and the wrapup trail</span></a>
+    <a href="#contract"><span class="ref">05</span><span class="t">The release contract</span><span class="s">Notes in the repo, decisions in one thread</span></a>
   </nav>
 </header>
 
@@ -205,8 +207,7 @@ s-inbox.md       s-spawn.md   s-wrapup.md    session-wrap.md</pre>
 <span class="esc">^[]8;;</span><span class="lnk">https://jwildfire.github.io/obot.roadmap/</span><span class="esc">^G</span><span class="lnk">↗ obot hub</span><span class="esc">^[]8;;^G</span></pre>
   </div>
 
-  <div class="note"><b>Two things this fixes beyond the link.</b> The status line's source was an untracked file on one machine — <code>git ls-tree origin/main | grep statusline</code> returned nothing before this release. It is now tracked at <code>tools/statusline/</code> with an idempotent installer, so a second machine can reproduce it. And the new <code>--serve</code> flag on the watch loop turns the in-workspace link into an <code>http://127.0.0.1:7325/</code> URL, because Ghostty hands <code>file://</code> links to Finder instead of the browser.</p>
-  </div>
+  <div class="note"><b>Two things this fixes beyond the link.</b> The status line's source was an untracked file on one machine — <code>git ls-tree origin/main | grep statusline</code> returned nothing before this release. It is now tracked at <code>tools/statusline/</code> with an idempotent installer, so a second machine can reproduce it. And the new <code>--serve</code> flag on the watch loop turns the in-workspace link into an <code>http://127.0.0.1:7325/</code> URL, because Ghostty hands <code>file://</code> links to Finder instead of the browser.</div>
 
   <div class="repro">
     <div class="k">Reproduce — render the status line without a session</div>
@@ -333,6 +334,108 @@ obot-auto: would run: claude --bg --permission-mode auto <span class="g">--remot
 </section>
 
 <div class="cut"><span>&nbsp;<em>Also in this release</em></span></div>
+<div class="cut"><span>05 &nbsp;<em>The release contract</em></span></div>
+<section id="contract">
+  <div class="hd">
+    <h2>This release is the first one with a written contract</h2>
+    <span class="prs"><a href="https://github.com/jwildfire/obot.agent/pull/83">#83</a> · <a href="https://github.com/jwildfire/obot.agent/pull/85">#85</a> · <a href="https://github.com/jwildfire/obot.agent/pull/86">#86</a> · <a href="https://github.com/jwildfire/obot.agent/pull/87">#87</a></span>
+  </div>
+  <p class="what">Until this release, "what reaches @jwildfire" was an unwritten habit, and it leaked: a convention PR sat in his queue tonight waiting on a review it never needed. <code>docs/rc-framework.md</code> now says it outright — <b>release candidates and decision artifacts reach him, nothing else does</b> — and two mechanisms make the rule survive contact: release notes live in a repo's <code>NEWS.md</code> and publish from it unedited, and every open decision gets a Q&amp;A thread where he answers in one place. The page you are reading is that contract's output for v0.4.0.</p>
+
+  <h3>The notes live in the repo, demo link first</h3>
+  <p class="what" style="margin-top:10px">A release's notes are no longer typed into the GitHub release form. They are a section of <code>NEWS.md</code> on the integration branch, reviewable in a diff like anything else, and the section opens with its demo link before a word of prose — the rule the skill states, and the reason you landed on this page from the release rather than the other way round.</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>obot.agent/NEWS.md<span class="who">obot2 · 2026-08-14</span></div>
+<pre><span class="c">$ head -11 obot.agent/NEWS.md</span>
+<span class="dim">&lt;!--</span>
+<span class="dim">NEWS.md is the running release log and the draft of each release's notes.</span>
+<span class="dim">Shape (per skills/rc-release-notes/SKILL.md): newest release first; every release</span>
+<span class="dim">section opens with its demo-artifact link, then a text-only, functionality-first</span>
+<span class="dim">account of what a user can now do. The GitHub release publishes from the section</span>
+<span class="dim">here, copied verbatim, when the release is approved and tagged.</span>
+<span class="dim">--&gt;</span>
+
+<span class="y"># obot.agent v0.4.0</span>
+
+<span class="b">**See it move:**</span> the [annotated v0.4.0 demo](https://jwildfire.github.io/obot.roadmap/reports/oa-v0.4-demo/) walks each change as a real terminal capture with the command that produced it.</pre>
+  </div>
+  <div class="repro">
+    <div class="k">Reproduce</div>
+<pre>head -11 obot.agent/NEWS.md</pre>
+  </div>
+
+  <h3>The release body is that section, byte for byte</h3>
+  <p class="what" style="margin-top:10px">"A news.md file that will be copied to release notes once I approve the PR" — his words on the v1.6.0 candidate, now a checkable property rather than an intention. The notes on the v0.4.0 draft release and the notes in <code>NEWS.md</code> are the same bytes; a <code>diff</code> is the test, and it is silent.</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>verbatim check<span class="who">obot2 · 2026-08-14</span></div>
+<pre><span class="c">$ python3 - &lt;&lt;'PY'   # compare the NEWS.md section with the draft release body</span>
+<span class="c">  ...</span>
+<span class="c">PY</span>
+NEWS.md section : 7,369 bytes
+release body    : 7,369 bytes
+<span class="g">IDENTICAL — the release publishes the NEWS.md section unedited</span></pre>
+  </div>
+  <div class="repro">
+    <div class="k">Reproduce</div>
+<pre>python3 - &lt;&lt;'PY'
+import pathlib, subprocess
+news = pathlib.Path("obot.agent/NEWS.md").read_text()
+section = news[news.index("# obot.agent v0.4.0"):news.index("# Earlier releases")].rstrip()
+body = subprocess.run(["gh","release","view","v0.4.0","-R","jwildfire/obot.agent",
+                       "--json","body","-q",".body"], capture_output=True, text=True).stdout
+notes = body[:body.rindex("\n---\n")].rstrip()   # everything above the attribution rule
+print(f"NEWS.md section : {len(section):,} bytes")
+print(f"release body    : {len(notes):,} bytes")
+print("IDENTICAL — the release publishes the NEWS.md section unedited" if notes == section
+      else "DIFFERS — the release body has drifted from NEWS.md")
+PY</pre>
+  </div>
+  <div class="note">
+    <b>What that <code>rindex</code> slice drops.</b> Exactly one thing: the drafted-by attribution block this house style appends below a <code>---</code> rule on every published artifact. Everything above it — all 7 369 bytes — is the <code>NEWS.md</code> section unchanged. Nothing is reworded on the way to the release form, which is the whole point: what you review in the diff is what ships.
+  </div>
+
+  <h3>The skill that says how, next to the ones that say what</h3>
+  <p class="what" style="margin-top:10px">The convention is loadable, not folklore. <code>rc-release-notes</code> joins the skill library alongside the session-lifecycle and renderer-migration families, so a session told to "prep the RC" or "draft release notes" loads the procedure by description match instead of improvising a house style per repo.</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>skills library<span class="who">obot2 · 2026-08-14</span></div>
+<pre><span class="c">$ ls obot.agent/skills/ | column -c 78</span>
+chartjs-migration       requirements-harvesting  session-scaffold
+gxp-test-framework      session-dashboard        session-spawn
+obot-identity           session-idea             session-todo
+p004-test-driver        session-inbox            session-update
+p004-test-setup         session-init             session-wrapup
+p004-write-tests        session-note             stakeholder-interview
+<span class="g">rc-release-notes</span>        session-prime
+renderer-modernization  session-reviews</pre>
+  </div>
+  <div class="repro">
+    <div class="k">Reproduce</div>
+<pre>ls obot.agent/skills/ | column -c 78</pre>
+  </div>
+
+  <h3>And decisions get one place to be answered</h3>
+  <p class="what" style="margin-top:10px">A decision artifact used to be a page with nowhere to reply. Every open decision now also posts a brief summary — question, options, recommendation — to the hub's Q&amp;A discussions, and the thread is where the answer is recorded. Three are live and waiting as of this release.</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>hub discussions<span class="who">obot2 · 2026-08-14</span></div>
+<pre><span class="c">$ gh api graphql -f query='{repository(owner:"jwildfire",name:"obot.roadmap"){</span>
+<span class="c">    discussions(first:5,orderBy:{field:CREATED_AT,direction:DESC}){nodes{</span>
+<span class="c">    number title category{name} answer{id}}}}}' -q "$FMT"</span>
+<span class="y">#154</span>  <span class="m">[Q&amp;A]</span>    Decide: context management for obot-prime (C1–C6) — state fi  <span class="r">answered=false</span>
+<span class="y">#151</span>  <span class="dim">[Ideas]</span>  Document Monitor-authoring rules: zsh word-splitting trap +    <span class="dim">answered=false</span>
+<span class="y">#150</span>  <span class="m">[Q&amp;A]</span>    Decision needed: demo-301's site branch — which size mitigat  <span class="r">answered=false</span>
+<span class="y">#149</span>  <span class="m">[Q&amp;A]</span>    Decision needed: the app plan rewrite — four calls (A1–A4)     <span class="r">answered=false</span>
+<span class="y">#141</span>  <span class="dim">[Ideas]</span>  Make obot-merge --check report mergeability, not just policy   <span class="dim">answered=false</span></pre>
+  </div>
+  <div class="repro">
+    <div class="k">Reproduce</div>
+<pre>FMT='.data.repository.discussions.nodes[] | "#\(.number)  [\(.category.name)]  \(.title[0:60])  answered=\(.answer != null)"'
+gh api graphql -f query='{repository(owner:"jwildfire",name:"obot.roadmap"){discussions(first:5,orderBy:{field:CREATED_AT,direction:DESC}){nodes{number title category{name} answer{id}}}}}' -q "$FMT"</pre>
+  </div>
+  <div class="note">
+    <b>The same contract shows up at the other end of a session.</b> Every wrapup output now opens with two lists — <em>🚦 Release candidates needing review</em>, then <em>🧭 Decisions needed</em> — before any work log, and both carry forward until they are closed rather than scrolling away with the diary entry. The <code>NEWS.md</code> half of the contract is what makes the first list reviewable: an RC without notes and a deployed demo page is not an RC.
+  </div>
+</section>
+
 <section>
   <ul>
     <li><b>An upstream audit you can hand over.</b> Five ready-to-file issue drafts for <code>gsm.qtl</code>'s report workflow, each with a runnable repro script, live at <code>drafts/gsm.qtl/</code> (<a href="https://github.com/jwildfire/obot.agent/pull/62">#62</a>). Every finding was re-verified against current upstream on 2026-08-14 and none has been fixed. They stay drafts by rule — agents do not write outside the <code>jwildfire</code> org.</li>
@@ -341,7 +444,7 @@ obot-auto: would run: claude --bg --permission-mode auto <span class="g">--remot
   </ul>
 
   <div class="note" style="margin-top:26px">
-    <b>One thing this release does not fix.</b> Three of the five merges above were denied on first attempt by the Claude&nbsp;Code auto-mode classifier and succeeded on a plain retry — the harness's own message reads <em>"usually transient — retrying often succeeds."</em> The evidence, and the one permission rule that would close it, are in a separate <a href="../decisions/2026-08-14-merge-lane-classifier-denials/">decision artifact</a>. It needs a settings change only @jwildfire can make.
+    <b>The one thing that looked like it would not work.</b> Three <code>obot-merge</code> calls in this window were denied by the Claude&nbsp;Code auto-mode classifier — including a read-only <code>--check</code> dry run — which read as a threat to the whole "increments merge unattended" model. It was not: <b>3 denials in 99 real invocations</b>, traced to the one command spelling the workspace permission allowlist did not cover. The rule landed on 2026-08-14, and the three merges that closed this release went through on the first attempt. Full reasoning in the <a href="../decisions/2026-08-14-merge-lane-classifier-denials/">decision artifact</a>.
   </div>
 </section>
 
