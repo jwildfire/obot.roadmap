@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>obot.agent v0.4.0 — annotated demo</title>
+<meta name="description" content="What v0.4.0 changes about running a session, shown as before/after terminal captures with the exact command to reproduce each one.">
+<style>
+:root{
+  --paper:#f7f5f1; --panel:#fffdfa; --ink:#16181b; --ink2:#434850; --mute:#787d86;
+  --rule:#e0dbd1; --rule2:#c5bcab;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --term-bg:#1b1d21; --term-fg:#dcd8d0;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1020px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.3)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code{font-family:var(--mono)}
+p{max-width:72ch}
+
+/* masthead */
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:66ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:24px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+/* contents */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:32px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+@media (max-width:860px){.toc{grid-template-columns:repeat(2,1fr)}.toc a:nth-child(3){border-left:0}}
+@media (max-width:520px){.toc{grid-template-columns:1fr}.toc a{border-left:0;border-top:1px solid var(--rule)}.toc a:first-child{border-top:0}}
+
+/* section rule */
+.cut{position:relative;margin:66px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.prs{font:600 11px/1 var(--mono);color:var(--mute);letter-spacing:.04em}
+.prs a{color:var(--mute);border-bottom-color:rgba(120,125,134,.4)}
+.what{max-width:70ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:16px;margin:32px 0 0;font-family:var(--display)}
+
+/* terminal frames */
+.term{margin:14px 0 0;background:var(--term-bg);border:1px solid #2c3037;border-radius:6px;overflow:hidden}
+.term .bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#24272c;border-bottom:1px solid #2c3037;
+  font:600 10.5px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:#8a9099}
+.term .bar .lamp{width:8px;height:8px;border-radius:50%;background:#3a3f47}
+.term .bar .who{margin-left:auto;text-transform:none;letter-spacing:0;color:#6e747c;font-weight:500}
+.term pre{margin:0;padding:14px 16px;color:var(--term-fg);font:12.8px/1.7 var(--mono);
+  overflow-x:auto;white-space:pre;tab-size:2}
+.term.before{border-color:#4a3330}
+.term.before .bar{background:#2c211f;color:#c08b83}
+.term.after{border-color:#2f4a38}
+.term.after .bar{background:#1f2c24;color:#84b795}
+.c{color:#868c95}
+.g{color:#8fd39a}.r{color:#f2857a}.y{color:#e6c07b}.b{color:#7fb2dd}.m{color:#c8a0d8}.dim{color:#6e747c}
+.lnk{color:#7fb2dd;text-decoration:underline}
+.esc{color:#5d636b}
+
+/* repro block */
+.repro{margin:16px 0 0;border-left:3px solid var(--rule2);padding:2px 0 2px 16px}
+.repro .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.repro pre{margin:9px 0 0;background:var(--panel);border:1px solid var(--rule);border-radius:4px;
+  padding:11px 13px;font:12.6px/1.6 var(--mono);color:var(--ink);overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0 0}
+@media (max-width:820px){.ba{grid-template-columns:1fr}}
+.note{margin:16px 0 0;background:var(--panel);border:1px solid var(--rule);border-left:3px solid var(--bronze);
+  border-radius:4px;padding:14px 16px;font-size:14.5px;color:var(--ink2)}
+.note b{color:var(--ink)}
+ul{max-width:72ch;padding-left:22px}
+li{margin:7px 0}
+.foot{margin:72px 0 0;border-top:1px solid var(--rule);padding:24px 0 64px;font-size:13.5px;color:var(--mute)}
+.foot a{color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>obot.agent</span><span class="dot"></span><span>Release candidate</span><span class="dot"></span><span>2026-08-14</span></div>
+  <h1>obot.agent <span class="v">v0.4.0</span> — what changed, shown running</h1>
+  <p class="lede">This release is a harness: no charts, no pages, nothing to point a browser at. So the demo is the behaviour itself — every capture below is real output from this machine, taken after the release commit, with the command that produced it. Where the change is a fix, the old behaviour is captured beside the new one.</p>
+  <div class="facts">
+    <span><b>Release</b> v0.4.0 (draft)</span>
+    <span><b>Since</b> v0.3.0 · 2026-07-26</span>
+    <span><b>Merged</b> 16 pull requests</span>
+    <span><b>Tests</b> 104 / 104 passing</span>
+    <span><b>Goal</b> #73 autonomy</span>
+  </div>
+
+  <nav class="toc">
+    <a href="#paint"><span class="ref">01</span><span class="t">Sessions open instantly</span><span class="s">The hand-off is injected before the model's first token</span></a>
+    <a href="#hub"><span class="ref">02</span><span class="t">One click to the hub</span><span class="s">The status line carries a live link</span></a>
+    <a href="#policy"><span class="ref">03</span><span class="t">One policy file per repo</span><span class="s">Two drifting files became one profile</span></a>
+    <a href="#unattended"><span class="ref">04</span><span class="t">Runs stop stalling</span><span class="s">Worktrees, Remote Control, and the wrapup trail</span></a>
+  </nav>
+</header>
+
+<div class="cut"><span>01 &nbsp;<em>The session framework</em></span></div>
+<section id="paint">
+  <div class="hd">
+    <h2>A session now opens before the model thinks</h2>
+    <span class="prs"><a href="https://github.com/jwildfire/obot.agent/pull/76">#76</a> · <a href="https://github.com/jwildfire/obot.agent/pull/77">#77</a> · <a href="https://github.com/jwildfire/obot.agent/pull/80">#80</a> · <a href="https://github.com/jwildfire/obot.agent/pull/81">#81</a></span>
+  </div>
+  <p class="what">Typing <code>/s-init</code> used to start a conversation: the agent read the scratchpad, chased the previous session's notes, then painted a list — several round trips before anything appeared. The hand-off bundle is now assembled by a shell script that runs <em>during command expansion</em>, so its output is already in the prompt when the model produces its first token. The paint costs zero tool calls.</p>
+
+  <h3>The bundle assembles in 30 milliseconds</h3>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>after — v0.4.0<span class="who">obot2 · 2026-08-14</span></div>
+<pre><span class="c">$ /usr/bin/time -p bash obot.agent/tools/session-init/handoff.sh</span>
+<span class="g">=== HANDOFF (preprocessed 2026-08-14 19:50) ===</span>
+<span class="g">=== SCRATCHPAD ===</span>
+file: /Users/jwildfire/Documents/obot2/.claude/session-notes/2026-08-14.md (age: 0m)
+
+<span class="dim">--- previous scratchpad (pointer-chase guard) ---</span>
+file: /Users/jwildfire/Documents/obot2/.claude/session-notes/2026-08-04.md (age: 13205m)
+
+<span class="y">### Agent-actionable</span>
+- [ ] 1. /s-init acceptance re-run on the merged fast path …
+- [ ] 2. Rebase pass: oa#63 + oa#67 (single-file conflicts vs PR#76) …
+- [ ] 3. #140 impl after D1–D8: ONE oa PR closing oa#65 + oa#75 …
+
+<span class="y">### Waiting on @jwildfire</span>
+- [ ] 9. D-lists: #140 D1–D8 · #91 D1–D7 + formal sign-off …
+- [ ] 12. PR queue ×7 — 5 CONFLICTING …
+
+<span class="c">real 0.03
+user 0.01
+sys  0.02</span></pre>
+  </div>
+  <p class="what" style="margin-top:14px">110 lines and 20 KB of carried state, assembled in 30 ms of shell time — versus the several model round trips the old init spent rediscovering it. <code>/session-init</code> and <code>/s-init</code> are now the same skill (<a href="https://github.com/jwildfire/obot.agent/pull/81">#81</a>), so the long form no longer takes the slow path, and unattended runs launched by <code>obot-auto</code> ride the same fast paint (<a href="https://github.com/jwildfire/obot.agent/pull/80">#80</a>).</p>
+
+  <div class="repro">
+    <div class="k">Reproduce</div>
+    <pre>cd ~/Documents/obot2 &amp;&amp; /usr/bin/time -p bash obot.agent/tools/session-init/handoff.sh</pre>
+  </div>
+
+  <h3>The command family got short forms</h3>
+  <p class="what">Eleven session commands gained one-word aliases (<a href="https://github.com/jwildfire/obot.agent/pull/64">#64</a>), and two new ones arrived: <code>/s-idea</code> files a half-formed thought to the triage queue, <code>/s-reviews</code> walks the PRs waiting on a decision.</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>after — v0.4.0<span class="who">obot.agent/commands</span></div>
+<pre><span class="c">$ ls obot.agent/commands/</span>
+s-dashboard.md   s-init.md    s-reviews.md   s-todo.md
+s-idea.md        s-note.md    s-scaffold.md  s-update.md
+s-inbox.md       s-spawn.md   s-wrapup.md    session-wrap.md</pre>
+  </div>
+</section>
+
+<div class="cut"><span>02 &nbsp;<em>Getting to the dashboard</em></span></div>
+<section id="hub">
+  <div class="hd">
+    <h2>The status line carries a live hub link</h2>
+    <span class="prs"><a href="https://github.com/jwildfire/obot.agent/pull/52">#52</a></span>
+  </div>
+  <p class="what">Reaching the ops hub meant running <code>/session-dashboard</code> and waiting, or remembering where <code>live.html</code> lives. Every status line now ends with a clickable link — the live hub inside the obot workspace, the deployed roadmap hub anywhere else. The captures below are raw <code>cat -v</code> output, so the OSC&nbsp;8 hyperlink escapes are visible rather than rendered.</p>
+
+  <div class="ba">
+    <div class="term before">
+      <div class="bar"><span class="lamp"></span>before — v0.3.0</div>
+<pre><span class="m">[a1554f0d]</span> <span class="b">Opus 5</span> <span class="y">~/Documents/obot2</span>
+<span class="y">68% left</span> <span class="r">$1.20</span>
+
+<span class="c"># no link. To reach the hub:
+# run /session-dashboard, or find
+# .claude/session-hub/live.html
+# by hand.</span></pre>
+    </div>
+    <div class="term after">
+      <div class="bar"><span class="lamp"></span>after — v0.4.0</div>
+<pre><span class="m">[a1554f0d]</span> <span class="b">Opus 5</span> <span class="y">~/Documents/obot2</span>
+<span class="y">68% left</span> <span class="r">$1.20</span> <span class="lnk">↗ ops hub</span>
+
+<span class="c"># the segment is an OSC 8 hyperlink:</span>
+<span class="esc">^[]8;;</span><span class="lnk">file:///…/session-hub/live.html</span><span class="esc">^G</span>
+<span class="lnk">↗ ops hub</span><span class="esc">^[]8;;^G</span></pre>
+    </div>
+  </div>
+
+  <p class="what" style="margin-top:16px">Outside the workspace the same segment points at the deployed hub instead, so the link is never dead:</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>after — outside the workspace<span class="who">cwd: ~/Documents/github</span></div>
+<pre><span class="m">[deadbeef]</span> <span class="b">Opus 5</span> <span class="y">~/Documents/github</span> <span class="y">91% left</span> <span class="r">$0.02</span> <span class="lnk">↗ obot hub</span>
+<span class="esc">^[]8;;</span><span class="lnk">https://jwildfire.github.io/obot.roadmap/</span><span class="esc">^G</span><span class="lnk">↗ obot hub</span><span class="esc">^[]8;;^G</span></pre>
+  </div>
+
+  <div class="note"><b>Two things this fixes beyond the link.</b> The status line's source was an untracked file on one machine — <code>git ls-tree origin/main | grep statusline</code> returned nothing before this release. It is now tracked at <code>tools/statusline/</code> with an idempotent installer, so a second machine can reproduce it. And the new <code>--serve</code> flag on the watch loop turns the in-workspace link into an <code>http://127.0.0.1:7325/</code> URL, because Ghostty hands <code>file://</code> links to Finder instead of the browser.</p>
+  </div>
+
+  <div class="repro">
+    <div class="k">Reproduce — render the status line without a session</div>
+    <pre>echo '{"model":{"display_name":"Opus 5"},"workspace":{"current_dir":"/Users/jwildfire/Documents/obot2"},"context_window":{"remaining_percentage":68},"session_id":"a1554f0d","cost":{"total_cost_usd":1.2}}' \
+  | bash ~/Documents/obot2/obot.agent/tools/statusline/statusline.sh | cat -v
+
+# swap current_dir to somewhere outside the workspace for the deployed-hub variant,
+# or prefix OBOT_STATUSLINE_LINK=off to drop the segment on terminals that can't click.</pre>
+  </div>
+</section>
+
+<div class="cut"><span>03 &nbsp;<em>Write policy</em></span></div>
+<section id="policy">
+  <div class="hd">
+    <h2>One decision per repo, in one file</h2>
+    <span class="prs"><a href="https://github.com/jwildfire/obot.agent/pull/59">#59</a> · <a href="https://github.com/jwildfire/obot.agent/pull/61">#61</a></span>
+  </div>
+  <p class="what">What an agent may write used to live in two files — <code>merge-policy.json</code> for merge tiers and <code>autonomy-grants.json</code> for unattended grants — each needing a separate edit per repo, and they had already drifted: two repos were listed for merges but missing from the grants matrix, a state neither file could express. They are now one <code>policy.json</code> where a repo gets a single decision, its <em>profile</em>, and you can ask what that means in plain words.</p>
+
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>after — v0.4.0<span class="who">the authority on any repo's lane</span></div>
+<pre><span class="c">$ obot.agent/scripts/obot-policy explain jwildfire/obot.agent</span>
+
+<span class="b">jwildfire/obot.agent</span>   profile: <span class="g">auto</span>
+  approved: @jwildfire on 2026-07-22 — obot.roadmap#18 design review
+  merge main (integration)         -&gt; <span class="g">standard</span>
+  merge &lt;any other branch&gt;         -&gt; <span class="r">refused</span>
+  --auto: branch=True  draftPR=main  mergeStandard=['main']  issues=full+closes</pre>
+  </div>
+
+  <p class="what" style="margin-top:16px">Branches are matched by <em>role</em>, not by name, so a repo whose release branch is called <code>master</code> or <code>site</code> needs no special-casing. Merges are gated by the same file: the dry run below refuses to say yes for a branch with no declared role, and every real merge in this release went through it.</p>
+
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>after — dry run, merges nothing</div>
+<pre><span class="c">$ obot.agent/scripts/obot-merge 52 -R jwildfire/obot.agent --check</span>
+PR #52 https://github.com/jwildfire/obot.agent/pull/52
+  title: Add a clickable hub link to the agent status line
+  base:  main   state: OPEN   draft: False   mergeable: MERGEABLE
+  policy: profile auto, role integration
+<span class="g">obot-merge: CHECK PASSED - policy permits merging PR #52 in jwildfire/obot.agent</span></pre>
+  </div>
+
+  <div class="repro">
+    <div class="k">Reproduce</div>
+    <pre>cd ~/Documents/obot2
+obot.agent/scripts/obot-policy explain jwildfire/obot.agent
+obot.agent/scripts/obot-policy explain jwildfire/safety-histogram   # release role is 'master'
+obot.agent/scripts/obot-merge &lt;any-open-pr&gt; -R jwildfire/obot.agent --check</pre>
+  </div>
+</section>
+
+<div class="cut"><span>04 &nbsp;<em>Unattended runs</em></span></div>
+<section id="unattended">
+  <div class="hd">
+    <h2>Three things that used to stall an overnight run</h2>
+    <span class="prs"><a href="https://github.com/jwildfire/obot.agent/pull/69">#69</a> · <a href="https://github.com/jwildfire/obot.agent/pull/63">#63</a> · <a href="https://github.com/jwildfire/obot.agent/pull/67">#67</a> · <a href="https://github.com/jwildfire/obot.agent/pull/71">#71</a> · <a href="https://github.com/jwildfire/obot.agent/pull/72">#72</a></span>
+  </div>
+
+  <h3>Worktrees no longer ask permission</h3>
+  <p class="what">Claude Code auto-approves worktrees under <code>.claude/worktrees/</code> and prompts for anything else. Spawned audit agents were being handed a literal command placing their worktree in a sibling directory, so each one parked on a permission click — in an unattended run, until morning. The spawn prompt now names the auto-approved path.</p>
+  <div class="ba">
+    <div class="term before">
+      <div class="bar"><span class="lamp"></span>before — the spawn prompt</div>
+<pre><span class="c">session-audit.mjs:137</span>
+git worktree add \
+  <span class="r">../obot.roadmap-worktrees/</span>audit-apply-${t} \
+  -b audit-apply-${t} origin/main
+
+<span class="c"># → permission prompt,
+#   run parks until clicked</span></pre>
+    </div>
+    <div class="term after">
+      <div class="bar"><span class="lamp"></span>after — v0.4.0</div>
+<pre><span class="c">session-audit.mjs:137</span>
+git worktree add \
+  <span class="g">.claude/worktrees/</span>audit-apply-${t} \
+  -b audit-apply-${t} origin/main
+
+<span class="c"># → auto-approved,
+#   run continues unattended</span></pre>
+    </div>
+  </div>
+  <div class="repro">
+    <div class="k">Reproduce</div>
+    <pre>grep -n "worktree add" ~/Documents/obot2/obot.agent/tools/session-hub/session-audit.mjs</pre>
+  </div>
+
+  <h3>You can tell why a session is missing from Remote Control</h3>
+  <p class="what">A background session that never appears on claude.ai/code had four possible causes and no way to tell them apart. <code>docs/remote-control.md</code> now maps each job's <code>template</code> and <code>respawnFlags</code> signature to the lane that launched it and the one fix that works for that lane — including agents-view sessions, which take no flag at all because there is nowhere to pass one. That was the lane that kept the lead session off Remote Control for six days, and it is why hardening the spawn skill never fixed it: the lead was never spawned by that skill.</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>after — the flag survives into the spawn</div>
+<pre><span class="c">$ obot.agent/scripts/obot-auto --preflight-only</span>
+<span class="g">obot-auto: pre-flight OK (level=A1, goal=charts → hub#78)</span>
+obot-auto: would run: claude --bg --permission-mode auto <span class="g">--remote-control</span> \
+    -n '👯🤖 2026-08-14 charts' --model opus <span class="g">/s-init --auto --goal charts</span></pre>
+  </div>
+  <div class="repro">
+    <div class="k">Reproduce — prints the command, launches nothing</div>
+    <pre>~/Documents/obot2/obot.agent/scripts/obot-auto --preflight-only</pre>
+  </div>
+
+  <h3>The wrapup leaves a trail instead of prose</h3>
+  <p class="what">A risk named only in a diary entry is a risk nobody is tracking — the entry scrolls off the news page and the concern goes with it. Wrapups now file every actionable blocker or risk as a tracked issue (<a href="https://github.com/jwildfire/obot.agent/pull/71">#71</a>), each carrying a proposed mitigation rather than just a warning (<a href="https://github.com/jwildfire/obot.agent/pull/72">#72</a>), and refresh the Analytics page's cost data before posting (<a href="https://github.com/jwildfire/obot.agent/pull/67">#67</a>) — that dashboard had been frozen at 2026-07-29 while the builder had data through today.</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>after — v0.4.0<span class="who">the step the wrapup now runs</span></div>
+<pre><span class="c">$ python3 obot.roadmap/scripts/build_usage_data.py --dry-run</span>
+  <span class="b">claude-opus-4-8</span>      $   818.65   5,183 calls
+  <span class="b">claude-sonnet-5</span>      $     9.39     171 calls
+  <span class="b">claude-haiku-4-5</span>     $     0.88      49 calls
+  <span class="dim">&lt;synthetic&gt;</span>          $     0.00       8 calls
+
+<span class="c"># the committed usage.json the site renders was frozen at 2026-07-29;
+# the builder has data through today. The wrapup is the only thing that
+# closes that gap — the site deploy cannot, because the source is this
+# machine's local transcripts.</span></pre>
+  </div>
+  <div class="repro">
+    <div class="k">Reproduce — prints the summary, writes nothing</div>
+    <pre>cd ~/Documents/obot2 &amp;&amp; python3 obot.roadmap/scripts/build_usage_data.py --dry-run</pre>
+  </div>
+
+  <h3>And the audit lane that costs nothing to run</h3>
+  <p class="what">The roadmap audit queue (<a href="https://github.com/jwildfire/obot.agent/pull/55">#55</a>, <a href="https://github.com/jwildfire/obot.agent/pull/56">#56</a>) renders findings locally and spends no model tokens until you click: a click spawns the apply agent, and batches submit in parallel with per-agent worktrees so concurrent applies stop colliding on the same push.</p>
+</section>
+
+<div class="cut"><span>&nbsp;<em>Also in this release</em></span></div>
+<section>
+  <ul>
+    <li><b>An upstream audit you can hand over.</b> Five ready-to-file issue drafts for <code>gsm.qtl</code>'s report workflow, each with a runnable repro script, live at <code>drafts/gsm.qtl/</code> (<a href="https://github.com/jwildfire/obot.agent/pull/62">#62</a>). Every finding was re-verified against current upstream on 2026-08-14 and none has been fixed. They stay drafts by rule — agents do not write outside the <code>jwildfire</code> org.</li>
+    <li><b>demo-301 joined the policy file</b> at the standard tier, with <code>main</code> as its integration lane and the published <code>site</code> branch in the release role (<a href="https://github.com/jwildfire/obot.agent/pull/59">#59</a>).</li>
+    <li><b>104 tests</b> across the status line, session hub, serve loop, and audit lane — up from 66 at v0.3.0.</li>
+  </ul>
+
+  <div class="note" style="margin-top:26px">
+    <b>One thing this release does not fix.</b> Three of the five merges above were denied on first attempt by the Claude&nbsp;Code auto-mode classifier and succeeded on a plain retry — the harness's own message reads <em>"usually transient — retrying often succeeds."</em> The evidence, and the one permission rule that would close it, are in a separate <a href="../decisions/2026-08-14-merge-lane-classifier-denials/">decision artifact</a>. It needs a settings change only @jwildfire can make.
+  </div>
+</section>
+
+<footer class="foot">
+  <p>Every capture on this page is real output taken from this machine after the v0.4.0 release commit, not a mock-up. Terminal colours are reproduced in CSS; escape sequences shown as <code>^[</code> and <code>^G</code> are the literal bytes as printed by <code>cat -v</code>.</p>
+  <p style="margin-top:14px"><a href="https://github.com/jwildfire/obot.agent">obot.agent</a> · <a href="https://github.com/jwildfire/obot.agent/releases">Releases</a> · <a href="https://jwildfire.github.io/obot.roadmap/">obot hub</a> · <a href="https://github.com/jwildfire/obot.roadmap/issues/73">Goal #73 — autonomy</a></p>
+  <hr style="border:0;border-top:1px solid var(--rule);margin:22px 0">
+  <p>This demo was drafted by Claude Code using Opus 5 and reviewed by @jwildfire</p>
+</footer>
+
+</div>
+</body></html>
