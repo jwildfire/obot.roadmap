@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — how obot.agent ships a release candidate</title>
+<meta name="description" content="obot.agent's integration branch is main, so there is no branch left to open a release PR from. Four ways to give it an RC that is an actual PR, with what each costs and how v0.4.0 ships under it.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:940px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:66ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:70ch}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--go);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--go)}
+.verdict p{margin:10px 0 0;font-size:17px}
+.verdict p:first-of-type{font-family:var(--display);font-weight:600;font-size:19px;color:var(--ink);letter-spacing:-.012em}
+
+table{border-collapse:collapse;width:100%;margin:20px 0 0;font-size:14.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  border-bottom:1px solid var(--rule2)}
+td.n{font-family:var(--mono);white-space:nowrap}
+tr.bad td{background:rgba(184,58,46,.055)}
+tr.bad td.n{color:var(--flag);font-weight:600}
+tr.good td.n{color:var(--go);font-weight:600}
+.scroll{overflow-x:auto}
+
+pre{margin:16px 0 0;background:#1c1e22;color:#e6e3dc;border-radius:6px;padding:16px 18px;
+  font:13px/1.65 var(--mono);overflow-x:auto;border:1px solid #2b2e34}
+pre .c{color:#8f959f}
+pre .deny{color:#f2857a}
+pre .ok{color:#8fd39a}
+pre .p{color:#e0b070}
+
+.opts{margin:24px 0 0;display:grid;gap:16px}
+.opt{border:1px solid var(--rule);border-radius:5px;background:var(--panel);padding:18px 20px}
+.opt.rec{border-color:var(--go);box-shadow:inset 3px 0 0 var(--go)}
+.opt .hd{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.opt h3{margin:0;font-size:17px}
+.badge{font:600 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;
+  border-radius:3px;border:1px solid currentColor}
+.badge.rec{color:var(--go)}
+.badge.no{color:var(--mute)}
+.opt dl{margin:12px 0 0;display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;font-size:14.5px}
+.opt dt{font:600 11px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding-top:2px}
+.opt dd{margin:0;color:var(--ink2)}
+ul{max-width:70ch;padding-left:22px}
+li{margin:7px 0}
+.foot{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;font-size:13.5px;color:var(--mute)}
+.foot a{color:var(--mute)}
+@media (max-width:640px){.opt dl{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-14</span><span class="dot"></span><span>Goal #73 · autonomy</span></div>
+  <h1>obot.agent has no branch to open a release PR from</h1>
+  <p class="lede">You set the rule tonight that a release candidate is a <em>PR</em> — assignee <code>obotclaw[bot]</code>, reviewer @jwildfire, review formally requested — and that only RCs reach your queue. obot.agent cannot satisfy it: its integration branch <em>is</em> <code>main</code>, so work merges straight there and nothing is left to propose. The v0.4.0 draft release is the framework's own documented workaround for that, and you are right that it is not an RC.</p>
+  <div class="facts">
+    <span><b>Blocks</b> obot.agent v0.4.0</span>
+    <span><b>Also affects</b> obot.roadmap</span>
+    <span><b>Options</b> R1–R4</span>
+    <span><b>Recommendation</b> R2</span>
+    <span><b>Needs</b> a policy.json edit — carve-out, your sign-off</span>
+    <span><b>Answer in</b> <a href="https://github.com/jwildfire/obot.roadmap/discussions/155">Q&amp;A #155</a></span>
+  </div>
+</header>
+
+<div class="cut"><span>The situation</span></div>
+<section>
+  <h2>Three sentences</h2>
+  <p>Every other releasing repo we own has two branches — work lands on <code>dev</code>, releases are proposed to <code>main</code> — so a release is naturally a PR with a diff, a reviewer and a merge gate. obot.agent and obot.roadmap have one branch each: <code>policy.json</code> records both as <code>{"integration": "main", "release": []}</code>, meaning no branch holds the release role at all. With nothing to merge <em>into</em>, a release there can only be a GitHub draft release, which has no assignee, no reviewer, no review request and no diff — none of the five things that make an RC reviewable.</p>
+
+  <div class="verdict">
+    <div class="k">The precise gap</div>
+    <p>A release PR's diff is "everything since the last tag." For that to exist, the PR's <em>base</em> must be a branch sitting at the last release.</p>
+    <p>obot.agent has no such branch. That is the whole problem, and it is one branch wide — not a repo-model problem, unless we choose to make it one.</p>
+  </div>
+
+  <h3>What the framework currently says, and why it is now wrong</h3>
+  <p><code>docs/rc-framework.md</code> (merged tonight as <a href="https://github.com/jwildfire/obot.agent/pull/83">oa#83</a>) already anticipated this and answered it:</p>
+  <pre><span class="c">### Repos where integration *is* the release branch</span>
+
+obot.agent, obot.roadmap and demo-301 have no `dev`. There, the RC is a <span class="p">**draft
+GitHub release**</span> — same notes, same demo link, same ask — proposed against the
+accumulated `main`, rather than a `dev -> main` PR.</pre>
+  <p>The v0.4.0 draft therefore follows the written framework exactly. What changed is the <em>roles</em> rule, set after that paragraph was written: an RC carries <code>obotclaw[bot]</code> as assignee and you as requested reviewer, the way <a href="https://github.com/jwildfire/safety.viz/pull/124">sv#124</a> did. A draft release cannot carry either. Two documents merged on the same night now contradict each other, and this artifact exists to pick which one gives way.</p>
+  <p class="mono" style="font-size:13px;color:var(--mute);margin-top:14px">Aside, same doc: line 26 lists demo-301's release branch as <code>site</code>, while line 80 lists demo-301 among the repos that have none. Whichever option you pick, that line needs correcting.</p>
+</section>
+
+<div class="cut"><span>The options</span></div>
+<section>
+  <h2>Four ways to close it</h2>
+  <p>Ordered cheapest first. Every one of them needs your sign-off regardless, because <code>scripts/policy.json</code> sits inside its own carve-out.</p>
+
+  <div class="opts">
+
+    <div class="opt">
+      <div class="hd"><h3>R1 — Change the rule, not the repo</h3><span class="badge no">Do nothing</span></div>
+      <p style="margin-top:10px">Amend the roles rule so that a draft GitHub release is an accepted RC vehicle for single-branch repos, and give it the closest available substitutes: a hub issue standing in for the review request, and the wrapup's 🚦 list as the queue.</p>
+      <dl>
+        <dt>Costs</dt><dd>"An RC is a PR" stops being an invariant and becomes a per-repo case. Every consumer — the wrapup's two headlines, <code>reviews-queue</code>, <code>obot-merge</code>, the RC roles memory — must handle two shapes forever, and each new consumer is a chance to handle only one.</dd>
+        <dt>Forecloses</dt><dd>Diff-level review of a release. You would keep approving obot.agent releases by reading notes, never by reading what actually changed.</dd>
+        <dt>v0.4.0</dt><dd>Ships tonight. Publish the draft as it stands.</dd>
+        <dt>Effort</dt><dd>One paragraph in <code>rc-framework.md</code>.</dd>
+      </dl>
+    </div>
+
+    <div class="opt rec">
+      <div class="hd"><h3>R2 — Add one lagging release branch: <code>main</code> → <code>stable</code></h3><span class="badge rec">Recommended</span></div>
+      <p style="margin-top:10px">Create <code>stable</code> once, at the commit tagged <code>v0.3.0</code>. Work keeps landing on <code>main</code> exactly as it does today. Each release is a <code>main → stable</code> PR whose diff is precisely the release window; it takes the RC roles, merges on the attested lane, and the tag lands on <code>stable</code>. <code>policy.json</code> already supports this shape — it is demo-301's shape (<code>integration: main</code>, <code>release: ["site"]</code>) — so the change is one array in one file.</p>
+      <dl>
+        <dt>Costs</dt><dd>One extra branch and one extra merge per release. <code>stable</code> lags <code>main</code> between releases, which is the point but is a second thing to look at.</dd>
+        <dt>Forecloses</dt><dd>Nothing. It is a strict superset of today: <code>main</code> keeps its name, its role, its default status and its URLs. R3 remains available later if the two-branch bookkeeping ever earns its keep.</dd>
+        <dt>v0.4.0</dt><dd>Ships as a real RC PR tonight — base <code>stable</code>, head <code>main</code>, diff = the 21 merged PRs, body = the NEWS.md section, demo page linked, roles applied. Then tag <code>v0.4.0</code> on <code>stable</code>.</dd>
+        <dt>Effort</dt><dd>~15 minutes: create the branch, add <code>"release": ["stable"]</code> to obot.agent's <code>policy.json</code> entry, open the PR, fix the <code>rc-framework.md</code> paragraph.</dd>
+        <dt>Same fix for</dt><dd>obot.roadmap, if and when it wants releases. Not required now.</dd>
+      </dl>
+    </div>
+
+    <div class="opt">
+      <div class="hd"><h3>R3 — The full safety.viz model: create <code>dev</code>, make it default</h3><span class="badge no">Bigger</span></div>
+      <p style="margin-top:10px">Branch <code>dev</code> from <code>main</code>, switch the repository's default branch to it, repoint <code>policy.json</code> to <code>{"integration": "dev", "release": ["main"]}</code>, and protect <code>main</code>. Releases become <code>dev → main</code> PRs, identical in shape to safety.viz.</p>
+      <dl>
+        <dt>Costs</dt><dd>A default-branch switch touches things that are only findable by breaking them: <b>47 hard-coded <code>obot.agent/blob/main</code> links</b> across 40 files in this repo and the hub silently change meaning from "current" to "last released"; 21 existing feature branches are based on <code>main</code>; the installer, the AGENTS.md worktree recipe (<code>origin/{base}</code>) and the spawn docs all name branches. There is <b>no CI in this repo at all</b> — no workflows, no <code>package.json</code> — so nothing catches a stale reference.</dd>
+        <dt>Also</dt><dd>Twelve workspace skills are symlinks into <code>obot.agent/skills/</code>, so the branch this clone sits on is the code every session in the workspace actually runs. That is survivable either way, but it means the choice of default branch is also a choice about which code your sessions execute.</dd>
+        <dt>Forecloses</dt><dd>Nothing permanently, but it is the option that is hardest to walk back.</dd>
+        <dt>v0.4.0</dt><dd>Same PR diff as R2, with the branch-model migration bundled in front of it — so it ships a day later, not tonight.</dd>
+        <dt>Effort</dt><dd>A half-session, plus a sweep for stale references with no test suite to back it up.</dd>
+      </dl>
+    </div>
+
+    <div class="opt">
+      <div class="hd"><h3>R4 — A throwaway <code>release/vX.Y.Z</code> base per release</h3><span class="badge no">Variant of R2</span></div>
+      <p style="margin-top:10px">Same mechanic as R2, but instead of one permanent <code>stable</code>, cut a fresh <code>release/v0.4.0</code> at the previous tag for each release, PR <code>main</code> into it, tag, and delete it.</p>
+      <dl>
+        <dt>Costs</dt><dd>Identical review experience to R2 with more moving parts: a branch to create and delete every time, a name that changes every release, and a <code>policy.json</code> release array that must either be edited per release or hold a pattern the file does not currently support.</dd>
+        <dt>Worth stating</dt><dd>The intuitive form of this — cutting <code>release/v0.4.0</code> <em>from <code>main</code></em> and PR-ing it back to <code>main</code> — produces an <b>empty diff</b>, because the branch and its base are the same commit. Whichever way it is arranged, the base has to be a branch that lags. That is R2.</dd>
+        <dt>v0.4.0</dt><dd>Same as R2.</dd>
+        <dt>Effort</dt><dd>Same as R2 tonight, more every release after.</dd>
+      </dl>
+    </div>
+
+  </div>
+</section>
+
+<div class="cut"><span>Recommendation</span></div>
+<section>
+  <h2>R2 — one branch, no migration</h2>
+  <div class="verdict">
+    <div class="k">Recommended</div>
+    <p>Create <code>stable</code> at v0.3.0 and release by <code>main → stable</code> PR.</p>
+    <p>It is the only option that satisfies the rule you set without changing anything about how obot.agent is worked on today. It needs one array edited in one file, it reuses a shape <code>policy.json</code> already models and demo-301 already runs, it leaves all 47 <code>blob/main</code> links meaning what they mean now, and it strands none of the 21 live branches. R3 buys symmetry with safety.viz and nothing else that R2 does not already give you — and it is the option that costs a day and a reference sweep in a repo with no CI to catch what the sweep misses.</p>
+  </div>
+
+  <h3>What unblocks on each answer</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Answer</th><th>Next action, immediately</th><th>v0.4.0 reaches you as</th></tr></thead>
+    <tbody>
+      <tr class="good"><td class="n">R2</td><td>Create <code>stable</code>, one-line <code>policy.json</code> edit, open the RC PR, correct <code>rc-framework.md</code></td><td>A PR you review and approve, tonight</td></tr>
+      <tr><td class="n">R1</td><td>Amend the roles rule in <code>rc-framework.md</code></td><td>The draft release, unchanged — publish when ready</td></tr>
+      <tr><td class="n">R3</td><td>Branch, switch default, repoint policy, protect <code>main</code>, sweep references</td><td>A PR, after the migration lands</td></tr>
+      <tr><td class="n">R4</td><td>As R2, with a per-release branch name</td><td>A PR you review and approve, tonight</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p style="margin-top:22px"><b>Until you answer, v0.4.0 stays an unpublished draft.</b> Its notes, its demo page and its diff are all ready — <a href="https://github.com/jwildfire/obot.agent/blob/main/NEWS.md">NEWS.md</a> is written and the <a href="../../oa-v0.4-demo/">demo page</a> is live and covers all five areas. Only the vehicle is undecided. Handing it to you as "an RC" before that is settled would repeat exactly the mistake you corrected tonight.</p>
+
+  <h3>What this does not decide</h3>
+  <ul>
+    <li><b>obot.roadmap</b> has the same single-branch shape but does not cut releases, so it needs nothing today. R2 applies to it unchanged if that ever changes.</li>
+    <li><b>The draft-versus-ready contradiction</b> for <em>increment</em> PRs is a separate open question, filed as <a href="https://github.com/jwildfire/obot.roadmap/issues/152">#152</a>. This artifact is only about release candidates.</li>
+    <li><b>Whether obot.agent should release at all on a cadence</b> — R2 makes releases cheap enough that the question is worth revisiting, but it is not this decision.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Sources, all read for this artifact: <code>obot.agent/scripts/policy.json</code> (v2, the <code>roles</code>/<code>profiles</code>/<code>repos</code> blocks); <code>obot.agent/docs/rc-framework.md</code> lines 24–30 and 78–83; the GitHub API for obot.agent's default branch, branch list and protection state; <code>git log v0.3.0..origin/main</code>; and a repo-wide grep for <code>obot.agent/blob/main</code> across obot.agent and obot.roadmap.</p>
+  <p style="margin-top:14px"><a href="../">All decisions</a> · <a href="../../oa-v0.4-demo/">v0.4.0 demo</a> · <a href="https://github.com/jwildfire/obot.agent/blob/main/NEWS.md">NEWS.md</a> · <a href="https://github.com/jwildfire/obot.roadmap/issues/73">Goal #73 — autonomy</a></p>
+  <hr style="border:0;border-top:1px solid var(--rule);margin:22px 0">
+  <p>This artifact was drafted by Claude Code using Opus 5 (👯🤖 oa-rc sibling session) and awaits @jwildfire's decision</p>
+</footer>
+
+</div>
+</body></html>
