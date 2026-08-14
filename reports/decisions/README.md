@@ -29,4 +29,4 @@ PRs, and these.
 |---|---|---|---|
 | [The app plan rewrite — four calls to make](2026-08-14-app-plan-rewrite/) | 2026-08-14 | [#79](https://github.com/jwildfire/obot.roadmap/issues/79) | Awaiting @jwildfire |
 | [demo-301's `site` branch — what the fork actually costs](2026-08-14-demo-301-site-size/) | 2026-08-14 | [#79](https://github.com/jwildfire/obot.roadmap/issues/79) | Awaiting @jwildfire — S1–S6 on [#143](https://github.com/jwildfire/obot.roadmap/issues/143) |
-| [The merge lane is not broken — one invocation form is](2026-08-14-merge-lane-classifier-denials/) | 2026-08-14 | [#73](https://github.com/jwildfire/obot.roadmap/issues/73) | Awaiting @jwildfire — one permission rule to add |
+| [The merge lane is not broken — one invocation form is](2026-08-14-merge-lane-classifier-denials/) | 2026-08-14 | [#73](https://github.com/jwildfire/obot.roadmap/issues/73) | Decided 2026-08-14 — approved; the permission rule is @jwildfire's edit to make |

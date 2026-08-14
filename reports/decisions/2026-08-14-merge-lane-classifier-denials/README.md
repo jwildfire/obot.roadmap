@@ -1,6 +1,6 @@
 # Decision — the obot-merge classifier denials
 
-**Date:** 2026-08-14 · **Goal:** [#73 autonomy](https://github.com/jwildfire/obot.roadmap/issues/73) · **Status:** Awaiting @jwildfire
+**Date:** 2026-08-14 · **Goal:** [#73 autonomy](https://github.com/jwildfire/obot.roadmap/issues/73) · **Status:** Decided — @jwildfire approved the recommendations, 2026-08-14
 
 ## Question
 
