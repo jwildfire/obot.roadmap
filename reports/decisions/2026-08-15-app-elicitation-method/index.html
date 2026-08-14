@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to interview @jwildfire — the elicitation method (2026-08-15)</title>
+<style>
+  :root{
+    --bg:#faf8f4; --ink:#1f2430; --faint:#7a7f8c; --line:#e3ded2;
+    --accent:#7b3f9e; --accent-soft:#f3ebf8; --good:#2c7a4b; --mono:"SF Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){ :root{
+    --bg:#16181d; --ink:#e8e6e1; --faint:#8b90a0; --line:#2c2f38;
+    --accent:#c08ae0; --accent-soft:#241b2c; --good:#6fbf8f;
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Georgia,"Times New Roman",serif}
+  .wrap{max-width:880px;margin:0 auto;padding:3rem 1.4rem 4rem}
+  .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 .8rem}
+  h1{font-size:2.1rem;line-height:1.15;margin:.2rem 0 1rem}
+  h2{font-size:1.35rem;margin:2.6rem 0 .6rem}
+  h3{font-size:1.05rem;margin:1.6rem 0 .4rem}
+  p{margin:.6rem 0}
+  a{color:var(--accent)}
+  code{font-family:var(--mono);font-size:.82em;background:var(--accent-soft);padding:.08em .35em;border-radius:4px}
+  .standfirst{font-size:1.12rem;color:var(--ink)}
+  .callout{border:1.5px solid var(--accent);background:var(--accent-soft);border-radius:12px;padding:1rem 1.3rem;margin:1.4rem 0}
+  .verdict{border-left:4px solid var(--good);padding:.4rem 0 .4rem 1rem;margin:1rem 0}
+  .verdict .k{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--good)}
+  .opt{border:1px solid var(--line);border-radius:10px;padding:1rem 1.2rem;margin:.8rem 0}
+  .opt.rec{border-color:var(--accent)}
+  .opt .id{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+  .opt dl{display:grid;grid-template-columns:8rem 1fr;gap:.25rem .8rem;margin:.6rem 0 0;font-size:.94rem}
+  .opt dt{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding-top:.15rem}
+  .opt dd{margin:0}
+  @media (max-width:640px){.opt dl{grid-template-columns:1fr}}
+  table{border-collapse:collapse;width:100%;font-size:.88rem;margin:1rem 0 0}
+  .scroll{overflow-x:auto}
+  th,td{text-align:left;padding:.45rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:400}
+  .small{font-size:.86rem;color:var(--faint)}
+  ul{padding-left:1.3rem}
+  li{margin:.35rem 0}
+  footer{margin-top:3.5rem;padding-top:1rem;border-top:1px solid var(--line);font-family:var(--mono);font-size:.74rem;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">goal #79 · decision artifact · 2026-08-15</p>
+  <h1>How to interview @jwildfire: the method, and four calls in it</h1>
+  <p class="standfirst">On reviewing the <a href="../2026-08-14-app-plan-rewrite/">app-plan artifact</a>, @jwildfire said the goal itself needs rework — he holds detail about what the app should be that is not captured anywhere, he does not have all of it in his head, and he asked to be interviewed: <em>"I basically want you to interview me to figure out what I want. I remember seeing a 'grill-me' skill somewhere&hellip; I think we did a helpful gap-analysis exercise for the CSR side quest&hellip;"</em> This page is the research spike he asked for: what method extracts tacit product intent from a single expert, run by an agent over chat. <strong>The method is designed and shipped as a skill; four calls in it are his.</strong></p>
+</header>
+
+<div class="verdict">
+  <div class="k">Delivered alongside this page</div>
+  <p>The protocol shipped as the <code>grill-me</code> skill in obot.agent (<a href="https://github.com/jwildfire/obot.agent/pull/96">PR #96</a>, merged on the standard lane, wired into the workspace). It encodes the recommendations below as defaults; the E1–E4 calls amend it, they do not gate it. <strong>To start: open a fresh obot2 session and type <code>/grill-me 79 --prep</code></strong> — Phase 0 costs you nothing; Phase 1 is a ~30-minute sitting whenever you want it.</p>
+</div>
+
+<section>
+  <h2>The situation, in three sentences</h2>
+  <p>Goal #79's Intent/Boundaries no longer describe what @jwildfire actually wants built, the missing detail is partly tacit and partly not yet known even to him, and A3/A4 of the app-plan artifact are held open until it is captured. Asking him to write it down is the one method known to fail: experts unintentionally omit up to ~70% of what matters when describing from scratch, and a single open interview captures roughly a third of a domain. The question this artifact answers is <em>how</em> to run the extraction — not what the answers are.</p>
+</section>
+
+<section>
+  <h2>What the three research strands found</h2>
+
+  <h3>1 · The "grill-me" skill exists — his memory is accurate</h3>
+  <p><a href="https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md">grill-me</a> is a real, widely-installed (~800k installs) Claude Code skill by Matt Pocock. It is a one-line wrapper over a <a href="https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md">grilling</a> engine whose mechanics are excellent and worth adopting: model the subject as a <strong>design tree</strong>; ask only the <strong>frontier</strong> (questions whose prerequisites are settled); every question carries the agent's <strong>recommended answer</strong> so a round is answerable by number; <strong>facts are never the user's job</strong> — agents look them up, only decisions reach the human. But it is deliberately <strong>stateless and single-session</strong> ("~46 questions across four rounds is an ordinary session"), which fails the #79 shape outright. Pocock's own resumable sibling, <a href="https://github.com/mattpocock/skills/blob/main/skills/engineering/wayfinder/SKILL.md">wayfinder</a>, contributes the missing half: a persistent map of decision tickets, one resolved per session, with an explicit <strong>"fog of war"</strong> section for questions you can tell are coming but cannot yet phrase — exactly the "he does not have all of it in his head" problem. The term also has local history: <code>obot.agent/interviews/p004-grill-queue.md</code> is literally titled "P004 grill-me queue" (he answered its questions in May 2026), running on the Telegram-era <code>stakeholder-interview</code> skill — which supplied the capture schema (verbatim Answer / operational Decision / Follow-up artifacts) our skill forks.</p>
+
+  <h3>2 · The CSR precedent — why it worked, and its two holes</h3>
+  <p>The exercise he remembers is the <a href="../../csr-change-request-framework-2026-07-27/">CSR change-request framework report</a> (2026-07-27; his memory likely blends it with the <a href="../../platform-gap-analysis-2026-07-25/">platform gap analysis</a> of 07-25, the only artifact literally named "gap analysis"). It was <em>not</em> an interview. It was a pre-built, source-linked proposal — 18-product landscape, an 11-step as-is workflow table, five increments — ending in <strong>five numbered questions each carrying a draft position</strong>. His cost: a 3-sentence brief in, a ~30-minute read, one decisive message out. The single most important observation: <strong>the only tacit requirement it surfaced (hub#131, study-level GitHub repos) arrived as an unsolicited objection to the agent's sequencing — not as an answer to any question asked.</strong> And the contrast case is stark: the decide-by-exception questions were all answered same-day, while the open-ended "pick from these 12 proposals" gate (hub#114 D5) has never been answered, three weeks on. The two holes to fix: every one of its questions was about mechanism and none about boundaries/ownership (both misses landed there), and blanket approval of five draft positions in one clause recorded zero signal about which he actually holds opinions on.</p>
+
+  <h3>3 · The literature — what survives an LLM interviewer over chat</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Finding</th><th>Design consequence</th></tr></thead>
+    <tbody>
+      <tr><td>Experts omit up to ~70% of critical information in free description (Clark &amp; Feldon, cognitive task analysis); one open interview captures ~27–48% of a domain (Aranda et al., 12 quasi-experiments); structured elicitation has effect size g≈0.87 (Tofel-Grehl &amp; Feldon 2013)</td><td>Never run a blank-page "what do you want?" interview; plan multiple passes and let a fog-of-war ledger carry the tail</td></tr>
+      <tr><td>The instrument beats the interviewer: analyst experience shows no effect, structured protocols do (Agarwal &amp; Tanniru; Davis et al. RE'06 systematic review — structured interviews beat card sorts, ranking, think-aloud)</td><td>Encode the protocol as a skill; a checklist-driven agent is enough, a clever one is not the point</td></tr>
+      <tr><td>Reaction to ONE concrete design is systematically inflated; criticism unlocks with a comparison set of 3 (Tohidi et al., CHI 2006); critique without a supplied lens is nearly worthless, premortem framing is the strongest lens (Veinott et al. 2010); role-played "devil's advocate" gets discounted (Nemeth 2001)</td><td>Show three genuinely divergent goal drafts, never one; frame critique passes (premortem, perspective reading); never announce a straw man as bait</td></tr>
+      <tr><td>LLM interviewers already perform near human level on coverage (LLMREI, RE 2025: 73.7% of planted requirements; mistake-guided question generation preferred over human analysts' 68% of the time) — but chat read-backs manufacture false agreement (81% user confirmation vs 72% coder agreement) and models flip under conversational pushback while judging correctly in evaluative framing; only a hard devil's-advocate ROLE produces real dissent (99.2% vs ~55% for "push back" prompt lines)</td><td>Separate interviewer / critic roles; quote-anchored read-backs asking "find what's wrong", never "is this right?"; challenges routed through a separate evaluative call</td></tr>
+      <tr><td>Loading the agent with context suppresses clarifying questions — models resolve ambiguity from priors instead of asking; closed/multiple-choice framing systematically truncates answers (Schuman &amp; Presser)</td><td>Run the interviewer context-light (the context-rich agent preps and critiques); every menu is preceded by an open turn and carries a live "none of these" escape</td></tr>
+      <tr><td>No published study exists of an LLM interviewing a single expert repeatedly and asynchronously about a product they own</td><td>This deployment is an experiment, not applied known practice — instrument it (the ledger records everything) and expect to tune the protocol after round one</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">Full citations and the per-technique fit table are in the spike record (<a href="https://github.com/jwildfire/obot.roadmap/tree/main/reports/decisions/2026-08-15-app-elicitation-method">README</a> lists sources).</p>
+</section>
+
+<section>
+  <h2>The recommended method (shipped as <code>/grill-me</code>)</h2>
+  <p>A three-layer hybrid, each layer earning its place from a different strand:</p>
+  <ul>
+    <li><strong>CSR-style reactive substrate</strong> — Phase 0 builds, with zero @jwildfire time: a fit-gap matrix with a blank "target" column for him to fill, a numbered as-is/to-be workflow walkthrough to red-line, <strong>three divergent goal drafts</strong> (different governing principles, presented side by side), and latent requirements mined from the program record with verbatim source quotes, offered accept/reject/edit. He corrects; he does not compose.</li>
+    <li><strong>grilling-style engine</strong> — design tree + frontier; recommended answers on convergence questions (decide-by-exception, the thing that demonstrably gets answered); facts looked up by agents, never asked; open-generative turns before any menu, his unprompted answer recorded before agent hypotheses are revealed; laddering, critical incidents, teach-a-novice, repertory-grid triads, and a premortem rotated by topic; at least one forced ranking/cut with <em>no</em> draft position, and boundary/ownership questions asked explicitly (the CSR holes).</li>
+    <li><strong>wayfinder-style persistence</strong> — a hub-side ledger (<code>reports/goal-79-elicitation/</code>: log.md, answers.json, frontier.md with fog-of-war, published index) committed after every answer batch; one topic per 15–25-minute session; resumable any day; wrap phase drafts the goal prose from decided entries with bidirectional question-ID ↔ issue traceability, and closes A3/A4 on their artifact and Q&amp;A thread.</li>
+  </ul>
+  <div class="callout"><p><strong>Honest time budget:</strong> Phase 1 ≈ 30 min; then 2–4 sessions of 15–25 min; wrap review ≈ 20 min. <strong>Total ≈ 1.5–2.5 hours of his attention across 4–6 short sittings.</strong> The research says one pass misses ~25% even for a good LLM interviewer — the fog-of-war ledger is the design admission of that, not a failure of it.</p></div>
+</section>
+
+<section>
+  <h2>The four calls (E1–E4)</h2>
+  <p class="small">Each has a recommendation baked into the shipped skill as the default. Answering "defaults" in one line is a complete response; any pick amends the skill.</p>
+
+  <div class="opt rec">
+    <p><span class="id">E1 — Interview mode</span> · <strong>Recommended: (b) reactive-first hybrid</strong></p>
+    <dl>
+      <dt>a</dt><dd>Pure grill Q&amp;A (Pocock as-is): cheapest to run, but blank-page-shaped — the evidence says it loses most of the tacit content, and it is single-session by design.</dd>
+      <dt>b</dt><dd><strong>Reactive-first hybrid (default):</strong> artifacts to correct, then targeted grill rounds. Costs agent prep time (free to you); forecloses nothing.</dd>
+      <dt>c</dt><dd>Pure CSR-style proposal + decide-by-exception, no interview: your demonstrated lowest-cost pattern, but it only surfaces tacit content by luck (an objection you happen to volunteer) — it is how hub#131 nearly didn't happen.</dd>
+    </dl>
+  </div>
+
+  <div class="opt rec">
+    <p><span class="id">E2 — Question cadence</span> · <strong>Recommended: (b) small rounds, one topic per session</strong></p>
+    <dl>
+      <dt>a</dt><dd>Strictly one question at a time: best anti-anchoring hygiene, slowest; multiplies sittings.</dd>
+      <dt>b</dt><dd><strong>AskUserQuestion rounds of ≤4 independent questions, one topic per 15–25-min session (default):</strong> matches your stated inline-multiple-choice preference and phone-sized replies.</dd>
+      <dt>c</dt><dd>Full-frontier rounds (Pocock default, ~46 questions/session): efficient for a sit-down marathon you have said you won't do.</dd>
+    </dl>
+  </div>
+
+  <div class="opt rec">
+    <p><span class="id">E3 — Where the ledger lives</span> · <strong>Recommended: (a) hub reports/ folder</strong></p>
+    <dl>
+      <dt>a</dt><dd><strong>obot.roadmap/reports/goal-79-elicitation/ (default):</strong> direct-commit-to-main grant makes per-answer commits free; published to Pages so you can review state in Chrome; git history is the audit trail.</dd>
+      <dt>b</dt><dd>obot.agent/interviews/: matches the old convention, but every write is a PR through obot-merge — friction that pushes the agent to batch writes, which is the evaporation failure mode.</dd>
+      <dt>c</dt><dd>Wayfinder-literal: one hub issue per open question. Maximum visibility, but floods the issue list and the goalless-audit with ~dozens of non-requirement issues.</dd>
+    </dl>
+  </div>
+
+  <div class="opt rec">
+    <p><span class="id">E4 — How answers reach goal #79's body</span> · <strong>Recommended: (a) grant asked up front</strong></p>
+    <dl>
+      <dt>a</dt><dd><strong>Ask for the body-edit grant as question zero of Phase 1 (default):</strong> on Approve at wrap, the agent applies the ratified Intent/Boundaries under the documented exception route (strikethrough, exception recorded in a comment). Keeps the exercise from stalling on your editing time.</dd>
+      <dt>b</dt><dd>Proposed-body comment only, you apply by hand: maximally conservative, and the known way elicitation output sits in a comment for weeks.</dd>
+    </dl>
+  </div>
+</section>
+
+<section>
+  <h2>What unblocks</h2>
+  <ul>
+    <li><strong>On "defaults" (or silence):</strong> any session runs <code>/grill-me 79 --prep</code>; the Phase-0 artifacts get built and published; you start Phase 1 whenever you have ~30 minutes. Wrap closes A3/A4 and produces the ratified #79 body + requirements — which then unblocks executing the accepted A1/A2.</li>
+    <li><strong>On any E-pick:</strong> the skill is amended first (one small PR on the standard lane), then the same path.</li>
+    <li><strong>Not gated on this:</strong> A1/A2 execution order — but running the interview first is recommended, since the A2 requirement texts should cite the elicitation ledger.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Decision thread: <a href="https://github.com/jwildfire/obot.roadmap/discussions/159">Q&amp;A discussion #159</a> · Skill: <a href="https://github.com/jwildfire/obot.agent/pull/96">obot.agent PR #96</a> (merged) · Prior artifact: <a href="../2026-08-14-app-plan-rewrite/">the app plan rewrite (A1–A4)</a></p>
+  <p>This page was drafted by Claude Code (Fable 5) in an unattended session from a 7-agent research workflow and has not been reviewed by @jwildfire.</p>
+</footer>
+
+</div>
+</body>
+</html>
