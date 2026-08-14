@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Context management for obot-prime — six calls to make (2026-08-14)</title>
+<style>
+  :root {
+    --pg-paper:#F4F1EC; --pg-card:#FDFCFA; --pg-ink:#26211B; --pg-muted:#6F6558;
+    --pg-faint:#9C917F; --pg-line:#E2DACC; --pg-accent:#B4470E; --pg-accent-soft:#F4E2D2;
+    --pg-good:#2F6B4F; --pg-good-soft:#E2EFE7;
+    --serif:"Instrument Serif","Iowan Old Style",Georgia,serif;
+    --sans:"Instrument Sans","Avenir Next","Segoe UI",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+    --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18;
+    --pg-good:#7FBF9B; --pg-good-soft:#1E2E25;
+  } }
+  :root[data-theme="dark"] {
+    --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+    --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18;
+    --pg-good:#7FBF9B; --pg-good-soft:#1E2E25;
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--pg-paper); color:var(--pg-ink); font-family:var(--sans); line-height:1.55; margin:0; padding:3rem 1.25rem 4.5rem; }
+  .wrap { max-width:940px; margin:0 auto; }
+  .prose { max-width:70ch; }
+  a { color:var(--pg-accent); text-underline-offset:2px; }
+  a:focus-visible { outline:2px solid var(--pg-accent); outline-offset:2px; }
+  code { font-family:var(--mono); font-size:0.85em; background:var(--pg-accent-soft); padding:0.05em 0.3em; border-radius:4px; }
+  .eyebrow { font-family:var(--mono); font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--pg-accent); margin:0 0 0.55rem; }
+  h1 { font-family:var(--serif); font-weight:400; font-size:clamp(2rem,4.5vw,2.8rem); line-height:1.1; margin:0 0 1rem; text-wrap:balance; }
+  h2 { font-family:var(--serif); font-weight:400; font-size:1.65rem; margin:0 0 0.9rem; }
+  h3 { font-family:var(--serif); font-weight:400; font-size:1.25rem; margin:1.6rem 0 0.5rem; }
+  .standfirst { font-size:1.05rem; color:var(--pg-muted); margin:0; }
+  .standfirst strong { color:var(--pg-ink); }
+  section { margin:3.2rem 0 0; }
+  p { margin:0.6rem 0; }
+  .small { font-size:0.85rem; color:var(--pg-muted); }
+  ul, ol { max-width:70ch; padding-left:1.15rem; }
+  li { margin:0.4rem 0; }
+
+  .decision { border:1px solid var(--pg-line); border-radius:14px; background:var(--pg-card); padding:1.5rem 1.6rem; margin:1.6rem 0 0; }
+  .decision > .k { font-family:var(--mono); font-size:0.68rem; letter-spacing:0.11em; text-transform:uppercase; color:var(--pg-accent); }
+  .decision h2 { margin:0.35rem 0 0.6rem; font-size:1.5rem; }
+  .opts { display:grid; gap:0.9rem; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin:1.2rem 0 0; }
+  .opt { border:1px solid var(--pg-line); border-radius:10px; padding:0.9rem 1rem; background:var(--pg-paper); }
+  .opt.pick { border-color:var(--pg-good); background:var(--pg-good-soft); }
+  .opt h4 { font-family:var(--sans); font-size:0.95rem; margin:0 0 0.45rem; }
+  .opt .tag { display:inline-block; font-family:var(--mono); font-size:0.6rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--pg-good); border:1px solid var(--pg-good); border-radius:99px; padding:0.05em 0.45em; margin-left:0.35rem; vertical-align:1px; }
+  .opt dl { margin:0.5rem 0 0; font-size:0.86rem; }
+  .opt dt { font-family:var(--mono); font-size:0.63rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--pg-faint); margin-top:0.5rem; }
+  .opt dd { margin:0.1rem 0 0; color:var(--pg-muted); }
+  .rec { border-left:3px solid var(--pg-accent); background:var(--pg-accent-soft); border-radius:0 10px 10px 0; padding:0.9rem 1.1rem; margin:1.3rem 0 0; }
+  .rec p { margin:0.3rem 0; }
+  .rec .k { font-family:var(--mono); font-size:0.64rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--pg-accent); display:block; margin-bottom:0.2rem; }
+  .unblocks { margin:1rem 0 0; font-size:0.9rem; }
+  .unblocks .k { font-family:var(--mono); font-size:0.64rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--pg-faint); }
+
+  table { border-collapse:collapse; width:100%; font-size:0.88rem; margin:1rem 0 0; }
+  .scroll { overflow-x:auto; }
+  th, td { text-align:left; padding:0.5rem 0.7rem; border-bottom:1px solid var(--pg-line); vertical-align:top; }
+  th { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--pg-faint); font-weight:400; }
+  .callout { border:1.5px solid var(--pg-accent); background:var(--pg-accent-soft); border-radius:12px; padding:1.1rem 1.3rem; margin:1.6rem 0 0; }
+  .callout p { margin:0.3rem 0; }
+  .ask { display:grid; gap:0.6rem; margin:1.2rem 0 0; }
+  .ask .row { display:grid; grid-template-columns:4.5rem 1fr; gap:0.8rem; align-items:baseline; border-bottom:1px solid var(--pg-line); padding-bottom:0.6rem; }
+  .ask .id { font-family:var(--mono); font-size:0.78rem; color:var(--pg-accent); }
+  .num { font-family:var(--mono); font-size:0.85em; }
+  footer { margin-top:3.5rem; padding-top:1rem; border-top:1px solid var(--pg-line); font-family:var(--mono); font-size:0.76rem; color:var(--pg-faint); }
+  footer p { margin:0.25rem 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">session framework · decision artifact · 2026-08-14</p>
+    <h1>How prime remembers: six calls, latency-first</h1>
+    <p class="standfirst prose">🎩🤖 obot-prime is a standing singleton designed to stay up indefinitely, which makes context compaction a certainty, not a risk. Its charter asserts that <em>"durable state lives in the scratchpad and in the delegates' artifacts, never only in prime's context"</em> — an assertion with no mechanism behind it, and tonight produced a live instance of the failure class it invites. <strong>This page turns the assertion into a mechanism, under one binding constraint: the &lt;30-second reply is the objective function, not a tiebreaker.</strong> It also evaluates @jwildfire's mid-session proposal of a standing <em>Navigator</em> agent head-to-head against the file-based designs, on the same terms. Every recommendation is measured or cited.</p>
+  </header>
+
+  <section>
+    <h2>The ask, in one screen</h2>
+    <div class="ask">
+      <div class="row"><span class="id">C1</span><span><strong>Split queryable STATE from the append-only narrative log?</strong><br><span class="small">→ Recommend <b>yes: a capped <code>prime-state.md</code></b> — five sections (Open / Delegates / Armed / Claims / Settled), ~4&nbsp;KB hard cap, <b>a provenance stamp on every line</b> (<code>[verified gh 23:41]</code> vs <code>[asserted 👯🤖 news-rc]</code>), lines deleted on resolution. The log stays as-is: it answers "what happened"; the state file answers "what is true right now".</span></span></div>
+      <div class="row"><span class="id">C2</span><span><strong>Is state kept true by a standing "Navigator" peer agent?</strong><br><span class="small">→ Recommend <b>yes — but only as a file-writer, never as someone prime asks</b>. Day-one scope: verify-and-stamp bookkeeping only; standards enforcement as observe-and-report, not correction; audits stay in their existing lane. Ramp from a scheduled verification sweep (tonight's 22:51 sweep is the working prototype — it caught the stale oa#83 claim) to a standing session only if cadence demands it.</span></span></div>
+      <div class="row"><span class="id">C3</span><span><strong>What is the rehydration procedure after compaction or relaunch?</strong><br><span class="small">→ Recommend <b>one scripted bundle read</b> (<code>prime-rehydrate</code>, mirroring the proven <code>handoff.sh</code>): state file(s) + today's log + sweep cache in a single ~7k-token, one-round-trip read — 0.35&nbsp;s wall, measured. Fired lazily, on the first post-compaction turn that touches state. Trust the compaction summary for flavor, the bundle for facts.</span></span></div>
+      <div class="row"><span class="id">C4</span><span><strong>Are per-event writes at the right cost?</strong><br><span class="small">→ Recommend <b>script-ify the heartbeat</b>: the 759-char Bash+python heredoc costs ≈190 generated tokens (≈2–3&nbsp;s) per event; a <code>scratchpad-log</code> call costs ≈20. ~10× cheaper, and every sibling benefits.</span></span></div>
+      <div class="row"><span class="id">C5</span><span><strong>What does prime deliberately let go?</strong><br><span class="small">→ Recommend <b>four retention rules</b>: answered Q&amp;A is gone once relayed; delegate reports reduce to a pointer; GitHub state is pointed at, never copied; settled decisions live as one <code>## Settled</code> line until applied, then deleted.</span></span></div>
+      <div class="row"><span class="id">C6</span><span><strong>Where does this land?</strong><br><span class="small">→ Recommend <b>one obot.agent PR</b> (skill section + link-only framework section + two scripts + template edit), left open for review — and the <b>Navigator as a hub requirement issue</b>, drafted through the requirement lifecycle rather than smuggled into the same PR.</span></span></div>
+    </div>
+    <p class="small" style="margin-top:1rem">C1 gates C3 and C5 (both operate on the state file). C2 composes with C1 — the Navigator needs the state file to write into. C4 is independent and pays across every sibling. C6 is the vehicle.</p>
+  </section>
+
+  <section>
+    <h2>The situation</h2>
+    <p class="prose">Prime launched tonight (2026-08-14, 22:44) as the standing Q&amp;A concierge: one long-running session reachable from terminal or phone, whose only product is fast answers — &lt;30 seconds, ≤2 sequential round trips, everything else delegated. Working sessions die at their wrapup and are reborn through <code>session-init</code>'s hand-off; prime has no bookends and no rebirth. When its context fills, the harness summarizes the conversation and continues — and per Anthropic's documented compaction contract, what survives on purpose is what lives on disk; what was only ever said in conversation survives only if the summary happens to keep it.</p>
+    <p class="prose">That compaction summary is written by the harness, not by prime: prime does not choose what survives it, cannot audit what it dropped, and cannot re-derive what was never written down. The charter's answer — durable state lives outside the context — is correct doctrine with no mechanism: nothing says <em>what</em> gets written, <em>when</em>, in <em>what shape</em>, or how a freshly-compacted prime gets back to useful without blowing its own latency contract.</p>
+    <p class="prose">Mid-drafting, @jwildfire added a design intuition, relayed through prime: <em>"we probably need a separate 'Roadmap bot' running in the background… call it the 'Navigator'… watching the roadmap for current state and keeping everything up to date for you. I might also delegate the audit updates to the navigator. Its job is to make sure that all of the worker agents are following our github standards and to keep track of current state of the work being done (so that you don't have to)."</em> That is a concrete architectural answer to this exact question — externalize state into a <em>peer agent</em> rather than only into files — and it is evaluated head-to-head in C2, not footnoted.</p>
+
+    <div class="callout">
+      <p><b>The incident to design against.</b> At 22:50 prime armed an RC-watch monitor and told @jwildfire it "self-corrects". That was false — the monitor was broken on arm (a zsh word-splitting bug; it was watching nothing) and the finding prime credited to it had actually come from a separate one-off verification sweep. The claim was made inline and <em>never written down</em>, so no record on disk existed to contradict it; it took a peer session independently catching the broken monitor (22:53) to surface the error. <strong>A claim that exists only in prime's context is unfalsifiable by anything on disk — and after compaction, it can survive as confident summary-fact with its provenance gone.</strong></p>
+    </div>
+
+    <p class="prose">And it was not alone. Tonight produced <strong>three further provenance errors, every one a summary-of-a-summary</strong>: a close-out line reported oa#83 "still open" when it had merged hours earlier (stale self-report, caught by the 22:51 verification sweep); prime's own sweep then misread a creation timestamp as the merge time (corrected by a peer at 23:10); and a peer attributed the hub's two unpushed commits to prime when they were the closing lead's (corrected at 23:10). None of these were lies — each was an agent confidently repeating derived state without a provenance stamp that would have made it checkable. That pattern, not any single mistake, is what the mechanism below must fix.</p>
+  </section>
+
+  <section>
+    <h2>What compaction would cost prime right now</h2>
+    <p class="prose">Read against tonight's scratchpad (66 log lines by 23:16), prime's load-bearing context divides cleanly into what is already safe on disk and what is not:</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>State prime holds</th><th>On disk tonight?</th><th>Recoverable in one bounded read?</th></tr></thead>
+      <tbody>
+        <tr><td>Live sibling roster + what each was told (news-rc, hub-close, blockers-tails)</td><td>Yes — the 23:08/23:14 spawn lines are detailed</td><td>No — scattered across the log; completion status only implicit in later close-out lines</td></tr>
+        <tr><td>The inherited pending queue (2 RCs, 2 decisions, 4 blockers, worktrees, stale prereqs, 2 ideas)</td><td>Yes — enumerated once in the 23:10 handoff line</td><td>No — per-item status changes as siblings finish; "what is still open" requires replaying every subsequent line</td></tr>
+        <tr><td>Corrections to earlier claims (oa#83 merge time; whose commits afb431d/788430f are; the monitor claim)</td><td>Yes — three CORRECTION lines</td><td>No — a reader must fold each correction over the earlier claim; a summary may keep either version</td></tr>
+        <tr><td>Armed-monitor state (id <code>bm8f7wvah</code>, 15-min cadence, dies-on-retirement)</td><td>Yes — 22:50–22:53 lines</td><td>No — three lines tell the story only in sequence: armed → found broken → re-armed corrected</td></tr>
+        <tr><td>Which claims were verified vs self-reported (the 22:51 sweep)</td><td>Yes — sweep lines say "verified"</td><td>Partially — verified facts are marked, but nothing marks the <em>unverified</em> ones</td></tr>
+        <tr><td>The "self-corrects" claim itself, before the peer caught it</td><td><b>No — never written</b></td><td><b>No — this is the incident</b></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="prose">The honest reading: tonight's <em>narrative</em> capture is good — prime logged heavily and well. What is missing is not more narrative. It is (a) a <strong>queryable rollup</strong>: nothing answers "what is open right now, who is doing what, what is armed" without replaying the whole log and mentally applying every correction; (b) a <strong>write-with-reply rule for claims</strong>: the one thing that went wrong tonight went wrong precisely because it was never written; and (c) <strong>provenance per claim</strong>: nothing distinguishes a fact verified against GitHub at a known time from an assertion inherited through two summaries.</p>
+  </section>
+
+  <section>
+    <h2>The latency budget, measured</h2>
+    <p class="prose">Everything below was measured on this machine tonight (Python <code>time.perf_counter()</code> over full-file reads; <code>time</code> over script runs; <code>wc -c</code> for sizes; tokens estimated at 4 bytes/token):</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Source</th><th>Size</th><th>≈ tokens</th><th>Disk read</th></tr></thead>
+      <tbody>
+        <tr><td>Tonight's scratchpad <code>2026-08-14.md</code></td><td class="num">17,049 B</td><td class="num">~4,300</td><td class="num">0.33 ms</td></tr>
+        <tr><td>Heaviest recent scratchpad (<code>2026-07-28.md</code>)</td><td class="num">66,939 B</td><td class="num">~16,700</td><td class="num">—</td></tr>
+        <tr><td>Sweep cache <code>gh-sweep.json</code></td><td class="num">7,429 B</td><td class="num">~1,900</td><td class="num">0.20 ms</td></tr>
+        <tr><td>Memory index <code>MEMORY.md</code></td><td class="num">15,763 B</td><td class="num">~3,900</td><td class="num">0.20 ms</td></tr>
+        <tr><td>All August scratchpads together</td><td class="num">89,027 B</td><td class="num">~22,000</td><td class="num">1.77 ms</td></tr>
+        <tr><td><code>handoff.sh</code> full bundle run (the C3 pattern)</td><td>multi-source</td><td>—</td><td class="num">0.35 s wall</td></tr>
+        <tr><td>Session transcripts (JSONL, 108 files)</td><td class="num">10–16 MB each</td><td class="num">millions</td><td>delegate-only lane</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <h3>What the numbers mean</h3>
+    <ul>
+      <li><strong>Disk I/O is ~0% of the budget.</strong> The entire candidate rehydration set reads in under 2 ms. File size is not a latency problem at these scales — <em>round trips and generated tokens are the whole budget</em>.</li>
+      <li><strong>The round-trip arithmetic.</strong> The contract allows ≤2 sequential round trips per reply. A cold (post-compaction) turn that needs state therefore has exactly <em>one</em> spare round trip for reading before the answering trip. Rehydration must be a single batched read; two reads breaks the contract by itself. (Per-round-trip wall time for an Opus-class lead at working context is on the order of 5–15 s — an estimate from tonight's observed turn cadence, marked as such — which is why 2 round trips ≈ the 30-second ceiling.)</li>
+      <li><strong>Generated tokens are the hidden per-event cost.</strong> Output generation is the slow direction (~tens of tokens/second). The 759-character heartbeat heredoc is ≈190 tokens of <em>generation</em> per log event — ≈2–3 s each time, plus permanent context burn, since every tool call stays in context.</li>
+      <li><strong>Context burn is second-order latency.</strong> Every KB prime re-reads recurringly advances the next compaction, and each compaction costs a summarization pass plus a rehydration. There is also a documented cache cliff: a session idle past the prompt-cache lifetime (1 hour on subscription) reprocesses its full context on the next message (<a href="https://code.claude.com/docs/en/costs">Anthropic, Claude Code costs</a>) — for an agent answering sporadic phone questions, that post-idle first reply is the worst case, and it scales with context size. A bounded working set makes the cliff shallower every time.</li>
+      <li><strong>The budget, stated:</strong> a cold turn may spend <b>one</b> Bash/Read round trip ingesting <b>≤ ~8k tokens</b> from <b>≤ ~30 KB</b> of files, then answer. The recommended bundle (state ~1k + today's log ~4k + sweep cache ~2k ≈ 7k tokens, &lt;30 KB, 0.35 s) fits with margin. Tonight's 17 KB scratchpad alone would fit; 07-28's 67 KB (~16.7k tokens) would not — which is why "just re-read the log" is not the answer.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What the scaffold already has</h2>
+    <p class="prose">An honest inventory — what each mechanism durably captures, what it costs, and whether prime can actually use it inside 30 seconds:</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Mechanism</th><th>Durably captures</th><th>Write cost</th><th>Read-back cost</th><th>Usable in &lt;30 s?</th></tr></thead>
+      <tbody>
+        <tr><td>Scratchpad <code>## Session log</code> (multi-writer, append-only)</td><td>Narrative: spawns, milestones, corrections, close-outs</td><td>≈190 gen-tokens/event (heredoc)</td><td>~4.3k tokens tonight; ~16.7k on a heavy night; corrections must be folded by the reader</td><td><b>Yes, but degrading</b> — one read, unbounded growth, state must be inferred</td></tr>
+        <tr><td>Sweep cache <code>gh-sweep.json</code> (~2 ms warm)</td><td>Cross-repo issue/PR delta since the window start</td><td>Free to prime (hub tooling refreshes it)</td><td>~1.9k tokens, 0.2 ms</td><td><b>Yes</b> — the canonical "what changed on GitHub" answer</td></tr>
+        <tr><td>Agent memory (<code>MEMORY.md</code> + fact files)</td><td>Cross-session durable facts, preferences, workstream state</td><td>One Write + index line</td><td>Index auto-loaded at session start — and <b>re-injected from disk after every compaction</b> (documented harness behavior), so memory is compaction-proof by construction</td><td><b>Yes</b> — but wrong granularity for tonight's queue; it is for facts that outlive weeks, not hours</td></tr>
+        <tr><td><code>handoff.sh</code> Tier-0 bundle</td><td>Wrapup hand-off + diary heads + sweep cache, ===-delimited, ages precomputed</td><td>—</td><td>0.35 s wall, one Bash call; zero round trips when pre-injected by <code>/s-init</code></td><td><b>Yes — the proven pattern</b>, but built for working-session bookends; prime has no bookends, so nothing invokes it for prime today</td></tr>
+        <tr><td>Session transcripts (JSONL)</td><td>Everything, verbatim — full provenance</td><td>Free (harness)</td><td>10–16 MB per session; grep-able; also queryable via <code>claude -p --resume &lt;id&gt;</code> (a supported lane)</td><td><b>No</b> — delegate-only mining lane, never inline</td></tr>
+        <tr><td><code>obot-session-state</code> → hub site</td><td>Outbound status indicator for the roadmap page</td><td>One script call</td><td>n/a (it publishes, it does not rehydrate)</td><td>n/a — not a memory mechanism; listed to be honest that it is not one</td></tr>
+        <tr><td>Harness compaction summary</td><td>Whatever the harness chose to keep</td><td>Free, automatic</td><td>Free — it <em>is</em> the post-compaction context</td><td><b>Yes for flavor, no for state</b> — uncontrolled, unauditable, and the lane by which an unwritten false claim becomes confident summary-fact</td></tr>
+        <tr><td>Diary drafts / wrapup checkpoint files</td><td>End-of-session record for @jwildfire</td><td>Lead-owned</td><td>~12.8 KB tonight</td><td>Not prime's lane (prime has no wrapup until retirement)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="prose">The gap is precise: <strong>every durable lane is either narrative (the log), external (GitHub, the sweep), or the wrong timescale (memory)</strong>. Nothing holds the working set — open items, live delegates, armed monitors, claim status — in a form a compacted prime can swallow in one bounded read. And the one mechanism purpose-built for fast state recovery (<code>handoff.sh</code>) is wired only to the bookends prime doesn't have.</p>
+  </section>
+
+  <section>
+    <h2>What the field says</h2>
+    <p class="prose">A background research pass swept Anthropic's documentation and engineering posts plus the third-party agent-memory literature. The load-bearing findings, each with its source:</p>
+    <ul>
+      <li><strong>Only disk-backed state reliably survives compaction — and the harness reloads it free.</strong> Anthropic documents exactly what survives a compact: the system prompt is unchanged, project-root <code>CLAUDE.md</code> and the auto-memory <code>MEMORY.md</code> index are <em>re-injected from disk</em>, and anything said only in conversation survives only if the summary keeps it (<a href="https://code.claude.com/docs/en/context-window">context-window docs</a>, <a href="https://code.claude.com/docs/en/memory">memory docs</a>). The working set must live on disk; conversation is not storage.</li>
+      <li><strong>"Assume interruption" is the vendor's own operating doctrine.</strong> The system-prompt protocol Anthropic auto-injects with its API memory tool reads: <em>"ASSUME INTERRUPTION: Your context window might be reset at any moment, so you risk losing any progress that is not recorded in your memory directory"</em> (<a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool">memory-tool docs</a>). Prime's charter assertion is this doctrine; the mechanism below is its implementation.</li>
+      <li><strong>Snapshot + log is Anthropic's published pattern for long-running agents.</strong> Their harness guidance has an initializer write a structured current-state file plus an append-only progress log, and every session resume by reading them; "compaction alone isn't sufficient" without this scaffolding (<a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents">effective harnesses post</a>). The same post prefers JSON for worker-fleet state because models tamper with it less — an honest point against the Markdown choice in C1, answered there.</li>
+      <li><strong>Index-eager, detail-lazy is the sanctioned retrieval shape.</strong> Auto-memory loads only the first 200 lines / 25 KB of the index and fetches topic files on demand; the context-engineering post generalizes it as "just-in-time" retrieval via lightweight identifiers (<a href="https://code.claude.com/docs/en/memory">memory docs</a>, <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">context engineering post</a>). A post-compaction answer should need one fast read, not a re-exploration.</li>
+      <li><strong>Context rot is empirical, and it argues for small.</strong> Model recall degrades as in-context tokens grow — treat attention as a finite budget (<a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic</a>); Chroma's 18-model evaluation shows reliability degrading well below nominal window limits (<a href="https://www.trychroma.com/research/context-rot">context-rot research</a>). A 1k-token state file is not just faster than a 17k-token log replay — it is more accurately <em>read</em>.</li>
+      <li><strong>Summaries are contaminated ground truth.</strong> A mis-summarized detail "propagates forward as if it were ground truth" (<a href="https://zylos.ai/research/2026-04-21-agent-context-compaction-long-running-sessions/">zylos</a>); LangChain's deep-agents work names goal drift and false completion claims as compaction failure modes and recommends stress-testing recovery by compacting early (<a href="https://www.langchain.com/blog/context-management-for-deepagents">deep agents post</a>); Cognition's argument against dispersed context — summaries of summaries lose the implicit decisions — is precisely tonight's three provenance errors (<a href="https://cognition.com/blog/dont-build-multi-agents">Cognition</a>). Steering exists (<code>/compact &lt;instructions&gt;</code>, a <code># Compact instructions</code> heading in CLAUDE.md — <a href="https://code.claude.com/docs/en/costs">docs</a>) and is worth using, but Anthropic's own belt-and-suspenders advice is to pair compaction with external memory, never rely on the summary alone (<a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool">memory-tool docs</a>).</li>
+      <li><strong>The measured upside is large.</strong> On Anthropic's agentic-search evaluation, memory + context management beat the baseline by 39%, and context editing alone cut token consumption 84% in a 100-turn evaluation (<a href="https://claude.com/blog/context-management">Anthropic announcement</a>).</li>
+      <li><strong>The industry working-set/archive split maps one-to-one onto this scaffold.</strong> Letta/MemGPT's tiers — capped self-edited in-context "core memory", searchable interaction history, external archival store (<a href="https://www.letta.com/blog/agent-memory/">Letta</a>) — and LangGraph's checkpointer-plus-store (<a href="https://docs.langchain.com/oss/python/langgraph/persistence">LangGraph persistence</a>) correspond to: <em>prime-state.md</em> (core, missing today) / scratchpad + transcripts (history, exists) / GitHub + artifacts + memory (archive, exists). The scaffold has every layer except the core one.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The six decisions</h2>
+
+    <div class="decision">
+      <span class="k">C1 · gates C3 and C5</span>
+      <h2>Does prime get a queryable STATE file, separate from the narrative log?</h2>
+      <p class="prose"><b>Why now:</b> tonight's log is good narrative that cannot answer "what is open right now" without a full replay plus mental correction-folding. Compaction makes that replay a recurring cost, and makes the un-replayed alternative — trusting the summary — exactly the confidently-stale failure mode.</p>
+      <div class="opts">
+        <div class="opt">
+          <h4>C1-a · Status quo: log + compaction summary</h4>
+          <dl>
+            <dt>What</dt><dd>Keep appending narrative; let the harness summary carry the working set across compaction.</dd>
+            <dt>Costs</dt><dd>Rehydration = whole-log replay (~4.3k tokens tonight, ~16.7k on a 07-28-scale night) with corrections folded by the model each time; or trusting a summary prime neither writes nor audits. The "self-corrects" class survives intact.</dd>
+            <dt>Forecloses</dt><dd>Nothing — which is the problem; it also forecloses nothing for the failure modes.</dd>
+          </dl>
+        </div>
+        <div class="opt pick">
+          <h4>C1-b · A capped <code>prime-state.md</code>, provenance-stamped<span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd><code>.claude/session-hub/prime-state.md</code>: five bulleted sections — <b>Open</b> (pending items, one line + link each), <b>Delegates</b> (slug · lane · told-to-do · status), <b>Armed</b> (monitor ids, cadence, re-arm notes), <b>Claims</b> (assertions made to @jwildfire), <b>Settled</b> (do-not-relitigate, with provenance). <b>Every line carries a provenance stamp</b>: <code>[verified gh 23:41]</code> / <code>[asserted 👯🤖 news-rc 23:20]</code> / <code>[self, unverified]</code> / <code>[corrected 22:53]</code> — written for the reader who must decide whether to repeat the claim to @jwildfire. Hard cap ~4 KB (~1k tokens); resolved lines are <em>deleted</em> — the log keeps history. One line in <code>MEMORY.md</code> points at the file and the rehydrate procedure, making the <em>mechanism itself</em> compaction-proof (the index is re-injected from disk after every compact). Prime is sole writer of its sections, so section-replacing edits are safe under the multi-writer rules.</dd>
+            <dt>Costs</dt><dd>One Edit per state change — batched into the same message as the reply that changes it, so zero added round trips. Discipline: the cap must be enforced or this becomes a second scratchpad. On Anthropic's JSON-over-Markdown point: that guidance targets worker fleets resuming each other's state cold; prime is a singleton sole-writer whose file doubles as a human-glanceable dashboard for @jwildfire, and Markdown keeps the write cheap inside a reply. If tampering is ever observed, switching the file to JSON is a mechanical change.</dd>
+            <dt>Forecloses</dt><dd>Treating the log as the query surface. It also makes prime's claims falsifiable — deliberately.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>C1-c · Structured JSON state</h4>
+          <dl>
+            <dt>What</dt><dd>The same content as machine-parseable JSON (shape-checked, tool-queryable).</dd>
+            <dt>Costs</dt><dd>Prime is the only consumer and reads Markdown natively; JSON adds escaping/rewrite friction on every update with no query engine to exploit, and loses the over-the-shoulder readability a concierge's state file gets for free. (Anthropic's tamper-resistance argument for JSON is acknowledged in C1-b and revisited if the Navigator becomes a second writer.)</dd>
+            <dt>Forecloses</dt><dd>Cheap hand-editing and casual inspection; buys little until a second machine consumer exists.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>C1-b — the capped, provenance-stamped Markdown state file.</strong></p>
+        <p>This is the snapshot/log split — Anthropic's published long-running-agent pattern and Letta's "core memory" — applied at exactly prime's scale: the log remains the append-only record of what happened; the state file is the ~1k-token snapshot of what is currently true, with every line carrying <em>how it is known</em>. The write is free at the latency margin because it rides the reply message, and the <b>Claims</b> section is the direct fix for the "self-corrects" incident: the rule becomes <em>"if it's worth telling @jwildfire, it's worth one stamped state line, written in the same message"</em> — making every claim falsifiable by disk before it can fossilize into a compaction summary.</p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>C3's one-read rehydration, C5's retention rules, and C2's Navigator — which needs a stamped state surface to keep true.</p>
+    </div>
+
+    <div class="decision">
+      <span class="k">C2 · @jwildfire's proposal · composes with C1</span>
+      <h2>Is state kept true by a standing "Navigator" peer — and what may it own?</h2>
+      <p class="prose"><b>Why now:</b> @jwildfire, mid-session: a background Roadmap bot "watching the roadmap for current state and keeping everything up to date for you", possibly owning audit updates and GitHub-standards enforcement across worker agents, "so that you don't have to". Evaluated here on the same latency-first terms as everything else. The blunt architectural fact first: <strong>a peer prime must <em>ask</em> is strictly worse than a file prime reads; a peer that <em>writes the file</em> prime reads is strictly better than prime maintaining everything alone.</strong> Which of those the Navigator is decides whether it helps or hurts.</p>
+      <div class="opts">
+        <div class="opt">
+          <h4>C2-a · Navigator as someone prime asks</h4>
+          <dl>
+            <dt>What</dt><dd>Prime forwards state questions to the Navigator over the session-to-session message lane and relays its answer.</dd>
+            <dt>Costs</dt><dd>Every answer waits on a cross-session round trip plus the peer's own model turn — seconds to minutes, and unbounded if the Navigator is mid-task. That breaks the ≤2-round-trip / &lt;30 s contract on its face. Worse, it is a <em>summary-of-a-summary lane</em>: prime would fluently relay a peer's curated view with no way to distinguish verified fact from confident inference — the exact shape of all four of tonight's errors, now institutionalized.</dd>
+            <dt>Forecloses</dt><dd>The latency contract and the provenance fix simultaneously. Never this.</dd>
+          </dl>
+        </div>
+        <div class="opt pick">
+          <h4>C2-b · Navigator as a verifier that writes state<span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd>The Navigator's product is a file, not a conversation: on a cadence it verifies the working set against live GitHub and writes <code>navigator-state.md</code> beside prime's file (two files, each single-writer — no multi-writer hazard) — upgrading stamps to <code>[verified gh HH:MM]</code>, flagging drift (stale claims, items that moved, standards violations) as report lines. Prime's rehydration bundle picks it up in the same one read at ~0 marginal cost (0.2 ms/file, measured). <b>Day-one scope: job (a) only</b> — read-only bookkeeping and verification. Job (b), standards enforcement, is <b>observe-and-report</b>: the Navigator files what it sees (state lines, issues); it never corrects another agent's work, because a bot that polices peers can be wrong about them — tonight two careful agents disagreed about whether a merge-lane denial even reproduced — and the recourse for a wrong <em>report</em> is a reply, while the recourse for a wrong <em>correction</em> is an incident. Job (c), audit updates, stays in its existing lane (the local audit framework) until (a) has proven reliable; migrating it is a later, separate call. <b>Ramp:</b> start as a scheduled verification sweep — tonight's 22:51 one-off sweep is the working prototype, and it caught the stale oa#83 claim — and graduate to a standing session only if cadence and scope demand one.</dd>
+            <dt>Costs</dt><dd>Another agent to operate, with the fragility tonight demonstrated (the monitor that was broken on arm and dies on retirement): the Navigator needs its own proof-of-life line in state, and its absence must degrade gracefully to prime's self-stamps. Navigator errors remain possible — mitigated because every line it writes is stamped and therefore checkable, unlike a spoken answer.</dd>
+            <dt>Forecloses</dt><dd>Nothing: it composes with C1 rather than replacing it, and the ramp means no standing session is built before a cron sweep has earned it.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>C2-c · No Navigator: self-maintained state + ad-hoc sweeps</h4>
+          <dl>
+            <dt>What</dt><dd>Prime maintains its own state file and launches one-off verification sweeps when it judges them worthwhile (tonight's pattern).</dd>
+            <dt>Costs</dt><dd>Verification happens only when someone thinks of it, so freshness is lumpy and the <code>[verified]</code> stamps age unpredictably; prime carries bookkeeping for cross-agent state, which grows with fleet size — the exact burden @jwildfire is proposing to lift.</dd>
+            <dt>Forecloses</dt><dd>Nothing — this is the graceful-degradation floor that C2-b falls back to when the Navigator is down, and the sensible interim while C1 beds in.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>C2-b — yes to the Navigator, strictly as a file-writing verifier, scoped to bookkeeping on day one, ramped from a scheduled sweep.</strong></p>
+        <p>The head-to-head is not Navigator <em>versus</em> state file: a Navigator only works <em>as a writer of</em> the state surface C1 creates, and it answers the one weakness of self-maintained state — that self-reports go stale and nobody re-verifies them (all four of tonight's provenance errors). One boundary is non-negotiable: <b>the Claims section stays prime's own.</b> Only prime knows what it just told @jwildfire; the "self-corrects" claim was invisible to any GitHub watcher by construction, so the write-with-reply rule stands regardless of how capable the Navigator becomes. And enforcement stays observe-and-report until there is a track record — the standard for a bot that judges other agents should be the same one this page applies to prime: every judgment written down, stamped, and checkable.</p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>@jwildfire's "so that you don't have to" — prime stops carrying cross-agent bookkeeping — without ever putting a peer agent on the response path. Approving C2-b also settles where audit updates do <em>not</em> go yet.</p>
+    </div>
+
+    <div class="decision">
+      <span class="k">C3 · the heart of it</span>
+      <h2>What exactly does a compacted prime run to get back to useful?</h2>
+      <p class="prose"><b>Why now:</b> the budget allows one read round trip on a cold turn. The question is what that one read contains, and whether it fires eagerly (every post-compaction turn) or lazily (only when a question touches state).</p>
+      <div class="opts">
+        <div class="opt">
+          <h4>C3-a · Re-read the whole scratchpad</h4>
+          <dl>
+            <dt>What</dt><dd>On a cold turn, read today's full scratchpad (plus yesterday's, per the pointer-chase guard) and reconstruct state from narrative.</dd>
+            <dt>Costs</dt><dd>~4.3k tokens tonight, ~16.7k on a heavy night, growing all day; reconstruction (folding corrections, inferring status) is model work done <em>inside the latency budget</em>, every time. Unbounded by design.</dd>
+            <dt>Forecloses</dt><dd>Predictable cold-turn latency.</dd>
+          </dl>
+        </div>
+        <div class="opt pick">
+          <h4>C3-b · Scripted bundle: <code>prime-rehydrate</code><span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd>A ~30-line sibling of <code>handoff.sh</code>: emits <code>prime-state.md</code> (+ <code>navigator-state.md</code> if C2-b lands) + today's <code>## Session log</code> + <code>gh-sweep.json</code>, ===-delimited, ages precomputed. One Bash call, ≈7k tokens, measured pattern cost 0.35 s wall. Fired <em>lazily</em>: on the first post-compaction turn whose answer touches state scope; pure-lookup questions (conventions, where-does-X-live) skip it. Also wired as <code>/s-prime</code> preprocessing so a <em>relaunch</em> rehydrates with zero round trips — the same Tier-0 trick that took init toward its &lt;10 s bar. Complement, not substitute: a <code># Compact instructions</code> block (a documented harness feature) steering summaries to keep roster/queue/corrections makes the summary <em>better</em>, but the bundle stays the authority.</dd>
+            <dt>Costs</dt><dd>Writing and maintaining one small script. The lazy trigger requires prime to notice "this question touches state" — a judgment call, but a cheap one, and the failure mode (rehydrating unnecessarily) costs one round trip, not correctness.</dd>
+            <dt>Forecloses</dt><dd>Nothing; C3-a remains the degraded fallback if the script is missing (every source optional, always exit 0, handoff.sh-style).</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>C3-c · Trust the compaction summary, read nothing</h4>
+          <dl>
+            <dt>What</dt><dd>Fastest possible cold turn: zero extra round trips; lean on the harness summary alone, reading files only when an answer visibly needs them.</dd>
+            <dt>Costs</dt><dd>The summary is unaudited and uncontrolled — this is the one option that <em>preserves</em> the "self-corrects" failure class, now with provenance stripped. The literature's word for this is contamination: a mis-summarized detail propagates as ground truth.</dd>
+            <dt>Forecloses</dt><dd>The ability to promise @jwildfire that post-compaction answers about program state are grounded.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>C3-b — the lazy scripted bundle.</strong></p>
+        <p>It is the only option that is simultaneously bounded (≤ ~7k tokens, one round trip, fitting the ≤2-round-trip contract with the answering trip to spare), grounded (state comes from disk, not from the summary), and honest about cost (0.35 s wall, measured on the identical handoff.sh pattern; sub-2 ms of that is I/O). The compaction summary is still used — for conversational continuity, which it is good at — just never as the authority on state. The one-line version: <em>trust the summary for flavor, the bundle for facts.</em></p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>Compaction stops being an event prime fears or even notices much: cold turns cost one bounded read, relaunches cost zero. The charter's longevity clause becomes true by mechanism instead of by assertion.</p>
+    </div>
+
+    <div class="decision">
+      <span class="k">C4 · independent · pays across all siblings</span>
+      <h2>Is a 759-character heredoc per log event the right write cost?</h2>
+      <p class="prose"><b>Why now:</b> the heartbeat heredoc (briefing template) is generated fresh by every agent on every event: ≈190 output tokens ≈ 2–3 s of generation each time, plus permanent context burn, plus 759 characters embedded in every sibling briefing. Prime logs a lot (14 events tonight); under latency pressure the temptation is to skip a write — and a skipped write is exactly how the "self-corrects" class is born.</p>
+      <div class="opts">
+        <div class="opt">
+          <h4>C4-a · Keep the heredoc</h4>
+          <dl>
+            <dt>What</dt><dd>Status quo: self-contained, zero dependencies, works even if obot.agent is missing.</dd>
+            <dt>Costs</dt><dd>≈190 gen-tokens/event; tonight's 14 prime events ≈ 2,700 tokens of pure boilerplate generation (~30–45 s cumulative) and the same again in context burn. Every spawn prompt carries the block.</dd>
+            <dt>Forecloses</dt><dd>Nothing; it is just the expensive way.</dd>
+          </dl>
+        </div>
+        <div class="opt pick">
+          <h4>C4-b · <code>scratchpad-log</code> script<span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd>Move the exact python (heading-anchored insert, section-drift guard, shelled timestamp) to <code>obot.agent/tools/scratchpad-log</code>. A log event becomes <code>scratchpad-log '👯🤖 slug' 'event text'</code> — ≈20 generated tokens, ~10× cheaper, identical semantics. The briefing template shrinks by the whole code block and gains one line. Needs one allowlist entry in workspace settings — @jwildfire's edit to make, same carve-out lane as tonight's merge-lane fix.</dd>
+            <dt>Costs</dt><dd>A script to maintain; a graceful-degradation line in the template (fall back to the heredoc if the script is absent). The allowlist edit is a manual step for @jwildfire.</dd>
+            <dt>Forecloses</dt><dd>Nothing — the heredoc remains the documented fallback.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>C4-b — script-ify, for everyone.</strong></p>
+        <p>This is the one change in the page that makes writes <em>cheaper</em> rather than adding any — it lowers the marginal cost of the exact behavior (write-with-reply, every claim, every event) that C1 depends on. When logging costs ≈20 tokens inside the same message as the answer, "too busy to log it" stops being a real pressure, which is the honest mitigation for the skipped-write failure mode: make the right thing nearly free instead of exhorting discipline.</p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>Cheaper heartbeats for every sibling and ultracode job, a ~750-character-lighter spawn prompt on every spawn, and the write-with-reply rule at a cost nobody will dodge.</p>
+    </div>
+
+    <div class="decision">
+      <span class="k">C5 · rides C1</span>
+      <h2>What does prime deliberately let go — and how does it avoid re-litigating the settled?</h2>
+      <p class="prose"><b>Why now:</b> a memory mechanism that only accretes recreates the problem it solves. The discipline of forgetting is what keeps the state file at ~1k tokens and the cold read bounded forever. And post-compaction, a prime that has lost the <em>feeling</em> of a settled argument will cheerfully reopen it unless the settlement is written where rehydration finds it.</p>
+      <div class="opts">
+        <div class="opt">
+          <h4>C5-a · Keep everything in state</h4>
+          <dl>
+            <dt>What</dt><dd>Append to the state file; never delete.</dd>
+            <dt>Costs</dt><dd>The state file becomes a second scratchpad on a ~week timescale; the bounded read stops being bounded; the working set drowns in its own history — which the log already keeps better.</dd>
+            <dt>Forecloses</dt><dd>The entire point of C1.</dd>
+          </dl>
+        </div>
+        <div class="opt pick">
+          <h4>C5-b · Bounded working set, delete-on-resolve<span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd>Four rules. <b>(1)</b> Answered questions are gone once relayed — the transcript keeps them verbatim, a delegate can mine it. <b>(2)</b> A delegate's report reduces to one pointer line (artifact URL / issue number) the moment it is relayed; the artifact is the authority. <b>(3)</b> GitHub state is never copied into the state file beyond a pointer — <code>gh-sweep.json</code> and one bounded <code>gh</code> call are the authorities; copied state is born stale and reads as confident. <b>(4)</b> A settled decision is one <code>## Settled</code> line with provenance ("hub-commit inspection: Jeremy chose inspect-then-push — log 23:14") kept until applied, then deleted. Settled means cite-and-move-on, not re-argue.</dd>
+            <dt>Costs</dt><dd>Prime occasionally re-fetches something it once knew (one bounded call — the round-trip budget covers it). Deletion requires the same discipline as writing.</dd>
+            <dt>Forecloses</dt><dd>Using the state file as an archive. That is what the log, the transcripts, and the artifacts are for — three archives are enough.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>C5-c · Archive sidecar</h4>
+          <dl>
+            <dt>What</dt><dd>Move resolved lines to <code>prime-state-archive.md</code> instead of deleting.</dd>
+            <dt>Costs</dt><dd>Duplicates the log's job with worse provenance (no timestamps unless re-added); one more file to maintain; the archive is read by nobody until it is read by accident.</dd>
+            <dt>Forecloses</dt><dd>Nothing, which is why it is tempting — but it spends maintenance on a lane three existing mechanisms already cover.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>C5-b — the four rules, enforced by the cap.</strong></p>
+        <p>Letting go is what the scaffold's layering already implies: verbatim history in transcripts, narrative in the log, deliverables in artifacts, live truth on GitHub. The state file is the only layer with no archive duty, so it is the only layer allowed to forget — and it must, or the bounded read stops being bounded. The <code>## Settled</code> rule is the anti-relitigation mechanism: post-compaction prime does not remember the argument, but it rehydrates the verdict with a pointer, which is all it needs to decline to reopen it.</p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>A state file that is still ~1k tokens in December; settled questions that stay settled across any number of compactions.</p>
+    </div>
+
+    <div class="decision">
+      <span class="k">C6 · the vehicle</span>
+      <h2>Where does this land in the framework?</h2>
+      <p class="prose"><b>Why now:</b> the mechanism touches a skill (session-prime), the canonical contract doc (session-framework.md), a template every sibling inherits, the tools directory — and, if C2-b is approved, a new agent role. Scattering it invites drift; the framework doc's own convention is that there is only ever one copy of a contract to keep current.</p>
+      <div class="opts">
+        <div class="opt">
+          <h4>C6-a · Skill-only</h4>
+          <dl>
+            <dt>What</dt><dd>Add the state contract and rehydration to session-prime's SKILL.md; change nothing else.</dd>
+            <dt>Costs</dt><dd>C4's savings never reach the other siblings (the briefing template keeps the heredoc); the framework doc stays silent on standing sessions, so the next standing agent — including the Navigator — re-derives all of this.</dd>
+            <dt>Forecloses</dt><dd>Nothing technically; practically, the ecosystem-wide half of the value.</dd>
+          </dl>
+        </div>
+        <div class="opt pick">
+          <h4>C6-b · Skill + framework section + scripts in one PR; Navigator as a requirement<span class="tag">recommended</span></h4>
+          <dl>
+            <dt>What</dt><dd>One obot.agent PR: <b>(i)</b> a "Durable state and rehydration" section in session-prime's SKILL.md — the prime-state contract with provenance stamps (C1), the lazy bundle (C3), the retention rules (C5), and the write-with-reply claims rule; <b>(ii)</b> a short link-only "Standing sessions" section in session-framework.md; <b>(iii)</b> <code>tools/prime-rehydrate</code> and <code>tools/scratchpad-log</code>, plus the briefing-template edit with heredoc fallback; <b>(iv)</b> <code>/s-prime</code> preprocessing wiring. PR left open for @jwildfire per the approval gates; the settings allowlist line ships in the PR description as his edit. <b>The Navigator lands separately as a hub requirement issue</b> through the normal lifecycle — it is a new agent role with scope questions of its own (the (a)/(b)/(c) boundary above), not a doc edit to smuggle into a tooling PR.</dd>
+            <dt>Costs</dt><dd>One review of a mixed docs+tools PR, plus one requirement to draft. The PR pieces are separable if he wants a subset — the body should say which chunks stand alone (C4 does; C3 needs C1).</dd>
+            <dt>Forecloses</dt><dd>Nothing; it is the reversible, reviewable shape.</dd>
+          </dl>
+        </div>
+        <div class="opt">
+          <h4>C6-c · A new standalone session-state skill</h4>
+          <dl>
+            <dt>What</dt><dd>Promote durable-state management to its own skill any session could invoke.</dd>
+            <dt>Costs</dt><dd>Over-structure today: prime is the only standing session, and working sessions have their bookends. A skill with one caller is a doc with extra steps.</dd>
+            <dt>Forecloses</dt><dd>Nothing — it can be extracted the day a second standing agent (the Navigator, say) actually exists, which is exactly when it would earn its keep.</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommendation</span>
+        <p><strong>C6-b — one PR for the mechanism, one requirement for the Navigator.</strong></p>
+        <p>The skill owns the contract, the framework doc points at it in three lines, the tools make it cheap, and the template spreads C4's savings to every sibling. The Navigator gets the front door every new capability gets — a requirement with its scope boundary made explicit — rather than arriving as a side effect. Extraction into a standalone skill (C6-c) stays available the day a second standing agent exists.</p>
+      </div>
+      <p class="unblocks"><span class="k">Unblocks</span><br>Approving any of C1–C5 has a place to land; approving all of them lands in one review plus one requirement draft.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What this session did not do</h2>
+    <ul>
+      <li>No skill, script, template, or settings file was edited — C6 is a proposal, not a landed change.</li>
+      <li>No <code>prime-state.md</code> was created for prime, and no Navigator was spawned; the mechanism starts, if approved, with prime writing its first state file from tonight's log.</li>
+      <li>Prime was not redirected — it is running tonight under its current charter; its mid-session relay of @jwildfire's Navigator input was folded in as C2, nothing more.</li>
+      <li>Nothing outside <code>jwildfire/obot.roadmap</code> was committed; the hub commits here are the artifact itself plus its index entries, under the standing hub grant.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Evidence</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Claim in this page</th><th>How it was established</th></tr></thead>
+      <tbody>
+        <tr><td>Warm-source reads are sub-millisecond; the full August scratchpad set reads in 1.77 ms</td><td>Python <code>time.perf_counter()</code> over full-file <code>read_bytes()</code>, this machine, 2026-08-15</td></tr>
+        <tr><td><code>handoff.sh</code> full bundle costs 0.35 s wall</td><td><code>time handoff.sh &gt;/dev/null</code>, this machine, 2026-08-15</td></tr>
+        <tr><td>The heartbeat heredoc is 759 characters ≈ 190 output tokens per event</td><td><code>awk</code> extraction of the code block from <code>templates/sibling-briefing.md</code> piped to <code>wc -c</code>; tokens at 4 bytes/token</td></tr>
+        <tr><td>Scratchpads: 17,049 B tonight; 66,939 B on 2026-07-28; transcripts 10–16 MB × 108 files</td><td><code>wc -c</code> / <code>ls -S</code> over the live directories</td></tr>
+        <tr><td>The "self-corrects" claim was made, was false, and was never logged before its correction</td><td>Tonight's scratchpad, lines timestamped 22:50–22:53: the arm line, the peer catch, the re-arm, and prime's own 22:53 CORRECTION line stating "I told Jeremy the monitor 'self-corrects'. False."</td></tr>
+        <tr><td>Three further provenance errors, all summaries-of-summaries (oa#83 "still open"; creation time read as merge time; commit ownership guessed)</td><td>Tonight's scratchpad: the 22:51 verification-sweep correction and the two 23:10 CORRECTION lines; corroborated by prime's own account relayed mid-session</td></tr>
+        <tr><td>The pending queue and roster are on disk but not answerable in one bounded read</td><td>End-to-end read of <code>2026-08-14.md</code> (66 log lines at 23:16): queue enumerated once at 23:10, status mutations scattered across subsequent lines, three CORRECTION folds required</td></tr>
+        <tr><td>Compaction survival: system prompt unchanged; CLAUDE.md and the MEMORY.md index re-injected from disk; conversation-only content at the summary's mercy</td><td>Anthropic documentation: <a href="https://code.claude.com/docs/en/context-window">context-window</a> and <a href="https://code.claude.com/docs/en/memory">memory</a> pages, fetched 2026-08-15 by the research pass</td></tr>
+        <tr><td>The post-idle cache cliff (full-context reprocess after &gt;1 h idle)</td><td><a href="https://code.claude.com/docs/en/costs">Anthropic, Claude Code costs</a> — "your first message after a break longer than the cache lifetime misses the cache and reprocesses your full context"</td></tr>
+        <tr><td><code>obot-session-state</code> is outbound-only</td><td>Script read in full: renders and publishes <code>session.json</code> to the orphan <code>session-state</code> branch; contains no read-back lane</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <ul>
+      <li>Tonight's scratchpad <code>.claude/session-notes/2026-08-14.md</code> — read end to end (the case study)</li>
+      <li><code>.claude/skills/session-prime/SKILL.md</code> (the charter), <code>obot.agent/docs/session-framework.md</code>, <code>templates/sibling-briefing.md</code>, <code>tools/session-init/handoff.sh</code>, <code>scripts/obot-session-state</code>, <code>scripts/obot-prime</code></li>
+      <li>@jwildfire's Navigator proposal, relayed verbatim by 🎩🤖 obot-prime mid-session, late 2026-08-14 — quoted in full in "The situation"</li>
+      <li>Local measurements listed in the Evidence table, all made for this page on 2026-08-14/15</li>
+      <li>External sources — linked inline in "What the field says" and the Evidence table: Anthropic documentation (context-window, memory, sessions, costs, memory-tool, context-editing, compaction, prompt-caching) and engineering posts (effective context engineering, effective harnesses, multi-agent research system), plus Letta, LangGraph, LangChain deep-agents, Chroma context-rot, Cognition, and zylos</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Decision artifact · obot.roadmap reports/decisions · 2026-08-14 · case study: obot-prime's first night</p>
+    <p>---</p>
+    <p>This artifact was drafted by Claude Code using Fable 5 in an unattended session and has not been reviewed by @jwildfire.</p>
+  </footer>
+
+</div>
+</body>
+</html>
