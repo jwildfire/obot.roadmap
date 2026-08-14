@@ -33,6 +33,7 @@ PRs, and these.
 
 | Decision | Date | Goal | Discussion | Status |
 |---|---|---|---|---|
+| [The roadmap audit audits itself](2026-08-15-roadmap-audit/) | 2026-08-15 | roadmap audit [#92](https://github.com/jwildfire/obot.roadmap/issues/92) | [#163](https://github.com/jwildfire/obot.roadmap/discussions/163) | Awaiting @jwildfire — C1 / O1 / H1 / R1–R4 ("adopt all" is a complete answer; 27 changes already applied) |
 | [The blockers list — work only your hands can do](2026-08-15-blockers-list/) | 2026-08-15 | Session framework | [#162](https://github.com/jwildfire/obot.roadmap/discussions/162) | Awaiting @jwildfire — BL1–BL4 ("adopt all" is a complete answer; seed lives locally, never in this repo) |
 | [How to interview @jwildfire — the elicitation method](2026-08-15-app-elicitation-method/) | 2026-08-15 | [#79](https://github.com/jwildfire/obot.roadmap/issues/79) | [#159](https://github.com/jwildfire/obot.roadmap/discussions/159) | Awaiting @jwildfire — E1–E4 ("defaults" is a complete answer; `/grill-me` skill already shipped) |
 | [Which repos are operational, which are clinical](2026-08-15-operational-clinical-classification/) | 2026-08-15 | [#73](https://github.com/jwildfire/obot.roadmap/issues/73) | [#160](https://github.com/jwildfire/obot.roadmap/discussions/160) | Awaiting @jwildfire — C1 / G1 / D1 / M1 |

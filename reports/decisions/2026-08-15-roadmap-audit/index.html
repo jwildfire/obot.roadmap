@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The roadmap audit audits itself (2026-08-15)</title>
+<style>
+  :root{
+    --bg:#faf8f4; --ink:#1f2430; --faint:#7a7f8c; --line:#e3ded2;
+    --accent:#7b3f9e; --accent-soft:#f3ebf8; --good:#2c7a4b; --mono:"SF Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){ :root{
+    --bg:#16181d; --ink:#e8e6e1; --faint:#8b90a0; --line:#2c2f38;
+    --accent:#c08ae0; --accent-soft:#241b2c; --good:#6fbf8f;
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Georgia,"Times New Roman",serif}
+  .wrap{max-width:880px;margin:0 auto;padding:3rem 1.4rem 4rem}
+  .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 .8rem}
+  h1{font-size:2.1rem;line-height:1.15;margin:.2rem 0 1rem}
+  h2{font-size:1.35rem;margin:2.6rem 0 .6rem}
+  h3{font-size:1.05rem;margin:1.6rem 0 .4rem}
+  p{margin:.6rem 0}
+  a{color:var(--accent)}
+  code{font-family:var(--mono);font-size:.82em;background:var(--accent-soft);padding:.08em .35em;border-radius:4px}
+  .standfirst{font-size:1.12rem;color:var(--ink)}
+  .callout{border:1.5px solid var(--accent);background:var(--accent-soft);border-radius:12px;padding:1rem 1.3rem;margin:1.4rem 0}
+  .verdict{border-left:4px solid var(--good);padding:.4rem 0 .4rem 1rem;margin:1rem 0}
+  .verdict .k{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--good)}
+  .opt{border:1px solid var(--line);border-radius:10px;padding:1rem 1.2rem;margin:.8rem 0}
+  .opt.rec{border-color:var(--accent)}
+  .opt .id{font-family:var(--mono);font-size:.8rem;color:var(--accent)}
+  .opt dl{display:grid;grid-template-columns:8rem 1fr;gap:.25rem .8rem;margin:.6rem 0 0;font-size:.94rem}
+  .opt dt{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding-top:.15rem}
+  .opt dd{margin:0}
+  @media (max-width:640px){.opt dl{grid-template-columns:1fr}}
+  table{border-collapse:collapse;width:100%;font-size:.88rem;margin:1rem 0 0}
+  .scroll{overflow-x:auto}
+  th,td{text-align:left;padding:.45rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:400}
+  .small{font-size:.86rem;color:var(--faint)}
+  ul{padding-left:1.3rem}
+  li{margin:.35rem 0}
+  footer{margin-top:3.5rem;padding-top:1rem;border-top:1px solid var(--line);font-family:var(--mono);font-size:.74rem;color:var(--faint)}
+</style>
+<style>
+  .metric{display:flex;flex-wrap:wrap;gap:1.6rem;margin:1.4rem 0 .4rem}
+  .metric div{flex:1 1 8rem}
+  .metric .n{font-family:var(--mono);font-size:1.9rem;line-height:1;color:var(--accent)}
+  .metric .l{font-size:.78rem;color:var(--faint);margin-top:.3rem}
+  .bad{color:#b3261e}
+  @media (prefers-color-scheme: dark){ .bad{color:#f2857c} }
+  .tag{font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding:.12em .5em;border-radius:99px;border:1px solid var(--line);color:var(--faint);white-space:nowrap}
+  .tag.fail{border-color:#b3261e;color:#b3261e}
+  .tag.pass{border-color:var(--good);color:var(--good)}
+  .tag.mar{border-color:#a97f00;color:#a97f00}
+  @media (prefers-color-scheme: dark){ .tag.fail{border-color:#f2857c;color:#f2857c} .tag.mar{border-color:#dcb43c;color:#dcb43c} }
+  .applied td:first-child{font-family:var(--mono);font-size:.78rem;white-space:nowrap}
+  .q{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="eyebrow">roadmap audit &middot; decision artifact &middot; 2026-08-15</p>
+  <h1>The roadmap audit audits itself</h1>
+  <p class="standfirst">A full audit of <a href="https://github.com/jwildfire/obot.roadmap">jwildfire/obot.roadmap</a> ran tonight under the new standing grant to auto-accept high-confidence findings. <strong>27 changes were applied without asking.</strong> But the sharper instruction was the aside: <em>&ldquo;generally speaking, if it needs my attention it probably isn&rsquo;t a good audit rule.&rdquo;</em> Applied as a test to all 22 rules, it fails five of them &mdash; and <strong>18 of the 24 findings that landed in your lap came from just two rules.</strong> One broken rule was fixed and shipped tonight; the rest are the decisions below.</p>
+</header>
+
+<div class="metric">
+  <div><div class="n">45</div><div class="l">live findings, 22 rules</div></div>
+  <div><div class="n">27</div><div class="l">changes auto-applied</div></div>
+  <div><div class="n bad">24</div><div class="l">findings that needed you</div></div>
+  <div><div class="n bad">2</div><div class="l">rules producing 18 of them</div></div>
+</div>
+
+<div class="callout">
+  <p><strong>The short version.</strong> The roadmap was in better shape than the finding count suggests. Most of the 45 findings were mechanical and are already fixed. The real defect is in the rule set: three rules ask questions instead of proposing changes, and a question can never resolve itself &mdash; it re-fires every night until you answer it. Fix those three and the nightly needs-you rate drops from <strong>53% to about 13%</strong>.</p>
+</div>
+
+<div class="verdict">
+  <div class="k">Decide here</div>
+  <p><a href="https://github.com/jwildfire/obot.roadmap/discussions/163">Q&amp;A discussion #163</a> &mdash; C1, O1, H1, R1, R2, R3, R4. Answering <strong>&ldquo;adopt all&rdquo;</strong> is a complete response.</p>
+</div>
+
+<h2>1. What was applied without asking</h2>
+
+<p>Every change below is reversible and none of it deleted anything. Issue closes were deliberately <em>not</em> auto-applied &mdash; they are a state change with consequences, and agent closes are hook-blocked in this workspace by design. They are batched as <strong>C1</strong>.</p>
+
+<div class="scroll"><table class="applied">
+<thead><tr><th>Change</th><th>Where</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>milestone <code>backlog</code></td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/69">#69</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/81">#81</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/83">#83</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/119">#119</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/145">#145</a></td><td>Your 2026-08-14 rule: no work starts until a milestone is assigned. These sat at Backlog with none.</td></tr>
+<tr><td>milestone <code>2026q3</code></td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/25">#25</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/111">#111</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/113">#113</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/114">#114</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/152">#152</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/153">#153</a></td><td>Same rule; these are in Development or actively live, so they get the current delivery slot rather than <code>backlog</code>.</td></tr>
+<tr><td>created milestone <code>backlog</code></td><td>obot.agent, safety.viz</td><td>Neither repo had one, so your milestone-before-work rule was <em>unsatisfiable</em> outside the hub. Created rather than reported, because the rule is the point.</td></tr>
+<tr><td>milestone <code>backlog</code></td><td><a href="https://github.com/jwildfire/obot.agent/issues/14">obot.agent#14</a>, <a href="https://github.com/jwildfire/obot.agent/issues/15">obot.agent#15</a>, <a href="https://github.com/jwildfire/safety.viz/issues/99">safety.viz#99</a></td><td>Real open scope stranded under closed hub parents. Milestone makes them pickup-ready; their parenting is <strong>O1</strong>.</td></tr>
+<tr><td>assignee <code>@jwildfire</code></td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/157">#157</a> Navigator</td><td>Open requirement with no assignee.</td></tr>
+<tr><td>board &rarr; Backlog</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/157">#157</a></td><td>On the board with no Status at all.</td></tr>
+<tr><td>board &rarr; Review</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/43">#43</a> DILI tools</td><td>All 3 sub-issues closed while the board still said Development.</td></tr>
+<tr><td>board &rarr; Development</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/31">#31</a> roadmap transparency</td><td>Sat at Requirement Gathering with its only sub-issue closed and the page long since live. Now carries the open bug <a href="https://github.com/jwildfire/obot.roadmap/issues/94">#94</a>.</td></tr>
+<tr><td>board Released &rarr; Development</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/129">#129</a> open.csr outputs</td><td><strong>The board was wrong, not the issue.</strong> Its own last comment says Parts A and B shipped and Part&nbsp;C still awaits your option pick. Released was a false claim.</td></tr>
+<tr><td>sub-issue &rarr; goal <a href="https://github.com/jwildfire/obot.roadmap/issues/78">#78</a> charts</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/138">#138</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/81">#81</a></td><td>#138 was the one genuinely goalless requirement; #81 (safety-histogram fork close-out) was in no structure at all.</td></tr>
+<tr><td>sub-issue &rarr; goal <a href="https://github.com/jwildfire/obot.roadmap/issues/73">#73</a> autonomy</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/152">#152</a></td><td>The increment-PR-draft contradiction is an autonomy-harness defect.</td></tr>
+<tr><td>sub-issue &rarr; <a href="https://github.com/jwildfire/obot.roadmap/issues/88">#88</a> hepExplorer</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/83">#83</a></td><td>Legend/hover on hep-waterfall panels is exactly #88&rsquo;s scope.</td></tr>
+<tr><td>sub-issue &rarr; <a href="https://github.com/jwildfire/obot.roadmap/issues/31">#31</a> transparency</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/94">#94</a></td><td>&ldquo;Releases render as an em-dash on the roadmap page&rdquo; is a defect in exactly that requirement.</td></tr>
+<tr><td>sub-issue &rarr; <a href="https://github.com/jwildfire/obot.roadmap/issues/134">#134</a> demo-301 v0</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/153">#153</a></td><td>The silently-failing pipeline belongs under the demo it breaks &mdash; and #134 is under goal #79, so it inherits a goal.</td></tr>
+<tr><td>evidence comments</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/2">#2</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/21">#21</a>, <a href="https://github.com/jwildfire/gsm.safety/issues/44">gsm.safety#44</a></td><td>Shipping evidence recorded in-thread so the close in <strong>C1</strong> is a one-click decision, not a re-investigation.</td></tr>
+<tr><td><strong>code fix, merged to main</strong></td><td><a href="https://github.com/jwildfire/obot.roadmap/commit/17881b3">17881b3</a> &mdash; closes <a href="https://github.com/jwildfire/obot.roadmap/issues/133">#133</a></td><td><code>GOALLESS-REQUIREMENT</code> now walks the whole ancestor chain. See <strong>&sect;3</strong>: this rule was producing false positives, and a false positive is the purest example of what you described.</td></tr>
+</tbody>
+</table></div>
+
+<p class="small">Live findings after these changes: <strong>45 &rarr; 32</strong>. Of the 32 remaining, 24 are the decisions below and the rest are covered by the rule changes proposed in &sect;3.</p>
+<h2>2. The decisions &mdash; seven, all in one place</h2>
+
+<p>These are the findings that survived auto-application. Each is here because doing it silently would have cost something irreversible, not because the rule was clever.</p>
+
+<h3><span class="q">C1</span> &nbsp;Close four issues that are provably shipped</h3>
+<p>Four issues are open, sit at <strong>Released</strong> on the board, have zero open sub-issues, and carry in-thread evidence of shipping written by the sessions that shipped them. This exact set was already pre-listed as item <strong>X2</strong> on the <a href="https://github.com/jwildfire/obot.roadmap/issues/114">2026-07-25 review guide #114</a>, which was never worked to the bottom &mdash; so it has been queued for you for three weeks.</p>
+<ul>
+<li><a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a> obot GitHub App &mdash; the design &sect;6 acceptance criterion was verified in-thread on 2026-07-04 by <code>app-smoke-test.yml</code> posting as obotclaw[bot]; the App has been the standing agent identity ever since.</li>
+<li><a href="https://github.com/jwildfire/obot.roadmap/issues/21">#21</a> safety.viz docs site &mdash; all four sub-issues closed; all three publishing tiers live and verified in safety.viz v0.1.0.</li>
+<li><a href="https://github.com/jwildfire/obot.roadmap/issues/2">#2</a> Safety Histogram pilot &mdash; both sub-issues closed; done-gate satisfied on the released site. (The remaining fork clean-up survives as <a href="https://github.com/jwildfire/obot.roadmap/issues/81">#81</a>, now milestoned and under goal #78.)</li>
+<li><a href="https://github.com/jwildfire/gsm.safety/issues/44">gsm.safety#44</a> branch model &mdash; &ldquo;implemented and verified 2026-07-23&rdquo; in its own comment; every PR since has landed under that model.</li>
+</ul>
+<div class="opt rec"><span class="id">C1-a &mdash; recommended</span>
+<p>Close all four as completed. Then <strong>extend the auto-accept grant to closes that meet a hard bar</strong>: board says Released, zero open sub-issues, and shipping evidence already written in-thread. That bar is what made these four safe; it is checkable by the rule rather than by judgement.</p>
+<dl><dt>Costs</dt><dd>Nothing reversible is lost &mdash; reopening is one click.</dd><dt>Forecloses</dt><dd>Nothing. The bar excludes every ambiguous case, including <a href="https://github.com/jwildfire/obot.roadmap/issues/35">#35</a> below.</dd></dl></div>
+<div class="opt"><span class="id">C1-b</span><p>Close all four, but keep closes permanently outside the grant. Every future one comes back to you.</p>
+<dl><dt>Costs</dt><dd>This is the rule shape you objected to: <code>OPEN-IN-RELEASED</code> keeps generating queue items forever.</dd></dl></div>
+<div class="opt"><span class="id">C1-c</span><p>Leave them open &mdash; you are using &ldquo;open at Released&rdquo; deliberately as a watch list.</p>
+<dl><dt>Costs</dt><dd>Then the board stage, not the issue, is the thing that is wrong, and the rule should be re-pointed at that instead.</dd></dl></div>
+
+<h3><span class="q">O1</span> &nbsp;Three pieces of scope stranded under closed parents</h3>
+<p>Their parent requirements were closed as completed; these children were never resolved. All three now have a <code>backlog</code> milestone so they are pickup-ready, but re-parenting means unlinking them from a closed parent &mdash; a structural change I did not make unasked.</p>
+<div class="scroll"><table>
+<thead><tr><th>Issue</th><th>Closed parent</th><th>Reading</th></tr></thead>
+<tbody>
+<tr><td><a href="https://github.com/jwildfire/obot.agent/issues/14">obot.agent#14</a> &mdash; stage upstream contributions to gsm.agent</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a></td><td><strong>Probably moot.</strong> gsm.agent is a Gilead-BioStats repo; the standing rule is no writes outside the <code>jwildfire</code> org. Untouched since 2026-07-11.</td></tr>
+<tr><td><a href="https://github.com/jwildfire/obot.agent/issues/15">obot.agent#15</a> &mdash; land the shared keynote stylesheet</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/17">#17</a></td><td><strong>Still wanted.</strong> Belongs under the keynote goal <a href="https://github.com/jwildfire/obot.roadmap/issues/72">#72</a>. Blocked only by the single-parent constraint.</td></tr>
+<tr><td><a href="https://github.com/jwildfire/safety.viz/issues/99">safety.viz#99</a> &mdash; lab-family dock rollout (6 renderers)</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/45">#45</a></td><td><strong>Real, unscheduled work.</strong> The participant-profile module shipped; rolling the dock across the remaining six long-lab renderers never did.</td></tr>
+</tbody></table></div>
+<div class="opt rec"><span class="id">O1-a &mdash; recommended</span><p>Re-parent obot.agent#15 under goal #72; close obot.agent#14 as no-longer-applicable; file a small follow-up requirement for safety.viz#99 under goal #78 and re-parent it there.</p>
+<dl><dt>Costs</dt><dd>One new hub requirement.</dd><dt>Unblocks</dt><dd><code>CLOSED-PARENT-OPEN-SUBS</code> goes quiet, and the lab-family rollout becomes selectable by an autonomous session.</dd></dl></div>
+<div class="opt"><span class="id">O1-b</span><p>Re-parent all three to their nearest live goal and decide nothing about scope now.</p><dl><dt>Costs</dt><dd>obot.agent#14 stays in the backlog as a permanent no-op.</dd></dl></div>
+<div class="opt"><span class="id">O1-c</span><p>Leave them where they are; a closed parent is acceptable bookkeeping.</p><dl><dt>Costs</dt><dd>The rule keeps firing, and nothing under a closed parent is reachable from a goal page.</dd></dl></div>
+
+<h3><span class="q">H1</span> &nbsp;Retire the 2026-07-25 review guide (#114)</h3>
+<p><a href="https://github.com/jwildfire/obot.roadmap/issues/114">#114</a> is a checkbox review guide from three weeks ago: <strong>9 boxes checked, 11 still open.</strong> It is quietly the single largest source of &ldquo;needs @jwildfire&rdquo; in the hub &mdash; and most of it is already stale. Checked against live state tonight:</p>
+<ul>
+<li><strong>Already resolved elsewhere:</strong> D1a/D1b (dashboard chat &mdash; <a href="https://github.com/jwildfire/obot.roadmap/issues/77">#77</a> closed, oa#50 merged, feature parked 07-26); D2 (superseded, shipped in v1.5.0); D6 (oa#52 merged).</li>
+<li><strong>Genuinely still open:</strong> A2 (audit decisions bundle &mdash; superseded by this page); D3 (keep public cost data); D4 (Goal Atlas &mdash; 6 chart relinks, plus 3 proposed goals / 9 relinks / 32 requirement candidates); D5 (platform gap analysis &mdash; 12 ranked proposals); X1 (close <a href="https://github.com/jwildfire/obot.roadmap/issues/58">#58</a>); X2 (= <strong>C1</strong> above); X3 (your-clicks-only bundle, incl. the goal-board convention call = <strong>R3</strong>).</li>
+</ul>
+<div class="opt rec"><span class="id">H1-a &mdash; recommended</span><p>Close #114 and re-file only its four live items as their own issues: D3, D4, D5, X1. A checkbox guide is a <em>session</em> instrument &mdash; it goes stale the moment the session ends, and it has no milestone, no goal and no stage, so nothing else in the system can see it.</p>
+<dl><dt>Costs</dt><dd>Four small issues to triage instead of one long checklist.</dd><dt>Unblocks</dt><dd>D4 (Goal Atlas) is the biggest single win available: 6 pre-computed chart relinks plus 32 requirement candidates, all already analysed.</dd></dl></div>
+<div class="opt"><span class="id">H1-b</span><p>Work #114 to the bottom in one sitting, then close it.</p><dl><dt>Costs</dt><dd>~30 minutes on decisions that are three weeks cold; D4 and D5 need real thought, not a checkbox.</dd></dl></div>
+<div class="opt"><span class="id">H1-c</span><p>Leave it open as a rolling list.</p><dl><dt>Costs</dt><dd>It has produced no movement in 20 days. It is invisible to the roadmap page, the board and every audit rule except <code>UNTRACKED-TASK</code>.</dd></dl></div>
+<h2>3. The rule set, judged by your own test</h2>
+
+<p>You wrote: <em>&ldquo;generally speaking, if it needs my attention it probably isn&rsquo;t a good audit rule.&rdquo;</em> That is a sharper claim than it looks. It says the measure of an audit rule is not whether it detects something true &mdash; all 22 of these detect true things &mdash; but whether the thing it detects can be <strong>resolved by the system that detected it</strong>. A rule that ends in a question is a rule that has outsourced its own job.</p>
+
+<p>Here is every rule that fired tonight, scored that way.</p>
+
+<div class="scroll"><table>
+<thead><tr><th>Rule</th><th>Fired</th><th>Auto&#8209;applied</th><th>Needed you</th><th>False&nbsp;pos.</th><th>Verdict</th></tr></thead>
+<tbody>
+<tr><td><code>STALLED-IN-FLIGHT</code></td><td>13</td><td>0</td><td class="bad"><strong>13</strong></td><td>0</td><td><span class="tag fail">fails &mdash; replace</span></td></tr>
+<tr><td><code>DESIGN-MISSING</code></td><td>5</td><td>0</td><td class="bad"><strong>5</strong></td><td>0</td><td><span class="tag fail">fails &mdash; re-gate</span></td></tr>
+<tr><td><code>GOAL-BOARD-INCONSISTENT</code></td><td>1</td><td>0</td><td class="bad">1</td><td>0</td><td><span class="tag fail">fails &mdash; needs a default</span></td></tr>
+<tr><td><code>GOALLESS-REQUIREMENT</code></td><td>3</td><td>1</td><td>0</td><td class="bad"><strong>2</strong></td><td><span class="tag pass">fixed tonight</span></td></tr>
+<tr><td><code>OPEN-IN-RELEASED</code></td><td>5</td><td>1</td><td>3</td><td>1</td><td><span class="tag mar">marginal</span></td></tr>
+<tr><td><code>CLOSED-PARENT-OPEN-SUBS</code></td><td>2</td><td>0</td><td>2</td><td>0</td><td><span class="tag mar">marginal &mdash; but rare</span></td></tr>
+<tr><td><code>UNTRACKED-TASK</code></td><td>7</td><td><strong>7</strong></td><td>0</td><td>0</td><td><span class="tag pass">passes</span></td></tr>
+<tr><td><code>MILESTONE-MISSING</code></td><td>5</td><td><strong>5</strong></td><td>0</td><td>0</td><td><span class="tag pass">best rule here</span></td></tr>
+<tr><td><code>SUBS-DONE-PARENT-OPEN</code></td><td>2</td><td>2</td><td>0</td><td>0</td><td><span class="tag pass">passes</span></td></tr>
+<tr><td><code>ASSIGNEE-MISSING</code></td><td>1</td><td>1</td><td>0</td><td>0</td><td><span class="tag pass">passes</span></td></tr>
+<tr><td><code>UNSTAGED-BOARD-ITEM</code></td><td>1</td><td>1</td><td>0</td><td>0</td><td><span class="tag pass">passes</span></td></tr>
+<tr><td colspan="6" class="small">Plus 10 rules that fired nothing (<code>CLOSED-NOT-RELEASED</code>, <code>OFF-BOARD-REQUIREMENT</code>, <code>BOARD-DUPLICATE</code>, <code>GOAL-NO-MEMBERS</code>, <code>MERGED-PR-OPEN-TARGET</code>, <code>OPEN-PR-CLOSED-TARGET</code>, <code>PR-NO-REQUIREMENT</code>, <code>REQUIREMENT-LABEL-MISSING</code>, <code>AUTO-DRAFT-CONFLICT</code>, <code>PROMOTED-IDEA-OPEN</code>) and one muted (<code>HARD-WRAPPED-BODY</code>). A quiet rule is a passing rule.</td></tr>
+</tbody></table></div>
+
+<div class="callout">
+<p><strong>The pattern is not subtle.</strong> Every rule that passed proposes a <em>specific change</em> &mdash; set this milestone, move this stage, assign this person. Every rule that failed proposes a <em>question</em> &mdash; &ldquo;establish what is blocking it&rdquo;, &ldquo;write the Design section&rdquo;, &ldquo;settle the convention&rdquo;. The dividing line is not confidence, difficulty or domain. It is grammar: <strong>imperative rules resolve themselves, interrogative rules queue for you.</strong></p>
+</div>
+
+<h3><span class="q">R1</span> &nbsp;Retire <code>STALLED-IN-FLIGHT</code> and replace it</h3>
+<p>Thirteen findings &mdash; <strong>29% of the entire audit</strong>, and every one of them yours. Its detection is fine (board stage is Development or Review, no activity for 14 days, no open PR references it). Its proposal is <em>&ldquo;Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.&rdquo;</em> That is a request for an explanation, and no amount of GitHub data can supply one. So it re-fires every single night, for the same 13 issues, forever.</p>
+<p>Two deeper problems. First, <strong>stalled is not a defect</strong> &mdash; you run a wide program and park things deliberately; the rule pathologises normal behaviour. Second, it <strong>double-counts</strong>: <a href="https://github.com/jwildfire/obot.roadmap/issues/43">#43</a> fired here <em>and</em> under <code>SUBS-DONE-PARENT-OPEN</code>, where the same situation produced an auto-applicable stage move. When two rules see one fact and only one of them proposes a change, the other is noise.</p>
+<div class="opt rec"><span class="id">R1-a &mdash; recommended: turn the question into a reversible default</span>
+<p>Replace it with <strong><code>STAGE-DECAY</code></strong>: in-flight, no activity for 30 days, no open PR &rarr; <em>automatically move the item back to Backlog and comment saying so</em>. Mechanical, auto-applied, no question asked.</p>
+<p>The insight is that &ldquo;why is this stalled?&rdquo; and &ldquo;should the board still claim this is in flight?&rdquo; are different questions, and only the second one matters to the roadmap. Parking is reversible and costs you nothing; if the rule is wrong, you drag it forward, and that act <em>is</em> the activity that clears the finding. The roadmap stops claiming 13 things are in flight when nothing has moved in three weeks.</p>
+<dl><dt>Costs</dt><dd>Board churn on genuinely-slow work. Mitigated by 30 days rather than 14, and by skipping anything with an open PR or an open sub-issue.</dd><dt>Unblocks</dt><dd>13 findings become 0 &mdash; some auto-parked, the rest simply not defects.</dd></dl></div>
+<div class="opt"><span class="id">R1-b &mdash; narrow it to contradiction only</span>
+<p>Keep a rule but fire it <em>only</em> where the stage contradicts observable evidence: all sub-issues closed while the stage is below Review, a release shipped that closes the issue while the stage is below Released, the last linked PR merged more than N days ago while the stage says Development. Every one of those has a concrete stage move attached. Silence on mere quiet.</p>
+<dl><dt>Costs</dt><dd>Genuinely stuck work stops being surfaced anywhere. Acceptable if the weekly goal review (<a href="https://github.com/jwildfire/obot.roadmap/issues/87">#87</a>) is the place for that.</dd></dl></div>
+<div class="opt"><span class="id">R1-c &mdash; demote to a counter</span>
+<p>Keep detection, drop it from the findings list: render &ldquo;13 items in flight with no movement&rdquo; as a dashboard number, not 13 rows awaiting decisions.</p>
+<dl><dt>Costs</dt><dd>Least change, least value &mdash; the number is only actionable if someone reads it, which is the same problem one level up.</dd></dl></div>
+
+<h3><span class="q">R2</span> &nbsp;Re-gate <code>DESIGN-MISSING</code> to the moment it is violated</h3>
+<p>Five findings, all yours, all proposing &ldquo;Write the Design section from the work as it actually stands.&rdquo; But every one of the five is <strong>already in Development</strong> &mdash; <a href="https://github.com/jwildfire/obot.roadmap/issues/29">#29</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/88">#88</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/130">#130</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/132">#132</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/134">#134</a>. Retro-writing a design document for work that is already built is documentation theatre: it cannot inform a decision that was made weeks ago.</p>
+<p>This one is also mis-classified. It is not a cleanup finding at all &mdash; it is a <em>work order</em>, and work orders belong in the backlog where they get a milestone and a stage, not in a findings list that re-renders them nightly.</p>
+<div class="opt rec"><span class="id">R2-a &mdash; recommended</span>
+<p>Fire it only on the <strong>transition</strong>: a requirement moving Design &rarr; Development with an empty Design section. At that moment it is a real process violation with a real fix (write the design before building). Once the item is past Development, stop asking &mdash; and instead auto-file a small documentation task under the requirement, so the gap is tracked as work rather than as a nightly reproach.</p>
+<dl><dt>Costs</dt><dd>Needs the audit to remember the previous stage; it currently sees only the present snapshot. That is a genuine addition, roughly a stage-history field on the ledger.</dd><dt>Unblocks</dt><dd>5 findings &rarr; 0 tonight, and the rule starts catching the violation when it can still be prevented.</dd></dl></div>
+<div class="opt"><span class="id">R2-b</span><p>Keep it as-is but reclassify it from a finding to a backlog generator: on first sight, auto-file a &ldquo;write the design for #N&rdquo; task and never report it again.</p><dl><dt>Costs</dt><dd>Five new backlog items nobody asked for. Honest, but it moves the pile rather than shrinking it.</dd></dl></div>
+<div class="opt"><span class="id">R2-c</span><p>Retire it. A design document that nobody missed while the work was being built was not load-bearing.</p><dl><dt>Costs</dt><dd>Loses the one gate that has actually improved requirement quality this year. I would not.</dd></dl></div>
+
+<h3><span class="q">R3</span> &nbsp;Give <code>GOAL-BOARD-INCONSISTENT</code> a default instead of a question</h3>
+<p>One finding: goals <a href="https://github.com/jwildfire/obot.roadmap/issues/72">#72</a> and <a href="https://github.com/jwildfire/obot.roadmap/issues/73">#73</a> are on the board; <a href="https://github.com/jwildfire/obot.roadmap/issues/78">#78</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/79">#79</a> and <a href="https://github.com/jwildfire/obot.roadmap/issues/112">#112</a> are not. Its proposal is &ldquo;Settle the convention&rdquo; &mdash; a question. It has re-fired every night since 2026-07-25 and it is <em>also</em> sitting unanswered as item X3 on #114. Twenty nights of asking the same question is the clearest possible illustration of your point.</p>
+<div class="opt rec"><span class="id">R3-a &mdash; recommended</span><p>Adopt <strong>goals are not board items</strong> and make the rule enforce it: goals live forever, the board tracks delivery stages, and a permanent item has no stage to be in. Concretely, remove #72 and #73 from the board (a removal, so it needs your word) and have the rule flag any goal that appears on it.</p>
+<dl><dt>Costs</dt><dd>Goals stop showing in board views. They are already surfaced by the goal pages and the hierarchy section, which is the better surface.</dd></dl></div>
+<div class="opt"><span class="id">R3-b</span><p>Adopt the opposite &mdash; every goal on the board at a fixed <code>Backlog</code> status &mdash; and have the rule auto-add missing ones. Also self-resolving, and needs no deletion.</p>
+<dl><dt>Costs</dt><dd>Five permanent rows in a board built for things that move.</dd></dl></div>
+<div class="opt"><span class="id">R3-c</span><p>Retire the rule. It has produced exactly one finding in three weeks and no harm has come from the inconsistency.</p><dl><dt>Costs</dt><dd>None measurable. This is a defensible answer.</dd></dl></div>
+
+<h3><span class="q">R4</span> &nbsp;Teach <code>OPEN-IN-RELEASED</code> about phased work</h3>
+<p>Five findings: three are clean closes (<strong>C1</strong>), one was a wrong board stage that I fixed (<a href="https://github.com/jwildfire/obot.roadmap/issues/129">#129</a>), and one is a straight false positive. <a href="https://github.com/jwildfire/obot.roadmap/issues/35">#35</a> nepExplorer is at Released and open <em>on purpose</em> &mdash; its last comment says so in as many words: Phase 1 shipped in safety.viz v1.6.0, the issue stays open for Phase 2. The rule cannot tell &ldquo;done and unclosed&rdquo; from &ldquo;phase one done, phase two pending&rdquo;, so it asks you.</p>
+<div class="opt rec"><span class="id">R4-a &mdash; recommended</span><p>Two changes: (i) honour an explicit <code>phased</code> label or a <code>&lt;!-- stays-open: reason --&gt;</code> marker in the body and stay silent; (ii) when a Released-and-open issue has been <em>touched recently</em>, report it as a stage error rather than a close candidate &mdash; recent activity is evidence the work is live, which is what caught #129 correctly tonight.</p>
+<dl><dt>Costs</dt><dd>One label to remember on phased requirements.</dd><dt>Unblocks</dt><dd>Combined with <strong>C1-a</strong>, this rule becomes fully self-resolving: closes it can prove, stage fixes it can apply, silence where the author declared intent.</dd></dl></div>
+<div class="opt"><span class="id">R4-b</span><p>Add a Released-with-remaining-phases board stage (e.g. <em>Partially Released</em>) and let the rule read that.</p><dl><dt>Costs</dt><dd>A sixth stage on a board that is readable precisely because it has five.</dd></dl></div>
+
+<h2>4. What this does to the numbers</h2>
+<p>Tonight: 45 findings, 27 changes applied unattended, <strong>24 findings needing you &mdash; 53%</strong>.</p>
+<p>With <strong>R1-a</strong>, <strong>R2-a</strong>, <strong>R3</strong> (any option), <strong>R4-a</strong> and <strong>C1-a</strong> adopted, the same roadmap state produces roughly <strong>6 findings needing you &mdash; about 13%</strong>, and the six that remain are genuine one-off scope judgements like <strong>O1</strong>, not nightly repeats.</p>
+<p>The one structural addition worth naming: three of the five failing rules fail for the same missing capability &mdash; <strong>the audit has no memory of stage transitions</strong>. It sees only tonight&rsquo;s snapshot, so it can detect &ldquo;this is in Development with no design&rdquo; but not &ldquo;this <em>entered</em> Development without one&rdquo;. Adding a stage-history field to the ledger is what turns <code>DESIGN-MISSING</code>, a sharpened <code>STALLED-IN-FLIGHT</code> and part of <code>OPEN-IN-RELEASED</code> from interrogative into imperative. That is the single highest-leverage change to the audit, and it is <a href="https://github.com/jwildfire/obot.roadmap/issues/92">#92</a>-shaped work, not a new requirement.</p>
+
+<h2>5. Already surfaced elsewhere &mdash; not re-litigated here</h2>
+<ul>
+<li><a href="https://github.com/jwildfire/obot.roadmap/issues/129">#129</a> <strong>open.csr Part C</strong> &mdash; the board claimed Released; it is now back at Development. The decision itself (Options A&ndash;D for how editing reaches the reading view, with C recommended) is already written into the issue&rsquo;s Design section and is yours to pick. Not duplicated here.</li>
+<li><a href="https://github.com/jwildfire/obot.roadmap/issues/145">#145</a> <strong>Lex Jansen archive</strong> &mdash; the watch-phase build decision was due at the ~2026-08-10 checkpoint and is five days overdue. Milestoned <code>backlog</code> tonight; it has its own workstream and deserves its own artifact, not a line item in this one.</li>
+<li><a href="https://github.com/jwildfire/obot.roadmap/issues/153">#153</a> <strong>demo-301 pipeline failing since 2026-08-03</strong> &mdash; given a home under <a href="https://github.com/jwildfire/obot.roadmap/issues/134">#134</a> and a <code>2026q3</code> milestone tonight, so it is now visible to goal #79 and the board.</li>
+</ul>
+
+<footer>
+<p>Written 2026-08-15 by an unattended sibling session (👯🤖 audit) in obot2, from a full run of <code>scripts/audit_roadmap.mjs</code> against live GitHub state. Every applied change is listed in &sect;1 and reversible; nothing was deleted.</p>
+<p>Drafted by Claude Code using Opus 5 and reviewed by @jwildfire</p>
+</footer>
+
+</div>
+</body>
+</html>
