@@ -56,7 +56,7 @@ it cannot make — situation, options with what each costs and forecloses, a pla
 recommendation, and what unblocks on each choice. One folder per decision, dated. These and
 release-candidate PRs are the only two things @jwildfire reviews, per the
 [release-candidate framework](https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md);
-the contract is documented in [`decisions/README.md`](decisions/README.md).
+the contract is documented in [`decisions/README.md`](https://github.com/jwildfire/obot.roadmap/blob/main/reports/decisions/README.md).
 
 ## Session reports
 

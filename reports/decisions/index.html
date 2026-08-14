@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision artifacts</title>
+<style>
+  :root {
+    --pg-paper:#F4F1EC; --pg-card:#FDFCFA; --pg-ink:#26211B; --pg-muted:#6F6558;
+    --pg-faint:#9C917F; --pg-line:#E2DACC; --pg-accent:#B4470E; --pg-accent-soft:#F4E2D2;
+    --pg-good:#2F6B4F; --pg-good-soft:#E2EFE7;
+    --serif:"Instrument Serif","Iowan Old Style",Georgia,serif;
+    --sans:"Instrument Sans","Avenir Next","Segoe UI",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+    --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18;
+    --pg-good:#7FBF9B; --pg-good-soft:#1E2E25;
+  } }
+  :root[data-theme="dark"] {
+    --pg-paper:#1A1611; --pg-card:#232019; --pg-ink:#EAE4D8; --pg-muted:#A69B89;
+    --pg-faint:#7E7462; --pg-line:#383126; --pg-accent:#E8843C; --pg-accent-soft:#3C2A18;
+    --pg-good:#7FBF9B; --pg-good-soft:#1E2E25;
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--pg-paper); color:var(--pg-ink); font-family:var(--sans); line-height:1.55; margin:0; padding:3rem 1.25rem 4.5rem; }
+  .wrap { max-width:940px; margin:0 auto; }
+  .prose { max-width:70ch; }
+  a { color:var(--pg-accent); text-underline-offset:2px; }
+  a:focus-visible { outline:2px solid var(--pg-accent); outline-offset:2px; }
+  code { font-family:var(--mono); font-size:0.85em; background:var(--pg-accent-soft); padding:0.05em 0.3em; border-radius:4px; }
+  .eyebrow { font-family:var(--mono); font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--pg-accent); margin:0 0 0.55rem; }
+  h1 { font-family:var(--serif); font-weight:400; font-size:clamp(2rem,4.5vw,2.8rem); line-height:1.1; margin:0 0 1rem; text-wrap:balance; }
+  h2 { font-family:var(--serif); font-weight:400; font-size:1.65rem; margin:0 0 0.9rem; }
+  h3 { font-family:var(--serif); font-weight:400; font-size:1.25rem; margin:1.6rem 0 0.5rem; }
+  .standfirst { font-size:1.05rem; color:var(--pg-muted); margin:0; }
+  .standfirst strong { color:var(--pg-ink); }
+  section { margin:3.2rem 0 0; }
+  p { margin:0.6rem 0; }
+  .small { font-size:0.85rem; color:var(--pg-muted); }
+  ul, ol { max-width:70ch; padding-left:1.15rem; }
+  li { margin:0.4rem 0; }
+
+  .decision { border:1px solid var(--pg-line); border-radius:14px; background:var(--pg-card); padding:1.5rem 1.6rem; margin:1.6rem 0 0; }
+  .decision > .k { font-family:var(--mono); font-size:0.68rem; letter-spacing:0.11em; text-transform:uppercase; color:var(--pg-accent); }
+  .decision h2 { margin:0.35rem 0 0.6rem; font-size:1.5rem; }
+  .opts { display:grid; gap:0.9rem; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin:1.2rem 0 0; }
+  .opt { border:1px solid var(--pg-line); border-radius:10px; padding:0.9rem 1rem; background:var(--pg-paper); }
+  .opt.pick { border-color:var(--pg-good); background:var(--pg-good-soft); }
+  .opt h4 { font-family:var(--sans); font-size:0.95rem; margin:0 0 0.45rem; }
+  .opt .tag { display:inline-block; font-family:var(--mono); font-size:0.6rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--pg-good); border:1px solid var(--pg-good); border-radius:99px; padding:0.05em 0.45em; margin-left:0.35rem; vertical-align:1px; }
+  .opt dl { margin:0.5rem 0 0; font-size:0.86rem; }
+  .opt dt { font-family:var(--mono); font-size:0.63rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--pg-faint); margin-top:0.5rem; }
+  .opt dd { margin:0.1rem 0 0; color:var(--pg-muted); }
+  .rec { border-left:3px solid var(--pg-accent); background:var(--pg-accent-soft); border-radius:0 10px 10px 0; padding:0.9rem 1.1rem; margin:1.3rem 0 0; }
+  .rec p { margin:0.3rem 0; }
+  .rec .k { font-family:var(--mono); font-size:0.64rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--pg-accent); display:block; margin-bottom:0.2rem; }
+  .unblocks { margin:1rem 0 0; font-size:0.9rem; }
+  .unblocks .k { font-family:var(--mono); font-size:0.64rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--pg-faint); }
+
+  table { border-collapse:collapse; width:100%; font-size:0.88rem; margin:1rem 0 0; }
+  .scroll { overflow-x:auto; }
+  th, td { text-align:left; padding:0.5rem 0.7rem; border-bottom:1px solid var(--pg-line); vertical-align:top; }
+  th { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--pg-faint); font-weight:400; }
+  .callout { border:1.5px solid var(--pg-accent); background:var(--pg-accent-soft); border-radius:12px; padding:1.1rem 1.3rem; margin:1.6rem 0 0; }
+  .callout p { margin:0.3rem 0; }
+  .ask { display:grid; gap:0.6rem; margin:1.2rem 0 0; }
+  .ask .row { display:grid; grid-template-columns:4.5rem 1fr; gap:0.8rem; align-items:baseline; border-bottom:1px solid var(--pg-line); padding-bottom:0.6rem; }
+  .ask .id { font-family:var(--mono); font-size:0.78rem; color:var(--pg-accent); }
+  footer { margin-top:3.5rem; padding-top:1rem; border-top:1px solid var(--pg-line); font-family:var(--mono); font-size:0.76rem; color:var(--pg-faint); }
+  footer p { margin:0.25rem 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">obot · decision artifacts</p>
+    <h1>Decisions waiting on @jwildfire</h1>
+    <p class="standfirst prose">When an autonomous session hits a call it cannot make — an unsigned design, a clinical judgement, a policy carve-out, a missing prerequisite — it does not stall and it does not guess. It writes one of these and moves on. Each page carries <strong>the situation in three sentences, the options with what each costs and forecloses, a plain recommendation, and what unblocks on each choice.</strong> These and release-candidate PRs are the only two things @jwildfire reviews, per the <a href="https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md">release-candidate framework</a>.</p>
+  </header>
+
+  <section>
+    <h2>Open</h2>
+    <div class="docs" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:1.4rem">
+      <a class="doc" style="display:block;border:1px solid var(--pg-line);border-radius:12px;background:var(--pg-card);padding:1.2rem 1.3rem;text-decoration:none;color:inherit" href="2026-08-14-app-plan-rewrite/">
+        <span class="k" style="font-family:var(--mono);font-size:0.67rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--pg-accent)">2026-08-14 · goal #79 · A1–A4</span>
+        <h3 style="font-family:var(--serif);font-weight:400;font-size:1.35rem;margin:0.35rem 0 0.4rem">The app plan rewrite — four calls to make</h3>
+        <p style="margin:0;font-size:0.9rem;color:var(--pg-muted)">The app goal blocks its own selection on a plan rewrite that the 2026-07-28 design pass and the demo-301 v0 ship overtook. What replaces the stale plan, what the requirement set is, what v1.0 means, and whether demo-301 is the fork template.</p>
+      </a>
+      <a class="doc" style="display:block;border:1px solid var(--pg-line);border-radius:12px;background:var(--pg-card);padding:1.2rem 1.3rem;text-decoration:none;color:inherit" href="2026-08-14-demo-301-site-size/">
+        <span class="k" style="font-family:var(--mono);font-size:0.67rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--pg-accent)">2026-08-14 · #143 · S1–S6</span>
+        <h3 style="font-family:var(--serif);font-weight:400;font-size:1.35rem;margin:0.35rem 0 0.4rem">demo-301's site branch — what the fork actually costs</h3>
+        <p style="margin:0;font-size:0.9rem;color:var(--pg-muted)">The 302.58 MiB figure is exact, but 34% of it is a byte-identical duplicate tree and a clone transfers 90.91 MiB. Six options, three recommended, nothing changed.</p>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2>The contract</h2>
+    <ul>
+      <li>One folder per decision at <code>reports/decisions/{YYYY-MM-DD}-{slug}/</code>, self-contained HTML plus a <code>README.md</code> recording provenance, sources and assumptions.</li>
+      <li>Linked from the blocked goal's hub issue, and surfaced in that night's executive summary under <em>Critical blockers</em>.</li>
+      <li>One artifact per decision topic — a single page carries several decisions only when they gate each other and must be answered in one sitting.</li>
+      <li>Full contract: <a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/decisions/README.md"><code>decisions/README.md</code></a>.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Decision artifacts for the obot portfolio · established 2026-08-14 per the release-candidate framework.</p>
+  </footer>
+
+</div>
+</body>
+</html>
