@@ -52,6 +52,29 @@ const subject = (issue) => ({
   url: issue.url,
 });
 
+// Is a goal reachable from this issue by walking parents upward?
+//
+// Requirement-under-requirement nesting is legitimate (#122 → #18 → goal #73),
+// so goal membership is an *ancestor* question, not a parent question. Checking
+// only the direct parent is what made GOALLESS-REQUIREMENT report two false
+// positives out of three on 2026-08-15 — and a false positive is the one kind of
+// finding no rule can resolve for itself. Parents are always hub issues, and the
+// visited set makes a data cycle terminate rather than hang the audit.
+const hasGoalAncestor = (s, issue) => {
+  const seen = new Set();
+  const queue = [key(issue.repo, issue.number)];
+  while (queue.length) {
+    const k = queue.shift();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    for (const parent of s.parentOf.get(k) ?? []) {
+      if (parent.labels?.includes('goal')) return true;
+      queue.push(key(s.hub, parent.number));
+    }
+  }
+  return false;
+};
+
 // Board items for an issue (a list — being on the board twice is itself a rule).
 const itemsFor = (s, repo, number) => s.boardByKey.get(key(repo, number)) ?? [];
 const statusOf = (s, repo, number) => itemsFor(s, repo, number).map((i) => i.status).find((v) => v) ?? null;
@@ -383,19 +406,18 @@ const goallessRequirement = {
   id: 'GOALLESS-REQUIREMENT',
   title: 'Open requirement under no goal',
   group: 'Hierarchy',
-  why: 'Since #53 goals are hub issues and membership is the sub-issue link — nothing else. A requirement with no goal parent belongs to no standing direction, so it never appears on a goal page and an autonomous session selecting by goal can never pick it up.',
+  why: 'Since #53 goals are hub issues and membership is the sub-issue link — nothing else. Membership is inherited, so a requirement nested under another requirement still belongs to that requirement\u2019s goal; only an issue with no goal anywhere up its parent chain belongs to no standing direction, never appears on a goal page, and can never be picked up by an autonomous session selecting by goal.',
   fix: 'Link it under the goal it serves, or state why it is deliberately standalone.',
   check(s) {
-    const goalNumbers = new Set(s.issues.filter(isGoal).map((i) => i.number));
     const goalTitles = s.issues.filter((i) => isGoal(i) && i.state === 'OPEN')
       .map((i) => `#${i.number} ${i.title.replace(/^Goal:\s*/i, '')}`);
     return s.issues
       .filter((i) => i.state === 'OPEN' && isRequirement(i) && !isGoal(i))
-      .filter((i) => !(s.parentOf.get(key(i.repo, i.number)) ?? []).some((p) => goalNumbers.has(p.number)))
+      .filter((i) => !hasGoalAncestor(s, i))
       .map((i) => ({
         confidence: 'medium',
         subject: subject(i),
-        evidence: ['open requirement', 'not a sub-issue of any `goal`-labelled issue'],
+        evidence: ['open requirement', 'no `goal`-labelled ancestor at any depth'],
         proposal: {
           kind: 'agentic',
           summary: 'Link it under the goal it serves.',

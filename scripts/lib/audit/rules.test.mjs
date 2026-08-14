@@ -201,6 +201,45 @@ test('GOALLESS-REQUIREMENT: a requirement under a goal does not fire', () => {
   assert.deepEqual(found.map((f) => f.subject.number), [36]);
 });
 
+// Requirement-under-requirement nesting is legitimate and common: #122 sits under
+// #18 which sits under goal #73, and #131 under #130 under goal #112. Checking
+// only the direct parent called both of those goalless — two false positives out
+// of three findings on 2026-08-15, each one landing in front of @jwildfire. The
+// goal is reachable, just not in one hop.
+test('GOALLESS-REQUIREMENT: a requirement whose goal is reachable through another requirement does not fire', () => {
+  const goal = issue(73, {
+    labels: ['goal'],
+    title: 'Goal: autonomy',
+    subIssues: [{ repo: HUB, number: 18, title: 'r', url: 'u', state: 'OPEN' }],
+    subSummary: { total: 1, completed: 0 },
+  });
+  const middle = issue(18, {
+    subIssues: [{ repo: HUB, number: 122, title: 'r', url: 'u', state: 'OPEN' }],
+    subSummary: { total: 1, completed: 0 },
+  });
+  const snap = snapshot({ issues: [goal, middle, issue(122), issue(140)] });
+  assert.deepEqual(
+    fire('GOALLESS-REQUIREMENT', snap).map((f) => f.subject.number),
+    [140],
+    'only the requirement with no goal ancestor at any depth is goalless',
+  );
+});
+
+// The walk is over GitHub data, not a tree we control, so a parent cycle must
+// terminate rather than hang the whole audit.
+test('GOALLESS-REQUIREMENT: a parent cycle terminates instead of hanging', () => {
+  const a = issue(200, {
+    subIssues: [{ repo: HUB, number: 201, title: 'r', url: 'u', state: 'OPEN' }],
+    subSummary: { total: 1, completed: 0 },
+  });
+  const b = issue(201, {
+    subIssues: [{ repo: HUB, number: 200, title: 'r', url: 'u', state: 'OPEN' }],
+    subSummary: { total: 1, completed: 0 },
+  });
+  const snap = snapshot({ issues: [a, b] });
+  assert.deepEqual(fire('GOALLESS-REQUIREMENT', snap).map((f) => f.subject.number), [200, 201]);
+});
+
 // The audit must not audit its own control plane: a decision issue is unlabelled,
 // parentless and off the board by design, so UNTRACKED-TASK would flag every
 // accept click. Caught live on decision #100.
