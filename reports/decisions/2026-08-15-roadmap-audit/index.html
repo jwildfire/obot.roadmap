@@ -64,12 +64,12 @@
 <header>
   <p class="eyebrow">roadmap audit &middot; decision artifact &middot; 2026-08-15</p>
   <h1>The roadmap audit audits itself</h1>
-  <p class="standfirst">A full audit of <a href="https://github.com/jwildfire/obot.roadmap">jwildfire/obot.roadmap</a> ran tonight under the new standing grant to auto-accept high-confidence findings. <strong>27 changes were applied without asking.</strong> But the sharper instruction was the aside: <em>&ldquo;generally speaking, if it needs my attention it probably isn&rsquo;t a good audit rule.&rdquo;</em> Applied as a test to all 22 rules, it fails five of them &mdash; and <strong>18 of the 24 findings that landed in your lap came from just two rules.</strong> One broken rule was fixed and shipped tonight; the rest are the decisions below.</p>
+  <p class="standfirst">A full audit of <a href="https://github.com/jwildfire/obot.roadmap">jwildfire/obot.roadmap</a> ran tonight under the new standing grant to auto-accept high-confidence findings. <strong>32 changes were applied without asking.</strong> But the sharper instruction was the aside: <em>&ldquo;generally speaking, if it needs my attention it probably isn&rsquo;t a good audit rule.&rdquo;</em> Applied as a test to all 22 rules, it fails five of them &mdash; and <strong>18 of the 24 findings that landed in your lap came from just two rules.</strong> One broken rule was fixed and shipped tonight; the rest are the decisions below.</p>
 </header>
 
 <div class="metric">
   <div><div class="n">45</div><div class="l">live findings, 22 rules</div></div>
-  <div><div class="n">27</div><div class="l">changes auto-applied</div></div>
+  <div><div class="n">32</div><div class="l">changes auto-applied</div></div>
   <div><div class="n bad">24</div><div class="l">findings that needed you</div></div>
   <div><div class="n bad">2</div><div class="l">rules producing 18 of them</div></div>
 </div>
@@ -106,10 +106,13 @@
 <tr><td>sub-issue &rarr; <a href="https://github.com/jwildfire/obot.roadmap/issues/134">#134</a> demo-301 v0</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/153">#153</a></td><td>The silently-failing pipeline belongs under the demo it breaks &mdash; and #134 is under goal #79, so it inherits a goal.</td></tr>
 <tr><td>evidence comments</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/2">#2</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/3">#3</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/21">#21</a>, <a href="https://github.com/jwildfire/gsm.safety/issues/44">gsm.safety#44</a></td><td>Shipping evidence recorded in-thread so the close in <strong>C1</strong> is a one-click decision, not a re-investigation.</td></tr>
 <tr><td><strong>code fix, merged to main</strong></td><td><a href="https://github.com/jwildfire/obot.roadmap/commit/17881b3">17881b3</a> &mdash; closes <a href="https://github.com/jwildfire/obot.roadmap/issues/133">#133</a></td><td><code>GOALLESS-REQUIREMENT</code> now walks the whole ancestor chain. See <strong>&sect;3</strong>: this rule was producing false positives, and a false positive is the purest example of what you described.</td></tr>
+
+<tr><td>board &rarr; Released</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/133">#133</a></td><td>Closed by the rule fix above; the board had not caught up.</td></tr>
+<tr><td>board &rarr; Backlog</td><td><a href="https://github.com/jwildfire/obot.roadmap/issues/83">#83</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/94">#94</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/152">#152</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/153">#153</a></td><td>Side-effect of the links above &mdash; see &sect;3.5. Linking a sub-issue auto-adds it to the board with no Status.</td></tr>
 </tbody>
 </table></div>
 
-<p class="small">Live findings after these changes: <strong>45 &rarr; 32</strong>. Of the 32 remaining, 24 are the decisions below and the rest are covered by the rule changes proposed in &sect;3.</p>
+<p class="small">Live findings after these changes: <strong>45 &rarr; 28</strong>. Of the 28 remaining, most are the decisions below; the rest are covered by the rule changes proposed in &sect;3.</p>
 <h2>2. The decisions &mdash; seven, all in one place</h2>
 
 <p>These are the findings that survived auto-application. Each is here because doing it silently would have cost something irreversible, not because the rule was clever.</p>
@@ -218,8 +221,20 @@
 <dl><dt>Costs</dt><dd>One label to remember on phased requirements.</dd><dt>Unblocks</dt><dd>Combined with <strong>C1-a</strong>, this rule becomes fully self-resolving: closes it can prove, stage fixes it can apply, silence where the author declared intent.</dd></dl></div>
 <div class="opt"><span class="id">R4-b</span><p>Add a Released-with-remaining-phases board stage (e.g. <em>Partially Released</em>) and let the rule read that.</p><dl><dt>Costs</dt><dd>A sixth stage on a board that is readable precisely because it has five.</dd></dl></div>
 
+<h3>3.5 &nbsp;What happened when the fixes were applied</h3>
+
+<p>Applying 27 changes produced <strong>6 brand-new findings</strong> — a useful accident, because it exposed two rule interactions that only show up when the audit is actually acted on rather than read.</p>
+
+<ul>
+<li><strong>Linking a sub-issue silently adds it to the board with no Status.</strong> Giving <a href="https://github.com/jwildfire/obot.roadmap/issues/83">#83</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/94">#94</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/152">#152</a> and <a href="https://github.com/jwildfire/obot.roadmap/issues/153">#153</a> a home under <code>UNTRACKED-TASK</code> immediately made all four fire <code>UNSTAGED-BOARD-ITEM</code>. Both rules are correct; neither knows the other exists. <strong>Fix:</strong> <code>UNTRACKED-TASK</code>&rsquo;s proposal should set a Status in the same operation, so accepting one finding does not manufacture another. All four were then staged to Backlog in this session.</li>
+<li><strong><code>SUBS-DONE-PARENT-OPEN</code> treats sub-issue completeness as scope completeness.</strong> Correcting <a href="https://github.com/jwildfire/obot.roadmap/issues/129">#129</a>&rsquo;s false Released stage made it fire &mdash; its one sub-issue is closed, so the rule now proposes Review. But Part C is real outstanding scope that simply has no sub-issue yet. The rule is reasoning about the <em>tracker</em>, not the work. <strong>Fix:</strong> require the Design section to be free of open decisions before proposing Review, or treat &ldquo;zero sub-issues remaining <em>and</em> no unresolved options in the body&rdquo; as the bar.</li>
+<li><strong>The ladder works as designed.</strong> Moving <a href="https://github.com/jwildfire/obot.roadmap/issues/43">#43</a> from Development to Review immediately escalated it to a close proposal &mdash; correct behaviour, and it means one more close is waiting behind <strong>C1</strong>.</li>
+</ul>
+
+<p>The general lesson: <strong>a rule set is only testable by applying it.</strong> These three interactions had been latent since the audit shipped on 2026-07-24 because findings were being read, not executed in bulk. Worth re-running the audit immediately after any apply batch and treating a rule that reliably creates work for another rule as a defect in the first one.</p>
+
 <h2>4. What this does to the numbers</h2>
-<p>Tonight: 45 findings, 27 changes applied unattended, <strong>24 findings needing you &mdash; 53%</strong>.</p>
+<p>Tonight: 45 findings, 32 changes applied unattended (27 from the audit, 5 cleaning up after it &mdash; &sect;3.5), <strong>24 findings needing you &mdash; 53%</strong>. Live findings closed the night at <strong>28</strong>.</p>
 <p>With <strong>R1-a</strong>, <strong>R2-a</strong>, <strong>R3</strong> (any option), <strong>R4-a</strong> and <strong>C1-a</strong> adopted, the same roadmap state produces roughly <strong>6 findings needing you &mdash; about 13%</strong>, and the six that remain are genuine one-off scope judgements like <strong>O1</strong>, not nightly repeats.</p>
 <p>The one structural addition worth naming: three of the five failing rules fail for the same missing capability &mdash; <strong>the audit has no memory of stage transitions</strong>. It sees only tonight&rsquo;s snapshot, so it can detect &ldquo;this is in Development with no design&rdquo; but not &ldquo;this <em>entered</em> Development without one&rdquo;. Adding a stage-history field to the ledger is what turns <code>DESIGN-MISSING</code>, a sharpened <code>STALLED-IN-FLIGHT</code> and part of <code>OPEN-IN-RELEASED</code> from interrogative into imperative. That is the single highest-leverage change to the audit, and it is <a href="https://github.com/jwildfire/obot.roadmap/issues/92">#92</a>-shaped work, not a new requirement.</p>
 
