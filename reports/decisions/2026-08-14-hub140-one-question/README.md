@@ -30,6 +30,8 @@ One of the eight survives as a policy call (D4 → **W1**: what does the carve-o
 
 **@jwildfire, 2026-08-15, in chat (via 🎩🤖 obot-prime):** *"#156 looks good. recommnendations approved."* — W1a + W2a + W3a adopted as recommended. Recorded on the page itself in the `Decisions` section at the top, which is what the derived [decisions log](https://jwildfire.github.io/obot.roadmap/decisions/) reads.
 
+**Implemented the same day:** the enforcement pull request is [obot.agent#113](https://github.com/jwildfire/obot.agent/pull/113) (guardrail gate, authority ref, truthful `--check`, committed policy sweep; tests green) — held for @jwildfire's sign-off by the gate it adds, which is the behaviour W1 asked for. Hub [#140](https://github.com/jwildfire/obot.roadmap/issues/140) is closed against the v0.4.0 release, board Released, with two live pieces re-filed before the close: [obot.agent#114](https://github.com/jwildfire/obot.agent/issues/114) (the hub's direct-commit workflows, the severed D3 fragment) and [#115](https://github.com/jwildfire/obot.agent/issues/115) (server-side enforcement, his decision and his hands).
+
 ## Recommendation
 
 **W1a** (attested-always) + **W2a** (blanket-accept the design defaults, sever the hub-workflows fragment) + **W3a** (close #140 with v0.4.0). Together they unblock the single obot.agent PR specified in design §10, which closes oa#65, oa#75, and discussion #141 — and which itself arrives on the attested lane.
