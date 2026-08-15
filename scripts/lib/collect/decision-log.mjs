@@ -98,13 +98,17 @@ export function parseDecisionRecord(html = '') {
   return { present: true, entries };
 }
 
-/** The ID allocation record, when the identity lane has landed it. */
+/**
+ * The ID allocation record, indexed by slug.
+ *
+ * Read through the identity lane's own module rather than parsing the same JSON a
+ * second time — two readers of one file is how the two drift.
+ */
 export async function readRegistry() {
   try {
-    const raw = await fs.readFile(path.join(DIR, 'registry.json'), 'utf8');
-    const parsed = JSON.parse(raw);
-    const list = Array.isArray(parsed) ? parsed : (parsed.artifacts ?? parsed.decisions ?? []);
-    return new Map(list.filter((a) => a && a.slug).map((a) => [a.slug, a]));
+    const { readRegistry: read } = await import('../decision-ids.mjs');
+    const reg = read();
+    return new Map((reg.artifacts ?? []).filter((a) => a?.slug).map((a) => [a.slug, a]));
   } catch {
     return new Map();
   }

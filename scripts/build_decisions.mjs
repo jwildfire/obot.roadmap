@@ -98,6 +98,70 @@ ${log.entries.length ? days : '<p>No decisions recorded yet.</p>'}
   return shell('Decisions', body);
 }
 
+// The decisions folder's own landing page, rebuilt from the same data.
+//
+// It was hand-maintained and had drifted to listing 2 of 12 artifacts — @jwildfire
+// could open the decisions index and see a sixth of his queue. That is the exact
+// failure the derived log exists to prevent, so this page stops being written by
+// hand too. The committed copy under reports/ is superseded at deploy time.
+const landing = (log) => {
+  const card = (a) => `<a class="card" href="${esc(a.slug)}/">
+  <span class="k">${esc(a.date)}${a.id ? ` · ${esc(a.id)}` : ''} · ${a.awaiting ? 'awaiting you' : 'decided'}</span>
+  <h3>${esc(a.title)}</h3>
+  <p>${esc(a.statusPlain)}</p>
+</a>`;
+  const open = log.artifacts.filter((a) => a.awaiting);
+  const done = log.artifacts.filter((a) => !a.awaiting);
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision artifacts</title>
+<meta name="description" content="Every decision artifact in the obot portfolio — the ones still waiting on @jwildfire first, then the ones he has answered, each with what it is about and where it stands.">
+<style>
+  :root { --paper:#F4F1EC; --card:#FDFCFA; --ink:#26211B; --muted:#6F6558; --faint:#9C917F;
+          --line:#E2DACC; --accent:#B4470E; --good:#2F6B4F;
+          --serif:"Instrument Serif","Iowan Old Style",Georgia,serif;
+          --sans:"Instrument Sans","Avenir Next","Segoe UI",system-ui,sans-serif;
+          --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --paper:#1A1611; --card:#232019; --ink:#EAE4D8; --muted:#A69B89; --faint:#7E7462;
+    --line:#383126; --accent:#E8843C; --good:#7FBF9B; } }
+  * { box-sizing:border-box; }
+  body { background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.55; margin:0; padding:3rem 1.25rem 4.5rem; }
+  .wrap { max-width:940px; margin:0 auto; }
+  a { color:var(--accent); }
+  h1 { font-family:var(--serif); font-weight:400; font-size:clamp(2rem,4.5vw,2.6rem); margin:0 0 0.8rem; }
+  h2 { font-family:var(--serif); font-weight:400; font-size:1.5rem; margin:2.4rem 0 0.8rem; }
+  .lede { color:var(--muted); max-width:70ch; }
+  .grid { display:grid; gap:0.8rem; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+  .card { display:block; border:1px solid var(--line); border-radius:12px; background:var(--card);
+          padding:1rem 1.1rem; text-decoration:none; color:inherit; }
+  .card:hover { border-color:var(--accent); }
+  .card .k { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--accent); }
+  .card h3 { font-family:var(--serif); font-weight:400; font-size:1.2rem; margin:0.3rem 0 0.35rem; }
+  .card p { margin:0; font-size:0.85rem; color:var(--muted); }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line); font-family:var(--mono); font-size:0.75rem; color:var(--faint); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Decision artifacts</h1>
+<p class="lede">When an autonomous session hits a call it cannot make, it writes one of these and moves on. @jwildfire reviews exactly two kinds of thing: release candidates, and these. <a href="../../decisions/">The Decisions log</a> lists what he has already answered, in his words.</p>
+
+<h2>Waiting on you <span class="k">${open.length}</span></h2>
+<div class="grid">${open.length ? open.map(card).join('\n') : '<p class="lede">Nothing open.</p>'}</div>
+
+<h2>Answered <span class="k">${done.length}</span></h2>
+<div class="grid">${done.map(card).join('\n')}</div>
+
+<footer>Generated at deploy time from the artifacts and <a href="https://github.com/${HUB}/blob/main/reports/decisions/README.md">the index</a> — never hand-maintained. ${esc(fmtET(new Date()))}</footer>
+</div>
+</body>
+</html>`;
+};
+
 const log = await collectDecisionLog();
 
 if (log.problems.length) {
@@ -108,6 +172,11 @@ if (log.problems.length) {
 
 await fs.mkdir(OUT, { recursive: true });
 await fs.writeFile(path.join(OUT, 'index.html'), page(log));
+
+// The decisions folder's landing page, into the already-copied _site tree.
+const landingDir = path.join(ROOT, '_site', 'reports', 'decisions');
+await fs.mkdir(landingDir, { recursive: true });
+await fs.writeFile(path.join(landingDir, 'index.html'), landing(log));
 await fs.writeFile(path.join(OUT, 'decisions.json'), JSON.stringify({
   generated: new Date().toISOString(),
   hub: HUB,
