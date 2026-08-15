@@ -27,6 +27,19 @@ Adapted from [gsm.roadmap's requirement-design skill](https://github.com/Gilead-
    - **Simple requirement** → fill the Design section directly in the issue body (`Summary`, `Affected repos`, `Design artifacts`).
    - **Complex requirement** → create `requirements/design/{issue_number}_design.html` in this repo, add the long-form design there, and reference it from the issue's Design section.
 
+   A design document is an agent artifact and appears in the site's news feed, so its
+   page head carries its own one-line description — written now, with the file:
+
+   ```html
+   <title>Design #161 — Kaplan–Meier time-to-event family: the interactive renderer</title>
+   <meta name="description" content="Kaplan–Meier survival curves for safety.viz: the statistics stated exactly, the data contract, the at-risk table, and how the module gets verified.">
+   ```
+
+   Say what the design settles and why someone would open it. Not "Design document for
+   Requirement #161" — that restates the title and leans on a number nobody has
+   memorised. `node scripts/check_artifact_descriptions.mjs` fails the deploy without it;
+   full contract in [`requirements/design/README.md`](../../../requirements/design/README.md).
+
 4. **Draft the design** covering:
    - Summary of the approach
    - Affected repos

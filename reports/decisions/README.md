@@ -25,6 +25,14 @@ PRs, and these.
   full argument, never restating it in markdown. The discussion thread is the
   *place*: @jwildfire documents his decision there, and the thread link goes in
   the Index below and in the roadmap page's Todo section.
+- **A one-line description in the page head**, written with the page:
+  `<meta name="description" content="...">` directly on the line after `<title>`,
+  40–260 characters. This is the line the hub's news feed shows, and therefore the
+  line @jwildfire decides from before opening anything — say what the page contains
+  and why he would open it, under the same plain-English bar as everything below. Not
+  "AI-generated report." (the hardcoded feed fallback until 2026-08-15, now rejected
+  by name) and not a restatement of the title. `node scripts/check_artifact_descriptions.mjs`
+  fails the deploy without one; full contract in [`reports/README.md`](../README.md).
 - **One artifact per decision topic.** Bundling unrelated questions into one page
   defeats the purpose; a single page may carry several decisions only when they gate
   each other and must be answered in one sitting.

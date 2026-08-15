@@ -13,6 +13,7 @@ import { execFileSync } from 'node:child_process';
 
 import { REPOS, ROOT } from './lib/repos.mjs';
 import { siteHeader } from './lib/nav.mjs';
+import { readDescription, MISSING } from './lib/artifacts.mjs';
 
 const OWNER = 'jwildfire';
 const BLOG_FEED = 'https://jwildfire.github.io/feed.xml';
@@ -111,6 +112,19 @@ async function pageTitle(file, fallback) {
   }
 }
 
+// The description an artifact writes about itself is the whole point of the row:
+// it is what decides whether the row is worth opening. When it is absent, say so
+// loudly rather than printing a per-type constant — a plausible-sounding fallback
+// reads as intentional and hides the gap forever. `scripts/check_artifact_descriptions.mjs`
+// turns the same condition into a failed deploy.
+let undescribed = 0;
+function describe(text, rel) {
+  if (text) return { summary: text };
+  undescribed += 1;
+  console.warn(`::warning title=Artifact has no description::${rel} — add <meta name="description"> saying what it contains`);
+  return { summary: MISSING, undescribed: true };
+}
+
 async function artifactItems() {
   const items = [];
   const reportsDir = path.join(ROOT, 'reports');
@@ -121,12 +135,13 @@ async function artifactItems() {
     const nameDate = (entry.name.match(/\d{4}-\d{2}-\d{2}/) || [])[0];
     const date = nameDate || gitAddedDate(rel) || gitAddedDate(`${rel}/index.html`);
     if (!date) continue;
+    const index = path.join(reportsDir, entry.name, 'index.html');
     items.push({
       type: 'artifact',
       date,
-      title: await pageTitle(path.join(reportsDir, entry.name, 'index.html'), entry.name),
+      title: await pageTitle(index, entry.name),
       url: `${rel}/`,
-      summary: 'AI-generated report.',
+      ...describe(readDescription(index), rel),
     });
   }
   const designDir = path.join(ROOT, 'requirements', 'design');
@@ -134,13 +149,13 @@ async function artifactItems() {
     const rel = `requirements/design/${f}`;
     const date = gitAddedDate(rel);
     if (!date) continue;
-    const issue = (f.match(/^(\d+)_/) || [])[1];
+    const file = path.join(designDir, f);
     items.push({
       type: 'artifact',
       date,
-      title: await pageTitle(path.join(designDir, f), f),
+      title: await pageTitle(file, f),
       url: rel,
-      summary: issue ? `Design document for Requirement #${issue}.` : 'Design document.',
+      ...describe(readDescription(file), rel),
     });
   }
   return items;
@@ -183,7 +198,8 @@ const monthName = (ym) => `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4
 const dayLabel = (date) => `${MONTHS[Number(date.slice(5, 7)) - 1].slice(0, 3)} ${date.slice(8, 10)}`;
 
 function renderItem(it) {
-  const summary = it.summary ? `\n    <p class="news-summary">${esc(it.summary)}</p>` : '';
+  const cls = it.undescribed ? 'news-summary undescribed' : 'news-summary';
+  const summary = it.summary ? `\n    <p class="${cls}">${esc(it.summary)}</p>` : '';
   return `  <article class="news-item" data-type="${it.type}" data-month="${it.date.slice(0, 7)}">
     <span class="news-date">${dayLabel(it.date)}</span>
     <div class="news-body">
@@ -281,3 +297,4 @@ Source: <a href="https://github.com/${OWNER}/obot.roadmap">jwildfire/obot.roadma
 await fs.mkdir(path.join(ROOT, '_site'), { recursive: true });
 await fs.writeFile(path.join(ROOT, '_site', 'news.html'), html);
 console.log(`news: ${all.length} items (${Object.entries(counts).map(([t, n]) => `${t} ${n}`).join(', ')}) across ${months.length} months`);
+if (undescribed) console.warn(`news: ${undescribed} artifact(s) published with no description — run node scripts/check_artifact_descriptions.mjs`);
