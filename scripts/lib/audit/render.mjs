@@ -127,10 +127,15 @@ function rulesTable(rules) {
     <td><strong>${esc(r.title)}</strong><br><span class="rm-note">${esc(r.why)}</span><br><span class="rm-note"><em>Fix:</em> ${esc(r.fix)}</span></td>
   </tr>`;
   }).join('\n');
-  return `<table class="rm-table audit-rules">
+  // Scroll container for the same reason as the requirements table: the second
+  // column is nowrap, so at phone widths the table would run off a page that
+  // clips rather than scrolls.
+  return `<div class="rm-scroll">
+<table class="rm-table audit-rules">
   <tr><th>Rule</th><th>State</th><th>What it checks, and why</th></tr>
 ${rows}
-</table>`;
+</table>
+</div>`;
 }
 
 // The section. `ledger` is site/audit/findings.json; a missing file is a state to

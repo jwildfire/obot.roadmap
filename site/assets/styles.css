@@ -187,7 +187,10 @@ nav.entry-nav a { font-family: var(--mono); font-size: .85rem; text-decoration: 
 .news-item + .news-item { border-top: 1px solid var(--rule); }
 .news-date { font-family: var(--mono); font-size: .78rem; color: var(--faint); padding-top: .2rem; white-space: nowrap; }
 .news-body a { font-weight: 600; }
-.news-summary { margin: .15rem 0 0; font-size: .9rem; color: var(--muted); }
+/* Summaries carry pasted URLs, which are one unbreakable token: at 390px they
+   ran past the column and `overflow-x: clip` cut them off with nothing to
+   scroll to. Break them instead. */
+.news-summary { margin: .15rem 0 0; font-size: .9rem; color: var(--muted); overflow-wrap: anywhere; }
 .news-pill {
   display: inline-block;
   margin-right: .45rem;
@@ -386,9 +389,50 @@ table.rm-table tr:hover td { background: var(--panel); }
 table.rm-table td:first-child { font-family: var(--mono); font-size: .76rem; }
 table.rm-table td:first-child a { text-decoration: none; font-weight: 600; }
 
+/* A wide, unwrappable block — a seven-column table — scrolls inside itself
+   rather than pushing the page. `html { overflow-x: clip }` above means page
+   overflow is not recoverable by scrolling: whatever runs past the viewport is
+   simply gone, which on a phone silently ate four of the seven columns. */
+.rm-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* The floor keeps the columns readable instead of squeezing seven of them into a
+   phone's width. 44rem is measured, not guessed: below it the Requirement titles
+   wrap so hard the section runs 2775px tall at 390px, where 44rem brings it to
+   1453px; past 44rem the return flattens and the swipe just gets longer. Never
+   binding on desktop, where the table is narrower than the 72rem measure. */
+.rm-scroll > table.rm-table { min-width: 44rem; }
+
 /* Single column throughout (@jwildfire, 2026-07-24): sections read top to bottom
    in one narrative order rather than pairing up at the bottom. */
 @media (max-width: 60rem) { .rm-row { grid-template-columns: 7rem minmax(0, 1fr) auto; } }
+
+/* Phone widths (@jwildfire reviews this page on an iPhone, ~390px). Three
+   columns cannot hold a key, a body and a sentence-length meta at that width:
+   the `auto` meta track takes its max-content size and starves the
+   `minmax(0, 1fr)` body track to *zero*, so every decision row rendered its
+   title and its "answer in Q&A" link into a 0px-wide column — invisible, and
+   220–310px tall. That was the grey dead space filling the Todo section.
+
+   So stack instead of shrink: key and meta share the top line, the body takes
+   the full width beneath it, and nothing in the row is nowrap. The reading
+   order and the visual language are unchanged — same hairline rows, same mono
+   key, same faint meta. */
+@media (max-width: 40rem) {
+  .rm-row {
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    grid-template-areas: "key meta" "main main";
+    column-gap: .5rem;
+    row-gap: .05rem;
+    padding: .35rem 0;
+  }
+  .rm-key { grid-area: key; white-space: normal; overflow: visible; }
+  .rm-meta { grid-area: meta; white-space: normal; text-align: right; }
+  .rm-main { grid-area: main; overflow: visible; }
+  /* Long unbroken identifiers — release tags, branch names — break rather than
+     run off the edge, since there is no horizontal scroll to recover them. */
+  .rm-key, .rm-main, .rm-meta { overflow-wrap: anywhere; }
+  /* An empty body row (`upcoming` with nothing to say) must not leave a gap. */
+  .rm-main:empty { display: none; }
+}
 
 /* View toggle — Live / Attention / Pulse / All. Leads the bar because it changes
    what the page is, where the repo filter only narrows it. */
@@ -473,6 +517,16 @@ details.audit-rule > summary code { font-size: .74rem; color: var(--ink); }
 .audit-btn.reject:hover { color: var(--ink); border-color: var(--faint); text-decoration: none; }
 table.rm-table.audit-rules td { vertical-align: top; padding-bottom: .4rem; }
 table.rm-table.audit-rules td:nth-child(2) { white-space: nowrap; }
+
+/* Phone widths — the nowrap rules above are the ones that overflow, so the
+   overrides have to sit after them rather than in the row block earlier in this
+   file (same specificity, later wins). The bulk-clear button carries a whole
+   sentence ("clear 2 high-confidence mechanical fixes") and ran 49px past a
+   390px viewport, where `overflow-x: clip` cut it rather than scrolled to it. */
+@media (max-width: 40rem) {
+  .audit-btn { white-space: normal; }
+  .audit-what { white-space: normal; overflow: visible; }
+}
 
 /* ---------------------------------------------------------------- Cost section
    Per-agent token/dollar usage (site/usage/usage.json, scripts/lib/usage/render.mjs).
