@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open.gismo v0.2.0 — annotated demo</title>
+<meta name="description" content="What open.gismo v0.2.0 delivers, annotated: the local-first engine and the study site, captured live from the DEMO-301 deployment.">
+<style>
+:root{
+  /* Paper page around espresso captures — the site's own masthead colour is the accent. */
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;
+  --espresso:#3d2b1f;    /* the study-site masthead */
+  --bronze:#b05515;      /* the site's orange accent */
+  --flag:#b83a2e;
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(5,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:17px;margin:34px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--espresso);line-height:0}
+.frame img{display:block;width:100%;height:auto}
+.pin{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:23px;height:23px;border-radius:50%;background:var(--paper);color:var(--ink);
+  display:grid;place-items:center;font:700 12px/1 var(--mono);
+  box-shadow:0 0 0 3px var(--espresso),0 1px 4px rgba(0,0,0,.4)}
+figcaption{margin-top:12px}
+.keys{margin:0;padding:0;list-style:none;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 26px}
+.keys li{position:relative;padding-left:28px;font-size:14px;color:var(--ink2);line-height:1.45}
+.keys b{position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:50%;
+  background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font:700 11px/1 var(--mono)}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.cap b{color:var(--ink2);font-weight:600}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.pair figure{margin:0}
+.pair .cap{margin-top:10px}
+
+.strip{display:grid;grid-template-columns:1fr 340px;gap:0;margin:34px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+pre{background:var(--espresso);color:#f2e9df;border-radius:5px;padding:18px 20px;overflow-x:auto;
+  font:13px/1.7 var(--mono);margin:18px 0 0}
+pre .c{color:#a89887}
+
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3),.toc a:nth-child(5){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pair{grid-template-columns:1fr}
+  .pin{width:20px;height:20px;font-size:10px}
+  .mast{padding-top:36px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">open.gismo <span class="dot"></span> release review <span class="dot"></span> 2026-08-15</p>
+  <h1>What <span class="v">v0.2.0</span> delivers, annotated</h1>
+  <p class="lede">open.gismo becomes a local-first RBQM platform with a real study site: run the full gsm pipeline against a plain project folder — no GitHub required — and read the results as a study site with snapshot history, provenance, and RBQM and Safety domains. Everything below is captured from the <a href="https://jwildfire.github.io/demo-301/">live DEMO-301 deployment</a>, which this release's engine built end to end: two data cuts, one recorded script.</p>
+  <p class="facts">
+    <span>first release on <b>jwildfire/open.gismo</b> since v0.1.0</span>
+    <span><b>R-CMD-check</b> + <b>site-tests</b> green</span>
+    <span>runs live as <a href="https://jwildfire.github.io/demo-301/">DEMO-301</a></span>
+    <span>promotes <b>dev → main</b> via <a href="https://github.com/jwildfire/open.gismo/pulls">the v0.2.0 RC</a></span>
+  </p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#site"><span class="ref">site</span><span class="t">The study site</span><span class="s">Masthead, snapshots, domains</span></a>
+  <a href="#rbqm"><span class="ref">rbqm</span><span class="t">Sites needing attention</span><span class="s">Ranked scores beside the funnel</span></a>
+  <a href="#safety"><span class="ref">safety</span><span class="t">Denominators first</span><span class="s">Census, exposure, coverage</span></a>
+  <a href="#provenance"><span class="ref">snapshots</span><span class="t">Provenance &amp; time travel</span><span class="s">Pinned SHAs, re-point the app</span></a>
+  <a href="#engine"><span class="ref">engine</span><span class="t">The local-first engine</span><span class="s">og_init → og_validate → og_run</span></a>
+</nav>
+
+<!-- ============================================================ 1 ======= -->
+<div class="cut"><span>the site <em>· hub#134</em></span></div><section id="site">
+  <div class="hd"><h2>The study site</h2></div>
+  <p class="what">The site stops being a workflow explorer and becomes a <b>study site</b>. A masthead carries the study identity from config, a snapshot timeline, and a provenance chip; a collapsible sidebar organizes the study into domains — Study Overview, RBQM, Safety, Config — each nesting its own reports, charts and metrics from the study's registry.</p>
+
+  <figure>
+    <div class="frame">
+      <img src="media/og-overview.jpg" alt="DEMO-301 Study Overview: espresso masthead with study facts and snapshot timeline, RBQM flag tiles (9 red, 55 amber, 86 on-track sites), a since-ps-001 change list of site flag movements, and the Safety tile row." width="1500" height="1050">
+      <b class="pin" style="--x:57%;--y:2.5%">1</b>
+      <b class="pin" style="--x:91%;--y:6.5%">2</b>
+      <b class="pin" style="--x:47%;--y:21%">3</b>
+      <b class="pin" style="--x:50%;--y:56%">4</b>
+      <b class="pin" style="--x:50%;--y:90%">5</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> The masthead is one dense row: study, phase, enrollment, sites, therapeutic area</li>
+        <li><b>2</b> The snapshot timeline — one dot per cut, ps-002 current</li>
+        <li><b>3</b> RBQM flags at this snapshot, with unevaluated cells stated, not hidden</li>
+        <li><b>4</b> Since ps-001: site-level flag movements, worse and improved, each named</li>
+        <li><b>5</b> The Safety strip: enrollment, exposure, deaths, flagged-for-review</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>The overview answers the monitor's first three questions — what changed, where, and how bad — before a single click. Changes are computed against the previous snapshot because the engine now accumulates snapshot history; on a one-snapshot study this section simply is not shown.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/demo-301/#/overview"><span>Open the DEMO-301 Study Overview</span></a>
+      <ol>
+        <li>Read the change list: every row names its site, metric, and direction.</li>
+        <li>Collapse the sidebar with <b>«</b> — the rail remembers the choice.</li>
+        <li>Follow <b>open domain →</b> into RBQM or Safety.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 ======= -->
+<div class="cut"><span>rbqm</span></div><section id="rbqm">
+  <div class="hd"><h2>Sites that need attention, beside their precision</h2></div>
+  <p class="what">RBQM leads with the ranked site risk-score table — the <b>denominator beside every score</b>, contributing flags and weights on hover, a since-last-snapshot change chip, low-precision sites dimmed rather than ranked — and, beside it, a <b>funnel plot</b> of the same sites against their precision, with the study mean and 95% / 99.8% control limits. Ranked lists of institutions are what funnel plots were proposed to replace; showing both is the point.</p>
+
+  <figure>
+    <div class="frame">
+      <img src="media/og-rbqm.jpg" alt="RBQM page: flag tiles, then the Sites needing attention table (scores with denominators, change chips, driver badges) beside a funnel plot with control limits; only out-of-funnel sites are labelled." loading="lazy" width="1500" height="1050">
+      <b class="pin" style="--x:42%;--y:53%">1</b>
+      <b class="pin" style="--x:48%;--y:70%">2</b>
+      <b class="pin" style="--x:80%;--y:68%">3</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> Every score carries its denominator — "33 of 178 possible" — not a bare number</li>
+        <li><b>2</b> Change chips are a glyph <i>and</i> a word, only when the move clears a noise threshold</li>
+        <li><b>3</b> Only out-of-funnel sites are labelled; a high score inside the funnel is not a finding</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>A two-participant site at the top of a ranked list looks alarming and means nothing. Reading the ranking against the funnel keeps the score's precision in the same glance, and the on-page text explains the check honestly — a normal approximation on the ranking, not a test.</p>
+      <p>The group overview table below it is the real <code>gsm.viz</code> widget — the same table a gsm.kri report renders — over this snapshot's reporting layer, with a Site / Country switch. The QTL panel renders the study-level acceptable ranges in ICH E6(R3)'s three states, deliberately apart from the site KRIs.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/demo-301/#/rbqm"><span>Open RBQM on DEMO-301</span></a>
+      <ol>
+        <li>Hover a score — the flags and weights that built it appear.</li>
+        <li>Find SITE4314's <b>−9.0 better</b> chip, then find it in the funnel.</li>
+        <li>Scroll to the group overview table and flip Site / Country.</li>
+        <li>Open <a href="https://jwildfire.github.io/demo-301/#/rbqm/charts">Metric charts</a> and <a href="https://jwildfire.github.io/demo-301/#/rbqm/metrics">Metrics</a> from the nested sidebar.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 ======= -->
+<div class="cut"><span>safety</span></div><section id="safety">
+  <div class="hd"><h2>A Safety domain that leads with denominators</h2></div>
+  <p class="what">Before any finding, the Safety overview states what everything else is read against: census and exposure — enrolled, randomised, dosed, person-years, deaths — then <b>data coverage by visit</b>, the figure that decides whether a quiet visit is reassuring or empty. Below it: the participants the safety metrics flagged for review, and the gallery of rendered safety.viz charts, each opening the live renderer.</p>
+
+  <figure>
+    <div class="frame">
+      <img src="media/og-safety.jpg" alt="Safety overview: census and exposure tiles (765 enrolled, 741 dosed, 49.8 person-years on treatment, 5 deaths), then Data coverage by visit — a per-week bar list dropping from 100% at baseline to 2% at week 12." loading="lazy" width="1500" height="1050">
+      <b class="pin" style="--x:50%;--y:32%">1</b>
+      <b class="pin" style="--x:52%;--y:94%">2</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> The denominators, stated first — pooled across arms, and saying so</li>
+        <li><b>2</b> Week 12 labs: 17 of 765 (2%) — a quiet week that is missing data, not a clean result</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>Safety review's classic failure is reading absence of findings as absence of risk. Making coverage a first-class display — and wiring the overview's "lowest coverage" line straight to it — puts the caveat before the conclusion.</p>
+      <p>The participant review queues come from the three gsm.safety participant-level metrics this pipeline now runs (Hy's Law candidate, QTcF prolongation, serious/related AE) — see the <a href="https://jwildfire.github.io/obot.roadmap/reports/gs-v1.1-demo/">gsm.safety v1.1.0 demo</a> for that half of the story.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/demo-301/#/safety"><span>Open Safety on DEMO-301</span></a>
+      <ol>
+        <li>Read the census tiles, then scroll to coverage by visit.</li>
+        <li>Open <a href="https://jwildfire.github.io/demo-301/#/safety/metric/saf0001">Hy's Law Candidate</a> — the flagged-participant queue.</li>
+        <li>Open a chart from the gallery — the live safety.viz renderer, over this snapshot's data.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 ======= -->
+<div class="cut"><span>snapshots</span></div><section id="provenance">
+  <div class="hd"><h2>Provenance, and time travel</h2></div>
+  <p class="what">Every number on the site comes from a snapshot tree, and the site says so. The provenance chip expands into the snapshot's reproducibility record — input data version, package snapshot, pipeline status, and the pinned version + SHA of every package in the run. Pick a different dot on the timeline and the <i>whole app</i> re-points at that snapshot's tree.</p>
+
+  <div class="pair">
+    <figure>
+      <div class="frame">
+        <img src="media/og-provenance.jpg" alt="The provenance chip expanded: snapshot ps-002, created 2026-07-29, input data cut-2, package snapshot local-2026-07-29, pipeline completed, and the 8-package pinned table (gsm.core 1.2.0 through open.gismo 0.2.0) each with its SHA." loading="lazy" width="1500" height="1050">
+      </div>
+      <p class="cap"><b>The reproducibility record.</b> Eight packages pinned with SHAs — gsm.core through open.gismo itself — plus the input data version and pipeline status. "Every number on this site comes from this snapshot tree" is a claim the chip lets you check.</p>
+    </figure>
+    <figure>
+      <div class="frame">
+        <img src="media/og-snapshot-ps001.jpg" alt="The same overview after picking ps-001 on the timeline: 760 participants, 11 red sites, different tiles — the whole app re-pointed at the earlier snapshot's tree." loading="lazy" width="1500" height="1050">
+      </div>
+      <p class="cap"><b>Time travel.</b> One click on <code>ps-001</code> and the app is the earlier cut: 760 enrolled, 11 red sites, its own provenance. The snapshot date itself now derives from the data cut, not the clock — two cuts run on the same day stay distinguishable.</p>
+    </figure>
+  </div>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>RBQM outputs get quoted in audits. A site that can name the exact package SHAs and input version behind any number — at any historical snapshot — is the difference between a dashboard and a record.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/demo-301/"><span>Open DEMO-301</span></a>
+      <ol>
+        <li>Click the provenance chip (top right) and read the pinned table.</li>
+        <li>Click <b>ps-001</b> on the timeline — watch every tile re-derive.</li>
+        <li>Copy any URL: the hash carries the view <i>and</i> its snapshot.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 5 ======= -->
+<div class="cut"><span>engine</span></div><section id="engine">
+  <div class="hd"><h2>The local-first engine that built all of this</h2></div>
+  <p class="what">DEMO-301 is not a mock: both snapshots were produced by this release's pipeline, from CSVs in a plain project folder, by one recorded script. The engine is four verbs, and the site payload they write is exactly what the study site reads.</p>
+
+<pre><code><span class="c"># A self-contained study in a folder — no GitHub repo, Actions, or Pages required</span>
+og_init("demo-301")                      <span class="c"># scaffold: config, workflow YAMLs, example data</span>
+og_validate("demo-301")                  <span class="c"># per-domain validation of the input CSVs, in sentences</span>
+og_run("demo-301")                       <span class="c"># mappings → metrics → reporting → report modules, via {workr}</span>
+og_view("demo-301")                      <span class="c"># serve the study site you just saw</span>
+
+<span class="c"># Snapshot date comes from the data cut (override: og_run(snapshot_date = ...));</span>
+<span class="c"># history accumulates under history/, so change columns appear from snapshot two.</span></code></pre>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>The GitHub-backed lane (<code>gh_*</code>, Actions, Pages) is unchanged — but it is now a <i>publishing choice</i>, not a requirement. The <code>fs_*</code> functions are a filesystem twin of <code>gh_lConfig()</code>, which makes the {workr} <code>lConfig</code> seam a proven swappable-backend contract.</p>
+      <p>The QTL report capture below is the report-module generalization at work: module ids come from the project's own <code>workflows/4_modules/*.yaml</code>, so gsm.qtl's report snapshots into the app like any other.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://github.com/jwildfire/demo-301"><span>Fork the demo-301 study repo</span></a>
+      <ol>
+        <li>Read <code>scripts/</code> — the one recorded script that rebuilds both snapshots.</li>
+        <li>Swap in your own CSVs, run <code>og_validate()</code>, then <code>og_run()</code>.</li>
+        <li>Open the <a href="https://jwildfire.github.io/demo-301/#/rbqm/report/report_qtl">QTL report</a> in the app — a gsm.qtl module, snapshotted like any other.</li>
+      </ol>
+    </div>
+  </div>
+
+  <figure>
+    <div class="frame">
+      <img src="media/og-qtl-report.jpg" alt="The QTL Report module iframed in the app: QTL0001 Ineligibility overview table (current rate 4.3% against threshold 6.1%, no deviation) with its time-series chart, served from output/4_modules/report_qtl/." loading="lazy" width="1500" height="1050">
+    </div>
+    <p class="cap"><b>A gsm.qtl report, inside the study site.</b> The reports phase collects module HTML wherever the module wrote it and hands it the mapped domains and longitudinal results — so quality tolerance limits get a real report module, not a hard-coded slot.</p>
+  </figure>
+</section>
+
+<!-- ============================================================ end ===== -->
+<div class="cut"><span>notes</span></div><section>
+  <div class="hd"><h2>Reading this page</h2></div>
+  <div class="close">
+    <div>
+      <h3>How the captures were made</h3>
+      <ul>
+        <li>Playwright drove Chromium against the <b>live DEMO-301 deployment</b> — <a href="https://jwildfire.github.io/demo-301/">jwildfire.github.io/demo-301</a>, built by this release's engine — on 2026-08-15. Nothing was staged or mocked; the provenance and time-travel captures are real interactions.</li>
+        <li>Stills are 2× JPEG. DEMO-301 is a synthetic study — no real participant data.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Also in the release, not shown here</h3>
+      <ul>
+        <li><b><code>parseCsv()</code> fix</b> — quoted fields containing commas (gsm's threshold vectors) silently shifted columns and broke metric lookups.</li>
+        <li><b>Build and CI hygiene</b> — the bundle builds to <code>inst/site/</code>; <code>R-CMD-check</code> and <code>site-tests</code> run on every push and PR.</li>
+        <li><b>og_app()</b> — a thin Shiny/bslib shell over the same project-folder state; the package works fully without it.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="strip" style="margin-top:30px">
+    <div class="why">
+      <p class="lbl">Where this fits</p>
+      <p>This page is the review surface for the open.gismo v0.2.0 release candidate (dev → main). The release notes live in the RC PR's body and in <code>NEWS.md</code>, and publish on the <code>v0.2.0</code> tag when it merges — on your approval, via the attested lane, and not before. The repo's operational-vs-clinical classification is pending in <a href="https://github.com/jwildfire/obot.roadmap/discussions/160">Q&amp;A #160</a>; cutting the RC for review is the conservative action under either answer.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">The rest of the candidate</p>
+      <ol>
+        <li><a href="https://jwildfire.github.io/demo-301/">DEMO-301 live</a> — the release running as a study site</li>
+        <li><a href="https://github.com/jwildfire/open.gismo">jwildfire/open.gismo</a> — the package</li>
+        <li><a href="https://jwildfire.github.io/obot.roadmap/reports/gs-v1.1-demo/">gsm.safety v1.1.0 demo</a> — the metrics behind the Safety queues</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Captured and written by Claude Code using Fable 5 (session 👯🤖 rcsweep) on 2026-08-15 against the open.gismo v0.2.0 release candidate — for @jwildfire's review.</p>
+</footer>
+
+</div>
+
+</body></html>
