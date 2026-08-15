@@ -7,11 +7,11 @@
 <style>
   :root{
     --bg:#faf8f4; --ink:#1f2430; --faint:#7a7f8c; --line:#e3ded2;
-    --accent:#7b3f9e; --accent-soft:#f3ebf8; --good:#2c7a4b; --mono:"SF Mono",ui-monospace,Menlo,monospace;
+    --accent:#7b3f9e; --accent-soft:#f3ebf8; --good:#2c7a4b; --bad:#a8332a; --mono:"SF Mono",ui-monospace,Menlo,monospace;
   }
   @media (prefers-color-scheme: dark){ :root{
     --bg:#16181d; --ink:#e8e6e1; --faint:#8b90a0; --line:#2c2f38;
-    --accent:#c08ae0; --accent-soft:#241b2c; --good:#6fbf8f;
+    --accent:#c08ae0; --accent-soft:#241b2c; --good:#6fbf8f; --bad:#f2857c;
   }}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Georgia,"Times New Roman",serif}
@@ -60,6 +60,9 @@
   .verdict ol{padding-left:1.4rem;margin:.8rem 0 .4rem}
   .verdict ol li{margin:.6rem 0}
   .verdict .rec{color:var(--good)}
+  .verdict .no{color:var(--bad)}
+  .supersede{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--bad);border:1px solid var(--bad);border-radius:99px;padding:.15em .55em;margin-right:.5em;vertical-align:.15em}
+  h4{font-size:1rem;margin:2rem 0 .6rem}
   .code{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:99px;padding:.1em .5em;margin-left:.35em;white-space:nowrap}
 </style>
 </head>
@@ -78,13 +81,23 @@
   <div><div class="n bad">2</div><div class="l">rules producing 18 of them</div></div>
 </div>
 
+<h2>Decisions</h2>
+
+<div class="verdict">
+  <div class="k">@jwildfire &middot; 2026-08-15 &middot; in chat</div>
+  <p>&ldquo;I reviewed the roadmap artifact. It&rsquo;s good overall. R4 is the only place we disagree. I do want requirements tied to a single release. If a requirement is too big for that, split it into multiple requirements. It&rsquo;s fine to defer sub tasks, just make a note on the original requirement, file a new requirement and then transfer the deferred tasks. Other than that note, your recommendations are approved.&rdquo;</p>
+  <p><strong>Six of the seven calls are adopted as recommended</strong> &mdash; the four verified-shipped closes plus the standing grant to close future ones the same way, re-homing the three orphaned pieces of work, retiring the stale checkbox list, parking long-untouched work automatically instead of asking why it stalled, catching a missing design when work enters development rather than after it ships, and taking goals off the delivery board.</p>
+  <p><strong>The seventh is rejected and replaced.</strong> The proposal was to teach the audit that some requirements stay open on purpose because a later phase is coming. He does not want requirements that stay open on purpose. A requirement is tied to exactly one release; if the scope is bigger than one release, it is more than one requirement. Deferring is still allowed &mdash; it just has a procedure, in this order: <strong>note the deferral on the original</strong> (what is deferred and why), <strong>file a new requirement</strong> for the deferred scope with its own milestone, <strong>transfer the deferred sub-tasks</strong> to it, and the original then <strong>closes with its release</strong>. &ldquo;Phase two is coming&rdquo; is never a reason to hold a requirement open, because phase two is a different requirement.</p>
+  <p class="small"><strong>Carried out the same morning.</strong> The four approved closes are closed. Both known violations of the new rule were split by the procedure above: the kidney-explorer requirement closed with the release that carried its population screen, and its unbuilt patient-profile half moved to <a href="https://github.com/jwildfire/obot.roadmap/issues/168">a requirement of its own</a>; the liver-explorer follow-up closed with the six enhancements it delivered, and its three unshipped items were <em>transferred</em> to <a href="https://github.com/jwildfire/obot.roadmap/issues/169">a new requirement</a> rather than re-filed, so their scoping and history survived the move. A sweep then found five more requirements in the same shape &mdash; they are in <strong>&sect;5</strong>. The rule itself was written into the requirement-<em>authoring</em> path, where requirements are created, rather than into the audit that catches them afterwards.</p>
+</div>
+
 <div class="callout">
   <p><strong>The short version.</strong> The roadmap was in better shape than the finding count suggests. Most of the 45 findings were mechanical and are already fixed. The real defect is in the rule set: three rules ask questions instead of proposing changes, and a question can never resolve itself &mdash; it re-fires every night until you answer it. Fix those three and the nightly needs-you rate drops from <strong>53% to about 13%</strong>.</p>
 </div>
 
 <div class="verdict">
-  <div class="k">Decide here &mdash; seven calls, in plain English</div>
-  <p>Three are one-off tidy-ups of the roadmap itself; four change how the nightly audit behaves so it stops handing you the same work every night. The recommendation follows each dash. <strong>Answering &ldquo;adopt all&rdquo; takes every recommendation and is a complete response.</strong></p>
+  <div class="k">The seven calls &mdash; all now answered</div>
+  <p>Three were one-off tidy-ups of the roadmap itself; four changed how the nightly audit behaves so it stops handing you the same work every night. Six were adopted as recommended; the last was replaced by your own rule. Kept here as the original proposals, with each outcome marked.</p>
   <ol>
     <li><strong>Close four issues that shipped weeks ago and were never closed</strong>, and let the audit close future ones on its own when it can prove the same three things. &mdash; <span class="rec">Recommended: yes to both.</span><span class="code">C1</span></li>
     <li><strong>Re-home three live pieces of work whose parent requirements were closed out from under them</strong> &mdash; a keynote stylesheet, a lab-chart rollout across six renderers, and one item that is probably now moot. &mdash; <span class="rec">Recommended: re-home two, drop the moot one.</span><span class="code">O1</span></li>
@@ -92,9 +105,9 @@
     <li><strong>Stop the audit asking &ldquo;why has this stalled?&rdquo;</strong> &mdash; have it quietly move long-untouched in-flight work back to Backlog instead, which you can undo by dragging it forward. &mdash; <span class="rec">Recommended: adopt the automatic park.</span><span class="code">R1</span></li>
     <li><strong>Stop the audit nagging for design write-ups on work that is already built</strong> &mdash; catch the missing design at the moment something enters development, when it can still change the outcome. &mdash; <span class="rec">Recommended: move the check to that moment.</span><span class="code">R2</span></li>
     <li><strong>Settle whether goals belong on the delivery board</strong>, so the audit stops asking you the same question every night. &mdash; <span class="rec">Recommended: goals are not board items; take the two that are on it off.</span><span class="code">R3</span></li>
-    <li><strong>Teach the audit that some issues stay open on purpose</strong> because a second phase is planned, so it stops proposing to close them. &mdash; <span class="rec">Recommended: honour a marker in the issue, and treat recent activity as a stage error rather than a close.</span><span class="code">R4</span></li>
+    <li><strong>Teach the audit that some issues stay open on purpose</strong> because a second phase is planned, so it stops proposing to close them. &mdash; <span class="no">Rejected. Replaced by your rule: a requirement covers exactly one release, and a planned second phase is a second requirement.</span><span class="code">R4</span></li>
   </ol>
-  <p class="small">Post your answer on <a href="https://github.com/jwildfire/obot.roadmap/discussions/163">the Q&amp;A thread for this artifact</a> (discussion #163). The short codes above are only there so a reply can name one call without quoting it; each section below spells its own out again.</p>
+  <p class="small">Answered in chat on 2026-08-15; the decision as given is recorded in full at the top of this page. The <a href="https://github.com/jwildfire/obot.roadmap/discussions/163">Q&amp;A thread</a> remains as the working discussion, but this page is the record. The short codes are only there so a reply can name one call without quoting it.</p>
 </div>
 
 <h2>1. What was applied without asking</h2>
@@ -244,11 +257,39 @@
 <dl><dt>Costs</dt><dd>Five permanent rows in a board built for things that move.</dd></dl></div>
 <div class="opt"><span class="id">R3-c</span><p>Retire the rule. It has produced exactly one finding in three weeks and no harm has come from the inconsistency.</p><dl><dt>Costs</dt><dd>None measurable. This is a defensible answer.</dd></dl></div>
 
-<h3><span class="q">R4</span> &nbsp;Teach <code>OPEN-IN-RELEASED</code> about phased work</h3>
-<p>Five findings: three are clean closes (<strong>C1</strong>), one was a wrong board stage that I fixed (<a href="https://github.com/jwildfire/obot.roadmap/issues/129">#129</a>), and one is a straight false positive. <a href="https://github.com/jwildfire/obot.roadmap/issues/35">#35</a> nepExplorer is at Released and open <em>on purpose</em> &mdash; its last comment says so in as many words: Phase 1 shipped in safety.viz v1.6.0, the issue stays open for Phase 2. The rule cannot tell &ldquo;done and unclosed&rdquo; from &ldquo;phase one done, phase two pending&rdquo;, so it asks you.</p>
-<div class="opt rec"><span class="id">R4-a &mdash; recommended</span><p>Two changes: (i) honour an explicit <code>phased</code> label or a <code>&lt;!-- stays-open: reason --&gt;</code> marker in the body and stay silent; (ii) when a Released-and-open issue has been <em>touched recently</em>, report it as a stage error rather than a close candidate &mdash; recent activity is evidence the work is live, which is what caught #129 correctly tonight.</p>
-<dl><dt>Costs</dt><dd>One label to remember on phased requirements.</dd><dt>Unblocks</dt><dd>Combined with <strong>C1-a</strong>, this rule becomes fully self-resolving: closes it can prove, stage fixes it can apply, silence where the author declared intent.</dd></dl></div>
-<div class="opt"><span class="id">R4-b</span><p>Add a Released-with-remaining-phases board stage (e.g. <em>Partially Released</em>) and let the rule read that.</p><dl><dt>Costs</dt><dd>A sixth stage on a board that is readable precisely because it has five.</dd></dl></div>
+<h3><span class="q">R4</span> &nbsp;<span class="supersede">Superseded</span> One requirement, one release</h3>
+
+<div class="verdict">
+  <div class="k">What was proposed, and why it was wrong</div>
+  <p>The proposal was to teach <code>OPEN-IN-RELEASED</code> that some requirements are open on purpose: honour a <code>phased</code> label or a <code>stays-open</code> marker in the body and stay silent. The kidney-explorer requirement was the example &mdash; its population screen shipped in a release, its patient-profile half had not been built, and its last comment said in as many words that it would stay open for phase two.</p>
+  <p>@jwildfire rejected that outright, and the rejection is more interesting than the proposal. The rule was not producing a false positive. <strong>It was correctly reporting a defect that the proposal would have taught it to ignore.</strong> A requirement that stays open across releases has no release it can be said to have delivered, so nothing about it is ever finished, and every downstream surface &mdash; the board, the release notes, the roadmap page &mdash; has to carry an item that means &ldquo;partly done, indefinitely&rdquo;. Adding a marker would have made the audit quiet about exactly the thing worth being loud about.</p>
+</div>
+
+<div class="opt rec"><span class="id">R4 &mdash; decided by @jwildfire, 2026-08-15</span>
+<p><strong>A requirement covers exactly one release. If it is too big for one release, split it into more than one requirement.</strong> Deferring sub-tasks stays allowed, with a procedure, in this order:</p>
+<ol>
+<li><strong>Note the deferral on the original requirement</strong> &mdash; what is being deferred and why, in the issue itself, so the next reader does not have to reconstruct it.</li>
+<li><strong>File a new requirement</strong> for the deferred scope, carrying its own milestone.</li>
+<li><strong>Transfer the deferred sub-tasks</strong> to it &mdash; move them, do not re-file them, so their scoping and comment history moves with them.</li>
+<li><strong>The original closes with its release.</strong></li>
+</ol>
+<dl><dt>Costs</dt><dd>More requirements, and a real authoring step at the moment scope is deferred. That step is the point: it forces the deferred half to be named and milestoned while someone still remembers what it is, instead of surviving as a sentence in a comment on a closed-in-spirit issue.</dd>
+<dt>Unblocks</dt><dd>Every requirement acquires a release it delivered, and therefore an end. The board stops carrying items with no reachable final state, and release notes can be assembled from requirements rather than from memory.</dd></dl></div>
+
+<div class="opt"><span class="id">R4-a &mdash; original recommendation, rejected</span><p>Honour a <code>phased</code> label or a <code>&lt;!-- stays-open: reason --&gt;</code> marker in the body and stay silent; treat recent activity on a Released-and-open issue as a stage error rather than a close candidate.</p><dl><dt>Why rejected</dt><dd>The first half institutionalises the defect. The second half survives &mdash; see the verdict below.</dd></dl></div>
+<div class="opt"><span class="id">R4-b &mdash; not adopted</span><p>Add a <em>Partially Released</em> board stage and let the rule read that.</p><dl><dt>Why not</dt><dd>Same objection, one stage worse: it gives permanent-partial an official name on the board.</dd></dl></div>
+
+<h4>Verdict on the rule: sound now, but it needs re-specifying &mdash; in the opposite direction</h4>
+
+<p>You asked whether <code>OPEN-IN-RELEASED</code> is a good rule under your own test now that the new rule outlaws its blind spot. <strong>It is &mdash; and it becomes one of the better ones &mdash; but it does not get there by being left alone.</strong> Three changes, and one of them is the reverse of what R4-a proposed.</p>
+
+<ol>
+<li><strong>Delete the escape hatch instead of adding one.</strong> The rule's whole ambiguity was that a Released-and-open issue might be a defect or might be intentional, and it had no way to tell. Your rule removes the second category entirely: intentional no longer exists. So the rule must have <em>no</em> marker, label or comment that silences it &mdash; any such hatch would restore exactly the ambiguity that made it marginal. Released-and-open is now always a defect, and the rule's job is to say which of the two defects it is.</li>
+<li><strong>Two outcomes, both applicable without asking.</strong> If the issue has open sub-issues, unresolved options in its Design section, or recent activity, the <em>board stage</em> is wrong &mdash; move it back, do not close. Otherwise the work is done and unclosed &mdash; close it. Neither branch needs a human. This is the surviving half of R4-a, and it is what caught the open.csr stage error correctly last night.</li>
+<li><strong>Add the split as a third outcome, and keep this one a proposal.</strong> A Released requirement with open sub-issues is now a rule violation in its own right, not merely a stage error &mdash; it is a requirement spanning more than one release. The audit can detect it precisely and can prepare the whole split: draft the new requirement, list the sub-tasks to transfer, name the release the original delivered. It should not <em>file</em> it unattended, because choosing the new requirement's milestone is a scheduling judgement, and because a wrongly-split requirement is expensive to unpick. So: auto-apply the close and the stage fix, propose the split.</li>
+</ol>
+
+<p>Worth saying plainly: this stops being an audit rule at the moment it matters most. The audit catches a requirement spanning two releases weeks after the split became necessary, when the deferred half's rationale has already faded. <strong>The rule belongs where requirements are written, not where they are inspected</strong> &mdash; which is why it went into the requirement-authoring and task-decomposition guidance rather than only into the rule set. The audit is the backstop for requirements written before the rule existed, and there are seven of those.</p>
 
 <h3>3.5 &nbsp;What happened when the fixes were applied</h3>
 
@@ -264,10 +305,33 @@
 
 <h2>4. What this does to the numbers</h2>
 <p>Tonight: 45 findings, 32 changes applied unattended (27 from the audit, 5 cleaning up after it &mdash; &sect;3.5), <strong>24 findings needing you &mdash; 53%</strong>. Live findings closed the night at <strong>28</strong>.</p>
-<p>Adopt the recommended option on all seven decisions &mdash; any of the three answers works for the goals-on-the-board question &mdash; and the same roadmap state produces roughly <strong>6 findings needing you, about 13%</strong>. The six that remain are genuine one-off scope judgements, like deciding where a stranded piece of work should now live, rather than the same question re-asked every night.</p>
+<p>With six recommendations adopted and the seventh replaced by your rule, the same roadmap state produces roughly <strong>6 findings needing you, about 13%</strong>. The six that remain are genuine one-off scope judgements, like deciding where a stranded piece of work should now live, rather than the same question re-asked every night. Your replacement of the seventh does better than the forecast rather than worse: the rejected version would have silenced a class of finding, while the rule you gave instead <em>eliminates the condition</em> that produced it &mdash; and the sweep in &sect;5 has already cleared every existing instance, so that rule starts tomorrow night from zero.</p>
 <p>The one structural addition worth naming: three of the five failing rules fail for the same missing capability &mdash; <strong>the audit has no memory of stage transitions</strong>. It sees only tonight&rsquo;s snapshot, so it can detect &ldquo;this is in Development with no design&rdquo; but not &ldquo;this <em>entered</em> Development without one&rdquo;. Adding a stage-history field to the ledger is what turns <code>DESIGN-MISSING</code>, a sharpened <code>STALLED-IN-FLIGHT</code> and part of <code>OPEN-IN-RELEASED</code> from interrogative into imperative. That is the single highest-leverage change to the audit, and it belongs inside the existing nightly-roadmap-audit requirement that owns these rules (<a href="https://github.com/jwildfire/obot.roadmap/issues/92">#92</a>) rather than in a new one.</p>
 
-<h2>5. Already surfaced elsewhere &mdash; not re-litigated here</h2>
+<h2 id="sweep">5. The retroactive sweep &mdash; seven requirements, all closed</h2>
+
+<p>Your rule is not only forward-looking: any requirement already open across more than one release is in violation of it today. So the roadmap was swept for that shape &mdash; an open requirement whose delivered scope has shipped in a release while other scope remains &mdash; and <strong>every case found was split by the procedure and closed the same morning.</strong> Seven in total: the two known ones, and five the sweep turned up.</p>
+
+<p>The pattern in all seven is the same and it is worth naming, because it is what the rule is actually for. <strong>None of these was neglected work.</strong> Each delivered its headline scope, shipped it, and then kept a small unshipped tail alive indefinitely &mdash; and the tail did not move, in one case for a month past its own release, precisely because the requirement carrying it already read as substantially done. An open requirement is the worst possible home for deferred scope: it is finished enough that nobody re-reads it, and open enough that nothing prompts anyone to.</p>
+
+<div class="scroll"><table class="applied">
+<thead><tr><th>Requirement</th><th>What it delivered, and where</th><th>What was deferred, and where it went</th></tr></thead>
+<tbody>
+<tr><td><strong>Kidney explorer</strong><br><span class="small">nepExplorer migration (<a href="https://github.com/jwildfire/obot.roadmap/issues/35">#35</a>)</span></td><td>The KDIGO creatinine scatter and stage summary &mdash; the population screen, in full &mdash; in safety.viz v1.6.0, one day before this audit.</td><td>The per-participant kidney profile, never built and never decomposed, gated on a dataset that does not exist yet. Now <a href="https://github.com/jwildfire/obot.roadmap/issues/168">#168</a>. No sub-tasks to transfer.</td></tr>
+<tr><td><strong>Liver explorer follow-ups</strong><br><span class="small">hepExplorer enhancements (<a href="https://github.com/jwildfire/obot.roadmap/issues/88">#88</a>)</span></td><td>Six of eight enhancements &mdash; draggable cut-lines, marginal box plots, dropped-record downloads in v1.5.0; study-day animation, sparklines, quadrant polish in v1.6.0. Two releases, which is the violation.</td><td>Three items that made neither release: the exposure track and P_ALT estimate, the v1.2 interaction follow-ups, and the waterfall panel legends. Transferred to <a href="https://github.com/jwildfire/obot.roadmap/issues/169">#169</a>. Two false milestones corrected on the way.</td></tr>
+<tr><td><strong>Autonomous operations</strong><br><span class="small">(<a href="https://github.com/jwildfire/obot.roadmap/issues/18">#18</a>)</span></td><td>Autonomous session mode &mdash; the <code>--auto</code> skills, goal layer and launcher &mdash; in obot.agent v0.3.0 on 2026-07-26. Unattended sessions have run on it since 2026-07-24.</td><td>Scheduled and recurring sessions. <strong>No new requirement was needed</strong> &mdash; that scope was already filed as a requirement in its own right and was merely nested here; it was re-homed to the autonomy goal.</td></tr>
+<tr><td><strong>Session hub</strong><br><span class="small">(<a href="https://github.com/jwildfire/obot.roadmap/issues/24">#24</a>)</span></td><td>The live dashboard, the wrapup report step and the scaffold channel in obot.agent v0.2.0 on 2026-07-15. Every session since has produced a report through it.</td><td>Rendering those reports as diary tabs &mdash; parked at backlog for a month because the live view covered the in-session need. Now <a href="https://github.com/jwildfire/obot.roadmap/issues/170">#170</a>.</td></tr>
+<tr><td><strong>Canonical demo data</strong><br><span class="small">(<a href="https://github.com/jwildfire/obot.roadmap/issues/25">#25</a>)</span></td><td>The migration onto pharmaverseadam in safety.viz v1.1.0 on 2026-07-12 &mdash; the half that made the demos defensible to a clinical reviewer.</td><td>The scripted pipeline that would build the bundle reproducibly. Still a hand-trimmed extract, and every renderer needing a cohort the real data cannot show has bolted another injection script onto it. Now <a href="https://github.com/jwildfire/obot.roadmap/issues/171">#171</a>.</td></tr>
+<tr><td><strong>safety.viz v1.3</strong><br><span class="small">(<a href="https://github.com/jwildfire/obot.roadmap/issues/29">#29</a>)</span></td><td>The renderers it was named for: the hierarchical adverse-event table in v1.3.0 on 2026-07-16, evidence pages carrying reviewed requirement text in v1.3.1.</td><td><strong>The clearest case of the seven.</strong> Four platform-hardening items, none of them renderers, none moved in the month since the release the requirement is named after &mdash; three still milestoned <code>v1.3.0</code>. Now <a href="https://github.com/jwildfire/obot.roadmap/issues/172">#172</a>.</td></tr>
+<tr><td><strong>Roadmap transparency</strong><br><span class="small">(<a href="https://github.com/jwildfire/obot.roadmap/issues/31">#31</a>)</span></td><td>The roadmap page itself &mdash; requirements tied to goals, releases and live status &mdash; in obot.agent v0.2.0. Live and in daily use since.</td><td>Nothing, strictly. Its one open item is a <em>defect</em> in the delivered page, not held-back scope, so <strong>no new requirement was filed</strong>: a bug does not keep its requirement open. Re-homed to the autonomy goal as an ordinary issue.</td></tr>
+</tbody>
+</table></div>
+
+<p>Two of the seven needed no new requirement at all, and that distinction is worth carrying into the rule: <strong>the split is for deferred scope, not for every open thread.</strong> A defect found after release is an ordinary issue against shipped work. Scope that already has its own requirement just needs re-homing. Filing a new requirement for either would be paperwork, not tracking.</p>
+
+<p>Net effect on the roadmap: <strong>eight requirements closed</strong> (the seven here plus the fourth verified-shipped close in the batch you approved), five new requirements filed, all carrying milestones, and eleven sub-tasks either transferred or re-homed with their history intact. Nothing was deleted. Every closed requirement now names the release it delivered, and <strong>there is no longer a single requirement in the hub that is open with its board stage at Released.</strong></p>
+
+<h2>6. Already surfaced elsewhere &mdash; not re-litigated here</h2>
 <ul>
 <li><a href="https://github.com/jwildfire/obot.roadmap/issues/129">#129</a> <strong>open.csr Part C</strong> &mdash; the board claimed Released; it is now back at Development. The decision itself (Options A&ndash;D for how editing reaches the reading view, with C recommended) is already written into the issue&rsquo;s Design section and is yours to pick. Not duplicated here.</li>
 <li><a href="https://github.com/jwildfire/obot.roadmap/issues/145">#145</a> <strong>Lex Jansen archive</strong> &mdash; the watch-phase build decision was due at the ~2026-08-10 checkpoint and is five days overdue. Milestoned <code>backlog</code> tonight; it has its own workstream and deserves its own artifact, not a line item in this one.</li>

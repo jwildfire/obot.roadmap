@@ -1,12 +1,16 @@
 # The roadmap audit audits itself — 2026-08-15
 
-*v2 (2026-08-15): plain-English rewrite — decisions stated in words before any issue number, codes demoted to trailing tags; substance unchanged. (R4's section deliberately kept in v1 form: @jwildfire's verdict on it is being recorded by the follow-up audit session, which replaces that section wholesale.)*
+*v2 (2026-08-15): plain-English rewrite — decisions stated in words before any issue number, codes demoted to trailing tags; substance unchanged.*
+
+*v3 (2026-08-15, 👯🤖 audit2): @jwildfire's decision recorded in a `Decisions` section at the top, in his words. R4 replaced wholesale — the original recommendation is rejected and kept only as a rejected option, with a verdict on whether the underlying rule survives. New §5 records the retroactive sweep that applied his rule to every requirement already in violation of it.*
 
 **Decision artifact** for the roadmap-audit loop ([#92](https://github.com/jwildfire/obot.roadmap/issues/92)), written 2026-08-15 in an unattended sibling session (👯🤖 audit), on @jwildfire's instruction to run a roadmap clean-up under a new standing grant to auto-accept high-confidence findings.
 
-**Decide here:** [Q&A discussion #163](https://github.com/jwildfire/obot.roadmap/discussions/163). Answering **"adopt all"** is a complete response.
+**Decided** in chat on 2026-08-15; the decision is recorded in full at the top of the page. The [Q&A discussion](https://github.com/jwildfire/obot.roadmap/discussions/163) remains as the working thread, but the artifact is the record.
 
-**Status:** Awaiting @jwildfire — C1, O1, H1, R1, R2, R3, R4. The 27 applied changes are already live and need no answer.
+**Status: Decided 2026-08-15.** Six of seven calls adopted as recommended. The seventh (R4 — teach the audit that some requirements stay open on purpose) was **rejected and replaced** by @jwildfire's own rule: a requirement covers exactly one release; if it is too big for one, split it into more than one. Deferring sub-tasks is allowed, with a procedure — note the deferral on the original, file a new requirement with its own milestone, transfer the deferred sub-tasks, and the original closes with its release.
+
+**Follow-through, same day (👯🤖 audit2):** four approved closes executed; seven requirements found in violation of the new rule and all seven split and closed (§5) — five new requirements filed with milestones, eleven sub-tasks transferred or re-homed with history intact, nothing deleted; the rule folded into the requirement-authoring path rather than only into the audit rule set.
 
 ## Why it exists
 
