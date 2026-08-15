@@ -37,6 +37,15 @@ Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilea
    - **Design** — leave blank or add high-level notes if available
    - **Sub-issues** — leave blank (populated by `requirement-tasks` after Design)
 
+   **Renderer requirements carry the R widget from the start** (@jwildfire,
+   2026-08-15: "Every renderer gets an R widget"; see #164). A safety.viz
+   renderer requirement must name its `gsm.safety` widget as scoped work — as a
+   sub-issue, or as a separate filed requirement when the widget lands in a
+   different gsm.safety release (requirements tie to one release). "Widget
+   adoption follows in that package's own cadence" is not a valid scope line;
+   gsm.safety's `safety-viz-parity` CI fails on unwrapped renderers whose
+   deferral cites no filed requirement.
+
 4. **Present for review** with the `issue-review` skill and iterate.
 
 5. **After approval, post** with the required properties: `type:requirement` + `status:planned` + `project:P###` labels, assignee `@me`, and a link to the parent `type:project` issue in the body (the roadmap generator checks for it). Complete the posting checklist (rename draft, share URL).
