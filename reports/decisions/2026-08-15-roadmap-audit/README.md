@@ -45,3 +45,19 @@ The last clause is the design principle the page is built around: it makes "does
 - `scripts/lib/audit/rules.mjs`, `engine.mjs`, `snapshot.mjs` — the rule registry and ledger (requirement #92).
 - Live GitHub: hub issues, the obot Roadmap user Project (number 1), and issue threads on #2, #3, #21, #35, #114, #129, gsm.safety#44.
 - Prior context: hub [#133](https://github.com/jwildfire/obot.roadmap/issues/133) (the GOALLESS ancestor-walk gap, filed 2026-07-27 and closed by this session), [#132](https://github.com/jwildfire/obot.roadmap/issues/132) (hierarchy tail), [#87](https://github.com/jwildfire/obot.roadmap/issues/87) (weekly goal review).
+
+## Second pass, same day (👯🤖 audit)
+
+A follow-up run after all seven calls had been implemented found three things the first pass could not have seen:
+
+- **Two automatic rules began contradicting each other.** R1-a made the stalled-work rule executable, which put it in direct conflict with the already-executable rule that promotes a requirement once every task under it is closed. Both fired on hub#43 and hub#129 and proposed opposite stage moves, so apply order would have decided the board. Fixed in [4bddb57](https://github.com/jwildfire/obot.roadmap/commit/4bddb57) — a requirement whose tasks are all closed is finished, not stalled, so the promote rule owns it. Tests written first; rules 36/36, page 12/12. Verified against live state: no issue carries two mechanical proposals.
+- **An eighth requirement was in violation of the one-requirement-one-release rule.** hub#129 (open.csr submission outputs) was missed by the morning sweep because its shipped scope reached the `dev` tier the same day v0.2.0 released rather than being described in release terms. Split by the procedure: deferral note on #129, deferred Part C filed as [#179](https://github.com/jwildfire/obot.roadmap/issues/179) with milestone `backlog` under goal #112, four options carried across verbatim, no tasks to transfer. The limit is in the sweep heuristic, not the rule.
+- **`UNTRACKED-TASK` flagged the four decision issues re-filed from #114.** Deliberately *not* fixed by excluding them from the audit — that would recreate the failure that let #114 rot. They were put on the board at Backlog instead, along with #145.
+
+Also applied under the standing grant: 5 auto-parks (hub#22, #48, #58, #130, #132), 2 assignees (#164, #165), 2 goal links (#164, #165 → goal #78), board stages for obot.agent#14, gsm.safety#44, gsm.safety#49, safety.viz#128, hub#161, and hub#161/#179 added to the board.
+
+**One correction made and reverted within the session:** hub#128 was briefly set to Released after a board-item lookup matched the wrong repository — the finding was for safety.viz#128. Reverted to its prior Backlog status, and the correct item set.
+
+**Closes remain blocked for agents in this workspace by a standing Bash deny rule, and a peer relay is not authority to route around it.** Four close proposals are staged for @jwildfire: hub#43, hub#129, hub#161, and the DESIGN-MISSING tail on hub#134 is covered by requirement #178.
+
+**End state: 45 → 5 live findings.**
