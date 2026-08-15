@@ -12,7 +12,7 @@ The workflow mirrors [Gilead-BioStats/gsm.roadmap](https://github.com/Gilead-Bio
 | [`safety.agent`](https://github.com/jwildfire/safety.agent) | Agent scaffold — requirement matrices, skills, and workflow conventions for the renderer migration |
 | [`safety.viz`](https://github.com/jwildfire/safety.viz) | Consolidated Chart.js safety-chart library (mirrors `gsm.viz`) |
 | [`gsm.safety`](https://github.com/jwildfire/gsm.safety) | R package — `Widget_*.R` htmlwidgets consuming `safety.viz` (mirrors `gsm.kri`) |
-| [`safety-histogram`](https://github.com/jwildfire/safety-histogram) | Fork holding the nextgen histogram pilot (`dev` branch) |
+| [`safety-histogram`](https://github.com/jwildfire/safety-histogram) (archived 2026-08-15) | Retired P004 pilot fork — its renderer lives on as safety.viz's histogram module |
 | `obot-claw/*` (archived) | Legacy RhoInc renderer forks and the retired hub — read-only reference |
 
 Automation acts through the [`obotclaw`](https://github.com/apps/obotclaw) GitHub App

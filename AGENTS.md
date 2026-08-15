@@ -32,7 +32,7 @@ Sub-issues are filed in the repo closest to the implementation work. All repos a
 | `safety.agent` | Agent scaffold — requirement matrices (harvested from the RhoInc wiki), skills, templates, and workflow conventions for the renderer migration |
 | `safety.viz` | Consolidated Chart.js safety-chart library, one module per renderer (mirrors `gsm.viz`) |
 | `gsm.safety` | R package of `Widget_*.R` htmlwidgets consuming the safety.viz bundle (mirrors `gsm.kri`) |
-| `safety-histogram` | Fork holding the nextgen histogram pilot on its `dev` branch |
+| `safety-histogram` (archived 2026-08-15) | Retired P004 pilot fork — read-only; the renderer lives on as safety.viz's histogram module |
 | `obot-claw/*` (archived) | Legacy RhoInc renderer forks and the retired hub — read-only reference; do not file issues there |
 
 ## Key files

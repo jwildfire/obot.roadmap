@@ -1,5 +1,6 @@
 # Decision — which repos are operational, which are clinical
 
+- **Status: DECIDED 2026-08-15** (D0009.1–.4) — open.csr + open.gismo clinical and the policy.json home as recommended; **demo-301 clinical on his override** (converts to operational if it becomes a simple template with no user-facing changes); plus his added call: retire the safety-histogram fork (bundle-backed, archived; deletion held at the verification gate). Implemented in [obot.agent#108](https://github.com/jwildfire/obot.agent/pull/108). His verbatim words: Decisions section on the page.
 - **Date:** 2026-08-15 · **Goal:** [#73 autonomy](https://github.com/jwildfire/obot.roadmap/issues/73) · **Discussion:** [#160](https://github.com/jwildfire/obot.roadmap/discussions/160)
 - **Trigger:** @jwildfire's operational-vs-clinical governing principle ([recorded in #155](https://github.com/jwildfire/obot.roadmap/discussions/155#discussioncomment-18022829)) keys on a per-repo classification he never enumerated.
 - **Recorded as clear (not asked):** obot.agent, obot.roadmap operational; safety.viz, gsm.safety, safety-histogram clinical.
