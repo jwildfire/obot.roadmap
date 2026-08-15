@@ -89,25 +89,13 @@ for (const a of reg.artifacts) {
   changed += 1;
 }
 
-// The decisions index lists a card per open decision; give each card its id in the
-// same meta line that already carries the date and the artifact's own codes, so the
-// id is derived here rather than hand-typed into a second place.
-const indexFile = path.join(ROOT, 'reports', 'decisions', 'index.html');
-if (fs.existsSync(indexFile)) {
-  let index = fs.readFileSync(indexFile, 'utf8');
-  const before = index;
-  for (const a of reg.artifacts) {
-    const card = new RegExp(`(href="${a.slug}/"[^>]*>\\s*<span class="k"[^>]*>)([\\s\\S]*?)(</span>)`);
-    index = index.replace(card, (_, open, meta, close) => {
-      const cleaned = meta.replace(new RegExp(`^\\s*${reg.prefix || 'D'}\\d{4}\\s*·\\s*`), '').trim();
-      return `${open}${a.id} · ${cleaned}${close}`;
-    });
-  }
-  if (index !== before) {
-    if (check) stale.push('reports/decisions/index.html');
-    else { fs.writeFileSync(indexFile, index); console.log('decision ids: decisions index cards updated'); }
-  }
-}
+// The decisions landing page is NOT stamped here. It used to be a hand-kept list
+// that had drifted to two of twelve cards, so this script patched an id into each
+// card it found. scripts/build_decisions.mjs now regenerates that page at deploy
+// time from the registry, and its committed copy is a declared-stale fallback —
+// stamping it would mean --check failing the deploy over a file whose own header
+// says to edit the generator instead. The generator reads the same registry, so the
+// ids on the published page come from one place either way.
 
 if (check) {
   if (stale.length) {
