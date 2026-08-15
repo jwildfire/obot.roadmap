@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-14T08:44:35.620Z",
-  "source": "run 31785148726",
+  "generatedAt": "2026-08-15T07:52:02.688Z",
+  "source": "run 31873036816",
   "boardReadable": true,
   "counts": {
-    "total": 41,
-    "high": 2,
-    "medium": 35,
-    "low": 4,
-    "mechanical": 8,
-    "agentic": 33,
+    "total": 4,
+    "high": 0,
+    "medium": 4,
+    "low": 0,
+    "mechanical": 3,
+    "agentic": 1,
     "muted": 1
   },
   "rules": [
@@ -25,9 +25,9 @@
       "id": "OPEN-IN-RELEASED",
       "title": "Open issue the board calls Released",
       "group": "Board integrity",
-      "why": "Released is a terminal stage. An open issue in it is either finished work nobody closed — the usual case, and the reason the \"close clicks\" list keeps reappearing on the session hand-off — or live work filed in the wrong lane.",
-      "fix": "Close it if the work is done, otherwise move it back to the stage it is actually in.",
-      "fired": 4
+      "why": "Released is a terminal stage, and under @jwildfire's one-requirement-one-release rule (2026-08-15) nothing is ever open in it on purpose. An open issue at Released is one of exactly three defects: finished work nobody closed, live work filed in the wrong lane, or a requirement whose scope spans more than one release. There is deliberately no label, marker or comment that silences this rule — an escape hatch would restore the ambiguity the rule exists to remove.",
+      "fix": "Close it if the work is done; move the stage back if the work is live; split it if it carries scope beyond the release it delivered.",
+      "fired": 0
     },
     {
       "id": "UNSTAGED-BOARD-ITEM",
@@ -59,7 +59,7 @@
       "group": "Hierarchy",
       "why": "Sub-issues are the canonical task tracker for a requirement, so a closed parent asserts its children are finished. When they are not, the remaining work is orphaned — visible on no requirement, in no stage, and to nobody. (@jwildfire named this one as the founding example of the audit.)",
       "fix": "Close the children that are actually done; move genuine follow-on scope to a follow-up requirement — the #30 → #88 precedent — or reopen the parent.",
-      "fired": 2
+      "fired": 0
     },
     {
       "id": "SUBS-DONE-PARENT-OPEN",
@@ -67,15 +67,15 @@
       "group": "Hierarchy",
       "why": "When every task under a requirement is closed the requirement is done being built; leaving it open in an earlier stage means the board understates progress and the review queue never surfaces it.",
       "fix": "Move it to Review, or close it if it has already sat in Review.",
-      "fired": 2
+      "fired": 3
     },
     {
       "id": "GOALLESS-REQUIREMENT",
       "title": "Open requirement under no goal",
       "group": "Hierarchy",
-      "why": "Since #53 goals are hub issues and membership is the sub-issue link — nothing else. A requirement with no goal parent belongs to no standing direction, so it never appears on a goal page and an autonomous session selecting by goal can never pick it up.",
+      "why": "Since #53 goals are hub issues and membership is the sub-issue link — nothing else. Membership is inherited, so a requirement nested under another requirement still belongs to that requirement’s goal; only an issue with no goal anywhere up its parent chain belongs to no standing direction, never appears on a goal page, and can never be picked up by an autonomous session selecting by goal.",
       "fix": "Link it under the goal it serves, or state why it is deliberately standalone.",
-      "fired": 3
+      "fired": 0
     },
     {
       "id": "UNTRACKED-TASK",
@@ -83,7 +83,7 @@
       "group": "Hierarchy",
       "why": "The hub has exactly three ways an issue is visible: the `requirement` label puts it on the roadmap page, a sub-issue link puts it on a goal page, and a board item puts it in a stage lane. An issue with none of the three is filed and then invisible — it will be found again only by accident.",
       "fix": "Link it under the goal or requirement it belongs to, or promote it to a requirement.",
-      "fired": 5
+      "fired": 0
     },
     {
       "id": "GOAL-NO-MEMBERS",
@@ -97,9 +97,9 @@
       "id": "GOAL-BOARD-INCONSISTENT",
       "title": "Goals inconsistently placed on the board",
       "group": "Hierarchy",
-      "why": "Goals are not requirements and do not move through the requirement stages, but some goal issues sit on the obot Roadmap project and others do not (#72/#73 on, #78/#79 off as of 2026-07-24). Either is defensible; the split is not, because every board tally silently mixes the two kinds.",
-      "fix": "Pick one convention, apply it to every goal, and write it down in the hub README.",
-      "fired": 1
+      "why": "Goals are permanent and do not move through the requirement stages, so a goal on the delivery board is an item with no stage it can ever reach. @jwildfire settled the convention on 2026-08-15 (audit decision R3-a): goals are not board items. They are surfaced by the goal pages and the hierarchy view, which are the better surfaces for something that never finishes.",
+      "fix": "Take the goal off the board. Nothing is deleted — the goal issue and its sub-issue links are untouched.",
+      "fired": 0
     },
     {
       "id": "MERGED-PR-OPEN-TARGET",
@@ -115,7 +115,7 @@
       "group": "Linkage",
       "why": "Either the branch is stale work that should be dropped, or the issue was closed while its implementation was still in review. Both are worth knowing; neither resolves itself.",
       "fix": "Close the PR, or reopen the issue.",
-      "fired": 1
+      "fired": 0
     },
     {
       "id": "PR-NO-REQUIREMENT",
@@ -123,7 +123,7 @@
       "group": "Linkage",
       "why": "The Issue–PR Link Convention exists so a merge closes its requirement and the roadmap page can show which requirement a PR is moving. An unlinked PR is invisible to both.",
       "fix": "Add the closing reference to the requirement or task it implements.",
-      "fired": 1
+      "fired": 0
     },
     {
       "id": "REQUIREMENT-LABEL-MISSING",
@@ -147,7 +147,7 @@
       "group": "Conventions",
       "why": "Milestones are the delivery slot (`backlog`, `2026q3`, `2026q4`) and drive the release-facing views. A requirement with none is unscheduled by omission rather than by decision.",
       "fix": "Set `backlog` for anything not yet scheduled; pick the quarter for work in flight.",
-      "fired": 5
+      "fired": 0
     },
     {
       "id": "DESIGN-MISSING",
@@ -155,7 +155,7 @@
       "group": "Conventions",
       "why": "The lifecycle puts Design before Development for a reason: sub-issues are supposed to be decomposed from it. A requirement in Development whose Design section is empty or \"TBD\" means the decomposition was improvised, and there is nothing for a reviewer or an autonomous session to work from.",
       "fix": "Populate the Design section, or add a design doc under requirements/design/.",
-      "fired": 5
+      "fired": 1
     },
     {
       "id": "AUTO-DRAFT-CONFLICT",
@@ -186,283 +186,11 @@
       "title": "In-flight requirement that stopped moving",
       "group": "Conventions",
       "why": "Development and Review are lanes for work happening now. A requirement that has not been touched in two weeks, with no open PR behind it, is parked — and while it sits in an active lane it crowds out the real front line on every view of the roadmap.",
-      "fix": "Resume it, or move the stage back to where it honestly sits.",
-      "fired": 12
+      "fix": "Park it back at Backlog. Dragging it forward on the board is how you say it is live again.",
+      "fired": 0
     }
   ],
   "findings": [
-    {
-      "rule": "OPEN-IN-RELEASED",
-      "ruleTitle": "Open issue the board calls Released",
-      "group": "Board integrity",
-      "confidence": "high",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 3,
-        "title": "Requirement: obot GitHub App for agent and automation access",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/3"
-      },
-      "evidence": [
-        "issue is OPEN",
-        "board Status is Released",
-        "0 open sub-issues",
-        "last touched 34d ago"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Close it as completed — the board already says the work shipped, nothing is left open under it, and it has not moved in 34 days.",
-        "ops": [
-          {
-            "op": "close-issue",
-            "repo": "jwildfire/obot.roadmap",
-            "number": 3,
-            "reason": "completed",
-            "label": "close jwildfire/obot.roadmap#3 as completed"
-          }
-        ]
-      },
-      "id": "OPEN-IN-RELEASED:jwildfire/obot.roadmap#3",
-      "fingerprint": "707b3bf0c436",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "OPEN-IN-RELEASED",
-      "ruleTitle": "Open issue the board calls Released",
-      "group": "Board integrity",
-      "confidence": "high",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 21,
-        "title": "Requirement: safety.viz documentation site — example gallery, test evidence, and API reference",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/21"
-      },
-      "evidence": [
-        "issue is OPEN",
-        "board Status is Released",
-        "0 open sub-issues",
-        "last touched 33d ago"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Close it as completed — the board already says the work shipped, nothing is left open under it, and it has not moved in 33 days.",
-        "ops": [
-          {
-            "op": "close-issue",
-            "repo": "jwildfire/obot.roadmap",
-            "number": 21,
-            "reason": "completed",
-            "label": "close jwildfire/obot.roadmap#21 as completed"
-          }
-        ]
-      },
-      "id": "OPEN-IN-RELEASED:jwildfire/obot.roadmap#21",
-      "fingerprint": "319beed34c27",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "CLOSED-PARENT-OPEN-SUBS",
-      "ruleTitle": "Closed parent with open sub-issues",
-      "group": "Hierarchy",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 17,
-        "title": "Requirement: rebuild safety.agent as a thin overlay on the gsm.agent harness",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/17"
-      },
-      "evidence": [
-        "parent CLOSED (completed)",
-        "2 open sub-issues: obot.agent#14, obot.agent#15"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Resolve each open sub-issue: close the finished ones, and re-parent real remaining scope to a follow-up requirement rather than leaving it under a closed parent.",
-        "prompt": "The parent is closed but 2 sub-issues are open: jwildfire/obot.agent#14, jwildfire/obot.agent#15. For each, read it and decide: (a) the work shipped → close it as completed; (b) it is genuine follow-on scope → file ONE follow-up requirement in the hub carrying the remaining sub-issues (the #30 → #88 precedent: same goal parent, board Backlog, milestone set) and link them under it; (c) the parent was closed prematurely → reopen the parent and say so. Do not leave any sub-issue parented to a closed issue. Report what you did as a comment on the parent."
-      },
-      "id": "CLOSED-PARENT-OPEN-SUBS:jwildfire/obot.roadmap#17",
-      "fingerprint": "992576ea10d2",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "CLOSED-PARENT-OPEN-SUBS",
-      "ruleTitle": "Closed parent with open sub-issues",
-      "group": "Hierarchy",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 45,
-        "title": "Requirement: participant profile — shared drill-down module for safety.viz",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/45"
-      },
-      "evidence": [
-        "parent CLOSED (completed)",
-        "1 open sub-issue: safety.viz#99"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Resolve each open sub-issue: close the finished ones, and re-parent real remaining scope to a follow-up requirement rather than leaving it under a closed parent.",
-        "prompt": "The parent is closed but 1 sub-issues are open: jwildfire/safety.viz#99. For each, read it and decide: (a) the work shipped → close it as completed; (b) it is genuine follow-on scope → file ONE follow-up requirement in the hub carrying the remaining sub-issues (the #30 → #88 precedent: same goal parent, board Backlog, milestone set) and link them under it; (c) the parent was closed prematurely → reopen the parent and say so. Do not leave any sub-issue parented to a closed issue. Report what you did as a comment on the parent."
-      },
-      "id": "CLOSED-PARENT-OPEN-SUBS:jwildfire/obot.roadmap#45",
-      "fingerprint": "1e323b681eca",
-      "firstSeen": "2026-07-26",
-      "lastSeen": "2026-08-14",
-      "runs": 27,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "DESIGN-MISSING",
-      "ruleTitle": "Requirement past Design with no design",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 29,
-        "title": "Requirement: safety.viz v1.3 — remaining renderers + explorer demo environment",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/29"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no requirements/design/ doc",
-        "Design section is empty, stub or \"TBD\""
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Write the Design section from the work as it actually stands.",
-        "prompt": "Use the requirement-design skill. Read the requirement, its sub-issues and any merged PRs, then populate the Design section in the issue body (or add requirements/design/{number}_design.html for a substantial design) describing the approach that is actually being built — not an aspirational one. Keep it factual and short enough to be read."
-      },
-      "id": "DESIGN-MISSING:jwildfire/obot.roadmap#29",
-      "fingerprint": "24a7fe0bdb87",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "DESIGN-MISSING",
-      "ruleTitle": "Requirement past Design with no design",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 88,
-        "title": "Requirement: hepExplorer follow-up enhancements — interaction, animation & data handling",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/88"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no requirements/design/ doc",
-        "Design section is empty, stub or \"TBD\""
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Write the Design section from the work as it actually stands.",
-        "prompt": "Use the requirement-design skill. Read the requirement, its sub-issues and any merged PRs, then populate the Design section in the issue body (or add requirements/design/{number}_design.html for a substantial design) describing the approach that is actually being built — not an aspirational one. Keep it factual and short enough to be read."
-      },
-      "id": "DESIGN-MISSING:jwildfire/obot.roadmap#88",
-      "fingerprint": "f8953344da20",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 32,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "DESIGN-MISSING",
-      "ruleTitle": "Requirement past Design with no design",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 130,
-        "title": "Requirement: open.csr display change-request loop — the writer proposes, the agent drafts, the statistician signs the diff",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/130"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no requirements/design/ doc",
-        "Design section is empty, stub or \"TBD\""
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Write the Design section from the work as it actually stands.",
-        "prompt": "Use the requirement-design skill. Read the requirement, its sub-issues and any merged PRs, then populate the Design section in the issue body (or add requirements/design/{number}_design.html for a substantial design) describing the approach that is actually being built — not an aspirational one. Keep it factual and short enough to be read."
-      },
-      "id": "DESIGN-MISSING:jwildfire/obot.roadmap#130",
-      "fingerprint": "bbbe7862ce0b",
-      "firstSeen": "2026-07-28",
-      "lastSeen": "2026-08-14",
-      "runs": 25,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "DESIGN-MISSING",
-      "ruleTitle": "Requirement past Design with no design",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 132,
-        "title": "Requirement: roadmap hierarchy — every issue reachable from a goal",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/132"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no requirements/design/ doc",
-        "Design section is empty, stub or \"TBD\""
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Write the Design section from the work as it actually stands.",
-        "prompt": "Use the requirement-design skill. Read the requirement, its sub-issues and any merged PRs, then populate the Design section in the issue body (or add requirements/design/{number}_design.html for a substantial design) describing the approach that is actually being built — not an aspirational one. Keep it factual and short enough to be read."
-      },
-      "id": "DESIGN-MISSING:jwildfire/obot.roadmap#132",
-      "fingerprint": "7ed14a3d0fc1",
-      "firstSeen": "2026-07-28",
-      "lastSeen": "2026-08-14",
-      "runs": 18,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
     {
       "rule": "DESIGN-MISSING",
       "ruleTitle": "Requirement past Design with no design",
@@ -488,772 +216,8 @@
       "id": "DESIGN-MISSING:jwildfire/obot.roadmap#134",
       "fingerprint": "b68badde1bbf",
       "firstSeen": "2026-07-29",
-      "lastSeen": "2026-08-14",
-      "runs": 17,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "GOALLESS-REQUIREMENT",
-      "ruleTitle": "Open requirement under no goal",
-      "group": "Hierarchy",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 122,
-        "title": "Requirement: scheduled autonomous sessions — the A2 promotion (recurring goal-work loop)",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/122"
-      },
-      "evidence": [
-        "open requirement",
-        "not a sub-issue of any `goal`-labelled issue"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Link it under the goal it serves.",
-        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
-      },
-      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#122",
-      "fingerprint": "e42962c2a5bd",
-      "firstSeen": "2026-07-27",
-      "lastSeen": "2026-08-14",
-      "runs": 26,
-      "reappeared": false,
-      "decisions": [
-        {
-          "decision": "accept",
-          "at": "2026-07-28T01:27:47.911Z",
-          "outcome": "applied"
-        },
-        {
-          "decision": "accept",
-          "at": "2026-07-28T01:52:27.468Z",
-          "outcome": "failed"
-        }
-      ],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "GOALLESS-REQUIREMENT",
-      "ruleTitle": "Open requirement under no goal",
-      "group": "Hierarchy",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 131,
-        "title": "Requirement: study-level GitHub repo for the CSR demo study — CRs, PRs and sign-offs live with the study, not the engine",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/131"
-      },
-      "evidence": [
-        "open requirement",
-        "not a sub-issue of any `goal`-labelled issue"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Link it under the goal it serves.",
-        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
-      },
-      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#131",
-      "fingerprint": "e3f1d73849cc",
-      "firstSeen": "2026-07-28",
-      "lastSeen": "2026-08-14",
-      "runs": 25,
-      "reappeared": false,
-      "decisions": [
-        {
-          "decision": "accept",
-          "at": "2026-07-28T01:27:47.911Z",
-          "outcome": "applied"
-        },
-        {
-          "decision": "accept",
-          "at": "2026-07-28T01:52:27.468Z",
-          "outcome": "failed"
-        }
-      ],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "GOALLESS-REQUIREMENT",
-      "ruleTitle": "Open requirement under no goal",
-      "group": "Hierarchy",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 138,
-        "title": "Requirement: participant-level metrics and flags in gsm.safety — a 2_metrics phase over the existing charts",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/138"
-      },
-      "evidence": [
-        "open requirement",
-        "not a sub-issue of any `goal`-labelled issue"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Link it under the goal it serves.",
-        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
-      },
-      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#138",
-      "fingerprint": "458f516ef451",
-      "firstSeen": "2026-07-29",
-      "lastSeen": "2026-08-14",
-      "runs": 17,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "MILESTONE-MISSING",
-      "ruleTitle": "Open requirement with no milestone",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 69,
-        "title": "Requirement: Reviewer Notes section in PR template",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/69"
-      },
-      "evidence": [
-        "open requirement",
-        "no milestone",
-        "board Status is Backlog"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Set the `backlog` milestone — it is not scheduled into a quarter yet.",
-        "ops": [
-          {
-            "op": "set-milestone",
-            "repo": "jwildfire/obot.roadmap",
-            "number": 69,
-            "title": "backlog",
-            "label": "set milestone `backlog`"
-          }
-        ]
-      },
-      "id": "MILESTONE-MISSING:jwildfire/obot.roadmap#69",
-      "fingerprint": "a7b9e3b50ccc",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "MILESTONE-MISSING",
-      "ruleTitle": "Open requirement with no milestone",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 119,
-        "title": "Participant profile: the published copy documents the rail but not the adverse-event domain (sv#112 follow-up)",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/119"
-      },
-      "evidence": [
-        "open requirement",
-        "no milestone",
-        "board Status is Backlog"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Set the `backlog` milestone — it is not scheduled into a quarter yet.",
-        "ops": [
-          {
-            "op": "set-milestone",
-            "repo": "jwildfire/obot.roadmap",
-            "number": 119,
-            "title": "backlog",
-            "label": "set milestone `backlog`"
-          }
-        ]
-      },
-      "id": "MILESTONE-MISSING:jwildfire/obot.roadmap#119",
-      "fingerprint": "d3a92942c6ea",
-      "firstSeen": "2026-07-26",
-      "lastSeen": "2026-08-14",
-      "runs": 27,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "OPEN-IN-RELEASED",
-      "ruleTitle": "Open issue the board calls Released",
-      "group": "Board integrity",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 2,
-        "title": "Requirement: Safety Histogram migration (pilot)",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/2"
-      },
-      "evidence": [
-        "issue is OPEN",
-        "board Status is Released",
-        "0 open sub-issues",
-        "last touched 20d ago"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Close it as completed — the board already says the work shipped, nothing is left open under it, and it has not moved in 20 days.",
-        "ops": [
-          {
-            "op": "close-issue",
-            "repo": "jwildfire/obot.roadmap",
-            "number": 2,
-            "reason": "completed",
-            "label": "close jwildfire/obot.roadmap#2 as completed"
-          }
-        ]
-      },
-      "id": "OPEN-IN-RELEASED:jwildfire/obot.roadmap#2",
-      "fingerprint": "8bf9ddcdcded",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "OPEN-IN-RELEASED",
-      "ruleTitle": "Open issue the board calls Released",
-      "group": "Board integrity",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 129,
-        "title": "Requirement: open.csr submission outputs — RTF tables/listings, a values store, and seamless Reader editing",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/129"
-      },
-      "evidence": [
-        "issue is OPEN",
-        "board Status is Released",
-        "0 open sub-issues",
-        "last touched 18d ago"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Close it as completed — the board already says the work shipped, nothing is left open under it, and it has not moved in 18 days.",
-        "ops": [
-          {
-            "op": "close-issue",
-            "repo": "jwildfire/obot.roadmap",
-            "number": 129,
-            "reason": "completed",
-            "label": "close jwildfire/obot.roadmap#129 as completed"
-          }
-        ]
-      },
-      "id": "OPEN-IN-RELEASED:jwildfire/obot.roadmap#129",
-      "fingerprint": "56570dcfe85a",
-      "firstSeen": "2026-07-28",
-      "lastSeen": "2026-08-14",
-      "runs": 25,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "OPEN-PR-CLOSED-TARGET",
-      "ruleTitle": "Open PR against an already-closed issue",
-      "group": "Linkage",
-      "confidence": "medium",
-      "subject": {
-        "kind": "pr",
-        "repo": "jwildfire/obot.agent",
-        "number": 63,
-        "title": "Remote Control: fix the obot-auto lane, verify the global setting, document the lane that was actually broken",
-        "url": "https://github.com/jwildfire/obot.agent/pull/63"
-      },
-      "evidence": [
-        "open PR",
-        "every closing target is closed: obot.agent#54",
-        "last touched 16d ago"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Decide whether the PR is still wanted: close it as superseded, or reopen the issue it implements.",
-        "prompt": "Read the PR and the closed issue(s) it references. If the work was delivered another way, close the PR with a one-line comment saying what superseded it and delete the branch if it is safe to. If the work is still needed, reopen the referenced issue and say why. Never merge anything."
-      },
-      "id": "OPEN-PR-CLOSED-TARGET:jwildfire/obot.agent#63",
-      "fingerprint": "10a841d4c2a8",
-      "firstSeen": "2026-08-05",
-      "lastSeen": "2026-08-14",
-      "runs": 10,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "PR-NO-REQUIREMENT",
-      "ruleTitle": "Open PR with no requirement link",
-      "group": "Linkage",
-      "confidence": "medium",
-      "subject": {
-        "kind": "pr",
-        "repo": "jwildfire/obot.agent",
-        "number": 62,
-        "title": "Add gsm.qtl report_qtl.yaml upstream audit drafts",
-        "url": "https://github.com/jwildfire/obot.agent/pull/62"
-      },
-      "evidence": [
-        "no closing reference",
-        "no hub requirement reference in the title or body",
-        "opened 16d ago by jwildfire"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Identify the issue this PR implements and add the closing reference to its body.",
-        "prompt": "Read the PR diff and description, find the issue it implements (search the hub requirements and the PR repo's issues), and edit the PR body to add a `Closes <owner>/<repo>#N` line immediately after the opening paragraph, per the Issue–PR Link Convention. If no issue exists, file the task issue first, link it to the right requirement, then reference it. Use the REST API to edit the body — `gh pr edit` is broken here."
-      },
-      "id": "PR-NO-REQUIREMENT:jwildfire/obot.agent#62",
-      "fingerprint": "3640e18ff45f",
-      "firstSeen": "2026-07-30",
-      "lastSeen": "2026-08-14",
-      "runs": 16,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 18,
-        "title": "Requirement: autonomous obot operations — scheduled and event-driven agent runs",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/18"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 19d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#18",
-      "fingerprint": "14f47d0d477c",
-      "firstSeen": "2026-08-10",
-      "lastSeen": "2026-08-14",
-      "runs": 5,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 22,
-        "title": "Requirement: R/Pharma 2026 developer-diary blog series",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/22"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 31d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#22",
-      "fingerprint": "8eeb2043f55d",
-      "firstSeen": "2026-07-28",
-      "lastSeen": "2026-08-14",
-      "runs": 25,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 25,
-        "title": "Requirement: canonical demo data for safety.viz renderers",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/25"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 17d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#25",
-      "fingerprint": "14dd87eb8ab9",
-      "firstSeen": "2026-08-11",
-      "lastSeen": "2026-08-14",
-      "runs": 4,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 29,
-        "title": "Requirement: safety.viz v1.3 — remaining renderers + explorer demo environment",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/29"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 17d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#29",
-      "fingerprint": "564681d59e40",
-      "firstSeen": "2026-08-11",
-      "lastSeen": "2026-08-14",
-      "runs": 4,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 43,
-        "title": "Requirement: abnormal-baseline DILI tools — migration Sankey + ALT waterfall (Amirzadegan 2025)",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/43"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 22d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#43",
-      "fingerprint": "03474e440f2c",
-      "firstSeen": "2026-08-06",
-      "lastSeen": "2026-08-14",
-      "runs": 9,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 48,
-        "title": "Requirement: idea queue — Siri/Reminders + hub Ideas Discussions intake with obot triage",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/48"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 18d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#48",
-      "fingerprint": "12f8d56b5ca8",
-      "firstSeen": "2026-08-10",
-      "lastSeen": "2026-08-14",
-      "runs": 5,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 58,
-        "title": "Requirement: ideas-triage v2 — stronger model, richer context, bias-to-promote",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/58"
-      },
-      "evidence": [
-        "board Status is Review",
-        "no activity for 20d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#58",
-      "fingerprint": "bcfe2b42f1a6",
-      "firstSeen": "2026-08-08",
-      "lastSeen": "2026-08-14",
-      "runs": 7,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 111,
-        "title": "Requirement: open.csr — open-source Clinical Study Report builder",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/111"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 20d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#111",
-      "fingerprint": "415fb2f90631",
-      "firstSeen": "2026-08-08",
-      "lastSeen": "2026-08-14",
-      "runs": 7,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 113,
-        "title": "Requirement: open.csr Demo surface — one app, four tabs, and the move from reader to editor",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/113"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 20d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#113",
-      "fingerprint": "160acb1a1600",
-      "firstSeen": "2026-08-09",
-      "lastSeen": "2026-08-14",
-      "runs": 6,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 130,
-        "title": "Requirement: open.csr display change-request loop — the writer proposes, the agent drafts, the statistician signs the diff",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/130"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 17d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#130",
-      "fingerprint": "7fc2def29030",
-      "firstSeen": "2026-08-11",
-      "lastSeen": "2026-08-14",
-      "runs": 4,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 132,
-        "title": "Requirement: roadmap hierarchy — every issue reachable from a goal",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/132"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 17d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#132",
-      "fingerprint": "7f2350a5b2f3",
-      "firstSeen": "2026-08-12",
-      "lastSeen": "2026-08-14",
-      "runs": 3,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "STALLED-IN-FLIGHT",
-      "ruleTitle": "In-flight requirement that stopped moving",
-      "group": "Conventions",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 134,
-        "title": "Requirement: demo-301 v0 — forkable demo study running the app (Safety + RBQM domains)",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/134"
-      },
-      "evidence": [
-        "board Status is Development",
-        "no activity for 16d",
-        "no open PR references it"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.",
-        "prompt": "Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it."
-      },
-      "id": "STALLED-IN-FLIGHT:jwildfire/obot.roadmap#134",
-      "fingerprint": "f4d6828eaa7d",
-      "firstSeen": "2026-08-12",
-      "lastSeen": "2026-08-14",
-      "runs": 3,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "SUBS-DONE-PARENT-OPEN",
-      "ruleTitle": "All sub-issues closed, parent still open",
-      "group": "Hierarchy",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 31,
-        "title": "Requirement: roadmap transparency — requirements tied to session goals, releases, and live status",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/31"
-      },
-      "evidence": [
-        "1/1 sub-issues closed",
-        "board Status is Requirement Gathering",
-        "last touched 17d ago"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Move it to Review — all its tasks are closed but the board still says Requirement Gathering.",
-        "ops": [
-          {
-            "op": "set-board-status",
-            "itemId": "PVTI_lAHOADgnX84BcTPzzgyh1ag",
-            "value": "Review",
-            "label": "board Status → Review"
-          }
-        ]
-      },
-      "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#31",
-      "fingerprint": "e3b400c12366",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
+      "lastSeen": "2026-08-15",
+      "runs": 18,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1273,222 +237,125 @@
       },
       "evidence": [
         "3/3 sub-issues closed",
-        "board Status is Development",
-        "last touched 22d ago"
+        "board Status is Review",
+        "last touched 23d ago"
       ],
       "proposal": {
         "kind": "mechanical",
-        "summary": "Move it to Review — all its tasks are closed but the board still says Development.",
+        "summary": "Close it as completed and set the board to Released — every task under it is closed and it is already in Review.",
         "ops": [
+          {
+            "op": "close-issue",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 43,
+            "reason": "completed",
+            "label": "close jwildfire/obot.roadmap#43 as completed"
+          },
           {
             "op": "set-board-status",
             "itemId": "PVTI_lAHOADgnX84BcTPzzgz18LY",
-            "value": "Review",
-            "label": "board Status → Review"
+            "value": "Released",
+            "label": "board Status → Released"
           }
         ]
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#43",
-      "fingerprint": "4614098f2758",
+      "fingerprint": "455d425e7f58",
       "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
+      "lastSeen": "2026-08-15",
+      "runs": 38,
       "reappeared": false,
       "decisions": [],
       "muted": false,
       "mutedUntil": null
     },
     {
-      "rule": "UNTRACKED-TASK",
-      "ruleTitle": "Hub issue in no structure at all",
+      "rule": "SUBS-DONE-PARENT-OPEN",
+      "ruleTitle": "All sub-issues closed, parent still open",
       "group": "Hierarchy",
       "confidence": "medium",
       "subject": {
         "kind": "issue",
         "repo": "jwildfire/obot.roadmap",
-        "number": 81,
-        "title": "Close out safety-histogram fork and remove from roadmap",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/81"
+        "number": 129,
+        "title": "Requirement: open.csr submission outputs — RTF tables/listings, a values store, and seamless Reader editing",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/129"
       },
       "evidence": [
-        "no `requirement` or `goal` label",
-        "not a sub-issue of anything",
-        "not on the obot Roadmap project",
-        "filed 21d ago"
+        "1/1 sub-issues closed",
+        "board Status is Review",
+        "last touched 0d ago"
       ],
       "proposal": {
-        "kind": "agentic",
-        "summary": "Give it a home: link it under the goal or requirement it serves, or promote it to a requirement.",
-        "prompt": "Read the issue. If it is a small concrete task, link it as a sub-issue of the goal or requirement it serves (#53 allows small items to live directly under a goal). If it is really a scoped piece of work with its own lifecycle, promote it: add the `requirement` label, rewrite the body to the requirement template, add it to the obot Roadmap project at Backlog, and link it under a goal. Do not close it."
+        "kind": "mechanical",
+        "summary": "Close it as completed and set the board to Released — every task under it is closed and it is already in Review.",
+        "ops": [
+          {
+            "op": "close-issue",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 129,
+            "reason": "completed",
+            "label": "close jwildfire/obot.roadmap#129 as completed"
+          },
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg0K2dc",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ]
       },
-      "id": "UNTRACKED-TASK:jwildfire/obot.roadmap#81",
-      "fingerprint": "1a34d2b538f9",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 36,
+      "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#129",
+      "fingerprint": "1917b05ec590",
+      "firstSeen": "2026-08-15",
+      "lastSeen": "2026-08-15",
+      "runs": 1,
       "reappeared": false,
       "decisions": [],
       "muted": false,
       "mutedUntil": null
     },
     {
-      "rule": "UNTRACKED-TASK",
-      "ruleTitle": "Hub issue in no structure at all",
+      "rule": "SUBS-DONE-PARENT-OPEN",
+      "ruleTitle": "All sub-issues closed, parent still open",
       "group": "Hierarchy",
       "confidence": "medium",
       "subject": {
         "kind": "issue",
         "repo": "jwildfire/obot.roadmap",
-        "number": 83,
-        "title": "Add legend and hover detail to hep-waterfall box-and-whisker panels",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/83"
+        "number": 161,
+        "title": "Requirement: Kaplan–Meier time-to-event chart family — interactive renderer for safety.viz",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/161"
       },
       "evidence": [
-        "no `requirement` or `goal` label",
-        "not a sub-issue of anything",
-        "not on the obot Roadmap project",
-        "filed 20d ago"
+        "1/1 sub-issues closed",
+        "board Status is Review",
+        "last touched 0d ago"
       ],
       "proposal": {
-        "kind": "agentic",
-        "summary": "Give it a home: link it under the goal or requirement it serves, or promote it to a requirement.",
-        "prompt": "Read the issue. If it is a small concrete task, link it as a sub-issue of the goal or requirement it serves (#53 allows small items to live directly under a goal). If it is really a scoped piece of work with its own lifecycle, promote it: add the `requirement` label, rewrite the body to the requirement template, add it to the obot Roadmap project at Backlog, and link it under a goal. Do not close it."
+        "kind": "mechanical",
+        "summary": "Close it as completed and set the board to Released — every task under it is closed and it is already in Review.",
+        "ops": [
+          {
+            "op": "close-issue",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 161,
+            "reason": "completed",
+            "label": "close jwildfire/obot.roadmap#161 as completed"
+          },
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2ojqU",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ]
       },
-      "id": "UNTRACKED-TASK:jwildfire/obot.roadmap#83",
-      "fingerprint": "89113c19a933",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 36,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "UNTRACKED-TASK",
-      "ruleTitle": "Hub issue in no structure at all",
-      "group": "Hierarchy",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 94,
-        "title": "Show release summaries on the roadmap page — recent releases render as an em-dash",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/94"
-      },
-      "evidence": [
-        "no `requirement` or `goal` label",
-        "not a sub-issue of anything",
-        "not on the obot Roadmap project",
-        "filed 20d ago"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Give it a home: link it under the goal or requirement it serves, or promote it to a requirement.",
-        "prompt": "Read the issue. If it is a small concrete task, link it as a sub-issue of the goal or requirement it serves (#53 allows small items to live directly under a goal). If it is really a scoped piece of work with its own lifecycle, promote it: add the `requirement` label, rewrite the body to the requirement template, add it to the obot Roadmap project at Backlog, and link it under a goal. Do not close it."
-      },
-      "id": "UNTRACKED-TASK:jwildfire/obot.roadmap#94",
-      "fingerprint": "c763c539a964",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 36,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "UNTRACKED-TASK",
-      "ruleTitle": "Hub issue in no structure at all",
-      "group": "Hierarchy",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 114,
-        "title": "Morning review & release guide — 2026-07-25 (checkbox = go)",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/114"
-      },
-      "evidence": [
-        "no `requirement` or `goal` label",
-        "not a sub-issue of anything",
-        "not on the obot Roadmap project",
-        "filed 20d ago"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Give it a home: link it under the goal or requirement it serves, or promote it to a requirement.",
-        "prompt": "Read the issue. If it is a small concrete task, link it as a sub-issue of the goal or requirement it serves (#53 allows small items to live directly under a goal). If it is really a scoped piece of work with its own lifecycle, promote it: add the `requirement` label, rewrite the body to the requirement template, add it to the obot Roadmap project at Backlog, and link it under a goal. Do not close it."
-      },
-      "id": "UNTRACKED-TASK:jwildfire/obot.roadmap#114",
-      "fingerprint": "d67f6f0c85cb",
-      "firstSeen": "2026-07-26",
-      "lastSeen": "2026-08-14",
-      "runs": 27,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "UNTRACKED-TASK",
-      "ruleTitle": "Hub issue in no structure at all",
-      "group": "Hierarchy",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 145,
-        "title": "Watch: community preservation of the Lex Jansen archive (lexjansen.com)",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/145"
-      },
-      "evidence": [
-        "no `requirement` or `goal` label",
-        "not a sub-issue of anything",
-        "not on the obot Roadmap project",
-        "filed 14d ago"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Give it a home: link it under the goal or requirement it serves, or promote it to a requirement.",
-        "prompt": "Read the issue. If it is a small concrete task, link it as a sub-issue of the goal or requirement it serves (#53 allows small items to live directly under a goal). If it is really a scoped piece of work with its own lifecycle, promote it: add the `requirement` label, rewrite the body to the requirement template, add it to the obot Roadmap project at Backlog, and link it under a goal. Do not close it."
-      },
-      "id": "UNTRACKED-TASK:jwildfire/obot.roadmap#145",
-      "fingerprint": "4ca926efa038",
-      "firstSeen": "2026-07-31",
-      "lastSeen": "2026-08-14",
-      "runs": 15,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "GOAL-BOARD-INCONSISTENT",
-      "ruleTitle": "Goals inconsistently placed on the board",
-      "group": "Hierarchy",
-      "confidence": "low",
-      "subject": {
-        "kind": "convention",
-        "repo": "jwildfire/obot.roadmap",
-        "number": null,
-        "title": "Goal issues on the board",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues?q=is%3Aissue+is%3Aopen+label%3Agoal"
-      },
-      "evidence": [
-        "on the board: #72, #73",
-        "off the board: #78, #79, #112"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Settle the convention and make every goal follow it, then document the choice.",
-        "prompt": "Open goals are split: on the board #72, #73, off it #78, #79, #112. Read the hub README's requirement-lifecycle and goal sections and the #53 design. Choose the convention the documentation already implies (goals are not lifecycle items, so the default is OFF the board unless the README says otherwise), apply it to every open goal, add a sentence to the README stating it, and update the GOAL-BOARD-INCONSISTENT rule's `why` in scripts/lib/audit/rules.mjs to reference the now-documented convention."
-      },
-      "id": "GOAL-BOARD-INCONSISTENT:jwildfire/obot.roadmap#convention",
-      "fingerprint": "8dac21924e89",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
+      "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#161",
+      "fingerprint": "d39b4737dd46",
+      "firstSeen": "2026-08-15",
+      "lastSeen": "2026-08-15",
+      "runs": 1,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1518,8 +385,8 @@
       "id": "HARD-WRAPPED-BODY:jwildfire/obot.roadmap#22",
       "fingerprint": "af851fb3cc24",
       "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
+      "lastSeen": "2026-08-15",
+      "runs": 38,
       "reappeared": false,
       "decisions": [
         {
@@ -1530,102 +397,6 @@
       ],
       "muted": true,
       "mutedUntil": "2026-09-23"
-    },
-    {
-      "rule": "MILESTONE-MISSING",
-      "ruleTitle": "Open requirement with no milestone",
-      "group": "Conventions",
-      "confidence": "low",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 25,
-        "title": "Requirement: canonical demo data for safety.viz renderers",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/25"
-      },
-      "evidence": [
-        "open requirement",
-        "no milestone",
-        "board Status is Development"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Set the delivery-slot milestone that matches the stage it is in.",
-        "prompt": "This requirement is at board Status Development with no milestone. Read it, decide between `2026q3` (shipping now), `2026q4` and `backlog` given today's date and the work's state, and set it. State the choice in one line as an issue comment only if it is not obvious from the stage."
-      },
-      "id": "MILESTONE-MISSING:jwildfire/obot.roadmap#25",
-      "fingerprint": "563650cfecfe",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 37,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "MILESTONE-MISSING",
-      "ruleTitle": "Open requirement with no milestone",
-      "group": "Conventions",
-      "confidence": "low",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 111,
-        "title": "Requirement: open.csr — open-source Clinical Study Report builder",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/111"
-      },
-      "evidence": [
-        "open requirement",
-        "no milestone",
-        "board Status is Development"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Set the delivery-slot milestone that matches the stage it is in.",
-        "prompt": "This requirement is at board Status Development with no milestone. Read it, decide between `2026q3` (shipping now), `2026q4` and `backlog` given today's date and the work's state, and set it. State the choice in one line as an issue comment only if it is not obvious from the stage."
-      },
-      "id": "MILESTONE-MISSING:jwildfire/obot.roadmap#111",
-      "fingerprint": "279568031435",
-      "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-14",
-      "runs": 28,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "MILESTONE-MISSING",
-      "ruleTitle": "Open requirement with no milestone",
-      "group": "Conventions",
-      "confidence": "low",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 113,
-        "title": "Requirement: open.csr Demo surface — one app, four tabs, and the move from reader to editor",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/113"
-      },
-      "evidence": [
-        "open requirement",
-        "no milestone",
-        "board Status is Development"
-      ],
-      "proposal": {
-        "kind": "agentic",
-        "summary": "Set the delivery-slot milestone that matches the stage it is in.",
-        "prompt": "This requirement is at board Status Development with no milestone. Read it, decide between `2026q3` (shipping now), `2026q4` and `backlog` given today's date and the work's state, and set it. State the choice in one line as an issue comment only if it is not obvious from the stage."
-      },
-      "id": "MILESTONE-MISSING:jwildfire/obot.roadmap#113",
-      "fingerprint": "b0291844cf18",
-      "firstSeen": "2026-07-26",
-      "lastSeen": "2026-08-14",
-      "runs": 27,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
     }
   ]
 }
