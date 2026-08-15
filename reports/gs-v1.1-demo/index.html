@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gsm.safety v1.1.0 — annotated demo</title>
+<meta name="description" content="What gsm.safety v1.1.0 adds, annotated: the participant-level metrics phase and SafetyCensus, captured running live on the DEMO-301 study site.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;
+  --espresso:#3d2b1f;
+  --bronze:#b05515;
+  --flag:#b83a2e;
+  --amber:#9a7a1e;
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:17px;margin:34px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--espresso);line-height:0}
+.frame img{display:block;width:100%;height:auto}
+.pin{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:23px;height:23px;border-radius:50%;background:var(--paper);color:var(--ink);
+  display:grid;place-items:center;font:700 12px/1 var(--mono);
+  box-shadow:0 0 0 3px var(--espresso),0 1px 4px rgba(0,0,0,.4)}
+figcaption{margin-top:12px}
+.keys{margin:0;padding:0;list-style:none;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 26px}
+.keys li{position:relative;padding-left:28px;font-size:14px;color:var(--ink2);line-height:1.45}
+.keys b{position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:50%;
+  background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font:700 11px/1 var(--mono)}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.cap b{color:var(--ink2);font-weight:600}
+
+table.counts{border-collapse:collapse;margin:18px 0 0;font-size:14.5px;min-width:420px}
+table.counts th{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  text-align:left;padding:8px 18px 8px 0;border-bottom:1px solid var(--rule2)}
+table.counts td{padding:8px 18px 8px 0;border-bottom:1px solid var(--rule);color:var(--ink2)}
+table.counts td.n{font-family:var(--mono)}
+table.counts td.red{color:var(--flag);font-weight:600;font-family:var(--mono)}
+.tablewrap{overflow-x:auto}
+
+.strip{display:grid;grid-template-columns:1fr 340px;gap:0;margin:34px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+pre{background:var(--espresso);color:#f2e9df;border-radius:5px;padding:18px 20px;overflow-x:auto;
+  font:13px/1.7 var(--mono);margin:18px 0 0}
+pre .c{color:#a89887}
+pre .add{color:#8fd6a8}
+pre .mv{color:#f0b46a}
+
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pin{width:20px;height:20px;font-size:10px}
+  .mast{padding-top:36px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">gsm.safety <span class="dot"></span> release review <span class="dot"></span> 2026-08-15</p>
+  <h1>What <span class="v">v1.1.0</span> adds, annotated</h1>
+  <p class="lede">gsm.safety could draw the eDISH chart but could not tell you how many participants were in the Hy's Law quadrant. v1.1.0 adds the metrics phase that answers that — three participant-level safety metrics, each tuned against measured counts before being treated as real — plus <code>SafetyCensus()</code>, the denominators a safety overview leads with. Every capture below is the release's code running live inside the <a href="https://jwildfire.github.io/demo-301/#/safety">DEMO-301 study site</a>.</p>
+  <p class="facts">
+    <span><b>3</b> participant-level metrics — a new <b>2_metrics</b> phase</span>
+    <span><b>1 286</b> tests pass · R CMD check clean</span>
+    <span>runs live in <a href="https://jwildfire.github.io/demo-301/#/safety">DEMO-301 → Safety</a></span>
+    <span>promotes <b>dev → main</b> via <a href="https://github.com/jwildfire/gsm.safety/pulls">the v1.1.0 RC</a></span>
+  </p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#metrics"><span class="ref">gs#45</span><span class="t">The metrics phase</span><span class="s">Hy's Law, QTcF, serious/related AE</span></a>
+  <a href="#gate"><span class="ref">hub#138</span><span class="t">Tuned on real counts</span><span class="s">The gate that changed the design</span></a>
+  <a href="#census"><span class="ref">gs#47</span><span class="t">SafetyCensus</span><span class="s">The denominators, stated first</span></a>
+  <a href="#layout"><span class="ref">gs#46</span><span class="t">Standard phase layout</span><span class="s">3_reports → 4_modules, + 2_metrics</span></a>
+</nav>
+
+<!-- ============================================================ 1 ======= -->
+<div class="cut"><span>gs#45 <em>· hub#138</em></span></div><section id="metrics">
+  <div class="hd"><h2>The metrics phase: from chart to count</h2></div>
+  <p class="what">Three participant-level metrics, cut down from a longer candidate list by @jwildfire: <code>saf0001</code> <b>Hy's Law candidate</b>, <code>saf0002</code> <b>QTcF prolongation</b>, <code>saf0003</code> <b>serious / related AE</b>. Each scores one row per participant with an ordinal tier through the standard gsm contract — <code>Analyze_Identity()</code> + <code>Flag()</code>, following gsm.kri's <code>pat0015</code> precedent — so subject rows land in <code>Reporting_Results</code> beside site and country rows and nothing downstream changes. The liver and QT cut-points come from the vendored data contracts of the charts they correspond to, so the metric and the chart cannot drift apart.</p>
+
+  <figure>
+    <div class="frame">
+      <img src="media/gs-saf0001.jpg" alt="The Hy's Law Candidate metric page on DEMO-301: metric header (saf0001, Participant level, eDISH Quadrant Tier, 765 scored), then the flagged-participant queue — red rows with peak ALT/AST, bilirubin and ALP values, amber rows below, each with a review score." width="1500" height="1050">
+      <b class="pin" style="--x:75%;--y:17%">1</b>
+      <b class="pin" style="--x:33%;--y:22%">2</b>
+      <b class="pin" style="--x:55%;--y:30%">3</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> The metric states its contract: level Participant, score "eDISH Quadrant Tier", thresholds 1,3 — 765 scored</li>
+        <li><b>2</b> 100 flagged, 9 red — the Hy's Law queue, cholestatic cases excluded per the rule</li>
+        <li><b>3</b> Every finding is a sentence with the labs in it: peak ALT/AST, bilirubin, ALP in ×ULN</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>A chart shows the quadrant; a metric gives review a workable queue with a defensible tier behind every name. Because the cut-points are read from the same vendored contracts the charts use, "the chart says quadrant, the metric says tier" can never silently disagree.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/demo-301/#/safety/metric/saf0001"><span>Open saf0001 on DEMO-301</span></a>
+      <ol>
+        <li>Read the header contract, then the red rows — 9 participants, each with its labs.</li>
+        <li>Switch to <a href="https://jwildfire.github.io/demo-301/#/safety/metric/saf0002">saf0002</a>: QTcF, carried by the change criterion.</li>
+        <li>Cross-check the 9 red against the <a href="https://jwildfire.github.io/demo-301/#/safety/hep_explorer">Hepatic Safety Explorer</a> quadrant.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 ======= -->
+<div class="cut"><span>hub#138 <em>· the gate</em></span></div><section id="gate">
+  <div class="hd"><h2>Tuned on real counts, before being treated as real</h2></div>
+  <p class="what">hub#138's Data Requirement set a binding gate: <b>actual flagged-participant counts on demo data are reported before any metric is treated as real.</b> The counts below are the release's own evidence — and two of them changed the design.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <tr><th>Metric</th><th>Scored</th><th>Green</th><th>Amber</th><th>Red</th></tr>
+    <tr><td><code>saf0001</code> Hy's Law candidate</td><td class="n">765</td><td class="n">665</td><td class="n">91</td><td class="red">9</td></tr>
+    <tr><td><code>saf0002</code> QTcF prolongation</td><td class="n">400</td><td class="n">308</td><td class="n">81</td><td class="red">11</td></tr>
+    <tr><td><code>saf0003</code> serious / related AE</td><td class="n">765</td><td class="n">446</td><td class="n">251</td><td class="red">68</td></tr>
+  </table>
+  </div>
+  <p class="cap">Measured on DEMO-301's mapped output, 765 enrolled participants. Three findings reading the code would not have surfaced: the QTcF metric is carried by the <b>change criterion</b> (exactly one participant exceeds 500 ms absolute; ten more reach red only through ≥ 60 ms change from baseline); only <b>400 of 765</b> participants have a post-baseline QTcF at all — a coverage finding, and why the overview leads with coverage; and the AE metric as first written flagged <b>560 of 765</b> participants, so its amber threshold moved up a tier — "serious or related" alone is a property of being in a trial, not a review signal.</p>
+
+  <figure>
+    <div class="frame">
+      <img src="media/gs-saf0003.jpg" alt="The Serious / Related AE metric page: 319 participants flagged, 68 red, each row a sentence — counts of AEs, serious, related — with review scores." loading="lazy" width="1500" height="1050">
+    </div>
+    <p class="cap"><b>The retuned queue.</b> After the gate, <code>saf0003</code> flags 319 of 765 — 251 amber, 68 red — a queue someone can actually work, with amber starting at a serious event and red at a serious, related event at or above the grade cut. The discontinuation leg has no source column in this demo's AE domain; <code>Input_SafetyAE()</code> records <code>ActionColumnPresent = FALSE</code> on every row rather than scoring as though nobody discontinued — the gap is stated in the output.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>Safety metrics that ship untested against real distributions become dashboards nobody trusts. The gate is the release's discipline: every threshold in this package has a measured consequence attached, and the one figure that did not reproduce (the design artifact's 22-participant quadrant count) is corrected in the record — 31 with both axes elevated, 22 cholestatic exclusions among them, 9 surviving.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/demo-301/#/safety/metric/saf0003"><span>Open saf0003 on DEMO-301</span></a>
+      <ol>
+        <li>Read the header: 319 flagged, 68 red, thresholds 2,3.</li>
+        <li>Each row is a sentence: total AEs, serious, related.</li>
+        <li>Compare with <a href="https://jwildfire.github.io/demo-301/#/safety/ae_explorer">AE Explorer</a> — same Mapped_AE rows.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 ======= -->
+<div class="cut"><span>gs#47</span></div><section id="census">
+  <div class="hd"><h2>SafetyCensus: the denominators, stated first</h2></div>
+  <p class="what"><code>SafetyCensus()</code> reduces the mapped domains to what a safety overview leads with: enrollment, randomisation, exposure, person-years, deaths — and <b>data coverage per visit</b>, the figure that decides whether a quiet visit is reassuring or empty.</p>
+
+  <figure>
+    <div class="frame">
+      <img src="media/gs-census.jpg" alt="DEMO-301's Safety overview rendered from SafetyCensus output: census and exposure tiles (765 enrolled, 741 dosed, 49.8 person-years on treatment, 5 deaths), then data coverage by visit falling from 100% at baseline to 2% at week 12." loading="lazy" width="1500" height="1050">
+    </div>
+    <p class="cap"><b>The census as DEMO-301 renders it.</b> Week 12 labs cover 17 of 765 participants (2%) — the display says so before anyone reads "no week-12 findings" as good news. This is the same coverage fact that explains saf0002's 400-of-765 scored count above.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>Every rate in a safety review is a numerator over one of these denominators. Computing them once, in the package, from the mapped domains — instead of ad hoc in each display — is what lets an overview lead with them consistently.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/demo-301/#/safety"><span>Open the Safety overview</span></a>
+      <ol>
+        <li>Read the tiles, then scroll to coverage by visit.</li>
+        <li>Find week 12 — 2% — and week 16 back at 37%.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 ======= -->
+<div class="cut"><span>gs#46 <em>· hub#136</em></span></div><section id="layout">
+  <div class="hd"><h2>The standard gsm phase layout</h2></div>
+  <p class="what">The report workflows move from <code>inst/workflow/3_reports/</code> to <code>inst/workflow/4_modules/</code> — the standard gsm phase directory for <code>meta.Type: Report</code> workflows, the one gsm.kri already uses — and the new <code>2_metrics/</code> phase slots in where the ecosystem expects metric generation. <code>3_reports</code> was the one phase directory in the portfolio that deviated, and it sorted beside gsm.reporting's unrelated <code>3_reporting</code>.</p>
+
+<pre><code>inst/workflow/
+├── 1_mappings/          <span class="c"># unchanged</span>
+<span class="add">├── 2_metrics/           # NEW — metric generation, ahead of module assembly
+│   ├── saf0001.yaml     #   Hy's Law candidate
+│   ├── saf0002.yaml     #   QTcF prolongation
+│   └── saf0003.yaml     #   serious / related AE</span>
+<span class="mv">└── 4_modules/           # was 3_reports/ — the gsm standard for Report workflows</span>
+    ├── ae_explorer.yaml … safety_shift_plot.yaml   <span class="c"># 9 modules, unchanged content</span>
+</code></pre>
+  <p class="cap"><b>One breaking path.</b> Any pipeline that globbed <code>inst/workflow/3_reports/</code> updates its path — demo-301's did, in the same arc. Workflow content is unchanged.</p>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>The gsm pipeline's phases are a contract (<code>1_mappings → 2_metrics → 3_reporting → 4_modules</code>), and open.gismo's runner discovers workflows by these directories. Conforming means a study can point one runner at gsm.kri and gsm.safety alike — which is exactly how the DEMO-301 site above was built.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://github.com/jwildfire/gsm.safety/tree/dev/inst/workflow"><span>Browse inst/workflow on dev</span></a>
+      <ol>
+        <li>Open <code>2_metrics/saf0001.yaml</code> — the full Input → Flag chain in YAML.</li>
+        <li>Note DEMO-301's RBQM header: <code>workflows: 1_mappings, 2_metrics, 3_reporting, 4_modules</code>.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ end ===== -->
+<div class="cut"><span>notes</span></div><section>
+  <div class="hd"><h2>Reading this page</h2></div>
+  <div class="close">
+    <div>
+      <h3>How the captures were made</h3>
+      <ul>
+        <li>Playwright drove Chromium against the <b>live DEMO-301 deployment</b> on 2026-08-15 — a study site whose pipeline runs the metrics and census this release ships. Nothing was staged or mocked. DEMO-301 is a synthetic study — no real participant data.</li>
+        <li>Stills are 2× JPEG.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Also in the release, not shown here</h3>
+      <ul>
+        <li><b>New exported functions</b>: <code>Input_HysLaw()</code>, <code>Input_QtProlongation()</code>, <code>Input_SafetyAE()</code>, <code>SafetyCensus()</code> and metric utilities, each roxygen-documented.</li>
+        <li><b>Test coverage</b> for every new surface — 1 286 tests pass, <code>R CMD check</code> clean.</li>
+        <li><b>NEWS.md</b> becomes the running release log per the program convention.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="strip" style="margin-top:30px">
+    <div class="why">
+      <p class="lbl">Where this fits</p>
+      <p>This page is the review surface for the gsm.safety v1.1.0 release candidate (dev → main). gsm.safety is a clinical repo: nothing reaches <code>main</code> without your review. The release notes live in the RC PR's body and in <code>NEWS.md</code>, and publish on the <code>v1.1.0</code> tag when it merges — on your approval, via the attested lane, and not before.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">The rest of the candidate</p>
+      <ol>
+        <li><a href="https://jwildfire.github.io/demo-301/#/safety">DEMO-301 → Safety</a> — the release running live</li>
+        <li><a href="https://github.com/jwildfire/gsm.safety/pull/47">gs#47</a> — the increment PR with the full design record (D1–D6)</li>
+        <li><a href="https://jwildfire.github.io/obot.roadmap/reports/og-v0.2-demo/">open.gismo v0.2 demo</a> — the site these metrics render in</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Captured and written by Claude Code using Fable 5 (session 👯🤖 rcsweep) on 2026-08-15 against the gsm.safety v1.1.0 release candidate — for @jwildfire's review.</p>
+</footer>
+
+</div>
+
+</body></html>
