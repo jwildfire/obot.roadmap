@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — workers that finish into nothing</title>
+<meta name="description" content="Forty-one agents finished in two days and three left no recoverable trace of what they did. What a worker must produce before it may call itself done, how the Navigator would check it at closeout, and why telling the agents apart is harder than it looks.">
+<meta name="decision-id" content="D0015">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--go);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--go)}
+.verdict p{margin:10px 0 0;font-size:16.5px}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:24px 0 0}
+.trio .box{border:1px solid var(--rule);border-top:3px solid var(--blue);border-radius:5px;background:var(--panel);padding:16px 18px}
+.trio .box .n{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.trio .box h3{margin:8px 0 0;font-size:15.5px}
+.trio .box p{margin:7px 0 0;font-size:14.5px;color:var(--ink2)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>D0015</span><span class="dot"></span><span>2026-08-15</span><span class="dot"></span><span>Autonomy — the worker contract</span></div>
+  <h1>Workers that finish into nothing</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0015">
+<p>D0015 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0015.1"><a class="did" href="#D0015.1">D0015.1</a><span class="dcode">W1</span><span class="dq">Is the three-outcome rule the definition of done for a worker — and what happens to one that finishes into none of them?</span></li>
+  <li id="D0015.2"><a class="did" href="#D0015.2">D0015.2</a><span class="dcode">W2</span><span class="dq">How should the Navigator learn that a worker closed?</span></li>
+  <li id="D0015.3"><a class="did" href="#D0015.3">D0015.3</a><span class="dcode">W3</span><span class="dq">How do we tell which agent made a change, when every change carries the same bot identity?</span></li>
+  <li id="D0015.4"><a class="did" href="#D0015.4">D0015.4</a><span class="dcode">W4</span><span class="dq">Does the closeout check live inside the existing roadmap audit, or beside it?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">You said keeping track of a day of agent work now feels close to critical, and that making sure the roadmap keeps up is the Navigator's job. This page proposes the rule that makes that checkable: <b>every worker agent has to finish into one of three things — a pull request for a release you have actually planned, a question for you, or a request for the config work only your hands can do.</b> A worker that closes having produced none of the three has not finished; it has evaporated. Counting the last two days: forty-one agent jobs ended, and three of them left behind nothing any tool can now recover. Nobody noticed at the time. The check proposed here would have named all three by morning — and the by-agent list you asked for is that same check made visible.</p>
+  <div class="facts">
+    <span><b>Recommendation</b> adopt the three-outcome rule; check it at closeout, report drift, never auto-repair</span>
+    <span><b>Measured</b> 41 agent jobs over two days</span>
+    <span><b>Decide</b> W1–W4 below</span>
+  </div>
+</header>
+
+<div class="cut"><span>WHAT IS BEING DECIDED</span></div>
+<section>
+  <p>You chose the enforcement point yourself. The alternative was a gate at spawn time — refuse to start a worker until its roadmap paperwork is in order. You picked the other end:</p>
+
+  <blockquote>"I'm actually fine with the navigator reviewing agent's work at closeout instead of at spawn. probably makes more sense that way. Any time a 'worker' sibling or sub agent closes, navigator makes sure that the roadmap is updated appropriately and you make sure that my todo list is current. Most of the time, workers should impact both. They should either prepare a PR for a planned release, ask me questions or ask for config work if there are blockers."</blockquote>
+
+  <p>That last sentence is the substance, and it is stronger than it first reads. It is not a description of what workers usually do — it is a <b>definition of done</b>. A worker that ends without producing one of those three things has produced nothing that reaches you, and today that outcome is completely silent: the job stops, and the absence looks exactly like a quiet success.</p>
+
+  <div class="trio">
+    <div class="box"><div class="n">Outcome one</div><h3>A pull request for a planned release</h3><p>Work that is finished and ready for your review — attached to a release that actually exists, not speculative work parked on a branch.</p></div>
+    <div class="box"><div class="n">Outcome two</div><h3>A question for you</h3><p>A call the agent cannot make. It writes the question up, posts the thread, and moves on to the rest of its work rather than stalling.</p></div>
+    <div class="box"><div class="n">Outcome three</div><h3>A request for config work</h3><p>It is blocked on something only your hands can do — a permission line, an app install, a credential — and it says so on the blockers list.</p></div>
+  </div>
+
+  <p>Those three are not an arbitrary list. They are exactly the three sections of your Operations Dashboard: release candidates, decisions, and the work only your hands can clear. <b>The dashboard is the output surface of the worker contract</b> — which is why "make sure the roadmap is updated" and "make sure my todo list is current" turn out to be one instruction seen from two ends, and why a worker producing none of the three is, by construction, a worker whose night never reaches your screen.</p>
+</section>
+
+<div class="cut"><span>WHAT THE LAST TWO DAYS ACTUALLY LOOK LIKE</span></div>
+<section>
+  <p>Before proposing a mechanism it is worth knowing how bad the problem is, so this was measured rather than assumed. Every agent job the harness recorded over 14–15 August was read back — forty-one that ended, plus the two still running — and cross-checked against the shared scratchpad where agents log what they did.</p>
+
+  <div class="tbl"><table>
+    <tr><th>Question</th><th>Answer</th><th>What it means</th></tr>
+    <tr>
+      <td>How many worker jobs ended in the window?</td>
+      <td><b>41</b></td>
+      <td>Roughly twenty a day, unattended for most of it — and this is before full automation.</td>
+    </tr>
+    <tr>
+      <td>How many wrote the close-out line the convention requires?</td>
+      <td><b>32 of 41</b> — <span class="warn">nine did not (22%)</span></td>
+      <td>The scratchpad is the richest record there is, and it is missing for roughly one worker in five. It is also self-reported: a worker that dies mid-flight writes nothing at all.</td>
+    </tr>
+    <tr>
+      <td>How many had their work captured automatically by the harness?</td>
+      <td><b>22 of 41</b> — <span class="bad">nineteen captured nothing (46%)</span></td>
+      <td>The automatic capture is far less complete than it appears. One agent that merged three pull requests and filed two issues that night was recorded as having touched nothing at all.</td>
+    </tr>
+    <tr>
+      <td>How many left <em>no</em> recoverable trace — neither automatic capture nor a close-out line?</td>
+      <td><b>7 of 41</b>; setting aside three throwaway probes and the concierge session itself, <span class="bad">three were real workers</span></td>
+      <td>Three nights of work that cannot now be reconstructed from anything. Not "hard to find" — gone.</td>
+    </tr>
+  </table></div>
+
+  <p>Three-in-forty-one is the honest headline and it is deliberately not inflated: most agents did log properly, and the convention mostly works. But the failures cluster in exactly the wrong place. An agent that finishes cleanly is the one that writes a good close-out line. An agent that dies, gets killed, or runs out of room is the one that writes nothing — and that is precisely the case you need to hear about.</p>
+</section>
+
+<div class="cut"><span>HOW THE NAVIGATOR WOULD KNOW A WORKER CLOSED</span></div>
+<section>
+  <p>This was the load-bearing unknown. The Navigator is not a session — it is a small scheduled job that wakes every five minutes, checks the review queue against GitHub, and writes a state file. It has no hook into any agent's lifecycle and no way of being told when one ends.</p>
+
+  <p>It turns out it does not need one. <b>The harness already keeps a ledger of every background agent</b> — one small record per job holding its name, what it was asked to do, whether it is still running, and a timestamp stamped exactly once at the moment it goes terminal. Forty-four such records exist right now. The Navigator can read them all in a single pass with no network calls and no model involvement, remember the newest terminal timestamp it has seen, and treat anything newer as a fresh closeout on its next tick. Worst-case notice is five minutes.</p>
+
+  <p>Three properties make this the right lane rather than merely a workable one:</p>
+  <ul>
+    <li><b>It cannot be skipped.</b> The record is written by the harness, not by the agent. An agent that dies without logging, is killed mid-sentence, or simply decides not to report is in the ledger regardless — which is the entire population the scratchpad misses.</li>
+    <li><b>A killed worker counts as a closed worker.</b> The ledger distinguishes finished from stopped, and both should trigger the check. A worker that was killed is the strongest possible case of one that finished into nothing.</li>
+    <li><b>It costs nothing.</b> Forty-four small local file reads per tick. The sweep stays free of both API calls and model tokens, which is the property that lets it run every five minutes forever.</li>
+  </ul>
+
+  <p>The alternatives were considered and each fails for a specific reason. The <b>scratchpad close-out line</b> is self-reported and measurably missing 22% of the time. A <b>stop hook</b> fires at the end of every conversational turn rather than at the end of a session, and cannot tell "the agent paused" from "the agent is done" — the workspace already runs two of them and neither could carry this. The <b>agent-listing command and the session dashboard</b> are both views over the very same records, so reading the records directly is the same information with one less moving part.</p>
+
+  <div class="card block">
+    <div class="tag">The honest gap — subagents</div>
+    <h3>A subagent has no record at all, and pretending otherwise would be the failure mode</h3>
+    <p>You named both siblings and subagents. They are not equally tractable. A sibling is its own background session and gets its own ledger record; a subagent runs <em>inside</em> another agent's session and leaves none. There is no timestamp to watch and nothing to watermark.</p>
+    <p>Two facts make this acceptable rather than a hole. First, measured: across all 134 session transcripts in this workspace, <b>subagents have been used zero times</b> — the lane exists but has never once been taken. Second, by rule: the delegation split you approved earlier this month sends deliverable work to siblings and reserves subagents for answer-only research, so a subagent is not supposed to be producing roadmap changes on its own account anyway.</p>
+    <p>The proposed rule is therefore that <b>a subagent's output belongs to its parent's closeout</b>. The parent is the accountable unit and the parent is what gets checked. Where a subagent does file something it appears under the parent's name — attributed one level up, not lost. Wherever the ledger is shown it must say so in words, rather than implying a per-subagent precision it does not have.</p>
+  </div>
+</section>
+
+<div class="cut"><span>THE TAB YOU ASKED FOR — AND WHY IT IS HARD</span></div>
+<section>
+  <p>Minutes after setting the closeout contract you added what you want to see:</p>
+
+  <blockquote>"I think i almost certainly want a navigator tab in the ops db that tells me what changes each agent made to the dasboard. basically a list of issues/PRs that were created/updated by each agent."</blockquote>
+
+  <p>That is not a second feature. It is this check made visible: if the Navigator verifies the roadmap at each worker's closeout, the by-agent list is simply that verification rendered. But it runs straight into a problem worth stating plainly, because it has no free solution.</p>
+
+  <p><b>Every agent write is authored by the same identity.</b> Under the standing rule that agents act as the shared bot account, every issue, pull request, comment and commit any of them creates carries the same name, and always will. GitHub's record of "who did this" cannot distinguish forty agents from one. A straightforward sweep of recent activity produces a single undifferentiated pile and answers nothing.</p>
+
+  <p>Five ways to bridge that gap, each measured for what it <em>cannot</em> see — since that is what decides whether the resulting tab can be trusted:</p>
+
+  <div class="tbl"><table>
+    <tr><th>How you would tell agents apart</th><th>What it structurally cannot see</th><th>Measured on the last two days</th></tr>
+    <tr>
+      <td><b>The GitHub author field</b></td>
+      <td>Everything. One identity for every agent, permanently, by design.</td>
+      <td class="bad">Ruled out by construction</td>
+    </tr>
+    <tr>
+      <td><b>The scratchpad lines agents write</b> — already tagged with each agent's name and carrying its links</td>
+      <td>A worker that died before logging, and anything a live worker chose not to mention. It under-reports exactly when you most want it.</td>
+      <td class="warn">Missing entirely for 9 of 41 workers</td>
+    </tr>
+    <tr>
+      <td><b>The harness's automatic link capture</b> — links it notices in a session and attaches to that job's record</td>
+      <td>Most of what the worker actually did. The capture is real but partial, and its gaps are invisible from the outside.</td>
+      <td class="bad">Captured nothing for 19 of 41 — including an agent that merged three pull requests and filed two issues that same night</td>
+    </tr>
+    <tr>
+      <td><b>Re-reading the full session transcripts</b> — the harness writes one per agent, so attribution is automatic and perfect</td>
+      <td>The difference between something the agent <em>read</em> and something it <em>changed</em>. Both look identical in a transcript.</td>
+      <td class="bad">One agent's transcript mentions 87 distinct issues and pull requests, and its command output mentions 61 — but it made only 2 direct issue-creating calls. Its remaining writes went out through helper scripts and raw API calls that no text pattern reliably catches.</td>
+    </tr>
+    <tr>
+      <td><b>Recording each change as it is made</b> — a small hook firing after every shell command, noting what was created or updated</td>
+      <td>Anything written before it is switched on. It is completely blind to the past.</td>
+      <td class="ok">Not yet in place — this is the proposal</td>
+    </tr>
+  </table></div>
+
+  <p>The transcript row deserves one more sentence, because it is the option that looks most attractive. Attribution there is perfect — one transcript per agent, no identity collision at all. The problem is entirely on the other side: you cannot tell from a transcript whether a pull request appears because the agent created it or because the agent listed it. Every heuristic tried either over-reported reads or missed writes that went through a helper script, and a ledger that credits an agent with work it merely looked at is worse than no ledger.</p>
+
+  <div class="verdict">
+    <div class="k">Recommendation</div>
+    <p><b>Two lanes, honestly labelled.</b> <b>Going forward:</b> record each change at the moment it is made, with a small hook that fires after every shell command and writes one line — time, agent, what it did, the link. It sees the command <em>and its output</em>, so it catches the helper-script and raw-API writes that defeat every after-the-fact approach; the workspace already runs hooks of exactly this shape, so the lane is proven rather than speculative. Crucially it is written by the machinery rather than by the agent, so a worker that dies still has everything up to the moment it died. <b>Retrospectively:</b> reconstruct what can be reconstructed from the job records and the scratchpad, and mark it <em>incomplete on its face</em> — because for three of the last two days' workers the honest answer is "we cannot know", and a tab that renders that as a clean empty row is the same failure as an evidence baseline going stale while the tests stay green.</p>
+  </div>
+</section>
+
+<div class="cut"><span>WHAT HAPPENS WHEN A WORKER FAILS THE CHECK</span></div>
+<section>
+  <p>The Navigator cannot merge anything, cannot file a worker's paperwork for it, and should not try. The temptation is obvious — the check knows what is missing, so why not add the milestone, open the issue, write the missing link? Because a repair that silently completes a broken worker's homework destroys the only evidence that the worker was broken. Next week the same agent fails the same way and the ledger still looks clean. <b>A visible failure is worth more than an invisible fix</b> — the same principle already written into the Navigator's charter, which says it observes and reports and never corrects another agent's work.</p>
+
+  <p>So a failed check produces a named drift line in the Navigator's state file, and surfaces to the concierge session, which relays it to you like any other finding. The worker is named. What it was asked to do is in its record. What it left behind, or did not, is stated plainly. You decide whether it needs re-running, whether the requirement was wrong, or whether nothing was owed in the first place.</p>
+</section>
+
+<div class="cut"><span>DOES THIS REPLACE THE AUDIT? NO — AND IT MUST NOT DUPLICATE IT</span></div>
+<section>
+  <p>There is already a roadmap audit: about twenty rules checking the board for exactly the things a closeout check would want — a requirement with no milestone, a pull request with no requirement link, an issue under no goal, a missing assignee, a design never written, work that has stopped moving. It runs over the whole board, sorts findings by confidence, and you granted its mechanical high-confidence findings an auto-accept a day ago. That lane works, and it should not grow a second head.</p>
+
+  <p>What the audit structurally cannot do is <b>attribute</b>. It sees a requirement with no milestone; it does not know which agent left it that way, or that an agent closed ten minutes ago having left it that way. It is a photograph of the board, not a record of who moved what.</p>
+
+  <p>So the closeout check should be the <em>same rules, aimed differently</em>: when a worker closes, run the existing rules against that worker's blast radius rather than across the whole board, and attribute what they find to the worker. Zero new rule engines. Exactly one genuinely new rule is required — <b>"this worker finished into nothing"</b> — and it has to be new, because the board audit cannot possibly express it: nothing on the board records that a worker ran at all.</p>
+
+  <p>One thing this reframes rather than adds. Of the audit's rules, five were found last night to fail the "does this actually need @jwildfire's attention" test — work that stopped moving, designs never written, and so on. Several of those are exactly what a closeout check catches at the moment of closing, with a name attached, instead of surfacing weeks later as an anonymous board finding. Same rule, far more actionable, because it arrives attached to the agent that caused it.</p>
+</section>
+
+<div class="cut"><span>WHAT TO DECIDE</span></div>
+<section>
+
+  <div class="q">
+    <div class="qid">W1</div>
+    <h3>Is the three-outcome rule the definition of done for a worker — and what happens to one that finishes into none of them?</h3>
+    <p>Adopting this means a worker agent is not finished when it stops; it is finished when it has produced a pull request for a planned release, a question written up for you, or a config request on the blockers list. The cost is that genuinely fruitless work now has to say so out loud — an agent that investigated something and found nothing worth doing must write that down as a finding rather than quietly ending.</p>
+    <p>The alternative is to keep this as guidance and let the check merely report against it. That is softer, but it leaves "finished into nothing" indistinguishable from "quietly succeeded", which is the state we are in now.</p>
+    <div class="rec"><b>Recommendation:</b> adopt it as the definition of done. A worker with none of the three produces a named drift line, not silence — and "I looked, and there is nothing to do here" counts as a valid answer, provided it is written somewhere you can see it.</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">W2</div>
+    <h3>How should the Navigator learn that a worker closed?</h3>
+    <p>The proposal is to read the harness's own job ledger on the existing five-minute sweep — the one record per background agent that already exists, watermarked on the moment each goes terminal. It is free, needs no new plumbing, and sees dead workers as well as healthy ones, which no self-reported source can.</p>
+    <p>The thing to accept alongside it: <b>subagents get no such record</b>, so their work is attributed to the parent agent that spawned them. Measured usage of that lane in this workspace is zero, so the practical cost today is nil — but the ledger will say "attributed to parent" rather than claim a precision it does not have.</p>
+    <div class="rec"><b>Recommendation:</b> the job ledger, on the existing sweep. A killed worker counts as closed. Subagents roll up to their parent, stated plainly wherever the ledger is shown.</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">W3</div>
+    <h3>How do we tell which agent made a change, when every change carries the same bot identity?</h3>
+    <p>This is the hard one, and it has no free answer. Recording changes as they happen is the only approach that is both complete and not self-reported, but it cannot see backwards. Reconstructing from what already exists covers the past but is provably lossy — for three of the last two days' workers it recovers nothing at all.</p>
+    <p>The real choice is whether the tab is allowed to show gaps. A complete-looking ledger that silently omits dead agents would be actively misleading in exactly the situation you would be using it for.</p>
+    <div class="rec"><b>Recommendation:</b> both lanes, visibly distinguished. Switch on recording-as-it-happens now, so that from tomorrow the ledger is real; reconstruct the past from what survives, and mark every reconstructed row as such — with the gaps shown rather than smoothed over.</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">W4</div>
+    <h3>Does the closeout check live inside the existing roadmap audit, or beside it?</h3>
+    <p>Inside means reusing the twenty rules that already exist, aimed at one worker's blast radius, with findings flowing into the ledger you already have and under the auto-accept grant you already gave. Beside means a second checker with its own rules, its own findings and its own drift — two things to keep in agreement forever.</p>
+    <div class="rec"><b>Recommendation:</b> inside. The same rules, scoped to the closing worker and attributed to it, plus exactly one new rule for "finished into nothing" that the board audit cannot express. No second engine.</div>
+  </div>
+
+</section>
+
+<div class="cut"><span>WHAT UNBLOCKS</span></div>
+<section>
+  <ul>
+    <li><b>On W1 and W2</b> — the closeout check can be built onto the existing sweep. It is a small addition: read the ledger, watermark it, run the check, write the drift lines.</li>
+    <li><b>On W3</b> — the recording hook goes in, and the by-agent ledger starts being real from that moment. The Navigator tab already being built on the Operations Dashboard has a seam left for exactly this section.</li>
+    <li><b>On W4</b> — the audit rules get extracted for reuse rather than copied, and the one new rule lands beside them.</li>
+    <li><b>Not blocked on any of it</b> — the requirement is filed with a milestone, and the tab renders today's Navigator state regardless of how these four are answered.</li>
+  </ul>
+  <p>None of this is started. The requirement exists, the design calls are these four, and the work waits on your answers.</p>
+</section>
+
+<footer class="foot">
+  <p>Requirement: <a href="https://github.com/jwildfire/obot.roadmap/issues/184">the worker closeout check</a> · goal: <a href="https://github.com/jwildfire/obot.roadmap/issues/73">increased autonomy</a> · sibling requirements: <a href="https://github.com/jwildfire/obot.roadmap/issues/157">the release-candidate sweep</a> (shipped) and <a href="https://github.com/jwildfire/obot.roadmap/issues/181">working-set verification</a>.</p>
+  <p>Measurements taken 2026-08-15 from the local agent job records and session transcripts covering 2026-08-14 and 2026-08-15, cross-checked against the shared session scratchpad. Method and raw counts in the <a href="README.md">README</a>.</p>
+  <p>Drafted by Claude Code using Opus 5 in an unattended sibling session and reviewed by @jwildfire.</p>
+</footer>
+
+</div>
+</body></html>
