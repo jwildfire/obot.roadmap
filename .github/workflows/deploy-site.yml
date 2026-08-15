@@ -251,6 +251,24 @@ jobs:
           [ "$fail" = 0 ] || { echo "::error::site validation failed — see the errors above"; exit 1; }
           echo "site validation passed"
 
+      # Blockers-list guard (decision artifact 2026-08-15-blockers-list, BL2 layer 3 —
+      # approved by @jwildfire 2026-08-15). The workspace-local blockers file opens
+      # with a fixed local-only marker comment; if any copy of its content ever
+      # reaches the assembled site, fail the deploy rather than publish it. The
+      # marker is composed from two halves here so that pages *documenting* this
+      # guard can never trip it (the prose-false-positive lesson, obot.agent#58).
+      - name: Guard against local-only content
+        run: |
+          M1="LOCAL-ONLY: never publish"
+          M2=", never commit"
+          hits=$(grep -rlF "${M1}${M2}" _site || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "::error title=Local-only content in site::the local blockers sentinel appears in the assembled site (files above) — deploy blocked"
+            exit 1
+          fi
+          echo "local-only guard passed"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

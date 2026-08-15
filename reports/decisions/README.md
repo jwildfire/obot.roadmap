@@ -28,6 +28,28 @@ PRs, and these.
 - **One artifact per decision topic.** Bundling unrelated questions into one page
   defeats the purpose; a single page may carry several decisions only when they gate
   each other and must be answered in one sitting.
+- **Plain English is the bar** (@jwildfire, 2026-08-15: *"Executive summary references
+  lots of issue numbers I don't have memorized … Links to issues are references for a
+  deep dive (if I decide to do one), not a valid explanation."*). Concretely:
+  - A reader who has memorized **nothing** — no issue numbers, no repo shorthand, no
+    codenames — must be able to answer every question from the words alone. Name
+    things, don't number them: *"the merge-gate hook that refuses agent edits"*, not
+    *"#152"*.
+  - Every question states **what is being decided and why it matters, in words,
+    before any reference appears**. Issue/PR links come after the explanation, as
+    optional citations. The test: delete every link and bare reference — if a
+    paragraph becomes incomprehensible, rewrite it.
+  - The **executive summary alone carries the decision, the stakes, and the
+    recommendation** — it is the whole artifact for skim purposes. Decision codes
+    (W1, BL2, …) are trailing tags for the Q&A thread, never the subject of a
+    sentence, and never appear bare in a summary box.
+- **When @jwildfire decides — in chat, in a Q&A thread, anywhere — the artifact gets
+  a `Decisions` section at the top** (@jwildfire, 2026-08-15), added the same day,
+  before any other section. One entry per decision: the date, **his words verbatim**
+  (quoted), which questions it resolves, and what happened next (implementation
+  links as they land). The artifact's README and the Index row below move to
+  **Decided** in the same commit. The Q&A thread remains a valid place to decide,
+  but it is no longer the only record — the artifact itself is.
 
 ## Index
 
