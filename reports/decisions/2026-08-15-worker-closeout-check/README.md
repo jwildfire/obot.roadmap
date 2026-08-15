@@ -2,7 +2,7 @@
 
 **Status:** Awaiting @jwildfire — W1–W4 (D0015.1–.4)
 **Requirement:** [jwildfire/obot.roadmap#184](https://github.com/jwildfire/obot.roadmap/issues/184) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
-**Q&A:** [#185](https://github.com/jwildfire/obot.roadmap/discussions/185)
+**Q&A:** [#188](https://github.com/jwildfire/obot.roadmap/discussions/188)
 
 ## What produced this
 
