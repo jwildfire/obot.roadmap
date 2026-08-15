@@ -20,6 +20,8 @@ Adapted from [gsm.roadmap's requirement-tasks skill](https://github.com/Gilead-B
 
 2. **Identify the affected repos** from the Design section. Each sub-issue is scoped to a single repo.
 
+   **Check the decomposition fits one release.** A requirement covers exactly one release, so if the sub-issues you are about to draft cannot plausibly ship together, that is the moment to split — before any of them exist. Draft only the ones for this release; the rest become a second requirement, filed now with its own milestone, not a "phase 2" note in the body. See [README — One requirement, one release](../../../README.md#one-requirement-one-release).
+
 3. **Draft each sub-issue.** Follow the gsm.agent draft-file convention: save under `drafts/{repo}/ISSUE_N_{slug}.md` in the gsm.agent clone, with the `STATUS:` and `GITHUB_PROPERTIES:` headers. Each draft includes:
    - **Title** — `{verb} {what}` in the target repo (e.g. `Extract histogram module into safety.viz`)
    - **Description** — what changes, acceptance criteria, and a link back to the parent (`Parent: jwildfire/obot.roadmap#{N}`)
@@ -39,6 +41,18 @@ Adapted from [gsm.roadmap's requirement-tasks skill](https://github.com/Gilead-B
 7. **Mirror the URLs into the parent's Sub-issues section** — append one line per sub-issue URL via `gh issue edit --body-file` (draft-sync convention). This is what the roadmap generator reads; skipping it means the rollup shows no tasks.
 
 8. **Summarize** the result: parent #, list of posted sub-issues (`repo#N — title`), and links to each. The rollup refreshes on the next push to `main` (the Deploy site workflow runs `scripts/build_roadmap_next.mjs`); no manual trigger exists.
+
+## Deferring a sub-task after the fact
+
+When a sub-issue will not make the requirement's release, it moves — the requirement does not wait for it:
+
+1. **Note the deferral on the parent requirement**: what is deferred and why, in a comment on the issue.
+2. **File a new requirement** for the deferred scope, with its own milestone.
+3. **Transfer the sub-issues** — `removeSubIssue` from the old parent, `addSubIssue` to the new one. Never close-and-refile: transferring keeps the scoping, the comment history and any partial work attached.
+4. **Correct any milestone that now names a release the work did not ship in** — a sub-issue milestoned for a shipped release it missed is a false record.
+5. **Close the original requirement** with the release it delivered, and set its board Status to Released.
+
+Two cases need no new requirement: a **defect found after release** (an ordinary issue against shipped work — re-home it to the goal), and scope that **already has a requirement of its own** and was merely nested (re-home it to the goal).
 
 Implementation of each sub-issue is then a `/tdd` run in the target repo — there is no separate implementation skill.
 

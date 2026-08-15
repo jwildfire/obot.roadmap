@@ -46,9 +46,13 @@ Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilea
    gsm.safety's `safety-viz-parity` CI fails on unwrapped renderers whose
    deferral cites no filed requirement.
 
-4. **Present for review** with the `issue-review` skill and iterate.
+4. **Scope it to one release before presenting it.** A requirement covers **exactly one release**; if the scope is bigger than one release, draft more than one requirement. The tell is a body that describes phases, or a Tasks section where some items are explicitly "later" — that is two requirements wearing one issue number, and splitting is cheaper now than after the first release ships. See [README — One requirement, one release](../../../README.md#one-requirement-one-release).
 
-5. **After approval, post** with the required properties: `type:requirement` + `status:planned` + `project:P###` labels, assignee `@me`, and a link to the parent `type:project` issue in the body (the roadmap generator checks for it). Complete the posting checklist (rename draft, share URL).
+   When scope is deferred off an **existing** requirement, follow the procedure in that order: note the deferral on the original (what and why), file the new requirement with its own milestone, **transfer** the deferred sub-issues rather than re-filing them, and the original closes with its release. A defect found after release is not deferred scope — it is an ordinary issue against shipped work, and needs no new requirement.
+
+5. **Present for review** with the `issue-review` skill and iterate.
+
+6. **After approval, post** with the required properties: `type:requirement` + `status:planned` + `project:P###` labels, assignee `@me`, and a link to the parent `type:project` issue in the body (the roadmap generator checks for it). Complete the posting checklist (rename draft, share URL).
 
 ## Reference
 

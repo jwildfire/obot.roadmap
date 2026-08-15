@@ -58,6 +58,8 @@ Every Requirement issue must instantiate the [requirement template](.github/ISSU
 
 Before submitting, verify with: `gh issue view <n> --json body -q .body | grep '^### '` — the output must be exactly the five headings above.
 
+**Scope every requirement to one release.** A requirement covers exactly one release; if the scope is bigger than one release, file more than one requirement. Deferring scope off an existing requirement has a procedure — note the deferral on the original, file a new requirement with its own milestone, **transfer** the deferred sub-issues rather than re-filing them, and close the original with its release. A requirement never stays open because a later phase is coming. See [README — One requirement, one release](README.md#one-requirement-one-release) (@jwildfire, 2026-08-15).
+
 ## Diary and session wrapup
 
 Before ending any substantive working session, run the full **session wrapup** —

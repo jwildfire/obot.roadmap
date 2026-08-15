@@ -45,6 +45,26 @@ Requirements are captured as GitHub issues using the [requirement issue template
 
 Since this is a single-maintainer portfolio, all sign-offs are @jwildfire. Agent-drafted issues and PRs carry an attribution line noting the model used.
 
+### One requirement, one release
+
+A requirement covers **exactly one release**. If the scope is bigger than one release, it is more than one requirement — split it at authoring time rather than letting one issue span two.
+
+Deferring scope is allowed. It has a procedure, and the order matters:
+
+1. **Note the deferral on the original requirement** — what is being deferred and why, written in the issue itself while someone still remembers.
+2. **File a new requirement** for the deferred scope, carrying its own milestone.
+3. **Transfer the deferred sub-tasks** to it. *Transfer*, not re-file: moving the sub-issue keeps its scoping, comments and history.
+4. **The original closes with its release.**
+
+A requirement never stays open because a later phase is coming — the later phase is a different requirement. "Phase 2 follows in due course" is not a scope line; it is an unfiled requirement.
+
+Two things are *not* deferred scope and need no new requirement:
+
+- **A defect found after release** is an ordinary issue against shipped work. Re-home it to the goal (or to a live requirement it belongs in) and close the requirement that delivered the thing.
+- **Scope that already has its own requirement** just needs re-homing to the goal. Filing a second one is paperwork.
+
+Decided by @jwildfire on 2026-08-15, replacing the audit's proposal to let phased requirements stay open; the reasoning and the retroactive sweep that applied it to seven existing requirements are in the [roadmap-audit decision artifact](https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-15-roadmap-audit/).
+
 ## Labels
 
 One or more topic labels per requirement.
