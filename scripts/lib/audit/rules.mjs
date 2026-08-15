@@ -492,28 +492,25 @@ const goalBoardInconsistent = {
   id: 'GOAL-BOARD-INCONSISTENT',
   title: 'Goals inconsistently placed on the board',
   group: 'Hierarchy',
-  why: 'Goals are not requirements and do not move through the requirement stages, but some goal issues sit on the obot Roadmap project and others do not (#72/#73 on, #78/#79 off as of 2026-07-24). Either is defensible; the split is not, because every board tally silently mixes the two kinds.',
-  fix: 'Pick one convention, apply it to every goal, and write it down in the hub README.',
+  why: 'Goals are permanent and do not move through the requirement stages, so a goal on the delivery board is an item with no stage it can ever reach. @jwildfire settled the convention on 2026-08-15 (audit decision R3-a): goals are not board items. They are surfaced by the goal pages and the hierarchy view, which are the better surfaces for something that never finishes.',
+  fix: 'Take the goal off the board. Nothing is deleted — the goal issue and its sub-issue links are untouched.',
   needs: 'board',
   check(s) {
-    const goals = s.issues.filter((i) => i.state === 'OPEN' && isGoal(i));
-    if (goals.length < 2) return [];
-    const on = goals.filter((g) => itemsFor(s, g.repo, g.number).length);
-    const off = goals.filter((g) => !itemsFor(s, g.repo, g.number).length);
-    if (!on.length || !off.length) return [];
-    return [{
-      confidence: 'low',
-      subject: { kind: 'convention', repo: s.hub, number: null, title: 'Goal issues on the board', url: `https://github.com/${s.hub}/issues?q=is%3Aissue+is%3Aopen+label%3Agoal` },
-      evidence: [
-        `on the board: ${on.map((g) => `#${g.number}`).join(', ')}`,
-        `off the board: ${off.map((g) => `#${g.number}`).join(', ')}`,
-      ],
-      proposal: {
-        kind: 'agentic',
-        summary: 'Settle the convention and make every goal follow it, then document the choice.',
-        prompt: `Open goals are split: on the board ${on.map((g) => `#${g.number}`).join(', ')}, off it ${off.map((g) => `#${g.number}`).join(', ')}. Read the hub README's requirement-lifecycle and goal sections and the #53 design. Choose the convention the documentation already implies (goals are not lifecycle items, so the default is OFF the board unless the README says otherwise), apply it to every open goal, add a sentence to the README stating it, and update the GOAL-BOARD-INCONSISTENT rule's \`why\` in scripts/lib/audit/rules.mjs to reference the now-documented convention.`,
-      },
-    }];
+    // R3-a (@jwildfire, 2026-08-15): this used to compare goals against each other and ask
+    // which convention to adopt — a question, asked every night for twenty nights. The
+    // convention is now settled, so the rule enforces it per goal instead of debating it.
+    return s.issues
+      .filter((i) => i.state === 'OPEN' && isGoal(i))
+      .flatMap((g) => itemsFor(s, g.repo, g.number).map((item) => ({
+        confidence: 'high',
+        subject: subject(g),
+        evidence: ['issue carries the `goal` label', 'it has a board item', 'goals are not board items (README, 2026-08-15)'],
+        proposal: {
+          kind: 'mechanical',
+          summary: 'Take it off the board — a goal is permanent, so it has no delivery stage it can ever reach. The issue and its sub-issue links are untouched.',
+          ops: [removeItem(item)],
+        },
+      })));
   },
 };
 
@@ -809,7 +806,7 @@ const stalledInFlight = {
   title: 'In-flight requirement that stopped moving',
   group: 'Conventions',
   why: 'Development and Review are lanes for work happening now. A requirement that has not been touched in two weeks, with no open PR behind it, is parked — and while it sits in an active lane it crowds out the real front line on every view of the roadmap.',
-  fix: 'Resume it, or move the stage back to where it honestly sits.',
+  fix: 'Park it back at Backlog. Dragging it forward on the board is how you say it is live again.',
   needs: 'board',
   check(s) {
     return s.issues
@@ -822,10 +819,15 @@ const stalledInFlight = {
         subject: subject(i),
         evidence: [`board Status is ${statusOf(s, i.repo, i.number)}`,
           `no activity for ${Math.round(days(i.updatedAt, s.now))}d`, 'no open PR references it'],
+        // R1-a (@jwildfire, 2026-08-15): this rule used to ask "why has this stalled?", which
+        // is a question, and a question re-fires every night until someone answers it — 13 of
+        // the 24 findings that needed him on 2026-08-15 came from here alone. It now parks the
+        // item instead. The park is cheap and self-correcting: dragging the card forward on the
+        // board is how you say the work is live again, which costs one gesture and needs no reply.
         proposal: {
-          kind: 'agentic',
-          summary: 'Establish what is actually blocking it and either move the stage back with a reason, or record the blocker.',
-          prompt: 'Read the requirement, its sub-issues and its merged PRs. If the work is finished, take it to Review or close it. If it is blocked, add the `blocked` label and one comment naming the blocker. If it was simply dropped, move the board Status back to Backlog (or Design if the design still stands) with a one-line comment saying so. Do not start implementing it.',
+          kind: 'mechanical',
+          summary: `Park it back at Backlog — ${Math.round(days(i.updatedAt, s.now))} days in ${statusOf(s, i.repo, i.number)} with no open PR behind it. Drag it forward when it is live again.`,
+          ops: [setStatus(itemsFor(s, i.repo, i.number)[0], 'Backlog')],
         },
       }));
   },

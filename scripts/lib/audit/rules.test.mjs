@@ -363,6 +363,38 @@ test('STALLED-IN-FLIGHT: an open PR means it is not stalled', () => {
   assert.equal(fire('STALLED-IN-FLIGHT', moving).length, 0);
 });
 
+test('STALLED-IN-FLIGHT: parks the item automatically instead of asking why it stalled', () => {
+  // R1-a (@jwildfire, 2026-08-15): a rule that ends in a question re-fires every night.
+  const req = issue(29, { updatedAt: ago(30) });
+  const [f] = fire('STALLED-IN-FLIGHT', snapshot({ issues: [req], items: [item(29, 'Development')] }));
+  assert.equal(f.proposal.kind, 'mechanical');
+  assert.equal(f.proposal.ops[0].op, 'set-board-status');
+  assert.equal(f.proposal.ops[0].value, 'Backlog');
+});
+
+test('GOAL-BOARD-INCONSISTENT: every goal on the board comes off it, one finding each', () => {
+  // R3-a (@jwildfire, 2026-08-15): goals are not board items. The rule enforces the
+  // convention per goal rather than comparing goals against each other and asking.
+  const onBoard = issue(72, { labels: ['goal'], title: 'Goal: keynote' });
+  const alsoOn = issue(73, { labels: ['goal'], title: 'Goal: autonomy' });
+  const offBoard = issue(78, { labels: ['goal'], title: 'Goal: charts' });
+  const snap = snapshot({
+    issues: [onBoard, alsoOn, offBoard],
+    items: [item(72, 'Backlog'), item(73, 'Development')],
+  });
+  const found = fire('GOAL-BOARD-INCONSISTENT', snap);
+  assert.deepEqual(found.map((f) => f.subject.number).sort(), [72, 73]);
+  for (const f of found) {
+    assert.equal(f.confidence, 'high');
+    assert.equal(f.proposal.ops[0].op, 'remove-board-item');
+  }
+});
+
+test('GOAL-BOARD-INCONSISTENT: silent when no goal is on the board', () => {
+  const snap = snapshot({ issues: [issue(78, { labels: ['goal'], title: 'Goal: charts' })] });
+  assert.equal(fire('GOAL-BOARD-INCONSISTENT', snap).length, 0);
+});
+
 test('hardWrapped: catches wrapped prose, spares lists, tables and fences', () => {
   assert.equal(hardWrapped('This is a body that someone wrapped\nat eighty columns because their\neditor told them to and it reads\nragged on GitHub'), true);
   assert.equal(hardWrapped('One line per paragraph, as it should be, however long that line happens to run in the raw markdown.'), false);

@@ -76,6 +76,8 @@ One or more topic labels per requirement.
 | `ai` | Agent workflow and automation work |
 | `blocked` | Blocked on an external dependency or decision |
 | `goal` | Standing goal — parent of requirement issues |
+
+Goals are **not board items**. A goal is permanent, so it has no delivery stage it could ever reach; goals are surfaced by the goal pages and the hierarchy view instead. The nightly audit takes any goal it finds on the obot Roadmap project back off it. (@jwildfire, 2026-08-15 — roadmap audit decision R3-a.)
 | `audit-decision` | Machine-read: an accept/reject decision on audit findings, filed by the roadmap page's Audit section and consumed by the apply lane |
 
 ## Milestones
