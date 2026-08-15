@@ -814,6 +814,13 @@ const stalledInFlight = {
       .filter((i) => IN_FLIGHT.includes(statusOf(s, i.repo, i.number) ?? ''))
       .filter((i) => days(i.updatedAt, s.now) > T.stalledDays)
       .filter((i) => !openPrsFor(s, i.repo, i.number).length)
+      // An issue whose every sub-issue is closed is finished, not stalled, and
+      // SUBS-DONE-PARENT-OPEN owns that case — it proposes promoting the item,
+      // where this rule would park it. Before R1-a made this rule mechanical the
+      // two could coexist; now they are both executable, and on 2026-08-15 they
+      // proposed opposite stage moves for #43 and #129 on the same night. One
+      // rule owns one situation, as OPEN-IN-RELEASED already does for Released.
+      .filter((i) => !(i.subSummary.total && i.subSummary.completed === i.subSummary.total))
       .map((i) => ({
         confidence: 'medium',
         subject: subject(i),

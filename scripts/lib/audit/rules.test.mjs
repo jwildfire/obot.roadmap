@@ -207,6 +207,36 @@ test('SUBS-DONE-PARENT-OPEN: Review + all subs closed proposes closing it', () =
   assert.equal(f.proposal.ops[0].value, 'Review');
 });
 
+// R1-a made STALLED-IN-FLIGHT mechanical, which put it in direct conflict with
+// SUBS-DONE-PARENT-OPEN: on 2026-08-15 both fired on #43 and #129 and proposed
+// opposite stage moves (park to Backlog vs promote to Review/close). Two
+// mechanical rules disagreeing about one issue makes the nightly apply order
+// decide the board, which is exactly the nondeterminism the audit exists to
+// remove. One rule owns one situation — the same precedent OPEN-IN-RELEASED
+// already sets for the Released stage.
+test('STALLED-IN-FLIGHT: yields to SUBS-DONE-PARENT-OPEN when every sub-issue is closed', () => {
+  const finished = issue(43, {
+    updatedAt: ago(23),
+    subIssues: [{ repo: HUB, number: 44, title: 't', url: 'u', state: 'CLOSED' }],
+    subSummary: { total: 1, completed: 1 },
+  });
+  const quiet = issue(22, { updatedAt: ago(32) });
+  const snap = snapshot({
+    issues: [finished, quiet],
+    items: [item(43, 'Review'), item(22, 'Development')],
+  });
+  assert.deepEqual(
+    fire('STALLED-IN-FLIGHT', snap).map((f) => f.subject.number),
+    [22],
+    'an issue whose tasks are all done is finished, not stalled — the other rule owns it',
+  );
+  assert.deepEqual(
+    fire('SUBS-DONE-PARENT-OPEN', snap).map((f) => f.subject.number),
+    [43],
+    'and that rule still fires on it, so the situation is not lost',
+  );
+});
+
 test('GOALLESS-REQUIREMENT: a requirement under a goal does not fire', () => {
   const goal = issue(78, {
     labels: ['goal'],
