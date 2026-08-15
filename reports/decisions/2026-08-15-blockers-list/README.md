@@ -2,9 +2,11 @@
 
 **Decision artifact** for the session framework, written 2026-08-15 in a sibling session (👯🤖 blocklist) at @jwildfire's direct request: *"I also wonder if we need a formal 'blockers' list for things that don't fit into RC or Decision artifacts. That list might be local only since it's going to be my hands on keyboard to implement. Work on a plan for that too - security probably important for that one …"*
 
-**Decide here:** [Q&A discussion #162](https://github.com/jwildfire/obot.roadmap/discussions/162) — @jwildfire records BL1–BL4 there. "Adopt all" is a complete answer.
+**Status: Decided 2026-08-15 — all four calls adopted as recommended.**
 
-**Status: awaiting @jwildfire — BL1–BL4.**
+## Decisions
+
+- **2026-08-15, in chat:** *"BL1-4 look good. Recommendations approved."* — resolves BL1–BL4, all as recommended. Implemented same day: deploy-time sentinel guard + `blockers*` gitignore line in this repo; `blocker-log` capture script in obot.agent; seed file promoted from provisional to canonical at the workspace-local location. Read path (dashboard section + walkthrough skill) filed as follow-up in obot.agent; count-line spec handed to the daily-briefing design ([Q&A #158](https://github.com/jwildfire/obot.roadmap/discussions/158)). ([Q&A #162](https://github.com/jwildfire/obot.roadmap/discussions/162) remains the thread of record for the original ask.)
 
 ## What it contains
 

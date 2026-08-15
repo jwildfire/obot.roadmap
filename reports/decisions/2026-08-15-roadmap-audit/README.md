@@ -1,5 +1,7 @@
 # The roadmap audit audits itself — 2026-08-15
 
+*v2 (2026-08-15): plain-English rewrite — decisions stated in words before any issue number, codes demoted to trailing tags; substance unchanged. (R4's section deliberately kept in v1 form: @jwildfire's verdict on it is being recorded by the follow-up audit session, which replaces that section wholesale.)*
+
 **Decision artifact** for the roadmap-audit loop ([#92](https://github.com/jwildfire/obot.roadmap/issues/92)), written 2026-08-15 in an unattended sibling session (👯🤖 audit), on @jwildfire's instruction to run a roadmap clean-up under a new standing grant to auto-accept high-confidence findings.
 
 **Decide here:** [Q&A discussion #163](https://github.com/jwildfire/obot.roadmap/discussions/163). Answering **"adopt all"** is a complete response.

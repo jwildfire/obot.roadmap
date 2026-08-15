@@ -1,5 +1,7 @@
 # How to interview @jwildfire — the elicitation method (E1–E4)
 
+*v2 (2026-08-15): plain-English rewrite, substance unchanged.*
+
 **Decision artifact** for goal [#79](https://github.com/jwildfire/obot.roadmap/issues/79), written 2026-08-15 in an unattended sibling session (👯🤖 elicit), on @jwildfire's direct request while reviewing the [app-plan artifact](../2026-08-14-app-plan-rewrite/): *"I basically want you to interview me to figure out what I want."*
 
 **Decide here:** [Q&A discussion #159](https://github.com/jwildfire/obot.roadmap/discussions/159). Answering **"defaults"** is a complete response.
