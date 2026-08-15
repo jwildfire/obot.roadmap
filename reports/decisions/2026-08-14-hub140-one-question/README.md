@@ -1,6 +1,6 @@
 # Decision — who gets to change the guardrails? (was: hub#140, thirteen days on)
 
-**Date:** 2026-08-14 · **v2:** 2026-08-15 · **Goal:** [#73 autonomy](https://github.com/jwildfire/obot.roadmap/issues/73) · **Status:** Awaiting @jwildfire — 3 questions (W1–W3)
+**Date:** 2026-08-14 · **v2:** 2026-08-15 · **Goal:** [#73 autonomy](https://github.com/jwildfire/obot.roadmap/issues/73) · **Status:** **Decided 2026-08-15** — all three recommendations approved in chat (D0005.1–.3 / W1–W3)
 
 > **v2 (2026-08-15):** full plain-English rewrite at @jwildfire's request ("still confused about what decision you need from me… issue numbers I don't have memorized"). Every question is now explained in words before any issue reference; links are optional citations. Substance, evidence, and all three recommendations unchanged from v1. Same URL.
 
@@ -26,9 +26,13 @@ One of the eight survives as a policy call (D4 → **W1**: what does the carve-o
 - W3a assumes the requirement-lifecycle convention that hub Requirements close via a release promotion @jwildfire approves; the v0.4.0 release is treated as that event for the delivered half.
 - The board-status wording ("Requirement Gathering → Design") is from the design document, not re-read from the Project board tonight.
 
+## Decision
+
+**@jwildfire, 2026-08-15, in chat (via 🎩🤖 obot-prime):** *"#156 looks good. recommnendations approved."* — W1a + W2a + W3a adopted as recommended. Recorded on the page itself in the `Decisions` section at the top, which is what the derived [decisions log](https://jwildfire.github.io/obot.roadmap/decisions/) reads.
+
 ## Recommendation
 
 **W1a** (attested-always) + **W2a** (blanket-accept the design defaults, sever the hub-workflows fragment) + **W3a** (close #140 with v0.4.0). Together they unblock the single obot.agent PR specified in design §10, which closes oa#65, oa#75, and discussion #141 — and which itself arrives on the attested lane.
 
 ---
-This artifact was drafted by Claude Code using Fable 5 (👯🤖 sibling, session 2026-08-14) and awaits @jwildfire's review
+This artifact was drafted by Claude Code using Fable 5 (👯🤖 sibling, session 2026-08-14); decided by @jwildfire on 2026-08-15 and recorded by 👯🤖 hub140x
