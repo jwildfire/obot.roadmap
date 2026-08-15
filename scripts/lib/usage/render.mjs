@@ -93,11 +93,15 @@ function agentTable(cells) {
     <td class="uz-num">${money(a.cost)}</td>
   </tr>`).join('\n');
 
-  return `<table class="rm-table uz-table">
+  // Seven numeric columns: the scroll container is what keeps them off the page
+  // at phone widths, where `html { overflow-x: clip }` would cut them instead.
+  return `<div class="rm-scroll">
+<table class="rm-table uz-table">
   <tr><th>Agent</th><th class="uz-num">Days</th><th class="uz-num">Calls</th><th class="uz-num">In + out</th>
       <th class="uz-num">Cache read</th><th class="uz-num">Cache write</th><th class="uz-num">Cost</th></tr>
 ${rows}
-</table>`;
+</table>
+</div>`;
 }
 
 function modelTable(models, mult) {
@@ -113,11 +117,13 @@ function modelTable(models, mult) {
   return `<p class="uz-fine">Rates are per million tokens, input / output. Cache traffic is priced off the
 input rate: reads &times;${mult.read}, writes &times;${mult.write5m} (5-minute TTL) or &times;${mult.write1h} (1-hour TTL).
 <code>&lt;synthetic&gt;</code> messages are generated locally by the CLI — no request, no charge.</p>
+<div class="rm-scroll">
 <table class="rm-table uz-table">
   <tr><th>Model</th><th class="uz-num">Rate in / out</th><th class="uz-num">Calls</th><th class="uz-num">In + out</th>
       <th class="uz-num">Cache read</th><th class="uz-num">Cache write</th><th class="uz-num">Cost</th></tr>
 ${rows}
-</table>`;
+</table>
+</div>`;
 }
 
 export function usageSection(data) {

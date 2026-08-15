@@ -5,6 +5,7 @@
 // the index. Aliased per-repo connections are exact and cost one request.
 import { graphql } from '../gh.mjs';
 import { REPOS } from '../repos.mjs';
+import { releaseVersion } from '../rc.mjs';
 
 const FRAGMENT = `
 fragment prFields on Repository {
@@ -14,6 +15,7 @@ fragment prFields on Repository {
       number title url isDraft createdAt updatedAt body
       author { login }
       baseRefName headRefName reviewDecision
+      milestone { title }
       reviewRequests(first: 10) { nodes { requestedReviewer { ... on User { login } } } }
       labels(first: 6) { nodes { name } }
     }
@@ -61,6 +63,10 @@ ${FRAGMENT}`;
         // the discriminator the roadmap's Todo section filters on.
         reviewRequested: pr.reviewRequests.nodes.map((n) => n.requestedReviewer?.login).filter(Boolean),
         labels: pr.labels.nodes.map((l) => l.name),
+        milestone: pr.milestone?.title ?? null,
+        // The release this PR proposes, when it proposes one — the key that
+        // pairs an RC PR with the draft release of the same version (lib/rc.mjs).
+        version: releaseVersion(pr.milestone?.title, pr.title),
         createdAt: pr.createdAt,
         updatedAt: pr.updatedAt,
         requirements: requirementRefs(pr),

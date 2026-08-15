@@ -9,6 +9,7 @@
 // is done here where the generator is ours and main-only is a first-class model.
 import { rest } from '../gh.mjs';
 import { REPOS } from '../repos.mjs';
+import { releaseVersion, UNTAGGED } from '../rc.mjs';
 
 async function repoReleases(repo) {
   // RC_TOKEN (deploy-site.yml mints it from the obot app) has push access to the
@@ -51,10 +52,17 @@ async function repoReleases(repo) {
     .filter((r) => r.draft)
     .map((r) => ({
       repo: repo.nameWithOwner,
-      tag: r.tag_name || null,
+      // A draft that has not chosen a tag gets GitHub's `untagged-<hex>`
+      // placeholder. That is an internal id, not a label: shown in the roadmap's
+      // narrow key column it truncated to `obot.agent unt…` and told a reader
+      // nothing. No tag reads better than a fake one.
+      tag: r.tag_name && !UNTAGGED.test(r.tag_name) ? r.tag_name : null,
       name: r.name || r.tag_name || 'untitled draft',
       url: r.html_url,
       createdAt: r.created_at,
+      // The release this draft would publish — paired against an open RC PR of
+      // the same version so one release is listed once (lib/rc.mjs).
+      version: releaseVersion(r.tag_name, r.name),
     }));
 
   return { published, drafts };

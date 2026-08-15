@@ -137,10 +137,12 @@ function ruleReference(rules) {
   return `<details class="ap-fold" id="rules">
 <summary>Rules <span class="ap-n">${rules.length}</span> — ${rules.length - quiet} firing, ${quiet} quiet</summary>
 <p class="ap-note">Every convention the audit knows about, and how it fared on the last run. Adding a rule is one object in <a href="https://github.com/${HUB}/blob/main/scripts/lib/audit/rules.mjs"><code>rules.mjs</code></a>.</p>
+<div class="rm-scroll">
 <table class="ap-rules">
 <tr><th>Rule</th><th>Group</th><th>State</th><th>What it checks, and why</th></tr>
 ${rows}
 </table>
+</div>
 </details>`;
 }
 
@@ -158,10 +160,12 @@ function noscriptList(findings) {
   return `<noscript>
 <div class="ap-noscript">
 <p class="ap-notice"><strong>This page needs JavaScript to decide findings.</strong> The queue below is the same ledger, read-only. Any finding can also be applied by <a href="${esc(decisionUrl('accept', ['RULE-ID:owner/repo#123']))}">filing a decision issue</a> naming its id — the same lane handles both.</p>
+<div class="rm-scroll">
 <table class="ap-rules">
 <tr><th>Confidence</th><th>Which issue</th><th>Title</th><th>What changes</th></tr>
 ${rows}
 </table>
+</div>
 </div>
 </noscript>`;
 }
@@ -388,6 +392,19 @@ body.audit footer.site { margin: 0; padding: 1.2rem 1rem 1.4rem; }
 .ap-tbl col.c-subj { width: 8.6rem; }
 .ap-tbl col.c-title { width: 28%; }
 .ap-tbl col.c-kind { width: 8.4rem; }
+
+/* Phone widths: the fixed column widths above add up to more than a 390px
+   viewport, and the shared sheet's overflow-x:clip on html cuts the excess
+   rather than letting it scroll. Give the queue its own scroller. Scoped to
+   narrow viewports because a scroll container re-parents the sticky header,
+   which is worth keeping as-is everywhere it already fits. */
+@media (max-width: 40rem) {
+  #ap-queue { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ap-tbl { min-width: 34rem; }
+  /* The rules and noscript tables sit in a .rm-scroll wrapper from the shared
+     sheet; the floor is what stops four columns compressing to slivers. */
+  .rm-scroll > .ap-rules { min-width: 30rem; }
+}
 
 /* Rule band — one line carrying the rule, its count, the single change it
    proposes when every finding under it proposes the same one, and ✓/✗ for the

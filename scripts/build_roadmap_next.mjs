@@ -26,6 +26,7 @@ import { collectDecisions } from './lib/collect/decisions.mjs';
 import { collectIdeas } from './lib/collect/ideas.mjs';
 import { collectGoals } from './lib/collect/goals.mjs';
 import { collectHierarchy } from './lib/collect/hierarchy.mjs';
+import { releaseKey } from './lib/rc.mjs';
 import { hierarchySection } from './lib/hierarchy/render.mjs';
 import { auditSection } from './lib/audit/render.mjs';
 import { siteHeader } from './lib/nav.mjs';
@@ -85,18 +86,34 @@ const empty = (text) => `<p class="rm-empty">${text}</p>`;
 const REVIEWER = 'jwildfire';
 const TODO_HL = 'live attention pulse';
 
-function todoSection(prRes, relRes, decRes) {
+// The release-candidate queue, deduped. One release, one row: an open RC PR and
+// the draft release of the same version in the same repo are the same release
+// seen twice — the PR is the reviewable thing, so it wins and the draft is
+// suppressed (lib/rc.mjs). The count badge and the build log both read this, so
+// they cannot disagree with the rows.
+function rcQueue(prRes, relRes) {
   const rcPrs = (prRes.value ?? []).filter((pr) => pr.reviewRequested?.includes(REVIEWER));
-  const rcDrafts = relRes.value?.drafts ?? [];
+  const prKeys = new Set(rcPrs.map((pr) => releaseKey(pr.repo, pr.version)).filter(Boolean));
+  const allDrafts = relRes.value?.drafts ?? [];
+  const drafts = allDrafts.filter((d) => !prKeys.has(releaseKey(d.repo, d.version)));
+  return { rcPrs, drafts, suppressed: allDrafts.length - drafts.length };
+}
+
+function todoSection(prRes, relRes, decRes) {
+  const { rcPrs, drafts: rcDrafts } = rcQueue(prRes, relRes);
   const awaiting = decRes.ok ? decRes.value.awaiting : [];
 
-  const prRows = rcPrs.map((pr) => `  <div class="rm-row" data-repo="${esc(pr.repo)}" data-hl="${TODO_HL}">
+  const prRows = rcPrs.map((pr) => `  <div class="rm-row" data-repo="${esc(pr.repo)}" data-hl="${TODO_HL}"${
+    pr.version ? ` data-release="${esc(releaseKey(pr.repo, pr.version))}"` : ''
+  }>
     <span class="rm-key"><a href="${pr.url}">${esc(shortRepo(pr.repo))}#${pr.number}</a></span>
     <span class="rm-main"><span class="rm-pill rc">rc pr</span> ${esc(pr.title)}</span>
     <span class="rm-meta">${age(pr.updatedAt)}</span>
   </div>`);
-  const draftRows = rcDrafts.map((d) => `  <div class="rm-row" data-repo="${esc(d.repo)}" data-hl="${TODO_HL}" data-draft>
-    <span class="rm-key"><a href="${d.url}">${esc(shortRepo(d.repo))}${d.tag ? ` ${esc(d.tag)}` : ''}</a></span>
+  const draftRows = rcDrafts.map((d) => `  <div class="rm-row" data-repo="${esc(d.repo)}" data-hl="${TODO_HL}" data-draft${
+    d.version ? ` data-release="${esc(releaseKey(d.repo, d.version))}"` : ''
+  }>
+    <span class="rm-key"><a href="${d.url}" title="${esc(`${shortRepo(d.repo)} — draft release${d.tag ? ` ${d.tag}` : ''}`)}">${esc(shortRepo(d.repo))}${d.tag ? ` ${esc(d.tag)}` : ''}</a></span>
     <span class="rm-main"><span class="rm-pill rc">draft release</span> ${esc(d.name)}</span>
     <span class="rm-meta">${age(d.createdAt)}</span>
   </div>`);
@@ -195,14 +212,19 @@ async function requirementRow(req, prsByRequirement) {
   </tr>`;
 }
 
+// Seven columns cannot wrap into a phone's width, and `html { overflow-x: clip }`
+// means anything past the viewport is not scrolled to — it is lost. So the table
+// gets its own scroll container and the page keeps its width.
 async function requirementTable(reqs, prsByRequirement) {
   if (!reqs.length) return empty('None.');
   const rows = [];
   for (const req of reqs) rows.push(await requirementRow(req, prsByRequirement));
-  return `<table class="rm-table">
+  return `<div class="rm-scroll">
+<table class="rm-table">
   <tr><th>#</th><th>Requirement</th><th>Stage</th><th>Repos</th><th>Tasks</th><th>Design</th><th>Updated</th></tr>
 ${rows.join('\n')}
-</table>`;
+</table>
+</div>`;
 }
 
 // ---------------------------------------------------------------- open PRs
@@ -447,15 +469,26 @@ ${auditLogHtml}
 
   // A count badge counts the rows of the first list or table after its heading,
   // so the numbers keep telling the truth once a filter is on.
-  function scopeOf(badge) {
+  function scopesOf(badge) {
     var head = badge.closest('h2, h3');
     for (var el = head; el; el = el.nextElementSibling) {
-      if (el.classList && (el.classList.contains('rm-rows') || el.tagName === 'TABLE')) return el;
+      // rm-scroll is the overflow container a wide table sits in — count through
+      // it, or a wrapped table silently loses its badge.
+      if (el.classList && (el.classList.contains('rm-rows') || el.classList.contains('rm-scroll') || el.tagName === 'TABLE')) return [el];
     }
-    return null;
+    // No list right after the heading: a section that groups its rows into
+    // subsections instead. Todo is the one that does, and its heading badge sat
+    // frozen at the build-time number — after the live RC refresh replaced the
+    // rows under it, the header said 8 while the two subsections said 2 and 8.
+    // Count every row list in the section. A section whose heading counts
+    // something other than rows (Audit counts findings) has no .rm-rows and
+    // keeps its build-time number.
+    var sec = badge.closest('.rm-sec');
+    var lists = sec ? sec.querySelectorAll('.rm-rows') : [];
+    return lists.length ? Array.prototype.slice.call(lists) : null;
   }
   var badges = Array.prototype.slice.call(document.querySelectorAll('.rm-count')).map(function (b) {
-    return { el: b, scope: scopeOf(b) };
+    return { el: b, scope: scopesOf(b) };
   });
 
   function apply() {
@@ -468,8 +501,11 @@ ${auditLogHtml}
     });
     badges.forEach(function (b) {
       if (!b.scope) return;
-      var rows = b.scope.querySelectorAll('[data-repo]');
-      b.el.textContent = Array.prototype.filter.call(rows, function (r) { return !r.hidden; }).length;
+      var n = 0;
+      b.scope.forEach(function (s) {
+        Array.prototype.forEach.call(s.querySelectorAll('[data-repo]'), function (r) { if (!r.hidden) n++; });
+      });
+      b.el.textContent = n;
     });
     // Hide a subsection, then a section, once nothing in it survives — a
     // highlights view should be shorter, not the same page full of empty headings.
@@ -564,15 +600,37 @@ ${auditLogHtml}
           if (mins < 1440) return Math.floor(mins / 60) + 'h';
           return Math.floor(mins / 1440) + 'd';
         };
+        // Mirrors lib/rc.mjs — same precedence (milestone, then title), same
+        // normalisation. Kept in sync by hand because this script runs in the
+        // browser and cannot import the module.
+        var releaseKeyOf = function (repo, candidates) {
+          for (var i = 0; i < candidates.length; i++) {
+            var c = candidates[i];
+            if (!c || /^untagged-[0-9a-f]+$/i.test(c)) continue;
+            var m = String(c).match(/\bv?(\d+)\.(\d+)(?:\.(\d+))?\b/);
+            if (m) return repo + '@v' + m[1] + '.' + m[2] + '.' + (m[3] || 0);
+          }
+          return null;
+        };
+        var prKeys = {};
         var fresh = data.items.map(function (it) {
           var repo = it.repository_url.replace('https://api.github.com/repos/', '');
-          return '<div class="rm-row" data-repo="' + escape(repo) + '" data-hl="live attention pulse">' +
+          var key = releaseKeyOf(repo, [it.milestone && it.milestone.title, it.title]);
+          if (key) prKeys[key] = true;
+          return '<div class="rm-row" data-repo="' + escape(repo) + '" data-hl="live attention pulse"' +
+            (key ? ' data-release="' + escape(key) + '"' : '') + '>' +
             '<span class="rm-key"><a href="' + escape(it.html_url) + '">' + escape(repo.split('/')[1]) + '#' + it.number + '</a></span>' +
             '<span class="rm-main"><span class="rm-pill rc">rc pr</span> ' + escape(it.title) + '</span>' +
             '<span class="rm-meta">' + freshAge(it.updated_at) + '</span></div>';
         });
-        var drafts = Array.prototype.filter.call(rcRows.children, function (el) { return el.hasAttribute && el.hasAttribute('data-draft'); })
-          .map(function (el) { return el.outerHTML; });
+        // Re-run the build-time dedupe over the fresh list: a draft release whose
+        // RC PR is in this response is the same release, and listing it again
+        // would put the duplicate straight back after the fetch.
+        var drafts = Array.prototype.filter.call(rcRows.children, function (el) {
+          if (!el.hasAttribute || !el.hasAttribute('data-draft')) return false;
+          var key = el.getAttribute('data-release');
+          return !(key && prKeys[key]);
+        }).map(function (el) { return el.outerHTML; });
         var all = fresh.concat(drafts);
         rcRows.innerHTML = all.length ? all.join('') : '<p class="rm-empty">No release candidates are waiting.</p>';
         apply(); // recount badges and re-apply active filters over the fresh rows
@@ -614,10 +672,12 @@ const degraded = [
   ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes], ['goals', goalRes], ['hierarchy', hierRes],
   ['decisions', decRes],
 ].filter(([, r]) => !r.ok).map(([n]) => n);
-const todoRcCount = (prRes.value ?? []).filter((pr) => pr.reviewRequested?.includes(REVIEWER)).length
-  + (relRes.value?.drafts.length ?? 0);
+const todoRc = rcQueue(prRes, relRes);
+const todoRcCount = todoRc.rcPrs.length + todoRc.drafts.length;
 console.log(
-  `roadmap-next: todo ${todoRcCount} RCs + ${decRes.value?.awaiting.length ?? 0} decisions, ` +
+  `roadmap-next: todo ${todoRcCount} RCs` +
+  (todoRc.suppressed ? ` (${todoRc.suppressed} draft release${todoRc.suppressed > 1 ? 's' : ''} folded into their RC PR)` : '') +
+  ` + ${decRes.value?.awaiting.length ?? 0} decisions, ` +
   `${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
   `${prRes.value?.length ?? 0} PRs, ${relRes.value?.upcoming.length ?? 0} upcoming, ` +
   `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas, ` +
