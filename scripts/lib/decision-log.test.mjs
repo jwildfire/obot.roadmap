@@ -111,3 +111,21 @@ test('emphasis does not turn a settled decision back into an open one', async ()
   // Some questions still his: it stays on the list.
   assert.equal(isAwaiting('Partially decided 2026-08-15 — A1–A2 accepted'), true);
 });
+
+test('a byline in a paragraph is chrome, not the quote', () => {
+  // Most artifacts put the byline in a <span class="k">, which the paragraph scan
+  // skips for free. One backfill put it in a <p> and shipped "@jwildfire · … · in
+  // chat" as his words on the published log.
+  const r = parseDecisionRecord(wrap(`
+    <div class="verdict" data-date="2026-08-15" data-verbatim="false">
+      <p><b>@jwildfire &middot; 2026-08-15 &middot; in chat</b></p>
+      <p>A1 and A2 accepted as recommended; A3 and A4 held open.</p>
+      <p>He also said the goal needs rework.</p>
+    </div>`));
+  assert.equal(r.entries[0].quote, 'A1 and A2 accepted as recommended; A3 and A4 held open.');
+  assert.equal(r.entries[0].outcome, 'He also said the goal needs rework.');
+});
+
+test('entities the artifacts actually use come out as characters', () => {
+  assert.equal(text('a &middot; b &hellip; c &#8212; d'), 'a · b … c — d');
+});

@@ -54,11 +54,20 @@ export const text = (html = '') => html
   .replace(/<[^>]+>/g, ' ')
   .replace(/&ldquo;|&rdquo;|&quot;/g, '"')
   .replace(/&lsquo;|&rsquo;/g, "'")
-  .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–')
-  .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-  .replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&')
+  .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–').replace(/&middot;/g, '·')
+  .replace(/&hellip;/g, '…').replace(/&nbsp;/g, ' ')
+  .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+  .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  .replace(/&apos;/g, "'").replace(/&amp;/g, '&')
   .replace(/\s+/g, ' ')
   .trim();
+
+// The byline — "@jwildfire · 2026-08-15 · in chat" — is chrome, not the thing he
+// said. Most artifacts put it in a <span class="k">, which the paragraph scan skips
+// for free; some put it in a <p>, and one of those shipped a byline as the quote on
+// the published log (2026-08-15). Recognised by shape rather than by class, so it
+// stays skipped whatever element the next artifact wraps it in.
+const isByline = (s = '') => /^@?\w[\w.-]*\s*[·|]\s*\d{4}-\d{2}-\d{2}\b/.test(s.trim());
 
 /** The quote marks are the artifact's; the log adds its own. */
 const unquote = (s = '') => s.replace(/^["'“‘]+/, '').replace(/["'”’]+$/, '').trim();
@@ -81,7 +90,8 @@ export function parseDecisionRecord(html = '') {
   while ((m = re.exec(section[1])) !== null) {
     const tag = m[2];
     const body = m[3];
-    const paras = [...body.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)].map((p) => text(p[1])).filter(Boolean);
+    const paras = [...body.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map((p) => text(p[1])).filter(Boolean).filter((t) => !isByline(t));
     entries.push({
       date: attr(tag, 'data-date'),
       channel: attr(tag, 'data-channel') || 'in chat',
