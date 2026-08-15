@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz v1.7.0 — annotated demo</title>
+<meta name="description" content="What v1.7.0 adds, annotated: the Time-to-Event Explorer, captured live from the release-candidate build, with a way into each behaviour.">
+<style>
+:root{
+  /* Paper matched to the dev site's own background so the captures sit flush
+     with the page instead of floating on white. */
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;        /* interactive: links, steps — and the Placebo curve */
+  --bronze:#a95d10;      /* accent, from the charts */
+  --flag:#b83a2e;        /* the high-dose curve red */
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+
+/* ---------- masthead ---------- */
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+/* ---------- contents ---------- */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+/* ---------- the cut-line: this page's section rule ----------
+   A dashed step up at each section break — the release's own visual grammar
+   (the KM step curve) as page structure. */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.tag{font:600 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 9px;border-radius:3px;border:1px solid currentColor}
+.tag.exp{color:var(--bronze)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:17px;margin:34px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+/* ---------- figures ---------- */
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--panel);line-height:0}
+.frame img{display:block;width:100%;height:auto}
+.pin{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:23px;height:23px;border-radius:50%;background:var(--ink);color:var(--paper);
+  display:grid;place-items:center;font:700 12px/1 var(--mono);
+  box-shadow:0 0 0 3px var(--paper),0 1px 4px rgba(0,0,0,.3)}
+figcaption{margin-top:12px}
+.keys{margin:0;padding:0;list-style:none;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 26px}
+.keys li{position:relative;padding-left:28px;font-size:14px;color:var(--ink2);line-height:1.45}
+.keys b{position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:50%;
+  background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font:700 11px/1 var(--mono)}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.cap b{color:var(--ink2);font-weight:600}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.pair figure{margin:0}
+.pair .cap{margin-top:10px}
+.narrow{max-width:720px}
+
+/* ---------- read/try strip ---------- */
+.strip{display:grid;grid-template-columns:1fr 340px;gap:0;margin:34px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+/* ---------- closing ---------- */
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pair{grid-template-columns:1fr}
+  .pin{width:20px;height:20px;font-size:10px}
+  .mast{padding-top:36px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">safety.viz <span class="dot"></span> release review <span class="dot"></span> 2026-08-15</p>
+  <h1>What <span class="v">v1.7.0</span> adds, annotated</h1>
+  <p class="lede">The gallery learns to answer "how long until…". One new renderer — the Time-to-Event Explorer, the thirteenth in the gallery — brings Kaplan–Meier displays to the safety portfolio: step curves with censoring marks, pointwise confidence bands, and the at-risk table the FDA Safety Tables &amp; Figures guide mandates beneath every time-to-event plot. Each section below is a behaviour, a capture of it running, and a way into the live demo to check it yourself. Every capture was taken on 15 August from the <a href="https://jwildfire.github.io/safety.viz/dev/">live dev deploy</a> — the build this cut promotes.</p>
+  <p class="facts">
+    <span><b>1</b> new renderer — <b>13</b> in the gallery</span>
+    <span><b>1 250</b> unit + <b>252</b> browser tests</span>
+    <span>estimator cross-validated against <b>survival::survfit</b></span>
+    <span>promotes <b>dev → main</b> via <a href="https://github.com/jwildfire/safety.viz/pulls">the v1.7.0 RC</a></span>
+  </p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#curves"><span class="ref">sv#129</span><span class="t">The chart family</span><span class="s">Curves, censor marks, bands, at-risk table</span></a>
+  <a href="#orient"><span class="ref">sv#129</span><span class="t">Two orientations</span><span class="s">Incidence up, or survival down — always named</span></a>
+  <a href="#sparse"><span class="ref">sv#129</span><span class="t">The honest wide band</span><span class="s">A rare endpoint, displayed truthfully</span></a>
+  <a href="#ask"><span class="ref">sv#129</span><span class="t">Ask the curve</span><span class="s">Hover a step, click it, name its participants</span></a>
+</nav>
+
+<!-- ============================================================ 1 ======= -->
+<div class="cut"><span>sv#129 <em>· hub#161</em></span></div><section id="curves">
+  <div class="hd">
+    <h2>The chart family</h2>
+    <span class="tag exp">Experimental</span>
+  </div>
+  <p class="what">One estimator pass produces everything on screen: the step curves by treatment group, the censoring tick marks along them, the pointwise 95% confidence bands (Greenwood variance, log-log transform — the <code>survival::survfit</code> default family, cross-validated against it), and the <b>No. at risk / Cumulative events</b> strip beneath. Because the table is derived from the same pass as the curve, the two cannot disagree.</p>
+
+  <figure>
+    <div class="frame">
+      <img src="media/tte-hero.jpg" alt="Time-to-Event Explorer: cumulative-incidence step curves for Placebo and two Xanomeline arms with censoring tick marks and 95% confidence bands, data-handling notes above the chart, and the No. at risk / Cumulative events strip table beneath." width="1312" height="660">
+      <b class="pin" style="--x:52%;--y:5%">1</b>
+      <b class="pin" style="--x:88%;--y:26%">2</b>
+      <b class="pin" style="--x:71%;--y:47%">3</b>
+      <b class="pin" style="--x:54%;--y:82%">4</b>
+    </div>
+    <figcaption>
+      <ol class="keys">
+        <li><b>1</b> The header states its statistics: pointwise 95% CIs, not simultaneous — and where 1 − KM overreads risk</li>
+        <li><b>2</b> Censoring is drawn, not hidden: a tick on the curve at every censored exit</li>
+        <li><b>3</b> The band quantifies what the curve alone would overstate — precision thins as the at-risk set drains</li>
+        <li><b>4</b> The FDA ST&amp;F strip: at-risk and cumulative-event counts at each gridline, from the same estimator pass</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>Time-to-first-event is the display safety review reaches for when incidence tables disagree about "how often" because the arms differ in "how long". The demo endpoint is the CDISC Pilot 01 study's actual safety concern — time to first dermatologic event on a dermal patch — and the arms genuinely separate.</p>
+      <p>The renderer consumes an ADTTE-shaped analysis dataset: the clinical derivation of "first qualifying event" stays upstream with the data owner, where it belongs. It ships <b>Experimental</b> pending review of design decisions D1–D6.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/time-to-event/index.html"><span>Open the Time-to-Event Explorer</span></a>
+      <ol>
+        <li>Read the header line: events, censored, and the CI caveat are stated before the chart.</li>
+        <li>Follow the blue Placebo curve to its plateau — the ticks are censored participants leaving the risk set.</li>
+        <li>Check any gridline against the strip table: the curve and the counts always agree.</li>
+        <li>Then read the <a href="https://jwildfire.github.io/safety.viz/dev/time-to-event/evidence.html">evidence page</a> — every TTE-* row traces to a named test.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 ======= -->
+<div class="cut"><span>sv#129 <em>· hub#161</em></span></div><section id="orient">
+  <div class="hd"><h2>Two orientations, one estimator</h2></div>
+  <p class="what">The default display is <b>cumulative incidence (1 − KM)</b> — risk accumulating upward, the direction safety questions are asked in. One control flips to <b>event-free probability (KM)</b> — the classic survival curve stepping down. The axis always names the estimator in force, so a screenshot of either view carries its own definition.</p>
+
+  <figure>
+    <div class="frame">
+      <img src="media/tte-survival.jpg" alt="The same endpoint flipped to event-free probability: KM curves stepping down from 100%, the y-axis labeled 'Event-free probability (KM)', with the same censor marks, bands and strip table." loading="lazy" width="1312" height="660">
+    </div>
+    <p class="cap">The same endpoint, same estimator pass, flipped to event-free probability. Nothing else moves: bands, censor marks and the strip table carry over, and the y-axis label changes to say exactly what is now plotted. The header's caveat is standing, not decorative: 1 − KM can overestimate absolute risk when competing events are present — censoring here is end-of-study regardless of reason, including death, which is precisely that situation — and the <a href="https://jwildfire.github.io/safety.viz/dev/time-to-event/guide.html">clinical guide</a> walks through it.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>Reviewers argue about up-versus-down more than any other property of this display. Offering both, with the estimator named on the axis in every state, means the choice is presentational — the statistics cannot silently change under a toggle.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/time-to-event/index.html"><span>Open the demo, find Display → Orientation</span></a>
+      <ol>
+        <li>Flip Orientation to <b>Event-free probability (KM)</b> and watch the axis label follow.</li>
+        <li>Toggle the <b>Pointwise 95% CI band</b> checkbox off and on.</li>
+        <li>Filter Treatment Group to a single arm — counts and curves re-derive.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 ======= -->
+<div class="cut"><span>sv#129 <em>· hub#161</em></span></div><section id="sparse">
+  <div class="hd"><h2>The honest wide band</h2></div>
+  <p class="what">The demo ships three endpoints, and one is deliberately sparse: time to first <i>serious</i> adverse event — three events across 254 participants. The wide, hugging-the-floor band that produces is not a rendering problem. It is the correct display for a rare endpoint, and the renderer draws it rather than prettifying it.</p>
+
+  <figure>
+    <div class="frame">
+      <img src="media/tte-sparse.jpg" alt="Time to First Serious Adverse Event: 254 participants, 3 events, 251 censored — near-flat curves at the floor of the chart with a wide confidence band and dense censor ticks." loading="lazy" width="1312" height="660">
+    </div>
+    <p class="cap">Three events, 251 censored. The curves barely leave the floor, the band is wide and ends where the data end, and the strip table says plainly that almost nobody had the event. <b>This is the display doing its job</b>: a rare-endpoint KM plot that looked confident would be lying. The header counts events and censored up front, so the sparseness is announced before the eye reaches the curve.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>Safety endpoints are often rare by construction. A renderer that only looks good on rich endpoints teaches its readers to over-trust thin data; this one was shipped with the sparse case as a first-class demo endpoint precisely so the honest behaviour is on display.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/time-to-event/index.html"><span>Open the demo, switch the endpoint</span></a>
+      <ol>
+        <li>Set Endpoint to <b>Time to First Serious Adverse Event</b>.</li>
+        <li>Read the header: 3 events, 251 censored — stated before the chart.</li>
+        <li>Switch to <b>Time to First Treatment-Emergent AE</b> for the opposite extreme.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 ======= -->
+<div class="cut"><span>sv#129 <em>· hub#161</em></span></div><section id="ask">
+  <div class="hd"><h2>Ask the curve</h2></div>
+  <p class="what">Every step answers questions. Hover an event step and the tooltip gives the day, the estimate with its pointwise CI, and the risk-set arithmetic at that moment. Click it, and the participants behind that step are named — the same drill-down-to-the-person discipline the rest of the gallery holds.</p>
+
+  <div class="pair">
+    <figure>
+      <div class="frame">
+        <img src="media/tte-tooltip.jpg" alt="Tooltip on a high-dose event step: Day 30 — Xanomeline High Dose, cumulative incidence 50.2%, pointwise 95% CI 39.3–62.2%, 1 event of 36 at risk, 1 censored here (end of study)." loading="lazy" width="1008" height="527">
+      </div>
+      <p class="cap"><b>Hover:</b> day 30 on the high-dose arm — the estimate (50.2%), its pointwise CI (39.3–62.2%), and the arithmetic (1 event of 36 at risk; 1 censored here, with the censoring reason). The tooltip reads as a sentence a reviewer could quote.</p>
+    </figure>
+    <figure>
+      <div class="frame">
+        <img src="media/tte-select.jpg" alt="After clicking the same event step: the footnote beneath the chart reads 'Xanomeline High Dose, day 30: 1 participant with an event — 01-703-1076'." loading="lazy" width="1312" height="691">
+      </div>
+      <p class="cap"><b>Click:</b> the step's participants are named beneath the chart — here, day 30's single event is participant <code>01-703-1076</code>. The aggregate curve stays connected to the people in it.</p>
+    </figure>
+  </div>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>A KM curve is an aggregate over individual exits, and safety review eventually needs the individuals. Keeping "which participants are behind this step" one click away is what makes the display a working tool rather than a figure.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/time-to-event/index.html"><span>Open the demo</span></a>
+      <ol>
+        <li>Hover any event dot and read the estimate, CI and risk-set line.</li>
+        <li>Click it — the participant IDs appear beneath the chart.</li>
+        <li>Click empty chart space to clear the selection.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ end ===== -->
+<div class="cut"><span>notes</span></div><section>
+  <div class="hd"><h2>Reading this page</h2></div>
+  <div class="close">
+    <div>
+      <h3>How the captures were made</h3>
+      <ul>
+        <li>Playwright drove Chromium against the <b>live dev deploy</b> — <a href="https://jwildfire.github.io/safety.viz/dev/time-to-event/index.html">the release-candidate build</a> as served — on 2026-08-15. Nothing was staged or mocked; the tooltip and participant-selection captures are real interactions located via the chart's own data registry.</li>
+        <li>Stills are 2× JPEG.</li>
+        <li>The demo data is <code>site/data/adtte.csv</code>, derived from pharmaverseadam <code>adae</code> + <code>adsl</code> (CDISC Pilot 01): three endpoints — first dermatologic event, first serious AE (the sparse case), first any TEAE. The KM estimator is cross-validated against <code>survival::survfit</code> on this data.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Also in the release, not shown here</h3>
+      <ul>
+        <li><b>NEWS.md becomes the running release log</b> (<a href="https://github.com/jwildfire/safety.viz/pull/125">sv#125</a>, <a href="https://github.com/jwildfire/safety.viz/pull/127">sv#127</a>) — unreleased work accumulates under an <code>(Upcoming)</code> heading per the program convention.</li>
+        <li><b>Evidence baselines refreshed</b> for every module on the canonical Linux environment as part of the time-to-event landing.</li>
+        <li><b>Release prep</b> (<a href="https://github.com/jwildfire/safety.viz/pull/130">sv#130</a>) — <code>dist/safety.viz-1.7.0/</code> vendored, fixtures repointed.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="strip" style="margin-top:30px">
+    <div class="why">
+      <p class="lbl">Where this fits</p>
+      <p>This page is the review surface for the v1.7.0 release candidate (dev → main). The release notes live in the RC PR's body and in <code>NEWS.md</code>, and publish on the <code>v1.7.0</code> tag when it merges — on your approval, via the attested lane, and not before.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">The rest of the candidate</p>
+      <ol>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/">The dev gallery</a> — all thirteen renderers</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/time-to-event/evidence.html">time-to-event evidence</a> — requirement-keyed test records</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/time-to-event/guide.html">time-to-event clinical guide</a> — the 1 − KM reading, stated</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/time-to-event/api.html">API reference</a> — the data contract</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Captured and written by Claude Code using Fable 5 (session 👯🤖 rcsweep) on 2026-08-15 against the safety.viz v1.7.0 release candidate — for @jwildfire's review.</p>
+</footer>
+
+</div>
+
+</body></html>
