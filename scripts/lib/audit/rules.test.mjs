@@ -103,15 +103,33 @@ test('OPEN-IN-RELEASED: shipped-but-unclosed proposes the close, sure only when 
   assert.equal(fire('OPEN-IN-RELEASED', old)[0].confidence, 'high');
 });
 
-test('OPEN-IN-RELEASED: open sub-issues mean it has not shipped — go back to Review', () => {
+test('OPEN-IN-RELEASED: open sub-issues mean it spans two releases — propose the split, not a stage move', () => {
   const parent = issue(21, {
     subIssues: [{ repo: 'jwildfire/safety.viz', number: 9, title: 'sub', url: 'u', state: 'OPEN' }],
     subSummary: { total: 1, completed: 0 },
     updatedAt: ago(40),
   });
   const [f] = fire('OPEN-IN-RELEASED', snapshot({ issues: [parent], items: [item(21, 'Released')] }));
-  assert.equal(f.proposal.ops[0].op, 'set-board-status');
-  assert.equal(f.proposal.ops[0].value, 'Review');
+  // one requirement, one release (@jwildfire 2026-08-15): the delivered scope really did
+  // ship, so this is a split, not a walk back to Review.
+  assert.equal(f.proposal.kind, 'agentic');
+  assert.equal(f.proposal.ops, undefined);
+  assert.match(f.proposal.summary, /Split it/);
+  assert.match(f.proposal.prompt, /TRANSFER the deferred sub-issues/);
+  assert.match(f.proposal.prompt, /jwildfire\/safety\.viz#9/);
+});
+
+test('OPEN-IN-RELEASED: no escape hatch — a phased marker in the body does not silence it', () => {
+  // R4-a proposed honouring a `phased` label or a stays-open marker. @jwildfire rejected it:
+  // a hatch would restore exactly the ambiguity that made this rule marginal.
+  const marked = issue(35, {
+    body: 'Phase 1 shipped. <!-- stays-open: phase 2 pending -->',
+    labels: ['requirement', 'phased'],
+    updatedAt: ago(60),
+  });
+  const found = fire('OPEN-IN-RELEASED', snapshot({ issues: [marked], items: [item(35, 'Released')] }));
+  assert.equal(found.length, 1);
+  assert.equal(found[0].proposal.ops[0].op, 'close-issue');
 });
 
 test('UNSTAGED-BOARD-ITEM: closed → Released at high confidence, open → inferred', () => {

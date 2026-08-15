@@ -153,8 +153,8 @@ const openInReleased = {
   id: 'OPEN-IN-RELEASED',
   title: 'Open issue the board calls Released',
   group: 'Board integrity',
-  why: 'Released is a terminal stage. An open issue in it is either finished work nobody closed — the usual case, and the reason the "close clicks" list keeps reappearing on the session hand-off — or live work filed in the wrong lane.',
-  fix: 'Close it if the work is done, otherwise move it back to the stage it is actually in.',
+  why: 'Released is a terminal stage, and under @jwildfire\'s one-requirement-one-release rule (2026-08-15) nothing is ever open in it on purpose. An open issue at Released is one of exactly three defects: finished work nobody closed, live work filed in the wrong lane, or a requirement whose scope spans more than one release. There is deliberately no label, marker or comment that silences this rule — an escape hatch would restore the ambiguity the rule exists to remove.',
+  fix: 'Close it if the work is done; move the stage back if the work is live; split it if it carries scope beyond the release it delivered.',
   needs: 'board',
   check(s) {
     const out = [];
@@ -180,14 +180,27 @@ const openInReleased = {
         continue;
       }
       if (openSubs.length) {
+        // A Released requirement with open sub-issues is a requirement spanning more than
+        // one release, which the one-requirement-one-release rule forbids. The remedy is the
+        // split, not a stage move back: the delivered scope really did ship, and dragging the
+        // requirement to Review would deny that. Left agentic on purpose — the audit can
+        // prepare the whole split, but choosing the new requirement's milestone is a
+        // scheduling judgement, and a wrongly-split requirement is expensive to unpick.
+        const subList = openSubs.map((x) => `${x.repo}#${x.number}`).join(', ');
         out.push({
           confidence: 'medium',
           subject: { kind: 'issue', repo: it.repo, number: it.number, title: it.title, url: it.url },
           evidence,
           proposal: {
-            kind: 'mechanical',
-            summary: `Move it back to Review — ${openSubs.length} sub-issue${openSubs.length === 1 ? ' is' : 's are'} still open, so it has not shipped.`,
-            ops: [setStatus(it, 'Review')],
+            kind: 'agentic',
+            summary: `Split it — the board says it shipped, but ${openSubs.length} sub-issue${openSubs.length === 1 ? ' is' : 's are'} still open, so it covers more than one release.`,
+            prompt: [
+              'This requirement delivered a release and still carries unshipped scope, which the one-requirement-one-release rule forbids (README — One requirement, one release).',
+              `Open sub-issues: ${subList}.`,
+              'Work out which release the requirement actually delivered, and which sub-issues did not make it.',
+              'Then, in this order: (1) comment on this issue naming what shipped and where, what is deferred and why, and where it went; (2) file a new requirement for the deferred scope, with the five template sections, assignee jwildfire and its own milestone; (3) TRANSFER the deferred sub-issues to it — removeSubIssue from this parent then addSubIssue to the new one, never close-and-refile, so scoping and history survive; (4) correct any sub-issue milestone that names a release the work did not ship in; (5) close this issue as completed and leave the board at Released.',
+              'Two exceptions need no new requirement: a defect found after release is an ordinary issue against shipped work, and scope that already has a requirement of its own was merely nested — in both cases re-home it to the parent goal and say so.',
+            ].join(' '),
           },
         });
         continue;
@@ -199,7 +212,7 @@ const openInReleased = {
         proposal: {
           kind: 'agentic',
           summary: 'Decide whether the work is finished (close it) or still live (move the stage back), then do that.',
-          prompt: 'Read the issue and any linked PRs. If the work is finished, close the issue as completed and leave the board at Released. If it is not finished, set the board Status to the stage it is genuinely in. Say which you did and why in one comment on the issue.',
+          prompt: 'Read the issue and any linked PRs. Recent activity on a Released issue is evidence the work is live, so lean towards a stage error rather than a close. If the work is finished, close the issue as completed and leave the board at Released. If it is not finished, set the board Status to the stage it is genuinely in. If it turns out to carry scope beyond the release it delivered, split it instead — note the deferral here, file a new requirement with its own milestone, transfer the deferred sub-issues, then close this one. Say which you did and why in one comment on the issue.',
         },
       });
     }
