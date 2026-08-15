@@ -1,6 +1,8 @@
-# Decision — hub#140, thirteen days on: one question survives
+# Decision — who gets to change the guardrails? (was: hub#140, thirteen days on)
 
-**Date:** 2026-08-14 · **Goal:** [#73 autonomy](https://github.com/jwildfire/obot.roadmap/issues/73) · **Status:** Awaiting @jwildfire — W1–W3
+**Date:** 2026-08-14 · **v2:** 2026-08-15 · **Goal:** [#73 autonomy](https://github.com/jwildfire/obot.roadmap/issues/73) · **Status:** Awaiting @jwildfire — 3 questions (W1–W3)
+
+> **v2 (2026-08-15):** full plain-English rewrite at @jwildfire's request ("still confused about what decision you need from me… issue numbers I don't have memorized"). Every question is now explained in words before any issue reference; links are optional citations. Substance, evidence, and all three recommendations unchanged from v1. Same URL.
 
 ## Question
 
