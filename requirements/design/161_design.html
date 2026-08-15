@@ -78,6 +78,18 @@
 </ol>
 </nav>
 
+<div class="decision" style="border-left:4px solid #d97706;background:#fef3c7">
+<strong>Revision — 2026-08-15, sv#131 RC review.</strong> @jwildfire's review of the v1.7.0 release candidate
+overturned decision D1's UI consequence: endpoint selection is now driven by <em>flexible multiselect filters over
+the event dataset</em> (time to first qualifying event, censored at the population follow-up-end day), not by a
+pre-derived ADTTE endpoint list — "important items will vary from study to study." The renderer consumes ADAE-shaped
+event records plus an ADSL-shaped population extract; the fixed derivation rule is stated in the module's clinical
+guide, and the clinically loaded censoring-date decision stays with the data owner in the population dataset.
+Configured filter presets are staged to a later release. Implemented in
+<a href="https://github.com/jwildfire/safety.viz/pull/133">safety.viz#133</a>; the requirement matrix's
+<code>TTE-FILT-*</code>/<code>TTE-DERIV-*</code>/<code>TTE-ANIM-*</code> rows carry the revision. Sections §4–§6
+below describe the original ADTTE design and are retained as drafted.</div>
+
 <h2 id="summary">1. Summary</h2>
 
 <p>safety.viz gains a <strong>time-to-event</strong> module: Kaplan–Meier curves by treatment group with
@@ -210,7 +222,7 @@ nothing-dropped-silently pattern).</p>
 </table>
 
 <div class="decision">
-<strong>D1 — ADTTE contract, not raw-domain derivation.</strong> The alternative — deriving time-to-first-event
+<strong>D1 — ADTTE contract, not raw-domain derivation.</strong> <em>(Revised 2026-08-15 by the sv#131 review — see the banner at the top.)</em> The alternative — deriving time-to-first-event
 in the browser from AE + population domains — was rejected for Phase 1.
 <ul>
 <li>The censoring date hierarchy, treatment-emergence rules, and event baskets are clinical analysis decisions;
