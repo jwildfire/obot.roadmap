@@ -17,6 +17,20 @@ function cell(cells, headers, name) {
   return i === -1 ? '' : (cells[i] ?? '');
 }
 
+/**
+ * Does this row still want an answer from @jwildfire?
+ *
+ * The emphasis has to come off first. Rows that were settled emphatically —
+ * `**Decided 2026-08-15** — six of seven adopted` — read as still-open to a test
+ * anchored on the literal start of the cell, and two answered decisions were
+ * sitting in his waiting-on-you list because of it (found 2026-08-15 while
+ * building the decision log). "Partially decided" stays awaiting on purpose:
+ * some of its questions are still his.
+ */
+export function isAwaiting(status = '') {
+  return !/^decided\b/i.test(status.replace(/[*_`]/g, '').trim());
+}
+
 export async function collectDecisions() {
   const md = await fs.readFile(path.join(ROOT, 'reports', 'decisions', 'README.md'), 'utf8');
 
@@ -47,7 +61,7 @@ export async function collectDecisions() {
         status,
         // The status cell may carry markdown links; flatten them for meta columns.
         statusPlain: status.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'),
-        awaiting: !/^decided/i.test(status),
+        awaiting: isAwaiting(status),
       };
     });
 

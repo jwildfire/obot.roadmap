@@ -59,11 +59,23 @@ PRs, and these.
   **Decided** in the same commit. The Q&A thread remains a valid place to decide,
   but it is no longer the only record — the artifact itself is.
 
+- **The record is machine-readable, and the deploy enforces it.** A Decisions section
+  is not just prose: each decision inside it is one block carrying `data-date`,
+  `data-channel` and `data-resolves` (plus `data-verbatim="false"` when the words are
+  a relay rather than a quotation), wrapped in `<section id="decisions">`. The
+  deploy-time generator reads those blocks to build the site's
+  [Decisions log](https://jwildfire.github.io/obot.roadmap/decisions/), and **fails the
+  build** when an artifact this Index calls decided carries no readable section — a log
+  that silently omits a decision reads as complete, which is worse than no log.
+- **Never hand-maintain the log.** The artifacts are the source of truth; the log and
+  its `decisions.json` feed are views assembled at deploy time. Recording a decision
+  means editing the artifact, and nothing else.
+
 ## Index
 
 | Decision | Date | Goal | Discussion | Status |
 |---|---|---|---|---|
-| [Recording your decisions — in-doc, a derived log, and the "approve" button](2026-08-15-decision-recording/) | 2026-08-15 | Session framework | — (decide in chat) | Partially decided 2026-08-15 — Decisions-section rule adopted + in force; calls 1–3 (no public approve button / derived log / no new tracker) await @jwildfire |
+| [Recording your decisions — in-doc, a derived log, and the "approve" button](2026-08-15-decision-recording/) | 2026-08-15 | Session framework | — (decided in chat) | **Decided 2026-08-15** — Decisions-section rule plus all three calls adopted ("I'm good with recs in …", in chat). Implemented same day: the [derived Decisions log](https://jwildfire.github.io/obot.roadmap/decisions/) is live and the deploy fails on an unrecorded decision; the local click-to-decide surface is [requirement #180](https://github.com/jwildfire/obot.roadmap/issues/180) |
 | [The roadmap audit audits itself](2026-08-15-roadmap-audit/) | 2026-08-15 | roadmap audit [#92](https://github.com/jwildfire/obot.roadmap/issues/92) | [#163](https://github.com/jwildfire/obot.roadmap/discussions/163) | **Decided 2026-08-15** — six of seven adopted as recommended; R4 rejected and replaced by the one-requirement-one-release rule. Implemented same day: 4 closes, 7 requirements split and closed, 5 new requirements filed, rule folded into requirement authoring |
 | [The blockers list — work only your hands can do](2026-08-15-blockers-list/) | 2026-08-15 | Session framework | [#162](https://github.com/jwildfire/obot.roadmap/discussions/162) | **Decided 2026-08-15** — BL1–BL4 all adopted ("BL1-4 look good. Recommendations approved.", in chat); guards + capture script implemented same day, read path filed as follow-up |
 | [How to interview @jwildfire — the elicitation method](2026-08-15-app-elicitation-method/) | 2026-08-15 | [#79](https://github.com/jwildfire/obot.roadmap/issues/79) | [#159](https://github.com/jwildfire/obot.roadmap/discussions/159) | Awaiting @jwildfire — E1–E4 ("defaults" is a complete answer; `/grill-me` skill already shipped) |

@@ -128,6 +128,12 @@ jobs:
       # defect for six weeks. Fails the deploy rather than publishing the gap.
       - name: Check artifact descriptions
         run: node scripts/check_artifact_descriptions.mjs
+      # The decision log (_site/decisions/) — approved by @jwildfire 2026-08-15 as
+      # call 2 of the decision-recording artifact. Derived from every artifact's own
+      # Decisions section, so it cannot drift from the pages it summarizes; it exits
+      # non-zero when an artifact the index calls decided carries no such section.
+      - name: Build the decision log
+        run: node scripts/build_decisions.mjs
 
       - name: Build news
         run: node scripts/build_news.mjs
@@ -223,6 +229,11 @@ jobs:
           have status.html
           have status/index.html
           have news.html
+          # The decision log. dl-entry is the recorded-decision block and
+          # decisions.json the feed the local Operations Dashboard reads — between
+          # them they say the page is the log and that it carries real decisions.
+          have decisions/index.html;       says decisions/index.html dl-entry
+          have decisions/decisions.json
           have diary/index.html
           have reports/index.html
           have reports/autonomous-agent-framework/index.html
@@ -240,7 +251,8 @@ jobs:
           # stale hand-written copy, and the roadmap group — and only the
           # roadmap group — carries the second row.
           for f in index.html roadmap.html news.html status.html audit/index.html \
-                   analytics/index.html diary/index.html goals/index.html; do
+                   analytics/index.html diary/index.html goals/index.html \
+                   decisions/index.html; do
             # Exactly one shared top nav — two would mean a hand-written copy
             # survived alongside the injected one.
             n=$(grep -c 'aria-label="Site"' "_site/$f" || true)
@@ -254,7 +266,8 @@ jobs:
               && { echo "::error title=Uninjected nav::_site/$f still contains the SITE-HEADER marker"; fail=1; }
           done
 
-          for f in roadmap.html status.html audit/index.html analytics/index.html goals/index.html; do
+          for f in roadmap.html status.html audit/index.html analytics/index.html goals/index.html \
+                   decisions/index.html; do
             grep -q 'nav class="site sub"' "_site/$f" \
               || { echo "::error title=Missing sub-nav::_site/$f is in the roadmap group but has no second nav row"; fail=1; }
           done

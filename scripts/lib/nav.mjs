@@ -35,6 +35,7 @@ const SUB = [
   { key: 'audit', label: 'Audit', href: 'audit/index.html', blurb: 'Convention findings from the nightly audit' },
   { key: 'analytics', label: 'Analytics', href: 'analytics/index.html', blurb: 'Charts — token and dollar cost' },
   { key: 'status', label: 'Status', href: 'status.html', blurb: 'Per-repo releases, milestones, PR activity' },
+  { key: 'decisions', label: 'Decisions', href: 'decisions/index.html', blurb: 'Every call @jwildfire has made, newest first' },
 ];
 
 export const SUB_KEYS = SUB.map((s) => s.key);
