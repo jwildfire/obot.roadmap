@@ -14,6 +14,7 @@ import { execFileSync } from 'node:child_process';
 import { REPOS, ROOT } from './lib/repos.mjs';
 import { siteHeader } from './lib/nav.mjs';
 import { readDescription, MISSING } from './lib/artifacts.mjs';
+import { readRegistry, bySlug } from './lib/decision-ids.mjs';
 
 const OWNER = 'jwildfire';
 const BLOG_FEED = 'https://jwildfire.github.io/feed.xml';
@@ -144,6 +145,29 @@ async function artifactItems() {
       ...describe(readDescription(index), rel),
     });
   }
+  // Each decision is its own row, led by its canonical id (@jwildfire, 2026-08-15):
+  // decisions and release-candidate PRs are the only two things he reviews, and the
+  // feed is where he sees an id without opening anything. The reports/decisions/
+  // folder keeps its own row above — that one is the standing door to the queue.
+  const registry = readRegistry();
+  const decisionsDir = path.join(reportsDir, 'decisions');
+  for (const entry of await fs.readdir(decisionsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const rel = `reports/decisions/${entry.name}`;
+    const index = path.join(decisionsDir, entry.name, 'index.html');
+    const date = (entry.name.match(/\d{4}-\d{2}-\d{2}/) || [])[0] || gitAddedDate(rel);
+    if (!date) continue;
+    const id = bySlug(registry, entry.name)?.id;
+    const title = await pageTitle(index, entry.name);
+    items.push({
+      type: 'artifact',
+      date,
+      title: id ? `${id} · ${title}` : title,
+      url: `${rel}/`,
+      ...describe(readDescription(index), rel),
+    });
+  }
+
   const designDir = path.join(ROOT, 'requirements', 'design');
   for (const f of (await fs.readdir(designDir)).filter((f) => f.endsWith('.html'))) {
     const rel = `requirements/design/${f}`;

@@ -33,6 +33,33 @@ PRs, and these.
   "AI-generated report." (the hardcoded feed fallback until 2026-08-15, now rejected
   by name) and not a restatement of the title. `node scripts/check_artifact_descriptions.mjs`
   fails the deploy without one; full contract in [`reports/README.md`](../README.md).
+- **A permanent ID, claimed before the page is written** (@jwildfire, 2026-08-15:
+  *"Give every decision artifact an ID and then give each question for me a sub ID…
+  Use D0001 as the ID"*). The artifact is `D0001`; its questions are `D0001.1`,
+  `D0001.2`, … numbered in the order they appear on the page. Claim it with:
+
+  ```bash
+  node scripts/claim_decision_id.mjs 2026-08-16-your-slug \
+    --title "What the decision is called" \
+    --q "A1: The first question, in words" --q "A2: The second"
+  node scripts/stamp_decision_ids.mjs      # writes the ids onto the page
+  ```
+
+  The ID exists so he can approve one thing unambiguously in chat — *"D0004.2 is
+  approved"* — without also naming the artifact. Rules:
+  - **Never renumber and never reuse.** A superseded, retired or already-decided
+    artifact keeps its number; the decision log has to cite it forever. Gaps are
+    fine.
+  - **The artifact's own codes stay** (A1–A4, BL1–BL4, M1–M5, …), shown beside the
+    canonical ID rather than replaced, so questions he has already answered under
+    those codes stay findable.
+  - **The ID is a handle, not an explanation.** It never displaces the sentence
+    saying what is being decided — that sentence is still the thing he reads.
+  - The registry is [`registry.json`](registry.json); `node scripts/check_decision_ids.mjs`
+    fails the deploy on a duplicate, a missing page or a question that is not
+    anchored. Two sessions can compute the same next number without seeing each
+    other — `git push` is the arbiter, and a rejected push means rebase and re-run
+    the claim.
 - **One artifact per decision topic.** Bundling unrelated questions into one page
   defeats the purpose; a single page may carry several decisions only when they gate
   each other and must be answered in one sitting.

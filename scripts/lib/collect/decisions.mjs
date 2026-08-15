@@ -9,6 +9,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { ROOT } from '../repos.mjs';
+import { readRegistry, bySlug } from '../decision-ids.mjs';
 
 const LINK = /\[([^\]]+)\]\(([^)]+)\)/; // first markdown link in a cell
 
@@ -33,6 +34,9 @@ export function isAwaiting(status = '') {
 
 export async function collectDecisions() {
   const md = await fs.readFile(path.join(ROOT, 'reports', 'decisions', 'README.md'), 'utf8');
+  // The canonical id (D0001…) comes from the registry, not from this table, so
+  // @jwildfire's own index stays prose he can edit without minding a key column.
+  const registry = readRegistry();
 
   // The table under "## Index": a header row, a rule row, then data rows.
   const lines = md.split(/\r?\n/);
@@ -51,7 +55,9 @@ export async function collectDecisions() {
       const discussion = cell(cells, headers, 'discussion').match(LINK);
       const goal = cell(cells, headers, 'goal').match(LINK);
       const status = cell(cells, headers, 'status');
+      const slug = link ? link[2].replace(/^\.?\//, '').replace(/\/$/, '') : null;
       return {
+        id: slug ? bySlug(registry, slug)?.id ?? null : null,
         title: link?.[1] ?? cell(cells, headers, 'decision'),
         // README-relative folder link → site path under the deployed reports tree
         path: link ? `reports/decisions/${link[2].replace(/^\.?\//, '')}` : null,

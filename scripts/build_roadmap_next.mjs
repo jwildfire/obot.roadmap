@@ -119,7 +119,7 @@ function todoSection(prRes, relRes, decRes) {
   </div>`);
   const decRows = awaiting.map((d) => `  <div class="rm-row" data-repo="${HUB}" data-hl="${TODO_HL}">
     <span class="rm-key">${esc(d.date)}</span>
-    <span class="rm-main"><span class="rm-pill decision">decide</span> <a href="${d.path ?? 'reports/decisions/'}">${esc(d.title.replace(/\x60/g, ''))}</a>${
+    <span class="rm-main"><span class="rm-pill decision">decide</span> ${d.id ? `<a class="rm-did" href="${d.path ?? 'reports/decisions/'}">${esc(d.id)}</a> ` : ''}<a href="${d.path ?? 'reports/decisions/'}">${esc(d.title.replace(/\x60/g, ''))}</a>${
     d.goal ? ` <span class="rm-anchors"><a href="${d.goal.url}">${esc(d.goal.label)}</a></span>` : ''
   }${d.discussion ? ` · <a href="${d.discussion.url}"><strong>answer in Q&amp;A ${esc(d.discussion.label)}</strong></a>` : ''}</span>
     <span class="rm-meta">${esc(clip(d.statusPlain, 44))}</span>

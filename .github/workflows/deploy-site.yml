@@ -135,6 +135,16 @@ jobs:
       - name: Build the decision log
         run: node scripts/build_decisions.mjs
 
+      # Every decision artifact carries a permanent id (D0001) and every question in
+      # it a sub-id (D0004.2), because @jwildfire approves by quoting one back in
+      # chat. A duplicate id makes an approval ambiguous, and concurrent sessions can
+      # compute the same next id without seeing each other — so the collision has to
+      # fail here rather than reach the page.
+      - name: Check decision ids
+        run: |
+          node scripts/check_decision_ids.mjs
+          node scripts/stamp_decision_ids.mjs --check
+
       - name: Build news
         run: node scripts/build_news.mjs
 
