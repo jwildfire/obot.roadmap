@@ -11,8 +11,9 @@
 // issue naming finding ids, which the same lane handles when a browser cannot be
 // connected. Both paths carry ids and never operations; what an id means is
 // re-derived from a fresh audit server-side.
-import { esc, fmtET, age } from '../gh.mjs';
+import { esc, fmtET } from '../gh.mjs';
 import { HUB } from '../repos.mjs';
+import { freshness, STALE_HOURS } from './freshness.mjs';
 
 // One URL should not carry an unbounded list; past this a bulk accept is split
 // and the page says so rather than silently truncating.
@@ -156,7 +157,16 @@ ${body}
   const firing = rules.filter((r) => r.fired).length;
   const broken = rules.filter((r) => r.error);
 
-  const note = `Nightly rule sweep of the roadmap's own conventions — ${rules.length} rules, ${firing} of them firing. Decisions are made on the <a href="audit/index.html"><strong>audit page</strong></a>, which triggers the <a href="https://github.com/${HUB}/blob/main/.github/workflows/roadmap-audit-apply.yml">apply lane</a> in one click and reports the run as it happens; this fold is for noticing findings, not for clearing them. Last run ${esc(fmtET(ledger.generatedAt))} (${esc(age(ledger.generatedAt, now))} ago) · <a href="audit/index.html"><strong>full audit page</strong></a> · <a href="audit/findings.json">findings.json</a> · <a href="https://github.com/${HUB}/issues/92">#92</a>`;
+  // The age is its own line, above everything, in both states (#201). It used to
+  // be a clause near the end of the note below, which is where a reader who has
+  // already read the count does not go — and a count read without its date is
+  // how an unmeasured night got quoted as a clean one on 2026-08-16.
+  const fresh = freshness(ledger, now);
+  const freshLine = fresh.ok
+    ? `<p class="rm-note audit-fresh">Last run <strong>${esc(fresh.age)} ago</strong> — ${esc(fmtET(ledger.generatedAt))}. Everything below describes the roadmap as it stood then; anything filed since is invisible to it.</p>`
+    : `<p class="rm-notice audit-fresh">This audit last ran <strong>${esc(fresh.age)} ago</strong>${fresh.generatedAt ? ` — ${esc(fmtET(fresh.generatedAt))}` : ''}, past the ${STALE_HOURS}-hour mark for a nightly job. Its findings describe the roadmap as it was, not as it is: read the counts below as history until it runs again.</p>`;
+
+  const note = `Nightly rule sweep of the roadmap's own conventions — ${rules.length} rules, ${firing} of them firing. Decisions are made on the <a href="audit/index.html"><strong>audit page</strong></a>, which triggers the <a href="https://github.com/${HUB}/blob/main/.github/workflows/roadmap-audit-apply.yml">apply lane</a> in one click and reports the run as it happens; this fold is for noticing findings, not for clearing them. <a href="audit/index.html"><strong>full audit page</strong></a> · <a href="audit/findings.json">findings.json</a> · <a href="https://github.com/${HUB}/issues/92">#92</a>`;
 
   const boardNotice = ledger.boardReadable
     ? ''
@@ -165,9 +175,13 @@ ${body}
     ? `<p class="rm-notice">${broken.length} rule${broken.length === 1 ? '' : 's'} failed to run: ${broken.map((r) => esc(r.id)).join(', ')} — see the rule list.</p>`
     : '';
 
+  // Both summaries carry the age, because the fold's own headline is the line
+  // most likely to be quoted without opening it. "Findings (0) — the roadmap
+  // satisfies every rule" was true of a 22-hour-old file and false of the
+  // roadmap; "as of 22h ago" is the difference between the two.
   const summary = live.length
-    ? `Findings (${live.length}) — ${counts.high} high · ${counts.medium} medium · ${counts.low} low${counts.muted ? ` · ${counts.muted} muted` : ''}`
-    : `Findings (0) — the roadmap satisfies every rule${counts.muted ? `, with ${counts.muted} muted` : ''}`;
+    ? `Findings (${live.length}) as of ${fresh.age} ago — ${counts.high} high · ${counts.medium} medium · ${counts.low} low${counts.muted ? ` · ${counts.muted} muted` : ''}`
+    : `Findings (0) as of ${fresh.age} ago — every rule was satisfied when the audit last ran${counts.muted ? `, with ${counts.muted} muted` : ''}`;
 
   const mechanicalHigh = live.filter((f) => f.confidence === 'high' && f.proposal.kind === 'mechanical').length;
   const body = live.length
@@ -175,7 +189,7 @@ ${body}
       ? `clear ${mechanicalHigh} high-confidence mechanical fixes on the audit page`
       : 'open the audit page')}</div>
 ${CONFIDENCE.map((c) => tier(c, findings)).filter(Boolean).join('\n')}`
-    : '<p class="rm-empty">Nothing to review — every rule is satisfied.</p>';
+    : `<p class="rm-empty">Nothing to review — every rule was satisfied ${esc(fresh.age)} ago, when the audit last ran.</p>`;
 
   const mutedBlock = muted.length
     ? `<details class="audit-rule">
@@ -185,7 +199,8 @@ ${muted.map(findingRow).join('\n')}
 </details>`
     : '';
 
-  return head(`<p class="rm-note">${note}</p>
+  return head(`${freshLine}
+<p class="rm-note">${note}</p>
 ${boardNotice}${brokenNotice}<details class="rm-fold audit-fold" id="audit-findings">
 <summary>${esc(summary)}</summary>
 ${body}

@@ -256,22 +256,59 @@ const unstagedBoardItem = {
   },
 };
 
+// What the board is supposed to hold — which is not the same thing as what
+// carries the `requirement` label (#201).
+//
+// The label is a filing habit. Hub #189–#193 were filed with `infrastructure`
+// and `ai`, sat off the board, and OFF-BOARD-REQUIREMENT could not have named
+// them even on a fresh run: it was gated on a label they never had. The board is
+// the stage tracker for hub work, so the population is the work, not the tag.
+//
+// Two exclusions, each with a rule of its own behind it:
+//
+//   goals        are deliberately not board items — permanent, so no delivery
+//                stage they could ever reach (@jwildfire, R3-a, 2026-08-15).
+//                GOAL-BOARD-INCONSISTENT takes any goal it finds back off.
+//   closed and   is archaeology. A closed *requirement* still fires, because
+//   unlabelled   that is coverage this rule already had; asking for a board item
+//                on an unlabelled issue that finished months ago is paperwork
+//                about work that is over.
+//
+// `audit-decision` issues never reach this: snapshot.mjs drops them upstream.
+//
+// This overlaps UNTRACKED-TASK on an issue with no label, no parent and no board
+// item — #189–#193 were exactly that shape — and the overlap is deliberate. The
+// two rules answer different questions (what stage is it in / what does it serve)
+// and propose different fixes, the mechanical one here is the cheap half, and
+// applying it takes the issue out of UNTRACKED-TASK's population on the next run.
+const belongsOnBoard = (i) => {
+  if (isGoal(i)) return false;
+  return i.state === 'OPEN' || isRequirement(i);
+};
+
 const offBoardRequirement = {
   id: 'OFF-BOARD-REQUIREMENT',
-  title: 'Requirement issue missing from the board',
+  title: 'Hub issue missing from the board',
   group: 'Board integrity',
-  why: 'The obot Roadmap project is the requirement tracker. A requirement that never got added is invisible to the stage lanes, to the roadmap page\'s stage grouping, and to any review that starts from the board — which is how a burst of promoted ideas can vanish the day after it is filed.',
+  why: 'The obot Roadmap project is the stage tracker for hub work. An issue that never got added is invisible to the stage lanes, to the roadmap page\'s stage grouping, and to any review that starts from the board — which is how a burst of promoted ideas can vanish the day after it is filed. The population deliberately does not depend on the `requirement` label: #189–#193 were filed with `infrastructure` and `ai`, sat off the board, and a label-gated rule could not have named them even on a fresh run (#201).',
   fix: 'Add it to the project and give it a Status.',
   needs: 'board',
   check(s) {
     return s.issues
-      .filter((i) => isRequirement(i) && !itemsFor(s, i.repo, i.number).length)
+      .filter((i) => belongsOnBoard(i) && !itemsFor(s, i.repo, i.number).length)
       .map((i) => {
         const value = inferStatus(s, i);
         return {
           confidence: 'high',
           subject: subject(i),
-          evidence: ['labelled `requirement`', 'no item on the obot Roadmap project', `issue is ${i.state}`],
+          evidence: [
+            // What it actually carries, rather than the label the rule used to
+            // require — the old evidence line asserted `requirement` on every
+            // finding because nothing else could produce one.
+            i.labels.length ? `labelled ${i.labels.map((l) => `\`${l}\``).join(', ')}` : 'no labels',
+            'no item on the obot Roadmap project',
+            `issue is ${i.state}`,
+          ],
           proposal: {
             kind: 'mechanical',
             summary: `Add it to the obot Roadmap project at ${value}.`,

@@ -154,6 +154,61 @@ test('OFF-BOARD-REQUIREMENT: a requirement with no board item is added, goals ar
   assert.equal(found[0].proposal.ops[0].op, 'add-to-board');
 });
 
+test('OFF-BOARD-REQUIREMENT: the `requirement` label is not the population (#201)', () => {
+  // Hub #189–#193 were filed with `infrastructure` and `ai`, sat off the board,
+  // and the rule could not have named them even on a fresh run. The board is the
+  // stage tracker for hub work, so the label is a filing habit, not the gate.
+  const snap = snapshot({
+    issues: [
+      issue(189, { labels: ['infrastructure'], title: 'demo-301 publishes the snapshot twice' }),
+      issue(192, { labels: ['ai'], title: 'Build the goal #79 elicitation prep' }),
+      issue(180, { labels: ['requirement', 'infrastructure', 'ai'] }),
+    ],
+  });
+  const found = fire('OFF-BOARD-REQUIREMENT', snap);
+  assert.deepEqual(found.map((f) => f.subject.number).sort((a, b) => a - b), [180, 189, 192]);
+  // The evidence names the labels the issue actually carries, instead of
+  // asserting `requirement` on every finding because nothing else could make one.
+  const f189 = found.find((f) => f.subject.number === 189);
+  assert.equal(f189.evidence[0], 'labelled `infrastructure`');
+  for (const f of found) assert.equal(f.proposal.ops[0].op, 'add-to-board');
+});
+
+test('OFF-BOARD-REQUIREMENT: an unlabelled issue that was never on the board and is closed is archaeology', () => {
+  // Widening the population must not turn the rule into a backfill request for
+  // work that finished months ago. Live work is the point; a closed requirement
+  // still fires, because that is coverage the rule already had.
+  const snap = snapshot({
+    issues: [
+      issue(5, { state: 'CLOSED', labels: [], title: 'Enforce the requirement template' }),
+      issue(60, { state: 'CLOSED', labels: ['requirement'] }),
+    ],
+  });
+  assert.deepEqual(fire('OFF-BOARD-REQUIREMENT', snap).map((f) => f.subject.number), [60]);
+});
+
+test('OFF-BOARD-REQUIREMENT: overlaps UNTRACKED-TASK on purpose, and the overlap resolves itself', () => {
+  // An issue with no label, no parent and no board item — the #189–#193 shape —
+  // is named by both rules, and that is the intent: they answer different
+  // questions (what stage is it in / what does it serve) and propose different
+  // fixes. Applying the mechanical one here gives it a board item, which takes it
+  // out of UNTRACKED-TASK's population on the next run.
+  const loose = issue(150, { labels: [], title: 'Something filed and forgotten' });
+  const snap = snapshot({ issues: [loose] });
+  const [board] = fire('OFF-BOARD-REQUIREMENT', snap);
+  const [untracked] = fire('UNTRACKED-TASK', snap);
+  assert.equal(board.subject.number, 150);
+  assert.equal(untracked.subject.number, 150);
+  assert.equal(board.proposal.kind, 'mechanical');
+  assert.equal(untracked.proposal.kind, 'agentic');
+  assert.equal(board.evidence[0], 'no labels');
+
+  // Once it is on the board, neither fires.
+  const fixed = snapshot({ issues: [loose], items: [item(150, 'Backlog')] });
+  assert.equal(fire('OFF-BOARD-REQUIREMENT', fixed).length, 0);
+  assert.equal(fire('UNTRACKED-TASK', fixed).length, 0);
+});
+
 test('BOARD-DUPLICATE: keeps the item carrying a Status, removes the rest', () => {
   const snap = snapshot({ issues: [issue(53)], items: [item(53, null), item(53, 'Development')] });
   const [f] = fire('BOARD-DUPLICATE', snap);
