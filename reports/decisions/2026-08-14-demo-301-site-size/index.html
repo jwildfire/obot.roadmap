@@ -104,7 +104,7 @@
 </ol>
 </aside>
 <!-- END decision-ids -->
-    <p class="standfirst prose"><a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a> asks whether a ~302 MB published branch is the right shape for a repo whose whole purpose is to be forked, and says the call must be made before demo-301 is used as the keynote's fork template. <strong>The 302 MB figure is exact. It is also not what a fork downloads.</strong> This page reports what was measured, and recommends two cheap changes plus one growth bound. Companion to <a href="../2026-08-14-app-plan-rewrite/">the app plan-rewrite decisions</a> (A4 decides whether demo-301 is the template at all — this page decides what to do about its size either way).</p>
+    <p class="standfirst prose"><a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a> asks whether a ~302 MB published branch is the right shape for a repo whose whole purpose is to be forked, and says the call must be made before demo-301 is used as the keynote's fork template. The 302 MB figure is exact. It is also not what a fork downloads. This page reports what was measured, and recommends two cheap changes plus one growth bound. Companion to <a href="../2026-08-14-app-plan-rewrite/">the app plan-rewrite decisions</a> (A4 decides whether demo-301 is the template at all — this page decides what to do about its size either way).</p>
   </header>
 
   <section id="decisions">
@@ -114,17 +114,17 @@
       <p>&ldquo;I&rsquo;m good with the recommendations here, but I think the real issue is that we need to move to a more robust database instead of just leaning on github sooner or later. Add discussion of that approach to the upcoming grill-me session related to the app strategy/design.&rdquo;</p>
       <p>All six calls settled as recommended. <b>Doing:</b> stop publishing the current snapshot twice — the branch root copy goes and the site resolves the current snapshot through the index it already keeps (S1); shrink the synthetic data extracts that make up most of what a fork downloads, after auditing which workflows read them (S2); and put a retention limit on published snapshots, landing with the fix to the scheduled pipeline, because the day that pipeline goes green is the day the branch resumes growing (S3). <b>Not doing:</b> moving rendered charts out of the published tree (S4) or republishing from a single-commit orphan branch (S5) — both trade away a load-bearing property for a benefit the measurements do not support. Nor is this accepting the current size and spending the effort elsewhere (S6).</p>
       <p class="small">Follow-through, filed 2026-08-15 against the fork-template risk (<a href="https://github.com/jwildfire/obot.roadmap/issues/143">#143</a>, milestone 2026q3, nothing implemented yet): <a href="https://github.com/jwildfire/obot.roadmap/issues/189">#189</a> drops the duplicate root copy, <a href="https://github.com/jwildfire/obot.roadmap/issues/190">#190</a> shrinks what a fork downloads, <a href="https://github.com/jwildfire/obot.roadmap/issues/191">#191</a> bounds the branch's growth.</p>
-      <p class="small">The second half of his answer is a <b>separate and much larger question</b> than branch size: whether this program should keep using GitHub itself as its datastore — issues holding requirements and goals, a git branch holding study data and snapshots, JSON files holding the decision registry. It is not a size call and nothing here decides it; it is recorded as a prep topic for the app-strategy elicitation interview on <a href="https://github.com/jwildfire/obot.roadmap/issues/79">goal #79</a>, with the candidate questions written out in <a href="https://github.com/jwildfire/obot.roadmap/issues/79#issuecomment-5304424574">that thread</a>.</p>
+      <p class="small">The second half of his answer is a separate and much larger question than branch size: whether this program should keep using GitHub itself as its datastore — issues holding requirements and goals, a git branch holding study data and snapshots, JSON files holding the decision registry. It is not a size call and nothing here decides it; it is recorded as a prep topic for the app-strategy elicitation interview on <a href="https://github.com/jwildfire/obot.roadmap/issues/79">goal #79</a>, with the candidate questions written out in <a href="https://github.com/jwildfire/obot.roadmap/issues/79#issuecomment-5304424574">that thread</a>.</p>
     </div>
   </section>
 
   <section>
     <h2>The situation</h2>
-    <p class="prose">demo-301's <code>site</code> branch — the static tree GitHub Pages serves and the app reads — checks out to <strong>302.58 MiB across 689 files</strong>, exactly as #143 reported, and every republish pushes on the order of 500 paths.</p>
-    <p class="prose">But #143's framing (“cloning the demo means pulling hundreds of megabytes”) does not match what a fork does: a default clone downloads <strong>~91 MiB compressed</strong> for all branches and checks out <code>main</code>, landing <strong>~125 MiB on disk</strong> — of which <strong>124.48 MiB is <code>input/</code></strong>, and 103 MiB of <em>that</em> is two synthetic data-management CSVs. The <code>site</code> branch's 302 MiB is only materialised by whoever checks that branch out, which in a fork is the Actions runner.</p>
-    <p class="prose">So there are two separate problems wearing one issue number: a <strong>publish-branch problem</strong> (302 MiB, growing by roughly one snapshot per scheduled run, with no retention policy even though <code>PUBLISHING.md</code> says one belongs in the branch contract) and a <strong>fork-cost problem</strong> that lives on <code>main</code> and that #143 does not mention.</p>
+    <p class="prose">demo-301's <code>site</code> branch — the static tree GitHub Pages serves and the app reads — checks out to 302.58 MiB across 689 files, exactly as #143 reported, and every republish pushes on the order of 500 paths.</p>
+    <p class="prose">But #143's framing (“cloning the demo means pulling hundreds of megabytes”) does not match what a fork does: a default clone downloads ~91 MiB compressed for all branches and checks out <code>main</code>, landing ~125 MiB on disk — of which 124.48 MiB is <code>input/</code>, and 103 MiB of <em>that</em> is two synthetic data-management CSVs. The <code>site</code> branch's 302 MiB is only materialised by whoever checks that branch out, which in a fork is the Actions runner.</p>
+    <p class="prose">So there are two separate problems wearing one issue number: a publish-branch problem (302 MiB, growing by roughly one snapshot per scheduled run, with no retention policy even though <code>PUBLISHING.md</code> says one belongs in the branch contract) and a fork-cost problem that lives on <code>main</code> and that #143 does not mention.</p>
     <div class="callout">
-      <p><b>The free lever nobody has taken.</b> The branch root <code>output/</code> and <code>ps-002/output/</code> are <em>the same git tree object</em> — <code>d2f3ae3cefb8296212dedc628dd8134e8d4a4f50</code>. That is <b>103.41 MiB, 34% of the checkout</b>, duplicated with zero information content. Git already stores it once; the cost is purely in checkout size and path count. #143 does not mention it.</p>
+      <p>The free lever nobody has taken. The branch root <code>output/</code> and <code>ps-002/output/</code> are <em>the same git tree object</em> — <code>d2f3ae3cefb8296212dedc628dd8134e8d4a4f50</code>. That is 103.41 MiB, 34% of the checkout, duplicated with zero information content. Git already stores it once; the cost is purely in checkout size and path count. #143 does not mention it.</p>
     </div>
   </section>
 
@@ -142,8 +142,8 @@
         <tr><td><code>site</code> by directory</td><td><code>ps-002/</code> 103.45 · <code>output/</code> 103.41 · <code>ps-001/</code> 95.36 MiB</td><td><code>git ls-tree</code> + awk</td></tr>
         <tr><td>Root <code>output/</code> vs <code>ps-002/output/</code></td><td><b>identical tree <code>d2f3ae3</code></b> — 103.41 MiB duplicated</td><td><code>git rev-parse origin/site:output</code></td></tr>
         <tr><td>Heaviest files (each present twice)</td><td><code>kri_report_…html</code> 10.98 · <code>safety_outlier_explorer.html</code> 9.66 · <code>hep_explorer.html</code> 9.55 MiB</td><td><code>git ls-tree -r -l | sort -k4 -rn</code></td></tr>
-        <tr><td><code>main/input/</code></td><td><b>124.48 MiB</b> — <code>Raw_DATACHG.csv</code> 57.98 + <code>Raw_DATAENT.csv</code> 45.25 + <code>Raw_QUERY.csv</code> 11.74 = <b>83%</b></td><td><code>git ls-tree -r -l origin/main -- input</code></td></tr>
-        <tr><td>Largest chart, over the wire</td><td>10,015,826 bytes → <b>417,963 gzipped</b> (24×)</td><td><code>curl -H 'Accept-Encoding: gzip'</code></td></tr>
+        <tr><td><code>main/input/</code></td><td><b>124.48 MiB</b> — <code>Raw_DATACHG.csv</code> 57.98 + <code>Raw_DATAENT.csv</code> 45.25 + <code>Raw_QUERY.csv</code> 11.74 = 83%</td><td><code>git ls-tree -r -l origin/main -- input</code></td></tr>
+        <tr><td>Largest chart, over the wire</td><td>10,015,826 bytes → 417,963 gzipped (24×)</td><td><code>curl -H 'Accept-Encoding: gzip'</code></td></tr>
         <tr><td>Growth today</td><td><b>None</b> — the scheduled pipeline has failed on 2026-08-03 and 2026-08-10</td><td><code>gh run list -R jwildfire/demo-301</code></td></tr>
       </tbody>
     </table>
@@ -167,7 +167,7 @@
         <h4>S2 · Shrink <code>input/</code> on main<span class="tag">recommended</span></h4>
         <dl>
           <dt>What</dt><dd>Cut or downsample the two data-management CSVs (<code>Raw_DATACHG</code> 57.98 MiB, <code>Raw_DATAENT</code> 45.25 MiB) that no Safety or RBQM view in the demo reads at full size. Regenerate at a fraction of the row count, or move them behind a fetch step.</dd>
-          <dt>Gains</dt><dd>Up to <b>~103 MiB</b> off the disk cost of every fork — the part a forker actually feels, since <code>main</code> is what a clone checks out.</dd>
+          <dt>Gains</dt><dd>Up to ~103 MiB off the disk cost of every fork — the part a forker actually feels, since <code>main</code> is what a clone checks out.</dd>
           <dt>Costs</dt><dd>Requires checking which workflows consume them at what fidelity; downsampling changes demo numbers, so published snapshots would need regenerating for consistency.</dd>
           <dt>Forecloses</dt><dd>Demonstrating the pipeline at that data volume, unless a large-data variant is kept elsewhere.</dd>
         </dl>
@@ -212,12 +212,12 @@
     <h2>Recommendation</h2>
     <div class="rec">
       <span class="k">Recommendation</span>
-      <p><strong>S1 + S2 now, S3 with the pipeline fix. Not S4, not S5.</strong></p>
+      <p>S1 + S2 now, S3 with the pipeline fix. Not S4, not S5.</p>
       <p>S1 is free in information terms — 34% of the checkout is a byte-identical duplicate tree, and the only real work is teaching the shell to resolve the current snapshot through <code>snapshots.json</code> instead of assuming a flat root. S2 attacks the number a forker actually experiences: <code>main</code> is what a clone checks out, and 83% of its 124.48 MiB is two synthetic data-management CSVs that the Safety and RBQM views do not need at that size. S3 is the only option that stops the problem recurring, and it should land in the same change as the Actions install fix — because the day that pipeline goes green is the day the branch starts growing ~100 MiB a week again.</p>
       <p>S4 and S5 both trade away a load-bearing property for a benefit the measurements do not support. The rendered charts gzip 24× on the wire (10.0 MB → 418 KB), so they cost checkout space, not visitor bandwidth; and orphan-branch publishing would erase exactly the published history the provenance chip is built to trace.</p>
     </div>
     <p class="unblocks" style="margin-top:1.4rem"><span class="k">What unblocks</span><br>Taking S1+S2+S3 lets the fork-template hardening requirement carry a measurable acceptance test — <em>fork the repo, clone it, and the working tree is under X MiB; run the pipeline twice and the branch does not grow without bound</em>. Choosing S6 instead leaves #143 open as a ceiling with no owner, which is its current state. Either way this is decidable tonight; none of it requires further research.</p>
-    <p class="prose"><b>Nothing has been changed.</b> No branch was rewritten, no file deleted, no history touched — #143's surgery waits on this decision, per the standing rule that nothing is deleted without approval.</p>
+    <p class="prose">Nothing has been changed. No branch was rewritten, no file deleted, no history touched — #143's surgery waits on this decision, per the standing rule that nothing is deleted without approval.</p>
   </section>
 
   <footer>

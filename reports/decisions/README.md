@@ -78,6 +78,47 @@ PRs, and these.
     recommendation** — it is the whole artifact for skim purposes. Decision codes
     (W1, BL2, …) are trailing tags for the Q&A thread, never the subject of a
     sentence, and never appear bare in a summary box.
+- **No inline bold** (@jwildfire, 2026-08-16: *"I really don't like the randomly bolded
+  sentences in the middle of paragraphs. Call things out in modals if they're super
+  important, but no more random inline bold."*). He triages these pages fast, often on a
+  phone; when a quarter of a page is bold, nothing is emphasised and the skim the bold was
+  meant to help is the thing it destroys. Concretely:
+  - No bolded sentence or clause **inside a body paragraph** — not as the paragraph's
+    opening sentence, not mid-sentence, not on a number inside a table cell's prose.
+    Rewrite the sentence so it carries its own weight, or promote it.
+  - Anything that genuinely has to be seen goes in a **callout block** — a bordered,
+    tinted element with its own label, which every artifact must define before it needs
+    one. The current pages define theirs as `.callout`, `.card` or `.verdict`; the
+    canonical minimum, which holds at 390px and inherits the page's own colours, is:
+
+    ```html
+    <style>
+    .callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+      border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+    .callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;
+      color:var(--flag)}
+    .callout p{margin:8px 0 0}
+    </style>
+    <div class="callout"><div class="k">What this changes</div>
+      <p>The sentence he has to see, in plain words.</p></div>
+    ```
+
+    A bolded lead sentence inside a callout is the callout doing its job twice — drop the
+    bold, keep the callout.
+  - Bold that is doing structural work stays, and stripping it would make the page worse:
+    list-item and definition-list leads (`- **Name** — description`), table headers, a
+    label or value at the *start* of a cell, key–value strips like the fact bar under the
+    title, run-in labels that name what follows and end in a colon or period
+    (`Recommendation:`, `Sources.`, `Why it is gone:`), and standalone bold lines used as
+    sub-headings (the diary's section convention). The test for a run-in label is whether
+    it names the material after it or makes a claim about the world — *"One caveat worth
+    keeping."* is a label and stays; *"It does not reproduce."* is a claim and loses the
+    bold.
+  - Quotations from @jwildfire are untouchable, bold included — that text is his, not ours.
+  - The rule is about everything he reads, not only these pages: artifacts, the diary,
+    issue and PR bodies, and chat. The sweep that established it — 157 removals across the
+    six newest pages and the day's diary entry, with no word of any page changed — is
+    [requirement #198](https://github.com/jwildfire/obot.roadmap/issues/198).
 - **When @jwildfire decides — in chat, in a Q&A thread, anywhere — the artifact gets
   a `Decisions` section at the top** (@jwildfire, 2026-08-15), added the same day,
   before any other section. One entry per decision: the date, **his words verbatim**

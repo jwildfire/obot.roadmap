@@ -105,7 +105,7 @@ td b{font-weight:650}
 </header>
 
 <div style="margin:22px 0 0;padding:14px 18px;border:1px solid var(--rule2);border-left:4px solid var(--bronze);border-radius:5px;background:var(--panel)">
-<p style="margin:0;font-size:15.5px"><b>Folded into the consolidated Navigator design.</b> @jwildfire asked on 2026-08-16 for <em>"a consolidated design/decision doc explaining how the navigator/coo agent is going to work"</em> rather than several pages each answering part of it. The questions on this page are carried forward there, restated in that document's terms. Nothing here is withdrawn — the measurements and the argument stand, and the consolidated page cites them — but <b>decide on <a href="../2026-08-16-navigator-design/">The Navigator (D0017)</a></b>, not here.</p>
+<p style="margin:0;font-size:15.5px">Folded into the consolidated Navigator design. @jwildfire asked on 2026-08-16 for <em>"a consolidated design/decision doc explaining how the navigator/coo agent is going to work"</em> rather than several pages each answering part of it. The questions on this page are carried forward there, restated in that document's terms. Nothing here is withdrawn — the measurements and the argument stand, and the consolidated page cites them — but decide on <a href="../2026-08-16-navigator-design/">The Navigator (D0017)</a>, not here.</p>
 </div>
 
 
@@ -113,11 +113,11 @@ td b{font-weight:650}
 <section>
   <blockquote>"I wonder if we need some kind 'manager' agent to keep an eye on all of the workers and make sure they don't get lost/stalled etc. obot-prime is doing this now, but I feel like it's counter to its primary goal (low latency). So 3 key orchestration roles: I'm ceo, obot-prime is the captain, this new agent is first mate, then we've got the navigator and the crew (worker agents). I kind of think prime, first-mate and navigator all get long-running claude sessions…" — @jwildfire, tonight</blockquote>
 
-  <p>Three separable calls are hiding inside that. <b>Whether the job exists</b> — something must notice a worker that dies or wedges, and today nothing does unless a human asks. <b>Who does the job</b> — a Claude session that reasons about what it sees, or a scheduled script that reports and lets a session judge. <b>What the job is allowed to do</b> — watch and report, or reach in and replace a worker on its own. The first is settled by evidence below. The second and third are your calls, and they are where the cost and the risk live.</p>
+  <p>Three separable calls are hiding inside that. Whether the job exists — something must notice a worker that dies or wedges, and today nothing does unless a human asks. Who does the job — a Claude session that reasons about what it sees, or a scheduled script that reports and lets a session judge. What the job is allowed to do — watch and report, or reach in and replace a worker on its own. The first is settled by evidence below. The second and third are your calls, and they are where the cost and the risk live.</p>
 
   <div class="verdict">
     <div class="k">Recommendation</div>
-    <p><b>Add the role. Do not add a fourth standing session to carry it.</b> Put the eyes in the scheduled sweep that already runs every five minutes and already survives everything — that work is already scoped and already blocking next week's scheduled runs. Give the first mate a <em>waking</em> session instead of a standing one: it sleeps for free, the sweep summons it when something actually looks wrong, and it brings judgment to the handful of cases a script cannot decide. Roughly one incident per day earns a few cents of thinking; a standing session that polls all night earns the same answer and a monthly bill.</p>
+    <p>Add the role. Do not add a fourth standing session to carry it. Put the eyes in the scheduled sweep that already runs every five minutes and already survives everything — that work is already scoped and already blocking next week's scheduled runs. Give the first mate a <em>waking</em> session instead of a standing one: it sleeps for free, the sweep summons it when something actually looks wrong, and it brings judgment to the handful of cases a script cannot decide. Roughly one incident per day earns a few cents of thinking; a standing session that polls all night earns the same answer and a monthly bill.</p>
   </div>
 </section>
 
@@ -127,25 +127,25 @@ td b{font-weight:650}
 
   <div class="card">
     <div class="tag">Failure 1 — a worker died and nobody noticed</div>
-    <p>The audit worker hit a terminal API error — "the response stopped arriving" — and went to a blocked state at <b>06:12:24</b>. Twenty-six minutes later the concierge sent it a message; the message was recorded against the job, the job stayed blocked, and <b>eighty minutes of complete silence followed</b>. That is the whole lesson in one incident: a dead worker cannot be revived by talking to it, only replaced. The only reason the gap was twenty-seven minutes rather than the whole night is that the concierge happened to run a health check by hand.</p>
+    <p>The audit worker hit a terminal API error — "the response stopped arriving" — and went to a blocked state at 06:12:24. Twenty-six minutes later the concierge sent it a message; the message was recorded against the job, the job stayed blocked, and eighty minutes of complete silence followed. That is the whole lesson in one incident: a dead worker cannot be revived by talking to it, only replaced. The only reason the gap was twenty-seven minutes rather than the whole night is that the concierge happened to run a health check by hand.</p>
   </div>
 
   <div class="card">
     <div class="tag">Failure 2 — a watcher ended and nobody re-armed it</div>
-    <p>You left a changes-requested review on the chart-library release candidate at <b>4:29 in the morning</b>. It was first seen at <b>10:41</b> — six hours and twelve minutes later — and only because the scheduled sweep had by then been built. The watcher that should have caught it had ended when the pull requests it was watching closed, and re-arming it was a step someone had to remember.</p>
+    <p>You left a changes-requested review on the chart-library release candidate at 4:29 in the morning. It was first seen at 10:41 — six hours and twelve minutes later — and only because the scheduled sweep had by then been built. The watcher that should have caught it had ended when the pull requests it was watching closed, and re-arming it was a step someone had to remember.</p>
   </div>
 
   <div class="card">
     <div class="tag">Failure 3 — supervision is eating the concierge's turns</div>
-    <p>The concierge's own activity record shows <b>nine turns spent on fleet supervision</b> in thirty-six hours — sweeping worker states, collecting close-outs, diagnosing the dead worker, spawning its replacement. Each of those is a turn it was not answering you, and each of them was reactive: it looked because it thought to look, not because anything told it to.</p>
+    <p>The concierge's own activity record shows nine turns spent on fleet supervision in thirty-six hours — sweeping worker states, collecting close-outs, diagnosing the dead worker, spawning its replacement. Each of those is a turn it was not answering you, and each of them was reactive: it looked because it thought to look, not because anything told it to.</p>
   </div>
 
   <div class="card">
     <div class="tag">Failure 4 — happening right now, as this page is written</div>
-    <p>The scheduled sweep's <b>22:43 run failed partway through</b>: three of seven repositories would not list. It degraded exactly as designed — kept the last good queue, stamped the file "treat as stale", wrote the reason to its log. And <b>nothing alerted</b>. That is not an argument against the script; it is the argument for the layer above it, and it is the same shape as the demo study's scheduled pipeline that has now been red for twelve days with no subscriber.</p>
+    <p>The scheduled sweep's 22:43 run failed partway through: three of seven repositories would not list. It degraded exactly as designed — kept the last good queue, stamped the file "treat as stale", wrote the reason to its log. And nothing alerted. That is not an argument against the script; it is the argument for the layer above it, and it is the same shape as the demo study's scheduled pipeline that has now been red for twelve days with no subscriber.</p>
   </div>
 
-  <p>Worth saying plainly: this program has reached this conclusion before. A deep dive in June, in the previous era of the tooling, found the identical root cause — "treating returned agent ids as reliable active work without durable liveness evidence" — and concluded that agents were not safe to rely on until liveness became observable. The answer both times was <b>records, not another agent</b>: a run ledger with heartbeats, deadlines, and a recovery path. That history is the strongest single argument for where the eyes belong.</p>
+  <p>Worth saying plainly: this program has reached this conclusion before. A deep dive in June, in the previous era of the tooling, found the identical root cause — "treating returned agent ids as reliable active work without durable liveness evidence" — and concluded that agents were not safe to rely on until liveness became observable. The answer both times was records, not another agent: a run ledger with heartbeats, deadlines, and a recovery path. That history is the strongest single argument for where the eyes belong.</p>
 </section>
 
 <div class="cut"><span>WHAT A WATCHER CAN ACTUALLY SEE</span></div>
@@ -158,19 +158,19 @@ td b{font-weight:650}
     <tr>
       <td><b>State of the job</b></td>
       <td>Every agent session writes a live record: a state, a one-line description of what it is doing right now, a token count, a timestamp</td>
-      <td>Across <b>38 background worker sessions</b>, the blocked state appeared <b>twice</b> — both belonging to the single worker that died. Across the concierge and your own interactive sessions, it appeared <b>47 times</b>, every one of them a normal wait for you.</td>
+      <td>Across 38 background worker sessions, the blocked state appeared twice — both belonging to the single worker that died. Across the concierge and your own interactive sessions, it appeared 47 times, every one of them a normal wait for you.</td>
       <td class="ok">Use it — but role-aware</td>
     </tr>
     <tr>
       <td><b>Silence</b></td>
       <td>Time since the worker last did anything the machine recorded</td>
-      <td>Median gap between actions: <b>23 seconds</b>. Nineteen gaps in twenty exceed nothing worth noticing; ninety-nine in a hundred are under seven minutes. Gaps beyond fifteen minutes: <b>eight</b>, out of nearly two thousand. Beyond thirty minutes: <b>exactly one</b> — and that worker was legitimately working.</td>
+      <td>Median gap between actions: 23 seconds. Nineteen gaps in twenty exceed nothing worth noticing; ninety-nine in a hundred are under seven minutes. Gaps beyond fifteen minutes: eight, out of nearly two thousand. Beyond thirty minutes: exactly one — and that worker was legitimately working.</td>
       <td class="ok">Use it, at 30+ minutes</td>
     </tr>
     <tr>
       <td><b>The shared notebook</b></td>
       <td>The running log every agent is asked to write as it goes</td>
-      <td>Median gap between entries: <b>5 minutes</b>. One entry in ten follows a gap of <b>27 minutes or more</b>. The longest gap from a healthy worker was <b>eight and a half hours</b>.</td>
+      <td>Median gap between entries: 5 minutes. One entry in ten follows a gap of 27 minutes or more. The longest gap from a healthy worker was eight and a half hours.</td>
       <td class="bad">Do not use it for liveness</td>
     </tr>
     <tr>
@@ -189,7 +189,7 @@ td b{font-weight:650}
     <li><b>Replacing a dead worker is already mechanical.</b> Each job record carries the exact command that launched it and the full original instructions. Nothing has to be reconstructed or guessed to stand up a replacement — which is why the recommendation below can treat replacement as a safe, auditable action rather than a delicate one.</li>
   </ul>
 
-  <p>One honest limit, because it shapes what the watcher must be. The job record <b>settles</b>: the worker that died at 06:12 now reads as cleanly done, with a normal-looking completion note. Only its append-only event log still contains the death. A watcher reading job states after the fact cannot tell a clean finish from a corpse — it has to be watching while it happens. That is exactly what a scheduled sweep is for and exactly what a session that might be asleep, restarted, or compacted is not.</p>
+  <p>One honest limit, because it shapes what the watcher must be. The job record settles: the worker that died at 06:12 now reads as cleanly done, with a normal-looking completion note. Only its append-only event log still contains the death. A watcher reading job states after the fact cannot tell a clean finish from a corpse — it has to be watching while it happens. That is exactly what a scheduled sweep is for and exactly what a session that might be asleep, restarted, or compacted is not.</p>
 </section>
 
 <div class="cut"><span>THE SEAM — TWO OBSERVERS, ONE SUBSTRATE</span></div>
@@ -201,7 +201,7 @@ td b{font-weight:650}
     <li><b>The first mate fires while a worker is still running</b>, and asks: is this still moving, and if not, what do we do about it before morning?</li>
   </ul>
 
-  <p>They read <b>the same source</b> — the harness's own job records — and they must share one reader rather than growing two pollers with two opinions about what a session is. The closeout check watches for the moment a job first goes terminal; the first mate watches everything that has not. Between them there is no gap and no overlap, and neither of them evaluates the <em>quality</em> of anyone's work, which is the existing audit's job and stays there.</p>
+  <p>They read the same source — the harness's own job records — and they must share one reader rather than growing two pollers with two opinions about what a session is. The closeout check watches for the moment a job first goes terminal; the first mate watches everything that has not. Between them there is no gap and no overlap, and neither of them evaluates the <em>quality</em> of anyone's work, which is the existing audit's job and stays there.</p>
 </section>
 
 <div class="cut"><span>WHAT IT MAY DO ABOUT IT</span></div>
@@ -227,10 +227,10 @@ td b{font-weight:650}
   <p>You proposed that the concierge, the first mate, and the roadmap verifier all get long-running sessions. Two costs need stating honestly before that becomes the plan.</p>
 
   <h3>The durability cost</h3>
-  <p>The roadmap verifier is <b>not a session today</b>. It is a small scheduled program that runs every five minutes, and that is not an accident of implementation — it is the reason it works. Tonight it was <b>the only observer that survived the concierge's context reset</b>. It survives session death, harness kills, and reboots, and it costs nothing when there is nothing to see. Its own approved requirement already writes the ramp rule in advance: start as a scheduled sweep, and graduate to a standing session <em>only if cadence and scope demand one</em>. Nothing measured tonight demands one. Converting it would trade proven durability for judgment it does not currently need.</p>
+  <p>The roadmap verifier is not a session today. It is a small scheduled program that runs every five minutes, and that is not an accident of implementation — it is the reason it works. Tonight it was the only observer that survived the concierge's context reset. It survives session death, harness kills, and reboots, and it costs nothing when there is nothing to see. Its own approved requirement already writes the ramp rule in advance: start as a scheduled sweep, and graduate to a standing session <em>only if cadence and scope demand one</em>. Nothing measured tonight demands one. Converting it would trade proven durability for judgment it does not currently need.</p>
 
   <h3>The money cost</h3>
-  <p>A standing session is not a burst of spend, it is a continuous one, and the shape of the spend is counter-intuitive: <b>almost all of it is re-reading its own context, not thinking</b>. Priced from published rates for the model these sessions run on, and from the token counts the sessions themselves recorded today:</p>
+  <p>A standing session is not a burst of spend, it is a continuous one, and the shape of the spend is counter-intuitive: almost all of it is re-reading its own context, not thinking. Priced from published rates for the model these sessions run on, and from the token counts the sessions themselves recorded today:</p>
 
   <div class="tbl">
   <table>
@@ -242,7 +242,7 @@ td b{font-weight:650}
   </table>
   </div>
 
-  <p>That last row is the trap worth naming: a session that wakes on exactly the same interval as its own memory expires can end up paying the full un-discounted rate on every wake, and the difference between best and worst case is roughly <b>tenfold</b> for identical work. A scheduled program has no such cliff. These are order-of-magnitude estimates from list prices, not a bill — but the ordering between the rows is not sensitive to the assumptions, and the ordering is the decision.</p>
+  <p>That last row is the trap worth naming: a session that wakes on exactly the same interval as its own memory expires can end up paying the full un-discounted rate on every wake, and the difference between best and worst case is roughly tenfold for identical work. A scheduled program has no such cliff. These are order-of-magnitude estimates from list prices, not a bill — but the ordering between the rows is not sensitive to the assumptions, and the ordering is the decision.</p>
 
   <h3>The third cost, which is the one that bit us today</h3>
   <p>Every long-running session needs a story for what happens when it runs out of room to remember. The concierge has one, and exercised it for the first time tonight. The first mate and the verifier would each need their own, or they inherit the exact failure the concierge just spent a day fixing. That is the subject of the next section, and it is a real argument against multiplying standing sessions before the mechanism is proven once.</p>
@@ -269,10 +269,10 @@ td b{font-weight:650}
 
   <div class="card block">
     <div class="tag">Checked, not assumed</div>
-    <p><b>Automatic compaction is already switched on — and nobody chose it.</b> It is the harness default, and it is not overridden anywhere: not in your personal settings, not in the workspace settings, not by any environment override, not by the launcher that starts the concierge. So this is not a decision about turning it on. It is a decision about whether a setting that governs every long-running session's memory should be an unexamined default or a recorded, explicit choice in the scripts that launch them.</p>
+    <p>Automatic compaction is already switched on — and nobody chose it. It is the harness default, and it is not overridden anywhere: not in your personal settings, not in the workspace settings, not by any environment override, not by the launcher that starts the concierge. So this is not a decision about turning it on. It is a decision about whether a setting that governs every long-running session's memory should be an unexamined default or a recorded, explicit choice in the scripts that launch them.</p>
   </div>
 
-  <p>The good news is real and you called it correctly: the tracking systems are largely in place. Compacting <b>preserves</b> what a full relaunch destroys — armed watchers and the ability to reach live workers by name — and the one time nobody re-armed a watcher after a restart, your review sat unseen for six hours. For an unattended session, automatic compaction is therefore <em>strictly safer</em> than restarting when full. And the antidote to compaction being lossy already exists: a curated file on disk holding what must survive, with a one-command tool that reads it back.</p>
+  <p>The good news is real and you called it correctly: the tracking systems are largely in place. Compacting preserves what a full relaunch destroys — armed watchers and the ability to reach live workers by name — and the one time nobody re-armed a watcher after a restart, your review sat unseen for six hours. For an unattended session, automatic compaction is therefore <em>strictly safer</em> than restarting when full. And the antidote to compaction being lossy already exists: a curated file on disk holding what must survive, with a one-command tool that reads it back.</p>
 
   <p>The gaps, named precisely rather than agreed with warmly:</p>
   <ul>
@@ -298,14 +298,14 @@ td b{font-weight:650}
     <div class="qid">F2</div>
     <h3>Where is the line between the two observers, so we do not grow a second audit engine?</h3>
     <p>Two watchers reading the same records will merge unless the seam is written down. Stated as triggers rather than topics, there is no overlap.</p>
-    <div class="rec"><b>Recommended:</b> the closeout check fires <b>once, when a worker finishes</b> — did this land somewhere you can act on, and is the roadmap right? The first mate fires <b>while a worker is still running</b> — is it still moving, and what do we do if not? One shared reader of the job records, two triggers, and neither one judges the quality of anyone's work — that stays with the existing roadmap audit.</div>
+    <div class="rec"><b>Recommended:</b> the closeout check fires once, when a worker finishes — did this land somewhere you can act on, and is the roadmap right? The first mate fires while a worker is still running — is it still moving, and what do we do if not? One shared reader of the job records, two triggers, and neither one judges the quality of anyone's work — that stays with the existing roadmap audit.</div>
   </div>
 
   <div class="q">
     <div class="qid">F3</div>
     <h3>What is the supervisor allowed to DO when a worker goes quiet — and what counts as quiet?</h3>
     <p>What counts as quiet is close to settled by measurement: a worker in the blocked state is near-certainly dead, and thirty-plus minutes of silence is worth one look. The open call is the action ladder, and specifically whether an agent may stand up a replacement worker at 3am without asking you.</p>
-    <div class="rec"><b>Recommended:</b> always record and surface; nudge only a slow worker, never a dead one; <b>replace a confirmed-dead worker under a standing grant</b>, limited to workers the fleet itself started and never to your own sessions or the concierge, with a note posted every time; never kill a running worker automatically. Replacement is safe here because the job record already carries the exact instructions and launch command needed to redo it.</div>
+    <div class="rec"><b>Recommended:</b> always record and surface; nudge only a slow worker, never a dead one; replace a confirmed-dead worker under a standing grant, limited to workers the fleet itself started and never to your own sessions or the concierge, with a note posted every time; never kill a running worker automatically. Replacement is safe here because the job record already carries the exact instructions and launch command needed to redo it.</div>
   </div>
 
   <div class="q">
@@ -319,7 +319,7 @@ td b{font-weight:650}
     <div class="qid">F5</div>
     <h3>Who watches the watcher, and should anything wake you at night?</h3>
     <p>Peer-watching between two sessions is circular and fails together. The scheduler that is not a Claude session is the layer that has actually demonstrated survival.</p>
-    <div class="rec"><b>Recommended:</b> every observer declares its own staleness rule in the file it writes, something that is not it reads that stamp, and a 07:00 missing-digest check catches the case where both are dead. <b>Nothing wakes you at night for week one</b> — every overnight outcome the current fixes leave possible is a safe stop that can wait for morning. One gap to close: tonight's sweep failure was written only to a log nobody reads.</div>
+    <div class="rec"><b>Recommended:</b> every observer declares its own staleness rule in the file it writes, something that is not it reads that stamp, and a 07:00 missing-digest check catches the case where both are dead. Nothing wakes you at night for week one — every overnight outcome the current fixes leave possible is a safe stop that can wait for morning. One gap to close: tonight's sweep failure was written only to a log nobody reads.</div>
   </div>
 
   <div class="q">
@@ -333,7 +333,7 @@ td b{font-weight:650}
     <div class="qid">F7</div>
     <h3>What forces a standing session to write its memory to disk, now that compaction fires on its own?</h3>
     <p>Automatic compaction is already on by default and nobody chose it. It fires when it fires, so state cannot be written when someone remembers — it has to be current continuously.</p>
-    <div class="rec"><b>Recommended:</b> refresh the state file from the hook that already runs silently at the end of every turn of every agent here, so it is never more than one turn stale; <b>set the compaction preference explicitly in the launcher scripts</b> so it is a recorded choice rather than a default nobody picked; and add a cheap self-check on the first turn after compacting, since silent loss is invisible by construction. Mechanics and the remaining gaps are in the requirement filed alongside this page.</div>
+    <div class="rec"><b>Recommended:</b> refresh the state file from the hook that already runs silently at the end of every turn of every agent here, so it is never more than one turn stale; set the compaction preference explicitly in the launcher scripts so it is a recorded choice rather than a default nobody picked; and add a cheap self-check on the first turn after compacting, since silent loss is invisible by construction. Mechanics and the remaining gaps are in the requirement filed alongside this page.</div>
   </div>
 
 

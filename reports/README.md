@@ -40,6 +40,30 @@ runs it before publishing: a page with no description fails the build. If one ev
 reaches the site it renders as a loud `⚠ NO DESCRIPTION` strip rather than a plausible
 sentence — a fallback that reads as intentional is how the old one survived six weeks.
 
+## Emphasis is structural, or it is a callout
+
+@jwildfire, 2026-08-16: *"I really don't like the randomly bolded sentences in the middle
+of paragraphs. Call things out in modals if they're super important, but no more random
+inline bold."* He reads these pages fast, often on a phone. Bold applied to a quarter of a
+page emphasises nothing, and the skim it was meant to help is the thing it destroys.
+
+- No bolded sentence or clause inside a body paragraph — not as its opening sentence, not
+  mid-sentence, not on a number inside a table cell's prose. Rewrite the sentence so it
+  carries its own weight, or promote it.
+- Promote it to a callout: a bordered, tinted block with its own label. Every artifact
+  defines one (`.callout`, `.card` or `.verdict` on the current pages), it holds at 390px,
+  and it follows the page's light/dark handling. A bolded lead sentence inside a callout is
+  the callout doing its job twice.
+- Structural bold stays, and removing it would make the page worse: list-item and
+  definition-list leads, table headers, a label or value at the start of a cell, key–value
+  strips like the fact bar under a title, and short run-in labels ending in a colon or
+  period (`Recommendation:`, `Sources.`).
+- Quotations from @jwildfire keep whatever emphasis they came with — that text is his.
+
+The full rule, with the sweep that established it, is in
+[`decisions/README.md`](decisions/README.md) and
+[requirement #198](https://github.com/jwildfire/obot.roadmap/issues/198).
+
 ## Index
 
 | Report | Date | Status |
