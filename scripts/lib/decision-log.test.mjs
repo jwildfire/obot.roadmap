@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { parseDecisionRecord, isDecided, isFullyDecided, text } from './collect/decision-log.mjs';
+import { foldedInto, isAwaiting } from './collect/decisions.mjs';
 
 const wrap = (inner) => `<body><header>…</header>\n<section id="decisions">\n<h2>Decisions</h2>\n${inner}\n</section>\n<section><h2>The situation</h2><p>…</p></section></body>`;
 
@@ -81,6 +82,34 @@ test('status cells: partially decided counts as decided, awaiting does not', () 
   assert.equal(isDecided('Awaiting @jwildfire — E1–E4'), false);
   assert.equal(isFullyDecided('Partially decided 2026-08-15 — A1–A2 accepted'), false);
   assert.equal(isFullyDecided('**Decided 2026-08-15**'), true);
+});
+
+// The exact status cells D0015 and D0016 carried on 2026-08-16, when both rendered
+// as open cards on every surface built on the awaiting set (#210).
+const FOLDED = '**Folded into [D0017](2026-08-16-navigator-design/)** — its questions are carried forward into the consolidated Navigator design at @jwildfire\'s request (2026-08-16); answer there. Original recommendation, unchanged: W1–W4';
+
+test('a folded decision is not awaiting him — its questions belong to the successor', () => {
+  assert.equal(isAwaiting(FOLDED), false);
+  assert.deepEqual(foldedInto(FOLDED), { id: 'D0017', slug: '2026-08-16-navigator-design' });
+});
+
+test('a folded decision still resolves to what it was folded into', () => {
+  // Dropping it silently would leave a reader who remembers D0015 with nowhere to go.
+  assert.equal(foldedInto('Folded into D0017 — answer there').id, 'D0017');
+  assert.equal(foldedInto('Folded into D0017').slug, null);
+});
+
+test('"folded" only counts at the start of the cell, not anywhere in the prose', () => {
+  // A decided artifact that mentions folding another one in is decided, not folded.
+  const mentions = '**Decided 2026-08-16** — N1–N8 all adopted. Folds in the worker-closeout (D0015) and supervision (D0016) questions at his request';
+  assert.equal(foldedInto(mentions), null);
+  assert.equal(isAwaiting(mentions), false);
+  assert.equal(isDecided(mentions), true);
+});
+
+test('folding does not swallow an ordinary awaiting row', () => {
+  assert.equal(foldedInto('Awaiting @jwildfire — R1–R3'), null);
+  assert.equal(isAwaiting('Awaiting @jwildfire — R1–R3'), true);
 });
 
 test('a relayed decision is marked non-verbatim so the log drops the quote marks', () => {

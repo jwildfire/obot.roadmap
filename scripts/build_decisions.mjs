@@ -108,8 +108,12 @@ ${log.entries.length ? days : '<p>No decisions recorded yet.</p>'}
 // failure the derived log exists to prevent, so this page stops being written by
 // hand too. The committed copy under reports/ is superseded at deploy time.
 const landing = (log) => {
+  // A folded artifact says so on its own card. It is neither open nor decided on its
+  // own page — its questions were answered inside the successor — and reading
+  // "decided" on a page that records no decision is the drift this log exists against.
+  const state = (a) => (a.awaiting ? 'awaiting you' : (a.foldedInto ? `folded into ${a.foldedInto.id}` : 'decided'));
   const card = (a) => `<a class="card" href="${esc(a.slug)}/">
-  <span class="k">${esc(a.date)}${a.id ? ` · ${esc(a.id)}` : ''} · ${a.awaiting ? 'awaiting you' : 'decided'}</span>
+  <span class="k">${esc(a.date)}${a.id ? ` · ${esc(a.id)}` : ''} · ${esc(state(a))}</span>
   <h3>${esc(a.title)}</h3>
   <p>${esc(a.statusPlain)}</p>
 </a>`;

@@ -166,6 +166,7 @@ export async function collectDecisionLog() {
       statusPlain: d.statusPlain,
       path: d.path,
       awaiting: d.awaiting,
+      foldedInto: d.foldedInto ?? null,
       questions: reg?.questions ?? [],
       entries: record.entries,
     };
@@ -186,6 +187,9 @@ export async function collectDecisionLog() {
     artifacts,
     entries,
     open: artifacts.filter((a) => a.awaiting),
+    // Answered inside a successor rather than on their own page. Out of `open`, and
+    // named here so a surface can show where they went instead of dropping them.
+    folded: artifacts.filter((a) => a.foldedInto),
     problems,
     hasRegistry: registry.size > 0,
   };
