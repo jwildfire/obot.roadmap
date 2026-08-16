@@ -18,6 +18,30 @@ function cell(cells, headers, name) {
   return i === -1 ? '' : (cells[i] ?? '');
 }
 
+const bare = (status = '') => status.replace(/[*_`]/g, '').trim();
+
+/**
+ * The successor an artifact was folded into, or null.
+ *
+ * A third state neither "open" nor "decided" models: @jwildfire asked for two
+ * artifacts to be answered inside a later one, so their questions were carried
+ * forward and answered there (D0015 and D0016 into D0017, 2026-08-16). The index
+ * row already said so in the only place a status is recorded — the status cell —
+ * but nothing parsed it, so both stayed in the awaiting set and rendered as open
+ * cards on every surface built on it (jwildfire/obot.roadmap#210).
+ *
+ * Read from the same cell as every other status, deliberately. #196 is the standing
+ * argument against a second place to record whether a decision has been made; a
+ * `folded` field in the registry would be exactly that, and this needs no new
+ * mechanism — `**Folded into [D0017](2026-08-16-navigator-design/)**` is already
+ * both the sentence a human reads and the data a collector can read.
+ */
+export function foldedInto(status = '') {
+  const m = /^folded into\s+\[?([A-Z]\d{4})\]?\s*(?:\(([^)]+)\))?/i.exec(bare(status));
+  if (!m) return null;
+  return { id: m[1].toUpperCase(), slug: m[2] ? m[2].replace(/^\.?\//, '').replace(/\/$/, '') : null };
+}
+
 /**
  * Does this row still want an answer from @jwildfire?
  *
@@ -27,9 +51,15 @@ function cell(cells, headers, name) {
  * sitting in his waiting-on-you list because of it (found 2026-08-15 while
  * building the decision log). "Partially decided" stays awaiting on purpose:
  * some of its questions are still his.
+ *
+ * A folded row wants nothing from him either — its questions are the successor's
+ * now. It stays out of `awaiting` and, deliberately, inside `decided`, so every
+ * surface that already lists the settled artifacts keeps listing it and a reader
+ * who remembers D0015 can still find out where it went.
  */
 export function isAwaiting(status = '') {
-  return !/^decided\b/i.test(status.replace(/[*_`]/g, '').trim());
+  if (foldedInto(status)) return false;
+  return !/^decided\b/i.test(bare(status));
 }
 
 export async function collectDecisions() {
@@ -68,11 +98,16 @@ export async function collectDecisions() {
         // The status cell may carry markdown links; flatten them for meta columns.
         statusPlain: status.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'),
         awaiting: isAwaiting(status),
+        foldedInto: foldedInto(status),
       };
     });
 
   return {
     awaiting: decisions.filter((d) => d.awaiting),
     decided: decisions.filter((d) => !d.awaiting),
+    // A named subset of `decided`, not a third bucket beside it: every surface that
+    // already unions awaiting + decided keeps rendering these without knowing the
+    // state exists, and the ones that want to say "folded into D0017" can.
+    folded: decisions.filter((d) => d.foldedInto),
   };
 }
