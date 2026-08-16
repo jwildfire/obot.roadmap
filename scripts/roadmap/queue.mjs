@@ -1,4 +1,4 @@
-// Spike direction: "The queue" (requirement #202, task #204 — worker W0004.1).
+// The queue — the roadmap page's front door, at roadmap.html (D0018, #211).
 //
 // The page is @jwildfire's inbox, not a report. One ranked list of every item
 // that cannot proceed without him, longest-waiting first. Each card carries a
@@ -9,34 +9,34 @@
 // an amber edge, past three days a red edge, a tinted ground and a bigger age.
 //
 // Membership reuses the house semantics exactly — the same computations the
-// current roadmap page makes (lib/highlights.mjs thresholds, lib/rc.mjs release
-// dedupe) — so this direction differs in shape, never in what counts as waiting.
+// catalog makes (lib/highlights.mjs thresholds, lib/rc.mjs release dedupe) — so
+// this page differs in shape, never in what counts as waiting.
 //
-// What it gives up: the inventory. Nothing here lets you browse everything that
-// exists; the current page keeps that job.
+// It gives up the inventory on purpose: nothing here lets you browse everything
+// that exists, and the catalog keeps that job one click away. The count in the
+// headline is the number of things waiting on him and nothing else — the
+// hierarchy line below the list links to work he may want to review, and is
+// deliberately counted nowhere (🧭🤖 obot-navigator, 2026-08-16), because a
+// headline that counts two kinds of thing stops meaning one thing.
+//
+// Grew out of the design spike's queue direction (#202/#204, worker W0004.1),
+// which @jwildfire chose on 2026-08-16: "i'm good with your rec  build".
 import { esc, age, fmtET, clip, daysAgo } from '../lib/gh.mjs';
 import { siteHeader } from '../lib/nav.mjs';
-import { releaseKey } from '../lib/rc.mjs';
+import { releaseKey, browserReleaseKeySource } from '../lib/rc.mjs';
 import { T } from '../lib/highlights.mjs';
-import { spikeBanner } from './shared.mjs';
+import { nowStripHtml, nowStripStyle, nowStripScript } from './nowstrip.mjs';
 
 const REVIEWER = 'jwildfire';
 const PROJECT_URL = 'https://github.com/users/jwildfire/projects/1';
-const WORKER = 'W0004.1';
 
-export const meta = {
-  slug: 'queue',
-  name: 'The queue',
-  putsFirst: 'what needs him',
-  givesUp: 'the inventory — nothing here lets you browse everything that exists; the current page keeps that job',
-  blurb: 'One ranked inbox of everything that cannot move without you, longest wait first — each card says why it is yours and gives the one action that clears it.',
-};
+export const meta = { slug: 'queue', out: 'roadmap.html' };
 
 const short = (nameWithOwner) => (nameWithOwner || '').split('/')[1] ?? nameWithOwner;
 
 // ------------------------------------------------------------- queue membership
-// Every rule below is the house rule, stated where the current page states it:
-// RC dedupe from lib/rc.mjs, thresholds from lib/highlights.mjs. An item is
+// Every rule below is the house rule, stated where the catalog states it: RC
+// dedupe from lib/rc.mjs, thresholds from lib/highlights.mjs. An item is
 // {type, since (ISO or null), prefix (the age verb), title, why (HTML),
 //  act {label, href}, cite {label, href}, attrs (extra data- attributes)}.
 function buildItems({ NOW, reqRes, prRes, relRes, ideaRes, decRes }) {
@@ -78,7 +78,7 @@ function buildItems({ NOW, reqRes, prRes, relRes, ideaRes, decRes }) {
 
   // Decisions awaiting him, straight from the committed decision index.
   for (const d of decRes.value?.awaiting ?? []) {
-    const artifact = d.path ? `../${d.path}` : '../reports/decisions/';
+    const artifact = d.path ?? 'reports/decisions/';
     // statusPlain flattens links but keeps markdown emphasis; strip it or the
     // card reads "**Folded into D0017**" with literal asterisks.
     const status = clip((d.statusPlain || '').replace(/[*_`]/g, '').trim(), 110);
@@ -203,6 +203,30 @@ function card(item, NOW) {
   </li>`;
 }
 
+// ---------------------------------------------------------- the review lane line
+// The hierarchy's Current-versus-Proposed lane lives on the catalog, where it
+// edits the tree it sits beside. Losing the front door cost it discoverability,
+// so the queue names it — as a link, never as a card and never in the count.
+// "Pending" mirrors buildForest's effective-parent rule exactly: an edge whose
+// child already has a recorded parent has been applied and is not a diff.
+function reviewLaneLine(hierRes, proposal) {
+  if (!hierRes?.ok) return '';
+  const issues = hierRes.value.issues;
+  const pending = (proposal?.links ?? []).filter((l) => {
+    const child = issues.get(l.child);
+    if (!child) return false; // closed, or outside the tracked portfolio
+    return !(child.parentKey && issues.has(child.parentKey));
+  }).length;
+  const flags = (proposal?.flags ?? []).length;
+  if (!pending && !flags) return '';
+  const bits = [];
+  if (pending) bits.push(`${pending} proposed structure change${pending === 1 ? '' : 's'}`);
+  if (flags) bits.push(`${flags} cleanup flag${flags === 1 ? '' : 's'}`);
+  return `<p class="q-lane">${bits.join(' and ')} sit in the hierarchy review lane on the
+  <a href="catalog.html#hierarchy-proposed">catalog</a>. Not counted above: reviewing the roadmap's own
+  structure is work you may want, not work that is blocked on you.</p>`;
+}
+
 // ------------------------------------------------------------------ recent strip
 // Real counts over the pulse window, from the same bundle the queue reads. A
 // source that failed says so instead of pretending zero happened.
@@ -227,12 +251,12 @@ function recentStrip({ relRes, decRes, ideaRes, NOW }) {
     const n = ideaRes.value.promoted.filter((d) => d.closedAt && daysAgo(d.closedAt, NOW) <= T.pulseDays).length;
     parts.push(`${n} idea${n === 1 ? '' : 's'} promoted`);
   } else parts.push('promoted ideas not readable');
-  return `Last ${T.pulseDays} days: ${parts.join(' · ')}. Detail lives on the <a href="../roadmap.html#pulse">current roadmap page</a>.`;
+  return `Last ${T.pulseDays} days: ${parts.join(' · ')}. Every event, dated and cited, is on the <a href="wire.html">wire</a>.`;
 }
 
 // ------------------------------------------------------------------------- page
 export async function render(data) {
-  const { NOW, reqRes, prRes, relRes, ideaRes, decRes, HUB, SESSION_STATE_URL } = data;
+  const { NOW, reqRes, prRes, relRes, ideaRes, decRes, hierRes, proposal, HUB, lightsRes } = data;
   const items = buildItems(data);
   const n = items.length;
   const allOk = [prRes, relRes, decRes, ideaRes, reqRes].every((r) => r.ok);
@@ -249,7 +273,7 @@ export async function render(data) {
 
   const emptyHero = allOk
     ? `<p class="q-zero">Nothing is waiting on you.</p>
-    <p>No reviews, no open decisions, no un-triaged ideas, no stalled work, no release calls. The strips below still say what is running and what recently landed.</p>`
+    <p>No reviews, no open decisions, no un-triaged ideas, no stalled work, no release calls. The strip above still says what is running, and the catalog still holds everything that exists.</p>`
     : `<p class="q-zero">Nothing readable is waiting.</p>
     <p>Some sources failed on this build (see the notes above), so the queue may be incomplete rather than clear.</p>`;
 
@@ -258,9 +282,9 @@ export async function render(data) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The queue · obot</title>
+<title>Queue · obot</title>
 <meta name="description" content="Everything that cannot proceed without @jwildfire, ranked by wait — release reviews, decisions, idea triage, stalled work and release calls, on live data.">
-<link rel="stylesheet" href="../assets/styles.css">
+<link rel="stylesheet" href="assets/styles.css">
 <style>
 /* The queue — an inbox, so a single narrow column even on desktop. Mobile-first:
    nothing here has a fixed width, long GitHub titles wrap, and the only
@@ -326,21 +350,23 @@ export async function render(data) {
 .q-empty p { margin: 0; color: var(--muted); font-size: .9rem; }
 .q-empty p.q-zero { color: var(--ink); }
 
-/* The other two questions, answered small: Running now · Recent. */
-.q-strips { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .8rem; margin: 1.5rem 0 0; }
+/* The review lane pointer — a link, never a card, and counted nowhere. */
+.q-lane { margin: 1rem 0 0; padding: .5rem .8rem .55rem; border: 1px dashed var(--rule);
+  border-radius: 10px; font-size: .82rem; color: var(--muted); overflow-wrap: anywhere; }
+
+/* The other two questions, answered small. */
+.q-strips { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .8rem; margin: 1.2rem 0 0; }
 .q-strip { border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); padding: .6rem .85rem .7rem; min-width: 0; }
 .q-strip h2 { font: 600 .68rem/1.5 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 .3rem; }
 .q-strip p { margin: 0; font-size: .84rem; overflow-wrap: anywhere; }
-.q-live.live { color: var(--good); }
-.q-live.idle { color: var(--muted); }
-.q-live.stale { color: var(--faint); font-style: italic; }
-.q-fine { margin: .3rem 0 0 !important; font-size: .7rem !important; color: var(--faint); }
+
+${nowStripStyle()}
 </style>
 </head>
 <body>
-${siteHeader({ page: 'roadmap', depth: 1 })}
-${spikeBanner(meta)}
+${siteHeader({ page: 'queue' })}
 <main class="q-wrap">
+${nowStripHtml({ lightsRes, NOW })}
 <header class="q-head">
   <h1>Waiting on you</h1>
   <p class="q-sum"><span id="q-count">${countTxt}</span><span id="q-longest">${longestTxt}</span></p>
@@ -356,58 +382,51 @@ ${notices.map((t) => `  <p class="q-notice">${esc(t)}</p>`).join('\n')}
 ${items.map((item) => card(item, NOW)).join('\n')}
 </ol>
 
+${reviewLaneLine(hierRes, proposal)}
+
 <div class="q-strips">
-  <section class="q-strip">
-    <h2>Running now</h2>
-    <p class="q-live" id="q-live">Session feed not read — this readout needs JavaScript.</p>
-    <p class="q-fine">Published by the session heartbeat to the session-state branch; the raw feed caches for about five minutes.</p>
-  </section>
   <section class="q-strip">
     <h2>Recent</h2>
     <p>${recentStrip(data)}</p>
+  </section>
+  <section class="q-strip">
+    <h2>Everything else</h2>
+    <p>Goals, the requirement hierarchy, every open PR, unreleased work and the ideas queue are on the
+    <a href="catalog.html">catalog</a> — the complete record, filterable by view and repo.</p>
   </section>
 </div>
 </main>
 
 <script>
 (function () {
-  // ---- Running now: the heartbeat-published session state, fetched fresh so it
-  // is newer than the deploy. Never asserts liveness from a stale reading.
-  var live = document.getElementById('q-live');
-  var STALE_MINUTES = 120;
-  var agoTxt = function (mins) {
-    if (mins === null) return 'age unknown';
-    if (mins < 1) return 'just now';
-    if (mins < 60) return mins + 'm ago';
-    if (mins < 2880) return Math.floor(mins / 60) + 'h ago';
-    return Math.floor(mins / 1440) + 'd ago';
+  // ---- Fragment forwarder. This page used to be the inventory, and published
+  // links point into sections that now live on the catalog: README links
+  // #sec-audit and the 2026-07-27 diary links #hierarchy-proposed. Those land
+  // here, on a real page with no such section, where nothing looks broken — so
+  // the anchor is forwarded with the fragment intact rather than swallowed.
+  // #sec-todo is deliberately absent: the queue IS the Todo section.
+  var FORWARD = {
+    'sec-requirements': 'catalog.html', 'sec-hierarchy': 'catalog.html',
+    'hierarchy-proposed': 'catalog.html', 'sec-goals': 'catalog.html',
+    'sec-prs': 'catalog.html', 'sec-upcoming': 'catalog.html',
+    'sec-ideas': 'catalog.html', 'sec-releases': 'catalog.html',
+    'sec-audit': 'catalog.html',
+    // The four view deep-links (lib/highlights.mjs) — a shared URL for a
+    // particular reading of the inventory.
+    live: 'catalog.html', attention: 'catalog.html', pulse: 'catalog.html', all: 'catalog.html',
+    // Pre-existing rot: Cost moved to the analytics page long before this
+    // rebuild, and diary/2026-07-25.md still points at the old anchor.
+    'sec-usage': 'analytics/index.html'
   };
-  live.textContent = 'Reading the session feed…';
-  fetch(${JSON.stringify(SESSION_STATE_URL)}, { cache: 'no-store' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (s) {
-      if (!s || !s.state) {
-        live.className = 'q-live stale';
-        live.textContent = 'No session state is published right now.';
-        return;
-      }
-      var mins = s.updatedAt ? Math.floor((Date.now() - new Date(s.updatedAt)) / 60000) : null;
-      if (mins === null || mins > STALE_MINUTES) {
-        live.className = 'q-live stale';
-        live.textContent = 'The session feed last updated ' + agoTxt(mins) + ' — treated as unknown, not as live.';
-        return;
-      }
-      var idle = s.state === 'idle' || s.state === 'done';
-      var agents = s.agents && s.agents.total
-        ? ' · ' + s.agents.working + ' of ' + s.agents.total + ' agents working'
-        : '';
-      live.className = 'q-live ' + (idle ? 'idle' : 'live');
-      live.textContent = (idle ? '○ ' : '● ') + (s.name || 'obot') + ' — ' + (s.detail || s.state) + agents + ' · updated ' + agoTxt(mins);
-    })
-    .catch(function () {
-      live.className = 'q-live stale';
-      live.textContent = 'The session feed could not be read on this page load.';
-    });
+  var frag = (location.hash || '').replace('#', '');
+  if (frag && Object.prototype.hasOwnProperty.call(FORWARD, frag)) {
+    // replace(), not assign(): a forwarded link must not put a dead anchor in
+    // the back-button history.
+    location.replace(FORWARD[frag] + '#' + frag);
+    return;
+  }
+
+${nowStripScript()}
 
   // ---- Review re-check: PRs open and close without a push to this repo, and
   // the top of the queue must be as current as a page load. One unauthenticated
@@ -432,18 +451,8 @@ ${items.map((item) => card(item, NOW)).join('\n')}
     if (mins < 1440) return Math.floor(mins / 60) + 'h';
     return Math.floor(mins / 1440) + 'd';
   };
-  // Mirrors lib/rc.mjs (milestone title, then PR title; normalised version).
-  // Written without backslash escapes on purpose: this script lives inside a
-  // template literal, where a lone backslash is eaten before it reaches the page.
-  var releaseKeyOf = function (repo, candidates) {
-    for (var i = 0; i < candidates.length; i++) {
-      var c = candidates[i];
-      if (!c || /^untagged-[0-9a-f]+$/i.test(c)) continue;
-      var m = String(c).match(/v?([0-9]+)[.]([0-9]+)(?:[.]([0-9]+))?/);
-      if (m) return repo + '@v' + m[1] + '.' + m[2] + '.' + (m[3] || 0);
-    }
-    return null;
-  };
+  // lib/rc.mjs's rule, emitted from lib/rc.mjs rather than retyped (hub#209).
+${browserReleaseKeySource()}
   var insertSorted = function (li, ts) {
     var kids = list.children;
     for (var i = 0; i < kids.length; i++) {
@@ -509,11 +518,17 @@ ${items.map((item) => card(item, NOW)).join('\n')}
 })();
 </script>
 
-<footer class="site">Generated ${fmtET(NOW)} · built by
-<a href="https://github.com/${HUB}/blob/main/scripts/build_spike.mjs"><code>build_spike.mjs</code></a>
-for <a href="https://github.com/${HUB}/issues/204">task #204</a> · Worker: ${WORKER}</footer>
+<footer class="site">Generated ${fmtET(NOW)} · regenerates via <code>deploy-site.yml</code> ·
+built by <a href="https://github.com/${HUB}/blob/main/scripts/roadmap/queue.mjs"><code>roadmap/queue.mjs</code></a>
+for <a href="https://github.com/${HUB}/issues/211">requirement #211</a>.</footer>
 </body>
 </html>
 `;
+
+  const byType = items.reduce((acc, i) => { acc[i.type] = (acc[i.type] ?? 0) + 1; return acc; }, {});
+  console.log(
+    `queue: ${n} waiting (${Object.entries(byType).map(([k, v]) => `${v} ${k}`).join(', ') || 'none'})` +
+    (n && items[0].since ? ` · longest ${age(items[0].since, NOW)}` : ''),
+  );
   return html;
 }

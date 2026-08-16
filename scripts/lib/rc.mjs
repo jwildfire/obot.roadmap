@@ -50,3 +50,41 @@ export function releaseVersion(...candidates) {
 export function releaseKey(repo, version) {
   return repo && version ? `${repo}@${version}` : null;
 }
+
+// ---------------------------------------------------------------- browser copy
+// The pages re-check GitHub for review-requested PRs on load, which means the
+// dedupe above has to run in the browser too — and the browser cannot import
+// this module. It used to be hand-mirrored inside the generator's template
+// literal, where `\d` and `\b` were eaten before they reached the page: the
+// shipped pattern read /v?(d+).(d+)(?:.(d+))?/ and matched no version ever
+// (hub#209). The tell was the neighbouring /^untagged-[0-9a-f]+$/i, which
+// survived because it contains no backslashes.
+//
+// So the copy is emitted from the definitions above instead of retyped. The
+// patterns cross as `.source` strings through JSON.stringify, and an
+// interpolated value is inserted verbatim — a template literal never
+// reprocesses escapes in what `${}` produces. Same rule, one definition, and
+// rc.test.mjs evaluates what this emits so the class of bug cannot come back.
+
+/**
+ * JavaScript source for a browser-side `releaseKeyOf(repo, candidates)` —
+ * the same precedence and normalisation as releaseVersion()/releaseKey().
+ *
+ * @param name  the variable the function is bound to in the emitted source
+ */
+export function browserReleaseKeySource(name = 'releaseKeyOf') {
+  return `var ${name} = (function () {
+    var UNTAGGED = new RegExp(${JSON.stringify(UNTAGGED.source)}, ${JSON.stringify(UNTAGGED.flags)});
+    var SEMVER = new RegExp(${JSON.stringify(SEMVER.source)}, ${JSON.stringify(SEMVER.flags)});
+    return function (repo, candidates) {
+      if (!repo) return null;
+      for (var i = 0; i < candidates.length; i++) {
+        var c = candidates[i];
+        if (!c || UNTAGGED.test(c)) continue;
+        var m = String(c).match(SEMVER);
+        if (m) return repo + '@v' + m[1] + '.' + m[2] + '.' + (m[3] || 0);
+      }
+      return null;
+    };
+  })();`;
+}

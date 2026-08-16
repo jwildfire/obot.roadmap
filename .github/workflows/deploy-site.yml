@@ -95,22 +95,16 @@ jobs:
       - name: Test the generators' shared rules
         run: node --test scripts/lib/*.test.mjs
 
-      # The roadmap page (requirement #57). Replaced the lifecycle-lane generator
-      # (scripts/build_roadmap.mjs) at the flip on 2026-07-24; that file was
-      # deleted once the flip proved out — see git history if the shape is wanted.
-      - name: Build roadmap
+      # The roadmap page set (requirement #211, design D0018): the queue at
+      # roadmap.html, the wire one click behind it, and the catalog carrying the
+      # complete record that used to be the front door. One generator, one
+      # collection pass, so the three pages cannot disagree about the same
+      # morning. Replaced build_roadmap_next.mjs and the design spike's
+      # build_spike.mjs (#202/#204) when D0018 landed on 2026-08-16.
+      - name: Build the roadmap page set
         env:
           RC_TOKEN: ${{ steps.obot-token.outputs.token }}
-        run: node scripts/build_roadmap_next.mjs
-
-      # The roadmap-page design spike (requirement #202, task #204): three
-      # candidate directions rendered beside the live page, plus a landing page,
-      # all from the same sources the roadmap itself reads. Removed once the
-      # decision lands and the rebuild requirement is filed.
-      - name: Build roadmap spike directions
-        env:
-          RC_TOKEN: ${{ steps.obot-token.outputs.token }}
-        run: node scripts/build_spike.mjs
+        run: node scripts/build_roadmap.mjs
 
       # The audit reading view (_site/audit/index.html, requirement #92) — the
       # roadmap page's Audit fold is for clearing findings, this page is for
@@ -223,28 +217,55 @@ jobs:
           says() { grep -q "$2" "_site/$1" 2>/dev/null || { echo "::error title=Unexpected page content::_site/$1 does not contain '$2'"; fail=1; }; }
 
           have index.html;                 says index.html metric-row
-          have roadmap.html;               says roadmap.html sec-requirements
-                                           says roadmap.html rm-view-btn
-          # The Todo section (RC framework): what is waiting on @jwildfire must
-          # never silently drop off the page.
-                                           says roadmap.html sec-todo
-          # The audit section (#92) is generated from a committed ledger, so a
-          # missing or malformed site/audit/findings.json must fail the deploy
-          # rather than quietly publish a roadmap with no audit on it.
-                                           says roadmap.html sec-audit
+
+          # The roadmap page set (#211). These assertions moved WITH their
+          # content when D0018 made the queue the front door: sec-requirements
+          # and the view chips are the catalog's, and asserting them on
+          # roadmap.html would now pass on a page that does not hold them. That
+          # is the exact shape of a silent loss, so each page asserts its own.
+          #
+          # The queue at roadmap.html: the ranked list container and the NOW
+          # strip's live readout. Not a card — zero cards is the goal state.
+          have roadmap.html;               says roadmap.html 'id="q-list"'
+                                           says roadmap.html 'id="ns-live"'
+          # The wire: the stream container and its own NOW strip.
+          have wire.html;                  says wire.html 'id="w-stream"'
+                                           says wire.html 'id="ns-live"'
+          # The catalog: the inventory spine, both filters, the Todo section (RC
+          # framework — what is waiting on @jwildfire must never silently drop
+          # off), the hierarchy review lane, and the audit fold. The audit
+          # section is generated from a committed ledger, so a missing or
+          # malformed site/audit/findings.json fails the deploy rather than
+          # quietly publishing a roadmap with no audit on it.
+          have catalog.html;               says catalog.html sec-requirements
+                                           says catalog.html rm-view-btn
+                                           says catalog.html rm-chip-btn
+                                           says catalog.html sec-todo
+                                           says catalog.html sec-hierarchy
+                                           says catalog.html hierarchy-proposed
+                                           says catalog.html sec-audit
+          # The fragment forwarder on the queue. Published pages link into
+          # sections that now live on the catalog (README's #sec-audit, the
+          # 2026-07-27 diary's #hierarchy-proposed); without it those land on a
+          # real page with no such section and nothing looks broken.
+                                           says roadmap.html sec-hierarchy
+                                           says roadmap.html sec-usage
           have audit/findings.json
           # ap-queue is the container the decision table renders into, and
           # ap-data the embedded ledger it renders from — between them they say
           # the page is the queue (#109) and that it carries real findings.
           have audit/index.html;           says audit/index.html ap-queue
                                            says audit/index.html ap-data
-          have roadmap-next.html
-          # The design-spike pages (#202/#204): each direction must carry its
-          # spike banner, so a shared URL always says what it is an option for.
-          have roadmap-spike/index.html;   says roadmap-spike/index.html spike-landing
-          have roadmap-spike/queue.html;   says roadmap-spike/queue.html spike-banner
-          have roadmap-spike/wire.html;    says roadmap-spike/wire.html spike-banner
-          have roadmap-spike/board.html;   says roadmap-spike/board.html spike-banner
+          # roadmap-next.html was the URL the catalog was staged at during its
+          # own review in July and was shared in #57; it still redirects there.
+          have roadmap-next.html;          says roadmap-next.html catalog.html
+          # The design spike's pages (#202/#204) are retired, but D0018's
+          # published artifact links to all three, so each URL must keep
+          # forwarding to what that direction became rather than 404.
+          have roadmap-spike/index.html;   says roadmap-spike/index.html 'url=../roadmap.html'
+          have roadmap-spike/queue.html;   says roadmap-spike/queue.html 'url=../roadmap.html'
+          have roadmap-spike/wire.html;    says roadmap-spike/wire.html 'url=../wire.html'
+          have roadmap-spike/board.html;   says roadmap-spike/board.html 'url=../roadmap.html'
           have goals/index.html
           have goals/goals.json
           # Not a named page: goal filenames come from the goal issues, so
@@ -278,8 +299,8 @@ jobs:
           # drifting again: every page carries the top nav, no page carries a
           # stale hand-written copy, and the roadmap group — and only the
           # roadmap group — carries the second row.
-          for f in index.html roadmap.html news.html status.html audit/index.html \
-                   analytics/index.html diary/index.html goals/index.html \
+          for f in index.html roadmap.html wire.html catalog.html news.html status.html \
+                   audit/index.html analytics/index.html diary/index.html goals/index.html \
                    decisions/index.html; do
             # Exactly one shared top nav — two would mean a hand-written copy
             # survived alongside the injected one.
@@ -294,10 +315,29 @@ jobs:
               && { echo "::error title=Uninjected nav::_site/$f still contains the SITE-HEADER marker"; fail=1; }
           done
 
-          for f in roadmap.html status.html audit/index.html analytics/index.html goals/index.html \
-                   decisions/index.html; do
+          for f in roadmap.html wire.html catalog.html status.html audit/index.html \
+                   analytics/index.html goals/index.html decisions/index.html; do
             grep -q 'nav class="site sub"' "_site/$f" \
               || { echo "::error title=Missing sub-nav::_site/$f is in the roadmap group but has no second nav row"; fail=1; }
+          done
+
+          # hub#209. The browser copy of the release-identity rule is emitted
+          # from scripts/lib/rc.mjs rather than hand-typed into a template
+          # literal, because the hand-typed mirror lost its backslashes on the
+          # way into the page and shipped a pattern that matched no version at
+          # all — for weeks, invisibly, while every source-level test passed.
+          #
+          # The positive assertion is the one that matters: the escaped pattern
+          # must BE on the page. An absence check alone would also pass on a page
+          # that had lost the whole re-check script, which is the same silent
+          # failure wearing different clothes. The negative check is kept as well,
+          # narrowed to the executable shape (`match(/…`) so that prose describing
+          # the bug does not fail a page that is correct — which it did.
+          for f in roadmap.html catalog.html; do
+            grep -qF '\\bv?(\\d+)\\.(\\d+)' "_site/$f" \
+              || { echo "::error title=hub#209 regression::_site/$f has lost the escaped release-key pattern emitted by lib/rc.mjs"; fail=1; }
+            grep -qF 'match(/v?(d+)' "_site/$f" \
+              && { echo "::error title=hub#209 regression::_site/$f carries a release-key pattern whose escapes were eaten by a template literal"; fail=1; }
           done
           for f in index.html news.html diary/index.html; do
             grep -q 'nav class="site sub"' "_site/$f" \
