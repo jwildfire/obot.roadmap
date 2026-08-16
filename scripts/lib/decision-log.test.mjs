@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { parseDecisionRecord, isDecided, isFullyDecided, text } from './collect/decision-log.mjs';
-import { foldedInto, isAwaiting } from './collect/decisions.mjs';
+import { foldedInto, closedInto, isAwaiting } from './collect/decisions.mjs';
 
 const wrap = (inner) => `<body><header>…</header>\n<section id="decisions">\n<h2>Decisions</h2>\n${inner}\n</section>\n<section><h2>The situation</h2><p>…</p></section></body>`;
 
@@ -110,6 +110,33 @@ test('"folded" only counts at the start of the cell, not anywhere in the prose',
 test('folding does not swallow an ordinary awaiting row', () => {
   assert.equal(foldedInto('Awaiting @jwildfire — R1–R3'), null);
   assert.equal(isAwaiting('Awaiting @jwildfire — R1–R3'), true);
+});
+
+// He closed three artifacts on 2026-08-16 without answering any of their questions
+// ("D14/15/16 all seem like a mess to me. Close them all."). Closed is neither
+// awaiting nor decided: reporting it as decided would put a verdict in his mouth,
+// and reporting it as awaiting would keep three retired pages in his queue.
+test('a closed decision leaves his queue without being called decided', () => {
+  const closed = '**Closed 2026-08-16** — superseded by [D0019](2026-08-16-scheduled-sessions-assessment/). He read three pages circling one question and closed all three';
+  assert.equal(isAwaiting(closed), false);
+  assert.deepEqual(closedInto(closed), { id: 'D0019', slug: '2026-08-16-scheduled-sessions-assessment' });
+});
+
+test('a close with no successor is still a close', () => {
+  // Not every retirement has somewhere to send the reader, and the state must not
+  // depend on one existing.
+  assert.equal(isAwaiting('Closed 2026-08-16 — the question stopped mattering'), false);
+  assert.deepEqual(closedInto('Closed 2026-08-16 — the question stopped mattering'), { id: null, slug: null });
+  assert.deepEqual(closedInto('Retired 2026-08-16'), { id: null, slug: null });
+});
+
+test('"closed" only counts at the start of the cell', () => {
+  // A decided artifact whose prose mentions closing something else is decided.
+  const mentions = '**Decided 2026-08-15** — all three approved; the tracking issue closed against the release';
+  assert.equal(closedInto(mentions), null);
+  assert.equal(isAwaiting(mentions), false);
+  assert.equal(closedInto('Awaiting @jwildfire — S1–S4'), null);
+  assert.equal(isAwaiting('Awaiting @jwildfire — S1–S4'), true);
 });
 
 test('a relayed decision is marked non-verbatim so the log drops the quote marks', () => {

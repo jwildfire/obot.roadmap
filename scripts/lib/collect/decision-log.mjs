@@ -167,6 +167,7 @@ export async function collectDecisionLog() {
       path: d.path,
       awaiting: d.awaiting,
       foldedInto: d.foldedInto ?? null,
+      closedInto: d.closedInto ?? null,
       questions: reg?.questions ?? [],
       entries: record.entries,
     };
@@ -190,6 +191,9 @@ export async function collectDecisionLog() {
     // Answered inside a successor rather than on their own page. Out of `open`, and
     // named here so a surface can show where they went instead of dropping them.
     folded: artifacts.filter((a) => a.foldedInto),
+    // Retired without their questions being answered — out of `open` for the same
+    // reason as `folded`, and named so a surface can say so rather than drop them.
+    closed: artifacts.filter((a) => a.closedInto),
     problems,
     hasRegistry: registry.size > 0,
   };

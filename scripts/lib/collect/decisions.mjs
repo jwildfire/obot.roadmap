@@ -43,6 +43,35 @@ export function foldedInto(status = '') {
 }
 
 /**
+ * An artifact he closed without answering, and the successor that carries the
+ * question on — or null.
+ *
+ * The fourth state, and the one the vocabulary was missing on 2026-08-16 when he
+ * read three pages circling one question and said "close them all". Closing is not
+ * deciding: none of the three had its questions answered, and calling them decided
+ * on the log would be the exact drift the log exists against. It is not folding
+ * either — a fold carries live questions into a successor that will answer them,
+ * where a close retires them, with or without a successor.
+ *
+ * Read from the status cell like every other state, for the reason #196 gives: one
+ * place records whether a decision has been made. `**Closed 2026-08-16** —
+ * superseded by [D0019](2026-08-16-scheduled-sessions-assessment/)` is both the
+ * sentence he reads and the data the collectors read.
+ */
+export function closedInto(status = '') {
+  const cell = bare(status);
+  if (!/^(?:closed|retired)\b/i.test(cell)) return null;
+  // The successor is optional — not every retirement has somewhere to send the
+  // reader — so the state is decided by the opening word and the pointer is read
+  // separately, from the first "superseded by D0019" it finds.
+  const m = /\b(?:superseded|replaced|answered)\s+by\s+\[?([A-Z]\d{4})\]?\s*(?:\(([^)]+)\))?/i.exec(cell);
+  return {
+    id: m?.[1]?.toUpperCase() ?? null,
+    slug: m?.[2] ? m[2].replace(/^\.?\//, '').replace(/\/$/, '') : null,
+  };
+}
+
+/**
  * Does this row still want an answer from @jwildfire?
  *
  * The emphasis has to come off first. Rows that were settled emphatically —
@@ -56,9 +85,11 @@ export function foldedInto(status = '') {
  * now. It stays out of `awaiting` and, deliberately, inside `decided`, so every
  * surface that already lists the settled artifacts keeps listing it and a reader
  * who remembers D0015 can still find out where it went.
+ *
+ * A closed row wants nothing from him because he is the one who closed it.
  */
 export function isAwaiting(status = '') {
-  if (foldedInto(status)) return false;
+  if (foldedInto(status) || closedInto(status)) return false;
   return !/^decided\b/i.test(bare(status));
 }
 
@@ -99,6 +130,7 @@ export async function collectDecisions() {
         statusPlain: status.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'),
         awaiting: isAwaiting(status),
         foldedInto: foldedInto(status),
+        closedInto: closedInto(status),
       };
     });
 
@@ -109,5 +141,7 @@ export async function collectDecisions() {
     // already unions awaiting + decided keeps rendering these without knowing the
     // state exists, and the ones that want to say "folded into D0017" can.
     folded: decisions.filter((d) => d.foldedInto),
+    // Same arrangement for the ones he retired without answering.
+    closed: decisions.filter((d) => d.closedInto),
   };
 }

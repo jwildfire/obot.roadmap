@@ -111,7 +111,14 @@ const landing = (log) => {
   // A folded artifact says so on its own card. It is neither open nor decided on its
   // own page — its questions were answered inside the successor — and reading
   // "decided" on a page that records no decision is the drift this log exists against.
-  const state = (a) => (a.awaiting ? 'awaiting you' : (a.foldedInto ? `folded into ${a.foldedInto.id}` : 'decided'));
+  // A closed one says so too: he retired it without its questions being answered,
+  // which is a third thing again.
+  const state = (a) => {
+    if (a.awaiting) return 'awaiting you';
+    if (a.foldedInto) return `folded into ${a.foldedInto.id}`;
+    if (a.closedInto) return a.closedInto.id ? `closed · superseded by ${a.closedInto.id}` : 'closed';
+    return 'decided';
+  };
   const card = (a) => `<a class="card" href="${esc(a.slug)}/">
   <span class="k">${esc(a.date)}${a.id ? ` · ${esc(a.id)}` : ''} · ${esc(state(a))}</span>
   <h3>${esc(a.title)}</h3>
@@ -160,7 +167,7 @@ const landing = (log) => {
 <h2>Waiting on you <span class="k">${open.length}</span></h2>
 <div class="grid">${open.length ? open.map(card).join('\n') : '<p class="lede">Nothing open.</p>'}</div>
 
-<h2>Answered <span class="k">${done.length}</span></h2>
+<h2>Answered or closed <span class="k">${done.length}</span></h2>
 <div class="grid">${done.map(card).join('\n')}</div>
 
 <footer>Generated at deploy time from the artifacts and <a href="https://github.com/${HUB}/blob/main/reports/decisions/README.md">the index</a> — never hand-maintained. ${esc(fmtET(new Date()))}</footer>
