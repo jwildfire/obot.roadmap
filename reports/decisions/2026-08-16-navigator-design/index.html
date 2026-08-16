@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Navigator — how the operating officer works</title>
+<meta name="description" content="One page for the Navigator: what the session is, how it launches, what it reads and writes, what it does on day one, and what it must never do. Folds in the worker-closeout and supervision pages, and six calls you still have to make.">
+<meta name="decision-id" content="D0017">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-wrap:break-word}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32);overflow-wrap:anywhere}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13px;overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--go);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--go)}
+.verdict p{margin:10px 0 0;font-size:16.5px}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block{border-left:4px solid var(--flag)}
+.card.block .tag{color:var(--flag)}
+.card.go{border-left:4px solid var(--go)}
+.card.go .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+pre{margin:16px 0 0;background:#1e2125;color:#e8e4da;border-radius:6px;padding:14px 16px;overflow-x:auto;
+  font:13px/1.65 var(--mono);max-width:100%}
+pre .c{color:#9aa4ae}
+.tbl{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>Design + decision</span><span class="dot"></span><span>D0017</span><span class="dot"></span><span>2026-08-16</span><span class="dot"></span><span>Autonomy — the operating model</span></div>
+  <h1>The Navigator</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0017">
+<p>D0017 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0017.1"><a class="did" href="#D0017.1">D0017.1</a><span class="dcode">N1</span><span class="dq">Is the day-one scope right — and do you accept that the Navigator now authors requirements?</span></li>
+  <li id="D0017.2"><a class="did" href="#D0017.2">D0017.2</a><span class="dcode">N2</span><span class="dq">Where exactly does &quot;structure&quot; end and &quot;requirements&quot; begin?</span></li>
+  <li id="D0017.3"><a class="did" href="#D0017.3">D0017.3</a><span class="dcode">N3</span><span class="dq">What work is exempt from needing a requirement at all?</span></li>
+  <li id="D0017.4"><a class="did" href="#D0017.4">D0017.4</a><span class="dcode">N4</span><span class="dq">Where is the escalation line, and does it inherit the critical bar that already exists?</span></li>
+  <li id="D0017.5"><a class="did" href="#D0017.5">D0017.5</a><span class="dcode">N5</span><span class="dq">How are the Navigator's own decisions recorded, and how do you review them?</span></li>
+  <li id="D0017.6"><a class="did" href="#D0017.6">D0017.6</a><span class="dcode">N6</span><span class="dq">Standing session or waking session — what cadence, and what does it cost?</span></li>
+  <li id="D0017.7"><a class="did" href="#D0017.7">D0017.7</a><span class="dcode">N7</span><span class="dq">Does the separate supervisor survive, or fold into the Navigator?</span></li>
+  <li id="D0017.8"><a class="did" href="#D0017.8">D0017.8</a><span class="dcode">N8</span><span class="dq">What does delivering mean when a worker finishes — and what happens to last night's six?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">One page for the whole role, because you asked for one. The Navigator's job is <b>improving operations</b> — the templates, the dashboards, the audit framework, the process mechanics everyone else works inside. Turning your asks into requirements and checking that workers delivered are two instruments of that job, not the job itself. This page covers what the session is, how it starts, what it owns, what it decides without asking, what it escalates, and the one line it must never cross. It also settles something measurable: six pieces of work shipped overnight with nothing in the roadmap recording them — and almost every one of them was operations improvement, which is to say the Navigator's own work, dispatched ad hoc because the role did not exist. It folds in the two pages from last night that each answered part of this, so there is one place to decide rather than three.</p>
+  <div class="facts">
+    <span><b>Day one</b> it ships an operations improvement — the four audit checks that missed last night</span>
+    <span><b>Measured</b> the nightly audit caught 1 of last night's 6 failures</span>
+    <span><b>Cost</b> cents per waking, versus $10–50 a day to poll</span>
+    <span><b>Decide</b> N1–N8, after the design</span>
+  </div>
+</header>
+
+<div class="cut"><span>WHY THE ROLE EXISTS</span></div>
+<section>
+  <blockquote>"I can go either way on the manager, but strongly suspect we need an agent for the navigator. My main concern right now is that you and the workers you create aren't impacting the roadmap, which means none of this is sustainable. Every time I ask for something the roadmap should change in a concrete way. Every decision should result in new or updated issues. Every worker should advance a requirement through its lifecycle. That's the overall approach for this project and it currently feels like an after thought." — @jwildfire, 2026-08-16</blockquote>
+
+  <blockquote>"The overall approach is that prime and I set the strategy (think ceo) and then the navigator translates it to actionable tasks (coo) and makes sure the workers are delivering." — @jwildfire, the same morning</blockquote>
+
+  <p>The complaint is measurable, and it was measured before this page was written. Six pieces of work were filed and shipped overnight in the agent's own repository, all closed by morning, all carrying a release milestone. <b>None is attached to a requirement</b> — the link GitHub actually records is empty for every one of them, including the one that names its requirement in a sentence of prose. And the requirements were there the whole time: four of the six were Operations Dashboard work, and that requirement gained no child issue, no comment and no edit across the entire night. A fifth was the release-candidate naming rule, which belongs to the release-scaffolding requirement — a requirement that names that exact framework inside its own scope.</p>
+
+  <p><b>The night was not roadmap-free, and the difference is the whole diagnosis.</b> Eight requirements were filed overnight: three new ones from the design agents, and five as follow-through on decisions you had just made. Every task issue carried a milestone. So the roadmap moved, repeatedly — but only in the lane where a decision page had already forced it. In the lane where you simply ask for something, it did not move at all. The fault is direction of flow: the roadmap <b>records</b> work afterwards instead of <b>authorising</b> it beforehand.</p>
+
+  <p>The cause is structural, not careless. Today an ask reaches the concierge, the concierge writes instructions for a worker, the worker files an issue describing the work it is already doing, and the worker ships. That issue is a receipt. Nothing in the chain opens a requirement, so nothing updates one — and the role doing the dispatching is the one built to answer you in seconds, which is the opposite of what writing a requirement needs. <b>The intake problem is a role problem, not only an ordering problem.</b> Your org chart names the person who should own it.</p>
+
+  <div class="card go">
+    <div class="tag">The strongest argument for standing the role up today</div>
+    <p>Look at <em>what</em> shipped overnight, not just at what failed to be recorded. Three passes on the Operations Dashboard. Config items rewritten as installation qualifications. A release-candidate naming rule and a pull-request body contract. A pipeline so an answer you click actually reaches the page. A ledger so the config list cannot lose an entry quietly. And this morning, a scorecard of where the nightly audit is blind.</p>
+    <p><b>Every one of those is operations improvement — which is to say, every one of them is the Navigator's own job</b>, dispatched ad hoc by the concierge because the role did not exist to hold it. The six untracked issues were not a discipline lapse. They were a backlog belonging to a role nobody had created yet, executed by whoever was nearest. That is a far better reason to stand it up today than any argument from principle, and it also tells you what its first week looks like — because that backlog is not finished.</p>
+  </div>
+
+  <div class="card block">
+    <div class="tag">Corrections to what reached you</div>
+    <p><b>All six are unattached</b>, not four and not five. Two earlier counts were low: the remote-control change was missed entirely, and the dashboard iteration that mentions its requirement in prose was counted as linked when GitHub records no link for it either. Five of the six belong to requirements that are open right now; the sixth traces to a decision you signed that day.</p>
+    <p>And one of the six was not your instruction: the config-ledger fix was filed by an agent that noticed two allocated identifiers with nothing behind them. The other five trace to things you said.</p>
+  </div>
+</section>
+
+<div class="cut"><span>WHO OWNS WHAT</span></div>
+<section>
+  <blockquote>"I suspect that prime (and I) own goals and overall roadmap structure. Coo owns everything else. Requirements, tasks, lifecycle, milestones, etc. coo can propose structural changes, but we make the call on implementing or not." — @jwildfire, 2026-08-16</blockquote>
+
+  <blockquote>"I'm more interested in COO improving operations. Updating templates, tweaking dashboards, refining audit framework. That is its job. Splitting goals is strategy that ceo owns." — @jwildfire, 2026-08-16</blockquote>
+
+  <p>Read together, those two draw the line the rest of this design hangs on. An ambiguous boundary here is how the Navigator ends up either paralysed or overreaching — and the second quotation rules out one direction firmly: <b>the Navigator does not propose strategy.</b> Splitting a goal, retiring one, deciding what the program is for — none of that is its business to raise. What it owns instead is bigger than bookkeeping: the machinery everyone works inside.</p>
+
+  <div class="tbl">
+  <table>
+    <tr><th>&nbsp;</th><th>You and the concierge</th><th>The Navigator</th></tr>
+    <tr><td>Owns</td><td>Strategy: which goals exist, what the program is for, and the <em>shape</em> of the plan — what stages a requirement passes through, what counts as a requirement, what a milestone means across the portfolio</td><td>Operations: the templates, the dashboards, the audit framework, the process mechanics — plus requirements, tasks, lifecycle movement and milestone assignment</td></tr>
+    <tr><td>Decides</td><td>Whether the shape or the goals change</td><td>Everything inside that shape, without asking — including improving the machinery itself</td></tr>
+    <tr><td>Raises</td><td>—</td><td>Nothing structural, as a matter of course. Only the narrow case where its own operational work is genuinely blocked on a strategy call — and that is an escalation, not a proposal</td></tr>
+  </table>
+  </div>
+
+  <p>Concretely on the plan: creating a requirement, scoping it, splitting it, moving it to design, attaching a milestone, filing its tasks, closing it — all the Navigator's, no permission needed. Adding a goal, retiring one, changing what the lifecycle stages are, or changing the rule that a requirement covers exactly one release — all yours.</p>
+  <p>And concretely on the machinery, which is the larger half: sharpening an issue template, adding a check to the nightly audit, retiring a rule that turned out to be noise, reshaping a dashboard section, tightening the release-candidate contract, fixing a process that keeps producing the same mistake. The Navigator does that work continuously and ships it, the same way any other worker ships — a requirement above it, a task beneath it, a release it lands in. <b>It is a builder, not an inspector.</b> Enforcement is one of its instruments; improving the machine so enforcement is needed less often is the actual job.</p>
+
+  <div class="card go">
+    <div class="tag">The most concrete correction in this page</div>
+    <p><b>The concierge should not be filing requirements or task issues at all.</b> Last night's six untracked issues were not a discipline failure — they were the concierge doing the Navigator's job without the Navigator's tooling, judgment or time budget. Move the job to the role that owns it and the failure has no mechanism left to occur through.</p>
+  </div>
+
+  <div class="card block">
+    <div class="tag">No proposal pipeline — deliberately</div>
+    <p>An earlier draft of this design gave the Navigator a channel for proposing structural changes. That is cut. <b>Strategy is not something it raises</b>, and building a pipeline for it would invite exactly the drift the ownership line exists to prevent: an officer that spends its attention lobbying about goals instead of improving the machinery.</p>
+    <p>What survives is one narrow case: when the Navigator's own operational work is genuinely blocked on a strategy call — it cannot finish a thing you asked for without knowing whether a goal covers it — it <b>escalates</b>, in a sentence, and carries on with everything else. It does not stall, and it does not pre-build toward the answer it would prefer. An officer that quietly makes the alternative expensive has taken the decision by taking the option away.</p>
+  </div>
+</section>
+
+<div class="cut"><span>WHAT THE NAVIGATOR IS</span></div>
+<section>
+  <p>A standing Claude session named <code>🧭🤖 obot-navigator</code>, launched from the workspace root the same way the concierge is, and reachable the same ways — from the terminal, from the web, or from your phone.</p>
+
+<pre><span class="c"># the launcher to be written today, mirroring scripts/obot-prime</span>
+obot.agent/scripts/obot-navigator
+
+<span class="c"># which is exactly:</span>
+cd /Users/jwildfire/Documents/obot2
+claude --bg --permission-mode auto --remote-control \
+       -n "🧭🤖 obot-navigator" --model opus /s-navigator</pre>
+
+  <p>Three properties matter and each is copied deliberately from the concierge's launcher, which already works:</p>
+  <ul>
+    <li><b>Launched from the workspace root</b>, so it inherits the workspace instructions, the skills overlay and the session-hub cache. Not from inside a repo.</li>
+    <li><b>Bridged to remote control</b>, unlike the worker agents, which were deliberately unbridged yesterday. The Navigator is a role you talk to, and you are travelling — you should be able to reach it from a phone.</li>
+    <li><b>A singleton.</b> The launcher refuses to start a second one, exactly as the concierge's does: it scans the harness job records and exits if any live job's name starts with the Navigator's emoji. Two officers writing requirements for the same ask is the failure mode worth designing out on day one.</li>
+  </ul>
+
+  <p>Its behaviour lives in a new skill, in the same three-piece shape every other role already uses. All three are required — the middle one is the piece that is easy to forget, and without it the skill simply does not load:</p>
+<pre>obot.agent/skills/navigator/SKILL.md          <span class="c"># the contract</span>
+.claude/skills/navigator -&gt; ../../obot.agent/skills/navigator   <span class="c"># workspace overlay symlink</span>
+obot.agent/commands/s-navigator.md            <span class="c"># the /s-navigator entry point</span></pre>
+
+  <h3>Cold start — what it reads on wake</h3>
+  <p>The Navigator must be able to start cold and know the state of the world in one read, because it will be restarted often in the first week. It reads, in this order:</p>
+  <ul>
+    <li><code>.claude/session-hub/navigator-state.md</code> — what the mechanical sweep saw in the last five minutes: open release candidates, recorded decision answers, the config-ledger verdict, recent events. This file already exists and is already current.</li>
+    <li><code>.claude/session-hub/prime-state.md</code> — the concierge's durable state. <b>Read-only, always.</b> The Navigator never writes it.</li>
+    <li><code>.claude/session-notes/{today}.md</code> — the shared scratchpad every agent logs to.</li>
+    <li>The open requirements under the goal it is working, from GitHub, bounded to that goal's children.</li>
+  </ul>
+  <p>The first three are already assembled into a single bundle by the concierge's rehydrate tool, which the Navigator can reuse unchanged, read-only.</p>
+</section>
+
+<div class="cut"><span>ONE ROLE, TWO MECHANISMS</span></div>
+<section>
+  <p>The Navigator already exists as a machine, and it is running right now. A script fires every five minutes under the system scheduler, checks seven repositories, writes a state file, and appends its events to the shared scratchpad. It has run 233 times, most recently minutes before this page was written, and its last exit was clean. It caught a stale claim on 2026-08-14 and it now carries the config-ledger integrity check as well.</p>
+  <p>That machine is not being replaced — it becomes the Navigator's <b>eyes</b>, and the new session becomes its <b>judgment</b>. Nothing about the split is philosophical; it follows from what each half can actually decide.</p>
+
+  <div class="tbl">
+  <table>
+    <tr><th>Question</th><th>Who answers it</th><th>Why</th></tr>
+    <tr><td>Which release candidates are open and waiting on you?</td><td>The five-minute script</td><td>A list. No judgment involved.</td></tr>
+    <tr><td>Has a worker gone quiet?</td><td>The five-minute script</td><td>Measured: the typical gap between a worker's recorded actions is about twenty seconds, and a thirty-minute-silence rule fires roughly once in a day and a half. A script does this for nothing.</td></tr>
+    <tr><td>Which task issues have no parent requirement?</td><td>The five-minute script <span class="warn">(to add — one field)</span></td><td>This is the exact check that would have named all six of last night's by morning. It is one extra field on a query the sweep already makes.</td></tr>
+    <tr><td>Does this ask need a new requirement, or a change to an open one?</td><td>The session</td><td>Judgment. Requires reading the open requirements and deciding scope fit.</td></tr>
+    <tr><td>Did this worker attach to the <em>right</em> requirement, and did the stage really move?</td><td>The session</td><td>Judgment. A script can see that something was touched; it cannot see whether it was the right thing.</td></tr>
+    <tr><td>Should this deferral have become a requirement of its own?</td><td>The session</td><td>Judgment, and the one most often skipped today.</td></tr>
+  </table>
+  </div>
+
+  <h3>Two writers, two files — and the delivery record shows up for free</h3>
+  <p>The sweep is and remains the <b>sole writer</b> of its state file; the session writes its own, <code>.claude/session-hub/delivery.md</code>, append-only, one line per closeout. That is not fussiness. The last two nights produced repeated cases of one process quietly overwriting another's file, and a shared file here would put the delivery record — the thing this whole role exists to produce — squarely in that class.</p>
+  <p>The nice part is that the two files rejoin themselves without any new plumbing. The sweep reads the delivery file and renders it as a <code>## Delivery</code> heading inside its own state file; and the dashboard tab that shows you that state file <b>already renders any heading it finds</b> — it was deliberately built that way, so a new section appears without a line of code changing. So the day-one delivery record reaches your dashboard through machinery that already exists:</p>
+<pre>node obot.agent/tools/ops-dashboard/ops-dashboard.mjs --serve --open
+<span class="c"># the /navigator tab, already live, renders whatever headings the state file carries</span></pre>
+</section>
+
+<div class="cut"><span>WHAT THE NIGHTLY AUDIT ALREADY CATCHES — AND WHY IT MISSED THIS</span></div>
+<section>
+  <p>There is already a nightly roadmap audit: twenty-two rules, run at half past three every morning, reading the hub's issues and board, the pull requests across the seven portfolio repositories, the ideas queue and the design documents on disk. It is good machinery and the Navigator should lean on it rather than grow a second one. So it is worth being exact about what it did with last night's six real failures: <b>it caught one and missed five.</b></p>
+
+  <div class="tbl">
+  <table>
+    <tr><th>The failure</th><th>Audit</th><th>Why</th></tr>
+    <tr><td>Requirements filed overnight that were unparented or off the board</td><td class="warn">Partly caught</td><td>Hub issues are what it reads — but it reported four, and a separate check later found nine more</td></tr>
+    <tr><td>Five task issues shipped with no requirement above them</td><td class="bad">Missed</td><td>Wrong scope — its untracked-work rule only examines hub issues</td></tr>
+    <tr><td>Decisions you answered that nobody applied</td><td class="bad">Missed</td><td>It has no view of decision pages at all</td></tr>
+    <tr><td>A false claim left standing in a published page</td><td class="bad">Missed</td><td>No rule reads the prose of an artifact — and none could; this needs judgment</td></tr>
+    <tr><td>The registry and the published index disagreeing</td><td class="bad">Missed</td><td>The site reads one of the two and nothing compares them</td></tr>
+    <tr><td>Workers that ended having produced nothing</td><td class="bad">Missed</td><td>It sees GitHub, not agent runs</td></tr>
+  </table>
+  </div>
+
+  <div class="card block">
+    <div class="tag">A claim withdrawn before you read it</div>
+    <p>An earlier draft of this page said the hub side was clean and the gap sat entirely in the spoke repositories. <b>That is wrong and it has been removed.</b> The requirements filed overnight were not clean either: one was never actually linked to its goal, and nine needed to be put on the board after the fact by a check running hours later. They are all correct now — verified this morning, every one parented and boarded — but they were corrected, not filed correctly.</p>
+    <p>So the discipline gap is not confined to the spoke repositories. It is wherever work outruns the record, which last night was everywhere. The intake path is still the biggest hole; it is not the only one.</p>
+  </div>
+
+  <p>The reason it is blind is worth sitting with, because it explains why a new rule alone will not fix this. A spoke-repo issue is visible to the audit <em>only if a hub issue already lists it as a child</em> — which is the very link that was missing. <b>The check cannot see the failure, because the failure is the absence of the thing that would make it visible.</b> Something has to look from the other end.</p>
+
+  <div class="card block">
+    <div class="tag">The trap to avoid on day one</div>
+    <p>The obvious new rule — "every spoke issue needs a hub parent" — fires on <b>26 of the 41 open spoke issues today</b>, and on 14 of the 16 in the agent's own repository. Nobody would trust that list; it would be muted inside a week, and the real signal with it.</p>
+    <p><b>Gate on work done, not on filing.</b> An issue needs an ancestor once it has produced a merged pull request or been closed — not the moment somebody opens it. That fires on all six of last night's and on almost nothing else, which is the difference between a rule that survives and a rule that becomes noise.</p>
+  </div>
+
+  <div class="card block">
+    <div class="tag">An open item the Navigator should resolve first</div>
+    <p><b>Two independent checks disagreed about the same state of GitHub within hours of each other.</b> The nightly audit reported four requirements off the board; a separate verifier, run later the same morning, found nine more that the audit had not named. It may be a stale snapshot, it may be different scope, it may be a real defect — and it is not established which of the two was wrong. Neither is assumed correct here.</p>
+    <p>It matters because this design leans on the audit heavily. <b>A check whose results are not reproducible cannot be the thing an officer relies on</b>, and finding out which one was wrong is close to an ideal first task for the role: it is operations improvement, it is mechanical, and the answer either restores confidence in the audit or names a defect worth fixing before anything is built on top of it.</p>
+  </div>
+
+  <p>The split between the two mechanisms follows straight from this list. <b>Mechanical, and belonging in the sweep:</b> a spoke issue closed or a pull request merged with no requirement above it; an answer you recorded still unapplied after an hour; the registry and the index disagreeing; an agent exiting having produced nothing. <b>Judgment, and belonging to the session:</b> whether a stale claim in a published page is actually wrong, and whether a given piece of work should have had a requirement at all.</p>
+
+  <p>One more consequence of the delegation grant lands here. Several checks worth having were never adopted because their false-positive rate was too high to put in front of you. With the Navigator reading them instead, that calculation changes — <b>the audit can afford to be more sensitive than it could when you were the only reader</b>, because a judge now sits between the rule and your attention.</p>
+</section>
+
+<div class="cut"><span>THE JOBS, IN MECHANICS</span></div>
+<section>
+
+  <h3>1. Improve the machinery — the standing job</h3>
+  <p>This is the one that runs when nothing else is happening, and it is the reason the role is worth a session rather than a script. The Navigator carries a live backlog of operational improvements and ships them the way any worker ships: a requirement above the work, a task beneath it, a release it lands in. Sharpening a template, adding or retiring an audit rule, reshaping a dashboard section, tightening a contract that keeps producing the same mistake.</p>
+  <p>It does not need to be told to do this, and that is the point — the other two jobs are reactive, and a role with only reactive jobs sits idle between your asks. The backlog is not hypothetical either: this morning's audit scorecard names four checks that should exist and do not, and last night produced six more improvements of exactly this kind without anyone holding the role.</p>
+
+  <h3>2. Translate an ask into a requirement</h3>
+  <p>You say something to the concierge that implies work. The concierge answers you immediately — that conversation is strategy and it goes through nobody — and then hands the ask, verbatim, to the Navigator with one line of context. The concierge does <em>not</em> write worker instructions any more.</p>
+  <p>The Navigator then, in order: reads the open requirements under the relevant goal; decides whether this is a new requirement or a named change to an existing one; writes it, with a milestone, linked to its goal; and only then writes the worker's instructions, <b>derived from the requirement rather than from the conversation</b>. It reports one line back to the concierge — the requirement's link and the worker's name — which the concierge relays to you.</p>
+  <p>The rule that makes this safe is that <b>nothing in it is on your response path</b>. If the Navigator is slow, you do not notice; only the worker's start moves, by a few minutes.</p>
+
+  <h3>3. Judge delivery when a worker closes</h3>
+  <p>The Navigator learns a worker finished from the harness's own job records — the per-job state file and event timeline the machine already keeps for every agent, at no cost and with no calls to GitHub. Three details are load-bearing, all measured rather than assumed:</p>
+  <ul>
+    <li><b>The closeout watermark is the moment a job first goes terminal</b> — a single timestamp, written once and never revised. That is what the Navigator reads to know a worker closed, and it is why the check cannot double-count or miss.</li>
+    <li><b>A job's recorded state is not proof it finished well.</b> The worker that died at 06:12 yesterday has a state file that today reads <em>done</em>, with a normal-looking completion note. The death survives only in the append-only event log. So the Navigator reads the timeline, not just the state.</li>
+    <li><b>The "blocked" signal only means death for a worker.</b> For the concierge and your own sessions it is the ordinary waiting state — it appeared 47 times in 36 hours, every one a normal wait. For a background worker it appeared twice, both belonging to the one real death. Role-aware, it is precise; role-blind, it is noise.</li>
+  </ul>
+  <p>One thing the ledger cannot be trusted for: the list of what a job produced. Nearly half of the jobs measured recorded no children at all, including one that merged three pull requests and filed two issues. The Navigator therefore judges against GitHub, not against the job's own account of itself. As of this morning the ledger holds one stalled corpse that nobody has noticed — still sitting there, never marked terminal.</p>
+  <p>On each closeout it asks the three questions in the table above and appends one line to the delivery file: the worker, what it produced, the requirement it moved, and a verdict — <span class="ok">confirmed</span> or <span class="bad">drift</span>.</p>
+  <p><b>When the roadmap did not move, the Navigator fixes the roadmap — and never the work.</b> That distinction is the whole safety story. It may attach the issue to the requirement it belonged to, amend the requirement, or file the missing one, because those are the plan and the plan is its job. It may not touch a line of what the worker produced, merge anything, or publish anything. Every repair it makes to the plan is logged as a call you can read and reverse, so "it tidied up" never becomes "nobody knows what happened" — the failure this role exists to surface must not be absorbed by the role itself.</p>
+
+  <h3>4. Report delivery</h3>
+  <p>One section, appended through the day, answering the question you actually asked: what did this day of agents do to the roadmap. Confirmed movements, drift, and anything that closed producing none of the three outcomes a worker is allowed to finish into.</p>
+</section>
+
+<div class="cut"><span>WHAT IT DECIDES ON ITS OWN</span></div>
+<section>
+  <blockquote>"I am fine delegating a lot of judgement calls to COO. It can escalate critical items to me." — @jwildfire, 2026-08-16</blockquote>
+
+  <p>That sentence sets the default, and the default is the opposite of how the system behaves today. <b>The Navigator decides; it does not queue.</b> Almost everything the sweep and the closeout check surface should end with the Navigator resolving it — attaching the issue, amending the requirement, granting or refusing an exemption, judging that a deferral deserves a requirement of its own. Only a critical item reaches you. The present failure is precisely that everything funnels into your queue, and a role that merely adds a better-organised queue has not helped.</p>
+
+  <h3>Three consequences worth stating before you agree to it</h3>
+
+  <p><b>"Critical" already has a bar — it should not get a second one.</b> The Operations Dashboard shipped one last night: a pin capped at three items, earned only by a blocking reference confirmed still open on GitHub or by a computed condition, never by an agent's opinion. On its first night nothing earned it. That is exactly the right threshold to inherit as the escalation line, and inheriting it means there is one definition of urgent rather than two that drift apart. You have said you will be annoyed by anything marked critical that is not, and that if something needs your attention it probably is not a good rule in the first place.</p>
+
+  <p><b>It changes what is worth detecting, in your favour.</b> A check too noisy to put in front of you can be perfectly good when the Navigator is the one reading it, because the Navigator can absorb an ambiguous signal and judge it. So the audit can afford to be more sensitive than it could when you were the only reader — rules previously rejected for false positives are worth revisiting now that a judge sits between them and you. That widens what the system can catch without widening what you have to read.</p>
+
+  <div class="card block">
+    <div class="tag">The risk inside the grant</div>
+    <p><b>A delegated decision that leaves no record is indistinguishable from no decision.</b> If the Navigator is making calls on your behalf and they vanish into a log nobody reads, you have lost sight of what was decided for you — which is the same complaint that started all of this, moved up one level. Trusting the agent is not a design; the record is.</p>
+  </div>
+
+  <h3>Where its calls get written down</h3>
+  <p>Two levels, because not everything deserves the same weight:</p>
+  <ul>
+    <li><b>Every judgment gets a line</b> in the delivery record — what it decided, on what, and why, in one sentence. No identifier, no ceremony. This is most of them.</li>
+    <li><b>A call that changes the plan gets a permanent identifier</b> — filing a requirement, amending one, granting an exemption, closing something as out of scope. These are the reversible-by-you set, and they get short permanent ids in the same lowercase style the config items already use, allocated the same way and never reused.</li>
+  </ul>
+  <p><b>You review them in batch, not one at a time</b> — a single "calls made for you" section in the day's delivery record, read once, most days in under a minute. Escalation is the exception, batch review is the norm.</p>
+  <p><b>When you disagree after the fact, reversal is cheap by construction.</b> The Navigator only ever changes the plan, never the work, so undoing a call means reopening or editing an issue — seconds, no code involved, and both the original call and the reversal stay on the record against the same identifier. That property is the reason the "never touches the work" line has to stay absolute even as the judgment grant widens.</p>
+</section>
+
+<div class="cut"><span>WHAT IT MUST NEVER DO — AND ONE BOUNDARY THAT MOVES</span></div>
+<section>
+  <p>The Navigator may not merge, may not publish, may not correct another agent's work, and may not edit the concierge's state. Those are absolute, and they are what makes the judgment grant above safe to give: the wider its discretion over the <em>plan</em>, the harder the line around the <em>work</em> has to be. A role that can both decide freely and reach into what was built is one that can quietly rewrite history; a role that decides freely but only ever moves issues around is one whose every mistake is visible and undoable in seconds.</p>
+
+  <div class="card block">
+    <div class="tag">This changes an approved boundary — say yes deliberately</div>
+    <p>The Navigator as already approved is a <b>file-writing verifier</b>, explicitly "never a conversational dependency", observe-and-report only. Writing requirements is <em>authoring</em>, not verifying, and talking to the concierge makes it conversational. So the operating-officer role does not fit inside the boundary you already signed, and pretending otherwise would be a redefinition by stealth.</p>
+    <p>The proposed replacement line is narrower than "verifier only" and keeps the original intent intact: <b>the Navigator authors the plan and never edits the work.</b> It may write requirements, amendments, task issues and its own delivery file. It may not touch anything a worker produced, anything published, or anything the concierge owns. The original rule existed to stop a watcher silently repairing what it watches — that rule survives untouched.</p>
+  </div>
+</section>
+
+<div class="cut"><span>HOW THE CONCIERGE AND THE NAVIGATOR DIVIDE WORK</span></div>
+<section>
+  <p>Getting this wrong just moves the bottleneck, so it is worth being exact. The concierge has been doing the translating, badly, and that is what produced the five receipts.</p>
+  <div class="tbl">
+  <table>
+    <tr><th>&nbsp;</th><th>The concierge</th><th>The Navigator</th></tr>
+    <tr><td>With you</td><td>Strategy, questions, status — answers in seconds, always</td><td>Only when you want to talk about the plan itself</td></tr>
+    <tr><td>An ask that implies work</td><td>Answers you, then hands it over verbatim. Writes no brief.</td><td>Files the requirement, then writes the brief from it, then spawns the worker</td></tr>
+    <tr><td>A worker closing</td><td>Nothing</td><td>Reads the timeline, judges the roadmap, appends the verdict</td></tr>
+    <tr><td>State it owns</td><td>Its own durable state file</td><td>The delivery file. Reads the concierge's state, never writes it.</td></tr>
+  </table>
+  </div>
+  <p>The one rule that must not bend: <b>the concierge never waits on the Navigator before replying to you.</b> It replies, then hands off. If that inverts, the Navigator becomes the latency problem you already cut the concierge off for.</p>
+
+  <h3>The concierge's new job at intake is a routing call</h3>
+  <p>On every ask, one question: <b>is this about the shape of the plan, or about something inside it?</b> Shape — a new goal, a change to what the lifecycle is — stays with the concierge and you. Everything else goes to the Navigator. That is a decision small enough to make in a second, which is the point: it does not reintroduce slow thinking on your response path.</p>
+
+  <h3>A real ask from last night, before and after</h3>
+  <p>You wrote, at around ten in the evening: <em>"New rule for release candidate names: {package} Vx.x.x-RCx. No other summary allowed … always link to news.md in all RC PRs."</em></p>
+  <div class="tbl">
+  <table>
+    <tr><th>&nbsp;</th><th>What happened</th><th>What would happen</th></tr>
+    <tr><td>1</td><td>The concierge wrote a worker brief from your words</td><td>The concierge answers you in seconds, routes it as requirement-level, hands it to the Navigator verbatim</td></tr>
+    <tr><td>2</td><td>The worker filed an issue describing its own work</td><td>The Navigator reads the open requirements, finds the release-scaffolding one already scoping "a documented release-candidate framework", and judges this an <b>amendment</b> rather than a new requirement</td></tr>
+    <tr><td>3</td><td>—</td><td>It amends that requirement with the naming rule and the body contract, one line saying what changed and why, then files the task as a child of it</td></tr>
+    <tr><td>4</td><td>The worker shipped; the requirement was never touched</td><td>The worker's brief is written from the requirement; it ships; at closeout the Navigator confirms the requirement moved and the task closed against it</td></tr>
+    <tr><td>Result</td><td class="bad">A shipped change nothing in the plan records</td><td class="ok">An amended requirement, a linked task, a confirmed closeout — and one line for you to read</td></tr>
+  </table>
+  </div>
+  <p>Note what the second column does <em>not</em> contain: a new requirement written to describe work already done. The Navigator recognised an existing one and amended it, which is the judgment the whole role turns on and the thing no rule could have produced.</p>
+</section>
+
+<div class="cut"><span>DAY ONE, AND WHAT WAITS</span></div>
+<section>
+  <div class="verdict">
+    <div class="k">Day one, in a sentence</div>
+    <p>Stand the session up and have it <b>ship an operations improvement you can look at tonight</b> — the four audit checks that missed last night's failures — while running the two reactive jobs alongside it: your asks become requirements first, and every worker that closes gets one line of verdict you can read.</p>
+  </div>
+
+  <p>The four checks are named by this morning's scorecard and are all mechanical: a spoke issue closed or a pull request merged with no requirement above it (gated on work done, not on filing); an answer you recorded still unapplied after an hour; the registry and the published index disagreeing; an agent exiting having produced nothing. That is textbook work for this role — it improves the machine rather than policing it, it closes four of the five holes from last night permanently, and it is small enough to land in an afternoon.</p>
+
+  <p>You asked for a feel for how the two of you work together, and that means watching it <em>do</em> something rather than watching it report. By tonight there is a shipped change with a requirement above it, a task beneath it, and a delivery record saying so — which is the whole thesis of this page demonstrated on itself.</p>
+
+  <p><b>Waits until it has earned it:</b> counting exemptions and reporting the rate; a delivery view in the dashboard rather than a rendered file; folding the stall alarm in; letting the sweep wake it automatically on a detection; and any of the more sensitive audit rules that were previously rejected as too noisy for you.</p>
+</section>
+
+<div class="cut"><span>THE CALLS</span></div>
+<section>
+  <p>Four things you settled this morning are built into the design above rather than re-asked here: that the Navigator is an agent; that its job is improving operations rather than clerking the roadmap; that it owns requirements, tasks, lifecycle and milestones while you own goals and strategy; and that it may decide within its domain and escalate only critical items. What is left is where the edges sit.</p>
+
+  <div class="q">
+    <div class="qid">N1</div>
+    <h3>Is the day-one scope right — and is the boundary change acceptable?</h3>
+    <p>Two halves of one afternoon's work. Is "ship the four missing audit checks, take every ask as a requirement first, judge every closeout" the right first day? And do you accept that the Navigator now <b>authors</b> — requirements, and changes to the machinery itself — which the version of it you approved a few days ago was explicitly forbidden to do, being defined as a file-writing verifier, observe-and-report only, never conversational?</p>
+    <p>That boundary has to move for the role to exist at all, and moving it quietly would be a redefinition by stealth. The proposed replacement is narrower than it sounds and keeps the original intent: <b>the Navigator authors and repairs the plan, and never touches the work.</b> The old rule existed to stop a watcher silently mending what it watches — that survives untouched, because a plan repair is visible and undoable in seconds while a work repair is neither.</p>
+    <p>The safer alternative is to start with reporting only: let it judge closeouts and write the record, but ship nothing and leave the concierge dispatching for another week. It halves the risk, it leaves the actual complaint unfixed — dispatching without a requirement is the step that caused it — and it gives you a role you cannot form an opinion about, because you would be watching it observe rather than watching it work.</p>
+    <div class="rec"><b>Recommendation:</b> take both — day one as described, and the boundary moves to "authors and repairs the plan, never touches the work."</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">N2</div>
+    <h3>Where exactly does "structure" end and "operations" begin?</h3>
+    <p>You said you <em>suspect</em> the split is goals and roadmap structure for you, everything else for the Navigator — worth ratifying rather than inheriting. Goal-splitting is not asked about here; you have settled that it is strategy and yours.</p>
+    <p>The reading built into this design: <b>structure</b> is the goal set plus the shape of the plan itself — what stages a requirement passes through, what counts as a requirement, what a milestone means across the portfolio, and rules like "one requirement covers exactly one release". <b>Everything inside that shape</b> is the Navigator's: creating requirements, scoping and splitting them, moving stages, assigning milestones, filing and closing tasks, all without asking.</p>
+    <p>Two edge cases worth naming, because both arrive in the first week. Splitting one <em>requirement</em> into two is inside the shape and the Navigator just does it; deciding that requirements should have a new <em>stage</em> is the shape and comes to you. Likewise, retiring an audit rule that turned out to be noise is operations and needs no permission; changing what a milestone means across the whole portfolio is not.</p>
+    <div class="rec"><b>Recommendation:</b> adopt that line as written, with the split-versus-new-stage example as the test anyone can apply.</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">N3</div>
+    <h3>What work is exempt from needing a requirement at all?</h3>
+    <p>A rule that charges a full requirement for every one-line fix will be abandoned inside a week, and "use judgment" is not something you can hold anyone to. So the floor has to be written down.</p>
+    <p>The proposal is that the floor is <b>consequence, not size</b>: a requirement is needed whenever the work changes something you or a future reader would notice — anything that ships in a release, changes a rule or a contract, or belongs in the release notes. Exempt: a typo, a dead link, a failing check, or reverting something broken within the hour. A one-line change that alters a rule still needs one; a fifty-line documentation tidy does not.</p>
+    <p>What stops the exemption swallowing the rule is that it is written, not assumed: the worker records the call in one line on its own issue, so exemptions are countable. If much more than a third of a night's work is claiming exemption, the floor is in the wrong place and the count says so before you have to notice.</p>
+    <div class="rec"><b>Recommendation:</b> consequence-based floor, every exemption recorded in one line, the rate reported.</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">N4</div>
+    <h3>Where is the escalation line, and does it inherit the bar that already exists?</h3>
+    <p>You are fine delegating judgment and want only critical items. "Critical" already has a definition that shipped last night in your dashboard: a pin capped at three, earned only by a blocking reference confirmed still open or by a computed condition, never by an agent's opinion. On its first night, nothing earned it.</p>
+    <p>Inheriting that bar means one definition of urgent rather than two that drift apart, and it is already calibrated to your standing objection — that you will be annoyed by anything called critical that is not. The proposed addition is one clause: <b>an escalation must name the specific thing only you can do.</b> If it cannot, it is a call the Navigator should have made itself.</p>
+    <p>Structural proposals do not go through this gate at all. They reach you because they need your permission, not because they are urgent, and they wait in the batch review rather than interrupting you.</p>
+    <div class="rec"><b>Recommendation:</b> inherit the existing bar unchanged, add the "name what only you can do" clause, and keep structural proposals on the separate, unhurried path.</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">N5</div>
+    <h3>How are the Navigator's own decisions recorded, and how do you review them?</h3>
+    <p>This is the risk inside the delegation grant, and it should not be left as "trust the agent". A delegated decision that leaves no record is indistinguishable from no decision — and losing sight of what was decided for you is the same complaint that started this, one level up.</p>
+    <p>Two levels are proposed. <b>Every judgment gets one line</b> in the day's delivery record: what it decided, on what, and why. <b>A call that changes the plan gets a permanent identifier</b> — filing a requirement, amending one, granting an exemption, closing something as out of scope — allocated in the same never-reused style as the config items, so you can point at one and reverse it. You read them <b>in batch, once a day</b>, in one section, most days in well under a minute.</p>
+    <p>Reversal is cheap by construction, and that is the property that makes the grant safe: because the Navigator only ever changes the plan, undoing a call means reopening or editing an issue. Both the call and its reversal stay on the record.</p>
+    <div class="rec"><b>Recommendation:</b> two levels, batch review once a day, permanent identifiers only on the calls that change the plan.</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">N6</div>
+    <h3>Standing session or waking session — what cadence, and what does it cost?</h3>
+    <p>Neither half of the Navigator's job is periodic: it thinks when you ask for something, and when a worker closes. At last night's volume that is roughly a dozen to two dozen wakings, a few cents each, plus one pass at the end of the night. A session that instead polls every five minutes reaches the same answers for ten to fifty dollars a day — up to three hundred where its memory expires between wakes, which a five-minute poll makes likely rather than unlikely.</p>
+    <p>The wrinkle worth naming: "standing" and "waking" are the same session here. It stays up so you can talk to it from your phone; what should never exist is a timer that wakes it to look around when nothing has happened. The stall-watching that would justify polling is already done, for free, by the script.</p>
+    <div class="rec"><b>Recommendation:</b> a standing session you can talk to that thinks only on a trigger — your ask, or a worker closing. No polling loop.</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">N7</div>
+    <h3>Does the separate supervisor survive, or fold in?</h3>
+    <p>You said you could go either way on the manager. Under the model you have now described it has no separate job left: "makes sure the workers are delivering" is the second half of the Navigator's own sentence, and the stall-watching half is a script either way — so a separate role would mostly own a scheduled job.</p>
+    <p>The honest counter-argument is urgency: a stalled worker needs a response in minutes, roadmap judgment can wait until closeout, and one role holding both risks the urgent thing queueing behind the slow one. That is solved by the mechanism split rather than by another person — the five-minute script raises the alarm on its own and can replace a dead worker without waiting for anything to think.</p>
+    <p>What you lose by folding: nothing measurable. What you gain: four roles instead of five, and exactly one officer accountable when work ships and the plan does not move.</p>
+    <div class="rec"><b>Recommendation:</b> fold it in; the separate supervision requirement closes into the Navigator's rather than being built beside it.</div>
+  </div>
+
+  <div class="q">
+    <div class="qid">N8</div>
+    <h3>What does "the workers are delivering" mean at the moment a worker finishes — and what about last night's six?</h3>
+    <p>The closeout contract says a worker ends in one of three things: a pull request for a planned release, a question for you, or a request for config work. Only the first advances a requirement — and that is right, not a gap. A worker that correctly stops to ask you something should not be marked down for failing to move a stage. So: <b>a pull request</b> moves the requirement into implementation and closes it on merge if complete; <b>a question</b> parks it with the blocker named on it; <b>a config request</b> does the same. Two of the three annotate rather than advance, and today a worker that stops for an excellent reason leaves its requirement looking untouched — indistinguishable from one that did nothing.</p>
+    <p>When work fits no requirement there are three cases and only two mean "file one": a genuine new need, file it; a piece of something already open that nobody linked, attach it; neither, and the work should not have been started — stop and ask, rather than writing a requirement backwards from finished code.</p>
+    <p>Which answers last night's six. Five of them are not missing a requirement at all — they are missing a <em>link</em> to requirements that are still open: four pieces of Operations Dashboard work, and the release-candidate naming rule that belongs to the release-scaffolding requirement. Attaching them and adding one line to each parent recording what shipped is about a quarter of an hour, and it produces a true record rather than a reconstructed one. The sixth traces to a decision you signed that day, so cite it there and leave it.</p>
+    <p>The alternatives cost either most of a working day writing requirements backwards from finished code — which teaches the system that shipping first is fine because the paperwork follows — or nothing at all, which leaves the most-worked-on thing in the program showing no work against it.</p>
+    <div class="rec"><b>Recommendation:</b> adopt the mapping; link last night's five linkable ones rather than back-filling, cite the decision on the sixth, forward-only from there.</div>
+  </div>
+</section>
+
+<div class="cut"><span>WHAT UNBLOCKS</span></div>
+<section>
+  <ul>
+    <li><b>Say yes to the day-one scope and the boundary, and the Navigator starts this afternoon.</b> A launcher copied from the concierge's, a skill file and its overlay link, the four audit checks, and a delivery file the dashboard already knows how to render. By tonight there is something shipped with a requirement above it — which is the point, since you asked for a feel for how the two of you work together rather than a report about it.</li>
+    <li><b>Ratify where structure ends</b> and the concierge can stop filing requirements and dispatching operations work immediately, which removes the mechanism that produced last night's untracked issues. This one needs no code at all.</li>
+    <li><b>Settle the escalation line and the record of delegated calls</b> and the delegation grant becomes safe to use at full width — without them it is either unused or unaccountable, and both waste it.</li>
+    <li><b>Fold the supervisor in</b> and one of the two things currently blocking scheduled overnight runs disappears rather than being built.</li>
+    <li><b>Adopt the closeout mapping</b> and the existing closeout requirement gets its missing half as an amendment rather than as new scope — which is the rule this page argues for, applied to this page's own follow-through.</li>
+    <li><b>Decide nothing today</b> and the safe partial is the last call alone: linking last night's work costs a quarter of an hour and is correct under every other outcome.</li>
+  </ul>
+  <p><b>Deliberately not here:</b> whether the standing sessions survive their own memory being compacted. That is the concierge's problem, it has its own requirement, and folding it in would make this page about two things.</p>
+</section>
+
+<div class="foot">
+  <p><b>What this page replaces.</b> It folds in the worker-closeout decision and the worker-supervision decision of 2026-08-15, at your request for one document rather than several. Both pages remain, unchanged and cited; their questions are restated here in this design's terms, and both now point here. Nothing from either is withdrawn.</p>
+  <p><b>Sources.</b> The six overnight issues, their milestones, bodies and parent links, read from GitHub on the morning of 2026-08-16; the child-issue and comment history of the two requirements they belonged to; the eight requirements filed overnight and their authors; the live sweep state file, its scheduler entry and its five-minute cadence, read from this machine; the concierge's launcher script; the stall-detection measurements, cost model and the dead-worker case from the supervision decision; the three-outcome contract from the closeout decision. Provenance, method and assumptions in this artifact's <a href="README.md">README</a>.</p>
+  <p><b>Citations</b> (for a deep dive only — the argument stands without them): the <a href="https://github.com/jwildfire/obot.roadmap/issues/195">Navigator requirement</a>, the <a href="https://github.com/jwildfire/obot.roadmap/issues/73">autonomy goal</a>, the <a href="../2026-08-15-worker-closeout-check/">worker closeout decision</a>, the <a href="../2026-08-15-worker-supervision/">worker supervision decision</a>, the <a href="https://github.com/jwildfire/obot.roadmap/issues/180">Operations Dashboard requirement</a> and the <a href="https://github.com/jwildfire/obot.roadmap/issues/123">release-scaffolding requirement</a>.</p>
+  <hr style="border:0;border-top:1px solid var(--rule);margin:22px 0">
+  <p>This decision artifact was drafted by Claude Code using Opus 5 and reviewed by @jwildfire.</p>
+</div>
+
+</div>
+</body></html>

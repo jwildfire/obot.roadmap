@@ -1,6 +1,6 @@
 # D0015 — Workers that finish into nothing
 
-**Status:** Awaiting @jwildfire — W1–W4 (D0015.1–.4)
+**Status: Folded into [D0017](../2026-08-16-navigator-design/)** (2026-08-16) — @jwildfire asked for one consolidated Navigator design instead of several pages; W1–W4 are carried forward there and should be answered there. Nothing is withdrawn: the measurements and argument stand and D0017 cites them. Original scope — W1–W4 (D0015.1–.4)
 **Requirement:** [jwildfire/obot.roadmap#184](https://github.com/jwildfire/obot.roadmap/issues/184) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
 **Q&A:** [#188](https://github.com/jwildfire/obot.roadmap/discussions/188)
 

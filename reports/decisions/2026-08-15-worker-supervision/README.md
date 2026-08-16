@@ -1,6 +1,6 @@
 # D0016 — Who watches the workers
 
-**Status: Awaiting @jwildfire** — F1–F7 (D0016.1–.7). Q&A thread: [#187](https://github.com/jwildfire/obot.roadmap/discussions/187). Requirements filed alongside: [#185](https://github.com/jwildfire/obot.roadmap/issues/185) (supervision) and [#186](https://github.com/jwildfire/obot.roadmap/issues/186) (compaction survival).
+**Status: Folded into [D0017](../2026-08-16-navigator-design/)** (2026-08-16) — @jwildfire asked for one consolidated Navigator design instead of several pages; the questions below are carried forward there and should be answered there. Nothing is withdrawn: the measurements and argument stand and D0017 cites them. Original scope — F1–F7 (D0016.1–.7). Q&A thread: [#187](https://github.com/jwildfire/obot.roadmap/discussions/187). Requirements filed alongside: [#185](https://github.com/jwildfire/obot.roadmap/issues/185) (supervision) and [#186](https://github.com/jwildfire/obot.roadmap/issues/186) (compaction survival).
 
 Answers @jwildfire's proposal (chat, 2026-08-15 ~22:40) of a fourth orchestration
 role — a "first mate" that keeps an eye on the worker agents so they do not get
