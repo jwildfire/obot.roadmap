@@ -103,6 +103,15 @@ jobs:
           RC_TOKEN: ${{ steps.obot-token.outputs.token }}
         run: node scripts/build_roadmap_next.mjs
 
+      # The roadmap-page design spike (requirement #202, task #204): three
+      # candidate directions rendered beside the live page, plus a landing page,
+      # all from the same sources the roadmap itself reads. Removed once the
+      # decision lands and the rebuild requirement is filed.
+      - name: Build roadmap spike directions
+        env:
+          RC_TOKEN: ${{ steps.obot-token.outputs.token }}
+        run: node scripts/build_spike.mjs
+
       # The audit reading view (_site/audit/index.html, requirement #92) — the
       # roadmap page's Audit fold is for clearing findings, this page is for
       # reading them. Generated from the same committed ledger.
@@ -230,6 +239,12 @@ jobs:
           have audit/index.html;           says audit/index.html ap-queue
                                            says audit/index.html ap-data
           have roadmap-next.html
+          # The design-spike pages (#202/#204): each direction must carry its
+          # spike banner, so a shared URL always says what it is an option for.
+          have roadmap-spike/index.html;   says roadmap-spike/index.html spike-landing
+          have roadmap-spike/queue.html;   says roadmap-spike/queue.html spike-banner
+          have roadmap-spike/wire.html;    says roadmap-spike/wire.html spike-banner
+          have roadmap-spike/board.html;   says roadmap-spike/board.html spike-banner
           have goals/index.html
           have goals/goals.json
           # Not a named page: goal filenames come from the goal issues, so
