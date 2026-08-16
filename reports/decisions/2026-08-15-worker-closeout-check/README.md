@@ -1,6 +1,6 @@
 # D0015 — Workers that finish into nothing
 
-**Status: Folded into [D0017](../2026-08-16-navigator-design/)** (2026-08-16) — @jwildfire asked for one consolidated Navigator design instead of several pages; W1–W4 are carried forward there and should be answered there. Nothing is withdrawn: the measurements and argument stand and D0017 cites them. Original scope — W1–W4 (D0015.1–.4)
+**Status: Closed 2026-08-16** — answered by [D0017](../2026-08-16-navigator-design/), and the wider question it belonged to is now [D0019](../2026-08-16-scheduled-sessions-assessment/). @jwildfire closed this page and two others the same day (*"D14/15/16 all seem like a mess to me. Close them all…"*). Nothing here was lost by closing it: W1–W4 had already been folded into the consolidated Navigator design earlier that day, and he adopted all eight of its calls — the three-outcome closeout rule, the detection mechanism, and the agent-attribution answer are live. Original scope — W1–W4 (D0015.1–.4)
 **Requirement:** [jwildfire/obot.roadmap#184](https://github.com/jwildfire/obot.roadmap/issues/184) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
 **Q&A:** [#188](https://github.com/jwildfire/obot.roadmap/discussions/188)
 

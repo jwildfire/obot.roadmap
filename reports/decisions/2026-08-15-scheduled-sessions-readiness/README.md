@@ -1,6 +1,13 @@
 # D0014 — Scheduled sessions: go, after three fixes
 
-**Status: Awaiting @jwildfire** — S1–S4.
+**Status: Closed 2026-08-16** — superseded by
+[D0019](../2026-08-16-scheduled-sessions-assessment/). @jwildfire closed this page
+and two others the same day (*"D14/15/16 all seem like a mess to me. Close them
+all. Do a single assessment of readiness to move to a schedule and let me know when
+it's ready."*) without answering S1–S4. Its verdict — go, after three fixes — is
+therefore superseded rather than adopted: the successor re-derives the answer from
+live state, because most of what this page rested on changed inside a day. The
+evidence stands and the successor cites it.
 
 **Corrected 2026-08-16** — published as *"go, after four fixes"*; one of the four is
 withdrawn. See "The correction" below.
