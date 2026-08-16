@@ -7,6 +7,7 @@ release is cut; the GitHub release publishes from the section verbatim.
 
 # obot.roadmap v0.4 (Upcoming)
 
+- **The roadmap-page design spike is live** — three genuinely different redesign candidates rendered beside the current page on live data at [`roadmap-spike/`](https://jwildfire.github.io/obot.roadmap/roadmap-spike/): the queue (what needs you), the wire (what changed), the board (what is running) — with decision artifact D0018 carrying them side by side.
 - **The roadmap page opens with what needs you** — a Todo section leading with the two queues: release candidates awaiting review, then decisions needed, each linking its PR or Q&A thread.
 - **Decisions have a lane**: self-contained artifacts under `reports/decisions/` with an index, each posted to a Q&A discussion where the decision is documented in-thread — including the RC-shape (R2), operational-vs-clinical, session-model, elicitation-method, and prime-context decisions.
 - **Diary entries lead with RCs then decisions** — the RC-first wrapup format, so the daily record carries the same two headlines as the queues.
