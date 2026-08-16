@@ -4,9 +4,15 @@
 
 **Decision artifact** for goal [#79](https://github.com/jwildfire/obot.roadmap/issues/79), written 2026-08-15 in an unattended sibling session (👯🤖 elicit), on @jwildfire's direct request while reviewing the [app-plan artifact](../2026-08-14-app-plan-rewrite/): *"I basically want you to interview me to figure out what I want."*
 
-**Decide here:** [Q&A discussion #159](https://github.com/jwildfire/obot.roadmap/discussions/159). Answering **"defaults"** is a complete response.
+**Status: Decided 2026-08-15** — all four calls (E1–E4 / D0008.1–.4) left standing as recommended, in the local Operations Dashboard. His words, verbatim:
 
-**Status:** Awaiting @jwildfire — E1–E4. The protocol itself is already shipped as the `grill-me` skill ([obot.agent #95](https://github.com/jwildfire/obot.agent/issues/95) / [PR #96](https://github.com/jwildfire/obot.agent/pull/96), merged standard lane 2026-08-15) with the recommendations as defaults, so the E-calls amend rather than gate it.
+> "sounds good. let's try it."
+
+He changed none of the four, which under this page's own rule is a complete answer: build things for him to correct first and ask targeted questions after; small rounds of at most four questions per 15–25-minute sitting; the written record in a published folder on this site; and the agent writes the ratified goal statement into the goal once he approves it. The protocol was already shipped as the `grill-me` skill ([obot.agent #95](https://github.com/jwildfire/obot.agent/issues/95) / [PR #96](https://github.com/jwildfire/obot.agent/pull/96), merged standard lane 2026-08-15) with exactly those as defaults, so nothing needed amending.
+
+Follow-through filed 2026-08-16 under goal [#79](https://github.com/jwildfire/obot.roadmap/issues/79) (milestone 2026q3, nothing run yet): [#192](https://github.com/jwildfire/obot.roadmap/issues/192) builds the prep artifacts he corrects (costs him no time), [#193](https://github.com/jwildfire/obot.roadmap/issues/193) runs the sittings and ratifies the goal statement.
+
+**Decided in:** the local Operations Dashboard, not the Q&A thread ([discussion #159](https://github.com/jwildfire/obot.roadmap/discussions/159) remains the thread for the topic).
 
 ## Why it exists
 
@@ -32,4 +38,4 @@ A 7-agent ultracode workflow (`wf_882149bc-099`, ~700k subagent tokens, all agen
 
 ---
 
-Drafted by Claude Code using Fable 5 in an unattended session (not yet reviewed by @jwildfire).
+Drafted by Claude Code using Fable 5 in an unattended session; reviewed by @jwildfire, who settled all four calls on 2026-08-15.
