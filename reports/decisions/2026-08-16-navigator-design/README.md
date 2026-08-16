@@ -1,6 +1,6 @@
 # D0017 — The Navigator: how the operating officer works
 
-**Status: Awaiting @jwildfire** — N1–N8 (D0017.1–.8). **Q&A thread:** [#197](https://github.com/jwildfire/obot.roadmap/discussions/197). **Requirement:** [#195](https://github.com/jwildfire/obot.roadmap/issues/195) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
+**Status: Decided 2026-08-16** — N1–N8 (D0017.1–.8) all adopted as recommended, in chat ("I'm good with D0017 recommendations. Implement."), with one sequencing change: the audit-versus-verifier disagreement is resolved before the four new audit checks ship. The queued sessions-page ask becomes a requirement of its own. **Q&A thread:** [#197](https://github.com/jwildfire/obot.roadmap/discussions/197). **Requirement:** [#195](https://github.com/jwildfire/obot.roadmap/issues/195) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
 
 A consolidated design-and-decision document, written at @jwildfire's explicit request on
 2026-08-16: *"what I really want to see is a consolidated design/decision doc explaining
