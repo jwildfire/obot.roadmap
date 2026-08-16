@@ -496,7 +496,7 @@ ${auditLogHtml}
     return { el: b, scope: scopesOf(b) };
   });
 
-  function apply() {
+  function apply(fromClick) {
     document.querySelectorAll('[data-repo]').forEach(function (row) {
       // split(' ') not a regex: this script is inside a template literal, where
       // a lone backslash is eaten before it reaches the page.
@@ -535,21 +535,38 @@ ${auditLogHtml}
     });
     var blurb = document.getElementById('rm-blurb');
     blurb.textContent = blurbs[view] || '';
-    if (window.history && window.history.replaceState) {
+    // Only a view the reader CHOSE rewrites the URL. The unconditional rewrite
+    // that used to be here ran on load too, and replaced the whole fragment
+    // with location.pathname before the browser had acted on it — so every
+    // section deep-link into this page silently landed at the top instead of at
+    // its section. That was live: on 2026-08-16 the deployed roadmap.html threw
+    // away README's #sec-audit exactly this way, with nothing looking broken.
+    // The fromClick guard is the same shape the hierarchy toggle already uses.
+    if (fromClick && window.history && window.history.replaceState) {
       window.history.replaceState(null, '', view === ${JSON.stringify(DEFAULT_VIEW)} ? location.pathname : '#' + view);
     }
   }
   repoButtons.forEach(function (b) {
-    b.addEventListener('click', function () { repo = b.dataset.filter; apply(); });
+    b.addEventListener('click', function () { repo = b.dataset.filter; apply(true); });
   });
   viewButtons.forEach(function (b) {
-    b.addEventListener('click', function () { view = b.dataset.view; apply(); });
+    b.addEventListener('click', function () { view = b.dataset.view; apply(true); });
   });
   // A #live / #attention / #pulse / #all fragment deep-links a view, so a
   // particular reading of the page is a shareable URL.
   var hash = (location.hash || '').replace('#', '');
   if (blurbs.hasOwnProperty(hash)) view = hash;
   apply();
+
+  // A section fragment has to be re-honoured after apply(), not before it: the
+  // browser scrolled while every row was still visible, and apply() then hid
+  // rows and changed the page's height, which leaves that scroll pointing at
+  // the wrong place. #hierarchy-proposed is not an element id — it is the
+  // hierarchy toggle's own deep-link — so it aims at the section that hosts it.
+  if (hash && !blurbs.hasOwnProperty(hash)) {
+    var anchor = document.getElementById(hash === 'hierarchy-proposed' ? 'sec-hierarchy' : hash);
+    if (anchor) anchor.scrollIntoView();
+  }
 
   // Session indicator — published by the session heartbeat to a branch, not by a
   // deploy, so it stays current between site builds. Renders its own timestamp
