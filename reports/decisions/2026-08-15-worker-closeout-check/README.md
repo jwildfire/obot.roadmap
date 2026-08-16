@@ -42,7 +42,7 @@ All figures on the page were measured on 2026-08-15, not estimated.
 - [#157 the release-candidate sweep](https://github.com/jwildfire/obot.roadmap/issues/157) — shipped; the Navigator this extends.
 - [#181 working-set verification](https://github.com/jwildfire/obot.roadmap/issues/181) — the other Navigator requirement; separate release.
 - [Recording your decisions](../2026-08-15-decision-recording/) — the Operations Dashboard whose three sections the three worker outcomes map onto.
-- [Scheduled sessions: go, after four fixes](../2026-08-15-scheduled-sessions-readiness/) — the unattended lane whose volume makes this necessary.
+- [Scheduled sessions: go, after three fixes](../2026-08-15-scheduled-sessions-readiness/) — the unattended lane whose volume makes this necessary.
 
 ---
 
