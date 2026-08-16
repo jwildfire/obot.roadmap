@@ -111,6 +111,44 @@ for (const page of PAGES) {
   }
 }
 
+// The design spike's three pages (#202/#204) are retired by this build — a
+// spike left standing becomes a second source of truth. But D0018's published
+// artifact links to all three, and retiring them would leave a decision record
+// carrying three dead links. So each URL forwards to what that direction
+// actually became: the queue and the board both to the roadmap page, since the
+// board's contribution was the NOW strip the queue now carries, and the wire to
+// the wire. A reader following the artifact lands on the thing the option
+// turned into, which is more useful than the option was.
+const SPIKE_RETIRED = [
+  ['index.html', 'roadmap.html', 'the roadmap page'],
+  ['queue.html', 'roadmap.html', 'the roadmap page, which is the queue'],
+  ['wire.html', 'wire.html', 'the wire'],
+  ['board.html', 'roadmap.html', 'the roadmap page, whose NOW strip is what the board became'],
+];
+await fs.mkdir(path.join(outDir, 'roadmap-spike'), { recursive: true });
+for (const [from, to, label] of SPIKE_RETIRED) {
+  const href = `../${to}`;
+  await fs.writeFile(
+    path.join(outDir, 'roadmap-spike', from),
+    `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Retired · obot</title>
+<link rel="canonical" href="${href}">
+<meta http-equiv="refresh" content="0; url=${href}">
+</head>
+<body>
+<p>The roadmap-page design spike was retired when its decision (D0018) shipped as
+<a href="https://github.com/jwildfire/obot.roadmap/issues/211">#211</a>. This preview now forwards to
+${label}: <a href="${href}">${to}</a>.</p>
+</body>
+</html>
+`,
+  );
+  written.push(`roadmap-spike/${from}`);
+}
+
 const degraded = [
   ['requirements', reqRes], ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes],
   ['goals', goalRes], ['hierarchy', hierRes], ['decisions', decRes], ['repo activity', lightsRes],

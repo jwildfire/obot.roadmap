@@ -26,6 +26,12 @@ to answer. Commissioned under requirement
 [#204](https://github.com/jwildfire/obot.roadmap/issues/204) — the first project
 handed to obot-prime and obot-navigator to run without him (2026-08-16).
 
+The three preview pages were retired on 2026-08-16 when this decision shipped as
+[#211](https://github.com/jwildfire/obot.roadmap/issues/211); their URLs now forward to what
+each direction became — the queue and the board to the roadmap page, whose NOW strip is what
+the board contributed, and the wire to the wire. The 390px screenshots in this directory
+remain the visual record of what was compared.
+
 ## Provenance
 
 - Drafted 2026-08-16 by worker W0004 (Claude Code, Fable 5), spawned by

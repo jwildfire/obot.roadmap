@@ -89,7 +89,7 @@ Goals are **not board items**. A goal is permanent, so it has no delivery stage 
 
 ## Audit
 
-The lifecycle above only tells the truth if the fields are maintained, so a [nightly audit](.github/workflows/roadmap-audit.yml) checks the roadmap against its own conventions (requirement [#92](https://github.com/jwildfire/obot.roadmap/issues/92)) and publishes what it finds in the **Audit** section of the [roadmap page](https://jwildfire.github.io/obot.roadmap/roadmap.html#sec-audit).
+The lifecycle above only tells the truth if the fields are maintained, so a [nightly audit](.github/workflows/roadmap-audit.yml) checks the roadmap against its own conventions (requirement [#92](https://github.com/jwildfire/obot.roadmap/issues/92)) and publishes what it finds in the **Audit** section of the [catalog page](https://jwildfire.github.io/obot.roadmap/catalog.html#sec-audit).
 
 | Piece | Where |
 |---|---|
