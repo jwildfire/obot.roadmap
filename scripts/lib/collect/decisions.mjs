@@ -64,10 +64,14 @@ export function closedInto(status = '') {
   // The successor is optional — not every retirement has somewhere to send the
   // reader — so the state is decided by the opening word and the pointer is read
   // separately, from the first "superseded by D0019" it finds.
-  const m = /\b(?:superseded|replaced|answered)\s+by\s+\[?([A-Z]\d{4})\]?\s*(?:\(([^)]+)\))?/i.exec(cell);
+  // The verb is kept, not normalised: "answered by D0017" and "superseded by D0019"
+  // are different fates, and a card that prints the wrong one is a small lie about
+  // whether the questions ever got an answer.
+  const m = /\b(superseded|replaced|answered)\s+by\s+\[?([A-Z]\d{4})\]?\s*(?:\(([^)]+)\))?/i.exec(cell);
   return {
-    id: m?.[1]?.toUpperCase() ?? null,
-    slug: m?.[2] ? m[2].replace(/^\.?\//, '').replace(/\/$/, '') : null,
+    via: m?.[1]?.toLowerCase() ?? null,
+    id: m?.[2]?.toUpperCase() ?? null,
+    slug: m?.[3] ? m[3].replace(/^\.?\//, '').replace(/\/$/, '') : null,
   };
 }
 

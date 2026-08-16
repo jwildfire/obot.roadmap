@@ -119,15 +119,20 @@ test('folding does not swallow an ordinary awaiting row', () => {
 test('a closed decision leaves his queue without being called decided', () => {
   const closed = '**Closed 2026-08-16** — superseded by [D0019](2026-08-16-scheduled-sessions-assessment/). He read three pages circling one question and closed all three';
   assert.equal(isAwaiting(closed), false);
-  assert.deepEqual(closedInto(closed), { id: 'D0019', slug: '2026-08-16-scheduled-sessions-assessment' });
+  assert.deepEqual(closedInto(closed), { via: 'superseded', id: 'D0019', slug: '2026-08-16-scheduled-sessions-assessment' });
 });
 
 test('a close with no successor is still a close', () => {
   // Not every retirement has somewhere to send the reader, and the state must not
   // depend on one existing.
   assert.equal(isAwaiting('Closed 2026-08-16 — the question stopped mattering'), false);
-  assert.deepEqual(closedInto('Closed 2026-08-16 — the question stopped mattering'), { id: null, slug: null });
-  assert.deepEqual(closedInto('Retired 2026-08-16'), { id: null, slug: null });
+  assert.deepEqual(closedInto('Closed 2026-08-16 — the question stopped mattering'), { via: null, id: null, slug: null });
+  assert.deepEqual(closedInto('Retired 2026-08-16'), { via: null, id: null, slug: null });
+
+  // Answered inside a successor is a different fate from superseded by one, and the
+  // card prints the verb — D0015 and D0016 got answers in the Navigator design before
+  // he closed them; D0014's verdict never got one.
+  assert.equal(closedInto('**Closed 2026-08-16** — answered by [D0017](2026-08-16-navigator-design/)').via, 'answered');
 });
 
 test('"closed" only counts at the start of the cell', () => {

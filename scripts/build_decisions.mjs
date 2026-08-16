@@ -116,7 +116,7 @@ const landing = (log) => {
   const state = (a) => {
     if (a.awaiting) return 'awaiting you';
     if (a.foldedInto) return `folded into ${a.foldedInto.id}`;
-    if (a.closedInto) return a.closedInto.id ? `closed · superseded by ${a.closedInto.id}` : 'closed';
+    if (a.closedInto) return a.closedInto.id ? `closed · ${a.closedInto.via ?? 'superseded'} by ${a.closedInto.id}` : 'closed';
     return 'decided';
   };
   const card = (a) => `<a class="card" href="${esc(a.slug)}/">
