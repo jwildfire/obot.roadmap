@@ -2,6 +2,7 @@
 
 **Status: Awaiting @jwildfire** — H1–H5 (D0019.1–.5).
 **Requirement:** [jwildfire/obot.roadmap#122](https://github.com/jwildfire/obot.roadmap/issues/122) · **Task:** [#221](https://github.com/jwildfire/obot.roadmap/issues/221) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
+**Q&A:** [#222](https://github.com/jwildfire/obot.roadmap/discussions/222)
 
 Supersedes [D0014](../2026-08-15-scheduled-sessions-readiness/), and carries forward
 findings from [D0015](../2026-08-15-worker-closeout-check/) and
