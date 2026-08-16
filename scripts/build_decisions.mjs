@@ -36,7 +36,10 @@ const shell = (title, body) => `<!DOCTYPE html>
 <link rel="stylesheet" href="../assets/styles.css">
 <style>
   .dl-entry { border:1px solid var(--line,#E2DACC); border-radius:12px; padding:1rem 1.15rem; margin:0 0 0.9rem; }
-  .dl-entry blockquote { margin:0.5rem 0; font-size:1.02rem; line-height:1.5; }
+  /* His words are quoted as typed, and he types URLs — an unbroken one blew the
+     Decisions page past a 390px viewport (found 2026-08-16 on the phone-width probe).
+     Quotes wrap anywhere rather than being re-typed to fit. */
+  .dl-entry blockquote { margin:0.5rem 0; font-size:1.02rem; line-height:1.5; overflow-wrap:anywhere; }
   .dl-meta { font-size:0.8rem; opacity:0.75; display:flex; flex-wrap:wrap; gap:0.4rem 0.9rem; }
   .dl-id { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:0.75rem; opacity:0.6; }
   .dl-outcome { font-size:0.9rem; margin:0.5rem 0 0; }
