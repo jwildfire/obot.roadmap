@@ -136,6 +136,17 @@ test('nothing on the page is loaded from another host', () => {
   assert.doesNotMatch(html, /<script[^>]+src=/, 'no external script tags');
 });
 
+test('the page says how old the ledger is, without JavaScript and with it', () => {
+  // Server-rendered, so a noscript reader gets it (#201) …
+  assert.match(html, /id="ap-fresh"/);
+  assert.match(html, /before this page was built/);
+  assert.match(html, /invisible to it/);
+  // … and recomputed in the browser, because a static artifact read three days
+  // later must report three days, not the age it was published at.
+  assert.match(html, /var ageHours = \(Date\.now\(\) - stampedAt\) \/ 3600000/);
+  assert.match(html, /This audit last ran/);
+});
+
 test('the roadmap fold\'s per-rule deep links land somewhere', () => {
   // scripts/lib/audit/render.mjs links to audit/index.html#rule-<RULE-ID>.
   assert.match(html, /\^#rule-\(\.\+\)\$/, 'the page must read a #rule- deep link');

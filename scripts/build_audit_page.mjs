@@ -33,6 +33,7 @@ import path from 'node:path';
 import { esc, fmtET } from './lib/gh.mjs';
 import { ROOT, HUB } from './lib/repos.mjs';
 import { decisionUrl } from './lib/audit/render.mjs';
+import { freshness, STALE_HOURS } from './lib/audit/freshness.mjs';
 import { siteHeader } from './lib/nav.mjs';
 
 const NOW = new Date();
@@ -202,6 +203,15 @@ const dataBlob = ledger
   })
   : 'null';
 
+// How old the ledger is, on the page and in both states (#201). Rendered here so
+// a reader without JavaScript still gets it, and recomputed in the browser below
+// against the viewer's own clock — this page is a static artifact, so a build-time
+// age is the age it was published at, not the age it is being read at.
+const fresh = freshness(ledger, NOW);
+const freshLine = ledger
+  ? `<p class="ap-fresh${fresh.ok ? '' : ' stale'}" id="ap-fresh">Last run ${esc(fmtET(ledger.generatedAt))}, ${esc(fresh.age)} before this page was built. Every count here describes the roadmap as it stood then; anything filed since is invisible to it.</p>`
+  : '';
+
 const boardNotice = ledger && !ledger.boardReadable
   ? '<p class="ap-notice">The obot Roadmap project was unreadable on the last run — every board rule was skipped, so this queue is incomplete rather than clear.</p>'
   : '';
@@ -254,7 +264,7 @@ const shell = ledger
       <span class="ap-stamp" id="ap-stamp"></span>
       <span class="ap-conn" id="ap-conn"></span>
     </div>
-    ${boardNotice}${brokenNotice}
+    ${freshLine}${boardNotice}${brokenNotice}
     <div class="ap-run" id="ap-run" hidden></div>
     <div class="ap-qbar" id="ap-qbar" hidden></div>
     <div class="ap-meter" id="ap-meter"></div>
@@ -301,6 +311,12 @@ body.audit footer.site { margin: 0; padding: 1.2rem 1rem 1.4rem; }
 .ap-notice { margin: .5rem 0; padding: .5rem .8rem; border-left: 3px solid var(--accent-bright);
   background: var(--panel); font-size: .88rem; }
 .ap-note { font-size: .82rem; color: var(--muted); margin: .3rem 0; }
+/* The freshness line reads as ordinary page furniture while the audit is
+   current, and takes the notice treatment only once it is stale — but it is
+   present either way, which is the whole point of it (#201). */
+.ap-fresh { margin: .35rem 0; font-size: .82rem; color: var(--muted); }
+.ap-fresh strong { color: var(--ink); font-weight: 600; }
+.ap-fresh.stale { padding: .5rem .8rem; border-left: 3px solid #b42318; background: var(--panel); color: var(--ink); }
 .ap-meta { font-family: var(--mono); font-size: .72rem; color: var(--faint); }
 .ap-n { font: 500 .68rem/1.4 var(--mono); color: var(--muted); background: var(--card);
   border: 1px solid var(--rule); border-radius: 999px; padding: .04rem .42rem; }
@@ -1360,9 +1376,34 @@ ${shell}
   }).join('');
   sortSel.value = state.sort;
 
+  // #201 — the age, against the reader's clock rather than the builder's. This
+  // page is a static artifact: a build-time age is how old the ledger was when
+  // the page was published, which is not the question a reader is asking.
+  var STALE_HOURS = ${STALE_HOURS};
+  function ageWords(hours) {
+    if (!isFinite(hours)) return null;
+    if (hours < 1) return Math.max(0, Math.round(hours * 60)) + 'm';
+    if (hours < 24) return Math.round(hours) + 'h';
+    return Math.round(hours / 24) + 'd';
+  }
+  var stampedAt = Date.parse(ledger.generatedAt);
+  var ageHours = (Date.now() - stampedAt) / 3600000;
+  var ageText = ageWords(ageHours);
+  var freshEl = document.getElementById('ap-fresh');
+  if (freshEl && ageText) {
+    var stale = ageHours > STALE_HOURS;
+    freshEl.className = 'ap-fresh' + (stale ? ' stale' : '');
+    freshEl.innerHTML = 'This audit last ran <strong>' + esc(ageText) + ' ago</strong> — '
+      + esc(String(ledger.generatedAt)) + '. '
+      + (stale
+        ? 'That is past the ' + STALE_HOURS + '-hour mark for a nightly job, so the queue below describes the roadmap as it was, not as it is.'
+        : 'Every count below describes the roadmap as it stood then; anything filed since is invisible to it.');
+  }
+
   document.getElementById('ap-stamp').textContent = ledger.counts.total + ' findings · '
     + ledger.rules.filter(function (r) { return r.fired; }).length + ' of ' + ledger.rules.length
-    + ' rules firing · run ' + String(ledger.generatedAt).slice(0, 10);
+    + ' rules firing · run ' + String(ledger.generatedAt).slice(0, 10)
+    + (ageText ? ', ' + ageText + ' ago' : '');
 
   // The roadmap page's Audit fold links here per rule (#rule-RULE-ID). Those
   // anchors used to be section headings; the queue has no sections, so the link

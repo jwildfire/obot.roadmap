@@ -16,6 +16,7 @@ import { ROOT } from './lib/repos.mjs';
 import { hasToken } from './lib/gh.mjs';
 import { buildSnapshot } from './lib/audit/snapshot.mjs';
 import { buildLedger } from './lib/audit/engine.mjs';
+import { freshness } from './lib/audit/freshness.mjs';
 import { RULES } from './lib/audit/rules.mjs';
 
 const args = process.argv.slice(2);
@@ -56,6 +57,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   }
 
+  // What was on disk before this run — the file anyone reading `findings.json`
+  // in the last day was actually reading. Printed first, and printed whatever it
+  // says, because a 22-hour-old ledger looks exactly like a current one until
+  // something states its age out loud (#201).
+  console.log(`audit: previous ${freshness(await readJson(FINDINGS_PATH)).summary}`);
+
   const { result } = await runAudit({ source: process.env.GITHUB_RUN_ID ? `run ${process.env.GITHUB_RUN_ID}` : 'local' });
   const shown = only ? result.findings.filter((f) => f.rule === only) : result.findings;
 
@@ -78,7 +85,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     `\naudit: ${result.counts.total} live findings ` +
     `(${result.counts.high} high, ${result.counts.medium} medium, ${result.counts.low} low; ` +
     `${result.counts.mechanical} mechanical, ${result.counts.agentic} agentic, ${result.counts.muted} muted) ` +
-    `across ${result.rules.length} rules — ${quiet} quiet`,
+    `across ${result.rules.length} rules — ${quiet} quiet ` +
+    `(as of ${result.generatedAt}; stale after ${result.staleAfterHours}h)`,
   );
   for (const r of broken) console.error(`audit: rule ${r.id} threw — ${r.error}`);
 
