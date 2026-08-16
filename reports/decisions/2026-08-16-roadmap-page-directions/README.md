@@ -1,15 +1,21 @@
 # The roadmap page — three directions to react to (D0018)
 
-Status: **Decided 2026-08-16** — R1–R3 (D0018.1–.3). @jwildfire approved the spike's
-recommendation in chat ("i'm good with your rec  build"): the queue becomes the
-front page, the wire sits one click behind it, the board's NOW panel is absorbed as
-a slim strip, and the current inventory page survives as the catalog. R1 and R2 are
-settled in his words; R3 — the fixed, labelled recent window as the public answer to
-"what changed" — follows by implication from the page he approved, and is recorded
-as an implication on the artifact so it is cheap to correct. The rebuild is
-requirement [#211](https://github.com/jwildfire/obot.roadmap/issues/211); the
-commissioning requirement
-[#202](https://github.com/jwildfire/obot.roadmap/issues/202) closes out.
+Status: **Decided 2026-08-16** — R1–R3 (D0018.1–.3), in two exchanges.
+
+@jwildfire approved the spike's recommendation in chat ("i'm good with your rec  build"):
+the queue becomes the front page, the wire sits one click behind it, the board's NOW
+panel is absorbed as a slim strip, and the current inventory page survives as the
+catalog. That settled R1 and R2 outright. It did not touch R3 — whether the fixed,
+labelled recent window is the accepted public answer to "what changed" — which the
+wire he approved only implied. The inference was written down as an inference and put
+back to him rather than counted with the other two, and he answered it separately:
+"R3 is fine, leave it as approved". Both quotes are on the artifact as separate dated
+entries, kept apart on purpose.
+
+The recommendation is the spike's own, written by W0004 from the rendered pages; the
+concierge that carried the question offered none. The rebuild is requirement
+[#211](https://github.com/jwildfire/obot.roadmap/issues/211); the commissioning
+requirement [#202](https://github.com/jwildfire/obot.roadmap/issues/202) closes out.
 
 The design spike for the roadmap-page redesign: three genuinely different working
 pages deployed beside the current one, on live data, at
