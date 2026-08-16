@@ -105,7 +105,7 @@ td b{font-weight:650}
 <!-- END decision-ids -->
   <p class="lede">One page for the whole role, because you asked for one. The Navigator's job is <b>improving operations</b> — the templates, the dashboards, the audit framework, the process mechanics everyone else works inside. Turning your asks into requirements and checking that workers delivered are two instruments of that job, not the job itself. This page covers what the session is, how it starts, what it owns, what it decides without asking, what it escalates, and the one line it must never cross. It also settles something measurable: six pieces of work shipped overnight with nothing in the roadmap recording them — and almost every one of them was operations improvement, which is to say the Navigator's own work, dispatched ad hoc because the role did not exist. It folds in the two pages from last night that each answered part of this, so there is one place to decide rather than three.</p>
   <div class="facts">
-    <span><b>Day one</b> it ships an operations improvement — the four audit checks that missed last night</span>
+    <span><b>Day one</b> it ships the four missing audit checks, across all seven project repos</span>
     <span><b>Measured</b> the nightly audit caught 1 of last night's 6 failures</span>
     <span><b>Cost</b> cents per waking, versus $10–50 a day to poll</span>
     <span><b>Decide</b> N1–N8, after the design</span>
@@ -250,7 +250,7 @@ obot.agent/commands/s-navigator.md            <span class="c"># the /s-navigator
     <tr><th>Question</th><th>Who answers it</th><th>Why</th></tr>
     <tr><td>Which release candidates are open and waiting on you?</td><td>The five-minute script</td><td>A list. No judgment involved.</td></tr>
     <tr><td>Has a worker gone quiet?</td><td>The five-minute script</td><td>Measured: the typical gap between a worker's recorded actions is about twenty seconds, and a thirty-minute-silence rule fires roughly once in a day and a half. A script does this for nothing.</td></tr>
-    <tr><td>Which task issues have no parent requirement?</td><td>The five-minute script <span class="warn">(to add — one field)</span></td><td>This is the exact check that would have named all six of last night's by morning. It is one extra field on a query the sweep already makes.</td></tr>
+    <tr><td>Which task issues have no parent requirement, across all seven project repos?</td><td>The five-minute script <span class="warn">(to add)</span></td><td>The exact check that would have named all six of last night's by morning. The sweep already visits all seven repositories for release candidates, so it is one more field on a walk it already makes.</td></tr>
     <tr><td>Does this ask need a new requirement, or a change to an open one?</td><td>The session</td><td>Judgment. Requires reading the open requirements and deciding scope fit.</td></tr>
     <tr><td>Did this worker attach to the <em>right</em> requirement, and did the stage really move?</td><td>The session</td><td>Judgment. A script can see that something was touched; it cannot see whether it was the right thing.</td></tr>
     <tr><td>Should this deferral have become a requirement of its own?</td><td>The session</td><td>Judgment, and the one most often skipped today.</td></tr>
@@ -272,7 +272,7 @@ obot.agent/commands/s-navigator.md            <span class="c"># the /s-navigator
   <table>
     <tr><th>The failure</th><th>Audit</th><th>Why</th></tr>
     <tr><td>Requirements filed overnight that were unparented or off the board</td><td class="warn">Partly caught</td><td>Hub issues are what it reads — but it reported four, and a separate check later found nine more</td></tr>
-    <tr><td>Five task issues shipped with no requirement above them</td><td class="bad">Missed</td><td>Wrong scope — its untracked-work rule only examines hub issues</td></tr>
+    <tr><td>Six task issues shipped with no requirement above them</td><td class="bad">Missed</td><td>Wrong scope — its untracked-work rule only examines hub issues. Now settled as a defect to fix, not a choice</td></tr>
     <tr><td>Decisions you answered that nobody applied</td><td class="bad">Missed</td><td>It has no view of decision pages at all</td></tr>
     <tr><td>A false claim left standing in a published page</td><td class="bad">Missed</td><td>No rule reads the prose of an artifact — and none could; this needs judgment</td></tr>
     <tr><td>The registry and the published index disagreeing</td><td class="bad">Missed</td><td>The site reads one of the two and nothing compares them</td></tr>
@@ -286,12 +286,21 @@ obot.agent/commands/s-navigator.md            <span class="c"># the /s-navigator
     <p>So the discipline gap is not confined to the spoke repositories. It is wherever work outruns the record, which last night was everywhere. The intake path is still the biggest hole; it is not the only one.</p>
   </div>
 
-  <p>The reason it is blind is worth sitting with, because it explains why a new rule alone will not fix this. A spoke-repo issue is visible to the audit <em>only if a hub issue already lists it as a child</em> — which is the very link that was missing. <b>The check cannot see the failure, because the failure is the absence of the thing that would make it visible.</b> Something has to look from the other end.</p>
+  <p>The reason it is blind is worth sitting with, because it explains why a new rule alone would not have fixed this. A spoke-repo issue is visible to the audit <em>only if a hub issue already lists it as a child</em> — which is the very link that was missing. <b>The check cannot see the failure, because the failure is the absence of the thing that would make it visible.</b> Something has to look from the other end, which is precisely what widening the scope does.</p>
+
+  <div class="card go">
+    <div class="tag">Settled — the audit covers every project repo, not just the hub</div>
+    <p>@jwildfire, 2026-08-16: <em>"The audit def needs to include all project repos not just roadmap. Coo watches tasks too and tasks live across the project."</em> That is decided, not offered as an option below.</p>
+    <p>It is also the change that makes the headline failure <b>detectable at all</b>. The six untracked issues were invisible for exactly one reason — they were in a spoke repository, and the audit only looked at the hub. Without extending scope the Navigator would be blind to the precise problem that created it.</p>
+    <p>Scope becomes the seven project repositories the status page already tracks: safety.viz, gsm.safety, obot.roadmap, obot.agent, open.csr, open.gismo and demo-301.</p>
+    <p><b>What it costs, stated rather than waved past:</b> the audit's snapshot has to read issues across seven repositories instead of one, so each run makes several times the API calls it makes today. That is affordable, but it is not free — if it pushes a run past a comfortable window, the honest fix is a slower cadence for the cross-repo pass rather than pretending the cost is zero. The five-minute sweep is a separate, much cheaper thing and is unaffected.</p>
+  </div>
 
   <div class="card block">
-    <div class="tag">The trap to avoid on day one</div>
-    <p>The obvious new rule — "every spoke issue needs a hub parent" — fires on <b>26 of the 41 open spoke issues today</b>, and on 14 of the 16 in the agent's own repository. Nobody would trust that list; it would be muted inside a week, and the real signal with it.</p>
-    <p><b>Gate on work done, not on filing.</b> An issue needs an ancestor once it has produced a merged pull request or been closed — not the moment somebody opens it. That fires on all six of last night's and on almost nothing else, which is the difference between a rule that survives and a rule that becomes noise.</p>
+    <div class="tag">The trap that comes with the wider scope</div>
+    <p>Widening the scope without widening the rule's precision produces a mess on the first morning. The blunt version — "every spoke issue needs a hub parent" — fires on <b>26 of the 41 open spoke issues today</b>, and on 14 of the 16 in the agent's own repository. Nobody would trust that list; it would be muted inside a week, and the real signal with it.</p>
+    <p><b>Gate on work done, not on filing.</b> An issue needs an ancestor once it has produced a merged pull request or been closed — not the moment somebody opens it. That fires on all six of last night's and on almost nothing else, which is the difference between a rule that survives and one that becomes noise.</p>
+    <p><b>And the backlog is the Navigator's, not yours.</b> Whatever the wider scope turns up on its first pass — some of those 26, plus whatever else seven repositories are hiding — it works through and triages itself under the judgment grant. You see only what clears the critical bar. That is the whole point of having granted it: a scope change that would have been unusable when you were the reader is straightforwardly useful when it is not.</p>
   </div>
 
   <div class="card block">
@@ -409,7 +418,7 @@ obot.agent/commands/s-navigator.md            <span class="c"># the /s-navigator
     <p>Stand the session up and have it <b>ship an operations improvement you can look at tonight</b> — the four audit checks that missed last night's failures — while running the two reactive jobs alongside it: your asks become requirements first, and every worker that closes gets one line of verdict you can read.</p>
   </div>
 
-  <p>The four checks are named by this morning's scorecard and are all mechanical: a spoke issue closed or a pull request merged with no requirement above it (gated on work done, not on filing); an answer you recorded still unapplied after an hour; the registry and the published index disagreeing; an agent exiting having produced nothing. That is textbook work for this role — it improves the machine rather than policing it, it closes four of the five holes from last night permanently, and it is small enough to land in an afternoon.</p>
+  <p>The four checks are named by this morning's scorecard and are all mechanical: an issue closed or a pull request merged with no requirement above it (gated on work done, not on filing); an answer you recorded still unapplied after an hour; the registry and the published index disagreeing; an agent exiting having produced nothing. <b>All four run across the seven project repositories, not just the hub</b> — that is the scope change you called for this morning, and it is what makes last night's failure visible to a machine at all. It is textbook work for this role: it improves the machinery rather than policing it, it closes the holes from last night permanently, and it lands in an afternoon.</p>
 
   <p>You asked for a feel for how the two of you work together, and that means watching it <em>do</em> something rather than watching it report. By tonight there is a shipped change with a requirement above it, a task beneath it, and a delivery record saying so — which is the whole thesis of this page demonstrated on itself.</p>
 
