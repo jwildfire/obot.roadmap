@@ -34,8 +34,14 @@ All four are quoted on the page or built into the design:
    its job. Splitting goals is strategy that ceo owns."* An earlier draft built out a
    structural-proposal channel on the strength of input 4; input 5 cut it back to a narrow
    escalation and made the build mandate the centre of the role.
+6. The reporting line — *"The coo reports directly to you. You report to me … I might talk
+   to it directly sometimes if there are specific operational things I want done, but you
+   are still my primary point of contact"*, with prime owing him a recommendation on every
+   COO proposal rather than forwarding it. This settled the open question about who reads
+   the COO's decision record: prime does, daily; @jwildfire sees critical items and
+   proposals.
 
-Inputs 2–5 arrived while the page was being written and were relayed by prime rather than
+Inputs 2–6 arrived while the page was being written and were relayed by prime rather than
 typed into this session. They are quoted as his words on that basis; if any wording is off,
 the page should be corrected rather than defended.
 
