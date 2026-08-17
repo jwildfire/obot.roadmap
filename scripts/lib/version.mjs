@@ -251,7 +251,13 @@ export function versionBadge(state, { depth = 0, hubUrl = '', now = new Date() }
   const prefix = '../'.repeat(depth);
   const drift = driftSummary(state, { now });
   const label = state.version ? `v${esc(state.version)}` : 'unversioned';
-  const flag = drift.ok ? '' : '<span class="vs-flag" aria-hidden="true">•</span>';
+  // The drift marker costs no width. A dot beside the label did, and it was measured
+  // at twelve pixels — which is the difference between the nav sitting beside the
+  // brand at 390px and wrapping onto a line of its own on every page of the site. So
+  // the badge recolours instead of growing, and the state also goes into the button's
+  // accessible name so it is not carried by colour alone.
+  const flagged = drift.ok ? '' : ' data-drift="true"';
+  const named = drift.ok ? '' : ` aria-label="${esc(`${label}, changelog behind this build`)}"`;
 
   const rows = [];
   if (state.ci) {
@@ -286,8 +292,8 @@ export function versionBadge(state, { depth = 0, hubUrl = '', now = new Date() }
 
   // No `title` attribute: the browser's own tooltip would fight the panel on every
   // desktop hover, showing two different boxes for one gesture.
-  const badge = `<button class="version-badge" id="version-badge" type="button"
-      aria-expanded="false" aria-controls="version-panel">${label}${flag}</button>`;
+  const badge = `<button class="version-badge" id="version-badge" type="button"${flagged}${named}
+      aria-expanded="false" aria-controls="version-panel">${label}</button>`;
 
   const panel = `<div class="version-panel" id="version-panel">
     ${rows.join('\n    ')}

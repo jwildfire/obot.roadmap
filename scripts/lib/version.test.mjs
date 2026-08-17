@@ -139,8 +139,8 @@ test('the badge and the panel are separate pieces, because they go in different 
 });
 
 test('the drift flag appears on the badge only when there is drift', () => {
-  assert.doesNotMatch(versionBadge(state({ drift: behind(0) }), {}).badge, /vs-flag/);
-  assert.match(versionBadge(state({ drift: behind(3) }), {}).badge, /vs-flag/);
+  assert.doesNotMatch(versionBadge(state({ drift: behind(0) }), {}).badge, /data-drift/);
+  assert.match(versionBadge(state({ drift: behind(3) }), {}).badge, /data-drift/);
 });
 
 test('the header markup carries no second aria-label="Site"', () => {
