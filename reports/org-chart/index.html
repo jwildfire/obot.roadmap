@@ -1,0 +1,383 @@
+<title>The Obot Org Chart</title>
+<meta name="description" content="Who does what in the agent framework: one human, three named roles, a crew of numbered workers, and the script that watches them all — with the failure that created each role, dated 17 August 2026, and the two seams still open.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-wrap:break-word}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32);overflow-wrap:anywhere}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0;text-wrap:balance}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13px;overflow-wrap:anywhere}
+.mast{padding:52px 0 24px}
+.eyebrow{font:600 11px/1.5 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:52px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:14px 0 0;padding:10px 16px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:68ch;font-size:15.5px}
+.callout{margin:24px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.fig{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:14px;overflow-x:auto}
+.fig .mermaid{margin:0;background:transparent;border:0;padding:0}
+figure{margin:22px 0 0}
+figcaption{margin:10px 2px 0;font-size:13.5px;color:var(--mute);max-width:76ch}
+.legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin:12px 2px 0;font:500 12.5px/1.6 var(--mono);color:var(--ink2)}
+.legend .sw{display:inline-block;width:26px;height:0;vertical-align:middle;margin-right:7px;border-top:2px solid var(--ink2)}
+.legend .sw.dash{border-top-style:dashed}
+.legend .sw.out{border:1px dashed var(--bronze);height:12px;background:transparent}
+.role{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.role .tag{font:600 10.5px/1.6 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.role h3{font-size:18px;margin:8px 0 0}
+.role .sub{margin:4px 0 0;font-size:14.5px;color:var(--mute)}
+.role dl{display:grid;grid-template-columns:118px 1fr;gap:10px 16px;margin:14px 0 0}
+.role dt{font:600 10.5px/1.9 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.role dd{margin:0;font-size:15px;color:var(--ink)}
+.role dd p{margin:0 0 6px;max-width:none}
+.role dd p:last-child{margin-bottom:0}
+.role.notagent{border-style:dashed;border-color:var(--rule2)}
+.role.notagent .tag{color:var(--ink2)}
+.chip{display:inline-block;font:600 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--flag);border-radius:3px;padding:4px 7px}
+.chip.go{background:var(--go)}
+.tl{list-style:none;margin:18px 0 0;padding:0;max-width:none}
+.tl li{margin:0;padding:14px 0 14px 20px;border-left:2px solid var(--rule2);position:relative}
+.tl li::before{content:"";position:absolute;left:-6px;top:22px;width:10px;height:10px;border-radius:50%;background:var(--bronze);border:2px solid var(--paper)}
+.tl .d{font:600 12px/1.6 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bronze)}
+.tl .t{font-family:var(--display);font-weight:700;font-size:16.5px;margin:2px 0 4px}
+.tl p{margin:0;font-size:15px;color:var(--ink2);max-width:72ch}
+.prin{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:16px 20px}
+.prin .n{font:600 11px/1.6 var(--mono);letter-spacing:.1em;color:var(--bronze)}
+.prin h3{font-size:16.5px;margin:4px 0 0}
+.prin p{margin:8px 0 0;font-size:15px;color:var(--ink2)}
+.seam{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--bronze);border-radius:6px;background:var(--panel);padding:16px 20px}
+.seam .qid{font:600 12px/1.6 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.seam h3{font-size:16.5px;margin:4px 0 0}
+.seam p{margin:8px 0 0;font-size:15px}
+.foot{margin:60px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{margin:0 0 10px}
+hr.att{border:0;border-top:1px solid var(--rule);margin:26px 0 14px}
+@media (max-width:560px){
+  .role dl{grid-template-columns:1fr;gap:2px 0}
+  .role dt{margin-top:10px}
+  .role dl dt:first-child{margin-top:0}
+}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>The operating model</span><span class="dot"></span><span>as of 2026-08-17</span><span class="dot"></span><span>requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/237">hub#237</a></span></div>
+  <h1>The Obot Org Chart</h1>
+  <p class="lede">One person runs this programme. Three named agents run it with him — a concierge he talks to, an operating officer that turns his asks into requirements, and a fleet manager, named this morning, that keeps workers from silently stalling. A crew of numbered workers does the actual work, and one five-minute script watches all of it, because it is the only thing here that has never failed. This page says what each of them owns, what each may never do, who answers to whom, and how each one starts — and, because every role was created by a specific failure, it says which failure. That last part is what a new reader needs and what we would forget first.</p>
+  <div class="facts">
+    <span><b>As of</b> the morning of Sunday 17 August 2026</span>
+    <span><b>Cast</b> 1 human · 3 named agents · the worker crew · 1 script</span>
+    <span><b>Youngest role</b> fleet — named today, still being built</span>
+    <span><b>Not settled</b> two seams, named at the bottom</span>
+  </div>
+</header>
+
+<div class="callout"><div class="k">This chart has a date on purpose</div>
+  <p>The framework this page describes changed five times on the day it was written. It is accurate for the morning of Sunday 17 August 2026. It goes stale the moment a new role appears, a boundary moves, or a role retires — and one part is moving already: the fleet manager exists as a requirement and a half-built detector, not yet as a running role. The section at the bottom says exactly what to check before trusting this page later.</p></div>
+
+<div class="cut"><span>THE CHART</span></div>
+<section>
+  <h2>Who answers to whom, and who wakes whom</h2>
+  <figure>
+    <div class="fig">
+<pre class="mermaid">
+%%{init: {"theme": "neutral"}}%%
+flowchart TD
+  JW["@jwildfire<br>chief executive"]
+  subgraph NAMED["the named roles &mdash; pinned"]
+    P["&#127913;&#129302; obot-prime<br>the concierge"]
+    N["&#129517;&#129302; obot-navigator<br>the operating officer"]
+    F["&#128678;&#129302; fleet<br>the fleet manager &mdash; triggered"]
+  end
+  subgraph CREW["the crew &mdash; dispatched per requirement"]
+    W["&#128111;&#129302; workers<br>W0001 onward, ids never reused"]
+    S["subagents and forks<br>ids roll up to the parent"]
+  end
+  SW["the sweep &mdash; a script, not an agent<br>sole writer of navigator-state"]
+  LD["macOS launchd"]
+
+  P -- answers to --> JW
+  N -- reports to --> P
+  F -- reports findings to --> N
+  W -- judged at closeout by --> N
+  S -- attributed to --> W
+
+  JW -. asks .-> P
+  P -. hands each ask to .-> N
+  N -. dispatches, requirement first .-> W
+  W -. spawn .-> S
+  SW -. wakes on a detection .-> N
+  SW -. launches on a positive condition .-> F
+  LD -. fires every 5 minutes .-> SW
+
+  classDef notagent stroke-dasharray:6 3;
+  class SW,LD notagent;
+  classDef human stroke-width:2px;
+  class JW human;
+</pre>
+    </div>
+    <div class="legend">
+      <span><span class="sw"></span>reporting — who answers to whom</span>
+      <span><span class="sw dash"></span>trigger — who wakes whom</span>
+      <span><span class="sw out"></span>dashed box — not an agent</span>
+    </div>
+    <figcaption>The sweep and launchd sit outside the agent boxes deliberately: they are not agents, and that is the point of them. Every liveness chain in the diagram bottoms out there, so no agent is ever the sole watcher of another agent. The reporting chain bottoms out at @jwildfire.</figcaption>
+  </figure>
+</section>
+
+<div class="cut"><span>FOUR DAYS, FIVE ROLES</span></div>
+<section>
+  <h2>Every role here was created by a failure</h2>
+  <p>None of this structure was designed in advance. Each piece was added the day something broke, which is why the boundaries fall where they do. The dates matter: the whole officer layer is four days old.</p>
+  <ol class="tl">
+    <li>
+      <div class="d">Thursday 14 August</div>
+      <div class="t">🎩🤖 obot-prime — because answers were too slow</div>
+      <p>Before prime, any question competed with whatever work was running. The role was created with one mandate, in @jwildfire's words: the primary goal is responsiveness — low latency, never write code, never do deep research, and saying "spawning an agent now, let me get back to you" beats making him wait. Its hard lines were each earned by a later failure: a thirty-one minute silence with four increasingly frustrated messages into it made reply-first a mechanical rule (<a href="https://github.com/jwildfire/obot.agent/issues/102">obot.agent#102</a>), and a fifteen-minute turn spent composing worker briefings inline moved brief-writing off prime's turn entirely, into forks.</p>
+    </li>
+    <li>
+      <div class="d">Friday 15 August</div>
+      <div class="t">The sweep — because a watcher living inside a session is not a watcher</div>
+      <p>@jwildfire left a changes-requested review on a release candidate at 4:29 in the morning. It was first seen six hours and twelve minutes later: the watcher that should have caught it had been armed by hand inside a session, and had died with that session. The replacement is a script the operating system runs every five minutes — no model, no tokens, no session to die with. Peer-watching between agents was considered and rejected as circular: the same harness problem that kills one session tends to kill the other (<a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-15-worker-supervision/">the supervision decision</a>).</p>
+    </li>
+    <li>
+      <div class="d">Saturday 16 August, 07:43</div>
+      <div class="t">👯🤖 Worker ids — because nothing could tell one agent's work from another's</div>
+      <p>Every agent-authored issue, pull request, comment and commit carries the same bot identity, and always will. Thirty-three workers ran in one twenty-four hour stretch, six at once at the peak, and not one of the fifty-one background jobs on the machine carried any identifier. Reconstructing authorship afterwards does not work — one worker's transcript mentioned eighty-seven issues and pull requests and had actually written two. His ask was one line: give each worker a unique ID, W000x, permanent, never reused (<a href="https://github.com/jwildfire/obot.roadmap/issues/194">hub#194</a>).</p>
+    </li>
+    <li>
+      <div class="d">Saturday 16 August, 08:21</div>
+      <div class="t">🧭🤖 obot-navigator — because the roadmap recorded work instead of authorising it</div>
+      <p>Six pieces of work shipped overnight with no requirement above them — the issues describing them were receipts, written by the agents already doing the work, while the requirements they belonged to sat open and gained nothing. His verdict created the role: the workers were not impacting the roadmap, which meant none of it was sustainable. The fix was directional: an ask now becomes a requirement before it becomes work, and the concierge — built for seconds-latency answers, the opposite of what writing a requirement needs — stopped doing the dispatching (<a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-16-navigator-design/">the Navigator design, D0017</a>).</p>
+    </li>
+    <li>
+      <div class="d">Sunday 17 August</div>
+      <div class="t">🚦🤖 fleet — because both officers idled while holding a directive to act</div>
+      <p>Twice in two days, finished work stopped moving and @jwildfire found it before any agent did — six stalled sessions and seven idle operational pull requests, all visible the whole time. The Navigator held a standing directive to work the backlog and idled overnight; the concierge had the same knowledge and did not look. The lesson was not "try harder": fleet hygiene keeps losing to larger mandates, because a broad role always has something more interesting to do. What was missing is an actor with one narrow mandate that cannot lose to a bigger one (<a href="https://github.com/jwildfire/obot.roadmap/issues/236">hub#236</a>). The idea had already lived once as a proposed first mate and been folded into the Navigator a day earlier; it came back different — triggered, bounded, and never standing.</p>
+    </li>
+  </ol>
+</section>
+
+<div class="cut"><span>THE ROLES</span></div>
+<section>
+  <h2>What each role owns, and what it must never do</h2>
+
+  <div class="role">
+    <div class="tag"><span>The human</span></div>
+    <h3>@jwildfire — chief executive</h3>
+    <dl>
+      <dt>Owns</dt>
+      <dd><p>The goals and the shape of the roadmap, outright — agents propose changes to structure and never make them. The classification of every repository as operational or clinical, which is the single call that decides what he reviews and what agents ship alone. Merges to protected and clinical surfaces, deletions, permission changes, and anything a standing invariant names.</p></dd>
+      <dt>Does</dt>
+      <dd><p>Sets strategy with prime. Reviews release candidates, answers decisions, does the config work only his hands can do. That short list is his entire queue, by design — everything else is the agents' to absorb.</p></dd>
+      <dt>Reached by</dt>
+      <dd><p>The Operations Dashboard and the hub, when he chooses. Exactly two events may interrupt him with a push: a release candidate going ready with its demo, and every active goal blocked at once. A wake from the sweep can never reach him — that channel is agent-to-agent only.</p></dd>
+      <dt>Reports to</dt>
+      <dd><p>No one. The reporting chain ends here; the liveness chain ends at launchd.</p></dd>
+      <dt>The failure that drew this boundary</dt>
+      <dd><p>His dashboard once showed nine items needing his attention, and four were not real. A queue he cannot trust is a queue he stops reading — so the three-bucket rule exists to keep everything else off his surfaces (<a href="https://github.com/jwildfire/obot.roadmap/issues/220">hub#220</a>).</p></dd>
+    </dl>
+  </div>
+
+  <div class="role">
+    <div class="tag"><span>Named role · standing</span><span class="chip go">Live since 14 Aug</span></div>
+    <h3>🎩🤖 obot-prime — the concierge</h3>
+    <p class="sub">His primary contact. Answers fast, routes everything, does none of the work.</p>
+    <dl>
+      <dt>Owns</dt>
+      <dd><p>Strategy, with him — goals and roadmap structure are theirs together. Fast answers from warm, provenance-stamped state files. The routing call on every ask: is this about the shape of the plan, or about something inside it? Shape stays with prime and him; everything inside goes to the Navigator, verbatim, with one line of context. Prime is accountable for the Navigator's output — it owes a recommendation on every proposal, never a bare relay.</p></dd>
+      <dt>Must never</dt>
+      <dd><p>Write code or edit files. Branch, commit, push, or merge. Research inline. Run a synchronous subagent on the response path. Absorb a deliverable. Since the Navigator exists: file requirements or write worker instructions. And the one rule that must not bend — never wait on the Navigator before replying to him.</p></dd>
+      <dt>Reports to</dt>
+      <dd><p>@jwildfire directly.</p></dd>
+      <dt>Triggered</dt>
+      <dd><p>Standing singleton, launched by its own script, bridged so he can reach it from a phone. It thinks when he asks.</p></dd>
+      <dt>The failure that created it</dt>
+      <dd><p>Slowness itself. The role was chartered on his responsiveness mandate the day it launched, and each hard line was earned afterwards: the thirty-one minute answer (reply first, mechanically), the fifteen-minute inline briefing (forks write briefs now), nine turns in thirty-six hours spent supervising workers (supervision moved out, eventually to fleet), and the six untracked issues (requirement-writing moved to the Navigator).</p></dd>
+    </dl>
+  </div>
+
+  <div class="role">
+    <div class="tag"><span>Named role · standing</span><span class="chip go">Live since 16 Aug</span></div>
+    <h3>🧭🤖 obot-navigator — the operating officer</h3>
+    <p class="sub">Turns asks into requirements before they become work. Judges every worker at closeout. Improves the machinery in between.</p>
+    <dl>
+      <dt>Owns</dt>
+      <dd><p>Everything inside the shape of the plan: requirements, tasks, lifecycle, milestones. The delivery verdict on every worker that closes — judged against GitHub, never against the worker's own account of itself. The machinery — templates, dashboards, the audit framework — as its standing job between asks. It is the sole writer of the delivery record, and it decides within its domain: it escalates only what clears the critical bar, capped at three pinned items, each naming something only he can do.</p></dd>
+      <dt>Must never</dt>
+      <dd><p>Merge anything. Publish anything. Edit another agent's output. Write either shared state file. When work lands and the roadmap did not move, it repairs the plan and never the work — a plan repair is visible and undoable in seconds; a work repair is neither.</p></dd>
+      <dt>Reports to</dt>
+      <dd><p>Prime, which reports to him. He talks to it directly sometimes for operational asks; prime stays the primary contact.</p></dd>
+      <dt>Triggered</dt>
+      <dd><p>Standing singleton, launched by its own script — but it thinks only on a trigger: an ask handed over, a worker closing, a wake from the sweep. Deliberately no polling loop.</p></dd>
+      <dt>The failure that created it</dt>
+      <dd><p>The roadmap recorded work instead of authorising it. In his words: the workers were not impacting the roadmap, which meant none of it was sustainable. Measured: six issues shipped overnight with no parent requirement, while the requirements they belonged to gained nothing (<a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-16-navigator-design/">D0017</a>).</p></dd>
+    </dl>
+  </div>
+
+  <div class="role">
+    <div class="tag"><span>Named role · triggered</span><span class="chip">Being built today</span></div>
+    <h3>🚦🤖 fleet — the fleet manager</h3>
+    <p class="sub">Named by @jwildfire this morning — "fleet for short". A short-lived session the sweep launches when something specific is true. It acts, and exits.</p>
+    <dl>
+      <dt>Owns</dt>
+      <dd><p>Fleet liveness. It closes sessions stalled past measured thresholds, with a summary built from GitHub and never from the session's own record — worker records both understate and overstate, and one worker died reporting nothing after five GitHub writes. It lands operational pull requests that pass a strict bar — operational repo, integration branch, CI green, no requested changes, a linked issue — and states plainly why the rest cannot land. It surfaces missing closeout verdicts and wakes the Navigator to write them. Its own actions go in the delivery record, actor-stamped, because an overseer whose actions are invisible is the failure it exists to prevent.</p></dd>
+      <dt>Must never</dt>
+      <dd><p>Write a verdict — judging delivery stays the Navigator's, and a second writer would make the record two-sourced. Merge a release candidate. Touch a clinical repository. Publish. Touch a permission surface. Kill a running worker automatically. Act on itself or its successor. It has no authority over the Navigator or the concierge.</p></dd>
+      <dt>Reports to</dt>
+      <dd><p>The Navigator.</p></dd>
+      <dt>Triggered</dt>
+      <dd><p>Launched by the sweep on a positive condition about a named job or pull request — never on an absence, so a genuinely quiet system can never spawn managers forever. Thresholds were measured from this machine's own ninety-two job records rather than guessed. Its lifetime is hard-capped at thirty minutes, because a manager with no time limit is a standing session that has not admitted it yet; the sweep reports one that overstays.</p></dd>
+      <dt>The failure that created it</dt>
+      <dd><p>Both supervisors idled while holding a directive to act. Twice in two days finished work stopped moving and he found it first — six stalled sessions and seven idle operational pull requests in plain view. A narrow mandate that cannot lose to a bigger one was the missing piece (<a href="https://github.com/jwildfire/obot.roadmap/issues/236">hub#236</a>).</p></dd>
+      <dt>Honestly, today</dt>
+      <dd><p>As of this page's date, fleet is a requirement, a task, and a detection module under construction — not yet a running role. Its requirement was filed at 07:25 this morning and the worker building it started at 07:26 (<a href="https://github.com/jwildfire/obot.agent/issues/167">obot.agent#167</a>).</p></dd>
+    </dl>
+  </div>
+
+  <div class="role">
+    <div class="tag"><span>The crew</span></div>
+    <h3>👯🤖 Workers — W0001 onward</h3>
+    <p class="sub">The only roles that touch the work. Everything above them exists so they can.</p>
+    <dl>
+      <dt>Own</dt>
+      <dd><p>The work itself: branches, code, artifacts, pull requests. They commit early and often — a rule that exists because one dead worker left about 1,900 uncommitted lines invisible to every check, and another left 2,127 to be salvaged off disk.</p></dd>
+      <dt>The contract</dt>
+      <dd><p>Every worker finishes into exactly one of three things: a pull request for a planned release, a question for him, or a config request. Those three map one-to-one onto the sections of his dashboard — the worker contract and his todo list are one instruction seen from two ends. A worker that closes having produced none of the three is an evaporated worker, and gets a named drift line rather than silence.</p></dd>
+      <dt>Must never</dt>
+      <dd><p>Merge without approval, and only through the merge tool. Write outside his GitHub account. Delete anything. Route around a denied permission — a peer's clearance is not a permission grant; the honest move is to stop and surface it.</p></dd>
+      <dt>Report to</dt>
+      <dd><p>The Navigator, which dispatches them requirement-first and judges them at closeout. Verdicts count what moved on the roadmap, so "none" is a real verdict for finished work that has not landed.</p></dd>
+      <dt>Triggered</dt>
+      <dd><p>Dispatched per requirement, never standing. Each claims a permanent identifier before it is spawned — W0001 onward — never reused, even after death: two workers died the night of 15 August and their ids stay allocated, because an id freed by death is an id that lies about history.</p></dd>
+      <dt>The failure that created the ids</dt>
+      <dd><p>Every agent write carries the same bot author, so GitHub cannot tell forty agents from one. His ask was one line: each worker gets a unique ID, W000x, going forward (<a href="https://github.com/jwildfire/obot.roadmap/issues/194">hub#194</a>). The id only works if it is stamped at the moment of writing — nothing recovers attribution afterwards.</p></dd>
+    </dl>
+  </div>
+
+  <div class="role">
+    <div class="tag"><span>The crew · inside a parent</span></div>
+    <h3>Subagents and forks</h3>
+    <dl>
+      <dt>Are</dt>
+      <dd><p>Helpers that run inside a parent agent's session. The routing rule is one line: work whose entire product is an answer runs as a subagent; anything that leaves a URL, a path, or a lifetime behind gets a worker. When in doubt, the worker. Forks are the special case that write spawn briefings off prime's turn, so composing a brief never again costs him fifteen minutes of silence.</p></dd>
+      <dt>Identity</dt>
+      <dd><p>The parent's id with a dot suffix — W0042.1 — never an id of their own, because they have no job record and an independent id could never be joined back to anything. Everything they write is attributed one level up: the parent is the accountable unit.</p></dd>
+      <dt>Report to</dt>
+      <dd><p>Their parent, which answers for them at its own closeout.</p></dd>
+      <dt>Triggered</dt>
+      <dd><p>By their parent, mid-task.</p></dd>
+      <dt>The decision that kept them</dt>
+      <dd><p>He asked whether workers should go entirely — maybe everything becomes a subagent — and kept both lanes on the context cost: a subagent's full result lands in the parent's memory, and twenty worker-sized results a day would blow it (<a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-15-delegation-lanes/">D0013</a>).</p></dd>
+    </dl>
+  </div>
+
+  <div class="role notagent">
+    <div class="tag"><span>Not an agent</span><span class="chip go">Never failed</span></div>
+    <h3>The sweep — a launchd script</h3>
+    <p class="sub">No emoji, because it is not an agent. No model, no tokens, no session to die with. That is the point of it.</p>
+    <dl>
+      <dt>Is</dt>
+      <dd><p>A script the operating system runs every five minutes. It detects and reports: release candidates waiting on him, workers gone quiet, ledger drift, roadmap discipline. It is the sole writer of the Navigator's state file, it wakes the Navigator on a detection, and once fleet is live it will be what launches it. It renders its sections even when clean, because a detector that only speaks on failure is indistinguishable from a dead one — and a failed run rewrites its own header to say so, because a failed sweep must never look fresh.</p></dd>
+      <dt>Must never</dt>
+      <dd><p>Judge, correct, or publish anything, or touch another agent's work. It records and reports; judgment belongs to the session that reads it.</p></dd>
+      <dt>Reports to</dt>
+      <dd><p>Nothing. It is the bottom of every liveness chain — below it there is only launchd, which cannot stall the way an agent stalls.</p></dd>
+      <dt>Triggered</dt>
+      <dd><p>By the operating system, every 300 seconds, surviving session death and reboot.</p></dd>
+      <dt>The record</dt>
+      <dd><p>The only component here with a perfect record. It survived a context reset that killed the session-bound watchers, a lid closed for nearly twelve hours — resuming on its next tick, ninety seconds after the machine woke, with no re-arming — and both officer idles, through which it ran sixty-nine consecutive clean cycles reporting the same unhandled backlog while nothing acted on it.</p></dd>
+      <dt>The failure that created it</dt>
+      <dd><p>His changes-requested review that sat unseen for six hours and twelve minutes, because the watcher lived inside a session and died with it. A watcher living inside a session is not a watcher (<a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-15-worker-supervision/">the supervision decision</a>).</p></dd>
+    </dl>
+  </div>
+</section>
+
+<div class="cut"><span>THE PRINCIPLES</span></div>
+<section>
+  <h2>Five rules that matter more than the boxes</h2>
+  <p>The boxes above will keep moving — they have moved five times in a day. These are the invariants underneath them, and each one was also bought with a failure.</p>
+
+  <div class="prin"><span class="n">1</span>
+    <h3>His queue is exactly three things</h3>
+    <p>Release candidates, decisions, config items. Anything else is the agents' to absorb, and keeping it off his surfaces is the agents' obligation — the rule binds the surfaces, not his reading; his repositories stay open to him. Bought when his dashboard showed nine items and four were not real: a queue he cannot trust is one he stops reading (<a href="https://github.com/jwildfire/obot.roadmap/issues/220">hub#220</a>).</p>
+  </div>
+
+  <div class="prin"><span class="n">2</span>
+    <h3>Never let an agent be the sole watcher of an agent</h3>
+    <p>Every liveness check bottoms out in the sweep or in launchd, so the watching regress terminates at the operating system. Peer-watching is circular and fails in the correlated way you least want — the same harness problem that kills one session tends to kill the other. Bought by a worker that died at 06:12 and was messaged twenty-six minutes later: the message was recorded against the dead job and changed nothing. A dead worker cannot be talked back to life, only replaced.</p>
+  </div>
+
+  <div class="prin"><span class="n">3</span>
+    <h3>Single-writer records</h3>
+    <p>Every shared state file has exactly one writer, stated on the face of the file: the sweep writes the Navigator's state, the Navigator writes the delivery record, prime writes its own state, and nobody hand-maintains a derived log. Bought by two nights of one process quietly overwriting another's file, and by a registry status field that two artifacts carried and nothing read — two sources of truth is the defect this programme spent two days removing.</p>
+  </div>
+
+  <div class="prin"><span class="n">4</span>
+    <h3>What is in main gets released</h3>
+    <p>On operational repos, agents merge to main and main ships — there is no quiet holding state. Anything that should not ship comes out before release, or is deprecated in the open. Clinical repos invert the default: he reviews everything before it reaches a released surface, and which repo is which is his call alone.</p>
+  </div>
+
+  <div class="prin"><span class="n">5</span>
+    <h3>Transparency and continuous improvement, not perfection</h3>
+    <p>Fix what can honestly be fixed, label the rest, and never let cleanup become its own project. The strict standard is for approval-gated actions, not a licence to block ordinary work. Bought on the orphan backlog, where he overruled both officers' clean-start-line recommendation in favour of honest partial repair: fix the ones we can, and let some orphans stay orphaned — labelled.</p>
+  </div>
+</section>
+
+<div class="cut"><span>NOT SETTLED</span></div>
+<section>
+  <h2>The two seams still being drawn</h2>
+  <p>A chart that presents every boundary as decided hides the live questions, and this programme's failures come from unstated seams rather than wrong ones. These two are open right now. A reader who knows which lines are still being drawn is better equipped than one who thinks the drawing is finished.</p>
+
+  <div class="seam"><span class="qid">hub#215</span>
+    <h3>How a requirement records whose decision it carries</h3>
+    <p>Nothing on a requirement today distinguishes scope he approved from scope an agent inferred — so an agent-written requirement can appear to authorise an action only he can authorise, which would make the guardrail self-approving. The near miss that opened it: a worker briefed from a requirement prepared to delete files on scope he had never seen, and stopped only because it chose to ask. The proposed fix is two explicit fields — authored by, and approved by — where empty renders as "not approved" rather than as absence, and approved-by can only be set from a recorded decision, never typed by the filer (<a href="https://github.com/jwildfire/obot.roadmap/issues/215">hub#215</a>).</p>
+  </div>
+
+  <div class="seam"><span class="qid">hub#220</span>
+    <h3>What routes through whom when strategy work needs a worker</h3>
+    <p>Strategy is the concierge's, with him; dispatch and requirements are the Navigator's. Those two rules collide every time strategy work needs a worker, and they collided four times in two days — each caught and honestly corrected, which is exactly the signature of something that needs a mechanism rather than more care. The working agreement: the concierge directs the content and owns the conclusion, whatever the subject; the dispatch and the requirement go through the Navigator, regardless of whose subject it is. The mechanical check — a worker launched with no matching dispatch call in the delivery record — is proposed but not yet built (<a href="https://github.com/jwildfire/obot.roadmap/issues/220">hub#220</a>).</p>
+  </div>
+</section>
+
+<div class="cut"><span>STALENESS</span></div>
+<section>
+  <h2>When to stop trusting this page</h2>
+  <ul>
+    <li>A new role appears, a boundary moves, or a role retires. Any of the three makes this page a historical document rather than a chart.</li>
+    <li>Fleet finishes. This page describes it as designed and half-built; the day it runs, its entry here is out of date in the right direction — check the requirement that tracks it (<a href="https://github.com/jwildfire/obot.roadmap/issues/236">hub#236</a>).</li>
+    <li>Either open seam closes. hub#215 and hub#220 above will each move a boundary when decided.</li>
+    <li>For what superseded this snapshot, start at the org chart requirement (<a href="https://github.com/jwildfire/obot.roadmap/issues/237">hub#237</a>) and the hub's <a href="https://jwildfire.github.io/obot.roadmap/decisions/">decisions log</a>.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Sources. The roles as written: the navigator, session-prime and session-spawn skills in obot.agent. The boundaries: the delegation-lanes decision (<a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-15-delegation-lanes/">D0013</a>), the Navigator design (<a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-16-navigator-design/">D0017</a>), the scheduled-sessions assessment (<a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-16-scheduled-sessions-assessment/">D0019</a>), and requirements <a href="https://github.com/jwildfire/obot.roadmap/issues/236">hub#236</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/215">#215</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/220">#220</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/212">#212</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/194">#194</a> and <a href="https://github.com/jwildfire/obot.roadmap/issues/184">#184</a>. The failures: the delivery record, the Navigator's state file, and the day scratchpads for 14–17 August 2026.</p>
+  <hr class="att">
+  <p>This artifact was drafted by Claude Code using Fable 5 in an unattended worker session (W0032, dispatched by 🧭🤖 obot-navigator) and reviewed by @jwildfire.</p>
+</footer>
+
+</div>
