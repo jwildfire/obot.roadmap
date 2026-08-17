@@ -4,7 +4,7 @@
 
 **Decide here:** [Q&A discussion #149](https://github.com/jwildfire/obot.roadmap/discussions/149) — the thread where @jwildfire records the calls.
 
-**Status:** Partially decided 2026-08-15 — A1 and A2 accepted as recommended; A3 and A4 held open (deferred pending a structured elicitation exercise on goal #79's real scope, not rejected). @jwildfire's verdict, relayed from chat, is recorded on discussion #149.
+**Status:** Closed 2026-08-16 — A1 and A2 were accepted on 2026-08-15; A3 and A4 were never answered, and he closed the page in the local Operations Dashboard rather than answering them ("I think I'm done with this Decision. Close it out. We'll work on improving the goal separately soon."). A3 and A4 move to the goal #79 elicitation — prep round [#192](https://github.com/jwildfire/obot.roadmap/issues/192), sittings and ratification [#193](https://github.com/jwildfire/obot.roadmap/issues/193) — where both were already seeded. The page also records that A1 and A2's own follow-through has not been done: no supersession header on the July plan report, #34 still open, none of the four requirements filed. Recorded on the artifact 2026-08-17, nine hours after he answered, because nothing applied the answer.
 
 ## Why it exists
 

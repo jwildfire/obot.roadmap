@@ -4,7 +4,7 @@
 
 **Decide here:** [Q&A discussion](https://github.com/jwildfire/obot.roadmap/discussions/158) — @jwildfire records M1–M5 there.
 
-**Status: awaiting @jwildfire — M1–M5.**
+**Status: Decided 2026-08-16 — M1–M5 all adopted as recommended in the local Operations Dashboard (adopt-all, no words typed). Closed out at his instruction the next morning ("I thought I asked for D2/7/14/15/16 to all be closed."), recorded as a second dated entry rather than folded into the first.** Filed as requirements 2026-08-17: [#238](https://github.com/jwildfire/obot.roadmap/issues/238) the fold and the briefing, [#239](https://github.com/jwildfire/obot.roadmap/issues/239) the weekly, [#240](https://github.com/jwildfire/obot.roadmap/issues/240) the retirement and re-homing notes, [#242](https://github.com/jwildfire/obot.roadmap/issues/242) audio. Of the five duties M2 re-homed, none has fully moved: hygiene is half moved (the merge-time milestone gate is live; board and stage placement is still batch-repaired), and verification and hand-off only look moved — the Navigator is live but the 2026-08-16 wrapup still ran its own verifier, and the hand-off is still written into the scratchpad by the wrapup. Everything else on the page is unbuilt: no fold at any hour, no briefing page, no weekly machinery, no path to his phone. His answer sat unapplied for nine hours, which is why he had to ask — filed as [#241](https://github.com/jwildfire/obot.roadmap/issues/241).
 
 ## What it contains
 
