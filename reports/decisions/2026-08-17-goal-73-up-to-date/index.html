@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — bringing the autonomy goal up to date</title>
+<meta name="description" content="Goal #73 describes work that stopped happening a month ago. What is actually stale, the tracking gap measured across seven repos and the day it closed itself, five workstreams for its thirty-seven open requirements, and a recommendation on the rename.">
+<meta name="decision-id" content="D0020">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.verdict p{margin:10px 0 0;font-size:16.5px}
+.verdict.good{border-left-color:var(--go)}
+.verdict.good .k{color:var(--go)}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.ws{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:16px 18px}
+.ws .n{font:600 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--bronze)}
+.ws h3{margin-top:7px;font-size:17px}
+.ws p{margin:8px 0 0;font-size:15.5px}
+.ws .refs{margin:10px 0 0;font:500 12.5px/1.6 var(--mono);color:var(--mute)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .verdict,.card,.q,.callout,.ws{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>D0020</span><span class="dot"></span><span>2026-08-17</span><span class="dot"></span><span>Autonomy — the goal itself</span></div>
+  <h1>Bringing the autonomy goal up to date</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0020">
+<p>D0020 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0020.1"><a class="did" href="#D0020.1">D0020.1</a><span class="dcode">G1</span><span class="dq">What does done look like for this goal now, given the operating model that replaced the pipeline?</span></li>
+  <li id="D0020.2"><a class="did" href="#D0020.2">D0020.2</a><span class="dcode">G2</span><span class="dq">Do the 37 open requirements get grouped into five named workstreams, carried as labels?</span></li>
+  <li id="D0020.3"><a class="did" href="#D0020.3">D0020.3</a><span class="dcode">G3</span><span class="dq">What happens to the 160 shipped items with no requirement above them — bound the backlog, or backfill it?</span></li>
+  <li id="D0020.4"><a class="did" href="#D0020.4">D0020.4</a><span class="dcode">G4</span><span class="dq">Which title: Increase Autonomy, Increase Autonomy using goals and schedules, or Loop engineering?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">You said the goals are mostly fine and the work is not well tracked, and that what I was describing were requirements under increased autonomy rather than a new goal. That is right, and this page acts on it. The tracking gap is real and measurable — of 129 things that shipped across the seven repositories in the last fortnight, 59 had no requirement above them — but it largely closed itself on the evening of 15 August, and the rate since then is 13%. What did not catch up is the goal. Its stated scope names five pieces of work, four of which are not what anyone has built for a month; its done-condition describes a pipeline rather than the operating model that replaced it; and its thirty-seven open requirements sit in one flat list with nothing saying what any of them belongs to. This page proposes a new body, five workstreams to group those thirty-seven, a bounded answer for the backlog of history, and — last, because it matters least — a recommendation on the rename.</p>
+  <div class="facts">
+    <span><b>Goal</b> #73</span>
+    <span><b>Requirement</b> #226</span>
+    <span><b>Open requirements under it</b> 37</span>
+    <span><b>Shipped untracked, 14 days</b> 59 of 129</span>
+    <span><b>Since 15 Aug 20:00</b> 6 of 45</span>
+  </div>
+</header>
+
+<div class="cut"><span>WHAT YOU CORRECTED</span></div>
+<section>
+<h2>A fifth goal was the wrong answer to a real problem</h2>
+
+<p>I proposed filing a new goal to cover the operating system built over the past week — the dashboard, the operating officer, worker identity, the decision pipeline. You turned it down and said why:</p>
+
+<blockquote>“You own the strategy for the project with me, not the goals. I think the goals are mostly ok — I want to keep them very high level. I do agree with your sentiment that the work isn't well tracked though. I think what you're describing are requirements under increased autonomy.”</blockquote>
+
+<p>The diagnosis was right and the remedy was wrong, and it is worth being precise about which half failed, because the failing half is not the obvious one. The work is not unlinked. Goal #73 has fifty sub-issues and every substantial thing built this week is among them. What is missing is any structure between the goal and its thirty-seven open children, and a goal body that describes them. A new goal would have added a fifth top-level thing to maintain and left both of those untouched.</p>
+
+<div class="callout note"><div class="k">The frame this page works inside</div>
+<p>Four goals, kept very high level: autonomy, charts, the app, open.csr. Nothing here proposes a fifth. Everything below is a change to goal #73's body, to how its requirements are grouped, or to its title.</p></div>
+</section>
+
+<div class="cut"><span>WHAT IS ACTUALLY STALE</span></div>
+<section>
+<h2>Three things, each checked against the live issue</h2>
+
+<p>The goal was written on 24 July and last touched on 14 August. Reading it today against what exists:</p>
+
+<div class="card block"><div class="tag">Stale — the scope</div>
+<h3>It names work that mostly did not happen</h3>
+<p>The scope lists, in order: hardening the unattended lane from its first run, a second version of idea triage, trigger reliability for that pipeline, a broader grant matrix, and a goal-selection command. Of those five, idea triage and trigger reliability are still open and untouched since July, the grant matrix and the selection command were never built, and only the unattended-lane hardening resembles recent work. Meanwhile the things that did get built — an operating officer that judges delivery, a local dashboard where you answer decisions, permanent worker identities, a decision-answer pipeline, discipline checks across all seven repositories — appear nowhere in the scope.</p></div>
+
+<div class="card block"><div class="tag">Stale — the done-condition</div>
+<h3>It describes a pipeline; what was built is an operating model</h3>
+<p>Done currently looks like this: an idea becomes a requirement, becomes a build, becomes a draft pull request, becomes a digest, unattended, with you reviewing at the gates. That was a fair description in July. It has no place in it for an officer that turns your asks into requirements before they become work and judges whether a finished worker actually moved the roadmap — which is the thing that was actually built, and which you approved as a design on 16 August. A pipeline has stages; this has a role in it. The condition also predates the scheduled-sessions assessment, worker identity, the delivery record and the dashboard.</p></div>
+
+<div class="card block"><div class="tag">Stale — the title</div>
+<h3>“in obot.agent” is no longer true</h3>
+<p>The title reads <em>increased autonomy in obot.agent</em>. The work now spans seven repositories, a public site and a local dashboard, and the discipline checks were explicitly widened past the hub at your instruction. This is the one part of the title that is factually wrong rather than merely inelegant, and it is a reason to rename that survives independently of which name you prefer.</p></div>
+</section>
+
+<div class="cut"><span>THE TRACKING GAP, MEASURED</span></div>
+<section>
+<h2>Real, concentrated, and mostly already closed</h2>
+
+<p>“The work isn't well tracked” is the half you care about, so it should be a number rather than an impression. Every shipped item across the seven project repositories was checked for the structural parent link GitHub records — not a reference in prose, which does not count and has twice been mistaken for one.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>Repository</th><th>Shipped, last 14 days</th><th>No requirement above it</th><th>Rate</th></tr></thead>
+<tbody>
+<tr><td>obot.agent</td><td>76</td><td>34</td><td class="bad">45%</td></tr>
+<tr><td>safety.viz</td><td>15</td><td>12</td><td class="bad">80%</td></tr>
+<tr><td>obot.roadmap</td><td>30</td><td>6</td><td class="warn">20%</td></tr>
+<tr><td>gsm.safety</td><td>3</td><td>2</td><td class="bad">67%</td></tr>
+<tr><td>open.gismo</td><td>2</td><td>2</td><td class="bad">100%</td></tr>
+<tr><td>open.csr</td><td>2</td><td>2</td><td class="bad">100%</td></tr>
+<tr><td>safety-histogram</td><td>1</td><td>1</td><td class="bad">100%</td></tr>
+<tr><td><b>Total</b></td><td><b>129</b></td><td><b>59</b></td><td class="bad"><b>46%</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>A further 101 orphaned items sit outside the fourteen-day window, giving 160 in total across recorded history. The worst offender in absolute terms is the operating-system repository itself, which is its own kind of finding: the machinery for tracking work was built without tracking the work.</p>
+
+<h3>The rate is not flat, and that changes what to do about it</h3>
+
+<p>Splitting the same measurement at the evening of 15 August produces a break sharp enough to date:</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>Window</th><th>Shipped</th><th>Untracked</th><th>Rate</th></tr></thead>
+<tbody>
+<tr><td>Before 15 Aug, 20:00 (within the fortnight)</td><td>84</td><td>53</td><td class="bad">63%</td></tr>
+<tr><td>After 15 Aug, 20:00</td><td>45</td><td>6</td><td class="ok">13%</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The same break shows in the operating-system repository's own issues, and there it is almost perfectly clean. Of the twelve issues created there before that evening, none has a parent requirement. Of the seventeen created after it, sixteen do. The one exception is a note about an unverified claim rather than a piece of work.</p>
+
+<p>The six items that remain untracked since the break are not features. Three are paperwork pull requests that carry no closing keyword — a bytecode cleanup, a status-line fix, the writing convention — and three are hub fixes from the spike-deletion sequence. The check counts a pull request as parented only when it closes an issue, so a small direct fix registers as an orphan by construction.</p>
+
+<div class="callout good"><div class="k">What this means for the remedy</div>
+<p>Filing discipline turned on halfway through 15 August and has held since. The problem to solve is not “start linking work” — that is happening. It is a stale goal, a flat list of thirty-seven requirements under it, and 160 items of history nobody is going to retro-file.</p></div>
+
+<p>One caveat worth keeping. The discipline check that produces these numbers went live on 16 August, and this is the second day it has run; the break it reports coincides with the period when the people filing issues also knew a check was coming. The measurement is of filing behaviour, not of whether the requirements filed are good ones — that question is the next section.</p>
+</section>
+
+<div class="cut"><span>THE THIRTY-SEVEN</span></div>
+<section>
+<h2>Good requirements, no structure</h2>
+
+<p>My prior going into this was that the recent requirements were receipts — filed after the fact to describe work already done. Reading them, that is wrong and worth correcting plainly. They are well-formed: most open by quoting you directly with a date, state a business need in words, and carry a design section. Twenty-one of the twenty-four filed between 14 and 16 August are still open, which is not what a receipt looks like.</p>
+
+<p>The actual defect is altitude. Each one is scoped to a single thing you said, so a day in which you make eight remarks produces eight requirements, all at the same level, all parented directly to the goal. That is how forty-eight percent of the goal's fifty children came to be filed in three days. Nothing is mis-filed; there is simply no layer between a goal you want kept very high level and thirty-seven peers.</p>
+
+<h3>Five workstreams</h3>
+
+<p>Sorting all thirty-seven by what they are actually about produces five groups. These are proposed, not applied.</p>
+
+<div class="ws"><div class="n">Workstream 1 · 10 requirements</div>
+<h3>The surfaces you read</h3>
+<p>Everything you personally look at: the local dashboard, the public hub, the roadmap page, the diary. Includes making them read like news rather than an audit log, holding your queue to three buckets, telling you what changed since you last looked, and rendering honestly on the new machine where none of the local history exists.</p>
+<div class="refs">#180 · #218 · #220 · #203 · #205 · #206 · #223 · #170 · #146 · #94</div></div>
+
+<div class="ws"><div class="n">Workstream 2 · 8 requirements</div>
+<h3>The officer and the workers</h3>
+<p>Who runs the work when you are not there. The operating officer itself and its second phase, the rule that every worker finishes into a pull request, a question or a config request, in-flight supervision, waking on a worker that stops, the roster of every agent with its cost and impact, and the permanent identity each worker carries.</p>
+<div class="refs">#157 · #181 · #195 · #184 · #185 · #212 · #199 · #194</div></div>
+
+<div class="ws"><div class="n">Workstream 3 · 7 requirements</div>
+<h3>How a session behaves</h3>
+<p>The mechanics of a run: starting fast, closing fast, surviving a memory ceiling overnight, running alongside other sessions, the single-agent lane that skips startup, the scheduled recurring loop, and not littering the browser. This is the oldest cluster — most of it dates from July and none of it has been touched since.</p>
+<div class="refs">#91 · #148 · #122 · #147 · #127 · #186 · #117</div></div>
+
+<div class="ws"><div class="n">Workstream 4 · 6 requirements</div>
+<h3>Whether the plan matches reality</h3>
+<p>The checks that keep the roadmap honest: measuring discipline across all seven repositories, making every issue reachable from a goal, gating the audit's design check at the moment work starts, the weekly freshness sweep, and the two idea-intake requirements that feed the plan in the first place.</p>
+<div class="refs">#200 · #132 · #178 · #87 · #58 · #48</div></div>
+
+<div class="ws"><div class="n">Workstream 5 · 6 requirements</div>
+<h3>How work reaches you</h3>
+<p>The release lane and what a piece of work says about itself when it arrives: the release-candidate framework, resolving the four documents that disagree about draft pull requests, reviewer notes, who holds and who reviews an in-flight item, and marking whether a requirement carries your decision or an agent's inference.</p>
+<div class="refs">#123 · #152 · #69 · #128 · #215 · #76</div></div>
+
+<p>The bot avatar (#76) is the weakest fit in the set and is in group five only because it concerns the identity attached to work you review. It would be equally defensible to close it.</p>
+
+<div class="callout note"><div class="k">A grouping I proposed earlier that did not survive the sort</div>
+<p>I had suggested four groups: surfaces, the officer, provenance and identity, and roadmap discipline. Sorting the actual thirty-seven breaks it. Provenance does not hold together as a group — worker identity belongs with the officer that uses it, and the decision-attribution requirement belongs with the review lane — and the four miss two clusters entirely: the seven requirements about how a session behaves, which is the whole of the standing July work, and the six about how work reaches you. A taxonomy derived from three days does not cover a goal that is a month old.</p></div>
+
+<h3>Carried as labels, not as issues</h3>
+
+<p>Five names need somewhere to live. The obvious options are a new tier of grouping issues under the goal, or labels on the requirements.</p>
+
+<p>Grouping issues would give each workstream a body and a done-condition, which is genuinely useful — and it would also be a fifth goal wearing a hat, five times over. You would have five more things whose membership someone maintains and whose text goes stale exactly as #73's did. Labels are cheaper and reversible: the goal stays the single parent, the dashboard and the hub can group by label, nothing new appears in your queue, and the officer can apply them as it files. The cost is that a label carries a name and nothing else, so the explanation of what each workstream is has to live in the goal body — which is where this proposal puts it anyway.</p>
+</section>
+
+<div class="cut"><span>THE BACKLOG OF HISTORY</span></div>
+<section>
+<h2>160 items with nothing above them</h2>
+
+<p>Fifty-nine inside the fortnight, 101 outside it. The check reports the count rather than hiding it, so this will keep appearing in the officer's state file every five minutes until something is decided about it.</p>
+
+<p>Backfilling is not worth doing. Attaching a requirement to a merged pull request from three weeks ago does not make the plan more accurate — it manufactures a record of intent that never existed, and it is the kind of tidying that consumes a night and changes nothing you would ever read. The alternative is to declare a start line: everything shipped before the evening of 15 August is history, the check's window is set to begin there, and the count of what fell outside is stated once rather than re-reported forever.</p>
+
+<p>The one qualification is safety.viz, at 80% untracked over the fortnight and outside the operating-system work entirely. That is the charts goal's problem rather than this one's, and it is worth knowing about, but it does not change what to do here.</p>
+</section>
+
+<div class="cut"><span>THE RENAME</span></div>
+<section>
+<h2>The least important of the four questions</h2>
+
+<p>You offered three names. Before weighing them: a goal whose body and structure are current will work under any of them, and one whose body is stale is not fixed by a better title. If only one thing on this page gets decided, it should not be this one.</p>
+
+<p>With that said, renaming costs almost nothing, and that is worth knowing before choosing. Nothing in the tooling keys on the title. The goal's page on the public site is named from a <code>goal-slug: autonomy</code> comment in the issue body, and the policy file that makes the goal selectable keys on the same slug — so the title can change while the public URL, the registry entry and the selection lane all stay exactly as they are.</p>
+
+<div class="card"><div class="tag">Option 1</div>
+<h3>Increase Autonomy</h3>
+<p>Fixes the one part of the current title that is untrue, keeps the word that the artifacts, the policy file, the goal slug and every prior decision already use, and asserts nothing that has not been built. Its weakness is that it names a direction rather than a thing: the last week's work was not “more autonomy” in any measurable sense, it was building an operating model, and autonomy is the outcome that model is supposed to produce.</p></div>
+
+<div class="card"><div class="tag">Option 2</div>
+<h3>Increase Autonomy using goals and schedules</h3>
+<p>Names two mechanisms. Goals exist and carry real weight. Schedules do not exist — the readiness assessment now in your queue answers “not yet” against five unmet gates, the first of which is a machine that stays awake, and the scheduled trigger has never fired once. Naming a standing goal after a mechanism that has not run means the title makes a claim the program cannot support, and would need changing again if that lane slips. This is the one I would rule out.</p></div>
+
+<div class="card"><div class="tag">Option 3</div>
+<h3>Loop engineering</h3>
+<p>The most accurate description of the work. It names what is being built — the loop that runs itself, from your ask through requirement, work, judgement and surface, back to you — rather than a dial being turned. It is also the only one of the three that accommodates all five workstreams above without strain, which is a real test: the surfaces, the officer, the session mechanics, the discipline checks and the review lane are recognisably parts of one loop, and are not recognisably parts of “autonomy”. Its cost is legibility. The hub is public and feeds the conference diary; a reader who arrives at the goals page learns nothing from a coinage, whereas “autonomy” lands immediately.</p></div>
+
+<div class="verdict good"><div class="k">Recommendation</div>
+<p>Take “Increase Autonomy” as the title, and put the loop framing in the goal's opening sentence, where it has room to define itself. That keeps the public-facing word an outside reader can parse, drops the false claim about scope, and still gets the clarity — at the altitude where a coinage can be explained rather than one where it has to stand alone.</p></div>
+</section>
+
+<div class="cut"><span>THE PROPOSED BODY</span></div>
+<section>
+<h2>What #73 would say</h2>
+
+<p>Offered so the change is concrete rather than described. This is a proposal for you to apply — the goal reserves direction and membership to you, and autonomous sessions do not edit it.</p>
+
+<div class="card"><div class="tag">Goal</div>
+<p>Build the loop that runs the roadmap without you in it: your ask becomes a requirement, the requirement becomes work, the work is judged when it finishes, and what you need to see reaches a surface you read — with your review gates exactly where the operating contract puts them. Expand how much of that loop runs unattended as trust accrues.</p></div>
+
+<div class="card"><div class="tag">Scope</div>
+<p>Five workstreams: the surfaces you read; the operating officer and the workers it supervises; how a session starts, survives and ends; whether the plan still matches what shipped; and how finished work reaches you. Boundaries unchanged — merges only through the merge tool with approval, the policy and goal carve-outs stay yours, nothing is deleted without approval, and work found mid-run is filed rather than built.</p></div>
+
+<div class="card"><div class="tag">What done looks like</div>
+<p>A week passes in which you answer decisions and review release candidates, and nothing else needs you: every ask you make becomes a requirement without you filing it, every worker that finishes is judged against what it was asked to do, every piece of shipped work has a requirement above it, and the surfaces tell you what changed since you last looked without your having to ask.</p></div>
+</section>
+
+<div class="cut"><span>THE QUESTIONS</span></div>
+<section>
+
+<div class="q"><div class="qid">D0020.1 · G1</div>
+<h3>Does the goal's done-condition become the operating model rather than the pipeline?</h3>
+<p>The current condition describes work flowing from idea to digest unattended. The proposed one describes a week in which you answer decisions and review release candidates and nothing else needs you. The difference is that the second has the officer in it and the first does not.</p>
+<div class="rec"><b>Recommendation:</b> adopt the proposed body above — the goal, the scope and the done-condition. I post it as a comment on #73 for you to apply.</div></div>
+
+<div class="q"><div class="qid">D0020.2 · G2</div>
+<h3>Do the thirty-seven open requirements get grouped into the five workstreams, as labels?</h3>
+<p>The alternative is leaving one flat list, or creating five grouping issues. Labels keep the goal as the single parent and add nothing to your queue; grouping issues would carry more context and also five more things to maintain.</p>
+<div class="rec"><b>Recommendation:</b> five labels, named as above, applied by the officer as it files. No new tier of issues.</div></div>
+
+<div class="q"><div class="qid">D0020.3 · G3</div>
+<h3>What happens to the 160 shipped items with no requirement above them?</h3>
+<p>They will otherwise be re-reported every five minutes indefinitely. Backfilling manufactures intent that never existed; bounding declares 15 August the start line and states the historical count once.</p>
+<div class="rec"><b>Recommendation:</b> bound it. Set the check's start line at the evening of 15 August, report the historical count once, and do not backfill. Flag the charts goal separately about safety.viz.</div></div>
+
+<div class="q"><div class="qid">D0020.4 · G4</div>
+<h3>Which title?</h3>
+<p>“Increase Autonomy”, “Increase Autonomy using goals and schedules”, or something around “Loop engineering”. Renaming is free — nothing keys on the title, and the public URL comes from the slug.</p>
+<div class="rec"><b>Recommendation:</b> “Increase Autonomy”, with the loop framing carried in the goal's opening sentence. Ruling out option two, which names a mechanism that has not run.</div></div>
+</section>
+
+<div class="cut"><span>SOURCES</span></div>
+<section>
+<p>Everything above was measured on 2026-08-17 from live GitHub state and the machine's own records, not carried from a briefing.</p>
+<ul>
+<li>Goal <a href="https://github.com/jwildfire/obot.roadmap/issues/73">#73</a> — live body and its fifty sub-issue links, read through the GraphQL sub-issues connection.</li>
+<li>Requirement <a href="https://github.com/jwildfire/obot.roadmap/issues/226">#226</a> — the requirement this page was written under.</li>
+<li>Orphan measurement — the same query the officer's discipline check uses (<code>obot.agent/tools/navigator/checks.mjs</code>, <code>ORPHAN_QUERY</code>), run against all seven project repositories; parenthood taken from the structural field only.</li>
+<li>The 15 August break — creation timestamps and parent links for every issue created in obot.agent since 14 August.</li>
+<li>Live discipline totals — <code>.claude/session-hub/navigator-state.md</code>, swept 06:00 on 2026-08-17.</li>
+<li>Rename cost — <code>obot.agent/goals/registry.json</code>, <code>obot.agent/scripts/policy.json</code>, and the slug parser in <code>obot.roadmap/scripts/lib/collect/goals.mjs</code>.</li>
+<li>Prior decisions this page depends on: <a href="../2026-08-16-navigator-design/">D0017</a> (the officer's design, decided) and <a href="../2026-08-16-scheduled-sessions-assessment/">D0019</a> (scheduled sessions, awaiting you).</li>
+</ul>
+
+<div class="foot">
+<p>Drafted by Claude Code using Opus 5 for @jwildfire.</p>
+</div>
+</section>
+
+</div>
+</body></html>
