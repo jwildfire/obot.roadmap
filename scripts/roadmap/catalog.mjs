@@ -424,11 +424,7 @@ const html = `<!DOCTYPE html>
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body class="wide">
-${siteHeader({
-  page: 'catalog',
-  extra: `<button class="version-badge" id="version-badge" aria-haspopup="dialog" aria-controls="audit-log"
-      title="Roadmap audit log">v${esc(auditEntries[0].version)} – ${fmtET(auditEntries[0].date)}</button>`,
-})}
+${siteHeader({ page: 'catalog' })}
 
 <p class="rm-lede">Everything the roadmap tracks, on one page — nothing filtered out by design.
 What needs @jwildfire is on the <a href="roadmap.html">queue</a>; what changed in the last week is on
@@ -457,10 +453,18 @@ ${auditLogHtml}
 
 <script>
 (function () {
-  var badge = document.getElementById('version-badge');
+  // The audit log is this page's dialog; the header's version panel links to it from
+  // every other page and opens it here. Both lookups are guarded, and deliberately:
+  // the previous version of these two lines dereferenced #version-badge with no null
+  // check at the head of this IIFE, so the day the badge moved into the shared header
+  // every filter, chip and count on this page would have died with it — silently, on
+  // a page that still rendered perfectly.
   var log = document.getElementById('audit-log');
-  badge.addEventListener('click', function () { log.showModal(); });
-  log.addEventListener('click', function (e) { if (e.target === log) log.close(); });
+  var openLog = document.querySelector('[data-vs-log]');
+  if (log && openLog) {
+    openLog.addEventListener('click', function (e) { e.preventDefault(); log.showModal(); });
+  }
+  if (log) log.addEventListener('click', function (e) { if (e.target === log) log.close(); });
 
   // Repo filter — rows carry a space-separated data-repo list; a section with no
   // surviving rows hides itself so the page stays dense when filtered.

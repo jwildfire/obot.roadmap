@@ -21,7 +21,15 @@
 //
 // Adding a page means adding one row to TOP or SUB here. Nothing else in the
 // site defines nav, and the deploy asserts every page carries this markup.
+//
+// The version stamp sits at the end of the top row, on every page, for the same
+// reason the nav itself is defined once. It used to be passed in as `extra` by a
+// single generator, so it appeared on catalog.html and on none of the other ten
+// published pages — including roadmap.html, which D0018 made the front door the
+// day before @jwildfire asked for it. A badge only the least-visited page carries
+// is a badge he was right to say was missing.
 import { HUB } from './repos.mjs';
+import { getVersionState, versionBadge, VERSION_BADGE_SCRIPT } from './version.mjs';
 
 const GITHUB_ICON =
   '<svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">' +
@@ -64,8 +72,7 @@ function link({ href, label, blurb }, { current, prefix }) {
  *               ('roadmap' for pages in the group with no row of their own,
  *               e.g. the per-goal pages — the group lights up, no sub-item does)
  * @param depth  how many directories deep the page sits, for the `../` prefix
- * @param extra  markup appended inside the top nav, after the GitHub icon
- *               (the roadmap page's audit-log version badge)
+ * @param extra  markup appended inside the top nav, after the version stamp
  */
 export function siteHeader({ page, depth = 0, extra = '' } = {}) {
   const prefix = '../'.repeat(depth);
@@ -80,11 +87,19 @@ export function siteHeader({ page, depth = 0, extra = '' } = {}) {
   </nav>`
     : '';
 
+  // The badge wraps with the nav links; the panel hangs off the header itself so it
+  // can be positioned against the header's own padding rather than off the badge,
+  // which is what keeps it inside a 390px viewport. See lib/version.mjs.
+  const { badge, panel } = versionBadge(getVersionState(), { depth, hubUrl: `https://github.com/${HUB}` });
+
   return `<header class="site">
   <a class="brand" href="${prefix}index.html">🍊😺 obot</a>
   <nav class="site" aria-label="Site">
     ${top}
-    <a href="https://github.com/${HUB}" aria-label="GitHub" title="GitHub" style="display:inline-flex;align-items:center">${GITHUB_ICON}</a>${extra ? `\n    ${extra}` : ''}
-  </nav>${sub}
-</header>`;
+    <a href="https://github.com/${HUB}" aria-label="GitHub" title="GitHub" style="display:inline-flex;align-items:center">${GITHUB_ICON}</a>
+    ${badge}${extra ? `\n    ${extra}` : ''}
+  </nav>
+  ${panel}${sub}
+</header>
+<script>${VERSION_BADGE_SCRIPT}</script>`;
 }

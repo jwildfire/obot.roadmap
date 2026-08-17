@@ -236,6 +236,10 @@ nav.entry-nav a { font-family: var(--mono); font-size: .85rem; text-decoration: 
 .news-pill.release { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
 
 /* Roadmap version badge + audit-log modal */
+/* The version stamp. The badge carries the number and nothing else — its label used
+   to include the formatted date, which made it 247px wide and pushed the whole nav
+   onto a second line at 390px. The date is in the panel, which is where he asked for
+   it. */
 .version-badge {
   font: 500 .78rem/1.5 var(--mono);
   color: var(--side-soft);
@@ -246,6 +250,56 @@ nav.entry-nav a { font-family: var(--mono); font-size: .85rem; text-decoration: 
   cursor: pointer;
 }
 .version-badge:hover { color: var(--accent-bright); border-color: var(--accent-bright); }
+.version-badge:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+/* The changelog-behind-the-build signal. It recolours the badge rather than adding a
+   mark beside it: a dot measured twelve pixels, and twelve pixels is exactly what
+   decides whether the nav sits beside the brand at 390px or wraps onto its own line on
+   every page. Unobtrusive by request — it is his hover, not a public announcement —
+   but it is the one thing that would tell him at a glance, and the state is in the
+   button's accessible name too so it is never carried by colour alone. */
+.version-badge[data-drift] { color: var(--accent-bright); border-color: rgba(176, 92, 47, .45); }
+
+/* Anchored to header.site, NOT to the badge. Measured at a real 390px viewport:
+   anchored to the badge, `left: 0` runs 131px past the right edge and `right: 0` runs
+   33px off the left one — and `html { overflow-x: clip }` above means whatever runs
+   past the edge is gone rather than scrollable. Off the header, with the header's own
+   padding expression, it is clean at 320/390/430/768/1200/1600 with no layout shift.
+   The body.wide override mirrors the header's own wide-page padding at :43-44; without
+   it the panel floats ~9rem inside the right edge on the catalog and status pages.
+   z-index clears the sticky .rm-bar, which otherwise paints over it. */
+header.site { position: relative; }
+.version-panel {
+  position: absolute; top: 100%; right: max(calc(50vw - 25.5rem), 1.5rem); z-index: 30;
+  width: max-content; max-width: min(22rem, calc(100vw - 3rem)); margin-top: -.6rem;
+  font: 400 .74rem/1.55 var(--mono); color: var(--ink); background: var(--card);
+  border: 1px solid var(--faint); border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(39, 24, 16, .18); padding: .5rem .7rem; text-align: left;
+  display: none;
+}
+body.wide .version-panel { right: max(calc(50vw - 34.5rem), 1.5rem); }
+/* Hover is CSS and is gated on a real pointer — this is the file's first
+   `(hover: hover)` query. iOS synthesises a mouseenter on the first tap, so a
+   JS-bound hover would open the panel and close it again in the same gesture, a defect
+   that reproduces only on the phone he actually reads this on. */
+@media (hover: hover) and (pointer: fine) {
+  header.site:has(.version-badge:hover) .version-panel,
+  header.site:has(.version-panel:hover) .version-panel { display: block; }
+}
+header.site:has(.version-badge:focus-visible) .version-panel,
+header.site[data-vs-open="true"] .version-panel { display: block; }
+.version-panel .vs-row { display: flex; gap: .6rem; justify-content: space-between; }
+.version-panel .vs-k { color: var(--muted); }
+.version-panel .vs-v { text-align: right; }
+.version-panel code { font-size: .72rem; }
+.version-panel .vs-note { margin: .45rem 0 0; padding-top: .4rem; border-top: 1px solid var(--faint); color: var(--muted); }
+.version-panel .vs-more { margin: .35rem 0 0; }
+.version-panel .vs-warn { color: var(--accent-bright); }
+.version-panel .vs-local { color: var(--accent-bright); }
+
+/* The 38px that keeps the badge from pushing the nav below the brand at 390px. The
+   longhand is deliberate: plain `gap` here would also shrink the ROW gap and re-inflate
+   the wrapped sub-nav. 320px and 360px still pay the extra line; his phone is 390. */
+@media (max-width: 30rem) { nav.site { column-gap: .5rem; } }
 dialog.audit-log {
   max-width: 32rem;
   width: calc(100% - 3rem);
