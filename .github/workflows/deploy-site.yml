@@ -353,8 +353,18 @@ jobs:
             # every page simply falls back to the local-build wording and the site
             # deploys looking fine while claiming to be somebody's laptop. This is the
             # assertion that turns that into a failed deploy.
-            grep -q 'local build' "_site/$f" \
-              && { echo "::error title=Local stamp published::_site/$f says 'local build' — the Stamp the build step did not reach the generators"; fail=1; }
+            #
+            # MATCHED ON THE RENDERED SHAPE, NOT THE PHRASE. The bare phrase failed the
+            # very first deploy that carried it: the changelog entry announcing this
+            # guard says the words "local build" in prose, the catalog renders every
+            # changelog entry into its audit dialog, and the guard fired on its own
+            # announcement. That is obot.agent#58 exactly, and the same fix as hub#209
+            # below — assert the executable form. Changelog prose is escaped on the way
+            # into the page, so `"` becomes &quot; and this can only match markup that
+            # lib/version.mjs actually emitted. scripts/lib/version.test.mjs pins the
+            # needle so the two cannot drift apart.
+            grep -qF 'class="vs-v">local build' "_site/$f" \
+              && { echo "::error title=Local stamp published::_site/$f renders the local-build stamp — the Stamp the build step did not reach the generators"; fail=1; }
           done
 
           # The published build stamp the Navigator sweep reads. Asserting the real
@@ -363,6 +373,12 @@ jobs:
           have version.json
           grep -q "\"commit\": \"$GITHUB_SHA\"" _site/version.json \
             || { echo "::error title=Build stamp is not this build::_site/version.json does not carry $GITHUB_SHA"; fail=1; }
+          # The same question asked of the data rather than the markup, where no prose
+          # can ever reach it. `ci` is true only when the stamping step supplied both
+          # OBOT_BUILT_AT and OBOT_COMMIT, so this is the stamp saying it is a real
+          # deploy in a field nobody writes sentences into.
+          grep -q '"ci": true' _site/version.json \
+            || { echo "::error title=Unstamped build::_site/version.json reports ci=false — the Stamp the build step did not reach the generators"; fail=1; }
 
           for f in roadmap.html wire.html catalog.html status.html audit/index.html \
                    analytics/index.html goals/index.html decisions/index.html; do

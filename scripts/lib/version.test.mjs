@@ -83,8 +83,27 @@ test('a local build is not given a launch time', () => {
   const s = state({ env: {} });
   assert.equal(s.ci, false);
   const { panel } = versionBadge(s, { hubUrl: 'https://x/y' });
-  assert.match(panel, /local build/, 'the deploy greps published pages for exactly this phrase');
+  assert.match(panel, /local build/);
   assert.doesNotMatch(panel, /Launched/, 'a working tree never launched, so it is not given a launch time');
+});
+
+test('the local-build stamp keeps the exact shape the deploy greps for', () => {
+  // deploy-site.yml fails the deploy if a published page carries this. It matches the
+  // RENDERED shape, not the bare phrase, and that is not fussiness: the first deploy
+  // carrying this guard failed because the changelog entry announcing the guard says
+  // "local build" in prose, the catalog renders every changelog entry into its audit
+  // dialog, and the guard fired on its own announcement. Changelog prose is escaped on
+  // the way into a page, so the quote and the angle bracket here are unreachable by
+  // anything but markup this module emitted.
+  //
+  // Pinned here so the workflow's needle and this markup cannot drift apart — the
+  // hub#209 lesson, where a hand-typed copy of a shared pattern silently stopped
+  // matching anything for weeks while every source-level test still passed.
+  const NEEDLE = 'class="vs-v">local build';
+  const local = versionBadge(state({ env: {} }), { hubUrl: 'https://x/y' });
+  assert.ok(local.panel.includes(NEEDLE), `the local panel must contain ${NEEDLE}`);
+  const deployed = versionBadge(state(), { hubUrl: 'https://x/y' });
+  assert.equal(deployed.panel.includes(NEEDLE), false, 'a real deploy must never render it');
 });
 
 test('a deploy carrying unrecorded changes says so rather than picking a half', () => {
