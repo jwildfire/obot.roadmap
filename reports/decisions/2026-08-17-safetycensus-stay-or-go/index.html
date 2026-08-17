@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — SafetyCensus stays or goes</title>
+<meta name="description" content="Seven adversarial reviewers examined SafetyCensus() with gsm.safety v1.1.0 held: the correctness attacks landed — the death count is wrong on the ecosystem's own data — the usage attack failed, and the recommendation is to pull it before publication.">
+<meta name="decision-id" content="D0021">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.verdict p{margin:10px 0 0;font-size:16.5px}
+.verdict.good{border-left-color:var(--go)}
+.verdict.good .k{color:var(--go)}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .verdict,.card,.q,.callout{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-17</span><span class="dot"></span><span>gsm.safety v1.1.0 — held at the tag</span></div>
+  <h1>SafetyCensus(): stays or goes, before v1.1.0 publishes</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0021">
+<p>D0021 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0021.1"><a class="did" href="#D0021.1">D0021.1</a><span class="dcode">C1</span><span class="dq">Does SafetyCensus() ship in gsm.safety v1.1.0 as public API, or come out before publication?</span></li>
+  <li id="D0021.2"><a class="did" href="#D0021.2">D0021.2</a><span class="dcode">C2</span><span class="dq">Is a requirement filed to bring the census back lane-shaped in a later release — keeping the per-visit coverage idea — or does the census stay demo-local?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">The merged gsm.safety release is stopped one step short of publication because of a single function. Seven adversarial reviewers — six briefed to argue it out of the package, one briefed to keep it — examined it, every factual claim was checked by an independent fact-checker, and this page carries what survived, the cost of each path in release terms, and a recommendation.</p>
+  <div class="facts">
+    <span><b>Requirement</b> <a href="https://github.com/jwildfire/obot.roadmap/issues/229">#229</a></span>
+    <span><b>Task</b> <a href="https://github.com/jwildfire/obot.roadmap/issues/230">#230</a></span>
+    <span><b>Release PR</b> <a href="https://github.com/jwildfire/gsm.safety/pull/52">gsm.safety#52</a> (merged, unpublished)</span>
+    <span><b>Panel</b> 7 reviewers + 7 fact-checkers</span>
+    <span><b>Worker</b> W0023</span>
+  </div>
+</div>
+
+<div class="cut"><span>THE SITUATION</span></div>
+<section>
+  <p>gsm.safety v1.1.0 is merged and was minutes from publication when you flagged its new <code>SafetyCensus()</code> function — a study-census reducer that counts enrollment, exposure, deaths, disposition and per-visit data coverage — as messy-looking and asked for an adversarial review deciding whether it stays or goes. The function is exported, and gsm.safety is a clinical package: the moment the release publishes, it becomes public API, and removing it afterwards is a breaking change with a deprecation cycle rather than a decision not to ship. Publication is therefore held at the tag, the exit is still cheap, and this page exists so you can close it with one answer.</p>
+
+  <div class="callout note"><div class="k">The one-sentence version</div>
+    <p>The review found the function is genuinely used by the live demo but produces silently wrong clinical figures — including a death count of one where the ecosystem's own data records at least twelve — and the recommendation, formed only after all seven reviewers had reported, is that it comes out before the release publishes and returns properly built later.</p></div>
+</section>
+
+<div class="cut"><span>HOW THE REVIEW RAN</span></div>
+<section>
+  <p>Adversarial here means refute, not assess. Six reviewers each took one lens — pipeline fit, column conventions, testability, duplication, comprehensibility, and actual usage — and each started from the position that the function should go, required to argue it with evidence anchors for every claim. A seventh reviewer, the steelman, had the opposite job: keep it, arguing the strongest honest case for the function as it stands. All seven worked independently and could not see each other's reports.</p>
+  <p>Nothing reached this page on a reviewer's word alone. Each report went to a separate fact-checker briefed to reproduce every citation and re-run every probe — 47 claims produced 49 checked verdicts: 29 confirmed as written, 20 overstated in strength (with the accurate version recorded and used here instead), and none refuted outright. Where a number below is called verified, a second agent independently reproduced it, usually by executing the function in R.</p>
+  <p>The recommendation at the bottom was formed only after every lens and every fact-check had reported — no verdict was drafted, or leaned toward, before the panel finished.</p>
+
+  <h3>The panel corrected its own briefing twice</h3>
+  <p>Two facts in the commissioning brief did not survive the review, and both corrections cut in the function's favor. The brief said nothing reads the census file the demo study writes — wrong: that came from a stale local checkout, and the deployed demo app fetches and renders it live. The brief also said no issue anywhere asked for a census — too strong: no issue body does, but a decision record on the demo requirement's thread, posted 52 minutes before the function merged, sanctions a safety overview shaped as exposure-and-census, pending clinical input <a href="https://github.com/jwildfire/obot.roadmap/issues/138">(demo metrics requirement)</a>. The steelman-and-verify structure caught both, which is the reason it exists.</p>
+</section>
+
+<div class="cut"><span>WHAT SURVIVED THE REVIEW</span></div>
+<section>
+  <h2>The demolition landed on correctness</h2>
+  <p>The heart of the case against is not style — it is that three independent lenses, checked separately, each demonstrated the function printing wrong clinical figures without any warning. Everything below was reproduced by a fact-checker running the code.</p>
+
+  <div class="card block"><span class="tag">Verified — the death count</span>
+    <h3>It under-counts deaths on the ecosystem's own data</h3>
+    <p>The function's only source of deaths is exact string-matching on the study-completion form's reason column. Run with its defaults on the gsm ecosystem's own bundled study, it reports one death — the dedicated death-record table in the same bundle holds twelve, and the mapping layer's own death helper counts thirteen. Feeding it that death table directly returns zero, because it is not the domain the function reads. Reasons like "SUDDEN DEATH" or "DEATH DUE TO PROGRESSION" yield a definite zero, not a missing value, and in one verified run the same output printed a death count of zero while its own disposition table named a death state on the next rows.</p></div>
+
+  <div class="card block"><span class="tag">Verified — false zeros and inflated counts</span>
+    <h3>Untested paths violate the invariants the tests certify</h3>
+    <p>The ten existing tests are genuinely good on the paths they cover, and all pass. Every failure the panel produced lives one step off those paths, uncovered:</p>
+    <ul>
+      <li>If the treatment-time column is absent, "Received study drug" reports zero participants dosed — a false clinical zero, in a function whose own test suite certifies the principle that absent data is NA, never zero.</li>
+      <li>IDs in the disposition table that are not enrolled inflate numerators past denominators: five "Completed" in a four-person study. The ghost-ID guard the tests celebrate for lab data is missing here, and from the coverage counts too.</li>
+      <li>Duplicate rows double-count person-time and dosed counts; a blank completion reason produces the label "Discontinued - NA".</li>
+      <li>All eleven column-name parameters are tested only at their defaults — the entire configurability surface that justifies the sixteen-parameter signature has zero coverage.</li>
+    </ul></div>
+
+  <div class="card block"><span class="tag">Verified — the wrong dialect</span>
+    <h3>Its column defaults miss the mapped pipeline it claims to sit on</h3>
+    <p>On the mapped domains the gsm pipeline actually produces, "Randomised to an arm" silently returns NA (no mapped domain carries an arm column — the blinded pipeline deliberately surfaces randomization as a status domain instead), and visit ordering silently degrades to alphabetical — Week 12 sorting before Week 2 — exactly the behavior its own test forbids. The defaults were proven against one study's bespoke mapping: the demo's. The man page, meanwhile, documents almost none of the real semantics — that "expected" per visit just means total enrollment repeated with no visit schedule, that the dosed figure is a proxy for treatment-time greater than zero, or where the zero-versus-NA boundary sits — so a stranger reading the docs would misread the numbers even doing everything right.</p></div>
+
+  <div class="card block"><span class="tag">Verified — shape and drift</span>
+    <h3>It is the package's one workflow-orphan, and a second counting lane</h3>
+    <p>It is the only export in gsm.safety that is neither a workflow step nor referenced anywhere in the package's workflows, examples or widgets — its three sibling functions from the same pull request each got a workflow. Its return shape carries no subject or group key, so the pipeline's own machinery rejects it at the summarize step. And where it overlaps the pipeline it drifts: it is a second, parallel counting lane whose enrolled count and person-years agree with the pipeline's today, but whose death count already disagrees on the same study. Two death figures from one package on one study is drift built into public API.</p></div>
+
+  <h2>The attack that failed, and what the steelman won</h2>
+  <p>The stranded-helper attack collapsed under verification, and the keep case is real. It is worth stating plainly, because the recommendation goes the other way despite it.</p>
+  <div class="card done"><span class="tag">Verified — it is used, today</span>
+    <h3>A live, deployed consumer renders it right now</h3>
+    <p>The chain runs end to end: the function → the demo study's pipeline (step three of its canonical runner) → a committed JSON payload → the demo app's fetch → the safety overview rendered on the live site, with real figures on screen. The v1.1.0 release notes link straight to that page. The consumer code is source-controlled and has its own test suite, which even preserves the function's NA-never-zero semantics through to the UI <a href="https://jwildfire.github.io/demo-301/">(live demo)</a>.</p></div>
+  <div class="card done"><span class="tag">Verified — the keep case</span>
+    <h3>It passed the human gate, and its design has real virtues</h3>
+    <p>The release-candidate pull request you approved names the function twice in its visible prose — approval you made explicitly conditional on this review <a href="https://github.com/jwildfire/gsm.safety/pull/52">(the RC)</a>. The pooled-across-arms blinding stance is your recorded decision, FDA-grounded, and the code honors it exactly. The absent-domain-means-NA discipline and the refusal to invent "ongoing" for participants the disposition data does not cover are more careful than the pipeline's own machinery in places. And the per-visit data-coverage table is genuinely novel — nothing anywhere in the ecosystem computes it.</p></div>
+
+  <div class="callout good"><div class="k">What removal actually costs — verified, and less than feared</div>
+    <p>Nothing deployed breaks. The demo site is static and keeps serving its committed census file; the app catches an absent census and renders without it; the demo pipeline downgrades a failing census step to a printed note and exits clean. The only real consequences are that the census file stops being refreshed on future pipeline runs, one release-notes bullet and a few demo README lines need editing, and gsm.safety needs a small removal PR and a fresh release-candidate approval from you.</p></div>
+</section>
+
+<div class="cut"><span>THE OPTIONS, IN RELEASE TERMS</span></div>
+<section>
+  <p>One tension is named before the options, not after: the same day this review was commissioned, you set the principle that what is in main gets released, and deprecating later is fine provided it is done very transparently — merging, not publishing, is the commitment point. Holding this release for this review is an exception you created yourself, minutes from publication. The options below respect both facts: the principle is a real argument for shipping, and the hold is a real window you opened on purpose.</p>
+
+  <div class="card"><span class="tag">Path 1 — it goes</span>
+    <h3>Pull the export before publication; bring the census back properly later</h3>
+    <p>A small PR removes the function, its tests and its release-notes bullet; you approve a fresh release candidate; v1.1.0 publishes clean, hours late. The demo keeps working on its committed data. What it costs: the removal PR and one more RC approval from you, a demo census that stops refreshing until a replacement lands, and the loss — temporarily — of a live surface's data source. What it forecloses: nothing. The census can return in a later release, lane-shaped and under a real requirement, keeping the coverage idea and the blinding stance.</p></div>
+
+  <div class="card"><span class="tag">Path 2 — it stays</span>
+    <h3>Ship v1.1.0 as-is; fix forward transparently</h3>
+    <p>Publication unblocks immediately and the demo chain keeps refreshing. What it costs: the function becomes public API of a clinical package with its current behavior — a death count that is wrong on canonical data, false zeros on missing columns, numerators that can exceed denominators — and the fixes are not doc edits: correcting them changes published clinical figures, each a breaking behavior change on public API to be managed under your transparency rule. What it forecloses: the cheap exit. This is the last moment removing it is not a breaking change.</p></div>
+
+  <div class="card"><span class="tag">Path 3 — named, not recommended</span>
+    <h3>Publish now, deprecate later</h3>
+    <p>Every lens that priced this path priced it worst: the wrong figures stand in a published safety tool for the whole interim, and the package then pays the deprecation cycle anyway. It is listed because it is the default of doing nothing after publication, not because anyone argued for it.</p></div>
+
+  <div class="verdict"><div class="k">Recommendation — formed after all seven lenses reported</div>
+    <p>It goes. Pull the export before v1.1.0 publishes, and bring the census back in a later release as a properly lane-shaped, spec-checked function under a real requirement — keeping the per-visit coverage idea, the blinding stance, and the NA-discipline that the panel confirmed are worth keeping. The usage lens saved this function from being called dead code, but one in-house consumer that degrades gracefully is weak demand, and against it stand three independently verified ways the published numbers can be silently false — led by a wrong death count on the ecosystem's own data. A safety census whose death figure cannot be trusted is not API to freeze into a clinical package for the sake of shipping tonight instead of this week. Your merging-is-commitment principle argues for Path 2; the reason to make the exception is that this defect class — silently wrong clinical figures — is the one an honest label cannot cure, and you held the release precisely to keep this exit open.</p></div>
+</section>
+
+<div class="cut"><span>THE QUESTIONS</span></div>
+<section>
+  <div class="q"><span class="qid">C1</span>
+    <h3>Does SafetyCensus() ship in gsm.safety v1.1.0 as public API, or come out before publication?</h3>
+    <p>This is the whole decision. Everything above is its evidence; the release worker acts on the answer either way.</p>
+    <div class="rec"><b>Recommendation:</b> it comes out. A removal PR lands against main, you approve the refreshed release candidate, and v1.1.0 publishes without it.</div>
+  </div>
+  <div class="q"><span class="qid">C2</span>
+    <h3>Is a requirement filed to bring the census back lane-shaped in a later release — keeping the per-visit coverage idea — or does the census stay demo-local?</h3>
+    <p>The per-visit coverage table has no counterpart anywhere in the ecosystem and the panel judged it genuinely valuable; the blinded-denominators idea has your recorded design decision behind it. If C1 pulls the function, this decides whether that value returns through the front door — a requirement, a design, a workflow-shaped implementation with a death-domain input — or stays a private script in the demo study.</p>
+    <div class="rec"><b>Recommendation:</b> file the requirement. The function's ideas earned a return trip; its implementation did not earn a freeze.</div>
+  </div>
+</section>
+
+<div class="cut"><span>WHAT UNBLOCKS</span></div>
+<section>
+  <ul>
+    <li><b>If C1 = it goes</b> — the release worker gets a green light for: removal PR to gsm.safety main (function, tests, release-notes bullet), fresh RC for your approval, then publication. Demo edits (README lines, pipeline note) follow at leisure; nothing deployed is waiting on them.</li>
+    <li><b>If C1 = it stays</b> — publication unblocks immediately as merged. The panel's confirmed defects become a follow-up issue set on gsm.safety (death-domain input, false-zero fixes, ghost-ID guards, doc contract, test retag), each fix managed as a transparent behavior change on published API.</li>
+    <li><b>If C2 = file it</b> — a requirement goes to this hub for a lane-shaped census: workflow-invocable, spec-checked columns, death domain as an input, the coverage table kept, the demo consumer migrated to it.</li>
+    <li><b>Either way</b> — the paper trail gets fixed: the census work gets a retroactive requirement reference and the mislabeled test tags are corrected, per your transparency-not-perfection rule.</li>
+  </ul>
+</section>
+
+<div class="foot">
+  <p>Method and record: seven independent reviewers (six refute lenses, one steelman) plus seven independent fact-checkers, run as a 14-agent workflow under worker W0023 on 2026-08-17; 47 claims, 49 checked verdicts, none refuted. The full panel record — every claim, anchor and verdict — is committed beside this page as <a href="panel-record.json">panel-record.json</a>. Sources: gsm.safety origin/main at the v1.1.0 merge, the gsm.core and gsm.kri installed packages, the gsm.mapping specs, the demo study repo and its deployed site, and the gsm ecosystem conventions. Commissioned by <a href="https://github.com/jwildfire/obot.roadmap/issues/229">requirement #229</a> / <a href="https://github.com/jwildfire/obot.roadmap/issues/230">task #230</a>.</p>
+  <p>This page was drafted by 😺🤖 Claude Code (Claude Fable 5, worker W0023) and is awaiting review by @jwildfire.</p>
+</div>
+
+</div>
+</body></html>
