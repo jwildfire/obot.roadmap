@@ -50,6 +50,26 @@ jobs:
         with:
           fetch-depth: 0  # full history — build_news.mjs dates artifacts from git log
 
+      # ONE BUILD, ONE LAUNCH TIME. The header's version stamp says when the site
+      # shipped, and nine separate node processes below produce the ~82 pages that
+      # carry it — with an R toolchain install sitting between some of them. If each
+      # took its own clock reading, one deploy's pages would disagree with each other
+      # about when that deploy happened, by minutes. Frozen here, immediately after
+      # checkout, and read by every generator through scripts/lib/version.mjs.
+      #
+      # If this step is ever dropped or renamed the build does not fail here: every
+      # page falls back to saying "local build — not a deploy", which the Validate
+      # site step greps for and rejects. The failure is loud one step later rather
+      # than silent forever.
+      - name: Stamp the build
+        run: |
+          {
+            echo "OBOT_BUILT_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "OBOT_COMMIT=$GITHUB_SHA"
+            echo "OBOT_RUN_ID=$GITHUB_RUN_ID"
+            echo "OBOT_TRIGGER=$GITHUB_EVENT_NAME"
+          } >> "$GITHUB_ENV"
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -69,6 +89,12 @@ jobs:
       # Must run after the copy above, since it rewrites the _site copies in place.
       - name: Inject the shared header into static pages
         run: node scripts/build_static.mjs
+
+      # The build stamp as data (_site/version.json), so the Navigator sweep relays
+      # the verdict the header shows instead of computing a second one from a local
+      # clone that is routinely behind the deployed commit.
+      - name: Publish the build stamp
+        run: node scripts/build_version.mjs
 
       - name: Render diary
         run: node scripts/render_diary.mjs
@@ -313,7 +339,30 @@ jobs:
             # The marker must never reach a published page.
             grep -q 'SITE-HEADER' "_site/$f" \
               && { echo "::error title=Uninjected nav::_site/$f still contains the SITE-HEADER marker"; fail=1; }
+
+            # The version stamp (#224). The badge is what @jwildfire asked for and it
+            # lived on exactly one of these eleven pages before this; asserting it here
+            # is what stops it quietly becoming one page's feature again.
+            grep -q 'class="version-badge"' "_site/$f" \
+              || { echo "::error title=Missing version badge::_site/$f carries the shared header but no version badge"; fail=1; }
+            grep -q 'class="version-panel"' "_site/$f" \
+              || { echo "::error title=Missing version panel::_site/$f has the badge but nothing for it to open"; fail=1; }
+
+            # THE ONE THAT CATCHES THE SILENT FAILURE. If the `Stamp the build` step is
+            # ever dropped, renamed, or moved after the generators, nothing errors:
+            # every page simply falls back to the local-build wording and the site
+            # deploys looking fine while claiming to be somebody's laptop. This is the
+            # assertion that turns that into a failed deploy.
+            grep -q 'local build' "_site/$f" \
+              && { echo "::error title=Local stamp published::_site/$f says 'local build' — the Stamp the build step did not reach the generators"; fail=1; }
           done
+
+          # The published build stamp the Navigator sweep reads. Asserting the real
+          # commit is IN it is what proves the stamp is live rather than merely wired —
+          # a file containing nulls would satisfy `have` and tell the sweep nothing.
+          have version.json
+          grep -q "\"commit\": \"$GITHUB_SHA\"" _site/version.json \
+            || { echo "::error title=Build stamp is not this build::_site/version.json does not carry $GITHUB_SHA"; fail=1; }
 
           for f in roadmap.html wire.html catalog.html status.html audit/index.html \
                    analytics/index.html goals/index.html decisions/index.html; do

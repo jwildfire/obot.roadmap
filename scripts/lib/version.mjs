@@ -90,22 +90,34 @@ export function newestEntry(changelog) {
 /**
  * The build: when these generators ran, and on what commit.
  *
- * In CI the commit is GITHUB_SHA — correct under every trigger this workflow has. A
- * push run stamps the pushed commit; the daily cron and a manual dispatch stamp the tip
- * of the branch they ran on. In all three that is exactly "the commit this build ran
- * on", which is the question being answered.
+ * THE STAMP IS FROZEN BY THE WORKFLOW, NOT TAKEN HERE. One deploy runs nine separate
+ * node processes — build_static, build_roadmap, build_audit_page, build_goals,
+ * build_analytics, build_decisions, build_news, render_diary and the metrics script —
+ * with an R toolchain install sitting between some of them. If each took its own
+ * `new Date()`, the eighty-odd pages of one deploy would carry launch times spread
+ * across several minutes, and two pages of the same site would disagree about when the
+ * site shipped. So `Stamp the build` in deploy-site.yml writes OBOT_BUILT_AT once into
+ * $GITHUB_ENV, immediately after checkout, and every generator reads that same value.
  *
- * Locally there is no run and no deploy, and the stamp says so rather than dressing a
- * developer's working tree up as a launch.
+ * OBOT_COMMIT is GITHUB_SHA, which is the right commit under all three triggers this
+ * workflow has: a push run stamps the pushed commit, and the daily cron and a manual
+ * dispatch stamp the tip of the branch they ran on. In each case that is exactly "the
+ * commit this build ran on".
+ *
+ * Locally there is no run and no deploy. The stamp says `local` and withholds the
+ * launch time rather than dressing a developer's working tree up as something that
+ * shipped — and the deploy asserts that no published page ever says it.
  */
 export function buildStamp(env = process.env, now = new Date()) {
-  const sha = env.GITHUB_SHA || git(['rev-parse', 'HEAD']) || null;
-  const ci = Boolean(env.GITHUB_ACTIONS && env.GITHUB_SHA);
+  const ci = Boolean(env.OBOT_BUILT_AT && env.OBOT_COMMIT);
+  const sha = env.OBOT_COMMIT || env.GITHUB_SHA || git(['rev-parse', 'HEAD']) || null;
   return {
-    at: now.toISOString(),
+    at: env.OBOT_BUILT_AT || now.toISOString(),
+    frozen: Boolean(env.OBOT_BUILT_AT),
     commit: sha,
     short: sha ? sha.slice(0, 7) : null,
-    run: env.GITHUB_RUN_ID || null,
+    run: env.OBOT_RUN_ID || env.GITHUB_RUN_ID || null,
+    trigger: env.OBOT_TRIGGER || env.GITHUB_EVENT_NAME || null,
     ci,
     dirty: ci ? false : Boolean(git(['status', '--porcelain'])),
   };
@@ -150,10 +162,9 @@ export function changelogDrift({ cwd = ROOT } = {}) {
  * Everything the badge, the panel, the site validation and the sweep read — computed
  * once, so none of them can disagree about the same build.
  */
-export function versionState({ changelog, env = process.env, now = new Date(), cwd = ROOT } = {}) {
+export function versionState({ changelog, env = process.env, now = new Date(), cwd = ROOT, drift } = {}) {
   const entry = newestEntry(changelog);
   const build = buildStamp(env, now);
-  const drift = changelogDrift({ cwd });
   return {
     version: entry?.version ?? null,
     changelogAt: entry?.date ?? null,
@@ -161,9 +172,10 @@ export function versionState({ changelog, env = process.env, now = new Date(), c
     commit: build.commit,
     short: build.short,
     run: build.run,
+    trigger: build.trigger,
     ci: build.ci,
     dirty: build.dirty,
-    drift,
+    drift: drift ?? changelogDrift({ cwd }),
   };
 }
 
@@ -214,12 +226,26 @@ export function driftSummary(state, { now = new Date() } = {}) {
 }
 
 /**
- * The header badge and its panel.
+ * The header badge and its panel, as two pieces.
  *
- * Hover reveals the panel on a pointer; the button toggles it on a tap, because he
- * reads this on a phone and a hover-only affordance is not an affordance there. The
- * markup carries both and lib/nav.mjs renders it into every page's header, so no
- * generator can ship a page that forgot.
+ * They are returned separately because they belong in different places, and that is
+ * load-bearing rather than tidy. The BADGE is a child of `nav.site`, so it wraps with
+ * the links. The PANEL is a sibling of the nav and a direct child of `header.site`, so
+ * it can be positioned against the header's own padding.
+ *
+ * Anchoring it to the badge instead was measured and fails on his phone. At 390px a
+ * panel with `left: 0` runs 131px past the viewport and one with `right: 0` runs 33px
+ * off the left edge — and because this stylesheet sets `html { overflow-x: clip }`,
+ * what runs past the edge is not scrollable, it is simply gone. Anchored to the header
+ * with the header's own padding expression it is clean at 320, 390, 430, 768, 1200 and
+ * 1600, with no layout shift when it opens.
+ *
+ * Hover is pure CSS behind `(hover: hover) and (pointer: fine)`, so iOS never fires the
+ * synthesised mouseenter that would make the panel flash open and shut on his first
+ * tap. The tap path is the button, which is a real button and so answers Enter and
+ * Space too. The label is deliberately just `v2.12.0`: the old badge carried the date
+ * in its label, which made it 247px wide and pushed the whole nav onto a second line
+ * on a phone.
  */
 export function versionBadge(state, { depth = 0, hubUrl = '', now = new Date() } = {}) {
   const prefix = '../'.repeat(depth);
@@ -228,31 +254,46 @@ export function versionBadge(state, { depth = 0, hubUrl = '', now = new Date() }
   const flag = drift.ok ? '' : '<span class="vs-flag" aria-hidden="true">•</span>';
 
   const rows = [];
-  // The absolute stamp is rendered here; the "17h ago" beside it is computed in the
-  // browser, against the reader's own clock. A relative age baked in at build time
-  // would read "0m" on every page forever — which is not merely useless but is the
-  // same class of confident falsehood this badge exists to stop, since "how old is
-  // what I am looking at" is the entire question being asked. Without JS the row
-  // still shows the real timestamp and says nothing it cannot support.
-  rows.push(`<div class="vs-row"><span class="vs-k">Launched</span><span class="vs-v"><time datetime="${esc(state.builtAt)}" data-vs-at>${esc(fmtET(state.builtAt))}</time><span class="vs-ago" data-vs-ago></span></span></div>`);
+  if (state.ci) {
+    // The absolute stamp is rendered here; the "17h ago" beside it is computed in the
+    // browser, against the reader's own clock. A relative age baked in at build time
+    // would read "0m" on every page forever — which is not merely useless but is the
+    // same class of confident falsehood this badge exists to stop, since "how old is
+    // what I am looking at" is the entire question being asked. Without JS the row
+    // still shows the real timestamp and says nothing it cannot support.
+    rows.push(`<div class="vs-row"><span class="vs-k">Launched</span><span class="vs-v"><time datetime="${esc(state.builtAt)}" data-vs-at>${esc(fmtET(state.builtAt))}</time><span class="vs-ago" data-vs-ago></span></span></div>`);
+  } else {
+    // A developer's working tree never launched, so it is not given a launch time. The
+    // deploy greps every published page for this phrase and fails on it: if the
+    // workflow's stamping step is ever dropped or renamed, the site would still build
+    // and every page would quietly claim to be somebody's laptop, which is precisely
+    // the kind of success-shaped failure this whole change exists to make impossible.
+    rows.push(`<div class="vs-row"><span class="vs-k">Built</span><span class="vs-v">local build — not a deploy</span></div>`);
+  }
   if (state.short) {
-    const sha = hubUrl
+    const sha = hubUrl && state.ci
       ? `<a href="${hubUrl}/commit/${esc(state.commit)}"><code>${esc(state.short)}</code></a>`
       : `<code>${esc(state.short)}</code>`;
-    rows.push(`<div class="vs-row"><span class="vs-k">Build</span><span class="vs-v">${sha}${state.ci ? '' : ' <span class="vs-local">local</span>'}</span></div>`);
+    rows.push(`<div class="vs-row"><span class="vs-k">Commit</span><span class="vs-v">${sha}${state.dirty ? ' <span class="vs-local">+ uncommitted</span>' : ''}</span></div>`);
   }
   rows.push(`<p class="vs-note${drift.ok ? '' : ' vs-warn'}">${esc(drift.text)}</p>`);
   if (hubUrl) {
-    rows.push(`<p class="vs-more"><a href="${hubUrl}/blob/main/site/roadmap-changelog.json">What changed</a> · <a href="${prefix}catalog.html">full log</a></p>`);
+    // "full log" is the audit log — a dialog on the catalog page, a link from
+    // everywhere else. catalog.mjs binds [data-vs-log] to showModal(); on every other
+    // page the href is what happens, so the link is never dead and never needs JS.
+    rows.push(`<p class="vs-more"><a href="${hubUrl}/blob/main/site/roadmap-changelog.json">What changed</a> · <a href="${prefix}catalog.html" data-vs-log>full log</a></p>`);
   }
 
-  return `<span class="vs" data-vs>
-      <button class="version-badge" id="version-badge" type="button" aria-expanded="false" aria-controls="vs-panel"
-        title="${esc(`Launched ${fmtET(state.builtAt)}${state.short ? ` · ${state.short}` : ''}`)}">${label}${flag}</button>
-      <span class="vs-panel" id="vs-panel" role="note">
-        ${rows.join('\n        ')}
-      </span>
-    </span>`;
+  // No `title` attribute: the browser's own tooltip would fight the panel on every
+  // desktop hover, showing two different boxes for one gesture.
+  const badge = `<button class="version-badge" id="version-badge" type="button"
+      aria-expanded="false" aria-controls="version-panel">${label}${flag}</button>`;
+
+  const panel = `<div class="version-panel" id="version-panel">
+    ${rows.join('\n    ')}
+  </div>`;
+
+  return { badge, panel };
 }
 
 /**
@@ -265,41 +306,49 @@ export function versionBadge(state, { depth = 0, hubUrl = '', now = new Date() }
  */
 export const VERSION_BADGE_SCRIPT = `
 (function () {
-  var wrap = document.querySelector('[data-vs]');
-  if (!wrap) return;
-  var btn = wrap.querySelector('.version-badge');
-  if (!btn) return;
+  var head = document.querySelector('header.site');
+  if (!head) return;
+  var btn = head.querySelector('.version-badge');
+  var panel = head.querySelector('.version-panel');
+  if (!btn || !panel) return;
 
-  // "17h ago", against the reader's clock rather than the builder's.
-  var at = wrap.querySelector('[data-vs-at]');
-  var ago = wrap.querySelector('[data-vs-ago]');
+  // "17h ago", against the reader's clock rather than the builder's. Baking a
+  // relative age in at build time would print "0m" on every page forever.
+  var at = panel.querySelector('[data-vs-at]');
+  var ago = panel.querySelector('[data-vs-ago]');
   if (at && ago) {
     var ms = Date.now() - Date.parse(at.getAttribute('datetime'));
     if (isFinite(ms) && ms >= 0) {
       var mins = Math.floor(ms / 60000), hours = Math.floor(mins / 60), days = Math.floor(hours / 24);
-      var t = mins < 2 ? 'just now' : mins < 60 ? mins + 'm ago' : hours < 24 ? hours + 'h ago' : days + 'd ago';
-      ago.textContent = ' \\u00b7 ' + t;
-      // A build older than two days on a site that redeploys daily is itself the
-      // news, so the age says so in the one place he is already looking.
+      ago.textContent = ' \\u00b7 ' + (mins < 2 ? 'just now'
+        : mins < 60 ? mins + 'm ago'
+        : hours < 24 ? hours + 'h ago'
+        : days + 'd ago');
+      // This site redeploys on a daily cron, so a build more than two days old means
+      // the deploy itself has stopped running. That is worth saying where he is
+      // already looking rather than leaving it to be inferred from a date.
       if (days >= 2) ago.className = 'vs-ago vs-warn';
     }
   }
+
+  // Hover is CSS. This is only the tap path — and it is a real <button>, so it
+  // answers Enter and Space as well as a finger.
+  function set(open) {
+    head.setAttribute('data-vs-open', open ? 'true' : 'false');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
   btn.addEventListener('click', function (e) {
     e.stopPropagation();
-    var open = wrap.getAttribute('data-open') === 'true';
-    wrap.setAttribute('data-open', open ? 'false' : 'true');
-    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    set(head.getAttribute('data-vs-open') !== 'true');
   });
-  document.addEventListener('click', function (e) {
-    if (wrap.getAttribute('data-open') !== 'true') return;
-    if (wrap.contains(e.target)) return;
-    wrap.setAttribute('data-open', 'false');
-    btn.setAttribute('aria-expanded', 'false');
+  // pointerdown rather than click: on the status page the panel would otherwise
+  // outlive a tap that landed in the embedded dashboard iframe.
+  document.addEventListener('pointerdown', function (e) {
+    if (head.getAttribute('data-vs-open') !== 'true') return;
+    if (head.contains(e.target)) return;
+    set(false);
   });
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
-    wrap.setAttribute('data-open', 'false');
-    btn.setAttribute('aria-expanded', 'false');
-  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+  window.addEventListener('blur', function () { set(false); });
 })();
 `.trim();

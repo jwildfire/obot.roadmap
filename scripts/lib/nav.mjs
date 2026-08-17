@@ -87,15 +87,19 @@ export function siteHeader({ page, depth = 0, extra = '' } = {}) {
   </nav>`
     : '';
 
-  const stamp = versionBadge(getVersionState(), { depth, hubUrl: `https://github.com/${HUB}` });
+  // The badge wraps with the nav links; the panel hangs off the header itself so it
+  // can be positioned against the header's own padding rather than off the badge,
+  // which is what keeps it inside a 390px viewport. See lib/version.mjs.
+  const { badge, panel } = versionBadge(getVersionState(), { depth, hubUrl: `https://github.com/${HUB}` });
 
   return `<header class="site">
   <a class="brand" href="${prefix}index.html">🍊😺 obot</a>
   <nav class="site" aria-label="Site">
     ${top}
     <a href="https://github.com/${HUB}" aria-label="GitHub" title="GitHub" style="display:inline-flex;align-items:center">${GITHUB_ICON}</a>
-    ${stamp}${extra ? `\n    ${extra}` : ''}
-  </nav>${sub}
+    ${badge}${extra ? `\n    ${extra}` : ''}
+  </nav>
+  ${panel}${sub}
 </header>
 <script>${VERSION_BADGE_SCRIPT}</script>`;
 }
