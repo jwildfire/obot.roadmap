@@ -3,6 +3,7 @@
 **Status: Awaiting @jwildfire** — C1–C2 (D0021.1–.2).
 **Requirement:** [jwildfire/obot.roadmap#229](https://github.com/jwildfire/obot.roadmap/issues/229) · **Task:** [#230](https://github.com/jwildfire/obot.roadmap/issues/230) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
 **Release held:** [gsm.safety#52](https://github.com/jwildfire/gsm.safety/pull/52) (v1.1.0, merged 2026-08-17, unpublished pending this decision)
+**Q&A:** [#235](https://github.com/jwildfire/obot.roadmap/discussions/235)
 
 ## What produced this
 
