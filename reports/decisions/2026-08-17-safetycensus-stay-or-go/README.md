@@ -2,7 +2,8 @@
 
 > **Corrected 2026-08-18.** This page was published as *"SafetyCensus(): stays or goes, before v1.1.0 publishes"* and said the release was held at the tag pending this decision. It was not: gsm.safety v1.1.0 published 2026-08-17 at 05:42:53 UTC, sixteen minutes before this artifact was written. Only the framing is corrected — the panel record, the verified defects and the recommendation are unchanged. See the correction block at the top of [index.html](index.html). Correction task [#268](https://github.com/jwildfire/obot.roadmap/issues/268), under requirement [#266](https://github.com/jwildfire/obot.roadmap/issues/266).
 
-**Status: Awaiting @jwildfire** — C1–C2 (D0021.1–.2).
+**Status: Decided 2026-08-18** — C1–C2 (D0021.1–.2), against the recommendation. `SafetyCensus()` stays: not deprecated, kept under its own name (or an alias preserving it), and rebuilt on the gsm metric framework as metrics plus a report — design first, implementation second. His words are on [index.html](index.html) verbatim and complete. The refactor is [requirement #274](https://github.com/jwildfire/obot.roadmap/issues/274); this record is task [#276](https://github.com/jwildfire/obot.roadmap/issues/276).
+**The recommendation is not overruled.** Every verified finding stands — the untrustable death count, the false zeros, the ghost IDs, the wrong column dialect. The panel judged the implementation; he is judging the purpose, and the purpose survives: the census gives open.gismo a standing safety summary. The answer to numbers that cannot be trusted is to make them trustable, not to remove the thing that needed them.
 **Requirement:** [jwildfire/obot.roadmap#229](https://github.com/jwildfire/obot.roadmap/issues/229) · **Task:** [#230](https://github.com/jwildfire/obot.roadmap/issues/230) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
 **Release:** [gsm.safety v1.1.0](https://github.com/jwildfire/gsm.safety/releases/tag/v1.1.0) — published 2026-08-17 05:42:53 UTC, `SafetyCensus()` exported at the tag and named in the notes ([PR#52](https://github.com/jwildfire/gsm.safety/pull/52))
 **Q&A:** [#235](https://github.com/jwildfire/obot.roadmap/discussions/235)
@@ -15,7 +16,7 @@
 
 ~~Publication was held at the merge because the function is exported from a clinical R package: publishing makes it public API, after which removal is a breaking change rather than a decision not to ship.~~
 
-**As corrected, 2026-08-18.** Publication was not held. @jwildfire lifted the hold himself and v1.1.0 published at 05:42:53 UTC, before this artifact existed. The function is public API of a clinical package today, so the open question is whether it stays that way or is deprecated now and removed in the next version — the same evidence, a different choice.
+**As corrected, 2026-08-18.** Publication was not held. @jwildfire lifted the hold himself and v1.1.0 published at 05:42:53 UTC, before this artifact existed. The function is public API of a clinical package today, so the question became whether it stays that way or is deprecated now and removed in the next version — the same evidence, a different choice. He answered it on 2026-08-18: it stays, and is rebuilt.
 
 ## Method
 
@@ -41,4 +42,4 @@ Two facts in the orchestrator's own briefing failed verification, both in the fu
 
 ---
 
-This artifact was drafted by 😺🤖 Claude Code (Claude Fable 5, worker W0023) and reviewed by @jwildfire. Corrected by 👯🤖 Claude Code (Claude Opus 5, worker W0071) on 2026-08-18.
+This artifact was drafted by 😺🤖 Claude Code (Claude Fable 5, worker W0023) and reviewed by @jwildfire. Corrected by 👯🤖 Claude Code (Claude Opus 5, worker W0071) on 2026-08-18. His decision was recorded by 👯🤖 Claude Code (Claude Opus 5, worker W0075) the same day, under task [#276](https://github.com/jwildfire/obot.roadmap/issues/276).
