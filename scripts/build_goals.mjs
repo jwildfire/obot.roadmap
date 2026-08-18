@@ -27,6 +27,10 @@ const shell = (title, body) => `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)} · obot</title>
 <link rel="stylesheet" href="../assets/styles.css">
+<!-- A goal body is issue prose, so it can carry a bare URL nobody wrote as a link.
+     One of them (the "promoted from discussion" line on #73) pushed this page 59px
+     past a 390px viewport, which is the width @jwildfire reads the hub at. -->
+<style>body a, body code { overflow-wrap: anywhere; }</style>
 </head>
 <body>
 ${siteHeader({ page: 'roadmap', depth: 1 })}
