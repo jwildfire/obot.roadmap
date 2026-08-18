@@ -40,7 +40,11 @@ const short = (nameWithOwner) => (nameWithOwner || '').split('/')[1] ?? nameWith
 // dedupe from lib/rc.mjs, thresholds from lib/highlights.mjs. An item is
 // {type, since (ISO or null), prefix (the age verb), title, why (HTML),
 //  act {label, href}, cite {label, href}, attrs (extra data- attributes)}.
-function buildItems({ NOW, reqRes, prRes, relRes, ideaRes, decRes }) {
+// Exported for the briefing (obot.roadmap#247), which is a second VIEW of this
+// same list rather than a second computation of it. Two inboxes that disagree
+// would be worse than one, so the briefing cuts what it shows and never
+// changes what counts as waiting.
+export function buildItems({ NOW, reqRes, prRes, relRes, ideaRes, decRes }) {
   const items = [];
 
   // Release candidates: review-requested PRs, plus draft releases deduped
@@ -404,7 +408,7 @@ ${nowStripHtml({ lightsRes, NOW })}
 <header class="q-head">
   <h1>Waiting on you</h1>
   <p class="q-sum"><span id="q-count">${countTxt}</span><span id="q-longest">${longestTxt}</span></p>
-  <p class="q-note">Longest wait first. Review items re-check GitHub on every page load; everything else is as of ${fmtET(NOW)}. Ages measure each item's last recorded activity.</p>
+  <p class="q-note">Longest wait first. Review items re-check GitHub on every page load; everything else is as of ${fmtET(NOW)}. Ages measure each item's last recorded activity. The same queue cut to ten lines for a phone is the <a href="reports/briefing/">briefing</a>.</p>
 ${notices.map((t) => `  <p class="q-notice">${esc(t)}</p>`).join('\n')}
 </header>
 
