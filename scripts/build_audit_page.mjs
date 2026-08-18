@@ -33,6 +33,7 @@ import path from 'node:path';
 import { esc, fmtET } from './lib/gh.mjs';
 import { ROOT, HUB } from './lib/repos.mjs';
 import { decisionUrl } from './lib/audit/render.mjs';
+import { proposalUnavailable } from './lib/audit/ops.mjs';
 import { freshness, STALE_HOURS } from './lib/audit/freshness.mjs';
 import { siteHeader } from './lib/nav.mjs';
 
@@ -156,7 +157,8 @@ function noscriptList(findings) {
   <td><code>${esc(f.confidence)}</code></td>
   <td><a href="${esc(f.subject.url)}">${esc(shortRepo(f.subject.repo))}${f.subject.number ? `#${f.subject.number}` : ''}</a></td>
   <td>${esc(f.subject.title || f.ruleTitle)}</td>
-  <td>${esc(f.proposal.summary)}</td>
+  <td>${esc(f.proposal.summary)}${proposalUnavailable(f.proposal)
+    ? ` — cannot run: ${esc(proposalUnavailable(f.proposal).reason)} (#${proposalUnavailable(f.proposal).issue})` : ''}</td>
 </tr>`).join('\n');
   return `<noscript>
 <div class="ap-noscript">
@@ -195,6 +197,10 @@ const dataBlob = ledger
       proposal: {
         kind: f.proposal.kind, summary: f.proposal.summary,
         ops: f.proposal.ops ?? [], prompt: f.proposal.prompt ?? '',
+        // Whether the repair can be performed at all (#254). Recomputed here
+        // rather than trusted from the ledger, so a ledger written before the
+        // block was known still renders the truth about it today.
+        unavailable: proposalUnavailable(f.proposal),
       },
       fingerprint: f.fingerprint, firstSeen: f.firstSeen, lastSeen: f.lastSeen,
       runs: f.runs, reappeared: f.reappeared, muted: f.muted,
@@ -486,6 +492,12 @@ tr.ap-fnd.is-muted { opacity: .62; }
   border: 1px solid var(--rule); color: var(--muted); }
 .pill.judg { background: #fffbeb; border-color: #fde68a; color: #92400e; }
 .pill.mech { background: var(--card); }
+/* A repair no credential can perform (#254) — neutral, because the finding is
+   real and the row is not a fault; the rail says what has to happen first. */
+.pill.unavail { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+.detail .unavail-note { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: .5rem .6rem; margin: .4rem 0 0; font-size: .82rem; color: #475569; }
+.act.yes[disabled] { cursor: not-allowed; }
 .pill.back { background: #fef2f2; border-color: #fecaca; color: #b42318; }
 .pill.mutedp { background: var(--panel); border-style: dashed; }
 /* D7 — the row says where its own decision is, between the click and the ledger. */
@@ -799,9 +811,20 @@ ${shell}
       + '<span class="w">' + esc(f.confidence) + '</span></span>';
   }
   function kindHTML(f) {
-    return f.proposal.kind === 'agentic'
+    return (f.proposal.kind === 'agentic'
       ? '<span class="pill judg" title="A bounded agent decides how — the summary states the call it will make">judgment</span>'
-      : '<span class="pill mech" title="A listed operation, applied exactly as written">mechanical</span>';
+      : '<span class="pill mech" title="A listed operation, applied exactly as written">mechanical</span>')
+      + unavailHTML(f);
+  }
+  // #254 — a repair no credential can perform says so on the row, before anyone
+  // clicks ✓ on it. The finding is real; the fix is not available.
+  function unavailHTML(f) {
+    var u = f.proposal.unavailable;
+    if (!u) return '';
+    var t = u.partial
+      ? u.ops.join(', ') + ' cannot run — ' + u.reason + '. Accepting it applies ' + u.performable.join('; ') + ' and stops there (see #' + u.issue + ')'
+      : u.reason + '. Accepting this would fail rather than fix it — see #' + u.issue;
+    return '<span class="pill unavail" title="' + esc(t) + '">' + (u.partial ? 'part cannot run' : 'cannot run') + '</span>';
   }
   function subjHTML(f) {
     return '<a class="subj" href="' + esc(f.subject.url) + '" target="_blank" rel="noopener" title="'
@@ -829,10 +852,21 @@ ${shell}
     var m = mark(f.id);
     var lock = f.muted || settled(f) || (m && m.phase !== 'done');
     var dis = lock ? ' disabled' : '';
+    // #254 — accepting a repair nothing can perform buys a failed run and a
+    // finding that looks decided. The button is off and says why; ✗ stays live,
+    // because muting a finding you cannot fix is still a decision.
+    var u = f.proposal.unavailable;
+    var dead = u && !u.partial; // nothing in it can run — accepting buys a failed run
+    var yesDis = lock || dead ? ' disabled' : '';
+    var yesTitle = dead
+      ? 'Cannot be applied — ' + u.reason + ' (see #' + u.issue + ')'
+      : u
+        ? 'Accept — applies ' + u.performable.join('; ') + '; the board half cannot run (see #' + u.issue + ')'
+        : 'Accept — queue this finding for the apply agent (a)';
     return '<span class="acts">'
       + '<button class="act yes ' + (size || '') + '" data-act="accept" data-id="' + esc(f.id) + '"'
-      + ' aria-pressed="' + Boolean((m && m.decision === 'accept') || state.queued[f.id] === 'accept') + '"' + dis
-      + ' title="Accept — queue this finding for the apply agent (a)" aria-label="Accept ' + esc(f.subjLabel) + '">✓</button>'
+      + ' aria-pressed="' + Boolean((m && m.decision === 'accept') || state.queued[f.id] === 'accept') + '"' + yesDis
+      + ' title="' + esc(yesTitle) + '" aria-label="Accept ' + esc(f.subjLabel) + '">✓</button>'
       + '<button class="act no ' + (size || '') + '" data-act="reject" data-id="' + esc(f.id) + '"'
       + ' aria-pressed="' + Boolean((m && m.decision === 'reject') || state.queued[f.id] === 'reject') + '"' + dis
       + ' title="Reject — queue a 60-day mute (x)" aria-label="Reject ' + esc(f.subjLabel) + '">✗</button>'
@@ -850,6 +884,15 @@ ${shell}
       ? '<div class="dh">What runs</div><ul class="ops">'
         + f.ops.map(function (o) { return '<li>' + esc(o.label) + '</li>'; }).join('') + '</ul>'
       : '<div class="dh">What the agent is told</div><pre class="prompt">' + esc(f.proposal.prompt || '') + '</pre>';
+    var u = f.proposal.unavailable;
+    if (u) {
+      doing += '<p class="unavail-note"><strong>' + (u.partial ? 'Part of this cannot run.' : 'This cannot run.') + '</strong> '
+        + esc(u.ops.join(', ')) + ' — ' + esc(u.reason) + '. '
+        + (u.partial
+          ? 'Accepting it applies ' + esc(u.performable.join('; ')) + ' and stops there. '
+          : 'Nothing is attempted and nothing changes; accepting it would fail rather than fix it. ')
+        + '<a href="' + esc(u.url) + '" target="_blank" rel="noopener">#' + esc(u.issue) + '</a> is the decision that brings it back.</p>';
+    }
     return '<div class="detail">'
       + '<div class="dh">Why this is a finding — <code>' + esc(r.id) + '</code></div>'
       + '<p class="why">' + esc(r.why) + '</p>'

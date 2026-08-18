@@ -151,3 +151,25 @@ test('the roadmap fold\'s per-rule deep links land somewhere', () => {
   // scripts/lib/audit/render.mjs links to audit/index.html#rule-<RULE-ID>.
   assert.match(html, /\^#rule-\(\.\+\)\$/, 'the page must read a #rule- deep link');
 });
+
+// #254 — the page is where a repair is accepted, so it is where "this cannot be
+// performed" has to be said. The board ops are dead until #252 is answered.
+test('a finding proposing a board write is marked unavailable in the ledger the page renders', () => {
+  const data = embedded();
+  const board = data.findings.filter((f) => (f.proposal.ops ?? [])
+    .some((o) => ['set-board-status', 'add-to-board', 'remove-board-item'].includes(o.op)));
+  assert.ok(board.length, 'the committed ledger still carries board findings — otherwise this proves nothing');
+  for (const f of board) {
+    assert.ok(f.proposal.unavailable, `${f.id} must carry the unavailable marker`);
+    assert.equal(f.proposal.unavailable.issue, 252);
+  }
+  const others = data.findings.filter((f) => !board.includes(f));
+  for (const f of others) assert.equal(f.proposal.unavailable ?? null, null, `${f.id} is performable`);
+});
+
+test('the page says so on the row and in the rail, and never offers to accept it', () => {
+  assert.match(html, /cannot run/, 'the marker text is rendered');
+  assert.match(html, /issues\/252/, 'and links the reason');
+  // The accept button is locked for an unavailable finding in the deciding lane.
+  assert.match(htmlLocal, /f\.proposal\.unavailable/, 'the local build gates on it');
+});

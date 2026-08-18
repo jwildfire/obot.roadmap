@@ -28,7 +28,7 @@ import path from 'node:path';
 
 import { ROOT, HUB } from './lib/repos.mjs';
 import { runAudit, FINDINGS_PATH, DECISIONS_PATH, readJson } from './audit_roadmap.mjs';
-import { makeClient, runOps } from './lib/audit/ops.mjs';
+import { makeClient, runOps, proposalUnavailable } from './lib/audit/ops.mjs';
 import { RULE_BY_ID } from './lib/audit/rules.mjs';
 
 const args = process.argv.slice(2);
@@ -99,7 +99,7 @@ function report({ decision, results, issueNumber, dryRun }) {
   lines.push(`## Audit decision — ${decision}${dryRun ? ' (dry run)' : ''}`, '');
   lines.push(`${results.length} finding${results.length === 1 ? '' : 's'} from decision #${issueNumber ?? '—'}: ${applied.length} applied, ${delegated.length} handed to the agent, ${rejected.length} rejected, ${stale.length} refused as stale, ${blocked.length} blocked, ${failed.length} failed.`, '');
   if (blocked.length) {
-    lines.push(`**This decision was not applied and is still valid.** ${blocked.length} finding${blocked.length === 1 ? '' : 's'} could not be re-validated because a source the audit reads was unavailable on this run. Re-file the decision — the findings were not discarded.`, '');
+    lines.push(`**This decision was not applied and is still valid.** ${blocked.length} finding${blocked.length === 1 ? '' : 's'} went nowhere: either a source the audit reads was unavailable on this run, or the repair needs an operation no credential can currently perform. Nothing was attempted and nothing was discarded.`, '');
   }
 
   const block = (title, rows, render) => {
@@ -113,7 +113,7 @@ function report({ decision, results, issueNumber, dryRun }) {
   block('Handed to the agent', delegated, (r) => `**${r.finding.ruleTitle}** on ${link(r.finding.subject)} — ${r.finding.proposal.summary}`);
   block('Rejected (muted for 60 days, or until the evidence changes)', rejected, (r) => `**${r.id}** — ${r.detail}`);
   block('Refused as stale', stale, (r) => `**${r.id}** — ${r.detail}`);
-  block('Blocked — a source was unreadable, so nothing was re-validated', blocked, (r) => `**${r.id}** — ${r.detail}`);
+  block('Blocked — nothing was attempted, and the decision still stands', blocked, (r) => `**${r.id}** — ${r.detail}`);
   block('Failed', failed, (r) => `**${r.id}** — ${r.detail}`);
 
   lines.push('---', 'Applied by `apply_audit_decision.mjs` for [requirement #92](https://github.com/jwildfire/obot.roadmap/issues/92). Nothing runs without an explicit accept, and every accepted change is re-validated against a fresh audit before it is applied.');
@@ -198,6 +198,23 @@ async function main() {
     if (finding.proposal.kind === 'agentic') {
       agentic.push(finding);
       results.push({ id, finding, outcome: 'delegated', detail: 'handed to the bounded agent' });
+      continue;
+    }
+    // A repair no credential can perform is refused here, before the executor is
+    // handed anything (#254). It is `blocked`, not `failed`: nothing was wrong
+    // with the finding or the run, the operation simply has nowhere to go until
+    // #252 is answered — and blocked decisions are reported as still valid.
+    //
+    // A chain with a performable half is NOT refused: it goes to the executor,
+    // which applies that half and stops at the blocked op saying what landed.
+    const unavailable = proposalUnavailable(finding.proposal);
+    if (unavailable && !unavailable.partial) {
+      results.push({
+        id,
+        finding,
+        outcome: 'blocked',
+        detail: `${unavailable.ops.join(', ')} cannot run — ${unavailable.reason}. Nothing was attempted; see #${unavailable.issue}.`,
+      });
       continue;
     }
     try {

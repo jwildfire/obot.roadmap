@@ -14,6 +14,7 @@
 import { esc, fmtET } from '../gh.mjs';
 import { HUB } from '../repos.mjs';
 import { freshness, STALE_HOURS } from './freshness.mjs';
+import { proposalUnavailable } from './ops.mjs';
 
 // One URL should not carry an unbounded list; past this a bulk accept is split
 // and the page says so rather than silently truncating.
@@ -56,6 +57,20 @@ const clearOn = (anchor, label) =>
   `<a class="audit-btn accept" href="audit/index.html#${esc(anchor)}"`
   + ` title="Accept or reject on the audit page, which triggers the apply lane and reports the run as it happens">${esc(label)}</a>`;
 
+// A repair no credential can perform, marked where the finding is noticed (#254).
+// Computed here rather than read from the ledger so it appears on the ledger
+// already on disk, the night the block is discovered, instead of on the first
+// audit run afterwards.
+function unavailableMark(f) {
+  const u = proposalUnavailable(f.proposal);
+  if (!u) return '';
+  const word = u.partial ? 'part cannot run' : 'cannot run';
+  const detail = u.partial
+    ? `${u.ops.join(', ')} cannot run — ${u.reason}. Accepting it applies ${u.performable.join('; ')} and stops there.`
+    : `${u.reason}. Accepting this would fail rather than fix it.`;
+  return ` <a class="rm-pill audit-unavailable" href="${esc(u.url)}" title="${esc(detail)}">${word} — #${u.issue}</a>`;
+}
+
 function findingRow(f) {
   const subj = f.subject.number
     ? `<a href="${esc(f.subject.url)}">${esc(shortRepo(f.subject.repo))}#${f.subject.number}</a>`
@@ -81,7 +96,7 @@ function findingRow(f) {
         <span class="rm-meta">${seen}</span>
       </div>
       <p class="audit-evidence">${f.evidence.map(esc).join(' · ')}</p>
-      <p class="audit-proposal"><span class="rm-pill ${f.proposal.kind === 'agentic' ? 'ready' : 'ok'}">${esc(f.proposal.kind)}</span> ${esc(f.proposal.summary)} ${ops}</p>
+      <p class="audit-proposal"><span class="rm-pill ${f.proposal.kind === 'agentic' ? 'ready' : 'ok'}">${esc(f.proposal.kind)}</span> ${esc(f.proposal.summary)} ${ops}${unavailableMark(f)}</p>
       <div class="audit-actions">${flags}<code class="audit-id">${esc(f.id)}</code>${clearOn(`rule-${f.rule}`, 'review')}</div>
     </div>`;
 }
@@ -171,6 +186,14 @@ ${body}
   const boardNotice = ledger.boardReadable
     ? ''
     : '<p class="rm-notice">The obot Roadmap project was unreadable on the last run — every board rule was skipped, so this list is incomplete rather than clear.</p>';
+  // The repairs that are detected but not performable, counted once above the
+  // list (#254). Without this the fold offers a bulk "clear N fixes" button for
+  // findings that would every one of them fail on accept.
+  const unavailable = live.map((f) => proposalUnavailable(f.proposal)).filter(Boolean);
+  const partial = unavailable.filter((u) => u.partial).length;
+  const unavailableNotice = unavailable.length
+    ? `<p class="rm-notice">${unavailable.length} finding${unavailable.length === 1 ? '' : 's'} propose${unavailable.length === 1 ? 's' : ''} a write to the obot Roadmap board, which no credential can currently perform — the App is refused on a user-owned project and the guard denies the only token that works (<a href="https://github.com/${HUB}/issues/252">#252</a>). They are real findings and their board half is not repairable until that is answered${partial ? `; ${partial} of them also carry a change that does still run, and say so on the row` : ''}.</p>`
+    : '';
   const brokenNotice = broken.length
     ? `<p class="rm-notice">${broken.length} rule${broken.length === 1 ? '' : 's'} failed to run: ${broken.map((r) => esc(r.id)).join(', ')} — see the rule list.</p>`
     : '';
@@ -183,7 +206,13 @@ ${body}
     ? `Findings (${live.length}) as of ${fresh.age} ago — ${counts.high} high · ${counts.medium} medium · ${counts.low} low${counts.muted ? ` · ${counts.muted} muted` : ''}`
     : `Findings (0) as of ${fresh.age} ago — every rule was satisfied when the audit last ran${counts.muted ? `, with ${counts.muted} muted` : ''}`;
 
-  const mechanicalHigh = live.filter((f) => f.confidence === 'high' && f.proposal.kind === 'mechanical').length;
+  // The bulk button counts only repairs that would change something: a fully
+  // blocked one changes nothing, and a partial one still applies its other half.
+  const mechanicalHigh = live.filter((f) => {
+    if (f.confidence !== 'high' || f.proposal.kind !== 'mechanical') return false;
+    const u = proposalUnavailable(f.proposal);
+    return !u || u.partial;
+  }).length;
   const body = live.length
     ? `<div class="audit-top">${clearOn('audit-findings', mechanicalHigh
       ? `clear ${mechanicalHigh} high-confidence mechanical fixes on the audit page`
@@ -201,7 +230,7 @@ ${muted.map(findingRow).join('\n')}
 
   return head(`${freshLine}
 <p class="rm-note">${note}</p>
-${boardNotice}${brokenNotice}<details class="rm-fold audit-fold" id="audit-findings">
+${boardNotice}${unavailableNotice}${brokenNotice}<details class="rm-fold audit-fold" id="audit-findings">
 <summary>${esc(summary)}</summary>
 ${body}
 ${mutedBlock}

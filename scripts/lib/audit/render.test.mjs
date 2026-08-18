@@ -71,3 +71,29 @@ test('a missing ledger still renders the section, and says nothing has run', () 
   assert.match(html, /No audit has run yet/);
   assert.doesNotMatch(html, /satisfies every rule/);
 });
+
+// #254 — a repair nobody can perform says so where it is offered. The fold is
+// where a finding gets noticed, so the impossibility has to be visible at the
+// noticing, not discovered after the accept.
+test('a board repair is marked as one that cannot run, and links the reason', () => {
+  const html = auditSection(ledger({
+    counts: { total: 1, high: 1, medium: 0, low: 0, mechanical: 1, agentic: 0, muted: 0 },
+    findings: [finding],
+  }), { now: NOW });
+  assert.match(html, /audit-unavailable/, 'the finding is marked on the surface');
+  assert.match(html, /cannot run/i);
+  assert.match(html, /issues\/252/);
+});
+
+test('an ordinary repair carries no such mark', () => {
+  const ok = {
+    ...finding,
+    proposal: { kind: 'mechanical', summary: 'Close it.', ops: [{ op: 'close-issue', label: 'close it' }] },
+  };
+  const html = auditSection(ledger({
+    counts: { total: 1, high: 1, medium: 0, low: 0, mechanical: 1, agentic: 0, muted: 0 },
+    findings: [ok],
+  }), { now: NOW });
+  assert.doesNotMatch(html, /audit-unavailable/);
+  assert.doesNotMatch(html, /issues\/252/);
+});

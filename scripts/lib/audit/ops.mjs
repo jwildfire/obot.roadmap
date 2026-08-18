@@ -18,6 +18,56 @@ export const OPS = [
   'assign', 'set-milestone', 'close-discussion', 'comment',
 ];
 
+/**
+ * The board writes, and why nothing can perform them (#252, #254).
+ *
+ * Measured on 2026-08-18, minutes apart on the same issue: as the obotclaw App,
+ * `addProjectV2ItemById` returns FORBIDDEN, because a GitHub App cannot reach a
+ * board owned by a user account; as @jwildfire, which does work, the attribution
+ * guard denies the call before it is sent. There is no third credential.
+ *
+ * The ops stay in the vocabulary. They are not broken code and they are not a
+ * design mistake — they are correct operations with no credential to run under,
+ * and they work again the day #252 is answered. What changes is that every
+ * surface offering one says so BEFORE it is accepted, and the executor refuses
+ * up front instead of failing halfway through a chain.
+ */
+export const BOARD_WRITE_BLOCK = {
+  issue: 252,
+  url: 'https://github.com/jwildfire/obot.roadmap/issues/252',
+  since: '2026-08-18',
+  reason: 'no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire\'s own token',
+};
+
+const UNAVAILABLE = {
+  'set-board-status': BOARD_WRITE_BLOCK,
+  'add-to-board': BOARD_WRITE_BLOCK,
+  'remove-board-item': BOARD_WRITE_BLOCK,
+};
+
+/** Which of these ops cannot run, in listed order, deduplicated. */
+export const unavailableOps = (ops = []) =>
+  [...new Set((ops ?? []).map((o) => o?.op).filter((op) => UNAVAILABLE[op]))];
+
+/**
+ * The marker a surface renders beside a repair it cannot perform: null when the
+ * proposal can run, otherwise the ops that cannot, the reason, and the issue
+ * that has to be answered before they can. Pure, so the roadmap fold and the
+ * audit page can compute it from a ledger written before this existed.
+ *
+ * `partial` is the case worth keeping apart. Most blocked proposals are a board
+ * write and nothing else, and there is no reason to start one. A few chain a
+ * close in front of it — that half is real work that still lands, so the surface
+ * says which half runs instead of writing the whole repair off.
+ */
+export function proposalUnavailable(proposal) {
+  const ops = unavailableOps(proposal?.ops);
+  if (!ops.length) return null;
+  const { reason, issue, url, since } = UNAVAILABLE[ops[0]];
+  const performable = (proposal.ops ?? []).filter((o) => !UNAVAILABLE[o?.op]).map((o) => o.label);
+  return { ops, performable, partial: performable.length > 0, reason, issue, url, since };
+}
+
 export function makeClient({ token, projectToken = null, dryRun = false } = {}) {
   const project = projectToken || token;
 
@@ -191,9 +241,27 @@ const HANDLERS = {
 
 // Runs one finding's ops in order, stopping at the first failure so a half-applied
 // change is reported as exactly that rather than as a success.
+//
+// An op that cannot run under any credential is refused rather than attempted
+// (#254). A chain of nothing but blocked ops is refused before the first call
+// goes out — starting it would spend a request to learn what the vocabulary
+// already knows. A chain whose earlier ops CAN run still runs them, and stops at
+// the blocked one saying what landed, because refusing the performable half
+// would be this change removing a repair rather than describing one.
 export async function runOps(client, ops, ctx) {
+  const blocked = unavailableOps(ops);
+  const marker = blocked.length ? proposalUnavailable({ ops }) : null;
+  const cannotRun = (m, done) =>
+    new Error(
+      `${m.ops.join(', ')} cannot run — ${m.reason}. `
+      + `${done.length ? `Applied first: ${done.join('; ')}. ` : 'Nothing was attempted. '}`
+      + `See #${m.issue} (${m.url}); the op works again when that is answered.`,
+    );
+  if (marker && !marker.partial) throw cannotRun(marker, []);
+
   const done = [];
   for (const op of ops) {
+    if (UNAVAILABLE[op.op]) throw cannotRun(marker, done);
     const handler = HANDLERS[op.op];
     if (!handler) throw new Error(`unknown op "${op.op}" — the executor refuses anything outside ${OPS.join(', ')}`);
     try {
