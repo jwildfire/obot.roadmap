@@ -13,6 +13,13 @@ so report and diary entry are permanently paired:
 
 - `YYYY-MM-DD.html` — the day's first session (pairs with `diary/YYYY-MM-DD.md`)
 - `YYYY-MM-DD-N.html` (N = 2, 3, …) — later sessions the same day
+- `YYYY-MM-DD-boundary-HHMM.html` — a record **recovered** after being overwritten, named by the
+  session boundary inside it rather than by a sequence number. There is one: `2026-07-27-boundary-2221.html`,
+  destroyed on 2026-07-27 when two sessions resolved to the same filename with no day-boundary marker
+  present, and recovered from git on 2026-08-18. The page says so at the top of itself. The defect is
+  fixed in [obot.agent#201](https://github.com/jwildfire/obot.agent/issues/201) — a report is now
+  overwritten only when the boundary recorded in the file matches the render, and otherwise takes a
+  free name and reports which it chose.
 
 Each diary entry links its report with a "📊 Session report" line under the meta block
 (added by the wrapup); rendering reports as proper tabs on the diary pages is the
