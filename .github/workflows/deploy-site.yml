@@ -208,16 +208,39 @@ jobs:
       # GITHUB_PAT, which here is ROADMAP_TOKEN, and Gilead-BioStats enforces SAML SSO
       # for personal access tokens. actions/checkout uses the workflow token, which
       # reads public repos without an SSO grant.
+      # TIMEOUTS ON THE R HALF, and they are the point rather than a tidy-up.
+      #
+      # Every step below already carries `continue-on-error: true`, and the
+      # placeholder step after them runs `if: always()`. The intent could not be
+      # clearer: the package status dashboard is optional and must never block the
+      # deploy of pages built from this repo's own content.
+      #
+      # `continue-on-error` absorbs a step that FAILS. It does nothing for a step
+      # that HANGS, and there was no timeout anywhere, so the job's 6-hour default
+      # was the only backstop. On 2026-08-18 setup-r stalled inside `apt-get
+      # update` against the Ubuntu mirrors and produced no output for 42 minutes;
+      # two consecutive deploys — one of them carrying work already merged to main
+      # — were cancelled at that step with Validate, the local-only guard and the
+      # Deploy itself all skipped. Nothing published for the best part of an hour,
+      # and the failure looked exactly like a slow build the whole time.
+      #
+      # A timeout turns the hang into the failure the rest of this already knows
+      # how to survive: the step goes red, `continue-on-error` absorbs it, the
+      # placeholder publishes, and the site ships without the R dashboard — which
+      # is precisely what this section was written to do.
       - uses: r-lib/actions/setup-pandoc@v2
         continue-on-error: true
+        timeout-minutes: 5
 
       - uses: r-lib/actions/setup-r@v2
         continue-on-error: true
+        timeout-minutes: 10
         with:
           use-public-rspm: true
 
       - name: Check out gh.dash
         continue-on-error: true
+        timeout-minutes: 5
         uses: actions/checkout@v4
         with:
           repository: Gilead-BioStats/gh.dash
@@ -230,6 +253,7 @@ jobs:
       # local:: packaged the checkout into a 4 kB stub and failed inside pkgdepends.
       - name: Install gh.dash dependencies
         continue-on-error: true
+        timeout-minutes: 15
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           working-directory: gh.dash-src
@@ -239,10 +263,12 @@ jobs:
 
       - name: Install gh.dash
         continue-on-error: true
+        timeout-minutes: 10
         run: R CMD INSTALL --no-docs gh.dash-src
 
       - name: Build package status dashboard
         continue-on-error: true
+        timeout-minutes: 10
         run: Rscript scripts/build_status.R
 
       - name: Publish placeholder if the dashboard did not build
