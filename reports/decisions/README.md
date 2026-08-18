@@ -33,6 +33,37 @@ PRs, and these.
   "AI-generated report." (the hardcoded feed fallback until 2026-08-15, now rejected
   by name) and not a restatement of the title. `node scripts/check_artifact_descriptions.mjs`
   fails the deploy without one; full contract in [`reports/README.md`](../README.md).
+- **The premises the page rests on, in a form something can check.** A decision
+  artifact states its situation on the day it is written and nothing checks it again —
+  which is how D0021 came to say a release was held pending the decision when the
+  release had published sixteen minutes earlier, with the evidence and the
+  recommendation underneath it still perfectly sound
+  ([#266](https://github.com/jwildfire/obot.roadmap/issues/266)). Each load-bearing
+  premise gets one line beside the description:
+
+  ```html
+  <meta name="premise" content="gsm.safety v1.1.0 is published, not a draft | gh release view v1.1.0 -R jwildfire/gsm.safety --json isDraft --jq .isDraft → prints false">
+  ```
+
+  The sentence before the `|` is the assumption in plain words; after it is a read-only
+  command and what its output should say — the same `Verify:` grammar the config list
+  uses, so an author who has written one has written the other. Write several when the
+  page rests on several. The Navigator's five-minute sweep re-checks every one of them
+  while the artifact is still awaiting him and says when one has expired, before he
+  reads the page rather than after
+  ([obot.agent#262](https://github.com/jwildfire/obot.agent/issues/262)).
+
+  Three rules, all of them the reason it is worth doing:
+  - The command must be **read-only** and must not need a shell. A check that mutates
+    is not a check, and anything the allowlist does not recognise is reported as
+    unchecked rather than run — never as a premise that holds.
+  - A premise that **cannot be checked** and one that **no longer holds** are different
+    states and are never rendered as each other. `manual — <what to look at>` is a
+    legitimate value and says so plainly.
+  - A premise is about **framing**, not about evidence. When one expires the page's
+    argument usually survives and its question changes shape, so the correction is a
+    dated note he can see rather than a silent rewrite of a page he may already have
+    read — which is what D0021 got.
 - **A permanent ID, claimed before the page is written** (@jwildfire, 2026-08-15:
   *"Give every decision artifact an ID and then give each question for me a sub ID…
   Use D0001 as the ID"*). The artifact is `D0001`; its questions are `D0001.1`,
