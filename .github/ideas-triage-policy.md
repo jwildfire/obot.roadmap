@@ -28,7 +28,8 @@ Later comments in the thread override the opening post; ignore nudge/notice comm
 - Labels: `requirement` for outcome 2, plus one topical label (`safety`, `infrastructure`, or `ai`) when it clearly fits. Assignee: `jwildfire`.
 - `draft` label: NOT automatic — apply it by judgment, when the body leans heavily on assumptions or TBD sections and should be reviewed before anyone builds from it; omit it when the idea was specific enough that the filed issue stands on its own.
 - Milestone: `backlog` by default; `2026q3` when the idea is clearly near-term urgent.
-- Board: attempt `gh project item-add 1 --owner jwildfire --url <issue-url>`; if it fails (token lacks ProjectsV2), print "board add deferred to session wrapup" in your output and continue — that fallback is approved.
+- Board: attempt `gh project item-add 1 --owner jwildfire --url <issue-url>`; if it fails, print "board add deferred to session wrapup" in your output and continue — that fallback is approved. It fails whenever the credential is a GitHub App installation token: no App can reach a user-owned ProjectsV2 board, and there is no permission to grant ([obot.agent#197](https://github.com/jwildfire/obot.agent/issues/197)).
+- Every other write is attributed to `obotclaw[bot]`, never to @jwildfire — the ambient `gh` token authenticates as him and GitHub records the actor. In this workflow `GH_TOKEN` is already the app token. Running locally, write through `obot.agent/scripts/obot-gh`.
 
 ## Recording posted artifacts (binding — cost footers depend on it)
 

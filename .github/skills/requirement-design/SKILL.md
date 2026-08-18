@@ -47,7 +47,7 @@ Adapted from [gsm.roadmap's requirement-design skill](https://github.com/Gilead-
    - Dependencies on other requirements, data sources, or upstream repos
    - Open questions
 
-5. **Present the draft for review** and iterate. Design changes to the issue body go through `gh issue edit --body-file` (draft-sync convention). Verify Design is signed off before decomposing the work — then hand off to [`requirement-tasks`](../requirement-tasks/SKILL.md).
+5. **Present the draft for review** and iterate. Design changes to the issue body go through `obot.agent/scripts/obot-gh issue edit --body-file` (draft-sync convention) — the wrapper writes as `obotclaw[bot]`, where a plain `gh` writes as @jwildfire ([obot.agent#197](https://github.com/jwildfire/obot.agent/issues/197)). Verify Design is signed off before decomposing the work — then hand off to [`requirement-tasks`](../requirement-tasks/SKILL.md).
 
 ## Reference
 

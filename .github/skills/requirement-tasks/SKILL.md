@@ -33,12 +33,13 @@ Adapted from [gsm.roadmap's requirement-tasks skill](https://github.com/Gilead-B
 
 5. **Post the sub-issues** to their target repos:
    ```
-   gh issue create -R jwildfire/<repo> --title "<title>" --body-file <draft_path> --label <labels> --assignee @me
+   obot.agent/scripts/obot-gh issue create -R jwildfire/<repo> --title "<title>" --body-file <draft_path> --label <labels> --assignee jwildfire
    ```
+   The wrapper mints an `obotclaw[bot]` token, so GitHub records the bot as the actor rather than @jwildfire ([obot.agent#197](https://github.com/jwildfire/obot.agent/issues/197)). The assignee is spelled out because `@me` cannot work under it: a GitHub App bot is not an assignable user at all — `GET /repos/jwildfire/obot.roadmap/assignees/obotclaw[bot]` is a 404.
 
 6. **Link each posted sub-issue to the parent** using the `sub-issue-linking` skill (gsm.agent). Verify each child appears under the parent in the GitHub Relationships UI.
 
-7. **Mirror the URLs into the parent's Sub-issues section** — append one line per sub-issue URL via `gh issue edit --body-file` (draft-sync convention). This is what the roadmap generator reads; skipping it means the rollup shows no tasks.
+7. **Mirror the URLs into the parent's Sub-issues section** — append one line per sub-issue URL via `obot-gh issue edit --body-file` (draft-sync convention). This is what the roadmap generator reads; skipping it means the rollup shows no tasks.
 
 8. **Summarize** the result: parent #, list of posted sub-issues (`repo#N — title`), and links to each. The rollup refreshes on the next push to `main` (the Deploy site workflow runs `scripts/build_roadmap_next.mjs`); no manual trigger exists.
 
