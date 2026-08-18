@@ -27,10 +27,12 @@ Index row are views over it.
   proposed body, for him to apply on his word.
 
 Still open: G1, the rewritten body, proposed to him on the goal; and G2, whether the
-five workstreams are the right grouping. The five labels were applied across the 37
-open requirements at the operating officer's direction under
-[#226](https://github.com/jwildfire/obot.roadmap/issues/226), not on an answer of his,
-which is defensible only because a label is reversible.
+five workstreams are the right grouping. The five labels are applied at the operating
+officer's direction under [#226](https://github.com/jwildfire/obot.roadmap/issues/226),
+not on an answer of his, which is defensible only because a label is reversible — the
+37 this page sorted, plus 10 filed since and ruled on 2026-08-18 under the rule "label
+by what the deliverable is, not by what it is about". 47 of the goal's 48 open children
+carry one; #229 is left unlabelled deliberately and says so on its own issue.
 
 ## What produced this
 
