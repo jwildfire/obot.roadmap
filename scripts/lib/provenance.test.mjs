@@ -269,3 +269,48 @@ test('an unattended body that asserts his review, with an EMPTY block, is still 
   assert.equal(v.state, 'empty');
   assert.equal(v.reviewClaim, 'asserted');
 });
+
+// ---------------------------------------------------- prose about the convention
+
+test('an example inside a code fence is not read as the issue\'s own provenance', () => {
+  // A requirement that documents this convention quotes the block. Reading the
+  // example would let a page of prose about approvals assert one.
+  const doc = [
+    '### Design',
+    '',
+    'Requirements will carry a block:',
+    '',
+    '```',
+    'Authored by: somebody else',
+    'Approved by: D0018.1',
+    'Beyond the approval: none',
+    '```',
+    '',
+    'That is the shape.',
+  ].join('\n');
+  const p = parseProvenance(doc);
+  assert.equal(p.present, false);
+  assert.equal(judge(doc, INDEX, { requireBlock: false }).state, 'missing');
+});
+
+test('a real block at the foot beats a mention of the lines above it', () => {
+  const doc = [
+    '### Overview',
+    '',
+    'Authored by: the example in the prose above',
+    'Approved by: D0018.1',
+    '',
+    '---',
+    '',
+    'Authored by: 👯🤖 W0046',
+    'Approved by: EMPTY',
+  ].join('\n');
+  const p = parseProvenance(doc);
+  assert.equal(p.authoredBy, '👯🤖 W0046');
+  assert.equal(p.isEmpty, true, 'the block at the foot wins, and it claims nothing');
+});
+
+test('a tilde fence closes as well as a backtick one', () => {
+  const doc = '~~~\nApproved by: D0018.1\n~~~\n\nAuthored by: x\nApproved by: EMPTY\n';
+  assert.equal(parseProvenance(doc).isEmpty, true);
+});

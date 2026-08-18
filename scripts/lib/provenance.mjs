@@ -16,10 +16,10 @@
 // warning that a field nobody fills is worse than a sentence everybody writes.
 //
 // The measurement settles it, and not in the direction the warning expects. The
-// sentence everybody writes already exists: 66 of the hub's 100 requirement bodies
+// sentence everybody writes already exists: 75 of the hub's 113 requirement bodies
 // end "and reviewed by @jwildfire", 9 say "not yet reviewed", and #215 itself —
-// drafted unattended, never shown to him before filing — asserts that he reviewed
-// it. A costless sentence has already drifted from the truth 66 times. So the
+// drafted unattended, never shown to him before filing — asserted that he reviewed
+// it. A costless sentence had already drifted from the truth 75 times. So the
 // problem was never a field going unfilled; it was a claim nobody could check.
 //
 // Hence exactly one mechanical property, and it is not presence:
@@ -40,7 +40,7 @@
 // ## The block
 //
 // Three lines, at the foot of the issue body, in the slot the drafted-by line
-// already occupies (98 of 100 bodies put it there). Deliberately NOT a sixth `###`
+// already occupies (98 of 100 sampled bodies put it there). Deliberately NOT a sixth `###`
 // section: AGENTS.md forbids adding one, downstream parsers split on the five, and
 // an HTML comment — the other in-body metadata slot — renders invisibly, which is
 // the one thing #215 rules out.
@@ -91,9 +91,37 @@ const QUESTION_RE = /^[A-Z]\d{4}\.[1-9]\d*$/;
 const REVIEW_RE = /^([A-Za-z0-9][\w.-]*\/[\w.-]+)#(\d+)\s+review$/;
 
 const LABELS = {
-  authoredBy: /^[ \t]*Authored by:[ \t]*(.*)$/mi,
-  approvedBy: /^[ \t]*Approved by:[ \t]*(.*)$/mi,
-  beyond: /^[ \t]*Beyond the approval:[ \t]*(.*)$/mi,
+  authoredBy: /^[ \t]*Authored by:[ \t]*(.*)$/gmi,
+  approvedBy: /^[ \t]*Approved by:[ \t]*(.*)$/gmi,
+  beyond: /^[ \t]*Beyond the approval:[ \t]*(.*)$/gmi,
+};
+
+/**
+ * The body with fenced code blocks blanked out.
+ *
+ * A requirement that documents this convention quotes the block, and a naive scan
+ * would read the example as the issue's own provenance — which would let a page of
+ * prose about approvals assert one. The same trap the attribution-guard hit from the
+ * other side: a checker that cannot tell an example from the real thing is worse than
+ * none, because it is confidently wrong in the direction of claiming approval.
+ */
+const outsideFences = (body = '') => {
+  let fenced = false;
+  return body.split('\n').map((line) => {
+    if (/^\s*(```|~~~)/.test(line)) { fenced = !fenced; return ''; }
+    return fenced ? '' : line;
+  }).join('\n');
+};
+
+/**
+ * The LAST match, because the block lives at the foot of the body. An issue that
+ * mentions the lines in prose above its own block loses to the block.
+ */
+const field = (body, re) => {
+  re.lastIndex = 0;
+  let last = null, m;
+  while ((m = re.exec(body)) !== null) last = m[1];
+  return (last ?? '').trim();
 };
 
 /**
@@ -101,9 +129,9 @@ const LABELS = {
  *
  * The drafted-by line has asserted "and reviewed by @jwildfire" on two thirds of
  * the hub's requirements, including ones filed in unattended sessions where no
- * review was possible. Reported rather than rewritten: 66 bodies is a bulk edit,
+ * review was possible. Reported rather than rewritten: 74 bodies is a bulk edit,
  * and bulk-editing his record to say something different about his own review is
- * not a call an agent makes unattended.
+ * not a call an agent makes unattended. Counted in reports/requirement-provenance/.
  *
  * Returns `asserted` (claims he reviewed it), `disclaimed` (says he has not yet),
  * or `none`.
@@ -156,9 +184,10 @@ export function parseCitation(raw = '') {
  * filed after it means "the convention was skipped".
  */
 export function parseProvenance(body = '') {
-  const authoredBy = (body.match(LABELS.authoredBy)?.[1] ?? '').trim();
-  const approvedRaw = (body.match(LABELS.approvedBy)?.[1] ?? '').trim();
-  const beyond = (body.match(LABELS.beyond)?.[1] ?? '').trim();
+  const scan = outsideFences(body);
+  const authoredBy = field(scan, LABELS.authoredBy);
+  const approvedRaw = field(scan, LABELS.approvedBy);
+  const beyond = field(scan, LABELS.beyond);
   const present = Boolean(authoredBy || approvedRaw);
 
   const { citations, gloss } = splitCitations(approvedRaw);
