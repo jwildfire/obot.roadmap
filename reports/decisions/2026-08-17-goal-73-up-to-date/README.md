@@ -1,8 +1,36 @@
 # D0020 — Bringing the autonomy goal up to date
 
-**Status: Awaiting @jwildfire** — G1–G4 (D0020.1–.4).
+**Status: Partially decided 2026-08-17** — G3 and G4 (D0020.3–.4) answered; G1 and G2 still his.
 **Requirement:** [jwildfire/obot.roadmap#226](https://github.com/jwildfire/obot.roadmap/issues/226) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
 **Q&A:** [#228](https://github.com/jwildfire/obot.roadmap/discussions/228)
+
+## What he decided, 2026-08-17
+
+Recorded on the page in a `Decisions` section, which is the record — this file and the
+Index row are views over it.
+
+- G3, the historical orphans. He overruled the recommendation, and both the concierge
+  and the operating officer with it. His words: *"i'm fine if some orphans stay
+  orphaned, but fix the ones we can. Let's tag true orphans with a label. and just add
+  comments on requirements that get retroactive updates. Again, we're pushing for
+  transparency and continuous improvement. not perfection."* Refined once when the
+  chronology problem was put to him — several orphans predate the requirement they
+  would attach to, so a forced parent would be a fiction. Delivered the same morning
+  under [#233](https://github.com/jwildfire/obot.roadmap/issues/233) and
+  [obot.agent#164](https://github.com/jwildfire/obot.agent/pull/164): 51 attached and
+  re-read to confirm, 146 labelled `orphan-accepted` across seven repos, 28
+  requirements commented, orphans across all history 197 → 1.
+- G4, the title. Relayed rather than quoted, and marked as such on the page:
+  "Increase Autonomy", as recommended, with the loop framing in the goal's opening
+  sentence rather than in the name. Applying it is his — posted to
+  [#73](https://github.com/jwildfire/obot.roadmap/issues/73) as a comment with the
+  proposed body, for him to apply on his word.
+
+Still open: G1, the rewritten body, proposed to him on the goal; and G2, whether the
+five workstreams are the right grouping. The five labels were applied across the 37
+open requirements at the operating officer's direction under
+[#226](https://github.com/jwildfire/obot.roadmap/issues/226), not on an answer of his,
+which is defensible only because a label is reversible.
 
 ## What produced this
 
