@@ -26,6 +26,7 @@ import { siteHeader } from '../lib/nav.mjs';
 import { releaseKey, browserReleaseKeySource } from '../lib/rc.mjs';
 import { T } from '../lib/highlights.mjs';
 import { nowStripHtml, nowStripStyle, nowStripScript } from './nowstrip.mjs';
+import { readConfigCount, CONFIG_COUNT_STALE_DAYS } from '../lib/public-channel.mjs';
 
 const REVIEWER = 'jwildfire';
 const PROJECT_URL = 'https://github.com/users/jwildfire/projects/1';
@@ -255,7 +256,40 @@ function recentStrip({ relRes, decRes, ideaRes, NOW }) {
 }
 
 // ------------------------------------------------------------------------- page
+/**
+ * The config bucket, as a count and never as items (#203, BL4).
+ *
+ * The third of his three buckets — release candidates, decisions, config — and
+ * the only one this site cannot show. Each config item names exactly which
+ * control stops an agent from acting, so the list is a map of the locks and it
+ * lives in a workspace-local file outside every repo; the number reaches this
+ * page through data/config-count.json, which carries two integers and a date and
+ * is refused by lib/public-channel.mjs if it ever carries anything else.
+ *
+ * The omission is stated rather than hidden. A bucket that silently vanished from
+ * one of the two surfaces would break the spine the surfaces share, and a reader
+ * comparing them would be left to guess whether there were no config items or no
+ * config section — which are opposite facts.
+ */
+function configStrip(count) {
+  const dash = 'the <a href="https://github.com/jwildfire/obot.roadmap/issues/180">Operations Dashboard</a>';
+  if (!count.ok) {
+    return `Config items are cleared on ${dash}, on his own machine. No count has reached this page — `
+      + `${esc(count.why)}, so this page is not saying there are none.`;
+  }
+  const n = count.open;
+  const crit = count.critical ? ` ${count.critical} of them critical.` : '';
+  const when = count.stale
+    ? ` Counted ${esc(fmtET(new Date(count.asOf)))}, which is more than ${CONFIG_COUNT_STALE_DAYS} days ago — treat it as the last reading, not as now.`
+    : '';
+  // Second person, like every other line on this page: its h1 is "Waiting on you".
+  return `<b>${n}</b> item${n === 1 ? '' : 's'} need${n === 1 ? 's' : ''} your keyboard.${crit}${when} `
+    + `What each one is stays off this site by design — every entry names a control that stops an agent, `
+    + `so the text never leaves your machine and only the number crosses. You clear them on ${dash}.`;
+}
+
 export async function render(data) {
+  const configCount = readConfigCount({ now: data.NOW });
   const { NOW, reqRes, prRes, relRes, ideaRes, decRes, hierRes, proposal, HUB, lightsRes } = data;
   const items = buildItems(data);
   const n = items.length;
@@ -385,6 +419,10 @@ ${items.map((item) => card(item, NOW)).join('\n')}
 ${reviewLaneLine(hierRes, proposal)}
 
 <div class="q-strips">
+  <section class="q-strip">
+    <h2>Config</h2>
+    <p>${configStrip(configCount)}</p>
+  </section>
   <section class="q-strip">
     <h2>Recent</h2>
     <p>${recentStrip(data)}</p>

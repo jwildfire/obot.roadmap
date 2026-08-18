@@ -22,6 +22,11 @@ on:
       - "reports/**"
       - "scripts/**"
       - "requirements/design/**"
+      # The numbers his machine hands this build (#203). Currently the config
+      # count: two integers and a date, written by obot.agent/tools/config-count
+      # and refused by lib/public-channel.mjs if it ever arrives carrying
+      # anything else. A new count should redeploy the pages that render it.
+      - "data/**"
       - ".github/workflows/deploy-site.yml"
   schedule:
     - cron: "0 10 * * *" # daily (design decision D4)
@@ -84,6 +89,22 @@ jobs:
           cp -r site/. _site/
           cp -r reports _site/reports
           cp requirements/design/*.html _site/requirements/design/ 2>/dev/null || true
+
+      # THE LOCAL-ONLY BOUNDARY, checked before anything builds (#203).
+      #
+      # Config item text never reaches a public surface — counts only. Four
+      # defences already enforced that (location, sentinel, the deploy grep below,
+      # gitignore) and every one of them sits downstream of the read: they catch a
+      # copy that still carries the marker. A generator that reads the workspace
+      # list and renders its parsed headlines carries no marker and walks through
+      # all four.
+      #
+      # So the guard is upstream now — a public generator physically cannot open a
+      # file outside this repository — and this step is what stops a generator
+      # existing that has not got it. It runs FIRST, so a failure costs a build
+      # rather than a publish.
+      - name: Check the local-only boundary
+        run: node scripts/check_local_only_guard.mjs
 
       # The shared nav (scripts/lib/nav.mjs) into the two hand-written pages.
       # Must run after the copy above, since it rewrites the _site copies in place.
@@ -418,11 +439,19 @@ jobs:
       # reaches the assembled site, fail the deploy rather than publish it. The
       # marker is composed from two halves here so that pages *documenting* this
       # guard can never trip it (the prose-false-positive lesson, obot.agent#58).
+      #
+      # `-R`, not `-r`, and the difference is the whole guard (#203). `grep -r`
+      # follows symlinks only when they are named on the command line, so a
+      # symlink inside _site pointing at local content reads as "no hits" — while
+      # actions/upload-pages-artifact tars with --dereference and publishes the
+      # target's bytes as a regular file. Reproduced both halves on 2026-08-17: the
+      # -r grep passed and the tar shipped the content. `-R` follows symlinks in
+      # recursion, so grep and tar finally agree about what _site contains.
       - name: Guard against local-only content
         run: |
           M1="LOCAL-ONLY: never publish"
           M2=", never commit"
-          hits=$(grep -rlF "${M1}${M2}" _site || true)
+          hits=$(grep -RlF "${M1}${M2}" _site || true)
           if [ -n "$hits" ]; then
             echo "$hits"
             echo "::error title=Local-only content in site::the local blockers sentinel appears in the assembled site (files above) — deploy blocked"
