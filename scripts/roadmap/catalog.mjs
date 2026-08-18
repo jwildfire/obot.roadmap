@@ -203,6 +203,15 @@ async function requirementRow(req, prsByRequirement) {
   const drift = req.drift && req.drift !== 'unstaged'
     ? ` <span class="status-pill drift" title="Board Status disagrees with the issue state">${esc(req.drift)}</span>`
     : '';
+  // A requirement nothing could place gets a pill that says so, and a link to
+  // the reason (#254). Red would say "somebody let this slip"; the block is not
+  // that, and the pill is neutral because the row is not a fault.
+  const blocked = req.blocked
+    ? ` <a class="status-pill blocked" href="${esc(req.blocked.url)}" title="${esc(
+      `${req.blocked.onBoard ? 'On the board with no Status' : 'Not on the board'} — nothing can write to the board (#${req.blocked.issue})`
+      + (req.blocked.filedAfterBlock ? ', and this was filed after that was measured' : ', and it has been unplaceable since before this was filed'),
+    )}">board blocked</a>`
+    : '';
   // Whose decision it carries (#215). A pill appears only where a requirement
   // claims an approval under the current convention — that is the claim a reader
   // can believe wrongly, and the legend below says what no pill means.
@@ -222,10 +231,14 @@ async function requirementRow(req, prsByRequirement) {
     ? `${req.tasks.done}/${req.tasks.total}${req.tasks.source === 'checklist' ? '<span class="rm-none" title="from an inline checklist, not sub-issues">*</span>' : ''}`
     : '<span class="rm-none">—</span>';
   const repos = req.repos.map((r) => `<span class="rm-chip">${esc(shortRepo(r))}</span>`).join('');
+  // The word stays `Unstaged` — it has no stage and nothing may pretend it does.
+  // Only the colour changes, from the red that reads as neglect to the grey that
+  // reads as "waiting on a mechanism", which is what this is.
+  const stagePill = req.blocked ? 'blocked' : stageClass(req.stage);
   return `  <tr data-repo="${repoAttr(req.repos)}" data-hl="${requirementViews(req, prs, NOW)}">
     <td><a href="${req.url}">#${req.number}</a></td>
-    <td>${esc(req.title)}${drift}${prov}${activity}</td>
-    <td><span class="status-pill ${stageClass(req.stage)}">${esc(req.stage)}</span></td>
+    <td>${esc(req.title)}${drift}${blocked}${prov}${activity}</td>
+    <td><span class="status-pill ${stagePill}">${esc(req.stage)}</span></td>
     <td>${repos}</td>
     <td>${tasks}</td>
     <td>${await designLink(req.number)}</td>
@@ -391,6 +404,26 @@ for (const pr of prRes.value ?? []) {
 }
 
 const driftCount = active.filter((r) => r.drift).length;
+// The blocked class, counted and explained where the number is rather than in
+// conversation (#254). It rises every time a requirement is filed, and a number
+// that rises on its own has to carry the reason it rises, or it reads exactly
+// like the discipline decay it is not.
+const blockedReqs = active.filter((r) => r.blocked);
+const blockedSince = blockedReqs.filter((r) => r.blocked.filedAfterBlock).length;
+const blockedOff = blockedReqs.filter((r) => !r.blocked.onBoard).length;
+const blockedIssue = blockedReqs[0]?.blocked;
+const where = blockedOff === blockedReqs.length
+  ? 'are not on the obot Roadmap board at all'
+  : blockedOff === 0
+    ? 'sit on the obot Roadmap board with no Status'
+    : `have no stage on the obot Roadmap board, ${blockedOff} of them not on it at all`;
+const blockedNote = blockedReqs.length
+  ? ` <strong>${blockedReqs.length}</strong> open requirement${blockedReqs.length > 1 ? 's' : ''} ${where}, because nothing can write to it: the obotclaw App is refused on a user-owned project, and the guard denies the only credential that works (<a href="${esc(blockedIssue.url)}">#${blockedIssue.issue}</a>).${
+    blockedSince ? ` ${blockedSince} of them ${blockedSince > 1 ? 'were' : 'was'} filed after that was measured, so no agent could have placed ${blockedSince > 1 ? 'them' : 'it'};` : ''
+  }${
+    blockedReqs.length - blockedSince ? ` ${blockedSince ? 'the other' : ''} ${blockedReqs.length - blockedSince} predate${blockedReqs.length - blockedSince > 1 ? '' : 's'} it and cannot be placed now either.` : ''
+  } They are counted here as blocked rather than as drift, and this number will keep rising as work is filed — that is the block, not the discipline.`
+  : '';
 // Whose decision each requirement carries (#215), stated once under the table
 // people read. The legacy count is the whole population, not this table's share:
 // a number that changes depending on which fold you are looking at is worse than
@@ -398,7 +431,7 @@ const driftCount = active.filter((r) => r.drift).length;
 const claimedCount = [...active, ...folded].filter((r) => r.provenance?.state === 'claimed').length;
 const requirementsNote = `Board Status from the <a href="${PROJECT_URL}">obot Roadmap project</a>${
   driftCount ? `, including <strong>${driftCount}</strong> open requirement${driftCount > 1 ? 's' : ''} the board has parked in <code>Released</code> or left unstaged — shown here rather than folded away` : ''
-}. No approval pill means nobody has approved that requirement — the normal state for work an agent wrote, and recorded on the issue as <code>Approved by: EMPTY</code> rather than left blank (<a href="https://github.com/${HUB}/issues/215">#215</a>); a pill appears only where a requirement claims an approval, because a claim is the thing that can be believed wrongly.${
+}.${blockedNote} No approval pill means nobody has approved that requirement — the normal state for work an agent wrote, and recorded on the issue as <code>Approved by: EMPTY</code> rather than left blank (<a href="https://github.com/${HUB}/issues/215">#215</a>); a pill appears only where a requirement claims an approval, because a claim is the thing that can be believed wrongly.${
   claimedCount ? ` Separately, ${claimedCount} requirements still end with the older attribution line asserting that @jwildfire reviewed them, and nothing on record says he did — counted in the <a href="reports/requirement-provenance/">provenance report</a> rather than rewritten.` : ''
 }`;
 
@@ -709,7 +742,7 @@ console.log(
   `catalog: todo ${todoRcCount} RCs` +
   (todoRc.suppressed ? ` (${todoRc.suppressed} draft release${todoRc.suppressed > 1 ? 's' : ''} folded into their RC PR)` : '') +
   ` + ${decRes.value?.awaiting.length ?? 0} decisions, ` +
-  `${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
+  `${active.length} active (+${driftCount} drift${blockedReqs.length ? `, +${blockedReqs.length} board-blocked` : ''}), ${folded.length} folded, ` +
   `${prRes.value?.length ?? 0} PRs, ${relRes.value?.upcoming.length ?? 0} upcoming, ` +
   `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas, ` +
   `${auditLedger ? `${auditLedger.counts.total} audit findings` : 'no audit ledger'}` +
