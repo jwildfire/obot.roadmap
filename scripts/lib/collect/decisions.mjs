@@ -10,13 +10,9 @@ import path from 'node:path';
 
 import { ROOT } from '../repos.mjs';
 import { readRegistry, bySlug } from '../decision-ids.mjs';
+import { parseIndexTable, readArtifactState, isAwaiting as awaitingState } from '../decision-state.mjs';
 
 const LINK = /\[([^\]]+)\]\(([^)]+)\)/; // first markdown link in a cell
-
-function cell(cells, headers, name) {
-  const i = headers.indexOf(name);
-  return i === -1 ? '' : (cells[i] ?? '');
-}
 
 const bare = (status = '') => status.replace(/[*_`]/g, '').trim();
 
@@ -76,21 +72,23 @@ export function closedInto(status = '') {
 }
 
 /**
- * Does this row still want an answer from @jwildfire?
+ * Does this artifact still want an answer from @jwildfire?
  *
- * The emphasis has to come off first. Rows that were settled emphatically —
- * `**Decided 2026-08-15** — six of seven adopted` — read as still-open to a test
- * anchored on the literal start of the cell, and two answered decisions were
- * sitting in his waiting-on-you list because of it (found 2026-08-15 while
- * building the decision log). "Partially decided" stays awaiting on purpose:
- * some of its questions are still his.
+ * The state comes from the artifact page, not from this cell (#196, #255). It used
+ * to be parsed out of the prose here, which meant the emphasis had to come off first
+ * — rows settled emphatically (`**Decided 2026-08-15** — six of seven adopted`) read
+ * as still-open to a test anchored on the literal start of the cell, and two answered
+ * decisions sat in his waiting-on-you list because of it. The prose is still what he
+ * reads; it is no longer what a collector believes.
  *
- * A folded row wants nothing from him either — its questions are the successor's
- * now. It stays out of `awaiting` and, deliberately, inside `decided`, so every
- * surface that already lists the settled artifacts keeps listing it and a reader
- * who remembers D0015 can still find out where it went.
+ * "Partially decided" stays awaiting on purpose: some of its questions are still his.
+ * A folded row wants nothing from him — its questions are the successor's now — and
+ * it stays inside `decided` so every surface that lists the settled artifacts keeps
+ * listing it and a reader who remembers D0015 can still find where it went. A closed
+ * row wants nothing from him because he is the one who closed it.
  *
- * A closed row wants nothing from him because he is the one who closed it.
+ * Kept as an exported function over the status cell for the tests that pin the old
+ * behaviour, and because a surface handed only a row still needs an answer.
  */
 export function isAwaiting(status = '') {
   if (foldedInto(status) || closedInto(status)) return false;
@@ -98,45 +96,59 @@ export function isAwaiting(status = '') {
 }
 
 export async function collectDecisions() {
-  const md = await fs.readFile(path.join(ROOT, 'reports', 'decisions', 'README.md'), 'utf8');
+  const dir = path.join(ROOT, 'reports', 'decisions');
+  const md = await fs.readFile(path.join(dir, 'README.md'), 'utf8');
   // The canonical id (D0001…) comes from the registry, not from this table, so
   // @jwildfire's own index stays prose he can edit without minding a key column.
   const registry = readRegistry();
 
-  // The table under "## Index": a header row, a rule row, then data rows.
-  const lines = md.split(/\r?\n/);
-  const start = lines.findIndex((l) => /^##\s+Index\b/.test(l));
-  if (start === -1) throw new Error('reports/decisions/README.md has no "## Index" section');
-  const rows = lines.slice(start)
-    .filter((l) => /^\s*\|/.test(l))
-    .map((l) => l.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map((c) => c.trim()));
-  if (rows.length < 2) throw new Error('reports/decisions/README.md: the Index table has no rows');
+  const rows = parseIndexTable(md);
+  const decisions = await Promise.all(rows.map(async (row) => {
+    const link = (row.decision ?? '').match(LINK);
+    const discussion = (row.discussion ?? '').match(LINK);
+    const goal = (row.goal ?? '').match(LINK);
+    const status = row.status ?? '';
+    const slug = row.slug;
 
-  const headers = rows[0].map((h) => h.toLowerCase());
-  const decisions = rows.slice(1)
-    .filter((cells) => !/^[-\s:]+$/.test(cells.join(''))) // the |---|---| rule row
-    .map((cells) => {
-      const link = cell(cells, headers, 'decision').match(LINK);
-      const discussion = cell(cells, headers, 'discussion').match(LINK);
-      const goal = cell(cells, headers, 'goal').match(LINK);
-      const status = cell(cells, headers, 'status');
-      const slug = link ? link[2].replace(/^\.?\//, '').replace(/\/$/, '') : null;
-      return {
-        id: slug ? bySlug(registry, slug)?.id ?? null : null,
-        title: link?.[1] ?? cell(cells, headers, 'decision'),
-        // README-relative folder link → site path under the deployed reports tree
-        path: link ? `reports/decisions/${link[2].replace(/^\.?\//, '')}` : null,
-        date: cell(cells, headers, 'date'),
-        goal: goal ? { label: goal[1], url: goal[2] } : null,
-        discussion: discussion ? { label: discussion[1], url: discussion[2] } : null,
-        status,
-        // The status cell may carry markdown links; flatten them for meta columns.
-        statusPlain: status.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'),
-        awaiting: isAwaiting(status),
-        foldedInto: foldedInto(status),
-        closedInto: closedInto(status),
-      };
-    });
+    // The state is the page's, not the cell's. Reading it here is what makes every
+    // surface built on this collector derive from one authority (#196, #255): the
+    // artifact carries his words and declares what they add up to, and
+    // scripts/check_decision_status.mjs fails the deploy if this table disagrees.
+    let html = '';
+    if (slug) {
+      try {
+        html = await fs.readFile(path.join(dir, slug, 'index.html'), 'utf8');
+      } catch (err) {
+        // ENOENT is the only failure allowed to read as "no page". Anything else is
+        // an unreadable file, and treating it as absent would silently reopen a
+        // settled decision on every surface downstream.
+        if (err.code !== 'ENOENT') throw err;
+      }
+    }
+    const state = readArtifactState(html).state;
+    const awaiting = awaitingState(state);
+
+    return {
+      id: slug ? bySlug(registry, slug)?.id ?? null : null,
+      title: link?.[1] ?? row.decision ?? '',
+      // README-relative folder link → site path under the deployed reports tree
+      path: link ? `reports/decisions/${link[2].replace(/^\.?\//, '')}` : null,
+      date: row.date ?? '',
+      goal: goal ? { label: goal[1], url: goal[2] } : null,
+      discussion: discussion ? { label: discussion[1], url: discussion[2] } : null,
+      status,
+      // The status cell may carry markdown links; flatten them for meta columns.
+      statusPlain: status.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'),
+      state,
+      awaiting,
+      // Which flavour of retirement, and where the reader is sent, still comes from
+      // the cell — the successor is a link he wrote, not a state. Only consulted on
+      // a page the authority says is closed, so prose can no longer retire an
+      // artifact on its own.
+      foldedInto: state === 'closed' ? foldedInto(status) : null,
+      closedInto: state === 'closed' ? (foldedInto(status) ? null : closedInto(status) ?? { via: null, id: null, slug: null }) : null,
+    };
+  }));
 
   return {
     awaiting: decisions.filter((d) => d.awaiting),

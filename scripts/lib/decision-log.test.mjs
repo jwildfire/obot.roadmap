@@ -76,12 +76,17 @@ test('article is accepted as well as div', () => {
   assert.equal(r.entries.length, 1);
 });
 
-test('status cells: partially decided counts as decided, awaiting does not', () => {
-  assert.equal(isDecided('**Decided 2026-08-15** — six of seven adopted'), true);
-  assert.equal(isDecided('Partially decided 2026-08-15 — A1–A2 accepted'), true);
-  assert.equal(isDecided('Awaiting @jwildfire — E1–E4'), false);
-  assert.equal(isFullyDecided('Partially decided 2026-08-15 — A1–A2 accepted'), false);
-  assert.equal(isFullyDecided('**Decided 2026-08-15**'), true);
+// These took an index Status cell until #255. They take the artifact's own state
+// now: the cell is prose he edits, and classifying prose is how the log and the
+// registry came to disagree about ten artifacts. Classifying the cell is still
+// tested, once, where it belongs — decision-state.test.mjs, indexRowState().
+test('a ruling in part is still a ruling, and only a whole one is fully decided', () => {
+  assert.equal(isDecided('decided'), true);
+  assert.equal(isDecided('partially decided'), true);
+  assert.equal(isDecided('closed'), true); // closing a page is a call he made
+  assert.equal(isDecided('open'), false);
+  assert.equal(isFullyDecided('partially decided'), false);
+  assert.equal(isFullyDecided('decided'), true);
 });
 
 // The exact status cells D0015 and D0016 carried on 2026-08-16, when both rendered
@@ -104,7 +109,6 @@ test('"folded" only counts at the start of the cell, not anywhere in the prose',
   const mentions = '**Decided 2026-08-16** — N1–N8 all adopted. Folds in the worker-closeout (D0015) and supervision (D0016) questions at his request';
   assert.equal(foldedInto(mentions), null);
   assert.equal(isAwaiting(mentions), false);
-  assert.equal(isDecided(mentions), true);
 });
 
 test('folding does not swallow an ordinary awaiting row', () => {
