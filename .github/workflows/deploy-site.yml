@@ -195,6 +195,19 @@ jobs:
           node scripts/check_decision_ids.mjs
           node scripts/stamp_decision_ids.mjs --check
 
+      # Whether he has decided something is answered by the artifact page and nowhere
+      # else (#196, #255). Before this, the index row and a hand-written registry
+      # field both claimed to answer it and nothing compared them — on 2026-08-18 ten
+      # of twenty-one artifacts disagreed, on the surface he reads to know what he has
+      # already settled. The stamp keeps the registry a generated view; the check
+      # refuses a page that declares a state its own evidence does not support, and an
+      # index row that contradicts the page. Fails the deploy rather than publishing a
+      # decision log that is wrong about his own decisions.
+      - name: Check decision status
+        run: |
+          node scripts/check_decision_status.mjs
+          node scripts/stamp_decision_status.mjs --check
+
       - name: Build news
         run: node scripts/build_news.mjs
 

@@ -83,7 +83,7 @@ function page(log) {
     .map(([day, es]) => `<p class="dl-day">${esc(day)}</p>\n${es.map(entryBlock).join('\n')}`)
     .join('\n');
 
-  const settled = log.artifacts.filter((a) => isFullyDecided(a.status)).length;
+  const settled = log.artifacts.filter((a) => isFullyDecided(a.state)).length;
   const body = `<h1>Decisions</h1>
 <p class="prose">Every call @jwildfire has made on a decision artifact, newest first — his words, what each one resolved, and what shipped because of it. The page is <strong>derived</strong>: each artifact carries its own Decisions section, and this log is assembled from them at deploy time, so it cannot drift from the pages it summarizes. Adding a decision means recording it on the artifact; nothing is maintained here.</p>
 <p class="prose"><strong>${log.entries.length}</strong> decision${log.entries.length === 1 ? '' : 's'} recorded across <strong>${log.artifacts.length}</strong> artifacts — ${settled} fully settled, <strong>${log.open.length}</strong> still waiting on him.</p>

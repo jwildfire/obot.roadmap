@@ -37,14 +37,15 @@ import path from 'node:path';
 
 import { ROOT } from '../repos.mjs';
 import { collectDecisions } from './decisions.mjs';
+import { readArtifactState } from '../decision-state.mjs';
 
 const DIR = path.join(ROOT, 'reports', 'decisions');
 
-/** An index Status cell that means he has ruled, in whole or in part. */
-export const isDecided = (status = '') => /decided/i.test(status);
+/** A state that means he has ruled, in whole or in part. */
+export const isDecided = (state = '') => state !== 'open';
 
-/** …and one that means he has ruled on everything in the artifact. */
-export const isFullyDecided = (status = '') => isDecided(status) && !/partial/i.test(status);
+/** …and one that means he has ruled on everything the artifact asked. */
+export const isFullyDecided = (state = '') => state === 'decided';
 
 const attr = (tag, name) => tag.match(new RegExp(`\\b${name}=["']([^"']*)["']`, 'i'))?.[1] ?? '';
 
@@ -147,13 +148,13 @@ export async function collectDecisionLog() {
     } catch { /* an index row with no page — reported below */ }
     const record = parseDecisionRecord(html);
     const reg = registry.get(slug) ?? null;
+    // The page's own declaration, which is the authority every surface reads (#196,
+    // #255). collectDecisions already resolved it; re-derived here only when this
+    // module is handed an artifact the collector could not slug.
+    const state = d.state ?? readArtifactState(html).state;
 
     if (!html) problems.push(`${slug || d.title}: the index links a folder with no index.html`);
-    else if (isDecided(d.status) && !record.present) {
-      problems.push(`${slug}: the index says "${d.statusPlain}" but the page has no <section id="decisions">`);
-    } else if (isDecided(d.status) && record.entries.length === 0) {
-      problems.push(`${slug}: has a Decisions section with no dated decision block in it`);
-    }
+    else for (const p of readArtifactState(html).problems) problems.push(`${slug}: ${p}`);
 
     return {
       id: reg?.id ?? null,
@@ -164,6 +165,7 @@ export async function collectDecisionLog() {
       discussion: d.discussion,
       status: d.status,
       statusPlain: d.statusPlain,
+      state,
       path: d.path,
       awaiting: d.awaiting,
       foldedInto: d.foldedInto ?? null,

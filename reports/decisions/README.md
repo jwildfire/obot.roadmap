@@ -57,7 +57,9 @@ PRs, and these.
     saying what is being decided — that sentence is still the thing he reads.
   - The registry is [`registry.json`](registry.json); `node scripts/check_decision_ids.mjs`
     fails the deploy on a duplicate, a missing page or a question that is not
-    anchored. Two sessions can compute the same next number without seeing each
+    anchored. Identity (`id`, `slug`, `questions`) is claimed there; state
+    (`state`, `status`, the dates) is stamped there from the artifact and is not a
+    field to edit. Two sessions can compute the same next number without seeing each
     other — `git push` is the arbiter, and a rejected push means rebase and re-run
     the claim.
 - **One artifact per decision topic.** Bundling unrelated questions into one page
@@ -135,6 +137,29 @@ PRs, and these.
   [Decisions log](https://jwildfire.github.io/obot.roadmap/decisions/), and **fails the
   build** when an artifact this Index calls decided carries no readable section — a log
   that silently omits a decision reads as complete, which is worse than no log.
+- **The page says what state it is in, and nothing else gets to.** The opening tag
+  carries it: `<section id="decisions" data-state="decided">`, one of `decided`,
+  `partially decided` or `closed`; an artifact with no Decisions section is `open`.
+  That is the single authority — every other place the state appears is generated
+  from it or checked against it:
+  - `registry.json`'s `state`, `status`, `decidedOn` and `closedOn` are **stamped**
+    by `node scripts/stamp_decision_status.mjs` and are never hand-written. The two
+    dates come from the blocks themselves — the first is when he ruled, the last is
+    where the page ended. `status` is the coarse projection (`open` / `decided` /
+    `closed`, a partial counting as decided) that obot.agent's Navigator sweep reads.
+  - The Status cell in the Index below stays prose he can edit; its **leading word**
+    is checked against the page by `node scripts/check_decision_status.mjs`, which
+    fails the deploy on any disagreement.
+  - The declaration is refused unless the evidence backs it: `decided` on a page with
+    no dated block fails, and so does `open` on a page that records his words. A state
+    therefore costs the same edit that records what he said.
+  - Why the page and not one of the stores: a store can be written in one token by
+    anyone, and was — the state used to live in the Index row *and* in a registry
+    field a few sessions had written, with nothing comparing them. On 2026-08-18 ten
+    of twenty-one artifacts disagreed
+    ([#196](https://github.com/jwildfire/obot.roadmap/issues/196),
+    [#255](https://github.com/jwildfire/obot.roadmap/issues/255)). The page is the one
+    copy that cannot claim a decision without carrying it.
 - **Never hand-maintain the log.** The artifacts are the source of truth; the log and
   its `decisions.json` feed are views assembled at deploy time. Recording a decision
   means editing the artifact, and nothing else.
