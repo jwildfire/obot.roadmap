@@ -20,6 +20,8 @@
 // Adding a rule: export one object in RULES. Keep `why` written for a human
 // reading the dashboard's rule list — it is the convention's documentation.
 
+import { judge } from '../provenance.mjs';
+
 export const STAGES = ['Backlog', 'Requirement Gathering', 'Design', 'Development', 'Review', 'Released'];
 export const IN_FLIGHT = ['Development', 'Review'];
 export const OWNER_LOGIN = 'jwildfire';
@@ -743,6 +745,61 @@ const designMissing = {
   },
 };
 
+// The convention landed with #215; requirements filed before it are not failed for
+// a block that did not exist. The date is here rather than inside the rule so it
+// reads as a fact about the hub, not a threshold to tune.
+export const PROVENANCE_FROM = '2026-08-18';
+
+const approvalUnresolved = {
+  id: 'APPROVAL-UNRESOLVED',
+  title: 'Requirement claims an approval that does not resolve',
+  group: 'Conventions',
+  why: 'A requirement written by an agent must not be able to authorise what only @jwildfire can authorise (#215). `Approved by` therefore holds a citation that resolves — a decision id whose artifact records his words, or a native review — and never prose. An unresolvable citation is the exact failure this convention exists to stop: something claims his approval and cannot show it, and the next agent to read it will act on it. On 2026-08-16 one did, and prepared to delete files on the strength of a requirement its own supervisor had written.',
+  fix: 'Resolve it or remove it: `node scripts/provenance.mjs resolve <citation>` says why it fails. If he has not decided, the honest value is `EMPTY` — nothing is blocked by writing it.',
+  check(s) {
+    if (!s.approvals) return [];
+    return s.issues
+      .filter((i) => i.state === 'OPEN' && isRequirement(i))
+      .map((i) => ({ i, v: judge(i.body, s.approvals, { requireBlock: false }) }))
+      .filter(({ v }) => v.state === 'unresolved')
+      .map(({ i, v }) => ({
+        confidence: 'high',
+        subject: subject(i),
+        evidence: v.problems.slice(0, 3),
+        proposal: {
+          kind: 'agentic',
+          summary: 'Make the approval citation resolve, or set it to EMPTY.',
+          prompt: `This requirement's \`Approved by\` line does not resolve: ${v.problems[0]}. Run \`node scripts/provenance.mjs resolve <citation>\` to see why. If @jwildfire genuinely decided this, find the decision artifact that records it and cite the question sub-id (\`D0018.1\`) so the citation carries what was asked as well as what he said. If he did not, set the line to \`Approved by: EMPTY\` — that is a correct and complete answer, and nothing downstream is blocked by it. Do not invent a citation, and do not add a decision artifact just to have something to point at.`,
+        },
+      }));
+  },
+};
+
+const provenanceMissing = {
+  id: 'PROVENANCE-MISSING',
+  title: 'Requirement filed without saying who wrote it or who approved it',
+  group: 'Conventions',
+  why: `Every requirement filed since ${PROVENANCE_FROM} carries a provenance block: who authored it, and who approved it or \`EMPTY\` (#215). The empty value is the point — a missing field reads as an oversight and invites the next reader to assume, and an explicit "nobody has approved this" reads as a fact and invites them to check. Requirements filed before that date are out of scope here and counted instead in reports/requirement-provenance/, because rewriting 75 existing bodies to say something different about his own review is not a change an agent makes unattended.`,
+  fix: 'Add the block at the foot of the body: `node scripts/provenance.mjs stamp <number>` prints it.',
+  check(s) {
+    if (!s.approvals) return [];
+    return s.issues
+      .filter((i) => i.state === 'OPEN' && isRequirement(i))
+      .filter((i) => (i.createdAt ?? '') >= PROVENANCE_FROM)
+      .filter((i) => judge(i.body, s.approvals, { requireBlock: false }).state === 'missing')
+      .map((i) => ({
+        confidence: 'high',
+        subject: subject(i),
+        evidence: [`filed ${(i.createdAt ?? '').slice(0, 10)}, after the convention`, 'no `Authored by` / `Approved by` lines in the body'],
+        proposal: {
+          kind: 'agentic',
+          summary: 'Add the provenance block naming the author, with EMPTY unless an approval resolves.',
+          prompt: 'Add the three-line provenance block at the foot of this requirement (see AGENTS.md, "Who wrote it, and who approved it"). `Authored by` is whoever wrote the prose — an agent identity or @jwildfire. `Approved by` is `EMPTY` unless a recorded decision or a native GitHub review covers it, in which case cite it and run `node scripts/provenance.mjs check <number>` to confirm it resolves. Never write `Approved by` from your own reading of a conversation; if the decision is real but unrecorded, the fix is a decision artifact, not a citation.',
+        },
+      }));
+  },
+};
+
 const autoDraftConflict = {
   id: 'AUTO-DRAFT-CONFLICT',
   title: 'Issue labelled both `auto` and `draft`',
@@ -896,6 +953,8 @@ export const RULES = [
   assigneeMissing,
   milestoneMissing,
   designMissing,
+  approvalUnresolved,
+  provenanceMissing,
   autoDraftConflict,
   hardWrappedBody,
   promotedIdeaOpen,

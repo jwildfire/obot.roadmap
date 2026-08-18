@@ -19,6 +19,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { graphql } from '../gh.mjs';
+import { buildApprovalIndex } from '../provenance.mjs';
+import { collectDecisionLog } from '../collect/decision-log.mjs';
 import { REPOS, ROOT, HUB } from '../repos.mjs';
 
 const [OWNER, NAME] = HUB.split('/');
@@ -293,6 +295,24 @@ async function readIdeas() {
     }));
 }
 
+// --------------------------------------------------------------- approvals
+/**
+ * What a requirement's `Approved by` line is allowed to point at (#215).
+ *
+ * Read here, with every other source, so the rules stay pure functions of a
+ * snapshot. Degrades to an empty index rather than throwing: a decision log that
+ * cannot be read must not take the whole audit down, and the rules that use it
+ * stand down when it is absent rather than reporting every approval as unresolvable
+ * — which would be the loudest possible way to be wrong.
+ */
+async function readApprovals() {
+  try {
+    return buildApprovalIndex(await collectDecisionLog());
+  } catch {
+    return null;
+  }
+}
+
 // -------------------------------------------------------------- design docs
 async function readDesignDocs(root = ROOT) {
   try {
@@ -310,12 +330,13 @@ async function readDesignDocs(root = ROOT) {
 
 // ------------------------------------------------------------------ assemble
 export async function buildSnapshot({ now = new Date(), root = ROOT } = {}) {
-  const [issues, board, prs, ideas, designDocs] = await Promise.all([
+  const [issues, board, prs, ideas, designDocs, approvals] = await Promise.all([
     readIssues(),
     readBoard(),
     readPullRequests(now),
     readIdeas(),
     readDesignDocs(root),
+    readApprovals(),
   ]);
 
   return {
@@ -327,6 +348,7 @@ export async function buildSnapshot({ now = new Date(), root = ROOT } = {}) {
     prs,
     ideas,
     designDocs,
+    approvals,
     // Indexes the rules would otherwise rebuild each time.
     issueByNumber: new Map(issues.map((i) => [i.number, i])),
     boardByKey: boardIndex(board.items),

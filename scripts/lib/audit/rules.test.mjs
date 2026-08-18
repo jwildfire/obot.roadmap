@@ -8,7 +8,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { RULES, RULE_BY_ID, hardWrapped } from './rules.mjs';
+import { RULES, RULE_BY_ID, hardWrapped, PROVENANCE_FROM } from './rules.mjs';
+import { buildApprovalIndex } from '../provenance.mjs';
 import { boardIndex, parentIndex, CONTROL_LABELS } from './snapshot.mjs';
 import { runRules, reconcile, fingerprint, MUTE_DAYS } from './engine.mjs';
 
@@ -54,7 +55,34 @@ function item(number, status, over = {}) {
   };
 }
 
-function snapshot({ issues = [], items = [], open = [], merged = [], ideas = [], design = [], boardReadable = true } = {}) {
+// The decisions a citation may point at, in the shape collectDecisionLog() returns.
+// D0018.1 is answered; D0021.1 is claimed and still open — the pair that separates
+// "he decided this" from "there is an id for it".
+const APPROVALS = buildApprovalIndex({
+  artifacts: [
+    {
+      id: 'D0018',
+      slug: '2026-08-16-roadmap-page-directions',
+      title: 'The roadmap page',
+      path: 'reports/decisions/2026-08-16-roadmap-page-directions/',
+      questions: [{ id: 'D0018.1', code: 'R1', question: 'Which direction becomes the roadmap page?' }],
+      entries: [{ date: '2026-08-16', channel: 'in chat', resolves: ['R1'], verbatim: true, quote: "i'm good with your rec  build" }],
+    },
+    {
+      id: 'D0021',
+      slug: '2026-08-17-safetycensus-stay-or-go',
+      title: 'SafetyCensus()',
+      path: 'reports/decisions/2026-08-17-safetycensus-stay-or-go/',
+      questions: [{ id: 'D0021.1', code: 'C1', question: 'Does SafetyCensus() ship in v1.1.0?' }],
+      entries: [],
+    },
+  ],
+});
+
+/** A requirement body with the provenance block at its foot, as the convention puts it. */
+const withBlock = (lines) => `### Business Requirement\nWhy.\n\n### Design\nA design long enough that the DESIGN-MISSING rule is satisfied by it, because the rule only fires under 120 characters of prose.\n\n---\n\n${lines.join('\n')}\n`;
+
+function snapshot({ issues = [], items = [], open = [], merged = [], ideas = [], design = [], boardReadable = true, approvals = APPROVALS } = {}) {
   return {
     now: NOW,
     hub: HUB,
@@ -64,6 +92,7 @@ function snapshot({ issues = [], items = [], open = [], merged = [], ideas = [],
     prs: { open, merged },
     ideas,
     designDocs: new Set(design),
+    approvals,
     issueByNumber: new Map(issues.map((i) => [i.number, i])),
     boardByKey: boardIndex(items),
     parentOf: parentIndex(issues),
@@ -612,4 +641,81 @@ test('every rule returns findings the engine and executor understand', () => {
       assert.ok(f.proposal.prompt?.length > 40, `${f.id} is agentic with no usable prompt`);
     }
   }
+});
+
+// ------------------------------------------------------- provenance (#215)
+
+test('APPROVAL-UNRESOLVED: prose in place of a citation fires', () => {
+  const snap = snapshot({
+    issues: [issue(215, { body: withBlock(['Authored by: 🧭🤖 obot-navigator', 'Approved by: he said build in chat', 'Beyond the approval: none']) })],
+  });
+  const [f] = fire('APPROVAL-UNRESOLVED', snap);
+  assert.equal(f.confidence, 'high');
+  assert.match(f.evidence[0], /does not resolve/);
+  assert.equal(f.proposal.kind, 'agentic');
+});
+
+test('APPROVAL-UNRESOLVED: citing a decision he has not made yet fires', () => {
+  const snap = snapshot({
+    issues: [issue(215, { body: withBlock(['Authored by: 👯🤖 W0046', 'Approved by: D0021.1', 'Beyond the approval: none']) })],
+  });
+  const [f] = fire('APPROVAL-UNRESOLVED', snap);
+  assert.match(f.evidence[0], /still open/);
+});
+
+test('APPROVAL-UNRESOLVED: an approval that resolves is silent', () => {
+  const snap = snapshot({
+    issues: [issue(215, { body: withBlock(['Authored by: 👯🤖 W0046', 'Approved by: D0018.1 — @jwildfire, 2026-08-16, in chat', 'Beyond the approval: none']) })],
+  });
+  assert.deepEqual(fire('APPROVAL-UNRESOLVED', snap), []);
+});
+
+test('APPROVAL-UNRESOLVED: EMPTY is silent — the rule never demands an approval', () => {
+  const snap = snapshot({
+    issues: [issue(215, { body: withBlock(['Authored by: 🧭🤖 obot-navigator', 'Approved by: EMPTY']) })],
+  });
+  assert.deepEqual(fire('APPROVAL-UNRESOLVED', snap), []);
+});
+
+test('APPROVAL-UNRESOLVED: a review citation is not called false when it cannot be reached', () => {
+  // Rules are synchronous, so a native review cannot be confirmed here. Reporting
+  // it as unresolvable would call a real approval fake — the checker being offline
+  // is not evidence about @jwildfire.
+  const snap = snapshot({
+    issues: [issue(215, { body: withBlock(['Authored by: 👯🤖 W0046', 'Approved by: jwildfire/gsm.safety#39 review', 'Beyond the approval: none']) })],
+  });
+  assert.deepEqual(fire('APPROVAL-UNRESOLVED', snap), []);
+});
+
+test('APPROVAL-UNRESOLVED: stands down entirely when the decision log is unreadable', () => {
+  const snap = snapshot({
+    approvals: null,
+    issues: [issue(215, { body: withBlock(['Authored by: x', 'Approved by: he said so', 'Beyond the approval: none']) })],
+  });
+  assert.deepEqual(fire('APPROVAL-UNRESOLVED', snap), []);
+});
+
+test('PROVENANCE-MISSING: a requirement filed after the convention with no block fires', () => {
+  const snap = snapshot({ issues: [issue(300, { createdAt: `${PROVENANCE_FROM}T12:00:00Z` })] });
+  const [f] = fire('PROVENANCE-MISSING', snap);
+  assert.equal(f.confidence, 'high');
+  assert.match(f.evidence[1], /no `Authored by`/);
+});
+
+test('PROVENANCE-MISSING: the legacy population is out of scope, not silently swept up', () => {
+  // 75 requirements assert "reviewed by @jwildfire" with no record of it. They are
+  // counted in a report, not filed as 75 nightly findings against bodies nobody
+  // may rewrite unattended.
+  const snap = snapshot({ issues: [issue(199, { createdAt: '2026-08-16T12:00:00Z' })] });
+  assert.deepEqual(fire('PROVENANCE-MISSING', snap), []);
+});
+
+test('PROVENANCE-MISSING: a block present after the convention is silent', () => {
+  const snap = snapshot({
+    issues: [issue(300, {
+      createdAt: `${PROVENANCE_FROM}T12:00:00Z`,
+      body: withBlock(['Authored by: 👯🤖 W0046', 'Approved by: EMPTY']),
+    })],
+  });
+  assert.deepEqual(fire('PROVENANCE-MISSING', snap), []);
 });
