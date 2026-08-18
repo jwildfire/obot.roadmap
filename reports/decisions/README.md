@@ -64,6 +64,27 @@ PRs, and these.
     argument usually survives and its question changes shape, so the correction is a
     dated note he can see rather than a silent rewrite of a page he may already have
     read — which is what D0021 got.
+  - Correcting the page is one fifth of the correction. D0021's expired premise was
+    stated in five places and true in none — the page, this folder's README, the index
+    row below, `registry.json`, and the discussion title — and four of them reach him
+    through a different door. The sweep names all five when one expires; bringing them
+    along is a person's job.
+
+  Run it before publishing, from the workspace root:
+
+  ```bash
+  node obot.agent/tools/navigator/currency.mjs --artifact 2026-08-16-your-slug
+  ```
+
+  It exits non-zero on a premise that does not hold. A premise can be born false as
+  easily as it can expire — it is written by whoever wrote the framing, out of the same
+  understanding, so a wrong framing produces a premise that encodes the same wrong thing
+  and then reports it every five minutes forever with no path to green. That gate is the
+  answer to it. But the evaluation is not the part that closes the window D0021 opened:
+  the premise that expired was never in a field to evaluate. **Declaring** a premise
+  forces the author to state it as a command, so "the release is held" stops being a
+  belief and becomes a measurement at the moment of writing. The gate is worth having;
+  the declaration is the part doing the work.
 - **A permanent ID, claimed before the page is written** (@jwildfire, 2026-08-15:
   *"Give every decision artifact an ID and then give each question for me a sub ID…
   Use D0001 as the ID"*). The artifact is `D0001`; its questions are `D0001.1`,
