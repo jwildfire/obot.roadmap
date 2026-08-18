@@ -19,7 +19,9 @@ Index row are views over it.
   under [#233](https://github.com/jwildfire/obot.roadmap/issues/233) and
   [obot.agent#164](https://github.com/jwildfire/obot.agent/pull/164): 51 attached and
   re-read to confirm, 146 labelled `orphan-accepted` across seven repos, 28
-  requirements commented, orphans across all history 197 → 1.
+  requirements commented. Measured at 06:05 that morning, orphans across all recorded
+  history stood at 1, down from 197; a day later the check reads 9, which is new work
+  orphaning at the ordinary rate rather than the fix coming undone.
 - G4, the title. Relayed rather than quoted, and marked as such on the page:
   "Increase Autonomy", as recommended, with the loop framing in the goal's opening
   sentence rather than in the name. Applying it is his — posted to
@@ -31,8 +33,10 @@ five workstreams are the right grouping. The five labels are applied at the oper
 officer's direction under [#226](https://github.com/jwildfire/obot.roadmap/issues/226),
 not on an answer of his, which is defensible only because a label is reversible — the
 37 this page sorted, plus 10 filed since and ruled on 2026-08-18 under the rule "label
-by what the deliverable is, not by what it is about". 47 of the goal's 48 open children
-carry one; #229 is left unlabelled deliberately and says so on its own issue.
+by what the deliverable is, not by what it is about". Every open requirement under the
+goal carries one but #229, which is left unlabelled deliberately and says so on its own
+issue. No count is given here on purpose — the goal gains children faster than a number
+on a published page can stay true.
 
 ## What produced this
 
@@ -64,9 +68,11 @@ records. Nothing was carried from the commissioning brief.
   129 shipped in 14 days, 59 unparented; 101 more outside the window.
 - The break: creation timestamps and parent links for all 29 obot.agent issues created
   since 14 August. 0 of 12 parented before 2026-08-15 20:00; 16 of 17 after.
-- Rename cost: confirmed that nothing keys on the goal title — the public page name
-  comes from the `goal-slug: autonomy` comment in the body, and `policy.json` /
-  `goals/registry.json` key on the same slug.
+- Rename cost: the public URL and the `--auto` binding key on the `goal-slug: autonomy`
+  comment in the body, not on the title, so renaming breaks no link and no lane.
+  Corrected 2026-08-18: the goal page's own heading is taken from the issue title
+  (`scripts/lib/collect/goals.mjs`), so it follows the rename — which is the point, but
+  the original wording said the page name came from the slug, and that was wrong.
 
 ## Corrections made against the brief
 

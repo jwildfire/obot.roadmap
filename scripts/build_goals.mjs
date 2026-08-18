@@ -35,11 +35,25 @@ ${body}
 </body>
 </html>`;
 
+// The five workstream labels (D0020, requirement #226) group the autonomy goal's
+// requirements. Rendered as their plain-English name rather than the raw slug: a
+// column of `ws-officer` tokens is the label doing worse than nothing on the one page
+// the grouping was built for.
+const WORKSTREAMS = {
+  'ws-surfaces': 'the surfaces you read',
+  'ws-officer': 'the officer and the workers',
+  'ws-sessions': 'how a session behaves',
+  'ws-plan': 'whether the plan matches reality',
+  'ws-delivery': 'how work reaches you',
+};
+
 const memberRow = (m, stageOf) => {
   const stage = stageOf.get(m.number);
   const meta = [
     stage ? esc(stage) : null,
-    ...m.labels.filter((l) => !['requirement', 'goal', 'auto', 'draft'].includes(l)).map(esc),
+    ...m.labels
+      .filter((l) => !['requirement', 'goal', 'auto', 'draft'].includes(l))
+      .map((l) => esc(WORKSTREAMS[l] ?? l)),
   ].filter(Boolean).join(' · ');
   return `<li><a href="${m.url}">#${m.number}</a> ${esc(m.title.replace(/^Requirement:\s*/i, ''))}${meta ? ` <small>(${meta})</small>` : ''}</li>`;
 };
