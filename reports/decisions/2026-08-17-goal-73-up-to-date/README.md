@@ -1,10 +1,10 @@
 # D0020 — Bringing the autonomy goal up to date
 
-**Status: Partially decided 2026-08-17** — G3 and G4 (D0020.3–.4) answered; G1 and G2 still his.
+**Status: Decided** — G3 and G4 (D0020.3–.4) answered 2026-08-17; G1 and G2 (D0020.1–.2) answered 2026-08-18. All four settled.
 **Requirement:** [jwildfire/obot.roadmap#226](https://github.com/jwildfire/obot.roadmap/issues/226) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
 **Q&A:** [#228](https://github.com/jwildfire/obot.roadmap/discussions/228)
 
-## What he decided, 2026-08-17
+## What he decided
 
 Recorded on the page in a `Decisions` section, which is the record — this file and the
 Index row are views over it.
@@ -28,15 +28,37 @@ Index row are views over it.
   [#73](https://github.com/jwildfire/obot.roadmap/issues/73) as a comment with the
   proposed body, for him to apply on his word.
 
-Still open: G1, the rewritten body, proposed to him on the goal; and G2, whether the
-five workstreams are the right grouping. The five labels are applied at the operating
-officer's direction under [#226](https://github.com/jwildfire/obot.roadmap/issues/226),
-not on an answer of his, which is defensible only because a label is reversible — the
-37 this page sorted, plus 10 filed since and ruled on 2026-08-18 under the rule "label
-by what the deliverable is, not by what it is about". Every open requirement under the
-goal carries one but #229, which is left unlabelled deliberately and says so on its own
-issue. No count is given here on purpose — the goal gains children faster than a number
-on a published page can stay true.
+Then, on 2026-08-18, the other two.
+
+- G1, the done-condition, and G2, the five workstreams. Both approved as recommended,
+  in one dictated message: *"I listen to the one about the goals, and I approve. Yeah.
+  That all sounds fine. The goal groups makes sense. … so I approved both of your
+  recommendations."* The goal's done-condition becomes the operating model rather than
+  the pipeline, and the thirty-seven open requirements are grouped into the five named
+  workstreams carried as labels, not as a new tier of issues. His words are on the page
+  in full; this is an extract.
+- The channel is part of the record. He listened to the audio episode of this page and
+  dictated his answer into chat from his phone — the first decision this program has
+  taken through a brief rather than a page — and it did not use the Siri lane: *"That
+  seems easier than a than a Siri link."*
+  [#265](https://github.com/jwildfire/obot.roadmap/issues/265), written that morning,
+  assumes Siri and Reminders, and should be read against this. He quoted no identifier
+  of any kind, which is the constraint #265 states.
+- The five labels, already applied at the operating officer's direction under
+  [#226](https://github.com/jwildfire/obot.roadmap/issues/226) rather than on an answer
+  of his, are ratified by this. Their descriptions still say "proposed, pending his
+  confirmation"; correcting them is follow-through, not part of the record.
+- His one question, answered on the page: of the 45 open issues carrying a workstream
+  label on 2026-08-18 — all of them children of #73 — 43 are requirements. The two that
+  are not are [#94](https://github.com/jwildfire/obot.roadmap/issues/94) and
+  [#152](https://github.com/jwildfire/obot.roadmap/issues/152), small items filed
+  straight against the goal. Twelve further open children carry no workstream label:
+  #229 deliberately, and eleven filed on 18 August after the labelling pass.
+
+Nothing here is his any more. What follows from the approval is: the title and body are
+posted on [#73](https://github.com/jwildfire/obot.roadmap/issues/73) for him to apply,
+and [#226](https://github.com/jwildfire/obot.roadmap/issues/226) stays open until they
+are.
 
 ## What produced this
 
@@ -89,6 +111,8 @@ states both rather than quietly dropping them:
   of the standing July work) and six on how work reaches him. The page proposes five.
 
 ## What it asks
+
+All four are answered; the questions are kept as the page put them.
 
 - G1 (D0020.1) — the goal's done-condition becomes the operating model, not the pipeline.
 - G2 (D0020.2) — the 37 open requirements grouped into five workstreams, carried as labels.
