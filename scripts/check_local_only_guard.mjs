@@ -224,6 +224,18 @@ for (const file of sources) {
 // be public at all goes to @jwildfire as a decision (#203 close-out).
 const EMITTED = [
   {
+    // The config-count channel (#203). Its reader validates every field at build
+    // time and refuses the payload outright on anything that is not a number or a
+    // date; this pins the same shape at rest, so a file that grew a field is a
+    // failed build rather than a page that renders whatever the field held.
+    file: path.join(ROOT, 'data', 'config-count.json'),
+    by: 'obot.agent/tools/config-count',
+    top: ['_schema', 'open', 'critical', 'asOf'],
+    rows: {},
+    freeText: [],
+    optional: true, // absent on a fresh clone, and absence is a stated answer
+  },
+  {
     file: path.join(ROOT, 'site', 'usage', 'usage.json'),
     by: 'scripts/build_usage_data.py',
     top: ['schema', 'project', 'days', 'cells', 'models', 'roleLabels', 'cacheMultipliers', 'totals'],
@@ -242,6 +254,9 @@ for (const spec of EMITTED) {
   try {
     doc = JSON.parse(fs.readFileSync(spec.file, 'utf8'));
   } catch {
+    // An optional channel that is simply absent is fine — its reader treats a
+    // missing file as a stated absence rather than a zero, which is the point.
+    if (spec.optional && !fs.existsSync(spec.file)) continue;
     note(`${rel} is a declared channel from ${spec.by} but could not be read as JSON`);
     continue;
   }

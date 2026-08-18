@@ -21,6 +21,7 @@
 // confident "6 working" from a feed that died in the night is worse than
 // silence, because it tells him not to look.
 import { esc, age, fmtET, graphql } from '../lib/gh.mjs';
+import { sessionStateValidatorScript } from '../lib/public-channel.mjs';
 
 export const STALE_MINUTES = 120; // matches the catalog's session pill
 
@@ -117,6 +118,17 @@ ${lightsHtml(lightsRes, NOW)}
 export function nowStripScript() {
   return `  // ---- NOW strip: the heartbeat-published session state, refetched every 60s.
   // Every value lands via textContent — the feed is remote input.
+  //
+  // And it is validated before any of it is read (#203). The feed's producer is
+  // careful today and says so in its own source: sessionState() in obot.agent is
+  // "deliberately aggregate-only" because "the hub site is public, and
+  // agent-authored detail strings are free text". That comment is correct — and it
+  // was the only thing standing between an agent's words and this public page,
+  // because this reader used to render s.name and s.detail verbatim. The safety of
+  // a public page cannot rest on a comment in another repository, so the payload's
+  // free-text fields are now dropped here and the sentence below is composed from
+  // the numbers that survive.
+${sessionStateValidatorScript()}
   var nsLive = document.getElementById('ns-live');
   if (nsLive) {
     var nsStale = ${STALE_MINUTES};
@@ -127,28 +139,30 @@ export function nowStripScript() {
       if (mins < 1440) return Math.floor(mins / 60) + 'h ago';
       return Math.floor(mins / 1440) + 'd ago';
     };
-    var nsRender = function (s) {
+    var nsRender = function (raw) {
+      var s = nsClean(raw);
       if (!s || !s.state) {
         nsLive.className = 'ns-live stale';
         nsLive.textContent = 'No session state is published right now.';
         return;
       }
       var mins = s.updatedAt ? Math.floor((Date.now() - new Date(s.updatedAt)) / 60000) : null;
-      if (mins === null || mins > nsStale) {
+      if (mins === null || isNaN(mins) || mins > nsStale) {
         // Confident numbers from a dead feed are worse than an honest silence.
         nsLive.className = 'ns-live stale';
         nsLive.textContent = 'Session feed last updated ' + nsAgo(mins) + ' — too old to say what is running.';
         return;
       }
-      var a = s.agents || {};
-      var working = typeof a.working === 'number' ? a.working : null;
+      var working = s.working;
       var idle = s.state === 'idle' || s.state === 'done' || working === 0;
-      var count = working === null ? ''
-        : (working + (typeof a.total === 'number' ? ' of ' + a.total : '') + (working === 1 ? ' agent working' : ' agents working'));
       var bits = [];
-      if (count) bits.push(count);
-      if (typeof a.needsInput === 'number' && a.needsInput > 0) bits.push(a.needsInput + ' waiting on input');
-      bits.push((s.name || 'obot') + ' — ' + (s.detail || s.state));
+      if (working !== null) {
+        bits.push(working + (s.total !== null ? ' of ' + s.total : '') + (working === 1 ? ' agent working' : ' agents working'));
+      }
+      if (s.needsInput !== null && s.needsInput > 0) bits.push(s.needsInput + ' waiting on input');
+      // The session's own words used to go here. Now the page says which session by
+      // its date slug and what state it is in, both of which are closed shapes.
+      bits.push('obot session' + (s.slug ? ' ' + s.slug : '') + ' — ' + s.state);
       nsLive.className = 'ns-live ' + (idle ? '' : 'live');
       nsLive.textContent = (idle ? '○ ' : '● ') + bits.join(' · ') + ' · ' + nsAgo(mins);
     };

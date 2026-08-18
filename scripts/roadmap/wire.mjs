@@ -26,6 +26,7 @@ import { esc, day, fmtET, clip, settle, graphql } from '../lib/gh.mjs';
 import { siteHeader } from '../lib/nav.mjs';
 import { releaseKey } from '../lib/rc.mjs';
 import { nowStripHtml, nowStripStyle, nowStripScript } from './nowstrip.mjs';
+import { readConfigCount } from '../lib/public-channel.mjs';
 
 export const meta = { slug: 'wire', out: 'wire.html' };
 
@@ -251,6 +252,20 @@ query ($prQ: String!, $reqQ: String!) {
     pinnedLines.push(`<p class="w-pin-line">Waiting longest: ${oldest.html}, since ${esc(day(oldest.ts))}.</p>`);
   }
 
+  // The third bucket. This box has always been counts-only, which makes it the one
+  // place on the public site where the config list fits without any tension at all
+  // (#203): a number is exactly what it already renders. What each item IS never
+  // crosses — see lib/public-channel.mjs, which refuses the payload outright if it
+  // ever arrives carrying anything but integers and a date.
+  const configCount = readConfigCount({ now: NOW });
+  if (configCount.ok && configCount.open > 0) {
+    pinnedLines.push(`<p class="w-pin-line">${configCount.open} config item${configCount.open === 1 ? '' : 's'} `
+      + `need${configCount.open === 1 ? 's' : ''} your keyboard — counted here, never described here, `
+      + `and cleared on the dashboard.${configCount.stale ? ` Last counted ${esc(fmtET(new Date(configCount.asOf)))}.` : ''}</p>`);
+  } else if (!configCount.ok) {
+    pinnedLines.push(`<p class="w-pin-line">Config items: no count has reached this page (${esc(configCount.why)}), so this is not a claim that there are none.</p>`);
+  }
+
   const emptyStream = events.length
     ? ''
     : '<p class="w-empty">Nothing recorded in the window — no releases, decisions, filings or merges landed in the last 7 days.</p>';
@@ -342,11 +357,17 @@ ${streamItems}
 </ol>
 ${emptyStream}
 ${endNoteHtml}
-<p class="w-footnote">The window above is fixed at ${WINDOW_DAYS} days and is a property of this page, not a
-claim about you: the public site records nothing per visitor. The visit marker, when one appears in the stream, is
-a real timestamp this browser stored on your previous view and shows on this device only. A true cross-device
-"since you last looked" needs the dashboard to record page views — that signal is pending
-(<a href="https://github.com/${HUB}/issues/205">#205</a>) and nothing here stands in for it.
+<p class="w-footnote"><b>Why this page answers a different question from the dashboard's wire.</b>
+The window above is fixed at ${WINDOW_DAYS} days and is a property of this page, not a
+claim about you: the public site records nothing per visitor, and per-visitor tracking has no place on a public
+page even if this site had a server to do it with. The private Operations Dashboard is served from @jwildfire's
+own machine, so its request handler genuinely knows when he last opened a page — it answers <i>since you last
+looked</i>, and this page answers <i>what changed recently</i>. Same question, two honest answers at different
+depths, and the difference is by nature rather than by omission
+(<a href="https://github.com/${HUB}/issues/203">#203</a>, recorded in
+<a href="https://github.com/${HUB}/issues/205">#205</a>).
+The visit marker, when one appears in the stream, is a real timestamp this browser stored on your previous view
+and shows on this device only; nothing here stands in for the cross-device signal.
 Everything that exists is on the <a href="catalog.html">catalog</a>.</p>
 </div>
 

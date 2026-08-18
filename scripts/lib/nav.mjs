@@ -44,15 +44,40 @@ const TOP = [
 
 // The roadmap group's second row. Membership here is what makes a page show the
 // sub-nav and light up 'Roadmap' above it.
+//
+// THE SHARED SPINE (#203). The first four are the same four entities, in the same
+// order, as the Operations Dashboard's tab strip — so a reader who knows one
+// surface can navigate the other without being told. They answer the three
+// questions every surface built for his absence has to answer, and then point at
+// the record:
+//
+//   Queue    what needs you
+//   Wire     what changed
+//   Agents   what is running
+//   Catalog  the record
+//
+// `spine: true` is what marks them, and the rule they carry is that neither
+// surface gets an entity the other lacks a place for. Where a surface renders one
+// as a summary rather than a page, the entry points at the summary rather than
+// being dropped: Agents here is the NOW strip on the queue page, because the fleet
+// itself is a local surface and this site is a record.
+//
+// Everything after the divider is this surface's own, and sits after the spine
+// rather than inside it — an extra page must never come between two spine entries,
+// or the order stops carrying meaning across the two surfaces.
 const SUB = [
-  { key: 'queue', label: 'Queue', href: 'roadmap.html', blurb: 'What needs you — release candidates, then decisions, longest wait first' },
-  { key: 'wire', label: 'Wire', href: 'wire.html', blurb: 'What changed — the last 7 days, newest first' },
-  { key: 'catalog', label: 'Catalog', href: 'catalog.html', blurb: 'The complete record — goals, requirements, hierarchy, PRs, releases, ideas' },
+  { key: 'queue', label: 'Queue', href: 'roadmap.html', spine: true, blurb: 'What needs you — release candidates, then decisions, longest wait first' },
+  { key: 'wire', label: 'Wire', href: 'wire.html', spine: true, blurb: 'What changed — the last 7 days, newest first' },
+  { key: 'agents', label: 'Agents', href: 'roadmap.html#now', spine: true, blurb: 'What is running — counts only here; the fleet itself is on the local dashboard' },
+  { key: 'catalog', label: 'Catalog', href: 'catalog.html', spine: true, blurb: 'The complete record — goals, requirements, hierarchy, PRs, releases, ideas' },
   { key: 'audit', label: 'Audit', href: 'audit/index.html', blurb: 'Convention findings from the nightly audit' },
   { key: 'analytics', label: 'Analytics', href: 'analytics/index.html', blurb: 'Charts — token and dollar cost' },
   { key: 'status', label: 'Status', href: 'status.html', blurb: 'Per-repo releases, milestones, PR activity' },
   { key: 'decisions', label: 'Decisions', href: 'decisions/index.html', blurb: 'Every call @jwildfire has made, newest first' },
 ];
+
+/** The spine, in order — exported so both surfaces can be asserted against it. */
+export const SPINE = SUB.filter((s) => s.spine).map((s) => s.label);
 
 export const SUB_KEYS = SUB.map((s) => s.key);
 
@@ -81,9 +106,17 @@ export function siteHeader({ page, depth = 0, extra = '' } = {}) {
 
   // The sub-row is rendered only inside the group. On other pages it would be
   // four links to somewhere else wearing the current page's chrome.
+  // The divider after the last spine entry is not decoration: it is where this
+  // surface's own pages begin, and it is what lets the four shared names be read
+  // as one group rather than as the first four of eight (#203).
+  const subLinks = SUB.map((item, i) => {
+    const rendered = link(item, { current: item.key === page, prefix });
+    const lastOfSpine = item.spine && !SUB[i + 1]?.spine;
+    return lastOfSpine ? `${rendered}\n    <span class="sub-div" aria-hidden="true">·</span>` : rendered;
+  });
   const sub = inRoadmap(page)
     ? `\n  <nav class="site sub" aria-label="Roadmap sections">
-    ${SUB.map((item) => link(item, { current: item.key === page, prefix })).join('\n    ')}
+    ${subLinks.join('\n    ')}
   </nav>`
     : '';
 
