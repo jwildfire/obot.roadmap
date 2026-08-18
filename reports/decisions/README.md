@@ -73,7 +73,7 @@ PRs, and these.
   Run it before publishing, from the workspace root:
 
   ```bash
-  node obot.agent/tools/navigator/currency.mjs --artifact 2026-08-16-your-slug
+  obot.agent/tools/navigator/currency.mjs --artifact 2026-08-16-your-slug
   ```
 
   It exits non-zero on a premise that does not hold. A premise can be born false as
