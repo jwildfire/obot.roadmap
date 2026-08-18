@@ -1,17 +1,17 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-17T08:06:24.945Z",
+  "generatedAt": "2026-08-18T08:02:46.666Z",
   "staleAfterHours": 30,
   "freshnessNote": "These findings describe the roadmap as it was at generatedAt, not as it is now. Compute the age before quoting the counts: anything filed since that run is invisible to it, and a stale ledger reads exactly like a clean one.",
-  "source": "run 32008765135",
+  "source": "run 32114358820",
   "boardReadable": true,
   "counts": {
-    "total": 97,
-    "high": 62,
-    "medium": 35,
+    "total": 140,
+    "high": 97,
+    "medium": 43,
     "low": 0,
-    "mechanical": 83,
-    "agentic": 14,
+    "mechanical": 112,
+    "agentic": 28,
     "muted": 1
   },
   "rules": [
@@ -21,7 +21,7 @@
       "group": "Board integrity",
       "why": "The board Status is what the roadmap page and the `--auto` lane read as the stage of record. A closed issue sitting in Development makes the lane look busier than it is and hides what actually shipped — the exact drift the 2026-07-11 usage audit caught.",
       "fix": "Set the board Status to Released.",
-      "fired": 9
+      "fired": 10
     },
     {
       "id": "OPEN-IN-RELEASED",
@@ -37,7 +37,7 @@
       "group": "Board integrity",
       "why": "An item with no Status is on the board but outside the lifecycle: it appears in no stage lane, the roadmap page has to call it \"Unstaged\", and the `--auto` selector cannot reason about it.",
       "fix": "Set the Status the evidence supports — Released if it is closed, otherwise the stage its PRs and design artifacts imply.",
-      "fired": 31
+      "fired": 44
     },
     {
       "id": "OFF-BOARD-REQUIREMENT",
@@ -45,7 +45,7 @@
       "group": "Board integrity",
       "why": "The obot Roadmap project is the stage tracker for hub work. An issue that never got added is invisible to the stage lanes, to the roadmap page's stage grouping, and to any review that starts from the board — which is how a burst of promoted ideas can vanish the day after it is filed. The population deliberately does not depend on the `requirement` label: #189–#193 were filed with `infrastructure` and `ai`, sat off the board, and a label-gated rule could not have named them even on a fresh run (#201).",
       "fix": "Add it to the project and give it a Status.",
-      "fired": 10
+      "fired": 17
     },
     {
       "id": "BOARD-DUPLICATE",
@@ -69,7 +69,7 @@
       "group": "Hierarchy",
       "why": "When every task under a requirement is closed the requirement is done being built; leaving it open in an earlier stage means the board understates progress and the review queue never surfaces it.",
       "fix": "Move it to Review, or close it if it has already sat in Review.",
-      "fired": 11
+      "fired": 14
     },
     {
       "id": "GOALLESS-REQUIREMENT",
@@ -77,7 +77,7 @@
       "group": "Hierarchy",
       "why": "Since #53 goals are hub issues and membership is the sub-issue link — nothing else. Membership is inherited, so a requirement nested under another requirement still belongs to that requirement’s goal; only an issue with no goal anywhere up its parent chain belongs to no standing direction, never appears on a goal page, and can never be picked up by an autonomous session selecting by goal.",
       "fix": "Link it under the goal it serves, or state why it is deliberately standalone.",
-      "fired": 12
+      "fired": 19
     },
     {
       "id": "UNTRACKED-TASK",
@@ -141,7 +141,7 @@
       "group": "Conventions",
       "why": "The Assignee Convention puts @jwildfire on every issue the agent files, so his GitHub views (\"assigned to me\") are the same working set the roadmap shows. Unassigned issues fall out of that view.",
       "fix": "Assign @jwildfire.",
-      "fired": 22
+      "fired": 27
     },
     {
       "id": "MILESTONE-MISSING",
@@ -158,6 +158,22 @@
       "why": "The lifecycle puts Design before Development for a reason: sub-issues are supposed to be decomposed from it. A requirement in Development whose Design section is empty or \"TBD\" means the decomposition was improvised, and there is nothing for a reviewer or an autonomous session to work from.",
       "fix": "Populate the Design section, or add a design doc under requirements/design/.",
       "fired": 2
+    },
+    {
+      "id": "APPROVAL-UNRESOLVED",
+      "title": "Requirement claims an approval that does not resolve",
+      "group": "Conventions",
+      "why": "A requirement written by an agent must not be able to authorise what only @jwildfire can authorise (#215). `Approved by` therefore holds a citation that resolves — a decision id whose artifact records his words, or a native review — and never prose. An unresolvable citation is the exact failure this convention exists to stop: something claims his approval and cannot show it, and the next agent to read it will act on it. On 2026-08-16 one did, and prepared to delete files on the strength of a requirement its own supervisor had written.",
+      "fix": "Resolve it or remove it: `node scripts/provenance.mjs resolve <citation>` says why it fails. If he has not decided, the honest value is `EMPTY` — nothing is blocked by writing it.",
+      "fired": 0
+    },
+    {
+      "id": "PROVENANCE-MISSING",
+      "title": "Requirement filed without saying who wrote it or who approved it",
+      "group": "Conventions",
+      "why": "Every requirement filed since 2026-08-18 carries a provenance block: who authored it, and who approved it or `EMPTY` (#215). The empty value is the point — a missing field reads as an oversight and invites the next reader to assume, and an explicit \"nobody has approved this\" reads as a fact and invites them to check. Requirements filed before that date are out of scope here and counted instead in reports/requirement-provenance/, because rewriting 75 existing bodies to say something different about his own review is not a change an agent makes unattended.",
+      "fix": "Add the block at the foot of the body: `node scripts/provenance.mjs stamp <number>` prints it.",
+      "fired": 7
     },
     {
       "id": "AUTO-DRAFT-CONFLICT",
@@ -225,8 +241,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#181",
       "fingerprint": "9c75c22cd68d",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -264,8 +280,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#195",
       "fingerprint": "6fd60fa39dfd",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -303,47 +319,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#200",
       "fingerprint": "0927e1ca4c4a",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "ASSIGNEE-MISSING",
-      "ruleTitle": "Tracked issue with no assignee",
-      "group": "Conventions",
-      "confidence": "high",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.roadmap",
-        "number": 203,
-        "title": "Requirement: one information architecture, two audiences — symmetry between the private dashboard and the public hub",
-        "url": "https://github.com/jwildfire/obot.roadmap/issues/203"
-      },
-      "evidence": [
-        "open requirement",
-        "no assignee"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Assign @jwildfire.",
-        "ops": [
-          {
-            "op": "assign",
-            "repo": "jwildfire/obot.roadmap",
-            "number": 203,
-            "login": "jwildfire",
-            "label": "assign @jwildfire"
-          }
-        ]
-      },
-      "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#203",
-      "fingerprint": "0924c8d46c21",
-      "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -381,8 +358,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#205",
       "fingerprint": "b3000d299fc5",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -420,8 +397,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#206",
       "fingerprint": "dc3d4c59cbc5",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -459,8 +436,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#212",
       "fingerprint": "554b398db15f",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -498,8 +475,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#215",
       "fingerprint": "4261cd98200c",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -537,8 +514,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#218",
       "fingerprint": "63d227611bb1",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -576,8 +553,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#220",
       "fingerprint": "536f39ac0077",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -615,8 +592,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#223",
       "fingerprint": "fe8b24f25f12",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -654,8 +631,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#227",
       "fingerprint": "b9462f67bf26",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -693,8 +670,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#229",
       "fingerprint": "983580c6f06a",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -732,8 +709,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#234",
       "fingerprint": "2010a9094885",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -748,7 +725,7 @@
         "kind": "issue",
         "repo": "jwildfire/obot.roadmap",
         "number": 236,
-        "title": "Requirement: fleet — a triggered manager, so finished work stops sitting and nobody has to remember to look",
+        "title": "Requirement: the admiral — a triggered manager, so finished work stops sitting and nobody has to remember to look",
         "url": "https://github.com/jwildfire/obot.roadmap/issues/236"
       },
       "evidence": [
@@ -771,8 +748,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#236",
       "fingerprint": "f06ee1c8ee07",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -810,8 +787,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#237",
       "fingerprint": "97ec63267a77",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -849,8 +826,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#238",
       "fingerprint": "79452d8b29e6",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -888,8 +865,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#239",
       "fingerprint": "bd825ce2bc56",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -927,8 +904,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#240",
       "fingerprint": "78a9590a2022",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -966,8 +943,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#241",
       "fingerprint": "b1b9b78bdb46",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1005,8 +982,8 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#242",
       "fingerprint": "b81fcd684107",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1044,7 +1021,241 @@
       "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#243",
       "fingerprint": "1ab5ad008be2",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "ASSIGNEE-MISSING",
+      "ruleTitle": "Tracked issue with no assignee",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 251,
+        "title": "Requirement: a kill this house reports is a kill it confirmed — the liveness anchor reports success while the session survives",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/251"
+      },
+      "evidence": [
+        "open requirement",
+        "no assignee"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Assign @jwildfire.",
+        "ops": [
+          {
+            "op": "assign",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 251,
+            "login": "jwildfire",
+            "label": "assign @jwildfire"
+          }
+        ]
+      },
+      "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#251",
+      "fingerprint": "6cdad9819490",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "ASSIGNEE-MISSING",
+      "ruleTitle": "Tracked issue with no assignee",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 252,
+        "title": "Requirement: nobody can write to the board — the App is forbidden and the guard denies the only credential that works",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/252"
+      },
+      "evidence": [
+        "open requirement",
+        "no assignee"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Assign @jwildfire.",
+        "ops": [
+          {
+            "op": "assign",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 252,
+            "login": "jwildfire",
+            "label": "assign @jwildfire"
+          }
+        ]
+      },
+      "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#252",
+      "fingerprint": "4bda2fc3d4c4",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "ASSIGNEE-MISSING",
+      "ruleTitle": "Tracked issue with no assignee",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 256,
+        "title": "Requirement: work that never reached GitHub is invisible to every check we run",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/256"
+      },
+      "evidence": [
+        "open requirement",
+        "no assignee"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Assign @jwildfire.",
+        "ops": [
+          {
+            "op": "assign",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 256,
+            "login": "jwildfire",
+            "label": "assign @jwildfire"
+          }
+        ]
+      },
+      "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#256",
+      "fingerprint": "64c5b5fbf482",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "ASSIGNEE-MISSING",
+      "ruleTitle": "Tracked issue with no assignee",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 257,
+        "title": "Requirement: a thing he asked for has a delivery state, and something notices when it goes quiet",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/257"
+      },
+      "evidence": [
+        "open requirement",
+        "no assignee"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Assign @jwildfire.",
+        "ops": [
+          {
+            "op": "assign",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 257,
+            "login": "jwildfire",
+            "label": "assign @jwildfire"
+          }
+        ]
+      },
+      "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#257",
+      "fingerprint": "099b6e6b4e43",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "ASSIGNEE-MISSING",
+      "ruleTitle": "Tracked issue with no assignee",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 260,
+        "title": "Requirement: git pushes and commits still go out as him — the lane no token fixes",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/260"
+      },
+      "evidence": [
+        "open requirement",
+        "no assignee"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Assign @jwildfire.",
+        "ops": [
+          {
+            "op": "assign",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 260,
+            "login": "jwildfire",
+            "label": "assign @jwildfire"
+          }
+        ]
+      },
+      "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#260",
+      "fingerprint": "8efa5ecf198d",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "ASSIGNEE-MISSING",
+      "ruleTitle": "Tracked issue with no assignee",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 261,
+        "title": "Requirement: the highest-authority file the agents read has no owner, no history and no review path",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/261"
+      },
+      "evidence": [
+        "open requirement",
+        "no assignee"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Assign @jwildfire.",
+        "ops": [
+          {
+            "op": "assign",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 261,
+            "login": "jwildfire",
+            "label": "assign @jwildfire"
+          }
+        ]
+      },
+      "id": "ASSIGNEE-MISSING:jwildfire/obot.roadmap#261",
+      "fingerprint": "2c41bf440b35",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -1077,13 +1288,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#70",
       "fingerprint": "d49832f9a3f5",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1115,12 +1337,72 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#201",
       "fingerprint": "99f910cbdc31",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "CLOSED-NOT-RELEASED",
+      "ruleTitle": "Closed issue still parked in an active stage",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 203,
+        "title": "Requirement: one information architecture, two audiences — symmetry between the private dashboard and the public hub",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/203"
+      },
+      "evidence": [
+        "issue is CLOSED",
+        "board Status is Backlog"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released (currently Backlog).",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2tFAk",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#203",
+      "fingerprint": "83715fee8997",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -1153,13 +1435,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#204",
       "fingerprint": "ad90b442d410",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1191,13 +1484,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#209",
       "fingerprint": "1be3a1626283",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1229,13 +1533,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#210",
       "fingerprint": "b07e41afba48",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1267,13 +1582,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#211",
       "fingerprint": "a1ca056fe57e",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1305,13 +1631,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#219",
       "fingerprint": "22b5cd0694c8",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1343,13 +1680,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#221",
       "fingerprint": "710de807f9c6",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1381,13 +1729,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "CLOSED-NOT-RELEASED:jwildfire/obot.roadmap#224",
       "fingerprint": "38cb42931b41",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1421,13 +1780,24 @@
             "value": "Backlog",
             "label": "add to the obot Roadmap project at Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#66",
       "fingerprint": "8ce378385445",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1461,13 +1831,24 @@
             "value": "Backlog",
             "label": "add to the obot Roadmap project at Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#81",
       "fingerprint": "305169de2608",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1486,7 +1867,7 @@
         "url": "https://github.com/jwildfire/obot.roadmap/issues/180"
       },
       "evidence": [
-        "labelled `requirement`, `infrastructure`, `ai`",
+        "labelled `requirement`, `infrastructure`, `ai`, `ws-surfaces`",
         "no item on the obot Roadmap project",
         "issue is OPEN"
       ],
@@ -1501,13 +1882,24 @@
             "value": "Backlog",
             "label": "add to the obot Roadmap project at Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#180",
-      "fingerprint": "e5a5d090fb7c",
+      "fingerprint": "cfb4add39dd9",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1526,7 +1918,7 @@
         "url": "https://github.com/jwildfire/obot.roadmap/issues/181"
       },
       "evidence": [
-        "labelled `requirement`",
+        "labelled `requirement`, `ws-officer`",
         "no item on the obot Roadmap project",
         "issue is OPEN"
       ],
@@ -1541,13 +1933,24 @@
             "value": "Backlog",
             "label": "add to the obot Roadmap project at Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#181",
-      "fingerprint": "ff7a8831dbc0",
+      "fingerprint": "06e41dd70dd5",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1566,7 +1969,7 @@
         "url": "https://github.com/jwildfire/obot.roadmap/issues/226"
       },
       "evidence": [
-        "labelled `requirement`, `infrastructure`",
+        "labelled `requirement`, `infrastructure`, `ws-plan`",
         "no item on the obot Roadmap project",
         "issue is OPEN"
       ],
@@ -1581,13 +1984,24 @@
             "value": "Review",
             "label": "add to the obot Roadmap project at Review"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#226",
-      "fingerprint": "9182b57836af",
+      "fingerprint": "69ba094bd4f5",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1606,7 +2020,7 @@
         "url": "https://github.com/jwildfire/obot.roadmap/issues/238"
       },
       "evidence": [
-        "labelled `requirement`, `infrastructure`",
+        "labelled `requirement`, `infrastructure`, `ws-delivery`",
         "no item on the obot Roadmap project",
         "issue is OPEN"
       ],
@@ -1621,13 +2035,24 @@
             "value": "Backlog",
             "label": "add to the obot Roadmap project at Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#238",
-      "fingerprint": "95c5c21b8f2b",
+      "fingerprint": "bb5cb316d8af",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1646,7 +2071,7 @@
         "url": "https://github.com/jwildfire/obot.roadmap/issues/239"
       },
       "evidence": [
-        "labelled `requirement`, `infrastructure`",
+        "labelled `requirement`, `infrastructure`, `ws-delivery`",
         "no item on the obot Roadmap project",
         "issue is OPEN"
       ],
@@ -1661,13 +2086,24 @@
             "value": "Backlog",
             "label": "add to the obot Roadmap project at Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#239",
-      "fingerprint": "489cb8ddabf3",
+      "fingerprint": "a0f07ef93b40",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1686,7 +2122,7 @@
         "url": "https://github.com/jwildfire/obot.roadmap/issues/240"
       },
       "evidence": [
-        "labelled `requirement`, `infrastructure`",
+        "labelled `requirement`, `infrastructure`, `ws-sessions`",
         "no item on the obot Roadmap project",
         "issue is OPEN"
       ],
@@ -1701,13 +2137,24 @@
             "value": "Backlog",
             "label": "add to the obot Roadmap project at Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#240",
-      "fingerprint": "00e755315db0",
+      "fingerprint": "f254dca101bf",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1741,13 +2188,24 @@
             "value": "Backlog",
             "label": "add to the obot Roadmap project at Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#241",
       "fingerprint": "c943744fa193",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1766,7 +2224,7 @@
         "url": "https://github.com/jwildfire/obot.roadmap/issues/242"
       },
       "evidence": [
-        "labelled `requirement`, `infrastructure`",
+        "labelled `requirement`, `infrastructure`, `ws-delivery`",
         "no item on the obot Roadmap project",
         "issue is OPEN"
       ],
@@ -1781,12 +2239,597 @@
             "value": "Backlog",
             "label": "add to the obot Roadmap project at Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#242",
-      "fingerprint": "c77e541d5610",
+      "fingerprint": "5e31080f8613",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "OFF-BOARD-REQUIREMENT",
+      "ruleTitle": "Hub issue missing from the board",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 246,
+        "title": "Requirement: what the machine may say about itself in public — session names and draft-release titles",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/246"
+      },
+      "evidence": [
+        "labelled `requirement`, `infrastructure`",
+        "no item on the obot Roadmap project",
+        "issue is OPEN"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Add it to the obot Roadmap project at Backlog.",
+        "ops": [
+          {
+            "op": "add-to-board",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 246,
+            "value": "Backlog",
+            "label": "add to the obot Roadmap project at Backlog"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#246",
+      "fingerprint": "c4dfc6d63c30",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "OFF-BOARD-REQUIREMENT",
+      "ruleTitle": "Hub issue missing from the board",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 251,
+        "title": "Requirement: a kill this house reports is a kill it confirmed — the liveness anchor reports success while the session survives",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/251"
+      },
+      "evidence": [
+        "labelled `requirement`, `infrastructure`",
+        "no item on the obot Roadmap project",
+        "issue is OPEN"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Add it to the obot Roadmap project at Review.",
+        "ops": [
+          {
+            "op": "add-to-board",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 251,
+            "value": "Review",
+            "label": "add to the obot Roadmap project at Review"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#251",
+      "fingerprint": "f848c47ca611",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "OFF-BOARD-REQUIREMENT",
+      "ruleTitle": "Hub issue missing from the board",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 252,
+        "title": "Requirement: nobody can write to the board — the App is forbidden and the guard denies the only credential that works",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/252"
+      },
+      "evidence": [
+        "labelled `requirement`, `infrastructure`",
+        "no item on the obot Roadmap project",
+        "issue is OPEN"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Add it to the obot Roadmap project at Review.",
+        "ops": [
+          {
+            "op": "add-to-board",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 252,
+            "value": "Review",
+            "label": "add to the obot Roadmap project at Review"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#252",
+      "fingerprint": "45e8ef174b79",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "OFF-BOARD-REQUIREMENT",
+      "ruleTitle": "Hub issue missing from the board",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 256,
+        "title": "Requirement: work that never reached GitHub is invisible to every check we run",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/256"
+      },
+      "evidence": [
+        "labelled `requirement`, `infrastructure`",
+        "no item on the obot Roadmap project",
+        "issue is OPEN"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Add it to the obot Roadmap project at Backlog.",
+        "ops": [
+          {
+            "op": "add-to-board",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 256,
+            "value": "Backlog",
+            "label": "add to the obot Roadmap project at Backlog"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#256",
+      "fingerprint": "b24cd13bd438",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "OFF-BOARD-REQUIREMENT",
+      "ruleTitle": "Hub issue missing from the board",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 257,
+        "title": "Requirement: a thing he asked for has a delivery state, and something notices when it goes quiet",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/257"
+      },
+      "evidence": [
+        "labelled `requirement`, `infrastructure`",
+        "no item on the obot Roadmap project",
+        "issue is OPEN"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Add it to the obot Roadmap project at Backlog.",
+        "ops": [
+          {
+            "op": "add-to-board",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 257,
+            "value": "Backlog",
+            "label": "add to the obot Roadmap project at Backlog"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#257",
+      "fingerprint": "9162863fd9e2",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "OFF-BOARD-REQUIREMENT",
+      "ruleTitle": "Hub issue missing from the board",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 260,
+        "title": "Requirement: git pushes and commits still go out as him — the lane no token fixes",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/260"
+      },
+      "evidence": [
+        "labelled `requirement`, `infrastructure`",
+        "no item on the obot Roadmap project",
+        "issue is OPEN"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Add it to the obot Roadmap project at Backlog.",
+        "ops": [
+          {
+            "op": "add-to-board",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 260,
+            "value": "Backlog",
+            "label": "add to the obot Roadmap project at Backlog"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#260",
+      "fingerprint": "d720312a79a1",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "OFF-BOARD-REQUIREMENT",
+      "ruleTitle": "Hub issue missing from the board",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 261,
+        "title": "Requirement: the highest-authority file the agents read has no owner, no history and no review path",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/261"
+      },
+      "evidence": [
+        "labelled `requirement`, `infrastructure`",
+        "no item on the obot Roadmap project",
+        "issue is OPEN"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Add it to the obot Roadmap project at Backlog.",
+        "ops": [
+          {
+            "op": "add-to-board",
+            "repo": "jwildfire/obot.roadmap",
+            "number": 261,
+            "value": "Backlog",
+            "label": "add to the obot Roadmap project at Backlog"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "add-to-board"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "OFF-BOARD-REQUIREMENT:jwildfire/obot.roadmap#261",
+      "fingerprint": "818e1b0fd97d",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "PROVENANCE-MISSING",
+      "ruleTitle": "Requirement filed without saying who wrote it or who approved it",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 246,
+        "title": "Requirement: what the machine may say about itself in public — session names and draft-release titles",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/246"
+      },
+      "evidence": [
+        "filed 2026-08-18, after the convention",
+        "no `Authored by` / `Approved by` lines in the body"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Add the provenance block naming the author, with EMPTY unless an approval resolves.",
+        "prompt": "Add the three-line provenance block at the foot of this requirement (see AGENTS.md, \"Who wrote it, and who approved it\"). `Authored by` is whoever wrote the prose — an agent identity or @jwildfire. `Approved by` is `EMPTY` unless a recorded decision or a native GitHub review covers it, in which case cite it and run `node scripts/provenance.mjs check <number>` to confirm it resolves. Never write `Approved by` from your own reading of a conversation; if the decision is real but unrecorded, the fix is a decision artifact, not a citation."
+      },
+      "id": "PROVENANCE-MISSING:jwildfire/obot.roadmap#246",
+      "fingerprint": "142ac8be713f",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "PROVENANCE-MISSING",
+      "ruleTitle": "Requirement filed without saying who wrote it or who approved it",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 251,
+        "title": "Requirement: a kill this house reports is a kill it confirmed — the liveness anchor reports success while the session survives",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/251"
+      },
+      "evidence": [
+        "filed 2026-08-18, after the convention",
+        "no `Authored by` / `Approved by` lines in the body"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Add the provenance block naming the author, with EMPTY unless an approval resolves.",
+        "prompt": "Add the three-line provenance block at the foot of this requirement (see AGENTS.md, \"Who wrote it, and who approved it\"). `Authored by` is whoever wrote the prose — an agent identity or @jwildfire. `Approved by` is `EMPTY` unless a recorded decision or a native GitHub review covers it, in which case cite it and run `node scripts/provenance.mjs check <number>` to confirm it resolves. Never write `Approved by` from your own reading of a conversation; if the decision is real but unrecorded, the fix is a decision artifact, not a citation."
+      },
+      "id": "PROVENANCE-MISSING:jwildfire/obot.roadmap#251",
+      "fingerprint": "4b388c3d6012",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "PROVENANCE-MISSING",
+      "ruleTitle": "Requirement filed without saying who wrote it or who approved it",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 252,
+        "title": "Requirement: nobody can write to the board — the App is forbidden and the guard denies the only credential that works",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/252"
+      },
+      "evidence": [
+        "filed 2026-08-18, after the convention",
+        "no `Authored by` / `Approved by` lines in the body"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Add the provenance block naming the author, with EMPTY unless an approval resolves.",
+        "prompt": "Add the three-line provenance block at the foot of this requirement (see AGENTS.md, \"Who wrote it, and who approved it\"). `Authored by` is whoever wrote the prose — an agent identity or @jwildfire. `Approved by` is `EMPTY` unless a recorded decision or a native GitHub review covers it, in which case cite it and run `node scripts/provenance.mjs check <number>` to confirm it resolves. Never write `Approved by` from your own reading of a conversation; if the decision is real but unrecorded, the fix is a decision artifact, not a citation."
+      },
+      "id": "PROVENANCE-MISSING:jwildfire/obot.roadmap#252",
+      "fingerprint": "725878f34dff",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "PROVENANCE-MISSING",
+      "ruleTitle": "Requirement filed without saying who wrote it or who approved it",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 256,
+        "title": "Requirement: work that never reached GitHub is invisible to every check we run",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/256"
+      },
+      "evidence": [
+        "filed 2026-08-18, after the convention",
+        "no `Authored by` / `Approved by` lines in the body"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Add the provenance block naming the author, with EMPTY unless an approval resolves.",
+        "prompt": "Add the three-line provenance block at the foot of this requirement (see AGENTS.md, \"Who wrote it, and who approved it\"). `Authored by` is whoever wrote the prose — an agent identity or @jwildfire. `Approved by` is `EMPTY` unless a recorded decision or a native GitHub review covers it, in which case cite it and run `node scripts/provenance.mjs check <number>` to confirm it resolves. Never write `Approved by` from your own reading of a conversation; if the decision is real but unrecorded, the fix is a decision artifact, not a citation."
+      },
+      "id": "PROVENANCE-MISSING:jwildfire/obot.roadmap#256",
+      "fingerprint": "d75a65529d6b",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "PROVENANCE-MISSING",
+      "ruleTitle": "Requirement filed without saying who wrote it or who approved it",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 257,
+        "title": "Requirement: a thing he asked for has a delivery state, and something notices when it goes quiet",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/257"
+      },
+      "evidence": [
+        "filed 2026-08-18, after the convention",
+        "no `Authored by` / `Approved by` lines in the body"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Add the provenance block naming the author, with EMPTY unless an approval resolves.",
+        "prompt": "Add the three-line provenance block at the foot of this requirement (see AGENTS.md, \"Who wrote it, and who approved it\"). `Authored by` is whoever wrote the prose — an agent identity or @jwildfire. `Approved by` is `EMPTY` unless a recorded decision or a native GitHub review covers it, in which case cite it and run `node scripts/provenance.mjs check <number>` to confirm it resolves. Never write `Approved by` from your own reading of a conversation; if the decision is real but unrecorded, the fix is a decision artifact, not a citation."
+      },
+      "id": "PROVENANCE-MISSING:jwildfire/obot.roadmap#257",
+      "fingerprint": "5215fee52b0b",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "PROVENANCE-MISSING",
+      "ruleTitle": "Requirement filed without saying who wrote it or who approved it",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 260,
+        "title": "Requirement: git pushes and commits still go out as him — the lane no token fixes",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/260"
+      },
+      "evidence": [
+        "filed 2026-08-18, after the convention",
+        "no `Authored by` / `Approved by` lines in the body"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Add the provenance block naming the author, with EMPTY unless an approval resolves.",
+        "prompt": "Add the three-line provenance block at the foot of this requirement (see AGENTS.md, \"Who wrote it, and who approved it\"). `Authored by` is whoever wrote the prose — an agent identity or @jwildfire. `Approved by` is `EMPTY` unless a recorded decision or a native GitHub review covers it, in which case cite it and run `node scripts/provenance.mjs check <number>` to confirm it resolves. Never write `Approved by` from your own reading of a conversation; if the decision is real but unrecorded, the fix is a decision artifact, not a citation."
+      },
+      "id": "PROVENANCE-MISSING:jwildfire/obot.roadmap#260",
+      "fingerprint": "6b19a68c4deb",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "PROVENANCE-MISSING",
+      "ruleTitle": "Requirement filed without saying who wrote it or who approved it",
+      "group": "Conventions",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 261,
+        "title": "Requirement: the highest-authority file the agents read has no owner, no history and no review path",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/261"
+      },
+      "evidence": [
+        "filed 2026-08-18, after the convention",
+        "no `Authored by` / `Approved by` lines in the body"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Add the provenance block naming the author, with EMPTY unless an approval resolves.",
+        "prompt": "Add the three-line provenance block at the foot of this requirement (see AGENTS.md, \"Who wrote it, and who approved it\"). `Authored by` is whoever wrote the prose — an agent identity or @jwildfire. `Approved by` is `EMPTY` unless a recorded decision or a native GitHub review covers it, in which case cite it and run `node scripts/provenance.mjs check <number>` to confirm it resolves. Never write `Approved by` from your own reading of a conversation; if the decision is real but unrecorded, the fix is a decision artifact, not a citation."
+      },
+      "id": "PROVENANCE-MISSING:jwildfire/obot.roadmap#261",
+      "fingerprint": "148ee78c05f5",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -1819,13 +2862,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/gsm.safety#41",
       "fingerprint": "ed7bfc34a454",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1857,13 +2911,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/gsm.safety#42",
       "fingerprint": "837d7a234cc3",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1895,13 +2960,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/gsm.safety#43",
       "fingerprint": "b5079a8307b9",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1933,13 +3009,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/gsm.safety#45",
       "fingerprint": "adbc5909ae2c",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -1971,13 +3058,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.roadmap#85",
       "fingerprint": "bed6a38b8f1f",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2009,13 +3107,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.roadmap#97",
       "fingerprint": "8a52f9063993",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2047,13 +3156,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.roadmap#102",
       "fingerprint": "3ef46f56ab79",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2085,13 +3205,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.roadmap#105",
       "fingerprint": "a999933ef200",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2123,13 +3254,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/safety.viz#120",
       "fingerprint": "095bfb441666",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2161,13 +3303,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#134",
       "fingerprint": "083d2e3d9d2c",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2199,13 +3352,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#136",
       "fingerprint": "e7abee981f6a",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2237,13 +3401,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#138",
       "fingerprint": "b6997a997835",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2275,13 +3450,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#143",
       "fingerprint": "26a7b8c4c6a1",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2313,13 +3499,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#147",
       "fingerprint": "399993e7e1e1",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2351,13 +3548,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#151",
       "fingerprint": "cfb3ca4f3240",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2389,13 +3597,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#154",
       "fingerprint": "77cef25657f6",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2427,13 +3646,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#155",
       "fingerprint": "911ad94e26a0",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2465,13 +3695,73 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#159",
       "fingerprint": "9e7c1d10c77c",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 166,
+        "title": "The sibling briefing never tells a worker not to call EnterWorktree, and one stalled on it for 13 minutes",
+        "url": "https://github.com/jwildfire/obot.agent/issues/166"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2ybpg",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#166",
+      "fingerprint": "9b4085fa0ade",
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2503,13 +3793,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#167",
       "fingerprint": "7065dc2e3674",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2541,13 +3842,24 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#168",
       "fingerprint": "3251b1f811ff",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2579,12 +3891,709 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#169",
       "fingerprint": "54682dfb62f0",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 174,
+        "title": "Every date on the Agents tab is a UTC day, so overnight work reads as yesterday",
+        "url": "https://github.com/jwildfire/obot.agent/issues/174"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2y0SQ",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#174",
+      "fingerprint": "6152513963c4",
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 176,
+        "title": "A working session was reported as waiting on an unresolved prompt, and the admiral closes sessions on that signal",
+        "url": "https://github.com/jwildfire/obot.agent/issues/176"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2y9zw",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#176",
+      "fingerprint": "3a559640c7cb",
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 177,
+        "title": "The sibling briefing's opening HTML comment lands in the job status detail, carrying state with it",
+        "url": "https://github.com/jwildfire/obot.agent/issues/177"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2y-1M",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#177",
+      "fingerprint": "a6b3acc14d86",
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 178,
+        "title": "Agents tab: times on Created and Last active, in his local zone, and one day boundary",
+        "url": "https://github.com/jwildfire/obot.agent/issues/178"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2y_g0",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#178",
+      "fingerprint": "f2fd0c6fcc94",
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 179,
+        "title": "Agents tab: a task tag in the row, a summary on expand, and Roadmap impact demoted out of the table",
+        "url": "https://github.com/jwildfire/obot.agent/issues/179"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2zAg8",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#179",
+      "fingerprint": "d5a1de603253",
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 181,
+        "title": "A blocked admiral is invisible: it inherits the standing-session exclusion built for prime and nav",
+        "url": "https://github.com/jwildfire/obot.agent/issues/181"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg25vv4",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#181",
+      "fingerprint": "f27bbeea63cb",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 182,
+        "title": "Rename fleet to admiral — the three standing roles are prime, admiral and nav",
+        "url": "https://github.com/jwildfire/obot.agent/issues/182"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg25yMo",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#182",
+      "fingerprint": "1a6a4481cce6",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 186,
+        "title": "The checkout tracks main and consumers restart when it moves",
+        "url": "https://github.com/jwildfire/obot.agent/issues/186"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2549M",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#186",
+      "fingerprint": "525ed170e83b",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 206,
+        "title": "The dashboard shows him zero of ten config items and calls it an empty list",
+        "url": "https://github.com/jwildfire/obot.agent/issues/206"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg27wXc",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#206",
+      "fingerprint": "9821ff618d53",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 210,
+        "title": "A worker is told a requirement is not an approval, and given the command that says what is",
+        "url": "https://github.com/jwildfire/obot.agent/issues/210"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg27Y-A",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#210",
+      "fingerprint": "47c8648df96c",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 215,
+        "title": "A count stated about a source nobody read, and four more places the same mistake is waiting",
+        "url": "https://github.com/jwildfire/obot.agent/issues/215"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg27wcs",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#215",
+      "fingerprint": "dc648044a7d2",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 225,
+        "title": "A merged pull request counts as covered when it names an issue that is itself parented",
+        "url": "https://github.com/jwildfire/obot.agent/issues/225"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg28CFo",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#225",
+      "fingerprint": "0a723f1b7166",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 236,
+        "title": "AGENTS.md frames merging as approval-first, and policy.json says the opposite",
+        "url": "https://github.com/jwildfire/obot.agent/issues/236"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg28b_c",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#236",
+      "fingerprint": "ae931b9f24d7",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "high",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 255,
+        "title": "One authority for whether a decision has been made — and the ten that disagree",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/255"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is CLOSED"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Released — the issue is closed.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg27-BI",
+            "value": "Released",
+            "label": "board Status → Released"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.roadmap#255",
+      "fingerprint": "207844ada7fb",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -2616,8 +4625,8 @@
       "id": "DESIGN-MISSING:jwildfire/obot.roadmap#134",
       "fingerprint": "b68badde1bbf",
       "firstSeen": "2026-07-29",
-      "lastSeen": "2026-08-17",
-      "runs": 20,
+      "lastSeen": "2026-08-18",
+      "runs": 21,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2648,8 +4657,8 @@
       "id": "DESIGN-MISSING:jwildfire/obot.roadmap#199",
       "fingerprint": "3713e4f75793",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2679,8 +4688,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#182",
       "fingerprint": "42bb8adbe034",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2710,8 +4719,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#226",
       "fingerprint": "7d96ef79b710",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2741,8 +4750,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#227",
       "fingerprint": "4d3830c631a5",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2772,8 +4781,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#229",
       "fingerprint": "18b3ce6c1096",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2803,8 +4812,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#234",
       "fingerprint": "e8677fdff0f7",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2819,7 +4828,7 @@
         "kind": "issue",
         "repo": "jwildfire/obot.roadmap",
         "number": 236,
-        "title": "Requirement: fleet — a triggered manager, so finished work stops sitting and nobody has to remember to look",
+        "title": "Requirement: the admiral — a triggered manager, so finished work stops sitting and nobody has to remember to look",
         "url": "https://github.com/jwildfire/obot.roadmap/issues/236"
       },
       "evidence": [
@@ -2834,8 +4843,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#236",
       "fingerprint": "7b1503fd4c5e",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2865,8 +4874,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#237",
       "fingerprint": "c580755e79e3",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2896,8 +4905,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#238",
       "fingerprint": "c9f86416c673",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2927,8 +4936,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#239",
       "fingerprint": "fc9a8cbd1532",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2958,8 +4967,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#240",
       "fingerprint": "87a7c5ab8594",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -2989,8 +4998,8 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#242",
       "fingerprint": "cc8cea4e3d07",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3020,7 +5029,224 @@
       "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#243",
       "fingerprint": "b78a3a0354c1",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "GOALLESS-REQUIREMENT",
+      "ruleTitle": "Open requirement under no goal",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 246,
+        "title": "Requirement: what the machine may say about itself in public — session names and draft-release titles",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/246"
+      },
+      "evidence": [
+        "open requirement",
+        "no `goal`-labelled ancestor at any depth"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Link it under the goal it serves.",
+        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
+      },
+      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#246",
+      "fingerprint": "c3d4e36146ce",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "GOALLESS-REQUIREMENT",
+      "ruleTitle": "Open requirement under no goal",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 251,
+        "title": "Requirement: a kill this house reports is a kill it confirmed — the liveness anchor reports success while the session survives",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/251"
+      },
+      "evidence": [
+        "open requirement",
+        "no `goal`-labelled ancestor at any depth"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Link it under the goal it serves.",
+        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
+      },
+      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#251",
+      "fingerprint": "e5c4e2c96149",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "GOALLESS-REQUIREMENT",
+      "ruleTitle": "Open requirement under no goal",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 252,
+        "title": "Requirement: nobody can write to the board — the App is forbidden and the guard denies the only credential that works",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/252"
+      },
+      "evidence": [
+        "open requirement",
+        "no `goal`-labelled ancestor at any depth"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Link it under the goal it serves.",
+        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
+      },
+      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#252",
+      "fingerprint": "d20fe6a127c4",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "GOALLESS-REQUIREMENT",
+      "ruleTitle": "Open requirement under no goal",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 256,
+        "title": "Requirement: work that never reached GitHub is invisible to every check we run",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/256"
+      },
+      "evidence": [
+        "open requirement",
+        "no `goal`-labelled ancestor at any depth"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Link it under the goal it serves.",
+        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
+      },
+      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#256",
+      "fingerprint": "d4061fe4e382",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "GOALLESS-REQUIREMENT",
+      "ruleTitle": "Open requirement under no goal",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 257,
+        "title": "Requirement: a thing he asked for has a delivery state, and something notices when it goes quiet",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/257"
+      },
+      "evidence": [
+        "open requirement",
+        "no `goal`-labelled ancestor at any depth"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Link it under the goal it serves.",
+        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
+      },
+      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#257",
+      "fingerprint": "e77affc5ba89",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "GOALLESS-REQUIREMENT",
+      "ruleTitle": "Open requirement under no goal",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 260,
+        "title": "Requirement: git pushes and commits still go out as him — the lane no token fixes",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/260"
+      },
+      "evidence": [
+        "open requirement",
+        "no `goal`-labelled ancestor at any depth"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Link it under the goal it serves.",
+        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
+      },
+      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#260",
+      "fingerprint": "b3296a20f061",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "GOALLESS-REQUIREMENT",
+      "ruleTitle": "Open requirement under no goal",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 261,
+        "title": "Requirement: the highest-authority file the agents read has no owner, no history and no review path",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/261"
+      },
+      "evidence": [
+        "open requirement",
+        "no `goal`-labelled ancestor at any depth"
+      ],
+      "proposal": {
+        "kind": "agentic",
+        "summary": "Link it under the goal it serves.",
+        "prompt": "Read the requirement and the open goals (#72 R/Pharma 2026 keynote deck; #73 increased autonomy in obot.agent; #78 Keep adding charts (static + interactive); #79 Build the app (safetyGraphics replacement, open.gismo arc); #112 open.csr — the Clinical Study Report builder (web app)). If it clearly serves one, link it as a sub-issue of that goal (gh api repos/jwildfire/obot.roadmap/issues/{goal}/sub_issues). If it genuinely belongs to none, add one sentence to the issue body explaining why it is standalone, so the audit stops asking. Do not invent a new goal."
+      },
+      "id": "GOALLESS-REQUIREMENT:jwildfire/obot.roadmap#261",
+      "fingerprint": "366577fb056c",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -3042,7 +5268,7 @@
       "evidence": [
         "3/3 sub-issues closed",
         "board Status is Review",
-        "last touched 0d ago"
+        "last touched 1d ago"
       ],
       "proposal": {
         "kind": "mechanical",
@@ -3061,13 +5287,26 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [
+            "close jwildfire/obot.roadmap#43 as completed"
+          ],
+          "partial": true,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#43",
-      "fingerprint": "32e9200e4ea5",
+      "fingerprint": "832714a8b77a",
       "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-17",
-      "runs": 40,
+      "lastSeen": "2026-08-18",
+      "runs": 41,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3100,13 +5339,24 @@
             "value": "Review",
             "label": "board Status → Review"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#58",
       "fingerprint": "57fb90d0e5f9",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3127,7 +5377,7 @@
       "evidence": [
         "1/1 sub-issues closed",
         "board Status is Requirement Gathering",
-        "last touched 22d ago"
+        "last touched 0d ago"
       ],
       "proposal": {
         "kind": "mechanical",
@@ -3139,13 +5389,24 @@
             "value": "Review",
             "label": "board Status → Review"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#122",
-      "fingerprint": "cc49c5584998",
+      "fingerprint": "db156ffa3776",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3178,13 +5439,24 @@
             "value": "Review",
             "label": "board Status → Review"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#123",
       "fingerprint": "d0b14ec8e562",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3205,7 +5477,7 @@
       "evidence": [
         "1/1 sub-issues closed",
         "board Status is Review",
-        "last touched 2d ago"
+        "last touched 3d ago"
       ],
       "proposal": {
         "kind": "mechanical",
@@ -3224,13 +5496,26 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [
+            "close jwildfire/obot.roadmap#129 as completed"
+          ],
+          "partial": true,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#129",
-      "fingerprint": "9d127afedcd0",
+      "fingerprint": "000d0c3c470b",
       "firstSeen": "2026-08-15",
-      "lastSeen": "2026-08-17",
-      "runs": 3,
+      "lastSeen": "2026-08-18",
+      "runs": 4,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3251,7 +5536,7 @@
       "evidence": [
         "1/1 sub-issues closed",
         "board Status is Review",
-        "last touched 2d ago"
+        "last touched 3d ago"
       ],
       "proposal": {
         "kind": "mechanical",
@@ -3270,13 +5555,26 @@
             "value": "Released",
             "label": "board Status → Released"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [
+            "close jwildfire/obot.roadmap#161 as completed"
+          ],
+          "partial": true,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#161",
-      "fingerprint": "b54f242094a2",
+      "fingerprint": "1f3b483d0967",
       "firstSeen": "2026-08-15",
-      "lastSeen": "2026-08-17",
-      "runs": 3,
+      "lastSeen": "2026-08-18",
+      "runs": 4,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3297,7 +5595,7 @@
       "evidence": [
         "2/2 sub-issues closed",
         "board Status is Development",
-        "last touched 1d ago"
+        "last touched 0d ago"
       ],
       "proposal": {
         "kind": "mechanical",
@@ -3309,13 +5607,24 @@
             "value": "Review",
             "label": "board Status → Review"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#199",
-      "fingerprint": "17095ce933a3",
+      "fingerprint": "88cd04d5aa74",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3336,7 +5645,7 @@
       "evidence": [
         "1/1 sub-issues closed",
         "board Status is Development",
-        "last touched 1d ago"
+        "last touched 0d ago"
       ],
       "proposal": {
         "kind": "mechanical",
@@ -3348,13 +5657,24 @@
             "value": "Review",
             "label": "board Status → Review"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#205",
-      "fingerprint": "d862b89844f5",
+      "fingerprint": "fcaef4d816f5",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3375,7 +5695,7 @@
       "evidence": [
         "1/1 sub-issues closed",
         "board Status is Development",
-        "last touched 1d ago"
+        "last touched 0d ago"
       ],
       "proposal": {
         "kind": "mechanical",
@@ -3387,13 +5707,24 @@
             "value": "Review",
             "label": "board Status → Review"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#206",
-      "fingerprint": "81e972375b1f",
+      "fingerprint": "b04f5533320a",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3426,13 +5757,24 @@
             "value": "Review",
             "label": "board Status → Review"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#218",
       "fingerprint": "7d69e6a2d802",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3451,7 +5793,7 @@
         "url": "https://github.com/jwildfire/obot.roadmap/issues/223"
       },
       "evidence": [
-        "1/1 sub-issues closed",
+        "3/3 sub-issues closed",
         "board Status is Backlog",
         "last touched 0d ago"
       ],
@@ -3465,12 +5807,173 @@
             "value": "Review",
             "label": "board Status → Review"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#223",
-      "fingerprint": "774641e811eb",
+      "fingerprint": "5e3e0328ca36",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "SUBS-DONE-PARENT-OPEN",
+      "ruleTitle": "All sub-issues closed, parent still open",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 227,
+        "title": "Requirement: the dashboard's two views, literally — a session table with filters, and a filterable metrics dashboard",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/227"
+      },
+      "evidence": [
+        "7/7 sub-issues closed",
+        "board Status is Development",
+        "last touched 0d ago"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Move it to Review — all its tasks are closed but the board still says Development.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2yCNY",
+            "value": "Review",
+            "label": "board Status → Review"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#227",
+      "fingerprint": "0f4428308982",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "SUBS-DONE-PARENT-OPEN",
+      "ruleTitle": "All sub-issues closed, parent still open",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 236,
+        "title": "Requirement: the admiral — a triggered manager, so finished work stops sitting and nobody has to remember to look",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/236"
+      },
+      "evidence": [
+        "4/4 sub-issues closed",
+        "board Status is Development",
+        "last touched 0d ago"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Move it to Review — all its tasks are closed but the board still says Development.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2yc44",
+            "value": "Review",
+            "label": "board Status → Review"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#236",
+      "fingerprint": "8825323041c0",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "runs": 1,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "SUBS-DONE-PARENT-OPEN",
+      "ruleTitle": "All sub-issues closed, parent still open",
+      "group": "Hierarchy",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.roadmap",
+        "number": 243,
+        "title": "Requirement: merging is not deploying — the checkout tracks main, and consumers restart when it moves",
+        "url": "https://github.com/jwildfire/obot.roadmap/issues/243"
+      },
+      "evidence": [
+        "1/1 sub-issues closed",
+        "board Status is Backlog",
+        "last touched 0d ago"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Move it to Review — all its tasks are closed but the board still says Backlog.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg2ykBc",
+            "value": "Review",
+            "label": "board Status → Review"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "SUBS-DONE-PARENT-OPEN:jwildfire/obot.roadmap#243",
+      "fingerprint": "dbe8c8ed582c",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -3503,13 +6006,24 @@
             "value": "Backlog",
             "label": "board Status → Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#139",
       "fingerprint": "5363e2bc2096",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3541,13 +6055,24 @@
             "value": "Backlog",
             "label": "board Status → Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#141",
       "fingerprint": "01f7d3a1fe01",
       "firstSeen": "2026-08-16",
-      "lastSeen": "2026-08-17",
-      "runs": 2,
+      "lastSeen": "2026-08-18",
+      "runs": 3,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3579,12 +6104,72 @@
             "value": "Backlog",
             "label": "board Status → Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#157",
       "fingerprint": "91ba17afa122",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "runs": 2,
+      "reappeared": false,
+      "decisions": [],
+      "muted": false,
+      "mutedUntil": null
+    },
+    {
+      "rule": "UNSTAGED-BOARD-ITEM",
+      "ruleTitle": "Board item with no Status",
+      "group": "Board integrity",
+      "confidence": "medium",
+      "subject": {
+        "kind": "issue",
+        "repo": "jwildfire/obot.agent",
+        "number": 197,
+        "title": "Every structural roadmap edit is attributed to @jwildfire — he made none of them",
+        "url": "https://github.com/jwildfire/obot.agent/issues/197"
+      },
+      "evidence": [
+        "no board Status set",
+        "issue is OPEN"
+      ],
+      "proposal": {
+        "kind": "mechanical",
+        "summary": "Set board Status to Backlog, inferred from the absence of any in-flight signal.",
+        "ops": [
+          {
+            "op": "set-board-status",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg26uY4",
+            "value": "Backlog",
+            "label": "board Status → Backlog"
+          }
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
+      },
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#197",
+      "fingerprint": "1bbaabf0f58c",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -3599,9 +6184,9 @@
       "subject": {
         "kind": "issue",
         "repo": "jwildfire/obot.agent",
-        "number": 166,
-        "title": "The sibling briefing never tells a worker not to call EnterWorktree, and one stalled on it for 13 minutes",
-        "url": "https://github.com/jwildfire/obot.agent/issues/166"
+        "number": 207,
+        "title": "The attribution guard trusts GH_TOKEN=$(...) and a failed mint writes as him anyway",
+        "url": "https://github.com/jwildfire/obot.agent/issues/207"
       },
       "evidence": [
         "no board Status set",
@@ -3613,16 +6198,27 @@
         "ops": [
           {
             "op": "set-board-status",
-            "itemId": "PVTI_lAHOADgnX84BcTPzzg2ybpg",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg270YI",
             "value": "Backlog",
             "label": "board Status → Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
-      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#166",
-      "fingerprint": "5a4900aa54be",
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#207",
+      "fingerprint": "495d32299380",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -3637,9 +6233,9 @@
       "subject": {
         "kind": "issue",
         "repo": "jwildfire/obot.agent",
-        "number": 174,
-        "title": "Every date on the Agents tab is a UTC day, so overnight work reads as yesterday",
-        "url": "https://github.com/jwildfire/obot.agent/issues/174"
+        "number": 209,
+        "title": "A merge that cites a decision does not check that the decision exists",
+        "url": "https://github.com/jwildfire/obot.agent/issues/209"
       },
       "evidence": [
         "no board Status set",
@@ -3651,16 +6247,27 @@
         "ops": [
           {
             "op": "set-board-status",
-            "itemId": "PVTI_lAHOADgnX84BcTPzzg2y0SQ",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg27Y8k",
             "value": "Backlog",
             "label": "board Status → Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
-      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#174",
-      "fingerprint": "d4ca80eb8403",
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#209",
+      "fingerprint": "5615124b17f6",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -3675,9 +6282,9 @@
       "subject": {
         "kind": "issue",
         "repo": "jwildfire/obot.agent",
-        "number": 176,
-        "title": "A working session was reported as waiting on an unresolved prompt, and fleet closes sessions on that signal",
-        "url": "https://github.com/jwildfire/obot.agent/issues/176"
+        "number": 228,
+        "title": "The milestone gate reads a worked example as a closing declaration and refuses the merge",
+        "url": "https://github.com/jwildfire/obot.agent/issues/228"
       },
       "evidence": [
         "no board Status set",
@@ -3689,130 +6296,27 @@
         "ops": [
           {
             "op": "set-board-status",
-            "itemId": "PVTI_lAHOADgnX84BcTPzzg2y9zw",
+            "itemId": "PVTI_lAHOADgnX84BcTPzzg28ISI",
             "value": "Backlog",
             "label": "board Status → Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
-      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#176",
-      "fingerprint": "6a57875bdfec",
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "UNSTAGED-BOARD-ITEM",
-      "ruleTitle": "Board item with no Status",
-      "group": "Board integrity",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.agent",
-        "number": 177,
-        "title": "The sibling briefing's opening HTML comment lands in the job status detail, carrying state with it",
-        "url": "https://github.com/jwildfire/obot.agent/issues/177"
-      },
-      "evidence": [
-        "no board Status set",
-        "issue is OPEN"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Set board Status to Backlog, inferred from the absence of any in-flight signal.",
-        "ops": [
-          {
-            "op": "set-board-status",
-            "itemId": "PVTI_lAHOADgnX84BcTPzzg2y-1M",
-            "value": "Backlog",
-            "label": "board Status → Backlog"
-          }
-        ]
-      },
-      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#177",
-      "fingerprint": "c634d1754a90",
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "UNSTAGED-BOARD-ITEM",
-      "ruleTitle": "Board item with no Status",
-      "group": "Board integrity",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.agent",
-        "number": 178,
-        "title": "Agents tab: times on Created and Last active, in his local zone, and one day boundary",
-        "url": "https://github.com/jwildfire/obot.agent/issues/178"
-      },
-      "evidence": [
-        "no board Status set",
-        "issue is OPEN"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Set board Status to Backlog, inferred from the absence of any in-flight signal.",
-        "ops": [
-          {
-            "op": "set-board-status",
-            "itemId": "PVTI_lAHOADgnX84BcTPzzg2y_g0",
-            "value": "Backlog",
-            "label": "board Status → Backlog"
-          }
-        ]
-      },
-      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#178",
-      "fingerprint": "36ef00580d4d",
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
-      "reappeared": false,
-      "decisions": [],
-      "muted": false,
-      "mutedUntil": null
-    },
-    {
-      "rule": "UNSTAGED-BOARD-ITEM",
-      "ruleTitle": "Board item with no Status",
-      "group": "Board integrity",
-      "confidence": "medium",
-      "subject": {
-        "kind": "issue",
-        "repo": "jwildfire/obot.agent",
-        "number": 179,
-        "title": "Agents tab: a task tag in the row, a summary on expand, and Roadmap impact demoted out of the table",
-        "url": "https://github.com/jwildfire/obot.agent/issues/179"
-      },
-      "evidence": [
-        "no board Status set",
-        "issue is OPEN"
-      ],
-      "proposal": {
-        "kind": "mechanical",
-        "summary": "Set board Status to Backlog, inferred from the absence of any in-flight signal.",
-        "ops": [
-          {
-            "op": "set-board-status",
-            "itemId": "PVTI_lAHOADgnX84BcTPzzg2zAg8",
-            "value": "Backlog",
-            "label": "board Status → Backlog"
-          }
-        ]
-      },
-      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#179",
-      "fingerprint": "ccd8983fa066",
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
+      "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.agent#228",
+      "fingerprint": "8fcfa1af98cb",
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
       "runs": 1,
       "reappeared": false,
       "decisions": [],
@@ -3845,13 +6349,24 @@
             "value": "Backlog",
             "label": "board Status → Backlog"
           }
-        ]
+        ],
+        "unavailable": {
+          "ops": [
+            "set-board-status"
+          ],
+          "performable": [],
+          "partial": false,
+          "reason": "no credential can write to the obot Roadmap board — the obotclaw App is FORBIDDEN on a user-owned project, and the attribution guard denies @jwildfire's own token",
+          "issue": 252,
+          "url": "https://github.com/jwildfire/obot.roadmap/issues/252",
+          "since": "2026-08-18"
+        }
       },
       "id": "UNSTAGED-BOARD-ITEM:jwildfire/obot.roadmap#230",
       "fingerprint": "cd3bab01fb6f",
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "runs": 1,
+      "lastSeen": "2026-08-18",
+      "runs": 2,
       "reappeared": false,
       "decisions": [],
       "muted": false,
@@ -3881,8 +6396,8 @@
       "id": "HARD-WRAPPED-BODY:jwildfire/obot.roadmap#22",
       "fingerprint": "af851fb3cc24",
       "firstSeen": "2026-07-25",
-      "lastSeen": "2026-08-17",
-      "runs": 40,
+      "lastSeen": "2026-08-18",
+      "runs": 41,
       "reappeared": false,
       "decisions": [
         {
