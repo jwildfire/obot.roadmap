@@ -9,7 +9,13 @@
 // only on the pages inside the roadmap group.
 //
 //   🍊😺 obot    Home   Roadmap   News   ⌗
-//               Overview · Audit · Analytics · Status
+//               Queue · Wire · Catalog · Audit · Analytics · Status · Decisions
+//
+// The first three are the roadmap page set as D0018 settled it (2026-08-16):
+// the Queue is the front door and keeps `roadmap.html`, the Wire is one click
+// behind it, and the Catalog is the inventory page that used to be the front
+// door. They lead the row in that order because the order is the argument —
+// what needs you, then what changed, then what exists.
 //
 // The brand is the "obot" link, so there is no separate nav entry for it.
 //
@@ -31,7 +37,9 @@ const TOP = [
 // The roadmap group's second row. Membership here is what makes a page show the
 // sub-nav and light up 'Roadmap' above it.
 const SUB = [
-  { key: 'overview', label: 'Overview', href: 'roadmap.html', blurb: 'Goals, requirements, PRs, releases, ideas' },
+  { key: 'queue', label: 'Queue', href: 'roadmap.html', blurb: 'What needs you — release candidates, then decisions, longest wait first' },
+  { key: 'wire', label: 'Wire', href: 'wire.html', blurb: 'What changed — the last 7 days, newest first' },
+  { key: 'catalog', label: 'Catalog', href: 'catalog.html', blurb: 'The complete record — goals, requirements, hierarchy, PRs, releases, ideas' },
   { key: 'audit', label: 'Audit', href: 'audit/index.html', blurb: 'Convention findings from the nightly audit' },
   { key: 'analytics', label: 'Analytics', href: 'analytics/index.html', blurb: 'Charts — token and dollar cost' },
   { key: 'status', label: 'Status', href: 'status.html', blurb: 'Per-repo releases, milestones, PR activity' },

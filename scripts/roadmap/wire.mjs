@@ -1,4 +1,4 @@
-// Direction: "The wire" — the roadmap as a newspaper (spike #202/#204, worker W0004.2).
+// The wire — the roadmap as a newspaper, one click behind the queue (D0018, #211).
 //
 // A reverse-chronological, day-grouped stream of what actually happened in the
 // last 7 days, newest first. The returning reader scrolls until they hit
@@ -7,22 +7,27 @@
 // filed and promoted, roadmap-audit changelog lines, plus requirements filed and
 // PRs merged in the window (one extra GraphQL search, made here).
 //
-// Last-visit honesty rule (hard): the site records nothing per-visitor. The only
-// personal marker is a real localStorage timestamp written by this browser on a
-// previous view — rendered inline where it falls in the stream. Nothing on this
-// page computes or implies a "since you last looked" window from anything else.
+// It sits behind the queue rather than in front of it because catching up is a
+// reading he chooses, not a state he triages — D0018's own reasoning, approved
+// on 2026-08-16.
+//
+// Last-visit honesty rule (hard): the site records nothing per-visitor. The
+// window is fixed at 7 days and says so — a property of the page, never a claim
+// about him. The only personal marker is a real localStorage timestamp written
+// by this browser on a previous view, rendered inline where it falls in the
+// stream and labelled this-device-only. Nothing here computes or implies a
+// "since you last looked" window from a stand-in: not the last deploy, not the
+// newest changelog entry, not a fixed period relabelled as personal. The real
+// cross-device signal needs the dashboard to record views (#205); until that
+// exists this page says what it can prove and nothing else.
+//
+// Grew out of the design spike's wire direction (#202/#204, worker W0004.2).
 import { esc, day, fmtET, clip, settle, graphql } from '../lib/gh.mjs';
 import { siteHeader } from '../lib/nav.mjs';
 import { releaseKey } from '../lib/rc.mjs';
-import { spikeBanner } from './shared.mjs';
+import { nowStripHtml, nowStripStyle, nowStripScript } from './nowstrip.mjs';
 
-export const meta = {
-  slug: 'wire',
-  name: 'The wire',
-  putsFirst: 'what changed since he last looked',
-  givesUp: 'right-now operational depth — the wire reports what happened, not what is mid-flight; a thin waiting-on-you banner and one session line are its only present tense',
-  blurb: 'A day-grouped newspaper of the last 7 days — releases, decisions, merges, filings — read newest-first until you hit something you already know.',
-};
+export const meta = { slug: 'wire', out: 'wire.html' };
 
 const WINDOW_DAYS = 7;
 const REVIEWER = 'jwildfire';
@@ -45,7 +50,7 @@ const etLabelOf = (dayStr) =>
 const cite = (href, label) => ` <a class="w-cite" href="${esc(href)}">${esc(label)}</a>`;
 
 export async function render(data) {
-  const { NOW, prRes, relRes, ideaRes, decRes, changelog, HUB, REPOS, SESSION_STATE_URL } = data;
+  const { NOW, prRes, relRes, ideaRes, decRes, changelog, HUB, REPOS, lightsRes } = data;
   const windowStart = new Date(NOW.getTime() - WINDOW_DAYS * 86400000);
   const inWindow = (iso) => Boolean(iso) && new Date(iso) >= windowStart;
 
@@ -123,7 +128,7 @@ query ($prQ: String!, $reqQ: String!) {
     const all = [...(decRes.value.awaiting ?? []), ...(decRes.value.decided ?? [])];
     for (const d of all) {
       const title = esc(cleanTitle(d.title));
-      const href = d.path ? `../${d.path}` : '../decisions/index.html';
+      const href = d.path ?? 'decisions/index.html';
       const qa = d.discussion ? cite(d.discussion.url, `Q&A ${d.discussion.label}`) : '';
       const m = (d.statusPlain ?? '').match(/(partially\s+)?decided\s+(\d{4}-\d{2}-\d{2})/i);
       // Asked and decided the same day collapses to the decided line — two rows
@@ -221,7 +226,7 @@ query ($prQ: String!, $reqQ: String!) {
   }
   for (const d of awaiting) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) continue;
-    waitlist.push({ ts: `${d.date}T16:00:00Z`, html: `the decision <a href="${d.path ? `../${esc(d.path)}` : '../decisions/index.html'}">${esc(cleanTitle(d.title))}</a>${d.discussion ? ` (answer in <a href="${esc(d.discussion.url)}">Q&amp;A ${esc(d.discussion.label)}</a>)` : ''}` });
+    waitlist.push({ ts: `${d.date}T16:00:00Z`, html: `the decision <a href="${d.path ? esc(d.path) : 'decisions/index.html'}">${esc(cleanTitle(d.title))}</a>${d.discussion ? ` (answer in <a href="${esc(d.discussion.url)}">Q&amp;A ${esc(d.discussion.label)}</a>)` : ''}` });
   }
   waitlist.sort((a, b) => a.ts.localeCompare(b.ts));
   const oldest = waitlist[0] ?? null;
@@ -238,7 +243,7 @@ query ($prQ: String!, $reqQ: String!) {
   const allOk = prRes.ok && relRes.ok && decRes.ok;
   const pinnedLines = [];
   if (rcCount + awaiting.length > 0) {
-    pinnedLines.push(`<p class="w-pin-line">${countBits.join(' and ')} — the full queue is on the <a href="../roadmap.html#sec-todo">roadmap's Todo</a>.</p>`);
+    pinnedLines.push(`<p class="w-pin-line">${countBits.join(' and ')} — the full ranked queue is the <a href="roadmap.html">roadmap page</a>.</p>`);
   } else if (allOk) {
     pinnedLines.push('<p class="w-pin-line">Nothing is waiting on you right now.</p>');
   }
@@ -256,9 +261,9 @@ query ($prQ: String!, $reqQ: String!) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The wire · obot</title>
+<title>Wire · obot</title>
 <meta name="description" content="A reverse-chronological wire of the obot roadmap: releases, decisions, merges, requirement filings and ideas from the last 7 days, newest first — scroll until you hit something you already know.">
-<link rel="stylesheet" href="../assets/styles.css">
+<link rel="stylesheet" href="assets/styles.css">
 <style>
 .w-wrap { max-width: 46rem; margin: 0 auto; }
 /* Masthead — a newspaper nameplate: centered serif over a double rule. */
@@ -267,17 +272,14 @@ query ($prQ: String!, $reqQ: String!) {
 .w-mast h1 { margin: 0; font-size: 2.5rem; line-height: 1.05; }
 .w-folio { margin: .4rem 0 0; font-family: var(--mono); font-size: .7rem; color: var(--faint); }
 .w-how { margin: .55rem 0 1rem; text-align: center; font-size: .85rem; font-style: italic; color: var(--muted); }
-/* Pinned above the stream: what needs him + one live session line. */
+/* Pinned above the stream: what needs him, in counts — the ranked list is the
+   queue's job, and this box must not grow into a second copy of it. */
 .w-pinned { border: 1px solid var(--rule); border-left: 4px solid var(--accent-bright); border-radius: 10px;
   background: var(--card); padding: .6rem .9rem .7rem; margin: 0 0 1.3rem; font-size: .85rem; line-height: 1.5; }
 .w-pin-label { display: block; font-family: var(--mono); font-size: .66rem; font-weight: 600;
   letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: .15rem; }
 .w-pin-line { margin: .18rem 0; overflow-wrap: anywhere; }
 .w-pin-asof { display: block; margin-top: .25rem; font-family: var(--mono); font-size: .68rem; color: var(--faint); }
-.w-session-line { margin-top: .3rem; padding-top: .3rem; border-top: 1px solid var(--rule);
-  font-family: var(--mono); font-size: .74rem; color: var(--muted); overflow-wrap: anywhere; }
-#w-session.w-live { color: var(--good); }
-#w-session.w-stale { color: var(--faint); }
 /* The stream — one flat list; day headings are items so the visit marker can
    land anywhere in document order. */
 ol.w-stream { list-style: none; margin: 0; padding: 0; }
@@ -312,12 +314,14 @@ li.w-marker { margin: .45rem 0; padding: .28rem .4rem; border-top: 1px dashed va
   .w-mast h1 { font-size: 3rem; }
   li.w-ev { grid-template-columns: 6.2rem minmax(0, 1fr); }
 }
+
+${nowStripStyle()}
 </style>
 </head>
 <body>
-${siteHeader({ page: 'roadmap', depth: 1 })}
-${spikeBanner(meta)}
+${siteHeader({ page: 'wire' })}
 <div class="w-wrap">
+${nowStripHtml({ lightsRes, NOW })}
 <header class="w-mast">
   <p class="w-kicker">The obot roadmap, as it happened</p>
   <h1>The wire</h1>
@@ -330,7 +334,6 @@ ${spikeBanner(meta)}
 ${pinnedNotices.map((n) => `  <p class="w-notice">${esc(n)}</p>`).join('\n')}
 ${pinnedLines.map((l) => `  ${l}`).join('\n')}
   <span class="w-pin-asof">Counts as of this edition (${esc(fmtET(NOW))}); a deploy refreshes them.</span>
-  <p class="w-pin-line w-session-line">Running now: <span id="w-session">not checked — the live session feed loads with JavaScript</span></p>
 </section>
 
 ${noticeHtml}
@@ -339,10 +342,12 @@ ${streamItems}
 </ol>
 ${emptyStream}
 ${endNoteHtml}
-<p class="w-footnote">This page records nothing about you server-side; the visit marker, when one appears in the
-stream, is a real timestamp this browser stored on your previous view and shows on this device only. A true
-cross-device "since you last looked" needs the dashboard to record page views — that signal is pending
-(<a href="https://github.com/${HUB}/issues/205">#205</a>).</p>
+<p class="w-footnote">The window above is fixed at ${WINDOW_DAYS} days and is a property of this page, not a
+claim about you: the public site records nothing per visitor. The visit marker, when one appears in the stream, is
+a real timestamp this browser stored on your previous view and shows on this device only. A true cross-device
+"since you last looked" needs the dashboard to record page views — that signal is pending
+(<a href="https://github.com/${HUB}/issues/205">#205</a>) and nothing here stands in for it.
+Everything that exists is on the <a href="catalog.html">catalog</a>.</p>
 </div>
 
 <script>
@@ -413,43 +418,14 @@ cross-device "since you last looked" needs the dashboard to record page views �
     localStorage.setItem(KEY, new Date().toISOString());
   } catch (e) { /* storage unavailable — no marker, nothing implied */ }
 
-  // Session feed — published by the heartbeat to a branch, cached ~5 min by the
-  // raw CDN. Render its age; past 120 minutes stop asserting a live state.
-  var sess = document.getElementById('w-session');
-  if (sess) {
-    sess.textContent = 'checking the session feed…';
-    var STALE_MINUTES = 120;
-    fetch(${JSON.stringify(SESSION_STATE_URL)}, { cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (s) {
-        if (!s || !s.state) { sess.textContent = 'session feed has published nothing'; return; }
-        var mins = s.updatedAt ? Math.floor((Date.now() - new Date(s.updatedAt)) / 60000) : null;
-        var stale = mins === null || mins > STALE_MINUTES;
-        var idle = s.state === 'idle' || s.state === 'done';
-        var when = mins === null ? 'age unknown'
-          : mins < 1 ? 'just now'
-          : mins < 60 ? mins + 'm ago'
-          : Math.floor(mins / 60) + 'h ago';
-        if (stale) {
-          sess.className = 'w-stale';
-          sess.textContent = 'feed last updated ' + when + ' — not asserting a live state';
-          return;
-        }
-        var agents = '';
-        if (s.agents && typeof s.agents.working === 'number' && typeof s.agents.total === 'number') {
-          agents = ' · ' + s.agents.working + ' of ' + s.agents.total + ' agents working';
-        }
-        sess.className = idle ? '' : 'w-live';
-        sess.textContent = (idle ? '○ ' : '● ') + (s.name || 'obot') + ' — ' + (s.detail || s.state) + agents + ' · ' + when;
-      })
-      .catch(function () { sess.textContent = 'session feed unreachable from this page'; });
-  }
+${nowStripScript()}
+
 })();
 </script>
 
-<footer class="site">Generated ${esc(fmtET(NOW))} · built by
-<a href="https://github.com/${HUB}/blob/main/scripts/build_spike.mjs"><code>build_spike.mjs</code></a>
-for <a href="https://github.com/${HUB}/issues/204">task #204</a> · Worker: W0004.2</footer>
+<footer class="site">Generated ${esc(fmtET(NOW))} · regenerates via <code>deploy-site.yml</code> ·
+built by <a href="https://github.com/${HUB}/blob/main/scripts/roadmap/wire.mjs"><code>roadmap/wire.mjs</code></a>
+for <a href="https://github.com/${HUB}/issues/211">requirement #211</a>.</footer>
 </body>
 </html>
 `;

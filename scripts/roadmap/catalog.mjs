@@ -1,45 +1,49 @@
-#!/usr/bin/env node
-// Generate _site/roadmap-next.html — the refactored roadmap page (requirement #57).
+// The catalog — the complete public record of the roadmap (requirement #57).
 //
-// One at-a-glance operations page: standing goals, active requirements, open PRs,
-// upcoming releases, recent releases, and the ideas queue, every row linking to
-// its GitHub source, filterable by repo.
+// One page holding everything that exists: standing goals, the goal →
+// requirement → task hierarchy with its review lane, active requirements, open
+// PRs, upcoming releases, recent releases, the ideas queue and the audit fold,
+// every row linking to its GitHub source, filterable by view crossed with repo.
 //
-// This is the roadmap page. It was built as roadmap-next.html so it could be
-// reviewed on the deployed site beside the page it replaced (Pages only deploys
-// from main, so there is no branch preview); @jwildfire approved the flip on
-// 2026-07-24 and it now writes roadmap.html. roadmap-next.html lives on as a
-// redirect — that URL was shared while the page was staged.
+// This page WAS the roadmap page, at roadmap.html, from the flip on 2026-07-24
+// until D0018 on 2026-08-16. That decision made the queue the front door and
+// moved this page one click behind it as the catalog: nothing it does was given
+// up, it simply stopped being what he arrives at. `roadmap-next.html`, the URL
+// this page was staged at during its own review in July, still redirects here —
+// that URL always meant the inventory, and it still resolves to it.
 //
-// Every section comes from an independent collector wrapped in settle(): a failed
-// source renders as a notice line in its own section instead of blanking a page
-// that is the project's public record.
+// It must not converge toward the queue. The queue answers "what needs me" by
+// leaving things out; this page answers "what exists" by leaving nothing out,
+// and the two only stay useful while they stay different.
+//
+// Every section comes from an independent collector wrapped in settle() by the
+// driver: a failed source renders as a notice line in its own section instead of
+// blanking a page that is the project's public record.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { esc, fmtET, age, settle, hasToken, day, clip } from './lib/gh.mjs';
-import { REPOS, ROOT, HUB } from './lib/repos.mjs';
-import { collectRequirements } from './lib/collect/requirements.mjs';
-import { collectOpenPRs } from './lib/collect/prs.mjs';
-import { collectReleases } from './lib/collect/releases.mjs';
-import { collectDecisions } from './lib/collect/decisions.mjs';
-import { collectIdeas } from './lib/collect/ideas.mjs';
-import { collectGoals } from './lib/collect/goals.mjs';
-import { collectHierarchy } from './lib/collect/hierarchy.mjs';
-import { releaseKey } from './lib/rc.mjs';
-import { hierarchySection } from './lib/hierarchy/render.mjs';
-import { auditSection } from './lib/audit/render.mjs';
-import { siteHeader } from './lib/nav.mjs';
+import { esc, fmtET, age, hasToken, day, clip } from '../lib/gh.mjs';
+import { REPOS, ROOT, HUB } from '../lib/repos.mjs';
+import { releaseKey, browserReleaseKeySource } from '../lib/rc.mjs';
+import { hierarchySection } from '../lib/hierarchy/render.mjs';
+import { auditSection } from '../lib/audit/render.mjs';
+import { siteHeader } from '../lib/nav.mjs';
 import {
-  VIEWS, DEFAULT_VIEW, T, goalViews, requirementViews, prViews,
+  VIEWS, DEFAULT_VIEW, goalViews, requirementViews, prViews,
   upcomingViews, releaseViews, openIdeaViews, promotedIdeaViews,
-} from './lib/highlights.mjs';
+} from '../lib/highlights.mjs';
 
-const NOW = new Date();
+export const meta = { slug: 'catalog', out: 'catalog.html' };
 
-const OUT = process.env.ROADMAP_OUT || 'roadmap.html';
 const STAGED_ALIAS = 'roadmap-next.html'; // redirect kept for links shared during review
 const RECENT_RELEASES = 10;
+
+// The build clock, set once by render() from the driver's shared collection pass
+// so every page in the set ages its rows against the same instant. Module-level
+// rather than threaded through twenty render helpers: this file was a script
+// with a module-level NOW before it became a module, and keeping the shape means
+// the diff against that script is about the move and nothing else.
+let NOW = new Date();
 const PROJECT_URL = 'https://github.com/users/jwildfire/projects/1';
 // Heartbeat-published session state (#57 D5): a session-state branch holding one
 // small JSON, fetched client-side so the indicator refreshes without a deploy.
@@ -317,45 +321,41 @@ ${promoted.length ? promotedRows : `  ${empty('None promoted in the window.')}`}
 }
 
 // ---------------------------------------------------------------- page
-// The audit ledger (#92) is a committed file, not an API read: it is written by
-// the nightly audit and by the apply lane, and read here. A missing file renders
-// as "no audit has run yet" rather than omitting the section.
-async function readAuditLedger() {
-  try {
-    return JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'audit', 'findings.json'), 'utf8'));
-  } catch {
-    return null;
-  }
+// The staged URL was shared in #57 and in review comments while this page was
+// being built, and again in the D0018 rebuild; keep it resolving to the page it
+// has always meant rather than breaking those links.
+export function aliasRedirect() {
+  return {
+    name: STAGED_ALIAS,
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Catalog · obot</title>
+<link rel="canonical" href="${meta.out}">
+<meta http-equiv="refresh" content="0; url=${meta.out}">
+</head>
+<body>
+<p>The full roadmap inventory is the catalog: <a href="${meta.out}">${meta.out}</a>.</p>
+</body>
+</html>
+`,
+  };
 }
 
-const changelog = JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'roadmap-changelog.json'), 'utf8'));
+// The body below is deliberately left at column zero rather than indented into
+// this function. Most of it is template literals whose leading whitespace is the
+// emitted HTML, so re-indenting would rewrite the page's markup — and this move
+// is proved by diffing the rendered bytes against the page it replaces. Layout
+// that changes output is not cosmetic here.
+export async function render(data) {
+  const { reqRes, prRes, relRes, ideaRes, goalRes, hierRes, decRes, auditLedger, proposal, changelog } = data;
+  NOW = data.NOW ?? new Date();
+
 const auditEntries = [...changelog.entries].sort((a, b) => b.date.localeCompare(a.date));
 if (!auditEntries.length) throw new Error('site/roadmap-changelog.json has no entries');
 
 if (!hasToken) console.warn('roadmap: no GITHUB_TOKEN — sections that need the API will degrade');
-
-// The hierarchy proposal (Current vs Proposed views) is a committed file like
-// the changelog: absent or unparseable renders an empty proposal, not a broken
-// section — the Current tree is still the truth worth publishing.
-async function readProposal() {
-  try {
-    return JSON.parse(await fs.readFile(path.join(ROOT, 'scripts', 'roadmap-proposal.json'), 'utf8'));
-  } catch {
-    return { links: [], flags: [] };
-  }
-}
-
-const [reqRes, prRes, relRes, ideaRes, goalRes, hierRes, decRes, auditLedger, proposal] = await Promise.all([
-  settle('Requirements', collectRequirements),
-  settle('Open PRs', collectOpenPRs),
-  settle('Releases', collectReleases),
-  settle('Ideas', collectIdeas),
-  settle('Goals', collectGoals),
-  settle('Hierarchy', collectHierarchy),
-  settle('Decisions', collectDecisions),
-  readAuditLedger(),
-  readProposal(),
-]);
 
 // The requirements section is the page's spine: if it is gone, the deploy should
 // fail rather than publish a roadmap with no roadmap on it.
@@ -419,15 +419,20 @@ const html = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Roadmap · obot</title>
+<title>Catalog · obot</title>
+<meta name="description" content="The complete roadmap record: goals, the requirement hierarchy and its review lane, every active requirement, open PRs, upcoming and recent releases, and the ideas queue — filterable by view and repo.">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body class="wide">
 ${siteHeader({
-  page: 'overview',
+  page: 'catalog',
   extra: `<button class="version-badge" id="version-badge" aria-haspopup="dialog" aria-controls="audit-log"
       title="Roadmap audit log">v${esc(auditEntries[0].version)} – ${fmtET(auditEntries[0].date)}</button>`,
 })}
+
+<p class="rm-lede">Everything the roadmap tracks, on one page — nothing filtered out by design.
+What needs @jwildfire is on the <a href="roadmap.html">queue</a>; what changed in the last week is on
+the <a href="wire.html">wire</a>. This is the record both of those read from.</p>
 
 <div class="rm-bar">
   <span class="rm-views" id="rm-views" role="group" aria-label="View">${viewChips}</span>
@@ -600,18 +605,14 @@ ${auditLogHtml}
           if (mins < 1440) return Math.floor(mins / 60) + 'h';
           return Math.floor(mins / 1440) + 'd';
         };
-        // Mirrors lib/rc.mjs — same precedence (milestone, then title), same
-        // normalisation. Kept in sync by hand because this script runs in the
-        // browser and cannot import the module.
-        var releaseKeyOf = function (repo, candidates) {
-          for (var i = 0; i < candidates.length; i++) {
-            var c = candidates[i];
-            if (!c || /^untagged-[0-9a-f]+$/i.test(c)) continue;
-            var m = String(c).match(/\bv?(\d+)\.(\d+)(?:\.(\d+))?\b/);
-            if (m) return repo + '@v' + m[1] + '.' + m[2] + '.' + (m[3] || 0);
-          }
-          return null;
-        };
+        // lib/rc.mjs's rule, emitted from lib/rc.mjs rather than retyped here.
+        // The hand-written mirror that used to sit at this spot shipped broken
+        // for weeks: its escapes were eaten by this very template literal, so
+        // the deployed pattern was /v?(d+).(d+)(?:.(d+))?/ and the dedupe never
+        // fired once (hub#209). An interpolated value is never reprocessed for
+        // escapes, which is what makes the emitted form safe where the typed one
+        // was not — and rc.test.mjs evaluates what the emitter produces.
+        ${browserReleaseKeySource()}
         var prKeys = {};
         var fresh = data.items.map(function (it) {
           var repo = it.repository_url.replace('https://api.github.com/repos/', '');
@@ -640,33 +641,13 @@ ${auditLogHtml}
 })();
 </script>
 
-<footer class="site">Generated ${fmtET(new Date())} · regenerates via <code>deploy-site.yml</code> ·
-built by <a href="https://github.com/${HUB}/blob/main/scripts/build_roadmap_next.mjs"><code>build_roadmap_next.mjs</code></a>
-for <a href="https://github.com/${HUB}/issues/57">requirement #57</a>.</footer>
+<footer class="site">Generated ${fmtET(NOW)} · regenerates via <code>deploy-site.yml</code> ·
+built by <a href="https://github.com/${HUB}/blob/main/scripts/roadmap/catalog.mjs"><code>roadmap/catalog.mjs</code></a>
+for <a href="https://github.com/${HUB}/issues/57">requirement #57</a>, re-front-ended by
+<a href="https://github.com/${HUB}/issues/211">#211</a>.</footer>
 </body>
 </html>
 `;
-
-await fs.mkdir(path.join(ROOT, '_site'), { recursive: true });
-await fs.writeFile(path.join(ROOT, '_site', OUT), html);
-
-// The staged URL was shared in #57 and in review comments while the page was
-// being built; keep it resolving rather than breaking those links.
-if (OUT === 'roadmap.html') {
-  await fs.writeFile(path.join(ROOT, '_site', STAGED_ALIAS), `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Roadmap · obot</title>
-<link rel="canonical" href="roadmap.html">
-<meta http-equiv="refresh" content="0; url=roadmap.html">
-</head>
-<body>
-<p>The staged roadmap page is now the roadmap: <a href="roadmap.html">roadmap.html</a>.</p>
-</body>
-</html>
-`);
-}
 
 const degraded = [
   ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes], ['goals', goalRes], ['hierarchy', hierRes],
@@ -675,7 +656,7 @@ const degraded = [
 const todoRc = rcQueue(prRes, relRes);
 const todoRcCount = todoRc.rcPrs.length + todoRc.drafts.length;
 console.log(
-  `roadmap-next: todo ${todoRcCount} RCs` +
+  `catalog: todo ${todoRcCount} RCs` +
   (todoRc.suppressed ? ` (${todoRc.suppressed} draft release${todoRc.suppressed > 1 ? 's' : ''} folded into their RC PR)` : '') +
   ` + ${decRes.value?.awaiting.length ?? 0} decisions, ` +
   `${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
@@ -684,3 +665,6 @@ console.log(
   `${auditLedger ? `${auditLedger.counts.total} audit findings` : 'no audit ledger'}` +
   (degraded.length ? ` — degraded: ${degraded.join(', ')}` : ''),
 );
+
+  return html;
+}
