@@ -47,8 +47,9 @@ import { collectRepoLights, SESSION_STATE_URL } from './roadmap/nowstrip.mjs';
 import * as queue from './roadmap/queue.mjs';
 import * as wire from './roadmap/wire.mjs';
 import * as catalog from './roadmap/catalog.mjs';
+import * as briefing from './roadmap/briefing.mjs';
 
-const PAGES = [queue, wire, catalog];
+const PAGES = [queue, wire, catalog, briefing];
 
 const only = (() => {
   const i = process.argv.indexOf('--only');
@@ -101,7 +102,11 @@ const written = [];
 for (const page of PAGES) {
   if (only && page.meta.slug !== only) continue;
   const html = await page.render(data);
-  await fs.writeFile(path.join(outDir, page.meta.out), html);
+  const dest = path.join(outDir, page.meta.out);
+  // A page may sit in a subdirectory - the briefing publishes at
+  // reports/briefing/index.html because that URL is what he bookmarks.
+  await fs.mkdir(path.dirname(dest), { recursive: true });
+  await fs.writeFile(dest, html);
   written.push(page.meta.out);
   // The staged URL a page was reviewed at, kept resolving to the page it meant.
   if (typeof page.aliasRedirect === 'function') {
