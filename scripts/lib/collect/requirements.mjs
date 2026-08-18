@@ -12,6 +12,9 @@ import { HUB } from '../repos.mjs';
 
 const [OWNER, NAME] = HUB.split('/');
 
+import { judge, glossFor, buildApprovalIndex } from '../provenance.mjs';
+import { collectDecisionLog } from './decision-log.mjs';
+
 export const PROJECT_NUMBER = 1;
 export const ACTIVE_STAGES = ['Requirement Gathering', 'Design', 'Development', 'Review'];
 const STAGE_ORDER = ['Development', 'Review', 'Design', 'Requirement Gathering', 'Unstaged', 'Backlog', 'Released'];
@@ -81,6 +84,38 @@ function taskProgress(issue) {
   return done + open ? { done, total: done + open, source: 'checklist' } : null;
 }
 
+/**
+ * Whose decision a requirement carries, resolved rather than repeated (#215).
+ *
+ * The catalog shows a pill only when a requirement CLAIMS an approval, because a
+ * claim is the thing that can mislead — 113 rows each carrying an "EMPTY" chip is
+ * noise, and the table legend says what no pill means so the absence is explained
+ * on the surface rather than left to be inferred.
+ *
+ * `claimed` is the legacy state and it is deliberately visible: the drafted-by line
+ * asserts "reviewed by @jwildfire" on 75 requirements that carry no record of it.
+ * Those rows say so instead of reading like the approved ones.
+ */
+function provenanceOf(issue, approvals) {
+  const v = judge(issue.body ?? '', approvals, { requireBlock: false });
+  if (v.state === 'missing') {
+    return v.reviewClaim === 'asserted'
+      ? { state: 'claimed', detail: 'the drafted-by line says @jwildfire reviewed it — no record of it exists' }
+      : null;
+  }
+  if (v.state === 'empty') return { state: 'empty', detail: 'nobody has approved this' };
+  if (v.state === 'unresolved') {
+    return { state: 'unresolved', detail: v.problems[0] ?? 'the approval citation does not resolve' };
+  }
+  const cited = v.approved.map((c) => c.text).join(', ');
+  const first = v.resolved.find((r) => r.said);
+  const gloss = first ? glossFor(first) : '';
+  return {
+    state: v.state,
+    detail: `${cited}${gloss ? ` — ${gloss}` : ''}${v.beyond && v.beyond !== 'none' ? ` · beyond it: ${v.beyond}` : ''}`,
+  };
+}
+
 export async function collectRequirements() {
   const issues = [];
   let cursor = null;
@@ -97,6 +132,10 @@ export async function collectRequirements() {
   // readable, so an issue without one is genuinely unstaged rather than a
   // casualty of a token without project scope.
   const boardReadable = issues.some((i) => boardStatus(i));
+  // Local files only; a decision log that cannot be read degrades every claim to
+  // `unresolved` rather than to `approved`, which is the safe direction to fail.
+  let approvals = null;
+  try { approvals = buildApprovalIndex(await collectDecisionLog()); } catch { /* reported as unresolved */ }
 
   return issues.map((issue) => {
     const status = boardStatus(issue);
@@ -124,6 +163,7 @@ export async function collectRequirements() {
       updatedAt: issue.updatedAt,
       createdAt: issue.createdAt,
       promotedFrom: promotedFrom ? Number(promotedFrom) : null,
+      provenance: provenanceOf(issue, approvals),
     };
   }).sort((a, b) => {
     const s = STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage);

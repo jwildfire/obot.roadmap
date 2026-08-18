@@ -192,10 +192,27 @@ function goalsSection(res, requirements) {
 }
 
 // ---------------------------------------------------------------- requirements
+const PILL = {
+  approved: 'approved',
+  unresolved: 'approval unresolved',
+  undetermined: 'approval unconfirmed',
+};
+
 async function requirementRow(req, prsByRequirement) {
   // 'unstaged' is already what the stage pill says — don't badge it twice.
   const drift = req.drift && req.drift !== 'unstaged'
     ? ` <span class="status-pill drift" title="Board Status disagrees with the issue state">${esc(req.drift)}</span>`
+    : '';
+  // Whose decision it carries (#215). A pill appears only where a requirement
+  // claims an approval under the current convention — that is the claim a reader
+  // can believe wrongly, and the legend below says what no pill means.
+  //
+  // `claimed` (the legacy drafted-by line asserting a review nothing records) is
+  // deliberately NOT a pill: it is true of 74 rows, and 74 amber pills would drown
+  // the one pill that matters. It is counted in the legend and named in the report,
+  // which is the same boundary the audit rules draw by date.
+  const prov = PILL[req.provenance?.state]
+    ? ` <span class="status-pill prov-${req.provenance.state}" title="${esc(req.provenance.detail)}">${PILL[req.provenance.state]}</span>`
     : '';
   const prs = prsByRequirement.get(req.number) ?? [];
   const activity = prs.length
@@ -207,7 +224,7 @@ async function requirementRow(req, prsByRequirement) {
   const repos = req.repos.map((r) => `<span class="rm-chip">${esc(shortRepo(r))}</span>`).join('');
   return `  <tr data-repo="${repoAttr(req.repos)}" data-hl="${requirementViews(req, prs, NOW)}">
     <td><a href="${req.url}">#${req.number}</a></td>
-    <td>${esc(req.title)}${drift}${activity}</td>
+    <td>${esc(req.title)}${drift}${prov}${activity}</td>
     <td><span class="status-pill ${stageClass(req.stage)}">${esc(req.stage)}</span></td>
     <td>${repos}</td>
     <td>${tasks}</td>
@@ -374,9 +391,16 @@ for (const pr of prRes.value ?? []) {
 }
 
 const driftCount = active.filter((r) => r.drift).length;
+// Whose decision each requirement carries (#215), stated once under the table
+// people read. The legacy count is the whole population, not this table's share:
+// a number that changes depending on which fold you are looking at is worse than
+// no number, because it reads as a different fact each time.
+const claimedCount = [...active, ...folded].filter((r) => r.provenance?.state === 'claimed').length;
 const requirementsNote = `Board Status from the <a href="${PROJECT_URL}">obot Roadmap project</a>${
   driftCount ? `, including <strong>${driftCount}</strong> open requirement${driftCount > 1 ? 's' : ''} the board has parked in <code>Released</code> or left unstaged — shown here rather than folded away` : ''
-}.`;
+}. No approval pill means nobody has approved that requirement — the normal state for work an agent wrote, and recorded on the issue as <code>Approved by: EMPTY</code> rather than left blank (<a href="https://github.com/${HUB}/issues/215">#215</a>); a pill appears only where a requirement claims an approval, because a claim is the thing that can be believed wrongly.${
+  claimedCount ? ` Separately, ${claimedCount} requirements still end with the older attribution line asserting that @jwildfire reviewed them, and nothing on record says he did — counted in the <a href="reports/requirement-provenance/">provenance report</a> rather than rewritten.` : ''
+}`;
 
 const requirementsSection = section(
   'requirements',
