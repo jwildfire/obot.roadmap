@@ -155,3 +155,15 @@ const EMPTY_DATA = () => ({
   prRes: ok([]), relRes: ok({ drafts: [], upcoming: [] }),
   decRes: ok({ awaiting: [] }), ideaRes: ok({ open: [] }), reqRes: ok([]),
 })
+
+test('a config count that is hours old says so, instead of reading as a current fact', async () => {
+  // The count is a committed file that nothing refreshes on a schedule; the
+  // site's own staleness rule only flags it after three days, so a count off by
+  // one for a day renders as truth. Found live: the page said 9 while the list
+  // held 10, because the last hand-run was before c0016 was filed.
+  const html = await render({ ...EMPTY_DATA(), NOW: new Date('2026-08-18T18:00:00Z') })
+  const fresh = await render({ ...EMPTY_DATA(), NOW: new Date('2026-08-18T02:00:00Z') })
+  const stamped = /counted \d+[hd] ago/
+  if (/config item/.test(html)) assert.match(html, stamped, 'an old count must carry its age')
+  if (/config item/.test(fresh)) assert.doesNotMatch(fresh, stamped, 'a fresh one needs no caveat')
+})

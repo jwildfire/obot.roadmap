@@ -103,8 +103,18 @@ export async function render(data) {
   // The COUNT is the entire permitted payload. That list is local-only by design
   // and the deploy greps the assembled site for its sentinel, so no item text
   // reaches this page by any route.
+  // The count carries WHEN IT WAS COUNTED unless it is same-day fresh. It comes
+  // from a committed file that nothing refreshes on a schedule — it updates only
+  // when a session runs tools/config-count by hand — so "9 config items" can be a
+  // day old and read as a current fact. That matters more than tidiness right
+  // now: with obot.agent#206 open, his dashboard shows no config items at all, so
+  // this line is the only surface telling him about them (obot.agent#212).
+  const countAge = config.ok && config.asOf
+    ? Math.floor((NOW - new Date(config.asOf)) / 3600000) : null;
+  const asOf = countAge !== null && countAge >= 6
+    ? ` <span class="b-wait">counted ${countAge >= 48 ? `${Math.floor(countAge / 24)}d` : `${countAge}h`} ago</span>` : '';
   const configLine = config.ok && config.open > 0
-    ? `  <p class="b-line"><a href="${HUB}/roadmap.html">${config.open} config item${config.open === 1 ? '' : 's'} on your keyboard</a></p>`
+    ? `  <p class="b-line"><a href="${HUB}/roadmap.html">${config.open} config item${config.open === 1 ? '' : 's'} on your keyboard</a>${asOf}</p>`
     : '';
 
   const restLine = remainder > 0
