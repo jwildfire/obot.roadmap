@@ -12,7 +12,7 @@ This repo deliberately mirrors [Gilead-BioStats/gsm.roadmap](https://github.com/
 - A Requirement issue body has five sections, populated incrementally: **Business Requirement** and **Overview** (required at creation), then **Data Requirement**, **Design**, and **Tasks**.
 - Quarterly milestones are lowercase `YYYYqN` (e.g. `2026q3`). Backlog items use the `backlog` milestone.
 - Topic labels classify the work: `safety`, `infrastructure`, `ai`. One or more per requirement.
-- All sign-offs are @jwildfire — this is a single-maintainer portfolio. Agent-drafted issues and PRs carry an attribution line noting the model used (e.g. "This Issue was drafted by Claude Code using Fable 5 and reviewed by @jwildfire").
+- All sign-offs are @jwildfire — this is a single-maintainer portfolio. Agent-drafted issues and PRs carry an attribution line naming who drafted it (e.g. "This Issue was drafted by Claude Code using Opus 5"). That line names the author and nothing else: whether he approved it is a separate fact, recorded in the provenance block and checkable — see [Who wrote it, and who approved it](#who-wrote-it-and-who-approved-it).
 
 ## Operating autonomy
 
@@ -54,12 +54,68 @@ Every Requirement issue must instantiate the [requirement template](.github/ISSU
 1. Read `.github/ISSUE_TEMPLATE/requirement.yml` first — it is the source of truth. Do not reconstruct the sections from memory or by copying an existing issue.
 2. The body must contain exactly the template's five sections as `###` headings, in this order: `### Business Requirement`, `### Overview`, `### Data Requirement`, `### Design`, `### Tasks`. Never rename, reorder, add, or drop a section.
 3. Apply the `requirement` label the template sets, plus one or more topic labels.
-4. Keep the attribution line (see [Context](#context)) above the first section heading — it is a house convention, not a template section.
+4. Keep the attribution line and the provenance block at the foot of the body, after a `---` rule — they are house conventions, not template sections, which is why they are not `###` headings. See [Who wrote it, and who approved it](#who-wrote-it-and-who-approved-it).
 5. Sections not yet populated get a short italic placeholder stating when they will be filled (e.g. `_To be populated during Requirement Gathering (Step 2)._`) — never omit them.
 
 Before submitting, verify with: `gh issue view <n> --json body -q .body | grep '^### '` — the output must be exactly the five headings above.
 
 **Scope every requirement to one release.** A requirement covers exactly one release; if the scope is bigger than one release, file more than one requirement. Deferring scope off an existing requirement has a procedure — note the deferral on the original, file a new requirement with its own milestone, **transfer** the deferred sub-issues rather than re-filing them, and close the original with its release. A requirement never stays open because a later phase is coming. See [README — One requirement, one release](README.md#one-requirement-one-release) (@jwildfire, 2026-08-15).
+
+## Who wrote it, and who approved it
+
+Requirement #215. A requirement written by an agent must not be able to authorise what only @jwildfire can authorise — otherwise the guardrail is self-approving, which is the one property a guardrail cannot have. On 2026-08-16 a worker prepared to delete files from this repo reasoning that "@jwildfire reviewed that requirement". He had not; the Navigator had written it after he approved something narrower.
+
+Every requirement carries a three-line block at the foot of the body, after the `---` rule, alongside the attribution line:
+
+```
+Authored by: 🧭🤖 obot-navigator (Claude Code using Opus 5)
+Approved by: D0018.1 — @jwildfire, 2026-08-16, in chat
+Beyond the approval: the spike-harness teardown in Overview — the Navigator's own judgement
+```
+
+- **Authored by** — the agent or person who wrote the prose. Always known, so never blank.
+- **Approved by** — a citation, never prose, or the literal `EMPTY`. `EMPTY` means nobody has approved this, and it is the correct and complete answer for most agent-written requirements. It costs nothing to write and blocks nothing.
+- **Beyond the approval** — required only when an approval is cited: what the author added that the approval does not cover. `none` is a valid answer, and it is a claim rather than a formality. This is the line #211 needed and never had.
+
+Empty renders as `EMPTY`, never as an absent line. A missing field reads as an oversight and invites the next reader to assume; an explicit "nobody has approved this" reads as a fact and invites them to check.
+
+### What `Approved by` may hold
+
+| Value | Means |
+|---|---|
+| `EMPTY` | nobody has approved this |
+| `D0018.1` | one question on a decision artifact — preferred, because it names what was asked as well as what he said |
+| `D0018` | the artifact as a whole; weaker, because it does not say which question |
+| `owner/repo#123 review` | his native GitHub review — preferred over all of the above where it exists |
+
+Where an approval can live on the object being approved, it should. A native review carries his identity, the object, and a timestamp, held first-party by GitHub; there is no relay chain to have provenance about. Chat relay is the fallback, and it is the fallback precisely for what GitHub cannot hold — config items, deletions, decisions about surfaces rather than pull requests. Cite the strongest available form, not the first one that arrived.
+
+Anything else fails. Prose does not resolve, however true it sounds, and that is deliberate: `Approved by` is settable only from a record the filer did not write. Filling it falsely means editing a published decision artifact — a separate, visible act — rather than typing a line about yourself while filing.
+
+### Using it
+
+```bash
+node scripts/provenance.mjs resolve D0018.1   # what was asked, what he said, channel, date
+node scripts/provenance.mjs resolve 215       # whatever #215 cites
+node scripts/provenance.mjs check 215         # exits 1 if a claim does not resolve
+node scripts/provenance.mjs stamp 215 --approved-by D0018.1
+```
+
+`stamp` generates the human gloss after the `—` from the record rather than accepting a typed one, and refuses a citation that does not resolve. If you write the block by hand, do not type the gloss.
+
+> An approval-gated action cites the approval, not the requirement.
+
+Deleting, merging to a protected surface, and anything the write policy gates should name where he said yes — `resolve` prints exactly that. "Approved by @jwildfire, 2026-08-16, in chat via obot-prime" is checkable; "authorised by #211" is not, and was wrong.
+
+### What is checked, and what is not
+
+The nightly audit fires `APPROVAL-UNRESOLVED` when a requirement claims an approval that does not resolve, and `PROVENANCE-MISSING` on requirements filed from 2026-08-18 with no block. Nothing ever demands an approval — `EMPTY` passes.
+
+What no script judges: whether a resolved approval actually covers the scope claimed. That is what `Beyond the approval` declares in the author's own words, and a reader still has to read it. Three agents spent an evening failing to settle exactly that question about one sentence; pretending a checker could is how a convention gets trusted past what it can carry.
+
+### The scope this does not have
+
+This standard is for approval-gated actions — deletions, merges to protected surfaces, anything an invariant names. It is not a licence to block ordinary work. The test is whether being wrong would be expensive to undo; almost nothing qualifies. "We're pushing for transparency and continuous improvement. not perfection." (@jwildfire, 2026-08-17.)
 
 ## Diary and session wrapup
 

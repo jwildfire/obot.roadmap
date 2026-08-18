@@ -36,6 +36,34 @@ Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilea
    - **Data Requirement** — leave blank unless data availability is already known to matter
    - **Design** — leave blank or add high-level notes if available
    - **Sub-issues** — leave blank (populated by `requirement-tasks` after Design)
+   - **Provenance** — two lines at the foot of the body, after a `---` rule, beside the attribution line
+
+   Say who wrote it and who approved it, and do not conflate them (#215):
+
+   ```
+   Authored by: 🧭🤖 obot-navigator (Claude Code using Opus 5)
+   Approved by: EMPTY
+   ```
+
+   `Approved by: EMPTY` is the normal, correct value for a requirement you drafted. Write a citation
+   only when a recorded decision or a native GitHub review actually covers it — a decision id
+   (`D0018.1`, preferred because it names what was asked) or `owner/repo#123 review`. Never prose:
+   `node scripts/provenance.mjs check <n>` fails a claim that cannot be shown, and `EMPTY` always
+   passes, so nothing is gained by guessing.
+
+   The trap this exists for is specific and it is one you are in right now. You are usually drafting
+   from something @jwildfire said, and the requirement will contain more than he said — the scope you
+   worked out yourself. That extra scope is invisible once it is filed, and the next agent will read
+   the whole issue as his. When you cite an approval, the third line is required and it is where you
+   name the gap:
+
+   ```
+   Approved by: D0018.1 — @jwildfire, 2026-08-16, in chat
+   Beyond the approval: the spike-harness teardown in Overview — my own judgement, he has not seen it
+   ```
+
+   Do not file a decision artifact merely to have something to cite. If he has not decided, the
+   requirement is unapproved and says so.
 
    **Renderer requirements carry the R widget from the start** (@jwildfire,
    2026-08-15: "Every renderer gets an R widget"; see #164). A safety.viz
@@ -50,7 +78,11 @@ Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilea
 
    When scope is deferred off an **existing** requirement, follow the procedure in that order: note the deferral on the original (what and why), file the new requirement with its own milestone, **transfer** the deferred sub-issues rather than re-filing them, and the original closes with its release. A defect found after release is not deferred scope — it is an ordinary issue against shipped work, and needs no new requirement.
 
-5. **Present for review** with the `issue-review` skill and iterate.
+5. **Present for review** with the `issue-review` skill and iterate. Presenting it is not approval,
+   and posting it after an unattended session is not approval either. The attribution line names the
+   author only — do not append "and reviewed by @jwildfire" unless he reviewed it, and if he did,
+   record it in `Approved by` where it resolves. 75 of this hub's requirements assert his review in
+   prose and carry no record of it; that is the sentence this convention replaces.
 
 6. **After approval, post** with the required properties: `type:requirement` + `status:planned` + `project:P###` labels, assignee `@me`, and a link to the parent `type:project` issue in the body (the roadmap generator checks for it). Complete the posting checklist (rename draft, share URL).
 

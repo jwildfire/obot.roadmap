@@ -27,7 +27,18 @@ Adapted from [gsm.roadmap's requirement-tasks skill](https://github.com/Gilead-B
    - **Description** — what changes, acceptance criteria, and a link back to the parent (`Parent: jwildfire/obot.roadmap#{N}`)
    - **Target repo** — exactly one
    - **Labels** — repo-appropriate (defer to the target repo's conventions)
-   - **Attribution line** — per the gsm.agent conventions
+   - **Attribution line** — per the gsm.agent conventions. It names the author and nothing else; whether
+  @jwildfire approved anything is a separate fact, and it lives on the parent requirement's
+  `Approved by` line (#215)
+
+Before decomposing, run `node scripts/provenance.mjs resolve <parent number>`. A sub-issue inherits
+whatever authority its parent has, and if the parent's approval is `EMPTY` then so is the sub-issue's
+— which matters the moment a task is approval-gated. A worker briefed from #211 prepared to delete
+files because the requirement it came from read like settled intent; the requirement was the
+Navigator's own, and the task said nothing to correct that impression.
+
+If a task is approval-gated (a deletion, a merge to a protected surface, anything an invariant names),
+write the citation into the task itself — the specific approval, not the parent's issue number.
 
 4. **Present the drafts for review** with the `issue-review` skill before posting.
 

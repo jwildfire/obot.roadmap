@@ -32,6 +32,8 @@ Requirements are captured as GitHub issues using the [requirement issue template
 | **Design** | Step 3 — Design | — |
 | **Tasks** | Step 3 — Design | — |
 
+Below the five sections, after a `---` rule, every requirement carries an attribution line naming who drafted it and a [provenance block](#who-decided-it) saying who approved it.
+
 ## Lifecycle
 
 | # | Stage | Trigger | Milestone | Sign-off |
@@ -43,7 +45,22 @@ Requirements are captured as GitHub issues using the [requirement issue template
 | 5 | **Review** | Implementation merged; evidence posted | `YYYYqN` | @jwildfire review |
 | 6 | **Release** | Included in a quarterly release | `YYYYqN` | — |
 
-Since this is a single-maintainer portfolio, all sign-offs are @jwildfire. Agent-drafted issues and PRs carry an attribution line noting the model used.
+Since this is a single-maintainer portfolio, all sign-offs are @jwildfire. Agent-drafted issues and PRs carry an attribution line naming who drafted it.
+
+### Who decided it
+
+Most requirements are now written by an agent, and a filed requirement looks like settled intent — milestoned, boarded, linked to a goal — whether the scope in it came from @jwildfire or from an agent's own judgement. Nothing on its face separated the two until #215, and on 2026-08-16 a worker read one as his approval and prepared to delete files on the strength of it.
+
+So the two facts are recorded separately, at the foot of the body:
+
+```
+Authored by: 🧭🤖 obot-navigator (Claude Code using Opus 5)
+Approved by: EMPTY
+```
+
+`Approved by` holds a citation that resolves — a decision id (`D0018.1`), or his native GitHub review (`owner/repo#123 review`) where the approval can live on the object being approved — or the literal `EMPTY`, which means nobody has approved it. `EMPTY` is the normal state for agent-written work: it costs nothing, blocks nothing, and is the honest answer. What cannot happen is an unverifiable claim that he agreed. When an approval is cited, a third line says what the requirement adds that the approval does not cover.
+
+Check one with `node scripts/provenance.mjs resolve <number>`; it prints what was asked, what he said, the channel and the date. An approval-gated action cites that, never the requirement that contains it. The full convention is in [AGENTS.md](AGENTS.md#who-wrote-it-and-who-approved-it) (@jwildfire, #215).
 
 ### One requirement, one release
 
