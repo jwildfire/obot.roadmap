@@ -6,6 +6,20 @@
 // up still scoping to "safety.agent" long after the repo was renamed to
 // obot.agent (2026-07-11), quietly dropping obot.agent and open.gismo from the
 // homepage metrics and the news feed. Adding a repo stays a CSV edit.
+// The local-only guard is imported HERE, first, and on purpose (#203).
+//
+// Every generator reads the portfolio list, so every generator imports this
+// module — which makes it the one place that can arm the guard for all of them
+// without depending on whoever writes the next page remembering to. Importing it
+// installs it; see local-only-guard.mjs for what it refuses and why the four
+// existing defences were not enough on their own.
+//
+// It is not the only enforcement. `check_local_only_guard.mjs` runs before the
+// first generator in the deploy and walks each entrypoint's real import graph, so
+// a generator that stops importing this file fails the build rather than quietly
+// losing its guard.
+import './local-only-guard.mjs';
+
 import fs from 'node:fs';
 import path from 'node:path';
 

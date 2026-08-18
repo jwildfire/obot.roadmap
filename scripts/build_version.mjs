@@ -17,6 +17,12 @@
 // So: the build computes, the page renders, the sweep relays. One judgement, one
 // source, and the sweep's line about the site can never be newer or older than the
 // site itself, because it IS the site's own line.
+// The local-only guard (#203) — this generator writes into the published site,
+// so it carries the boundary like every other. It reaches lib/version.mjs but not
+// lib/repos.mjs, which is where the rest of them pick the guard up, so it says so
+// itself rather than relying on an import it does not make.
+import './lib/local-only-guard.mjs';
+
 import { mkdir, writeFile } from 'node:fs/promises';
 import { driftSummary, getVersionState } from './lib/version.mjs';
 
