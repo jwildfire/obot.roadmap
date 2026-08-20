@@ -2,6 +2,9 @@
 
 Decision artifact for the new-laptop rebuild. Eleven questions @jwildfire has to answer before the machine changes hands this weekend, led by whether the old machine is copied across or rebuilt clean.
 
+- Published: https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-20-laptop-migration/
+- Q&A thread (where he decides): https://github.com/jwildfire/obot.roadmap/discussions/290
+
 ## Provenance
 
 - Source: the new-laptop rebuild guide drafted 2026-08-20 by 👯🤖 W0081 against [obot.roadmap#279](https://github.com/jwildfire/obot.roadmap/issues/279). That guide is a local-only document — it names where credentials live, never what they are — and is not published, committed or quoted here beyond what each choice requires.
