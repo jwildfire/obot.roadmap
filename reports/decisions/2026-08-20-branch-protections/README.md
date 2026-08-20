@@ -2,7 +2,7 @@
 
 **Status: Open** — P1 (D0022.1) awaiting @jwildfire. One choice: Option A, B or C.
 **Requirement:** [jwildfire/obot.roadmap#272](https://github.com/jwildfire/obot.roadmap/issues/272) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
-**Q&A:** pending
+**Q&A:** [#283](https://github.com/jwildfire/obot.roadmap/discussions/283)
 
 ## What produced this
 
