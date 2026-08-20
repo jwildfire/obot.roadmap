@@ -10,6 +10,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { cut, render, LINE_BUDGET, meta } from '../roadmap/briefing.mjs'
+import { readFileSync } from 'node:fs'
+import { CONFIG_COUNT_PATH } from './public-channel.mjs'
 
 const item = (type, title, since) => ({
   type, title, since, prefix: 'waiting',
@@ -161,8 +163,20 @@ test('a config count that is hours old says so, instead of reading as a current 
   // site's own staleness rule only flags it after three days, so a count off by
   // one for a day renders as truth. Found live: the page said 9 while the list
   // held 10, because the last hand-run was before c0016 was filed.
-  const html = await render({ ...EMPTY_DATA(), NOW: new Date('2026-08-18T18:00:00Z') })
-  const fresh = await render({ ...EMPTY_DATA(), NOW: new Date('2026-08-18T02:00:00Z') })
+  //
+  // The two clocks are derived from the file's OWN asOf rather than pinned to
+  // fixed dates. Pinned, this asserted a property of one day's data instead of a
+  // property of the renderer: the first refresh of data/config-count.json after
+  // those dates made the count NEWER than the pinned NOW, so the age went
+  // negative, the stamp correctly did not render, and the test failed. That took
+  // the whole site deploy red on 2026-08-20 and left a decision artifact 404 for
+  // hours (obot.roadmap#287). The renderer stamps at >= 6h - see the countAge
+  // guard in scripts/roadmap/briefing.mjs - so 18h is old and 30 minutes is
+  // fresh, whatever the committed file happens to hold.
+  const countAsOf = new Date(JSON.parse(readFileSync(CONFIG_COUNT_PATH, 'utf8')).asOf)
+  const after = (ms) => new Date(countAsOf.getTime() + ms)
+  const html = await render({ ...EMPTY_DATA(), NOW: after(18 * 3600000) })
+  const fresh = await render({ ...EMPTY_DATA(), NOW: after(30 * 60000) })
   const stamped = /counted \d+[hd] ago/
   if (/config item/.test(html)) assert.match(html, stamped, 'an old count must carry its age')
   if (/config item/.test(fresh)) assert.doesNotMatch(fresh, stamped, 'a fresh one needs no caveat')
