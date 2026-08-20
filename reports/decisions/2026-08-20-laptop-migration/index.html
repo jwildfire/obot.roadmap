@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — The laptop move, and the calls that come before it</title>
+<meta name="description" content="You move to a new laptop this weekend. Eleven questions come first, starting with whether the old machine is copied across or rebuilt clean — plus two things already true: nothing here is backed up, and one key cannot be recovered.">
+<meta name="decision-id" content="D0024">
+<meta name="premise" content="the requirement that asked for a step-by-step rebuild of the new laptop is still open | gh issue view 279 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<meta name="premise" content="nothing on the old machine is backed up to any destination, which is what makes the first old-machine question urgent | tmutil destinationinfo → prints No destinations configured">
+<meta name="premise" content="the change that keeps agent GitHub writes off your own name has not landed yet, so its timing is still a choice you get to make | gh pr view 198 -R jwildfire/obot.agent --json state --jq .state → prints OPEN">
+<meta name="premise" content="the question of which repository owns the top-level instruction file is still unanswered, so the move does not inherit an answer | gh issue view 261 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<meta name="premise" content="the identity defect the rebuild is meant to fix at the root is still open | gh issue view 260 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--go);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--go)}
+.verdict p{margin:10px 0 0;font-size:16.5px}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.q .dis{margin:10px 0 0;padding:10px 14px;border-left:3px solid var(--bronze);background:#faf5ec;font-size:15px}
+.q .dis b{color:var(--bronze)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+.pre{margin:16px 0 0;padding:14px 16px;border:1px solid var(--rule);border-radius:5px;background:#f7f4ec;
+  font:13px/1.6 var(--mono);color:var(--ink2);overflow-x:auto;white-space:pre}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .verdict,.card,.q,.callout{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-20</span><span class="dot"></span><span>awaiting your decision</span><span class="dot"></span><span>eleven questions</span></div>
+  <h1>The laptop move: what has to be settled before the weekend</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0024">
+<p>D0024 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0024.1"><a class="did" href="#D0024.1">D0024.1</a><span class="dcode">L1</span><span class="dq">Copy the old machine across with Apple's migration tool, or rebuild it clean?</span></li>
+  <li id="D0024.2"><a class="did" href="#D0024.2">D0024.2</a><span class="dcode">L2</span><span class="dq">Where does the pre-move copy of the local-only store actually go, and is it in hand by Friday?</span></li>
+  <li id="D0024.3"><a class="did" href="#D0024.3">D0024.3</a><span class="dcode">L3</span><span class="dq">Is there a copy of the bot's signing key anywhere off the old machine, or is a replacement being generated?</span></li>
+  <li id="D0024.4"><a class="did" href="#D0024.4">D0024.4</a><span class="dcode">L4</span><span class="dq">Does the change that keeps agent GitHub writes off your own name land before the move, or after?</span></li>
+  <li id="D0024.5"><a class="did" href="#D0024.5">D0024.5</a><span class="dcode">L5</span><span class="dq">Same account name on the new machine, and the working folder in the same place?</span></li>
+  <li id="D0024.6"><a class="did" href="#D0024.6">D0024.6</a><span class="dcode">L6</span><span class="dq">Disk encryption on, and automatic login off, given that both together stop the scheduled sweep after any reboot?</span></li>
+  <li id="D0024.7"><a class="did" href="#D0024.7">D0024.7</a><span class="dcode">L7</span><span class="dq">A new access key for GitHub, or carry the old machine's key across?</span></li>
+  <li id="D0024.8"><a class="did" href="#D0024.8">D0024.8</a><span class="dcode">L8</span><span class="dq">Which repository owns the top-level instruction file, and is it installed as a link or as a checked copy?</span></li>
+  <li id="D0024.9"><a class="did" href="#D0024.9">D0024.9</a><span class="dcode">L9</span><span class="dq">Does the morning summary get turned on as part of building the new machine?</span></li>
+  <li id="D0024.10"><a class="did" href="#D0024.10">D0024.10</a><span class="dcode">L10</span><span class="dq">Which version of R does the new machine run: the old machine's, or the one the automated builds use?</span></li>
+  <li id="D0024.11"><a class="did" href="#D0024.11">D0024.11</a><span class="dcode">L11</span><span class="dq">Lid open by convention, or a desk that keeps running with the lid shut?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">You are moving to a new machine in a few days, and a step-by-step rebuild guide was written for it today. Eleven of its questions cannot wait for the day itself, because each one either changes what the steps say, has to happen while the old machine is still whole, or gets set in the first ten minutes of the new one and is awkward to undo. The first question decides how much the other ten matter. Every one of them arrives with a recommendation, so this is you agreeing or disagreeing rather than deciding cold.</p>
+  <div class="facts">
+    <span><b>Questions here:</b> 11</span>
+    <span><b>The one that conditions the rest:</b> the first</span>
+    <span><b>Backups of the old machine anywhere:</b> none</span>
+    <span><b>Your remaining act:</b> agree, or say which ones you would change</span>
+  </div>
+</div>
+
+<div class="cut"><span>THE SITUATION</span></div>
+<section id="situation">
+<h2>Three sentences</h2>
+
+<p>The new laptop can either be a copy of the old one or a rebuild of it, and that single choice turns roughly forty setup steps into either work or verification. The old machine has accumulated a specific kind of problem — settings typed into a box once, which now outrank the code and belong to no repository — and a faithful copy reproduces all of them silently, because a copy cannot tell configuration you meant from configuration that simply happened. Two facts sit underneath every question below and neither of them is a hypothetical.</p>
+
+<div class="callout"><div class="k">Nothing on the old machine is backed up anywhere</div>
+<p>No backup destination is configured, and no cloud folder holds a copy of the working area. Roughly eleven megabytes of it cannot be rebuilt from any repository: the record of what you have decided, the ledgers that hand out identifiers, and the program's own memory. If the drive failed this evening, all of it would be gone, and the first symptom would not be an error — it would be the machine coming up looking perfectly healthy and then asking you a question you already answered.</p></div>
+
+<div class="callout"><div class="k">One key cannot be recovered, only replaced</div>
+<p>Agent writes to GitHub go out as the bot rather than as you, and what makes that possible is a signing key that exists in exactly one place: inside the old machine's system keychain. There is no exported copy, and GitHub will not show the original again. If the key does not travel, the new machine needs a fresh one and every repository holding a copy of the old one has to be updated — which briefly breaks automated builds if it happens in the wrong order.</p></div>
+
+<p>There is a third thing worth stating because it is the reason one of the questions below has a deadline. The safeguard that keeps agent writes off your own name currently exists on this machine only, in a version that matches neither the shared repository nor the change that was supposed to introduce it. A rebuild that clones from the repository produces a machine without it.</p>
+</section>
+
+<div class="cut"><span>THE GATE</span></div>
+<section id="gate">
+<h2>Copy the machine, or rebuild it?</h2>
+
+<p>Apple's migration tool copies a user account whole: the login credentials, the browser profile, the shell configuration, the tools installed under your account, and — the part that matters most here — the keychain. Take it and the GitHub login survives, the signing key survives, and three of the longest steps in the rebuild guide become things you confirm rather than things you do. It is also, by a wide margin, the fastest route.</p>
+
+<p>What it cannot do is discriminate. The same pass that brings the key brings the permission list where most of the entries point at a project that has been dormant since May, the identity settings that make agent commits look like yours across thirteen checkouts, and the top-level instruction file that outranks everything else the agents read and lives in no repository at all. Those are the three problems the rebuild exists to fix. They are cheap to fix on an empty machine and expensive on a working one, because on a working one the fix has to be argued for against something that currently appears to function.</p>
+
+<div class="card done"><div class="tag">Option A — recommended</div>
+<h3>Rebuild clean</h3>
+<p>A fresh account on the new machine. Nothing comes across except the small local-only store, whatever documents you name explicitly, and repositories, which arrive by cloning. Every setting is chosen rather than inherited.</p>
+<ul>
+<li>Costs about three hours of attention spread over a day, with two long unattended waits.</li>
+<li>Costs a new signing key and a round of updating the repositories that hold a copy of it.</li>
+<li>Forecloses nothing — anything you miss can be brought over later from the old machine, which is still sitting there.</li>
+</ul>
+</div>
+
+<div class="card"><div class="tag">Option B</div>
+<h3>Copy the account across</h3>
+<p>The migration tool, whole account. Fastest by hours; keeps the GitHub login, the signing key and the browser profile intact.</p>
+<ul>
+<li>Costs the reason for the exercise: all three known problems arrive with everything else, and none of them announces itself.</li>
+<li>Forecloses the cheapest moment to fix them. The next opening is the next new machine.</li>
+<li>Carries a fourth thing besides: settings describing a different project entirely, which have been quietly judging this one's commands.</li>
+</ul>
+</div>
+
+<div class="card"><div class="tag">Option C</div>
+<h3>Copy the account, then undo the three problems deliberately</h3>
+<p>The migration tool, and then the three fixes applied by hand on the new machine, with the read-back checks at the end of the guide treated as the actual deliverable rather than an appendix.</p>
+<ul>
+<li>Costs less time than a rebuild and more attention, because you are removing things rather than not adding them, and removal is the harder direction to verify.</li>
+<li>Forecloses nothing, but relies on the checks being run rather than skipped once the machine appears to work.</li>
+<li>Honest fallback if the weekend turns out to be shorter than planned.</li>
+</ul>
+</div>
+
+<div class="verdict"><div class="k">Recommendation</div>
+<p>Rebuild clean, which is what the guide recommends and what it is written for. The whole premise is that a faithful copy is the wrong outcome. If time forces the migration tool, take Option C rather than Option B, and treat the read-backs as the work rather than the paperwork — they are the only thing standing between a fast move and a machine that quietly still has all three problems.</p></div>
+
+<div class="callout note"><div class="k">One thing the guide does not say, and this page does</div>
+<p>The single strongest argument for copying the account is that the signing key survives. That advantage can be had under a clean rebuild too, and it costs nothing: generate the replacement key and update the repositories that hold it now, this week, while both machines are alive and healthy. Do it that way and the new machine never has a window where automated builds are broken, and the key stops being a reason to choose the faster route.</p></div>
+</section>
+
+<div class="cut"><span>DECISIONS</span></div>
+<section id="questions">
+<h2>The eleven, in the order they come at you</h2>
+
+<p>Each one names what is being decided and why it matters. Every recommendation below is the one the rebuild guide already makes, unless the box says otherwise — three of them are added or sharpened here, and those say so plainly.</p>
+
+<h3>The gate</h3>
+
+<div class="q" id="L1">
+  <div class="qid">L1</div>
+  <h3>Copy the old machine across, or rebuild it clean?</h3>
+  <p>The three options are above. This is the only question on the page whose answer changes what the other ten mean: under a clean rebuild they are choices, and under a copy most of them are already answered for you by whatever the old machine happens to hold.</p>
+  <div class="rec"><b>Recommendation: rebuild clean.</b> If time is short, copy the account and then undo the three known problems deliberately — never copy and skip the checks.</div>
+</div>
+
+<h3>While the old machine is still whole</h3>
+
+<div class="q" id="L2">
+  <div class="qid">L2</div>
+  <h3>Where does the pre-move copy actually go, and is it in hand by Friday?</h3>
+  <p>The small local-only store has to reach the new machine somehow, and right now it exists on one drive with no copy anywhere. The realistic routes are an external disk, a proper backup destination you have been meaning to set up, or a direct machine-to-machine transfer with no intermediate copy at all. Only the first two leave you with anything if something goes wrong in the middle.</p>
+  <div class="rec"><b>Recommendation: an external disk, and set up a real backup destination on the new machine as part of building it.</b> The current arrangement means a failed drive costs the decision record, the ledgers and the whole memory store, with nothing to restore from.</div>
+  <div class="dis"><b>Added here:</b> whatever the medium, do not erase or hand on the old machine for at least a week after the new one is running. It is the only second copy that will exist during the changeover, and a transfer that is verified on the day can still turn out to have missed something on the Wednesday after.</div>
+</div>
+
+<div class="q" id="L3">
+  <div class="qid">L3</div>
+  <h3>Is there a copy of the signing key anywhere off this machine?</h3>
+  <p>If one exists, the move is a restore and nothing breaks. If none exists — which is what the evidence says — then the new machine needs a fresh key, and every repository holding a copy of the old one has to be updated to match. Doing those two things in the wrong order breaks automated builds until both halves are done.</p>
+  <div class="rec"><b>Recommendation: assume you are generating a new one, and confirm that before the move rather than during it.</b> A five-minute check now removes the only genuinely irreversible step from the weekend.</div>
+  <div class="dis"><b>Sharpened here:</b> do the replacement this week rather than on the new machine, for the reason in the note above. Both machines are working now; only one will be during the move.</div>
+</div>
+
+<div class="q" id="L4">
+  <div class="qid">L4</div>
+  <h3>Does the change that keeps agent writes off your name land before the move, or after?</h3>
+  <p>It has been open since Monday and it carries the safeguard that currently exists on the old machine only. Land it first and you are merging a two-day-old change under time pressure. Land it after and the new machine spends its first days with agent writes to GitHub attributable to you personally — and an edit cannot be re-attributed once it is made, so those days do not get cleaned up later.</p>
+  <div class="rec"><b>Recommendation: land it first, and in the same change add the safeguard to the installer</b> so that a fresh machine's own self-check can see whether it is there. Without that second half, the next machine recreates exactly the same gap.</div>
+</div>
+
+<h3>Set in the first ten minutes of the new machine</h3>
+
+<div class="q" id="L5">
+  <div class="qid">L5</div>
+  <h3>Same account name, and the working folder in the same place?</h3>
+  <p>Both are chosen while the machine is still setting itself up, and both are baked into more than the obvious places. The program's memory — the accumulated record of what has been decided and why — lives in a directory whose name is derived from the full location of the working folder. Change the account name or move the folder one level, and that store does not error. It becomes invisible: the machine comes up healthy, sessions start, and every question you have already answered gets asked again.</p>
+  <div class="rec"><b>Recommendation: keep both exactly as they are.</b> If you want the working folder somewhere else, that is a separate change to make deliberately later, with the memory store renamed as part of it.</div>
+</div>
+
+<div class="q" id="L6">
+  <div class="qid">L6</div>
+  <h3>Disk encryption on, and automatic login off?</h3>
+  <p>These two settings pull against each other for a machine that is supposed to work unattended. Encryption on means an unattended restart stops at an unlock screen and waits for you. Automatic login off means the scheduled background sweep — which needs a logged-in desktop session — stays dead after a reboot until someone physically logs in. Together they mean that any reboot silently stops the program.</p>
+  <div class="rec"><b>Recommendation: encryption on, automatic login off, and accept that a reboot needs you.</b> A laptop that travels with the only copy of the whole program's local store on it is a different risk calculation from a desktop that never leaves the room.</div>
+  <div class="dis"><b>Added here:</b> that answer is only safe with a second half the guide does not include — something has to tell you the sweep is not running. Otherwise the failure is silence, and silence looks exactly like a quiet night. The recurring defect in this program is an operation that reports success while doing nothing; a sweep that never starts is the same shape.</div>
+</div>
+
+<div class="q" id="L7">
+  <div class="qid">L7</div>
+  <h3>A new access key for GitHub, or carry the old one across?</h3>
+  <p>Generating a new one lets you cut the old machine off cleanly the day you retire it. Copying the existing one makes the two machines permanently indistinguishable to GitHub, so retiring the old laptop becomes an act of faith rather than a revocation.</p>
+  <p>One wrinkle worth knowing before the day: a new key has to be authorised in a browser before your employer's repositories will clone, and that step announces itself by failing rather than by asking.</p>
+  <div class="rec"><b>Recommendation: a new key.</b> The cost is one authorisation click; the benefit is that retiring the old machine is something you can actually verify.</div>
+</div>
+
+<h3>What gets built, rather than what gets copied</h3>
+
+<div class="q" id="L8">
+  <div class="qid">L8</div>
+  <h3>Which repository owns the top-level instruction file, and how does it get installed?</h3>
+  <p>This file outranks every other instruction the agents read, has no repository, no history and no review path, and has already gone stale in two places that were then acted on. Two candidates: the harness repository, which holds the rules the file has to agree with, or the roadmap hub, which is where you go to read things. And a second half — install it as a link into the owning repository, so edits are live but a branch switch can swap the file out from under a running session, or install it as a copy that a script can check, which is how the existing hooks already work and which drifts until somebody re-runs the check.</p>
+  <div class="rec"><b>Recommendation: the harness repository, installed as a checked copy,</b> matching the hooks. A new machine is the cheapest possible moment to establish it, since the file has to be put somewhere anyway.</div>
+  <div class="dis"><b>Added here:</b> the check has to run on a schedule, not by hand. A copy plus a check nobody runs is precisely the defect that produced the missing safeguard described at the top of this page — one machine holding the real version, and an installer reporting everything fine.</div>
+</div>
+
+<div class="q" id="L9">
+  <div class="qid">L9</div>
+  <h3>Does the morning summary get turned on?</h3>
+  <p>It was built weeks ago, it is tracked, and it has never actually been installed. Rebuilding what the old machine had means leaving it off. Rebuilding what you meant to have means turning it on. A clean rebuild is exactly where that distinction quietly gets lost, because nothing on the new machine will remember that it was supposed to exist.</p>
+  <div class="rec"><b>Recommendation: turn it on, along with the early wake that feeds it.</b> It has been one command away for weeks.</div>
+</div>
+
+<div class="q" id="L10">
+  <div class="qid">L10</div>
+  <h3>Which version of R does the new machine run?</h3>
+  <p>The old machine runs a version from April 2024. The automated builds run against the current release, which is now well ahead of it. Nothing anywhere pins a version, so "install the latest" produces a machine that runs fine and quietly does not reproduce this one — and "install the old one" produces a machine that reproduces this one and still does not match the builds. Those are two different targets and only one of them is checkable by a machine.</p>
+  <div class="rec"><b>Recommendation: pin to the old version for the move itself.</b> It is the lowest-risk answer under time pressure, and a package library that compiles cleanly on Saturday is worth more than a tidier version number.</div>
+  <div class="dis"><b>Disagreement worth recording:</b> matching the old laptop is the right answer for the weekend and the wrong one permanently. The end state should be a local machine that reproduces the automated builds, because those are what the evidence pages are generated from. The same problem exists worse for the JavaScript runtime, where four different build configurations pin four different versions. That reconciliation deserves its own piece of work rather than being improvised during a laptop move.</div>
+</div>
+
+<h3>The desk</h3>
+
+<div class="q" id="L11">
+  <div class="qid">L11</div>
+  <h3>Lid open by convention, or a desk that runs with the lid shut?</h3>
+  <p>Nine hours of unattended work were lost to the lid closing, twice of those while plugged in. There is no setting for it on this generation of hardware. Either the lid stays open because you remember to leave it open, or you set up an external display, an external keyboard and mains power, which is the only combination in which the machine keeps running with the lid shut.</p>
+  <div class="rec"><b>Recommendation: the desk setup, if you have the parts.</b> Convention has already failed once, and it failed silently.</div>
+  <div class="dis"><b>Added here:</b> this needs hardware in hand, which is why it is on a pre-weekend list rather than a during-the-move one. If the parts are not there by Friday, the honest fallback is to accept that the machine only works with the lid open and not schedule overnight work that assumes otherwise.</div>
+</div>
+</section>
+
+<div class="cut"><span>NOT ASKED HERE</span></div>
+<section id="excluded">
+<h2>Three questions that exist and are deliberately not on this page</h2>
+
+<p>The rebuild guide ends with fourteen questions. Eleven are above. The other three are named here rather than dropped, because a list that silently omits things reads as complete.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>What it is</th><th>Where it went, and why</th></tr></thead>
+<tbody>
+<tr><td>A block of settings describing a different, personal project, which has been judging this program's commands against the wrong trust boundary</td><td class="warn">Moved to the local configuration list. Stating the question in public would describe private family information; the decision itself is small and the recommendation is to move the block to where it belongs and where it is accurate.</td></tr>
+<tr><td>How broad the new machine's GitHub permissions should be</td><td class="warn">Moved to the local configuration list. Describing what a live credential is currently allowed to do is not something to publish, and the recommendation — grant only what the program needs, and add anything else for the ten minutes you need it — does not require a page.</td></tr>
+<tr><td>Whether the program's memory store should live in a private repository instead of being copied by hand</td><td>Deliberately deferred. The guide itself calls it the least urgent of the set and says it does not need resolving before the move. It is a real question and it should get its own page later, when the answer is not competing with a deadline.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Two of those three now sit on the local configuration list, which is the same list the operations dashboard shows you, and each one carries the exact action and the exact check that says whether it is done. Neither is lost; both are simply somewhere a public page is not the right place to reach them.</p>
+</section>
+
+<div class="cut"><span>AFTERWARDS</span></div>
+<section id="unblocks">
+<h2>What each answer unblocks</h2>
+
+<ul>
+<li>Answer the first question and the rebuild guide becomes usable as written — a checklist under a clean rebuild, or a verification pass with three deliberate corrections under a copy.</li>
+<li>Answer the two old-machine questions and the irreversible work moves off the weekend and into this week, where both machines are still available if something goes wrong.</li>
+<li>Answer the timing question and the safeguard either lands as a normal change or is knowingly deferred, rather than being discovered missing on the new machine in a fortnight.</li>
+<li>Answer the three first-boot questions and the new machine's account can actually be created without stopping to think, which is the moment where a small wrong choice becomes expensive.</li>
+<li>Answer the remaining four and the long unattended installs can run without supervision, because nothing in them is waiting on a preference.</li>
+<li>Answer none of them and the move still happens — it just happens with every default chosen by whoever is typing at the time, which is how the old machine got the configuration this whole exercise exists to remove.</li>
+</ul>
+
+<p>The rebuild guide itself is a local document and stays local: it names where credentials live, and it is written so that it never names what they are. Nothing in it is reproduced on this page beyond what is needed to state each choice.</p>
+</section>
+
+<div class="foot">
+<p>Sources. All eleven questions, and the recommendations attached to them, come from the new-laptop rebuild guide drafted on 2026-08-20 from an inventory taken on the machine itself rather than from memory. The absence of any backup destination and the absence of an exported copy of the signing key were both verified on the machine on the same day. Three recommendations are added or sharpened on this page and each is marked where it appears; every other recommendation is the guide's own, restated.</p>
+<p>References. Requirement: <a href="https://github.com/jwildfire/obot.roadmap/issues/279">obot.roadmap#279</a>. The identity defect: <a href="https://github.com/jwildfire/obot.roadmap/issues/260">obot.roadmap#260</a>. The ownerless instruction file: <a href="https://github.com/jwildfire/obot.roadmap/issues/261">obot.roadmap#261</a>. The change carrying the attribution safeguard: <a href="https://github.com/jwildfire/obot.agent/pull/198">obot.agent#198</a>.</p>
+<p>Drafted by 👯🤖 W0091 using Claude Opus 5. Not reviewed by @jwildfire.</p>
+</div>
+
+</div>
+</body></html>
