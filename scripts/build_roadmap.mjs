@@ -43,6 +43,7 @@ import { collectIdeas } from './lib/collect/ideas.mjs';
 import { collectGoals } from './lib/collect/goals.mjs';
 import { collectHierarchy } from './lib/collect/hierarchy.mjs';
 import { collectRepoLights, SESSION_STATE_URL } from './roadmap/nowstrip.mjs';
+import { readConfigCount } from './lib/public-channel.mjs';
 
 import * as queue from './roadmap/queue.mjs';
 import * as wire from './roadmap/wire.mjs';
@@ -90,9 +91,18 @@ const [
   readJsonOr('site/roadmap-changelog.json', { entries: [] }),
 ]);
 
+// The config count is read ONCE here, with the build's own clock, and handed to
+// the pages - so the clock and the file's date are read together. A page that
+// opens the file for itself can be handed a different clock than the file it
+// reads, which is how the briefing's test went red on a routine count refresh
+// and stopped the site deploying for four and a half hours (#287). The count,
+// and never any item text, is the whole permitted payload; the reader in
+// lib/public-channel.mjs is what enforces that.
+const configRes = readConfigCount({ now: NOW });
+
 const data = {
   NOW, reqRes, prRes, relRes, ideaRes, goalRes, hierRes, decRes, lightsRes,
-  auditLedger, proposal, changelog, HUB, REPOS, SESSION_STATE_URL,
+  configRes, auditLedger, proposal, changelog, HUB, REPOS, SESSION_STATE_URL,
 };
 
 const outDir = path.join(ROOT, '_site');

@@ -10,8 +10,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { cut, render, LINE_BUDGET, meta } from '../roadmap/briefing.mjs'
-import { readFileSync } from 'node:fs'
-import { CONFIG_COUNT_PATH } from './public-channel.mjs'
 
 const item = (type, title, since) => ({
   type, title, since, prefix: 'waiting',
@@ -127,12 +125,31 @@ test('the theme is complete in both directions', async () => {
 const NOW = new Date('2026-08-18T12:00:00Z')
 const ok = (value) => ({ ok: true, value, notice: null })
 
+// The config count is a FIXTURE, in the shape readConfigCount returns, stamped
+// relative to the clock this file pins. It used to be the repository's own
+// data/config-count.json, opened inside render(): on 2026-08-20 the automatic
+// `Config count` commit stamped that file two days past the pinned clock, the
+// count read as coming from the future, the age caveat was never rendered, and
+// the site did not deploy for four and a half hours (#287). Nothing had
+// regressed. Whether the committed file is one the site can read is checked
+// where the reader lives, in public-channel.test.mjs, on a rule no refresh of
+// the file can trip.
+const count = (hoursOld, open = 13) => ({
+  ok: true,
+  open,
+  critical: 0,
+  asOf: new Date(NOW.getTime() - hoursOld * 3600000).toISOString().replace('.000Z', 'Z'),
+  ageDays: hoursOld / 24,
+  stale: hoursOld / 24 > 3,
+})
+
 function DATA(items) {
   // buildItems is imported by render(); feeding it the collector shapes that
   // produce exactly these items would duplicate queue.mjs's rules here, which is
   // the drift this page exists to avoid. The items are injected instead.
   return {
     NOW,
+    configRes: count(0),
     prRes: ok(items.filter((i) => i.type === 'review').map((i, n) => ({
       repo: 'jwildfire/x', number: n, title: i.title, url: i.act.href,
       updatedAt: i.since, reviewRequested: ['jwildfire'], version: null,
@@ -154,6 +171,7 @@ function DATA(items) {
 
 const EMPTY_DATA = () => ({
   NOW,
+  configRes: count(0),
   prRes: ok([]), relRes: ok({ drafts: [], upcoming: [] }),
   decRes: ok({ awaiting: [] }), ideaRes: ok({ open: [] }), reqRes: ok([]),
 })
@@ -164,20 +182,39 @@ test('a config count that is hours old says so, instead of reading as a current 
   // one for a day renders as truth. Found live: the page said 9 while the list
   // held 10, because the last hand-run was before c0016 was filed.
   //
-  // The two clocks are derived from the file's OWN asOf rather than pinned to
-  // fixed dates. Pinned, this asserted a property of one day's data instead of a
-  // property of the renderer: the first refresh of data/config-count.json after
-  // those dates made the count NEWER than the pinned NOW, so the age went
-  // negative, the stamp correctly did not render, and the test failed. That took
-  // the whole site deploy red on 2026-08-20 and left a decision artifact 404 for
-  // hours (obot.roadmap#287). The renderer stamps at >= 6h - see the countAge
-  // guard in scripts/roadmap/briefing.mjs - so 18h is old and 30 minutes is
-  // fresh, whatever the committed file happens to hold.
-  const countAsOf = new Date(JSON.parse(readFileSync(CONFIG_COUNT_PATH, 'utf8')).asOf)
-  const after = (ms) => new Date(countAsOf.getTime() + ms)
-  const html = await render({ ...EMPTY_DATA(), NOW: after(18 * 3600000) })
-  const fresh = await render({ ...EMPTY_DATA(), NOW: after(30 * 60000) })
+  // The renderer stamps at >= 6h - see the countAge guard in
+  // scripts/roadmap/briefing.mjs - so 18h is old and 2h is fresh.
+  const html = await render({ ...EMPTY_DATA(), configRes: count(18) })
+  const fresh = await render({ ...EMPTY_DATA(), configRes: count(2) })
   const stamped = /counted \d+[hd] ago/
-  if (/config item/.test(html)) assert.match(html, stamped, 'an old count must carry its age')
-  if (/config item/.test(fresh)) assert.doesNotMatch(fresh, stamped, 'a fresh one needs no caveat')
+  // Unconditional. These assertions used to be guarded by `if the line is
+  // present`, which handed a committed file the power to decide whether the test
+  // ran at all: a refresh to `open: 0` removes the line, and the test would then
+  // pass while asserting nothing. Verified - with the guards in place and the
+  // count at zero, the whole ageing rule can be deleted from the renderer and
+  // this file still reports 14 pass, 0 fail.
+  assert.match(html, /13 config items/, 'the fixture is the count, so the line is always there')
+  assert.match(html, stamped, 'an old count must carry its age')
+  assert.doesNotMatch(fresh, stamped, 'a fresh one needs no caveat')
+})
+
+test('a count days old is stated in days, not in a three-figure hour count', async () => {
+  const html = await render({ ...EMPTY_DATA(), configRes: count(60) })
+  assert.match(html, /counted 2d ago/)
+})
+
+test('the page renders the count it is HANDED, never one it reads off disk', async () => {
+  // 4237 is a number data/config-count.json cannot plausibly hold. If a change
+  // puts a file read back inside render(), this fails on the spot instead of
+  // waiting for the next refresh to stop the deploy.
+  const html = await render({ ...EMPTY_DATA(), configRes: count(0, 4237) })
+  assert.match(html, /4237 config items/)
+})
+
+test('a briefing built without a count refuses, rather than publishing silence', async () => {
+  // The failure this refuses: a page that quietly drops the line reads as
+  // "nothing needs your hands" when in fact nobody looked.
+  const data = EMPTY_DATA()
+  delete data.configRes
+  await assert.rejects(() => render(data), /configRes is required/)
 })

@@ -11,6 +11,7 @@ import path from 'node:path';
 
 import {
   readConfigCount,
+  CONFIG_COUNT_PATH,
   CONFIG_COUNT_SCHEMA,
   CONFIG_COUNT_STALE_DAYS,
   SESSION_STATES,
@@ -189,4 +190,23 @@ test('every spine entry precedes every surface-specific page in the nav', async 
   assert.ok(spineAt.every((i) => i !== -1), 'every spine entry is in the nav');
   assert.ok(Math.max(...spineAt) < Math.min(...extrasAt.filter((i) => i !== -1)),
     'no surface-specific page comes between two spine entries — the order is the argument');
+});
+
+test('the count this repository actually ships is one this reader accepts', () => {
+  // The one check that belongs against the LIVE file, and the only property of it
+  // that is safe to assert: that the committed data/config-count.json is a
+  // payload the strict reader takes. It is written by tools/config-count and
+  // refreshed by an automatic commit, so anything asserted here about its VALUES
+  // — the number, its age, whether it is stale — is a test pinned to data no test
+  // controls, which is precisely what took the site's deploy down on 2026-08-20
+  // (#287). This assertion cannot be tripped by a refresh; only by the file
+  // actually becoming unreadable, which is a real failure and should be loud.
+  // Rejected, the briefing simply drops the line, and a page that silently omits
+  // "N config items on your keyboard" says nothing needs his hands when nobody
+  // looked.
+  //
+  // `now` is the file's own asOf, so age plays no part in the verdict.
+  const raw = fs.readFileSync(CONFIG_COUNT_PATH, 'utf8');
+  const r = readConfigCount({ file: CONFIG_COUNT_PATH, now: new Date(JSON.parse(raw).asOf) });
+  assert.equal(r.ok, true, `the committed count is not readable: ${r.why}`);
 });

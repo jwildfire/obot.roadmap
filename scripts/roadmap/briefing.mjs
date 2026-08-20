@@ -29,7 +29,6 @@
 // because a build-time generator here physically cannot read his machine. Until
 // then they render as absent rather than faked.
 import { esc, age, fmtET } from '../lib/gh.mjs';
-import { readConfigCount } from '../lib/public-channel.mjs';
 
 export const meta = { slug: 'briefing', out: 'reports/briefing/index.html' };
 
@@ -94,12 +93,26 @@ function section(emoji, label, items, NOW, ordered = true) {
 }
 
 export async function render(data) {
-  const { NOW, prRes, relRes, decRes, ideaRes, reqRes } = data;
+  const { NOW, prRes, relRes, decRes, ideaRes, reqRes, configRes } = data;
   const { buildItems } = await import('./queue.mjs');
   const items = buildItems(data);
   const { rcs, decisions, todos, remainder, overBudget } = cut(items);
 
-  const config = readConfigCount({ now: NOW });
+  // The count arrives as DATA, read once by the build and handed in like every
+  // other source, rather than being read off disk in here. This page's clock is
+  // injectable, so a renderer that opens a live file holds two clocks nothing
+  // keeps together: on 2026-08-20 the automatic `Config count` commit stamped
+  // the file two days past the clock the test pinned, the age caveat stopped
+  // rendering, the assertion failed, and the site did not deploy for four and a
+  // half hours (#287). With the count injected, a test owns both halves.
+  // A caller that forgets is a hard error. The alternatives — falling back to a
+  // disk read, or to a plausible zero — publish "nothing needs your hands" when
+  // nobody actually looked, which is the silence the strict reader in
+  // lib/public-channel.mjs exists to refuse.
+  if (!configRes || typeof configRes.ok !== 'boolean') {
+    throw new Error('briefing: data.configRes is required — pass readConfigCount({ now: NOW })');
+  }
+  const config = configRes;
   // The COUNT is the entire permitted payload. That list is local-only by design
   // and the deploy greps the assembled site for its sentinel, so no item text
   // reaches this page by any route.
