@@ -1,6 +1,10 @@
 # D0019 — Scheduled sessions: what is ready, what is not, and what would make it ready
 
-**Status: Awaiting @jwildfire** — H1–H5 (D0019.1–.5).
+**Status: Partially decided 2026-08-18** — H1, H3 and H4 answered in his own words
+(D0019.1, .3, .4); H2 and H5 (D0019.2, .5) untouched and still his, along with the
+second half of H4 — what a night does when it reaches the ceiling. His answer was
+dictated by voice from the car after the audio episode, and recorded on the page
+2026-08-20, two days late.
 **Requirement:** [jwildfire/obot.roadmap#122](https://github.com/jwildfire/obot.roadmap/issues/122) · **Task:** [#221](https://github.com/jwildfire/obot.roadmap/issues/221) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
 **Q&A:** [#222](https://github.com/jwildfire/obot.roadmap/discussions/222)
 
@@ -17,6 +21,38 @@ it's ready."*
 The page's job is therefore the finish line rather than a verdict argument: five
 gates, each with a check he can run himself, and an explicit list of observations
 that would falsify a later "yes". The answer is not yet.
+
+## How his answer was recovered, and why it is only partial
+
+He answered on 2026-08-18 at 12:33 UTC, dictated by voice from the car after
+listening to the audio episode of this page. The answer went into chat with
+🎩🤖 obot-prime and nowhere else: the Q&A thread (#222) has no comments, and no
+artifact, issue or log held his words. It was recovered on 2026-08-20 from the
+prime session transcript
+(`~/.claude/projects/-Users-jwildfire-Documents-obot2/5a3ddda9-…jsonl`, user entry
+at line index 4738) and is quoted on the page in full, unedited, disfluencies kept.
+
+Which questions it covers was judged from his words alone, by five independent
+agents — one reading coverage cold, one sweeping every human message across ~300
+transcripts in the 08-16 → 08-20 window, and three briefed to refute the readings
+rather than confirm them. The results:
+
+- H1, H3 answered; H4 answered on the number and not on the behaviour at the
+  number; H2 and H5 not touched in any form.
+- The refuter briefed against H3 and H4 argued both are over-readings. Its H3 case
+  is recorded on the page rather than dismissed: he never mentions the local guard,
+  and he deferred the branches and rules to a new document with its own episode.
+  What survives is the direction — server-side protection is in, "local guard only"
+  is out — plus his ordering, live before scheduling starts.
+- Decisive negative for H2 and H5: the episode offered him a one-phrase accept-all,
+  *"if you agree with the recommendations … say: schedule, agreed"*. That phrase
+  appears in no message he has ever sent. He took the alternative the script
+  offered — answer in his own words — and used it on three of five.
+
+Nothing about the two unanswered questions is inferred from what shipped afterwards.
+Both the branch-protection requirement (#272) and the nightly cap (#275) were built
+out of this answer while no record of it existed; the page names what each one owes
+to his words and what it owes to this page's recommendation instead.
 
 ## Method
 
