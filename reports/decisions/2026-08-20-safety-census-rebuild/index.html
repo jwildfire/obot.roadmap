@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — Rebuilding the safety census on metrics and reports</title>
+<meta name="description" content="The safety census is being rebuilt so its numbers can be validated one at a time. Here is the shape, every defect the review found and what happens to it, what moves on the live demo, and the six questions the design cannot answer without you.">
+<meta name="premise" content="the census function is public API of a published clinical package, so this rebuild changes shipped behaviour rather than unreleased code | gh api repos/jwildfire/gsm.safety/contents/R/SafetyCensus.R --jq .name → prints SafetyCensus.R">
+<meta name="premise" content="the live demo study still calls the function directly, so the figures on its public page move when the function's do | gh api repos/jwildfire/demo-301/contents/scripts/safety-census.R --jq .name → prints safety-census.R">
+<meta name="premise" content="the package has exactly three safety metrics today, the ones the new descriptive metrics would sit beside | gh api repos/jwildfire/gsm.safety/contents/inst/workflow/2_metrics --jq length → prints 3">
+<meta name="premise" content="the requirement this design answers is the live one | gh issue view 274 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<meta name="premise" content="the unflagged metric this design copies already exists and ships, so a metric with no action is not a new invention | manual — gsm.kri/inst/workflow/2_metrics/srs0001.yaml declares no threshold and calls no flag step, and its published rows carry an empty flag">
+<meta name="decision-id" content="D0023">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--go);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--go)}
+.verdict p{margin:10px 0 0;font-size:16.5px}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+.pre{margin:16px 0 0;padding:14px 16px;border:1px solid var(--rule);border-radius:5px;background:#f7f4ec;
+  font:13px/1.6 var(--mono);color:var(--ink2);overflow-x:auto;white-space:pre}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .verdict,.card,.q,.callout{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-20</span><span class="dot"></span><span>awaiting your decision</span><span class="dot"></span><span>six questions</span></div>
+  <h1>Rebuilding the safety census on metrics and reports</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0023">
+<p>D0023 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0023.1"><a class="did" href="#D0023.1">D0023.1</a><span class="dcode">C1</span><span class="dq">Deaths — which domain is the study's death count read from?</span></li>
+  <li id="D0023.2"><a class="did" href="#D0023.2">D0023.2</a><span class="dcode">C2</span><span class="dq">Coverage — what does 'expected' mean in the per-visit data-coverage table?</span></li>
+  <li id="D0023.3"><a class="did" href="#D0023.3">D0023.3</a><span class="dcode">C3</span><span class="dq">Thresholds — does any census number flag, or are they all descriptive?</span></li>
+  <li id="D0023.4"><a class="did" href="#D0023.4">D0023.4</a><span class="dcode">C4</span><span class="dq">Level — are census numbers computed for the study only, or per site as well?</span></li>
+  <li id="D0023.5"><a class="did" href="#D0023.5">D0023.5</a><span class="dcode">C5</span><span class="dq">Compatibility — do today's callers and the live demo payload keep working unchanged?</span></li>
+  <li id="D0023.6"><a class="did" href="#D0023.6">D0023.6</a><span class="dcode">C6</span><span class="dq">Charts — does this release add a chart, and if so built where?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">You said the census stays and is rebuilt: the numbers become metrics, the census becomes a report, and the shape is workflows calling helpers rather than one large function. This is that design. It is built around your sentence that a metric earns its place by being a number you can validate, whether or not anything fires on it — and it turns out the ecosystem already ships a metric like that, so the idea needs no new machinery. Six things it cannot decide without you are at the bottom, each answerable in three words.</p>
+  <div class="facts">
+    <span><b>Deaths the function reports today:</b> 1</span>
+    <span><b>Deaths in the same study's records:</b> 13</span>
+    <span><b>One function becomes:</b> 13 metrics and 1 report</span>
+    <span><b>Your remaining act:</b> answer six questions</span>
+  </div>
+</div>
+
+<div class="cut"><span>THE SITUATION</span></div>
+<section id="situation">
+<h2>Three sentences</h2>
+
+<p>The safety census is one exported function, two hundred and seventy-seven lines long, that reads five raw tables and returns every denominator a safety reader needs — how many participants, how many dosed, how much person-time, who left and why, and how completely the data was collected. An adversarial review confirmed that several of those figures are silently wrong, most seriously a death count that reports one where the same study's records hold thirteen. You decided it stays and gets rebuilt so that each number becomes a metric the pipeline computes and can be checked on its own, and the census becomes a report over those metrics.</p>
+
+<p>What you said, dictated on 18 August:</p>
+
+<blockquote>“I think that we should model it after the gsm.kri report, where these core numbers that right now are clearly wrong are metrics. Not every metric has to have an action associated with it. So number of deaths should be a metric, not some code wrapped deep in the safety census function. Right now those three safety metrics we have are all, in theory, actionable and flaggable, but that's not the only point of metrics. The point of metrics is to have trustable numbers that we can qualify and validate.”</blockquote>
+
+<div class="callout note"><div class="k">The sentence the design is built on</div>
+<p>A metric with no action is not a lesser metric. Everything below follows from taking that literally: the death count, the enrolment count and the person-time totals go into the same machinery as the flagging metrics, get the same specification, the same intermediate tables and the same independent inspection, and simply never raise anything.</p></div>
+</section>
+
+<div class="cut"><span>THE PART THAT MAKES IT CHEAP</span></div>
+<section id="precedent">
+<h2>A metric with no action already exists</h2>
+
+<p>The obvious objection to a descriptive metric is that the framework will not take one: the flagging step refuses to run without a threshold, and the step after it insists on a flag column. Both are true, and neither matters, because the risk-score metric in the key-risk-indicator package already goes around them. It declares no threshold, calls no flagging step, and publishes its rows with the flag left empty. It has been doing that in production the whole time.</p>
+
+<p>Three consequences, and they are the reason this is a modest build rather than a framework change:</p>
+
+<ul>
+<li>An empty flag, rather than a zero, is already the ecosystem's way of saying this number does not flag. A zero would mean measured and found fine — a green light nobody meant to give.</li>
+<li>The risk-score builder ignores any metric that carries no threshold, automatically. A descriptive metric cannot accidentally move a site's risk score, which is exactly the property you described when you said the participant metrics should not.</li>
+<li>Nothing upstream needs to change. Everything the design needs sits in packages we do not own and must not edit; none of it has to be touched.</li>
+</ul>
+
+<p>So a census metric is an ordinary metric definition with the threshold lines simply absent, plus one small helper in our own package that stands where the flagging step would be and marks the row as not flagging. That helper is about ten lines, and it is the only genuinely new mechanism in this design.</p>
+</section>
+
+<div class="cut"><span>THE SHAPE</span></div>
+<section id="shape">
+<h2>What replaces the function</h2>
+
+<p>Three layers, each one a thing the pipeline already knows how to run.</p>
+
+<h3>One. Thirteen metric definitions, one per number</h3>
+
+<p>Each census figure becomes its own metric definition file, named and numbered the way every other metric in the ecosystem is, and each declares the exact columns it reads from the standardised study domains. Declaring them is what fixes the largest class of defect: a column that is missing stops the metric with an error instead of quietly reporting zero.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>The number</th><th>Counted from</th><th>What changes about it</th></tr></thead>
+<tbody>
+<tr><td>Enrolled participants</td><td>the subject domain</td><td>nothing — already correct</td></tr>
+<tr><td>Randomised participants</td><td>the randomisation domain</td><td>stops reading a treatment-arm column that the standard domains do not have, which is why it currently comes out blank on any study but the demo</td></tr>
+<tr><td>Participants dosed</td><td>the subject domain's first-dose date</td><td>stops being inferred from treatment time being greater than zero, and stops reporting zero when that column is absent</td></tr>
+<tr><td>Deaths</td><td>the death domain</td><td>stops being a text match on a discontinuation reason — see the first question</td></tr>
+<tr><td>Participant-days on study</td><td>the subject domain</td><td>published as days, the number actually summed; the report presents years</td></tr>
+<tr><td>Participant-days on treatment</td><td>the subject domain</td><td>same</td></tr>
+<tr><td>Participants with a lab result</td><td>the lab domain</td><td>counted once per participant, so a duplicated row cannot inflate it</td></tr>
+<tr><td>Participants with an ECG</td><td>the ECG domain</td><td>same</td></tr>
+<tr><td>Participants with a reported adverse event</td><td>the adverse-event domain</td><td>same</td></tr>
+<tr><td>Participants with a disposition record</td><td>the study-completion domain</td><td>same</td></tr>
+<tr><td>Participants who completed</td><td>the study-completion domain</td><td>promoted from a row inside a table to a number of its own</td></tr>
+<tr><td>Participants who discontinued</td><td>the study-completion domain</td><td>same</td></tr>
+<tr><td>Data completeness</td><td>the lab and ECG domains against the visit schedule</td><td>becomes one headline figure with a per-participant, per-visit table underneath it — see the second question</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Every one of them uses the standard rate step, which anchors the count to the enrolled participants and looks the rest up against them. That single choice fixes two separate defects at once: a participant identifier that appears in a disposition record but was never enrolled cannot be counted, and the count and the denominator can no longer disagree, because they come out of the same operation. The published row carries the count and the denominator side by side, which is exactly the pair the census displays.</p>
+
+<h3>Two. One report definition</h3>
+
+<p>The census report becomes a report workflow of the same kind the key-risk-indicator report already is: it declares the tables it needs, and its steps call helper functions that assemble and render. It reads the metric results the pipeline produced rather than recomputing anything, so there is no second counting lane and no way for the census to disagree with the rest of the package about the same study.</p>
+
+<p>Two things the metric layer genuinely cannot express stay in the report, and the design says so rather than pretending otherwise:</p>
+
+<ul>
+<li>The median days on treatment. A median is not a count over a denominator. The report computes it from the exposure metric's own published per-participant table, so it is reproducible from an intermediate anyone can download, but it is a presentation rather than a metric. Making it one would need a new averaging step, which is a bigger change than it is worth today.</li>
+<li>The reasons participants discontinued. Those are free text and cannot be enumerated in advance, so the counted states are metrics and the reason breakdown is a table the report builds. The blank-reason bug goes with it: a missing reason reads as “reason not recorded”, never as the literal word for a missing value, which is what it prints today.</li>
+</ul>
+
+<h3>Three. The name, kept</h3>
+
+<p>The function survives as the one-call front door: it runs the census metric workflows over the domains it is handed, assembles the same three tables it returns today, and hands them back. What disappears from it is the arithmetic — every number inside it moves out into a metric definition that can be run, inspected and checked on its own. What survives is the convenience, which is the part anybody actually calls.</p>
+</section>
+
+<div class="cut"><span>THE DEFECTS, ONE BY ONE</span></div>
+<section id="defects">
+<h2>Every verified finding, and what happens to it</h2>
+
+<p>The review confirmed each of these by running the code, and none of them is retracted. This table is the promise that the rebuild does not quietly lose any of them.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>What the review found</th><th>What the design does</th></tr></thead>
+<tbody>
+<tr><td>The death count reads a discontinuation reason and reports one death where the bundled study's death records hold twelve and the standard mapping's combined figure is thirteen</td><td class="ok">Fixed, subject to the first question — deaths become a metric reading the death domain, and a study that does not supply one reports no figure rather than a wrong one</td></tr>
+<tr><td>A missing treatment-time column makes “received study drug” report zero — a false clinical zero, in a function whose own tests certify that absent data is never zero</td><td class="ok">Fixed by construction — each metric declares the columns it reads, and a declared column that is missing stops the workflow with an error</td></tr>
+<tr><td>Participant identifiers present in the disposition table but never enrolled push counts past their denominators — five completed in a four-person study</td><td class="ok">Fixed by construction — every count is anchored to the enrolled participants and looked up against them</td></tr>
+<tr><td>Duplicate rows double-count person-time and dosed participants</td><td class="ok">Fixed, with a rule and a test — every count metric reduces its domain to one row per participant before counting, and the test asserts that duplicating a row changes nothing</td></tr>
+<tr><td>A blank completion reason produces a state labelled with the literal word for a missing value</td><td class="ok">Fixed in the report's disposition helper — a missing reason says so in words</td></tr>
+<tr><td>“Randomised to an arm” silently comes out blank on the standard domains, because none of them carries a treatment-arm column</td><td class="ok">Fixed, and better than fixed — randomisation is counted from the randomisation domain, which records that a participant was randomised without recording to what, so the figure stops depending on a column your blinding stance says should not be read anyway</td></tr>
+<tr><td>Visit ordering degrades to alphabetical, so week twelve sorts before week two — the exact behaviour the function's own test forbids</td><td class="ok">Fixed by the second question's answer — coverage keys on the visit schedule rather than on whatever label the lab rows happen to carry</td></tr>
+<tr><td>The column defaults were proven against one study's bespoke data and match no standard domain</td><td class="ok">Fixed by construction — the columns are declared against the standard domains and checked before anything runs</td></tr>
+<tr><td>The documentation describes almost none of the real semantics — that expected-per-visit is just enrolment repeated, that dosed is a proxy, or where the boundary between zero and absent sits</td><td class="warn">Carried — each metric definition carries its own description, and the report states its denominators; but the writing is work, and it is on the build list rather than solved by the architecture</td></tr>
+<tr><td>It is the package's only export that is neither a pipeline step nor referenced by any workflow, and its return shape is rejected by the pipeline's own summarising step</td><td class="ok">Fixed by construction — thirteen metric workflows and one report workflow, all of them ordinary members of the pipeline</td></tr>
+<tr><td>It is a second, parallel counting lane whose figures already disagree with the pipeline's on the same study</td><td class="ok">Fixed by construction — the report reads the pipeline's results and computes nothing of its own</td></tr>
+<tr><td>Eleven column-name parameters have no test coverage at all, because every test runs at their defaults</td><td class="ok">Fixed by removal — the parameters go, replaced by declared columns on standard domains, so there is no untested configurability surface left to cover</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout"><div class="k">The one that is carried rather than fixed</div>
+<p>Documentation. Every other finding is answered by the shape of the design; that one is answered by somebody writing the words, and it is the finding most likely to be quietly dropped because nothing fails when it is. It is on the build list as its own step with its own acceptance: a reader who has never seen the code can tell, from the page alone, what each number counts and when it is absent rather than zero.</p></div>
+</section>
+
+<div class="cut"><span>WHAT MOVES UNDERNEATH YOU</span></div>
+<section id="breaks">
+<h2>What breaks, stated specifically</h2>
+
+<p>The interface barely moves. The numbers move a lot, and that is the real cost of this rebuild, so it is worth being exact about it.</p>
+
+<h3>The calls</h3>
+
+<ul>
+<li>There is exactly one caller anywhere: a script in the demo study, which passes five standardised domains and no column names. Under the recommended answer to the fifth question it keeps working untouched.</li>
+<li>The sixteen-parameter signature is what costs. Eleven of those parameters name columns, and they are the mechanism the review found untested and dialect-wrong. Keeping them working while the columns are declared elsewhere means keeping them as a deprecation notice: they are accepted, they warn, and they are ignored. That is a real piece of debt with a real removal date attached.</li>
+<li>An alias alone would be cheaper, but it would not satisfy what you asked for. An alias preserves the name; it does not preserve the call. The recommendation preserves both, which is why it is the more expensive of the two and still the right one.</li>
+</ul>
+
+<h3>The figures on the public demo page</h3>
+
+<p>The demo's safety overview reads the census payload live. These figures change the day this ships, and every one of them changes because it was wrong:</p>
+
+<ul>
+<li>Deaths goes from one to thirteen, or to absent, depending on how the first question is answered. This is a published clinical figure on a public page changing by more than a factor of ten. It is the entire reason the rebuild exists, and it is also the thing that will look alarming to anyone who sees the before and after without the explanation.</li>
+<li>Randomised participants stops being read from the demo's private arm column and starts being read from the randomisation domain, which the demo does not currently map. On today's inputs it would go from a number to absent.</li>
+<li>The expected count in the coverage table stops being total enrolment repeated at every visit, which is a fiction on any study with staggered enrolment.</li>
+</ul>
+
+<div class="callout"><div class="k">The failure mode to design against</div>
+<p>The demo application looks up four census rows by their exact wording — enrolled participants, received study drug, person-years on treatment, and deaths. If any of those labels is reworded, the tile does not error; it disappears. That is the silent-success shape this program keeps meeting, so the wording of those four is treated as a contract with a test behind it, and any rewording ships in the same release as the application change.</p></div>
+</section>
+
+<div class="cut"><span>DECISION</span></div>
+<section id="questions">
+
+<p>Six questions. Each has a subject word and named choices, so any of them can be answered out loud without a screen: say the subject word, then the choice. Answering a subset is fine — the ones you answer unblock their part of the build.</p>
+
+<div class="q" id="C1">
+  <div class="qid">C1 · deaths</div>
+  <h3>Which record decides how many participants died?</h3>
+  <p>There are three answers in the ecosystem's own bundled study and they are one, twelve and thirteen. One is what the census reports now, by matching the word for death in a free-text discontinuation reason. Twelve is the dedicated table of death records. Thirteen is the standard mapping's combined figure, which unions the two — twelve participants with a death record, plus one whose discontinuation reason says they died but who has no death record at all. That last participant is the interesting one: the sources genuinely disagree about a real person.</p>
+  <ul>
+    <li>Death domain. The metric reads the death records and nothing else. A study that does not supply them reports no death figure rather than a wrong one — including the demo, which does not supply them today and would need the file added.</li>
+    <li>Both, combined. The metric uses the standard mapping's union of the two sources, which is the ecosystem's existing definition and gives thirteen. Nothing new needs to be decided about what counts as a death, because the mapping layer has already decided.</li>
+    <li>Both, and their disagreement is its own number. The union is the death count, and a second descriptive metric publishes how many participants the two sources disagree about. On this study it would read one, which is a data-quality signal rather than a nuisance.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: both, and their disagreement is its own number.</b> The union is not our invention, so we are not inventing a clinical definition; and the disagreement count is nearly free once both sources are already in hand, is exactly the kind of number that has no action attached, and is the first thing a monitor would want to know. The cost, either way, is that the demo study has to start supplying death records — a file it does not have today.</div>
+</div>
+
+<div class="q" id="C2">
+  <div class="qid">C2 · coverage</div>
+  <h3>What does “expected” mean in the coverage table?</h3>
+  <p>The coverage table is the part of the census with no counterpart anywhere else in the ecosystem, and the review judged it the idea most worth keeping: it reports, per visit, how many participants have a result against how many should. The trouble is the second half. Today “should” means total enrolment, repeated at every visit — so a study that enrolled half its participants last month looks like it is missing half its data.</p>
+  <ul>
+    <li>Time on study. Expected means the participants whose time on study reaches that visit. Computable from what every study already supplies, no new data anywhere, and honest about staggered enrolment.</li>
+    <li>The visit schedule. Expected means the participants with that visit actually scheduled, read from the visit domain. This is the real answer clinically, and it costs the demo a domain it does not map today.</li>
+    <li>Leave it as enrolment, and say so. Cheapest, and the figure keeps a meaning nobody would guess, which is how it got here.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: time on study.</b> It is right for every study without asking any study for anything new, and it removes the alphabetical-visit-ordering defect on the way, because coverage stops keying on whatever visit label the lab rows happen to carry. The visit schedule is strictly better and is the natural follow-on once a study maps it — the design leaves the door open by making the expected-count source a declared input rather than an assumption.</div>
+</div>
+
+<div class="q" id="C3">
+  <div class="qid">C3 · thresholds</div>
+  <h3>Does any census number raise a flag?</h3>
+  <p>Your sentence says a metric does not need an action. It does not say none of them may have one, and there is one plausible candidate: data completeness. A visit where a large share of participants have no result is a monitoring finding in its own right, and it is the figure the coverage table exists to surface.</p>
+  <ul>
+    <li>None. Every census number is descriptive. The census never raises anything, and any thresholds are a separate decision later.</li>
+    <li>Completeness only. Data completeness carries a threshold and can go amber; everything else stays descriptive.</li>
+    <li>Decide per number later, once the numbers have been checked against a real study.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: none.</b> Not out of caution — because a threshold is a clinical cut-point and nobody has set one for data completeness, so choosing a number now would mean inventing it. Building the census entirely descriptive also demonstrates the thing you said the framework is for, on thirteen numbers at once. A completeness threshold is a small addition afterwards and would arrive with a reason attached.</div>
+</div>
+
+<div class="q" id="C4">
+  <div class="qid">C4 · level</div>
+  <h3>Study only, or sites too?</h3>
+  <p>The census answers about the study. The report you named as the model answers about sites. The metric framework computes at whichever level it is told, and the ecosystem's usual practice is to write the same metric out once per level rather than adding levels up — because some figures, medians among them, cannot be added up correctly.</p>
+  <ul>
+    <li>Study only. Thirteen definitions. This is what the census is and what the demo shows.</li>
+    <li>Study and site. Twenty-six definitions, each site's figures computed from participants directly rather than rolled up. Every census number becomes comparable across sites, which is what would make the report chart-worthy.</li>
+    <li>Study, site and country. Thirty-nine, matching the levels the key-risk-indicator metrics already run at.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: study only, built so the level is a setting.</b> The census's job is a standing study summary, and the first release should make its numbers trustable rather than multiply them. Adding sites afterwards is a copy of each definition with one line changed, not a rewrite — provided the level is a declared setting from the start, which is the part this recommendation is actually asking for.</div>
+</div>
+
+<div class="q" id="C5">
+  <div class="qid">C5 · compatibility</div>
+  <h3>Does everything keep working through the change?</h3>
+  <p>Two contracts exist. One is the function's own arguments. The other is the compact file the pipeline writes and the demo application fetches, whose shape and whose row labels the application depends on.</p>
+  <ul>
+    <li>Nothing breaks. The old arguments are still accepted, with the column names deprecated and ignored, and the report keeps writing the same file in the same shape. The demo application is untouched by this release and its figures simply become correct.</li>
+    <li>The name survives, the shape does not. The function takes the pipeline's results instead of raw tables, the file is replaced by the standard results tables, and the demo application moves in the same release.</li>
+    <li>Deprecate and remove. The function warns for one release and is removed in the next, with the demo migrated in between.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: nothing breaks.</b> It is what you asked for — the function kept, not merely the name — and it means the release that changes what the numbers say does not simultaneously change how anything reads them, so if a figure looks wrong afterwards there is exactly one place it can have come from. The second option is a good follow-on once the numbers are trusted; doing both at once makes any problem twice as hard to locate.</div>
+</div>
+
+<div class="q" id="C6">
+  <div class="qid">C6 · charts</div>
+  <h3>Does this release draw anything?</h3>
+  <p>You said the census probably becomes a report, perhaps with charting functions, and that the way charts are done in the two chart libraries today is fine for this. The coverage table is the one part that genuinely wants a picture. Where it gets built is the question, because our own chart library carries a completion bar: a new chart is not finished until it has a gallery demo, an evidence page, an interface reference and a binding in the R package.</p>
+  <ul>
+    <li>No chart. The report is tables and figures, rendered in the report itself. Charts become their own requirement, with the coverage chart as its first item.</li>
+    <li>Reuse. The coverage chart is drawn with the existing bar chart from the key-risk-indicator side, which needs no new chart work at all — but it does add a package dependency, on a repository we do not own and cannot install from reliably in our own automation.</li>
+    <li>Build it properly. A coverage chart in our own chart library, through the full four-part gate.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: no chart, and file the chart requirement in the same breath.</b> This release's job is making thirteen numbers trustable, and a proper chart is a piece of work of comparable size to the rest of it. Deferring it costs nothing if it is filed rather than remembered — and your own rule is that one requirement covers one release.</div>
+</div>
+
+<h3>What unblocks on each answer</h3>
+
+<ul>
+<li>Deaths — the death metric is the first thing built, and it is the one that proves the whole design. It also tells the demo study whether it needs a new input file, which is work outside gsm.safety.</li>
+<li>Coverage — the coverage metric's inputs are settled, and with them the visit-ordering fix.</li>
+<li>Thresholds — the metric definitions can be written; a descriptive one and a flagging one differ by three lines, so this is the cheapest question to answer and the one blocking the most files.</li>
+<li>Level — how many metric definitions get written. Nothing else changes shape.</li>
+<li>Compatibility — whether the demo study and its application are in this release's scope or a later one.</li>
+<li>Charts — whether the chart library is in scope at all. Answering “no chart” closes the whole question and files a follow-on.</li>
+</ul>
+
+<p>Nothing is blocked on all six. The metric layer can start on the answers to deaths, thresholds and level alone.</p>
+</section>
+
+<div class="cut"><span>AFTERWARDS</span></div>
+<section id="build">
+<h2>How it would get built, and how you would know it worked</h2>
+
+<p>Four steps, in this order, each landing as its own piece of work under the requirement. The order matters: the death count comes first because it is the number the review was written about, and until it is right nothing else about this rebuild has been demonstrated.</p>
+
+<ul>
+<li>The death metric, alone, with the small not-flagging helper it needs. One metric definition, one helper, tests. This is the proof that a descriptive metric runs end to end and lands beside the flagging ones with nothing downstream disturbed.</li>
+<li>The remaining twelve, written against the same pattern, with the duplicate-row and never-enrolled tests applied to each.</li>
+<li>The report workflow and its helpers, reading the results the metrics produced and computing nothing of its own — including the compact file the demo reads, if compatibility is answered that way.</li>
+<li>The function, rewritten to run the workflows and return the tables it returns today, with the column arguments deprecated.</li>
+</ul>
+
+<p>How it is checked is not a matter of the tests passing. Each number is checked against the same study through a second route — the death count against the death records read directly, the enrolment count against the subject table, the coverage figures against the raw domain — and the check is recorded. That is what qualifying a number means, and it is the part your sentence about validation is actually asking for. A test that the code does what the code does would not have caught any of the defects in the table above.</p>
+
+<div class="callout note"><div class="k">One thing worth saying plainly</div>
+<p>The published figures change when this ships, and the largest of them is a death count going from one to thirteen on a public page. Under your transparency rule the release notes name every figure that moved and why it was wrong before — not as a footnote, as the substance of the release. A safety tool quietly correcting a death count is worse than one that never had the bug.</p></div>
+</section>
+
+<div class="foot">
+<p>Sources. The function, its tests and the package's three existing metric definitions read from gsm.safety at its published state. The death figures reproduced for this page by running the standard mapping against the ecosystem's own bundled study: one from the discontinuation reason, twelve death records, thirteen combined. The unflagged-metric precedent read from the key-risk-indicator package's risk-score definition and the builder that excludes it from scoring. The standard domain definitions read from the mapping package as installed. The demo study's calling script and its application's census reader read from their repositories, including the four row labels the application looks up by exact wording. The verified defects are the review panel's, reproduced on this page rather than restated: seven independent reviewers and seven fact-checkers, forty-seven claims, none refuted.</p>
+<p>References. Decision this design answers: <a href="../2026-08-17-safetycensus-stay-or-go/">SafetyCensus stays or goes</a>. Requirement: <a href="https://github.com/jwildfire/obot.roadmap/issues/274">obot.roadmap#274</a>. This design: <a href="https://github.com/jwildfire/obot.roadmap/issues/284">obot.roadmap#284</a>.</p>
+<p>Drafted by 👯🤖 W0085 using Claude Opus 5. Not reviewed by @jwildfire.</p>
+</div>
+
+</div>
+</body></html>
