@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — Branch protections before the clock starts</title>
+<meta name="description" content="Eleven of the thirteen branches the merge policy governs have no protection at all, including the one holding the merge policy. Three options for what to lock down, what each costs the agents, and why the recommended one does not slow a single merge.">
+<meta name="premise" content="the branch holding the merge rules is still unprotected, which is the gap this page exists to close | gh api repos/jwildfire/obot.agent/branches/main --jq .protected → prints false">
+<meta name="premise" content="the two branches already protected are still protected, which is the evidence the bot merges fine under this shape | gh api repos/jwildfire/safety.viz/branches/main --jq .protected → prints true">
+<meta name="premise" content="the tool that applies and verifies the choice is merged and present, so applying is one command | gh api repos/jwildfire/obot.agent/contents/scripts/obot-protect --jq .name → prints obot-protect">
+<meta name="premise" content="the requirement asking for this page is still open | gh issue view 272 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<meta name="premise" content="scheduled sessions have not started, so the ordering he asked for still holds | gh issue view 122 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<meta name="decision-id" content="D0022">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--go);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--go)}
+.verdict p{margin:10px 0 0;font-size:16.5px}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+.pre{margin:16px 0 0;padding:14px 16px;border:1px solid var(--rule);border-radius:5px;background:#f7f4ec;
+  font:13px/1.6 var(--mono);color:var(--ink2);overflow-x:auto;white-space:pre}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .verdict,.card,.q,.callout{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-20</span><span class="dot"></span><span>awaiting your decision</span><span class="dot"></span><span>one question</span></div>
+  <h1>Branch protections: what gets locked down before the clock starts</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0022">
+<p>D0022 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0022.1"><a class="did" href="#D0022.1">D0022.1</a><span class="dcode">P1</span><span class="dq">Which set of branch protections is applied — the recommended one, the minimal one, or the strict one?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">You asked for this before scheduled sessions begin, and called it critical. Here is what is actually protected today, what the three sensible answers cost, and the one thing this page lives or dies on — whether the agents can still merge afterwards. The recommended answer does not slow a single merge, because eight of the branches it touches already work this way.</p>
+  <div class="facts">
+    <span><b>Branches the merge rules govern:</b> 13</span>
+    <span><b>Protected today:</b> 2</span>
+    <span><b>Merges the recommendation would block:</b> 0</span>
+    <span><b>Your remaining act:</b> pick A, B or C</span>
+  </div>
+</div>
+
+<div class="cut"><span>THE SITUATION</span></div>
+<section id="situation">
+<h2>Three sentences</h2>
+
+<p>Everything that keeps agent work inside the rules today is the agents choosing to route their merges through one tool, and that tool checking the policy before it merges. The tool only ever sees merges — a plain push straight onto a branch never reaches it, and eleven of the thirteen branches in the program accept exactly that, including the branch that stores the merge rules themselves. So the rule saying "the guardrail files need your sign-off" is enforced by a script sitting on a branch anyone with a write token can quietly rewrite.</p>
+
+<div class="callout"><div class="k">The specific hole</div>
+<p>The harness repository's main branch holds the merge policy, the merge tool, the policy reader, and the hooks that keep agent writes off your name. It has no protection. An unattended session — or a mistake — can push a rewritten policy onto it with no pull request, no gate and no record that anything was decided. Nothing has done this. Nothing is stopping it either.</p></div>
+
+<p>You put it this way on 18 August, dictated from the car:</p>
+
+<blockquote>“I definitely want you to do branch protections in GitHub. That is critical. We need to do it. Probably should have already done it. So you go ahead and make a separate recommendation document around that with a podcast, and we can… I’ll listen to that in the next few days, and I want that live before the scheduling starts. Definitely makes sense. It’s a guardrail.”</blockquote>
+</section>
+
+<div class="cut"><span>MEASURED</span></div>
+<section id="state">
+<h2>What is protected right now</h2>
+
+<p>Read from GitHub on 20 August, branch by branch, not from a settings page. Two branches are protected. Both belong to the packages that ship to clinical users, which is the right instinct applied to one half of the problem: the half where a mistake is embarrassing, rather than the half where a mistake is unrecoverable.</p>
+
+<p>The last column is the number that decides how much a rule costs. It counts, out of the most recent commits on that branch, how many arrived by a direct push rather than through a pull request. Where it reads zero, requiring a pull request changes nothing at all — the branch already works that way and simply cannot be forced to.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>Branch</th><th>Role</th><th>Protected today</th><th>Direct pushes recently</th></tr></thead>
+<tbody>
+<tr><td>safety.viz <code>main</code></td><td>released surface</td><td class="ok">yes — pull request required, one build check, no force-push, no deletion</td><td>0 of 25</td></tr>
+<tr><td>safety.viz <code>dev</code></td><td>where work lands</td><td class="bad">nothing</td><td>0 of 25</td></tr>
+<tr><td>gsm.safety <code>main</code></td><td>released surface</td><td class="ok">yes — pull request required, one build check, no force-push, no deletion</td><td>0 of 25</td></tr>
+<tr><td>gsm.safety <code>dev</code></td><td>where work lands</td><td class="bad">nothing</td><td>0 of 25</td></tr>
+<tr><td>open.csr <code>main</code></td><td>released surface</td><td class="bad">nothing</td><td>0 of 25</td></tr>
+<tr><td>open.csr <code>dev</code></td><td>where work lands</td><td class="bad">nothing</td><td>0 of 25</td></tr>
+<tr><td>open.gismo <code>main</code></td><td>released surface</td><td class="bad">nothing</td><td>2 of 2, both from March</td></tr>
+<tr><td>open.gismo <code>dev</code></td><td>where work lands</td><td class="bad">nothing</td><td>12 of 25, newest 24 June, none by anyone who still has access</td></tr>
+<tr><td>the harness repo <code>main</code></td><td>where work lands, and where the merge rules live</td><td class="bad">nothing</td><td>0 of 30</td></tr>
+<tr><td>the harness repo <code>stable</code></td><td>released surface</td><td class="bad">nothing</td><td>0 of 25</td></tr>
+<tr><td>the hub <code>main</code></td><td>where work lands; also the published site</td><td class="bad">nothing</td><td>14 of 25, including tonight’s automatic audit</td></tr>
+<tr><td>demo-301 <code>site</code></td><td>the live demo site</td><td class="bad">nothing</td><td>10 of 10 — this is how it publishes</td></tr>
+<tr><td>demo-301 <code>main</code></td><td>where work lands</td><td class="bad">nothing</td><td>10 of 13, all from the two days it was built</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Two other things were checked and are worth stating because they close off tempting answers. No repository uses the newer rulesets mechanism anywhere, so there is nothing already in place to conflict with. And the bot account cannot read or change branch protection at all — GitHub refuses it, because the app has never been given administrator permission. That refusal is not an obstacle to work around; see the last section.</p>
+</section>
+
+<div class="cut"><span>THE QUESTION THIS LIVES OR DIES ON</span></div>
+<section id="bot">
+<h2>Can the agents still merge?</h2>
+
+<p>Yes, under the recommended rules, and this is not a prediction. Two branches have carried exactly the recommended shape since July, and every release merge on both went through it as the bot. The recommendation is that shape, copied onto the branches that lack it.</p>
+
+<p>The reason it works is worth one paragraph, because it is the whole design. A protection can require a pull request without requiring a human to approve one. Those are two separate switches. Turning on the first means a change has to arrive as a pull request instead of a raw push; the bot opens pull requests already, so nothing changes for it. Turning on the second means somebody has to click approve, and the bot cannot approve its own work — that switch, and only that switch, is what would convert every automatic merge into a message asking you to come and click something. The recommendation turns on the first and leaves the second off everywhere.</p>
+
+<p>Nothing in the recommendation restricts who is allowed to merge, either, which is why no exception list or bypass entry is needed for the bot anywhere. There is no door it has to be let through; there is no door.</p>
+
+<h3>The switches that would break it, all left off</h3>
+
+<ul>
+<li>Requiring an approving review. The bot cannot approve itself, so every routine merge would wait for you.</li>
+<li>Requiring linear history. The merge tool’s default is an ordinary merge commit, which linear history refuses outright.</li>
+<li>Requiring a branch to be up to date before merging. Every time anything else lands first, the merge stalls until somebody refreshes it — with nobody awake to do so.</li>
+<li>Requiring conversation resolution. One unresolved comment thread blocks the merge indefinitely.</li>
+<li>Requiring signed commits. Agent pushes are not signed.</li>
+<li>Locking the branch. Nothing merges at all.</li>
+</ul>
+
+<p>The verifier treats each of those as a fault if it ever appears, in the same way it treats a missing guard as a fault. A well-meant tightening in the GitHub settings page — one approving review, say — would otherwise silently turn the whole program manual, and the first symptom would be work quietly not landing overnight.</p>
+
+<h3>And your sign-off is not asked for twice</h3>
+
+<p>The guardrail files already require your explicit sign-off before they merge; that is enforced by the merge tool. A protection that required your review as well would ask you for the same thing through two different doors on the same pull request. It does not: no rule here requires a review from anyone. The protection makes a pull request unavoidable, the merge tool asks you about the guardrail files inside it, and you are asked once.</p>
+</section>
+
+<div class="cut"><span>OPTIONS</span></div>
+<section id="options">
+<h2>Three answers, in order of how much they change</h2>
+
+<div class="card done"><div class="tag">Option A — recommended</div>
+<h3>Lock what can be locked for free, guard the rest</h3>
+<p>Ten branches get the pull-request rule: a change reaches them as a pull request, with the build check that already runs on every pull request there, no approval required, and force-pushing and deleting refused. All ten already work this way in practice, so the number of merges this would have blocked in recent history is zero.</p>
+<p>The remaining three — the hub’s main branch and the demo’s two — get force-push and deletion refused and nothing else, because automation writes to them directly by design. The hub takes a machine-written audit commit every night and takes your own commits straight to main by a grant you gave in July; the demo publishes by pushing its built site. Those keep working untouched, and their history still becomes impossible to rewrite or erase.</p>
+<ul>
+<li>Closes the harness hole completely: the merge rules can no longer be changed without a pull request.</li>
+<li>Costs no merge, no lane and no habit. Nothing you do today stops working.</li>
+<li>Leaves one gap open on purpose, described under Option B.</li>
+</ul>
+</div>
+
+<div class="card"><div class="tag">Option B — stricter</div>
+<h3>Option A, and the demo site publishes through a pull request too</h3>
+<p>Everything in Option A, plus the demo’s live site branch requires a pull request. That closes a real gap: the site branch is a released surface, so by the program’s own rules it should only change with your sign-off, and today it is published by a direct push that the merge tool never sees. The rule would make that impossible.</p>
+<p>The cost is that publishing the demo stops working until the publish script is rewritten to open a pull request instead of pushing, and every republish then waits for you. The hub keeps its direct-commit grant under this option too — a pull-request rule there would break the nightly audit and your own July grant on the same day, which is not a trade worth offering.</p>
+<ul>
+<li>Closes a genuine hole in the release rules for the demo.</li>
+<li>Breaks demo publishing until a script is changed, and adds you to the loop each time.</li>
+<li>Reasonable to choose later, once the demo is something people look at.</li>
+</ul>
+</div>
+
+<div class="card"><div class="tag">Option C — minimal</div>
+<h3>Only refuse force-pushes and deletions, everywhere</h3>
+<p>All thirteen branches get the two bans and nothing else. Nothing anywhere needs a pull request that does not need one today.</p>
+<p>This buys the irreversible half of the protection — no history can be rewritten, no branch erased — and none of the rest. The harness hole stays open: a rewritten merge policy can still be pushed straight onto the branch that holds it, and the first anyone would know is when a merge that should have stopped did not. It is the right answer only if you expect the pull-request rule to get in the way, and the measured history says it will not.</p>
+<ul>
+<li>Absolutely zero behaviour change anywhere.</li>
+<li>Leaves the reason this requirement exists unaddressed.</li>
+</ul>
+</div>
+</section>
+
+<div class="cut"><span>DECISION</span></div>
+<section id="questions">
+
+<div class="q" id="P1">
+  <div class="qid">P1</div>
+  <h3>Which set of protections gets applied?</h3>
+  <p>One choice. Everything else — which branch gets which rule, which build check is required, how it is applied and how it is checked afterwards — is already written down and does not need you.</p>
+  <div class="rec"><b>Recommendation: Option A.</b> It closes the hole the requirement was written about, it costs nothing that anyone does today, and it is the shape two branches have already been running under the bot for a month. Option B is the same thing plus one workflow change, and is easy to add later. Option C leaves the reason for the exercise untouched.</div>
+</div>
+
+<h3>What unblocks on each</h3>
+<ul>
+<li>Option A or C — protections go live the same day. Applying is one command and it reads every branch back afterwards, so “applied” means verified rather than attempted. Scheduled sessions become unblocked on the ordering you set.</li>
+<li>Option B — the same, minus the demo’s site branch, which waits on a small change to the publish script. That work is a day at most and does not hold up the rest.</li>
+<li>Any of them — the drift check joins the five-minute sweep, so a protection quietly removed or tightened in the settings page is reported rather than discovered.</li>
+</ul>
+</section>
+
+<div class="cut"><span>AFTERWARDS</span></div>
+<section id="apply">
+<h2>How it gets applied, and how you know it worked</h2>
+
+<p>The tooling is already merged and runnable. It reads the live state, compares it against a written specification of what each branch should carry, and refuses to apply anything without being told where and when you decided. After applying, it reads every branch back and compares again, because the success of a settings write is not evidence of the setting.</p>
+
+<div class="pre">obot.agent/scripts/obot-protect read     # what GitHub enforces right now
+obot.agent/scripts/obot-protect plan     # what would change; writes nothing
+obot.agent/scripts/obot-protect verify   # fails if live state and spec disagree
+obot.agent/scripts/obot-protect apply --approved '&lt;where and when you chose&gt;'</div>
+
+<p>It was tested against the real estate before it was trusted: run today, the check fails, names all eleven unprotected branches and the specific guard each one lacks, and passes on the two that already match. A checker that has only ever been seen to pass is a checker nobody has tested.</p>
+
+<div class="callout note"><div class="k">One thing to keep as it is</div>
+<p>Applying these rules needs administrator rights on each repository, and the bot account does not have them — GitHub refuses it outright today. That should stay true. A guardrail an agent can remove is a guardrail an agent has removed; the whole point is that this particular setting is yours and not the machine’s. The practical consequence is that the apply command runs under your own account, once, deliberately.</p></div>
+
+<h3>On the ordering you asked for</h3>
+
+<p>You said protections live, then scheduling starts. That ordering is currently written down in the requirement and nowhere else — the scheduled-sessions requirement does not mention it, and no mechanism enforces it. There is a natural place to put it: unattended sessions run at a level in the policy file that explicitly describes scheduling as not yet enabled, and raising that level is already something that needs your sign-off. Making the check above a precondition of that raise would turn your ordering from an intention into a step. That is a small follow-on, and it is noted rather than assumed.</p>
+</section>
+
+<div class="foot">
+<p>Sources. Branch and protection state read from the GitHub API on 2026-08-20 across all seven repositories the merge policy governs; direct-push counts computed per branch from the commits API by checking each commit for an associated pull request. Workflow triggers read from each repository’s workflow files to establish which build checks actually run on a pull request to each branch — requiring one that does not run would block a branch permanently. The bot’s lack of administrator permission confirmed by an actual refused request, not inferred from configuration.</p>
+<p>References. Requirement: <a href="https://github.com/jwildfire/obot.roadmap/issues/272">obot.roadmap#272</a>. Tooling: <a href="https://github.com/jwildfire/obot.agent/pull/267">obot.agent#267</a>, closing <a href="https://github.com/jwildfire/obot.agent/issues/266">obot.agent#266</a>. Scheduled sessions: <a href="https://github.com/jwildfire/obot.roadmap/issues/122">obot.roadmap#122</a>.</p>
+<p>Drafted by 👯🤖 W0079 using Claude Opus 5. Not reviewed by @jwildfire.</p>
+</div>
+
+</div>
+</body></html>
