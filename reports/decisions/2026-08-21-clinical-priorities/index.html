@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — Clinical work, not scaffold: the refocused ten and the v1.0 question</title>
+<meta name="description" content="The framework builds clinical charts well and nobody has written what version 1.0 contains — the evidence for both, ten items to replace the scaffold head of the queue, the charts worth making, and the smallest weekend build that would test it.">
+<meta name="premise" scope="live" content="the R package still wraps a chart library three releases old, which is what makes the wrong-liver-chart claim true | gh api repos/jwildfire/gsm.safety/contents/inst/htmlwidgets/lib --jq .[0].name &rarr; prints safety.viz-1.4.0">
+<meta name="premise" scope="live" content="the chart library it is measured against is at v1.7.0 | gh release view -R jwildfire/safety.viz --json tagName --jq .tagName &rarr; prints v1.7.0">
+<meta name="premise" scope="live" content="the design discussion that gates filing any app requirement is still open | gh issue view 34 -R jwildfire/obot.roadmap --json state --jq .state &rarr; prints OPEN">
+<meta name="premise" scope="live" content="nothing has been filed from last month's platform survey - the issue asking which of its proposals to file is still open | gh issue view 176 -R jwildfire/obot.roadmap --json state --jq .state &rarr; prints OPEN">
+<meta name="premise" scope="live" content="the review-state requirement exists and is unstarted, which is what makes the survey's zero-filed line out of date | gh issue view 139 -R jwildfire/obot.roadmap --json state --jq .state &rarr; prints OPEN">
+<meta name="premise" scope="history" content="the Kaplan-Meier renderer had shipped when this page was written, which is what moved it off the survey's missing list | gh api repos/jwildfire/safety.viz/contents/src/time-to-event.js --jq .name &rarr; prints time-to-event.js">
+<meta name="premise" scope="live" content="the demo study's most recent weekly rebuild failed, so the vehicle a v1.0 push would be judged on does not rebuild | gh api repos/jwildfire/demo-301/actions/workflows/322415322/runs --jq .workflow_runs[0].conclusion &rarr; prints failure">
+<meta name="decision-id" content="D0026">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.verdict{margin:26px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--go);border-radius:5px;
+  background:var(--panel);padding:20px 22px}
+.verdict .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--go)}
+.verdict p{margin:10px 0 0;font-size:16.5px}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+.pre{margin:16px 0 0;padding:14px 16px;border:1px solid var(--rule);border-radius:5px;background:#f7f4ec;
+  font:13px/1.6 var(--mono);color:var(--ink2);overflow-x:auto;white-space:pre}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .verdict,.card,.q,.callout{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+}
+</style>
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-21</span><span class="dot"></span><span>awaiting your answers</span><span class="dot"></span><span>five questions</span></div>
+  <h1>Clinical work, not scaffold &mdash; the refocused ten and the v1.0 question</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0026">
+<p>D0026 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0026.1"><a class="did" href="#D0026.1">D0026.1</a><span class="dcode">V1</span><span class="dq">Is the framework good enough to push towards open.gismo v1.0, and does the push start this weekend?</span></li>
+  <li id="D0026.2"><a class="did" href="#D0026.2">D0026.2</a><span class="dcode">V2</span><span class="dq">The refocused ten — accept this order, or change it?</span></li>
+  <li id="D0026.3"><a class="did" href="#D0026.3">D0026.3</a><span class="dcode">V3</span><span class="dq">Which single piece of clinical work is this weekend's experiment?</span></li>
+  <li id="D0026.4"><a class="did" href="#D0026.4">D0026.4</a><span class="dcode">V4</span><span class="dq">Which of the missing charts get filed as requirements now?</span></li>
+  <li id="D0026.5"><a class="did" href="#D0026.5">D0026.5</a><span class="dcode">V5</span><span class="dq">Does the review layer — mark it reviewed, show me what changed — become v1.0 scope, or is it deferred in writing?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">You asked whether the current framework is good enough to move towards a version 1.0 of the app, and you asked for the head of the queue refocused off scaffolding and onto charts and the platform. This page answers the first question in its second paragraph, re-derives last month&rsquo;s competitor survey against what has actually shipped since, proposes ten items to replace the current ten, names the charts worth building, and recommends the smallest piece of real clinical work that would genuinely test the machine over a weekend.</p>
+  <div class="facts">
+    <span><b>Charts shipped:</b> 13 of the 30 the survey scored</span>
+    <span><b>Filed from that survey:</b> none of its 12 proposals</span>
+    <span><b>Clinical share of what closed in August:</b> 7 of 57</span>
+    <span><b>Recommended weekend:</b> the R widget catch-up</span>
+  </div>
+</div>
+
+<div class="cut"><span>THE ANSWER</span></div>
+<section id="answer">
+<h2>Is the framework good enough to push towards v1.0?</h2>
+
+<div class="verdict">
+  <div class="k">Recommendation</div>
+  <p>Yes for building clinical work, and no for calling anything 1.0 &mdash; and those are two different problems, only one of which is about the framework. The machine that builds has spent the last month proving it can do clinical work well: it delivered a kidney-safety explorer, a Kaplan&ndash;Meier survival chart whose estimator agrees with R&rsquo;s survival package to ten decimal places, three participant-level safety metrics, and a study census, each through the same lane &mdash; isolated branch, tests written first, a published evidence page, release notes. Two of those were displays last month&rsquo;s survey listed as things everyone else ships and we did not. What is not ready is the bookkeeping a version number rests on: nobody has ever written down what 1.0 contains, the design question that would let the app&rsquo;s requirements be filed at all has sat open since 12 July, and the demo study a 1.0 would be judged on has failed its weekly rebuild three times running since 3 August without anyone noticing. Push, and start this weekend with clinical build work &mdash; but the first hour of it belongs to those three, because they cost almost nothing and every week of a v1.0 push without them arrives at a version nobody can define.</p>
+</div>
+
+<h3>The two readings of &ldquo;framework&rdquo;, because they answer differently</h3>
+<p>You used the word twice in one breath &mdash; &ldquo;how some clinical build work goes in our new framework&rdquo;, then &ldquo;whether the current framework is good enough&rdquo;. Read as the machine that builds &mdash; workers, lanes, gates, release candidates, evidence pages &mdash; the answer is yes, with one caveat below. Read as the product architecture &mdash; the chart library, the R package that carries it into clinical reports, the app that assembles them &mdash; the answer is yes for the charts and not yet for the layer around them. Both readings are answered on this page; the first is the one the recommendation above is about.</p>
+
+<h3>What the machine has actually done with clinical work</h3>
+<ul>
+  <li><b>Two charts the survey listed as missing.</b> The kidney explorer landed on 14 August, the Kaplan&ndash;Meier time-to-event chart on 15 August. The second was on the survey&rsquo;s headline list of things at least four competing platforms ship and we did not.</li>
+  <li><b>Correct conduct where the statistics were beyond its authority.</b> The survival chart was built with six statistical decisions an unattended session could not get signed &mdash; which estimator, how the bands are labelled, what the risk table means. It adopted them provisionally, shipped the chart marked Experimental, said so in the app and in the clinical guide, and filed the requirement to remove that marking after a clinician reviews them. That is the behaviour you would want; the review has not happened and the requirement is sitting in the backlog.</li>
+  <li><b>A clinical claim measured before it was made.</b> The three participant-level safety metrics were run on the demo data and the counts published before the metrics were treated as real.</li>
+  <li><b>Clinical definitions kept upstream.</b> The death count in the census rebuild you approved uses the standard mapping&rsquo;s existing definition rather than inventing one.</li>
+</ul>
+
+<div class="callout"><div class="k">The caveat, and it is the honest one</div>
+<p>Of the fifty-seven items this program closed in August, seven carry the safety label, and five of those seven were closed on a single day in what reads as bookkeeping on work that shipped weeks earlier. The machine is capable of clinical work. It has mostly not been pointed at it. That is what you are correcting, and it is a scheduling fact rather than a capability one.</p></div>
+
+<h3>What is not ready, in four sentences</h3>
+<ul>
+  <li><b>No written definition of 1.0.</b> The question that would have &mdash; the third question on the app-plan page from 14 August, &ldquo;what is in v1.0 and what is deferred, in writing&rdquo; &mdash; was never answered, and you closed the page with it open. It moved to the goal-79 interview, which has not been run.</li>
+  <li><b>The gate on filing any app requirement.</b> The design discussion about what GitHub is to the app has been open since 12 July, in the backlog. It explicitly blocks filing the app&rsquo;s phase requirements. Meanwhile the app shipped a local-first engine in its unreleased 0.2.0 &mdash; which is the architecture that discussion was called to settle, and the one you said you did not agree with.</li>
+  <li><b>A demo study that does not rebuild.</b> Its weekly pipeline has failed on 3, 10 and 17 August, every time at the step that installs its pinned packages. The site is still up on the last good run. A push towards 1.0 that starts on a red demo starts on sand, and the issue for it was filed and never ranked.</li>
+  <li><b>A wrong liver chart in the R package.</b> Details in the ten below; it is the first item there for a reason.</li>
+</ul>
+</section>
+
+<div class="cut"><span>THE SURVEY, RE-DERIVED</span></div>
+<section id="survey">
+<h2>What has changed under last month&rsquo;s gap analysis</h2>
+<p>The survey you asked me to review is <a href="../../platform-gap-analysis-2026-07-25/">What everyone else ships that we don&rsquo;t</a>, written on 25 July: thirteen safety platforms and two reference catalogues, sixty-three capabilities, our own column read off the code rather than assumed. It is unusually careful and it states its own limits &mdash; a competitor is scored as having a capability because its documentation says so, and nothing was tested. Its headline was that the chart set is competitive and the review layer around it barely exists.</p>
+<p>It is four weeks old, and four weeks is a long time here. I re-derived its numbers against the code and the issue trackers tonight rather than repeating them.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>What it said on 25 July</th><th>What is true tonight</th><th>Why it moved</th></tr></thead>
+<tbody>
+<tr><td>11 of 30 chart types shipped</td><td><b>13 of 30</b></td><td>The kidney explorer shipped on 14 August and the Kaplan&ndash;Meier survival chart on 15 August.</td></tr>
+<tr><td>Kaplan&ndash;Meier is missing, and on the headline list</td><td><b>Shipped</b>, marked Experimental</td><td>Four platforms ship it and we did not. The estimator is cross-checked against R&rsquo;s survival package. The headline list drops from sixteen rows to fifteen.</td></tr>
+<tr><td>0 of 10 review-workflow capabilities shipped, and none filed</td><td><b>1 filed</b>, covering 3 of the 10; still 0 shipped</td><td>You directed the action-log requirement on 28 July, three days after the survey; it was filed on the 29th and covers review state, comments and issue tracking to resolution. It has seven design questions written out and has not moved since.</td></tr>
+<tr><td>Nothing in the portfolio flags a participant</td><td><b>Half wrong now</b></td><td>The R package scores three participant-level safety metrics as of 17 August, and the demo site shows a queue of flagged participants. What is missing is the notification half and the reviewer&rsquo;s own state.</td></tr>
+<tr><td>&ldquo;What changed since I last looked&rdquo; does not exist here</td><td><b>Partly ours</b></td><td>The app draws snapshot-to-snapshot change chips at study and site level. Nothing does it per participant, and nothing is scoped to one reviewer&rsquo;s last visit &mdash; which is the capability the survey was pointing at.</td></tr>
+<tr><td>Charts sharing one filter and one selection is left to a requirement&rsquo;s design stage</td><td><b>Worse</b></td><td>That requirement was closed on 15 August with the mechanism unbuilt and nothing filed in its place. This capability now has no issue anywhere.</td></tr>
+<tr><td>Twelve requirement proposals, none filed, awaiting you</td><td><b>Unchanged after four weeks</b></td><td>The issue asking which of the twelve to file is still open. Question four on this page is the chart half of that answer.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>The chart count, stated honestly</h3>
+<p>Thirteen of the thirty chart types are shipped. Of the seventeen that are not: four are already filed as requirements, four are marked low priority by the survey itself and I agree with all four, and nine are genuinely wanted and unfiled. So &ldquo;the charts are nearly done&rdquo; is true as a competitive claim about the displays a safety reviewer actually opens, and false as a count of rows. Both sentences are worth having, because the first is what a September audience will see and the second is what a build plan has to work from.</p>
+
+<h3>Where I disagree with the reading you were given</h3>
+<p>The summary reaching you was that charts are nearly done, the workflow layer was never started, and therefore the gap is the platform around the charts rather than the charts. That is right as strategy and wrong in two particulars, and one of the particulars changes what to do this weekend.</p>
+<ul>
+  <li><b>The zero-filed line.</b> Out of date &mdash; the review layer has a requirement, written at your direction, with the hard part &mdash; where mutable review state lives when the whole data architecture rests on immutable snapshots &mdash; already identified as its central design problem. The layer is unstarted, not unnoticed.</li>
+  <li><b>The nearly-done claim.</b> It overstates the position by row count: nine wanted charts are unshipped and unfiled, and they cluster into exactly two families rather than a long tail: comparison-with-an-interval, and cross-domain context.</li>
+  <li><b>Right quarter, wrong weekend.</b> The two most valuable clinical things available right now are a chart family you approved last night and a chart the R package is drawing wrongly today. Telling you the gap is the platform is correct, and doing platform work first this weekend is not.</li>
+</ul>
+</section>
+
+<div class="cut"><span>THE PROPOSED TEN</span></div>
+<section id="ten">
+<h2>Ten items to replace the current ten</h2>
+<p>Every one of these already has an issue behind it; nothing here is ranked on a hope. The order is a proposal &mdash; ranking is obot-prime&rsquo;s call and it will act on this rather than adopt it. The migration is off by your own word tonight and is not ranked. Under each, whether it needs your clinical review before it ships.</p>
+
+<div class="card block"><span class="tag">1 &middot; needs your clinical review before release</span>
+  <h3>The R package is drawing a wrong liver chart, today</h3>
+  <p>The R package that carries these charts into clinical reports still wraps a copy of the chart library from three releases ago. One of those releases fixed a defect in the composite liver view: a participant with no day-zero record had their own baseline counted as an on-treatment peak &mdash; twenty-four of three hundred and eighteen participants on the demo data. The JavaScript chart was corrected in July; the R widget still draws the old one. This item ships the catch-up and a build check that makes the next drift loud instead of silent, so this is the last time it is discovered by accident. <span class="mono">obot.roadmap#164</span></p></div>
+
+<div class="card"><span class="tag">2 &middot; needs your clinical review before release</span>
+  <h3>Build the safety census you approved last night</h3>
+  <p>You answered all six questions on the census design on 20 August and nothing has been built since. Thirteen numbers become individually validatable metrics, the census becomes a report, and the death count goes from one to thirteen on the demo study because it starts using the standard mapping&rsquo;s definition. It is the clinical work in the whole backlog with the fewest remaining unknowns &mdash; the design is signed, so the only thing between here and a release candidate is the building. <span class="mono">obot.roadmap#274</span></p></div>
+
+<div class="card"><span class="tag">3 &middot; needs your clinical review before release</span>
+  <h3>The data-coverage chart &mdash; the first chart of the census family</h3>
+  <p>Data coverage per visit is the figure that decides whether a quiet visit is reassuring or empty, and it is the one census number that genuinely wants a picture. You approved deferring it and filing it in the same breath, and it was filed. Its first question &mdash; whether it reuses the existing risk-indicator bar chart or is built properly in our own library &mdash; is ours to answer in design, not yours. <span class="mono">obot.roadmap#291</span></p></div>
+
+<div class="card block"><span class="tag">4 &middot; no clinical gate</span>
+  <h3>The demo study has not rebuilt since 3 August</h3>
+  <p>Three consecutive weekly pipeline runs have failed at the step that installs its pinned packages. The published site still shows the last good run, so nothing looks broken from outside &mdash; which is exactly why it went three weeks. This is the study a version 1.0 would be demonstrated on and the template a fork would copy. The issue was filed on 15 August and never ranked. <span class="mono">obot.roadmap#153</span></p></div>
+
+<div class="card"><span class="tag">5 &middot; your call, not a build</span>
+  <h3>Settle what GitHub is to the app, because nothing else can be filed until it is</h3>
+  <p>This one is on the list because it is a gate, not because it is work. The app&rsquo;s own goal says no requirement can be filed for it until this lands, and it has been open since 12 July. Your recorded position is that you did not agree with demoting GitHub from a prerequisite to an optional publishing lane &mdash; and the unreleased 0.2.0 shipped exactly that architecture anyway, because the code kept moving while the decision did not. Half an hour of yours unlocks the entire app requirement set. <span class="mono">obot.roadmap#34</span></p></div>
+
+<div class="card"><span class="tag">6 &middot; this item is your clinical review</span>
+  <h3>Take the Experimental marking off the survival chart, or say what has to change first</h3>
+  <p>The Kaplan&ndash;Meier chart is live on the site with an Experimental label, because six statistical choices were made provisionally by an unattended session: which estimator, whether curves rise or fall by default, that the confidence bands are pointwise rather than simultaneous, what the at-risk table counts. All six are written down and defensible. None has been reviewed by a person with the standing to sign them, and until one is, we ship a survival curve carrying our own warning label. <span class="mono">obot.roadmap#182</span></p></div>
+
+<div class="card"><span class="tag">7 &middot; needs your clinical review before release</span>
+  <h3>The two newest charts have no R widget, so by our own rule they are not done</h3>
+  <p>The rule you set is that a chart is not finished until it exists as an R widget as well as a web component. The survival chart and the participant profile do not have one. Two shipped, demonstrated, evidence-backed charts are unfinished by the standard this program applies to itself, and the requirement for it is sitting in the backlog. <span class="mono">obot.roadmap#165</span></p></div>
+
+<div class="card"><span class="tag">8 &middot; design only, no clinical gate</span>
+  <h3>Mark it reviewed, and show me what changed &mdash; the design pass</h3>
+  <p>The survey&rsquo;s strongest single finding, and the thing that separates a chart library from a review tool: a reviewer opening the same study every week can neither record what they have already looked at nor see what arrived since. The requirement exists, written at your direction on 28 July, and its central problem is already identified &mdash; review state is mutable and the entire data architecture rests on snapshots being immutable. That is a design pass, not a build, and it is worth one this quarter. <span class="mono">obot.roadmap#139</span></p></div>
+
+<div class="card"><span class="tag">9 &middot; produces requirements, no clinical gate</span>
+  <h3>Mine the old renderer trackers for the features their users asked for</h3>
+  <p>Eight of the original chart repositories still carry issues filed by the people who used them. That is a source of charts to make grounded in what real reviewers asked for, rather than in what a competitor&rsquo;s marketing page describes &mdash; and it is the one input to the chart roadmap that costs nothing to trust. <span class="mono">obot.roadmap#33</span></p></div>
+
+<div class="card"><span class="tag">10 &middot; your call, one sitting</span>
+  <h3>Decide what last month&rsquo;s survey produces</h3>
+  <p>Twelve requirement proposals, none filed, four weeks old, and the issue asking which to file still open. Question four on this page answers the chart half. This closes the rest &mdash; including the four capabilities the survey recommends writing down as deliberately out of scope, which is cheaper now than being asked in September and having no answer. <span class="mono">obot.roadmap#176</span></p></div>
+
+<h3>What this displaces, and what I would keep visible</h3>
+<p>Nine of the current ten are harness work. Four of those would bite a clinical push rather than merely being unfinished, and I would keep two of them where you can see them rather than pretend they do not matter: nobody can currently write to the roadmap board, so every requirement&rsquo;s stage is wrong and every surface built on it inherits that; and agent commits still go out under your name. Neither is a chart. Both change what you can trust about a week of clinical work. One slot on the current ten is already empty &mdash; the honest-on-a-fresh-machine item closed today.</p>
+</section>
+
+<div class="cut"><span>WHAT DOES NOT EXIST YET</span></div>
+<section id="unfiled">
+<h2>Five things worth ranking that have no issue to rank</h2>
+<p>None of these can go on a ranked list, because ranking a thing with no requirement behind it is how work goes missing. Each needs filing first. I checked both trackers by search rather than by memory; nothing matching any of these exists anywhere.</p>
+
+<div class="card"><span class="tag">chart &middot; the strongest genuine hole</span>
+  <h3>Comparing arms with an interval &mdash; the risk-difference screen</h3>
+  <p>Two linked views of one question: which adverse-event terms differ between treatment arms and by how much. A volcano for screening hundreds of terms at once, and a paired panel &mdash; incidence per arm on the left, the difference with a confidence interval on the right &mdash; for reading the top of that list. We count adverse events and we list them and we never compare arms with an interval, which is the first question anyone asks of an imbalance. The original working group already built one and it was never migrated. Two of the FDA&rsquo;s core figures are the static twin.</p></div>
+
+<div class="card"><span class="tag">chart &middot; the cheapest genuine hole</span>
+  <h3>Mean change from baseline over time, with confidence intervals</h3>
+  <p>Our results-over-time chart draws quantile boxes, which answer &ldquo;how spread out is this&rdquo;. Every platform surveyed also draws the mean with an interval at each visit, which answers &ldquo;did the group move&rdquo;, and reviewers use both. It reuses the existing chart&rsquo;s data contract unchanged, which is what makes it the cheapest real gap on the list. Two more FDA core figures.</p></div>
+
+<div class="card"><span class="tag">charts &middot; every platform opens here</span>
+  <h3>The context set &mdash; demographics, disposition, enrolment</h3>
+  <p>The views a reviewer opens before any safety display: baseline characteristics by arm, discontinuations and their reasons, enrolment over time by site. Five platforms open on these and we ship none of them. Without them a reviewer cannot answer the standard first challenge to anything else we draw &mdash; is this a safety signal or a population difference.</p></div>
+
+<div class="card block"><span class="tag">platform &middot; regressed</span>
+  <h3>One filter and one selection, across charts</h3>
+  <p>Pick a participant in one chart and every open chart follows; set a filter once and it holds everywhere. Seven platforms do the first, five the second. The requirement that would have carried this closed on 15 August with the mechanism unbuilt, so this capability now has no issue at all &mdash; it went from filed to unfiled without anyone deciding to drop it. A searchable participant selector is filed in the chart library, but that is a component, not the mechanism.</p></div>
+
+<div class="card"><span class="tag">platform &middot; the survey&rsquo;s broadest finding</span>
+  <h3>What changed since <i>my</i> last review, per participant</h3>
+  <p>The app has change chips between snapshots at study and site level. What does not exist is the participant-level version, and the part that makes it a review tool rather than a diff: scoping it to when this reviewer last looked. It is inside the action-log requirement&rsquo;s scope, so this may be a design decision inside that rather than a sixth filing &mdash; worth saying which.</p></div>
+
+<div class="callout note"><div class="k">One piece of bookkeeping, while you are here</div>
+<p>The abnormal-baseline liver tooling requirement has all three of its sub-issues closed and is still open. It looks finished. Somebody should read it and close it rather than leave it counting against the quarter.</p></div>
+</section>
+
+<div class="cut"><span>WHAT A WEEKEND HOLDS</span></div>
+<section id="weekend">
+<h2>Two days, honestly</h2>
+<p>You said the weekend is busy, and the point of it is to watch clinical work go through this machine rather than to maximise output. So the question is not what fits &mdash; it is which single piece would actually test the thing you want tested.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>Work</th><th>Two days?</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>The R widget catch-up and its guard</td><td class="ok">Yes</td><td>A re-vendor, two new widget bindings, a build check, refreshed example data. Bounded, testable, ends in a release candidate.</td></tr>
+<tr><td>The demo pipeline fix</td><td class="ok">Yes</td><td>Hours rather than days, and everything else becomes demonstrable again.</td></tr>
+<tr><td>Taking Experimental off the survival chart</td><td class="ok">Yes, if you read it</td><td>The work is yours, not the machine&rsquo;s: six written decisions to accept or send back.</td></tr>
+<tr><td>The census rebuild</td><td class="warn">No &mdash; an arc</td><td>Thirteen metrics and a report on a clinical package, plus death records the demo study does not yet supply.</td></tr>
+<tr><td>The data-coverage chart</td><td class="warn">Design, then build</td><td>Its first design question has to be answered before anyone draws anything.</td></tr>
+<tr><td>The review layer</td><td class="bad">No</td><td>Seven open design questions, one of which is an architecture problem.</td></tr>
+<tr><td>Any of the five unfiled charts</td><td class="bad">No</td><td>They need requirements before they can be built.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="verdict">
+  <div class="k">Recommended experiment</div>
+  <p>The R widget catch-up. It is real clinical work &mdash; it changes what a liver chart shows in R output &mdash; it is already filed and scoped, and it exercises every part of the framework end to end in one pass: an isolated branch, tests written first, a clinical package, an evidence claim, a release candidate, and your review gate at the end of it. It also fixes a defect that is live right now, so a weekend spent on it is not a rehearsal. If it goes cleanly you have your answer about the framework from something that mattered; if it goes badly, it goes badly on work small enough to see why.</p>
+</div>
+
+<p>If you would rather watch a chart get built than a chart get fixed, the second choice is the data-coverage chart &mdash; but its first design question has to be answered on the Saturday, which makes it a design-then-build weekend and a weaker test of the build lane.</p>
+</section>
+
+<div class="cut"><span>CHARTS TO MAKE</span></div>
+<section id="charts">
+<h2>The charts, ranked by what they answer clinically</h2>
+<p>You asked directly, so this section is by clinical value rather than by how many competitors ship the thing. The count of platforms is in the survey and it is a weak signal on its own &mdash; every platform ships demographics tables, and that does not make them the most valuable thing we could build next.</p>
+
+<h3>Cheap, given what the library already has</h3>
+<ul>
+  <li><b>Mean change from baseline with confidence intervals.</b> Answers &ldquo;did the group move&rdquo;, which our quantile boxes cannot. Reuses the results-over-time data contract without changing it, so the cost is the drawing and the statistics language, not a new pipeline. Small. Unfiled.</li>
+  <li><b>Data coverage per visit.</b> Answers whether a quiet visit is reassuring or empty. The number already exists in the census work; the chart is the presentation. Small. Filed.</li>
+  <li><b>Graded abnormality shift.</b> Severity grading is how lab abnormalities are actually reviewed, and no renderer takes a grade column today &mdash; so this is a data-contract addition plus a variant of the shift plot we already draw. Small to medium. Unfiled, and the survey defers it to the internal atlas rather than proposing it.</li>
+</ul>
+
+<h3>Not cheap, and the highest clinical value</h3>
+<ul>
+  <li><b>Risk-difference screening across adverse-event terms.</b> The first question of any imbalance, and we cannot answer it. Needs a defensible statistical choice and language that says screening rather than inference. Medium. Unfiled.</li>
+  <li><b>One participant, every domain, one axis.</b> The question a liver signal always raises &mdash; what else was happening and what were they taking. Our event timeline is adverse-events-only and the participant profile is labs-only, and concomitant medications and medical history are the specific domains absent. The original chart suite shipped both and neither was in the migration set. Medium. Partly filed as an exposure track inside the liver explorer; the timeline itself is not.</li>
+  <li><b>The context set.</b> Demographics, disposition, enrolment. Medium. Unfiled.</li>
+</ul>
+
+<h3>Deliberately not, and worth writing down as such</h3>
+<ul>
+  <li><b>Tendril plots.</b> Low value, and the package we are putting back on CRAN is removing its tendril chart to get there.</li>
+  <li><b>Correlation heatmaps, scatter-plot matrices, response curves.</b> Biomarker and efficacy exploration rather than safety review.</li>
+  <li><b>Geographic site maps.</b> Striking in a demo and thin in use.</li>
+  <li><b>The data-integrity family.</b> Digit preference, duplicate subjects, implausible sequences. It is the largest single block we do not touch and it is arguably a different product &mdash; closer to the risk-indicator engine than to the chart library &mdash; and it is the one place where a badly worded display accuses a site of misconduct. Worth a scoping requirement, not a build.</li>
+</ul>
+</section>
+
+<div class="cut"><span>WHAT I NEED FROM YOU</span></div>
+<section id="questions">
+<h2>Five questions</h2>
+
+<div class="q">
+  <div class="qid">V1</div>
+  <h3>Is the framework good enough to push towards version 1.0, and does the push start this weekend?</h3>
+  <p>Three ways to go. Start the push now with clinical build work and fix the bookkeeping alongside it. Or harden first &mdash; finish the harness items on the current ten and start the push in September. Or push only once someone has written what 1.0 contains, which makes the definition the blocking task.</p>
+  <div class="rec"><b>Recommendation:</b> start now, with clinical build work, and treat the three bookkeeping items as the first hour rather than as a phase. The machine has shown it can do clinical work; what it has not had is a month of being pointed at it. Hardening first postpones the evidence you actually asked for.</div>
+</div>
+
+<div class="q">
+  <div class="qid">V2</div>
+  <h3>The refocused ten &mdash; accept this order, or change it?</h3>
+  <p>Ten items above, every one with an issue behind it, ordered so that the first four are things that are broken or signed-off rather than things that are new. Ranking is obot-prime&rsquo;s to do; this is a proposal it will act on.</p>
+  <div class="rec"><b>Recommendation:</b> accept the order, and keep the board-write failure and the commits-under-your-name item visible on the bench rather than dropping them &mdash; neither is a chart and both change what a week of clinical work is worth.</div>
+</div>
+
+<div class="q">
+  <div class="qid">V3</div>
+  <h3>Which single piece of clinical work is this weekend&rsquo;s experiment?</h3>
+  <p>The R widget catch-up, which fixes a chart that is wrong today. The data-coverage chart, which builds something new but needs a design answer first. Or the census rebuild, which is the largest and is signed off but will not finish in two days.</p>
+  <div class="rec"><b>Recommendation:</b> the R widget catch-up. It is the smallest piece of work that still runs the whole lane end to end and ends in something you can look at and judge.</div>
+</div>
+
+<div class="q">
+  <div class="qid">V4</div>
+  <h3>Which of the missing charts get filed as requirements now?</h3>
+  <p>Five have no issue anywhere: risk-difference screening, mean change with intervals, the context set, one filter and one selection across charts, and per-participant change since last review. Filing is cheap; ranking something unfiled is what goes wrong.</p>
+  <div class="rec"><b>Recommendation:</b> file the first three as chart requirements now and the fourth as a platform requirement, since it regressed from filed to unfiled without a decision. Hold the fifth &mdash; it belongs inside the review-layer design rather than beside it.</div>
+</div>
+
+<div class="q">
+  <div class="qid">V5</div>
+  <h3>Does the review layer become version 1.0 scope, or is it deferred in writing?</h3>
+  <p>Mark it reviewed, show me what changed, annotate a finding, track it to resolution. It is the survey&rsquo;s strongest finding and the difference between a chart library and a review tool. It is also a design problem with a real architectural conflict at the centre of it. Either it is in 1.0, or it is explicitly out and we say so before somebody asks in September.</p>
+  <div class="rec"><b>Recommendation:</b> a design pass this quarter, and out of 1.0 in writing. Attempting to build it before 1.0 will move the date; leaving it unsaid means the question arrives on stage. Deferring it on the record costs one paragraph.</div>
+</div>
+</section>
+
+<div class="cut"><span>HOW THIS WAS ESTABLISHED</span></div>
+<section id="method">
+<h2>What was read, and what is assumed</h2>
+<ul>
+  <li><b>Sources read directly.</b> All four pages of the 25 July platform survey including its frozen data file; the chart library&rsquo;s gallery configuration, source directory and published evidence pages; the R package&rsquo;s widget files, description and vendored library directory; the app&rsquo;s release notes, version and tags; the demo study&rsquo;s pipeline run history and the failing step; every open issue on the roadmap and on the chart library; every issue closed on the roadmap since 25 July; the goal registry and the ranked-head store.</li>
+  <li><b>The competitor half is not re-verified.</b> Everything this page says about other platforms comes from the July survey, which scored them from public documentation and tested nothing. Our own column is verified tonight; theirs is four weeks old and was never more than documented.</li>
+  <li><b>Row counts are a judgment, not a quantity.</b> Sixty-three capabilities is one analyst&rsquo;s split. &ldquo;Thirteen of thirty&rdquo; moves under a different one, which is why the recommendation does not rest on it.</li>
+  <li><b>Nothing was filed, ranked, closed or built.</b> No issue was created or edited, no ranking changed, no code touched. Every proposal on this page is a proposal.</li>
+  <li><b>The clinical share of August is measured by label.</b> Seven of the fifty-seven roadmap issues closed in August carry the safety label. Two clinical items closed in that window carry no safety label, so the true share is a little higher and the shape of the finding does not change.</li>
+</ul>
+</section>
+
+<div class="foot">
+  <p>Citations, for a deep dive rather than as explanation: the <a href="../../platform-gap-analysis-2026-07-25/">platform gap analysis</a> and its <a href="../../platform-gap-analysis-2026-07-25/proposals.html">twelve proposals</a>; the <a href="../2026-08-20-safety-census-rebuild/">census rebuild you approved</a>; the <a href="../2026-08-14-app-plan-rewrite/">app plan rewrite</a> whose third question was never answered; the <a href="../../ranked-head/">ranked head</a>. Roadmap issues named above, in order of appearance: <a href="https://github.com/jwildfire/obot.roadmap/issues/164">#164</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/274">#274</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/291">#291</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/153">#153</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/34">#34</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/182">#182</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/165">#165</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/139">#139</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/33">#33</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/176">#176</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/43">#43</a>.</p>
+  <p>Drafted by Claude Code using Opus 5, background worker <span class="mono">W0109</span>, 2026-08-21. Nothing on this page was filed; every proposal is a proposal.</p>
+</div>
+
+</div>
+</body>
+</html>
