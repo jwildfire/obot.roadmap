@@ -3,7 +3,7 @@
 **Status: Open** — C1–C3 (D0025.1–.3) awaiting @jwildfire. The headline is one approval:
 may the prepared safetyCharts release be submitted to CRAN.
 **Requirement:** [jwildfire/obot.roadmap#281](https://github.com/jwildfire/obot.roadmap/issues/281) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
-**Q&A:** [#292](https://github.com/jwildfire/obot.roadmap/discussions/292)
+**Q&A:** [#293](https://github.com/jwildfire/obot.roadmap/discussions/293)
 
 ## What produced this
 
