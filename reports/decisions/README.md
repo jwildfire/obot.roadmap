@@ -42,18 +42,38 @@ PRs, and these.
   premise gets one line beside the description:
 
   ```html
-  <meta name="premise" content="gsm.safety v1.1.0 is published, not a draft | gh release view v1.1.0 -R jwildfire/gsm.safety --json isDraft --jq .isDraft → prints false">
+  <meta name="premise" scope="live" content="SafetyCensus() is still exported, which is what makes &quot;it is public API today&quot; true | gh api … → prints true">
+  <meta name="premise" scope="history" content="gsm.safety v1.1.0 is published, not a draft | gh release view v1.1.0 -R jwildfire/gsm.safety --json isDraft --jq .isDraft → prints false">
   ```
 
   The sentence before the `|` is the assumption in plain words; after it is a read-only
   command and what its output should say — the same `Verify:` grammar the config list
   uses, so an author who has written one has written the other. Write several when the
-  page rests on several. The Navigator's five-minute sweep re-checks every one of them
-  while the artifact is still awaiting him and says when one has expired, before he
-  reads the page rather than after
+  page rests on several. The Navigator's five-minute sweep re-checks them and says when
+  one has expired, before he reads the page rather than after
   ([obot.agent#262](https://github.com/jwildfire/obot.agent/issues/262)).
 
-  Three rules, all of them the reason it is worth doing:
+  `scope` says which kind of claim it is, and it decides whether the premise keeps being
+  re-checked after the page settles:
+
+  - `scope="live"` — a claim about the present. Re-checked forever, whatever state the
+    artifact is in.
+  - `scope="history"` — what was true when the decision was made. Measured once at
+    publish time and deliberately never again.
+  - Nothing declared — the artifact's state supplies the default: re-checked while the
+    page is still awaiting him, and once it is decided or closed, *undeclared* — not
+    re-checked, and named in the sweep with its id so that cannot pass for coverage.
+
+  Write it. A decided page can still claim something about today — D0020 says goal #73's
+  rename is approved and *not yet applied*, which is true until somebody applies it — and
+  before 21 August the sweep skipped every decided artifact and nothing was looking
+  ([obot.agent#302](https://github.com/jwildfire/obot.agent/issues/302)).
+
+  Five rules, all of them the reason it is worth doing:
+  - **Say which kind it is.** An author writing a premise knows whether it is about the
+    present or about what was true on the day; a checker reading the sentence would be
+    guessing, and would be wrong in both directions. A `scope` that is neither word is
+    refused rather than defaulted, and reported.
   - The command must be **read-only** and must not need a shell. A check that mutates
     is not a check, and anything the allowlist does not recognise is reported as
     unchecked rather than run — never as a premise that holds.
@@ -76,7 +96,10 @@ PRs, and these.
   obot.agent/tools/navigator/currency.mjs --artifact 2026-08-16-your-slug
   ```
 
-  It exits non-zero on a premise that does not hold. A premise can be born false as
+  It answers for every premise the page declares — both scopes, and whatever state the
+  artifact is in — and exits non-zero on one that does not hold. Publish time is the
+  only time a `history` premise is ever measured, and it is where a `live` premise added
+  to an already-decided page gets its chance to reach green. A premise can be born false as
   easily as it can expire — it is written by whoever wrote the framing, out of the same
   understanding, so a wrong framing produces a premise that encodes the same wrong thing
   and then reports it every five minutes forever with no path to green. That gate is the
