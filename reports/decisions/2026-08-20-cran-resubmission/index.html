@@ -9,6 +9,8 @@
 <meta name="premise" content="the requirement this work sits under is still open | gh issue view 281 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
 <meta name="premise" content="the person outside the program who asked for this is still waiting, with no reply of any kind on their request | gh api repos/SafetyGraphics/safetyGraphics/issues/728 --jq .comments → prints 0">
 <meta name="premise" content="the checked file that would be uploaded to CRAN is still on this laptop | ls .claude/session-notes/2026-08-20-cran-patches/safetyCharts_0.5.0.tar.gz → prints .claude/session-notes/2026-08-20-cran-patches/safetyCharts_0.5.0.tar.gz">
+<meta name="premise" content="the prepared safetyCharts work is still on this laptop only, because the branch has never been pushed | git --git-dir=safetyCharts/.git branch -r --contains remove-tendril → not origin/">
+<meta name="premise" content="the prepared safetyGraphics work is still on this laptop only, for the same reason | git --git-dir=safetyGraphics/.git branch -r --contains remove-tendril → not origin/">
 <meta name="decision-id" content="D0025">
 <style>
 /* obot shared stylesheet — the decision-artifact reading language, in one place.
@@ -383,6 +385,8 @@ td b { font-weight:650; }
 
 <p>safetyGraphics and safetyCharts were both removed from CRAN on 25 March, because a charting package one of them depended on was removed the same day and CRAN takes down whatever is standing on top of it. That dependency is now gone, both packages have been fixed and checked and independently audited, and the exact files that would be uploaded are built and sitting on this laptop. All that is left is the submission itself — safetyCharts now, and safetyGraphics only once safetyCharts has been accepted — through a web form on CRAN's site, fed from two repositories our agents are forbidden to write to, so the act is yours, and asking you for it is the entire purpose of this page.</p>
 
+<p>One thing is not in the way. You are the named maintainer of both packages — your own address is in each package’s metadata, which is why CRAN’s check prints it back — so nothing here waits on anyone else’s permission, at CRAN or in the organisation the repositories sit under. The only reason an agent cannot do this for you is our own rule against writing outside your account, not a gate somebody else is holding.</p>
+
 <p>You described this shape yourself tonight, before this page existed:</p>
 
 <blockquote>“Around the safety graphics resubmission stuff, we need to figure out how you get stuff like that added to the queue. I think probably, like, it's not a release in one of our packages, so it probably belongs in a decision artifact where you're just summarizing what was done and asking for approval to do the next step outside of... like, it's basically just a nonstandard action. Right? So you're asking for approval for a nonstandard action, which I think is fine.”</blockquote>
@@ -418,13 +422,13 @@ td b { font-weight:650; }
 
 <h3>And the finished work was attacked before it was handed over</h3>
 
-<p>Five agents went at the branches and the write-up with an independent judging pass. It raised forty-nine items and confirmed eight real defects, including one behaviour change that had been introduced by accident and two false statements in the write-up itself. All eight are fixed, and they are listed on the hand-off rather than quietly folded in.</p>
+<p>Five agents went at the branches and the write-up with an independent judging pass. It raised forty-nine items and confirmed eight real defects, including one behaviour change that had been introduced by accident and two false statements in files the packages would have shipped — the release notes CRAN prints on the package page, and the comment file that gets pasted into the submission form in your name. All eight are fixed, and they are listed on the hand-off rather than quietly folded in.</p>
 
 <div class="callout"><div class="k">Something both packages were about to tell CRAN, untrue for years</div>
 <p>Each repository shipped a file, byte-identical in both, stating “there were no ERRORs, WARNINGs or NOTEs” from a version of R that is four years stale and three test machines that no longer exist. That file is what gets pasted into CRAN's comment box, in your name as maintainer. Both have been replaced with what the checks actually say.</p></div>
 
 <div class="callout good"><div class="k">The chart is not deleted</div>
-<p>The function is still there, still exported and still documented. Calling it raises an error that names the reason, the date, and how to draw the chart yourself from the archived package. The last working version stays in the repository's history under its release tag. Nothing was deleted, in either package.</p></div>
+<p>The function is still there, still exported and still documented. Calling it raises an error that names the reason, the date, and how to draw the chart yourself from the archived package. The last working version stays in the repository's history under its release tag. One file was removed — the chart's configuration entry — and removing it is what takes the Tendril Plot out of the application's chart list. Nothing else was deleted in either package.</p></div>
 </section>
 
 <div class="cut"><span>WHERE THE WORK LIVES</span></div>
@@ -534,7 +538,7 @@ td b { font-weight:650; }
 <tr><td><b>safetyGraphics version</b></td><td>2.2.0</td><td>2.1.2. The unreleased work is features rather than fixes, so a minor bump is the honest description of it</td></tr>
 <tr><td><b>The optional patient-profile tab</b></td><td>The package it needs is dropped from the declared list; the tab still works for anyone who installs that package from GitHub</td><td>Declaring it through an additional repository, which needs a live repository address that does not exist yet</td></tr>
 <tr><td><b>Example code in the help pages</b></td><td>Runs on twenty subjects rather than the full dataset</td><td>The full data, which put two examples at 3.7 and 4.1 seconds against CRAN's five-second limit, on hardware faster than CRAN's</td></tr>
-<tr><td><b>What ships inside the tarball</b></td><td>The rendered documentation site and a development scratch folder are excluded from the build, taking it from 1.55 MB to 539 KB</td><td>Shipping them, as the 2022 version did. Nothing is deleted — they are excluded from the build only</td></tr>
+<tr><td><b>What ships inside the tarball</b></td><td>The rendered documentation site and a development scratch folder are excluded from the build, taking it from 1.55 MB to 539 KB</td><td>Shipping the scratch folder, as the 2022 version did. The documentation site never shipped to CRAN at all — it entered the repository a month after that release and had simply never been excluded from the build. Nothing is deleted; both are excluded from the build only</td></tr>
 </tbody>
 </table>
 </div>
@@ -593,15 +597,16 @@ td b { font-weight:650; }
 <ol>
 <li>Push the prepared branch in each repository. This is the step that makes the work safe regardless of everything below it.</li>
 <li>Take the “(Upcoming)” marker off the release-notes heading in whichever package you are about to send. CRAN renders that file on the package's own page.</li>
+<li>Rebuild the tarball. The previous step changed the branch, so the file already on disk is no longer the package — it was built before that edit and still carries the marker you just removed. Everything below uses the rebuilt one.</li>
 <li>Run the development-version check on the exact tarball you intend to upload, and wait for the email.</li>
 <li>Upload safetyCharts alone, pasting the prepared comment into the form's optional comment box with the check result filled in.</li>
 <li>Accept the confirmation email. Nothing moves until you click it.</li>
 <li>Wait for acceptance — not for the automated pretest. Then fill in the two blanks in the safetyGraphics comment file, delete its do-not-submit banner, and repeat from step two.</li>
 </ol>
 
-<p>If you change anything on either branch, rebuild the tarball before sending it. CRAN asks for the check to have been run on the file you actually upload, and that is the whole reason the rule exists.</p>
+<p>The same applies to any other change you make: CRAN asks for the check to have been run on the file you actually upload, and that is the whole reason the rule exists.</p>
 
-<p>Everything named here is already on disk, and the tarballs were verified to be builds of the branch tips rather than assumed to be:</p>
+<p>Everything named here is already on disk, and the tarballs were verified to be builds of the branch tips as they stand tonight rather than assumed to be — which is exactly why the rebuild above is a step rather than a caveat:</p>
 
 <div class="pre">~/Documents/obot2/safetyCharts                     branch remove-tendril
 ~/Documents/obot2/safetyGraphics                   branch remove-tendril
