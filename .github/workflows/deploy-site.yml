@@ -495,7 +495,13 @@ jobs:
           # An `if` rather than a trailing `&&`: a bare `cmd && { ... }` whose grep finds
           # nothing evaluates to status 1, and that is the last statement of the list, so
           # under `bash -e` the good case would abort the step.
-          if grep -q -- '--side-bg' _site/assets/styles.css; then
+          # A DECLARATION, not a reference. `--side-bg` appears five times in styles.css
+          # as `var(--side-bg)` — the rules that use the token still live here, only the
+          # palette moved — so a grep for the bare name matched every one of them and
+          # failed the first deploy after this check landed. The colon is the difference
+          # between "uses the shared token", which is the goal, and "declares its own",
+          # which is the drift.
+          if grep -qE -- '--side-bg[[:space:]]*:' _site/assets/styles.css; then
             echo "::error title=Palette reintroduced::_site/assets/styles.css declares the espresso palette again — it belongs to assets/obot-keynote.css"
             fail=1
           fi
