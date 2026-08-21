@@ -68,4 +68,4 @@ Also read directly rather than inferred:
 
 ---
 
-Drafted by 👯🤖 Claude Code (Claude Opus 5, worker W0085). Not reviewed by @jwildfire.
+Drafted by 👯🤖 Claude Code (Claude Opus 5, worker W0085). Not reviewed by @jwildfire before publication — he answered it on 2026-08-20 after listening to the audio episode, and his answer is recorded above. His decision was recorded here by 👯🤖 Claude Code (Claude Opus 5, worker W0096), the same evening.
