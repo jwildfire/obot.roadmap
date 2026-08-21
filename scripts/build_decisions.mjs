@@ -119,7 +119,7 @@ const landing = (log) => {
     if (a.closedInto) return a.closedInto.id ? `closed · ${a.closedInto.via ?? 'superseded'} by ${a.closedInto.id}` : 'closed';
     return 'decided';
   };
-  const card = (a) => `<a class="card" href="${esc(a.slug)}/">
+  const card = (a) => `<a class="da-card" href="${esc(a.slug)}/">
   <span class="k">${esc(a.date)}${a.id ? ` · ${esc(a.id)}` : ''} · ${esc(state(a))}</span>
   <h3>${esc(a.title)}</h3>
   <p>${esc(a.statusPlain)}</p>
@@ -150,31 +150,37 @@ const landing = (log) => {
           --line:var(--rule); --accent:var(--blue); --good:var(--go);
           --serif:var(--display); --sans:var(--body); }
   body { font-family:var(--sans); line-height:1.55; margin:0; padding:3rem 1.25rem 4.5rem; }
-  .wrap { max-width:940px; margin:0 auto; }
+  /* Prefixed on 2026-08-21. This page adopted the shared document sheet, which owns
+     components called .wrap, .card and .lede — and this page's rules overrode only
+     some of their properties, so .wrap's 24px padding, .card's 22px top margin and
+     .lede's font-size came through on the deployed page. Adopting a sheet with
+     generic component names means the classes a page owns must not be classes the
+     sheet owns. */
+  .da-wrap { max-width:940px; margin:0 auto; }
   a { color:var(--accent); }
   h1 { font-family:var(--serif); font-weight:400; font-size:clamp(2rem,4.5vw,2.6rem); margin:0 0 0.8rem; }
   h2 { font-family:var(--serif); font-weight:400; font-size:1.5rem; margin:2.4rem 0 0.8rem; }
-  .lede { color:var(--muted); max-width:70ch; }
-  .grid { display:grid; gap:0.8rem; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
-  .card { display:block; border:1px solid var(--line); border-radius:12px; background:var(--card);
-          padding:1rem 1.1rem; text-decoration:none; color:inherit; }
-  .card:hover { border-color:var(--accent); }
-  .card .k { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--accent); }
-  .card h3 { font-family:var(--serif); font-weight:400; font-size:1.2rem; margin:0.3rem 0 0.35rem; }
-  .card p { margin:0; font-size:0.85rem; color:var(--muted); }
+  .da-lede { color:var(--muted); max-width:70ch; }
+  .da-grid { display:grid; gap:0.8rem; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+  .da-card { display:block; border:1px solid var(--line); border-radius:12px; background:var(--card);
+             padding:1rem 1.1rem; text-decoration:none; color:inherit; }
+  .da-card:hover { border-color:var(--accent); }
+  .da-card .k { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--accent); }
+  .da-card h3 { font-family:var(--serif); font-weight:400; font-size:1.2rem; margin:0.3rem 0 0.35rem; }
+  .da-card p { margin:0; font-size:0.85rem; color:var(--muted); }
   footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line); font-family:var(--mono); font-size:0.75rem; color:var(--faint); }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="da-wrap">
 <h1>Decision artifacts</h1>
-<p class="lede">When an autonomous session hits a call it cannot make, it writes one of these and moves on. @jwildfire reviews exactly two kinds of thing: release candidates, and these. <a href="../../decisions/">The Decisions log</a> lists what he has already answered, in his words.</p>
+<p class="da-lede">When an autonomous session hits a call it cannot make, it writes one of these and moves on. @jwildfire reviews exactly two kinds of thing: release candidates, and these. <a href="../../decisions/">The Decisions log</a> lists what he has already answered, in his words.</p>
 
 <h2>Waiting on you <span class="k">${open.length}</span></h2>
-<div class="grid">${open.length ? open.map(card).join('\n') : '<p class="lede">Nothing open.</p>'}</div>
+<div class="da-grid">${open.length ? open.map(card).join('\n') : '<p class="da-lede">Nothing open.</p>'}</div>
 
 <h2>Answered or closed <span class="k">${done.length}</span></h2>
-<div class="grid">${done.map(card).join('\n')}</div>
+<div class="da-grid">${done.map(card).join('\n')}</div>
 
 <footer>Generated at deploy time from the artifacts and <a href="https://github.com/${HUB}/blob/main/reports/decisions/README.md">the index</a> — never hand-maintained. ${esc(fmtET(new Date()))}</footer>
 </div>
