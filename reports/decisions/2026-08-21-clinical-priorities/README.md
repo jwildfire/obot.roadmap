@@ -40,6 +40,12 @@ The laptop migration is off for the weekend on his word, and is not ranked here.
 3. The clinical share of August is measured by the `safety` label: 7 of the 57 roadmap issues closed in August carry it. Two clinical items in that window carry no label, so the true share is slightly higher.
 4. Nothing was filed, ranked, closed, merged or built. No issue created or edited, no ranking changed, no code touched in any repo. The ranking itself is obot-prime's call; this page proposes.
 
+## Open tail
+
+- ~~This artifact needs an episode~~ — recorded 2026-08-21 by `W0111`, per [#280](https://github.com/jwildfire/obot.roadmap/issues/280): "Decision: clinical priorities", 6.5 minutes, on the private show. It is derived from this page as it stands at commit `b2760e2`, so a reworded page puts the decision back to owing a fresh episode that opens with the correction he can hear.
+- The episode carries one thing this page does not say, found by checking rather than by reading: the R widget catch-up it recommends for the weekend is not work waiting to start. [gsm.safety#51](https://github.com/jwildfire/gsm.safety/pull/51) has been open since 2026-08-15 with the two widgets, the re-vendored bundle and the parity guard in it; the release candidate it was held for ([gsm.safety#52](https://github.com/jwildfire/gsm.safety/pull/52)) merged on 2026-08-17, and nothing has moved since. The branch now conflicts with `dev`, and its own parity check is red because safety.viz v1.7.0 published four hours after that PR was last checked green. Question three therefore has a fork inside it: land at v1.6.0 and file the v1.7.0 catch-up ([#165](https://github.com/jwildfire/obot.roadmap/issues/165)) separately, or take the branch to v1.7.0 and wrap the survival widget first.
+- Question four, and item six of the ten, turn on clinical judgement rather than engineering judgement. The episode says so out loud rather than letting a recommendation imply the call is ours.
+
 ---
 
-Drafted by Claude Code using Opus 5, background worker `W0109`.
+Drafted by Claude Code using Opus 5, background worker `W0109`. Open tail added 2026-08-21 by background worker `W0111`, which recorded the episode.
