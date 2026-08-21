@@ -133,17 +133,23 @@ const landing = (log) => {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Decision artifacts</title>
 <meta name="description" content="Every decision artifact in the obot portfolio — the ones still waiting on @jwildfire first, then the ones he has answered, each with what it is about and where it stands.">
+<link rel="stylesheet" href="../../assets/obot.css">
 <style>
-  :root { --paper:#F4F1EC; --card:#FDFCFA; --ink:#26211B; --muted:#6F6558; --faint:#9C917F;
-          --line:#E2DACC; --accent:#B4470E; --good:#2F6B4F;
-          --serif:"Instrument Serif","Iowan Old Style",Georgia,serif;
-          --sans:"Instrument Sans","Avenir Next","Segoe UI",system-ui,sans-serif;
-          --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --paper:#1A1611; --card:#232019; --ink:#EAE4D8; --muted:#A69B89; --faint:#7E7462;
-    --line:#383126; --accent:#E8843C; --good:#7FBF9B; } }
-  * { box-sizing:border-box; }
-  body { background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.55; margin:0; padding:3rem 1.25rem 4.5rem; }
+  /* The palette and the base are the shared document sheet's now — the one the decision
+     artifacts themselves are written in (jwildfire/obot.roadmap#294 under #289).
+     @jwildfire, 2026-08-20: "match the css of the decision docs." This page is the cover
+     of that set, so it should be in their language rather than in a third one.
+
+     What was here also had a broken theme contract: the media block was guarded, but the
+     palette was never stated under [data-theme="dark"], so an explicit toggle to dark in a
+     light system did nothing at all. The shared sheet states it three times.
+
+     What is left below is this page's own names pointed at that sheet's tokens, and the
+     layout, which the sheet deliberately does not carry. */
+  :root { --card:var(--panel); --muted:var(--ink2); --faint:var(--mute);
+          --line:var(--rule); --accent:var(--blue); --good:var(--go);
+          --serif:var(--display); --sans:var(--body); }
+  body { font-family:var(--sans); line-height:1.55; margin:0; padding:3rem 1.25rem 4.5rem; }
   .wrap { max-width:940px; margin:0 auto; }
   a { color:var(--accent); }
   h1 { font-family:var(--serif); font-weight:400; font-size:clamp(2rem,4.5vw,2.6rem); margin:0 0 0.8rem; }

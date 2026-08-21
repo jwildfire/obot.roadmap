@@ -160,21 +160,16 @@ export async function render(data) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>obot briefing</title>
 <meta name="description" content="What is waiting on @jwildfire right now, in ten lines he can act on from a phone: release candidates, open decisions, and a count of everything else still queued.">
+<link rel="stylesheet" href="../../assets/obot.css">
 <style>
-  :root {
-    --paper: #FBF9F4; --ink: #1B1A17; --faint: #6E6A61; --rule: #E2DDD1;
-    --card: #FFFFFF; --flag: #C4622D; --link: #1F4E6B;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --paper: #16150F; --ink: #F1EDE2; --faint: #9C968A; --rule: #322F27;
-      --card: #1E1C16; --flag: #E08A52; --link: #7FB4D4;
-    }
-  }
-  :root[data-theme="dark"] {
-    --paper: #16150F; --ink: #F1EDE2; --faint: #9C968A; --rule: #322F27;
-    --card: #1E1C16; --flag: #E08A52; --link: #7FB4D4;
-  }
+  /* The palette, the type and the three theme states are the shared document sheet's
+     now (jwildfire/obot.roadmap#294 under #289). This page had its own fourth palette;
+     it was the only one of the four that already stated the palette three times, so
+     nothing is gained by keeping it and a copy is lost by not.
+
+     What is left is this page's own names pointed at that sheet's tokens, and the
+     layout, which the sheet deliberately does not carry. */
+  :root { --faint: var(--mute); --card: var(--panel); --link: var(--blue); }
   /* On html only. On body it would clip the full-bleed bands, and page overflow
      here is not recoverable by scrolling: whatever runs past the viewport is
      simply gone, which on a phone once ate four of seven columns. */
