@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The ranked head — the next ten and the bench</title>
+<meta name="description" content="The ten requirements ranked next and the eleven waiting behind them, each with the one line saying why it sits there — and a player that replays every re-rank of the single day the order has existed.">
+<style>
+/* obot shared stylesheet — the decision-artifact reading language, in one place.
+ *
+ * Requirement jwildfire/obot.agent#15. @jwildfire, 2026-08-20: "match the css of the
+ * decision docs. Prioritize creating a shared style sheet for the project."
+ *
+ * ## What this is, measured rather than remembered
+ *
+ * Seventeen of the twenty-four decision artifacts under obot.roadmap/reports/decisions
+ * carry the same eleven colours, the same three font stacks, and the same component
+ * vocabulary — byte-identical values, in seventeen separate <style> blocks. That is not
+ * a house style anybody wrote down; it is a paste that happened seventeen times. This
+ * file is that paste, written once. Every value below was read off those pages, and
+ * tools/ops-dashboard/test/shared-css.test.mjs reads them off again on every run, so
+ * the sheet cannot drift from the pages it was extracted from without going red.
+ *
+ * Two things the pages did NOT have, added here deliberately:
+ *
+ *   - A dark theme. Zero of the seventeen answer prefers-color-scheme, so every one of
+ *     them is a white page on a phone at midnight — and he reads them on a phone. The
+ *     palette below is stated three times, per the program's theme contract: the full
+ *     light palette on bare :root, the dark palette under the media query guarded so an
+ *     explicit light choice still wins, and the same dark palette again under
+ *     [data-theme="dark"] so a toggle wins in both directions. No colour is defined only
+ *     inside a theme block.
+ *   - Tokens for the colours the pages hard-coded. #f2eee3 behind inline code, #f4f8f4
+ *     behind a recommendation, rgba(47,111,168,.32) under a link: each was a literal on
+ *     ten to seventeen pages, and a literal is a colour the dark theme cannot reach.
+ *
+ * ## What this is NOT
+ *
+ * This is the *document* language — the one @jwildfire reads decisions and reports in,
+ * and now the one the operations dashboard is dressed in. The program also has an
+ * espresso *keynote* language (paper #faf6f1, espresso #271810, Instrument Serif) that
+ * dresses the public sites: obot.roadmap/site/assets/styles.css, safety.viz/site/site.css
+ * sections 1-4, open.gismo/site/src/style.css. Those are four copies of a second theme
+ * and they still have no shared home. See docs/shared-stylesheet.md.
+ *
+ * ## Consuming it
+ *
+ * Inline it. `import { OBOT_CSS } from '<obot.agent>/assets/obot-css.mjs'` and drop it in
+ * a <style> block. Decision artifacts and config cards are self-contained single files by
+ * contract, so a <link> would break them; a surface that is genuinely multi-page can link
+ * the file instead. Either way the bytes come from here — a consumer that copies them has
+ * re-made the problem, and the greppable string "obot shared stylesheet" is how you find
+ * one that did.
+ *
+ * Layout is the consumer's. This sheet carries palette, type, and the components below;
+ * it sets no grid, no fixed positioning, and no page chrome.
+ */
+
+/* ── Palette ──────────────────────────────────────────────────────────────────
+   The eleven colours, byte for byte off the seventeen pages, plus the surfaces
+   they hard-coded and a terminal ink that four of them invented. */
+:root {
+  --paper:#faf7f0;      /* page ground */
+  --panel:#fffdf9;      /* anything raised off the page: card, callout, table */
+  --ink:#17191c;        /* body text and headings */
+  --ink2:#454a51;       /* secondary text — ledes, card bodies, quotes */
+  --mute:#7b8089;       /* labels, eyebrows, footers: present but not read first */
+  --rule:#e2dccf;       /* hairline */
+  --rule2:#c8bfa9;      /* the heavier rule, for edges that mean something */
+  --blue:#2f6fa8;       /* links, and the primary accent */
+  --bronze:#a95d10;     /* attention without alarm: notes, tags, section marks */
+  --flag:#b83a2e;       /* the thing that is wrong */
+  --go:#2b7a4b;         /* the thing that is settled, passing, or recommended */
+
+  /* Surfaces the pages wrote as literals. */
+  --code-bg:#f2eee3;    /* was #f2eee3 on 13 pages */
+  --pre-bg:#f7f4ec;     /* was #f7f4ec on 6 */
+  --go-soft:#f4f8f4;    /* was #f4f8f4 behind .rec on 10 */
+  --blue-soft:#eef3f8;
+  --bronze-soft:#f8efe3;
+  --flag-soft:#f6ede5;  /* was rgba(184,58,46,.055) over --paper */
+  --link-rule:#b9cbd9;  /* was rgba(47,111,168,.32) on all 17 */
+
+  /* The console block: a real terminal, quoted. Dark in both themes on purpose —
+     it is a picture of a screen, not a surface of this page. */
+  --term-bg:#1c1e22;
+  --term-ink:#e6e3dc;
+  --term-go:#8fd39a;
+  --term-flag:#f2857a;
+  --term-bronze:#e0b070;
+
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+
+  --measure:72ch;       /* prose */
+  --measure-wide:76ch;  /* lists, footers */
+  --measure-lede:68ch;
+  --wrap:960px;
+
+  --radius-sm:3px;
+  --radius:6px;
+  --radius-md:5px;
+}
+
+/* The system's dark theme, unless the reader has explicitly asked for light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#141517;
+    --panel:#1c1e21;
+    --ink:#eceae5;
+    --ink2:#bfc3c9;
+    --mute:#8b9099;
+    --rule:#2b2e33;
+    --rule2:#454a52;
+    --blue:#7fb2e3;
+    --bronze:#dd9a4d;
+    --flag:#f0857b;
+    --go:#79c495;
+    --code-bg:#24272b;
+    --pre-bg:#1e2124;
+    --go-soft:#1c2a22;
+    --blue-soft:#1a232c;
+    --bronze-soft:#2c2317;
+    --flag-soft:#2e1e1c;
+    --link-rule:#3d5266;
+    --term-bg:#0f1113;
+    --term-ink:#e6e3dc;
+    --term-go:#8fd39a;
+    --term-flag:#f2857a;
+    --term-bronze:#e0b070;
+  }
+}
+
+/* An explicit dark choice, which must win even in a light system. Same values as
+   above; the test asserts the two blocks stay identical, because a toggle that
+   renders a third theme is a theme nobody designed. */
+:root[data-theme="dark"] {
+  --paper:#141517;
+  --panel:#1c1e21;
+  --ink:#eceae5;
+  --ink2:#bfc3c9;
+  --mute:#8b9099;
+  --rule:#2b2e33;
+  --rule2:#454a52;
+  --blue:#7fb2e3;
+  --bronze:#dd9a4d;
+  --flag:#f0857b;
+  --go:#79c495;
+  --code-bg:#24272b;
+  --pre-bg:#1e2124;
+  --go-soft:#1c2a22;
+  --blue-soft:#1a232c;
+  --bronze-soft:#2c2317;
+  --flag-soft:#2e1e1c;
+  --link-rule:#3d5266;
+  --term-bg:#0f1113;
+  --term-ink:#e6e3dc;
+  --term-go:#8fd39a;
+  --term-flag:#f2857a;
+  --term-bronze:#e0b070;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+* { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body {
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap { max-width:var(--wrap); margin:0 auto; padding:0 24px; }
+
+a { color:var(--blue); text-decoration:none; border-bottom:1px solid var(--link-rule); }
+a:hover { border-bottom-color:var(--blue); }
+
+h1, h2, h3 { font-family:var(--display); font-weight:700; letter-spacing:-.018em; line-height:1.15; margin:0; }
+h1 { font-size:clamp(28px,4.6vw,42px); margin:14px 0 0; }
+h2 { font-size:clamp(21px,2.8vw,27px); margin-top:4px; }
+h3 { font-size:16.5px; margin:30px 0 0; }
+
+p { max-width:var(--measure); }
+ul, ol { max-width:var(--measure-wide); padding-left:22px; }
+li { margin:7px 0; }
+
+code, .mono { font-family:var(--mono); }
+code {
+  background:var(--code-bg);
+  border:1px solid var(--rule);
+  border-radius:var(--radius-sm);
+  padding:1px 5px;
+  font-size:13.5px;
+  overflow-wrap:anywhere;
+}
+
+blockquote {
+  margin:18px 0 0;
+  padding:12px 18px;
+  border-left:3px solid var(--rule2);
+  color:var(--ink2);
+  max-width:70ch;
+  font-size:15.5px;
+}
+
+section { padding-top:24px; }
+
+/* ── Masthead ─────────────────────────────────────────────────────────────── */
+.mast { padding:56px 0 26px; }
+.eyebrow {
+  font:600 11px/1 var(--mono);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--mute);
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+.eyebrow .dot { width:4px; height:4px; border-radius:50%; background:var(--rule2); }
+.lede { max-width:var(--measure-lede); margin:16px 0 0; font-size:17.5px; color:var(--ink2); }
+.facts {
+  display:flex; flex-wrap:wrap; gap:6px 22px; margin:22px 0 0;
+  font:500 12.5px/1.5 var(--mono); color:var(--mute);
+}
+.facts b { color:var(--ink2); font-weight:600; }
+
+/* The section mark: a dashed rule with a word sitting on it. */
+.cut { position:relative; margin:56px 0 0; height:0; border-top:1px dashed var(--rule2); }
+.cut span {
+  position:absolute; top:-9px; left:0;
+  background:var(--paper); padding-right:14px;
+  font:600 12px/1 var(--mono); color:var(--bronze); letter-spacing:.06em;
+}
+
+/* ── Components ───────────────────────────────────────────────────────────────
+   Four boxes, and they are not interchangeable:
+     .verdict  what was concluded. One per page, near the end.
+     .callout  something the reader must not miss on the way past.
+     .card     one item in a set — an option, a finding, a piece of work.
+     .q        a question being put to the reader, with a recommendation.
+   The decisions README currently tells authors to paste a .callout and notes that
+   pages call the same box .callout, .card or .verdict. They are three components;
+   this is where the difference is written down. */
+
+.verdict {
+  margin:26px 0 0;
+  border:1px solid var(--rule2); border-left:4px solid var(--go);
+  border-radius:var(--radius-md); background:var(--panel);
+  padding:20px 22px;
+}
+.verdict .k { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--go); }
+.verdict p { margin:10px 0 0; font-size:16.5px; }
+
+.callout {
+  margin:22px 0 0;
+  border:1px solid var(--rule2); border-left:4px solid var(--flag);
+  border-radius:var(--radius); background:var(--panel);
+  padding:16px 18px; max-width:100%;
+}
+.callout .k { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--flag); }
+.callout p { margin:8px 0 0; }
+.callout.good { border-left-color:var(--go); }
+.callout.good .k { color:var(--go); }
+.callout.note { border-left-color:var(--bronze); }
+.callout.note .k { color:var(--bronze); }
+
+.card {
+  margin:22px 0 0;
+  border:1px solid var(--rule); border-radius:var(--radius);
+  background:var(--panel); padding:18px 20px;
+}
+.card .tag { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--bronze); }
+.card.block .tag { color:var(--flag); }
+.card.done .tag { color:var(--go); }
+.card h3 { margin-top:8px; }
+.card p { margin:8px 0 0; font-size:15.5px; }
+.card ul { margin:10px 0 0; font-size:15.5px; }
+
+.q {
+  margin:26px 0 0;
+  border:1px solid var(--rule2); border-radius:var(--radius);
+  background:var(--panel); padding:18px 22px;
+}
+.q .qid { font:600 12px/1 var(--mono); color:var(--bronze); letter-spacing:.06em; }
+.q h3 { margin-top:6px; }
+.q .rec { margin:12px 0 0; padding:10px 14px; border-left:3px solid var(--go); background:var(--go-soft); font-size:15px; }
+.q .rec b { color:var(--go); }
+
+/* ── Tables ───────────────────────────────────────────────────────────────────
+   .tbl is not optional. A table wide enough to be worth having is wider than a
+   phone, and without its own scroller it takes the whole page sideways. */
+.tbl { overflow-x:auto; margin:20px 0 0; -webkit-overflow-scrolling:touch; }
+table { border-collapse:collapse; width:100%; min-width:560px; font-size:14.5px; background:var(--panel); }
+th { font:600 11px/1.4 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--mute); text-align:left; }
+th, td { border:1px solid var(--rule); padding:9px 12px; vertical-align:top; }
+td b { font-weight:650; }
+
+/* Verdict words, wherever they appear. */
+.ok { color:var(--go); font-weight:650; }
+.bad { color:var(--flag); font-weight:650; }
+.warn { color:var(--bronze); font-weight:650; }
+
+/* ── Quoted output ────────────────────────────────────────────────────────── */
+.pre {
+  margin:16px 0 0; padding:14px 16px;
+  border:1px solid var(--rule); border-radius:var(--radius-md);
+  background:var(--pre-bg); color:var(--ink2);
+  font:13px/1.6 var(--mono);
+  overflow-x:auto; white-space:pre;
+}
+.term {
+  margin:16px 0 0; padding:16px 18px;
+  border-radius:var(--radius); background:var(--term-bg); color:var(--term-ink);
+  font:13px/1.55 var(--mono);
+  overflow-x:auto; white-space:pre; max-width:100%;
+}
+.term .ok { color:var(--term-go); }
+.term .bad { color:var(--term-flag); }
+.term .warn { color:var(--term-bronze); }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.foot {
+  margin:64px 0 0; padding:22px 0 46px;
+  border-top:1px solid var(--rule);
+  color:var(--mute); font-size:13.5px;
+}
+.foot p { max-width:var(--measure-wide); }
+
+/* ── The phone ────────────────────────────────────────────────────────────────
+   390px is the measurement that matters; 520 is where the page starts giving up
+   horizontal padding to keep the measure. */
+@media (max-width:520px) {
+  .wrap { padding:0 16px; }
+  .verdict, .card, .q, .callout { padding:15px 15px; }
+  .facts { gap:6px 14px; font-size:12px; }
+  .mast { padding:40px 0 18px; }
+}
+
+
+/* Layout only. The sheet above owns every colour, and nothing here invents one. */
+.grid {
+  display:grid; gap:14px; margin:18px 0 0;
+  grid-template-columns:repeat(auto-fill, minmax(min(300px,100%), 1fr));
+}
+.card { margin:0; }
+.rankcard { display:grid; grid-template-columns:34px 1fr; gap:12px; align-items:start; }
+.rankcard.is-closed { opacity:.72; }
+.rank { font:700 21px/1 var(--mono); color:var(--bronze); display:block; padding-top:2px; }
+.cardbody { min-width:0; }
+.card h3 { margin:8px 0 0; overflow-wrap:anywhere; }
+.card h3 a { border-bottom:none; }
+.card h3 a:hover { border-bottom:1px solid var(--link-rule); }
+.why { margin:8px 0 0; font-size:14.5px; color:var(--ink2); max-width:none; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; }
+.chip {
+  font:600 10px/1.7 var(--mono); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--mute); background:var(--code-bg); border:1px solid var(--rule);
+  border-radius:var(--radius-sm); padding:1px 6px;
+}
+.chip.ok { color:var(--go); }
+.chip.bad { color:var(--flag); }
+.chip.warn { color:var(--bronze); }
+.chip.mute { color:var(--mute); }
+.review { margin:10px 0 0; padding:9px 12px; border-left:3px solid var(--bronze); background:var(--bronze-soft); }
+.review .k { font:600 9.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--bronze); }
+.review p { margin:6px 0 0; font-size:14px; color:var(--ink2); max-width:none; }
+.benchcard { border-style:dashed; }
+.benchcard h3 { font-size:15px; }
+.secnote { margin:14px 0 0; color:var(--ink2); font-size:15.5px; }
+.hole { margin:12px 0 0; color:var(--flag); font-size:14.5px; }
+
+/* The rails: the only thing here drawn to scale. */
+.rail { margin:16px 0 0; }
+.railline {
+  position:relative; height:3px; margin:14px 0 0;
+  background:var(--rule); border-radius:2px;
+}
+.railline .dot {
+  position:absolute; top:-4px; width:11px; height:11px; margin-left:-5.5px;
+  border-radius:50%; background:var(--bronze); border:2px solid var(--panel);
+}
+.railends {
+  display:flex; justify-content:space-between; gap:10px; margin:9px 0 0;
+  font:500 11.5px/1.4 var(--mono); color:var(--mute);
+}
+.railnote { margin:8px 0 0; font-size:13.5px; color:var(--mute); max-width:none; }
+.rail-empty { margin:14px 0 0; font-size:13.5px; color:var(--mute); }
+
+/* The player. Closed by default: he lands on today and chooses to watch it move. */
+.player { margin:20px 0 0; border:1px solid var(--rule2); border-radius:var(--radius); background:var(--panel); }
+.player > summary {
+  cursor:pointer; padding:14px 16px; font:600 14px/1.3 var(--display); color:var(--ink);
+  list-style:none;
+}
+.player > summary::-webkit-details-marker { display:none; }
+.player > summary::before { content:"▶ "; color:var(--bronze); font-size:11px; }
+.player[open] > summary::before { content:"▼ "; }
+.player[open] > summary { border-bottom:1px solid var(--rule); }
+.playerbody { padding:14px 16px 18px; }
+.pbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.pbar button {
+  font:600 12px/1 var(--mono); color:var(--ink2); background:var(--code-bg);
+  border:1px solid var(--rule2); border-radius:var(--radius-sm); padding:7px 10px; cursor:pointer;
+}
+.pbar button:hover { border-color:var(--blue); color:var(--blue); }
+.pbar input[type=range] { flex:1 1 120px; min-width:100px; accent-color:var(--bronze); }
+.pcount { font:600 11.5px/1 var(--mono); color:var(--mute); }
+.phead { margin:14px 0 0; }
+.ptime { font:600 11.5px/1 var(--mono); color:var(--bronze); letter-spacing:.06em; }
+.psubject { margin:6px 0 0; font:700 16px/1.3 var(--display); overflow-wrap:anywhere; }
+.psha { margin:5px 0 0; font:500 11.5px/1 var(--mono); color:var(--mute); }
+.pnote {
+  margin:14px 0 0; padding:11px 13px; border-left:3px solid var(--flag);
+  background:var(--flag-soft); color:var(--ink2); font-size:14px;
+}
+.plist { list-style:none; margin:16px 0 0; padding:0; max-width:none; }
+.plist li {
+  display:grid; grid-template-columns:26px 1fr auto; gap:10px; align-items:center;
+  padding:8px 10px; margin:5px 0; border:1px solid var(--rule);
+  border-radius:var(--radius-sm); background:var(--paper); will-change:transform;
+}
+.plist .pr { font:700 14px/1 var(--mono); color:var(--bronze); }
+.plist .pt { font-size:13.5px; min-width:0; overflow-wrap:anywhere; }
+.plist .pt a { border-bottom:none; }
+.plist .pt .n { font-family:var(--mono); font-size:12.5px; color:var(--mute); }
+.mv { font:600 10px/1.6 var(--mono); letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:var(--radius-sm); }
+.mv.up { color:var(--go); background:var(--go-soft); }
+.mv.down { color:var(--bronze); background:var(--bronze-soft); }
+.mv.new { color:var(--blue); background:var(--blue-soft); }
+.mv.back { color:var(--flag); background:var(--flag-soft); }
+.mv.hold { color:var(--mute); background:var(--code-bg); }
+.pleft { margin:12px 0 0; font-size:13.5px; color:var(--ink2); }
+.pleft .mv { margin-right:6px; }
+.pwhy { margin:14px 0 0; }
+.pwhy > summary { cursor:pointer; font:600 12px/1 var(--mono); color:var(--mute); letter-spacing:.06em; }
+.pwhy .pre { white-space:pre-wrap; max-height:340px; overflow:auto; }
+.plegend { margin:14px 0 0; font-size:12.5px; color:var(--mute); max-width:none; }
+
+.reversals ul { margin:10px 0 0; font-size:14.5px; }
+.commits { margin:16px 0 0; padding-left:20px; max-width:none; }
+.commits li { margin:14px 0; }
+.ctime { font:600 11.5px/1 var(--mono); color:var(--mute); }
+.csubject { margin:5px 0 0; font-weight:600; font-size:15px; overflow-wrap:anywhere; }
+.corder { margin:7px 0 0; display:flex; flex-wrap:wrap; gap:4px 10px; }
+.ci { font:500 12px/1.5 var(--mono); color:var(--ink2); }
+.cbroken { margin:7px 0 0; font-size:13.5px; color:var(--flag); }
+
+.acts { list-style:none; margin:16px 0 0; padding:0; max-width:none; }
+.acts li { padding:10px 0; border-top:1px solid var(--rule); }
+.atime { font:600 11.5px/1 var(--mono); color:var(--bronze); }
+.achanges { margin:7px 0 0; display:flex; flex-wrap:wrap; gap:5px; }
+.chg { font:500 11.5px/1.6 var(--mono); padding:1px 6px; border-radius:var(--radius-sm); background:var(--code-bg); color:var(--ink2); }
+.chg.add { color:var(--go); }
+.chg.rm { color:var(--flag); }
+.chg em { font-style:normal; color:var(--mute); }
+.acount { margin:6px 0 0; font:500 11.5px/1 var(--mono); color:var(--mute); }
+.method ul { font-size:15px; }
+.foot hr { border:0; border-top:1px solid var(--rule); margin:18px 0; }
+
+@media (max-width:520px) {
+  .grid { grid-template-columns:1fr; }
+  .playerbody { padding:12px 12px 16px; }
+  .plist li { grid-template-columns:24px 1fr; }
+  .plist li .mv { grid-column:2; justify-self:start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plist li { transition:none !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">
+    <span>obot roadmap</span><span class="dot"></span><span>the ranked head</span>
+    <span class="dot"></span><span>jwildfire/obot.roadmap</span>
+  </div>
+  <h1>The next ten, and the eleven on the bench</h1>
+  <p class="lede">Two tiers of one population. The <code>top10</code> label says which ten come next and
+  <code>rank/top10.json</code> says in what order; the <code>on-deck</code> label is the shelf a slot is
+  filled from, and it is deliberately unranked. Every other thing on these cards — the title, whether
+  it is still open, its milestone, how far its sub-issues have got — is read from GitHub rather than
+  written down anywhere.</p>
+  <div class="facts">
+    <span><b>10</b> ranked</span>
+    <span><b>11</b> on the bench</span>
+    <span>order last touched <b>2026-08-20 21:41</b></span>
+    <span>state read <b>2026-08-21 00:23</b></span>
+    <span>all times EDT</span>
+  </div>
+</header>
+
+<section class="callout note" id="depth">
+  <span class="k">how deep this record goes</span>
+  <p>Ranked order exists from 2026-08-20 12:39 — 6 commits across one day, a window of 9 hours 3 minutes. Membership reaches further back, to 2026-08-18 21:32, from the label events on the issues themselves. There is nothing before that: neither record existed.</p>
+  
+<div class="rail" role="img" aria-label="when each re-rank commit happened, drawn to scale">
+  <div class="railline"><span class="dot" style="left:0.000%" title="97ed7e3 — The ranked head: one declared order, everything else derived (#269)"></span><span class="dot" style="left:4.840%" title="2d95ca6 — The first re-rank, and the test that would not let it happen"></span><span class="dot" style="left:53.422%" title="87653d7 — Three slots filled — the head after a day that closed seven requirements"></span><span class="dot" style="left:61.357%" title="4e17909 — #267 to rank 3, and a bench that is a shelf again rather than a drawer"></span><span class="dot" style="left:77.823%" title="a0c4d51 — The laptop IQ to rank 1, a promise kept, and the stylesheet onto the head"></span><span class="dot" style="left:100.000%" title="39fb645 — #260 back on the head — prime was wrong, and the evidence arrived the same night"></span></div>
+  <div class="railends"><span>2026-08-20 12:39</span><span>2026-08-20 21:41</span></div>
+  <p class="railnote">Every re-rank there has ever been, drawn to scale between the first commit and the last. The rail stops at the last commit because the record does.</p>
+</div>
+  
+<div class="rail" role="img" aria-label="when membership was changed by label, drawn to the same kind of scale">
+  <div class="railline"><span class="dot" style="left:0.000%" title="10 label changes"></span><span class="dot" style="left:22.439%" title="10 label changes"></span><span class="dot" style="left:80.879%" title="3 label changes"></span><span class="dot" style="left:81.320%" title="1 label changes"></span><span class="dot" style="left:82.039%" title="11 label changes"></span><span class="dot" style="left:89.650%" title="1 label changes"></span><span class="dot" style="left:91.222%" title="8 label changes"></span><span class="dot" style="left:92.699%" title="12 label changes"></span><span class="dot" style="left:95.811%" title="3 label changes"></span><span class="dot" style="left:99.990%" title="4 label changes"></span></div>
+  <div class="railends"><span>2026-08-18 21:32</span><span>2026-08-20 21:41</span></div>
+  <p class="railnote">The other record: 63 label changes on the <code>top10</code> and <code>on-deck</code> labels, grouped into 10 acts of labelling. It starts earlier than the order does and carries no ranking &mdash; a label cannot hold one.</p>
+</div>
+  
+  
+  
+</section>
+
+<section class="findings">
+  <div class="callout"><span class="k">slot open</span><p>Rank 4 is a slot open: #267 — &quot;the judge can see the constraints it is judging against&quot; is closed (2026-08-21). Something shipped. Choosing the replacement belongs to 🎩🤖 obot-prime and is not decided here or on this page.</p></div>
+</section>
+
+<div class="cut"><span>the ranked head</span></div>
+<section>
+  <p class="secnote">Ten, in order, each with the one line <code>rank/top10.json</code> gives for why it sits there.
+  Where a row carries a review note, that is the ranking flagging its own uncertainty; it is shown rather than hidden.</p>
+  <div class="grid">
+    
+<article class="card rankcard">
+  <div class="rankcol"><span class="rank">1</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip ok">open</span><span class="chip">2026q3</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/279">#279 a step-by-step IQ for the new laptop — the chance to fix rather than replicate</a></h3>
+    <p class="why">gates the session that gates scheduling, and a planning session with him will finalise it, which removes the write-from-memory risk</p>
+    <div class="review"><span class="k">under review</span><p>promise honoured - this row said it went to rank 1 the moment he put a date on the machine move, and on 2026-08-20 he said the migration is this weekend</p></div>
+  </div>
+</article>
+<article class="card rankcard">
+  <div class="rankcol"><span class="rank">2</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip ok">open</span><span class="chip">2026q3</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/272">#272 branch protections, live before any scheduled session runs</a></h3>
+    <p class="why">his word, critical, and obot.agent/main is where the merge policy lives</p>
+    <div class="review"><span class="k">under review</span><p>now one choice away — D0022 is live and the tooling is merged; it needs him to pick A, B or C and nothing else</p></div>
+  </div>
+</article>
+<article class="card rankcard">
+  <div class="rankcol"><span class="rank">3</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip ok">open</span><span class="chip">2026q3</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/261">#261 the highest-authority file the agents read has no owner, no history and no review path</a></h3>
+    <p class="why">the file with the most authority over every agent has no owner and no way to change it safely - and it currently names an active plan that does not exist on this machine</p>
+    
+  </div>
+</article>
+<article class="card rankcard is-closed">
+  <div class="rankcol"><span class="rank">4</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip bad">closed</span><span class="chip">2026q3</span><span class="chip">1/1 sub-issues</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/267">#267 the judge can see the constraints it is judging against</a></h3>
+    <p class="why">two workers have now collided on the same fix in one week - the Navigator&#39;s and mine, four hours apart on the deploy incident - and each collision spends fleet capacity twice on work that was already done</p>
+    
+  </div>
+</article>
+<article class="card rankcard">
+  <div class="rankcol"><span class="rank">5</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">1/3 sub-issues</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/289">#289 one stylesheet for every surface he reads, and a check that keeps it that way</a></h3>
+    <p class="why">he asked for it tonight and it compounds - every new surface starts by copying whichever one was nearest, and the number of surfaces he reads has roughly doubled this week</p>
+    
+  </div>
+</article>
+<article class="card rankcard">
+  <div class="rankcol"><span class="rank">6</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">2/2 sub-issues</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/260">#260 git pushes and commits still go out as him — the lane no token fixes</a></h3>
+    <p class="why">agent commits still go out under his name, and no token fixes that lane</p>
+    <div class="review"><span class="k">under review</span><p>prime moved this to the bench on 2026-08-20 arguing the new machine fixes it at the root; three agent commits landed under his name on the hub that same evening, so it is back</p></div>
+  </div>
+</article>
+<article class="card rankcard">
+  <div class="rankcol"><span class="rank">7</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">2/2 sub-issues</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/252">#252 nobody can write to the board — the App is forbidden and the guard denies the only credential that works</a></h3>
+    <p class="why">nobody can write the board, so every requirement&#39;s stage is wrong and every surface built on it inherits that</p>
+    
+  </div>
+</article>
+<article class="card rankcard">
+  <div class="rankcol"><span class="rank">8</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">1/1 sub-issues</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/263">#263 config items are short local artifacts he can decide from, not a field form</a></h3>
+    <p class="why">one bullet left and it is his: he has never read a config card and said whether it is better</p>
+    
+  </div>
+</article>
+<article class="card rankcard">
+  <div class="rankcol"><span class="rank">9</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">1/1 sub-issues</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/266">#266 a decision artifact notices when its own premise expires</a></h3>
+    <p class="why">D0021&#39;s premise had already expired by the time he read it; a decision argued from a fact that stopped being true wastes the one thing only he can spend</p>
+    
+  </div>
+</article>
+<article class="card rankcard">
+  <div class="rankcol"><span class="rank">10</span></div>
+  <div class="cardbody">
+    <div class="chips"><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">2/2 sub-issues</span></div>
+    <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/274">#274 SafetyCensus stays and is rebuilt on metrics and reports — design first</a></h3>
+    <p class="why">SafetyCensus rebuilt on metrics and reports, and the design needs his answer before any build starts</p>
+    
+  </div>
+</article>
+  </div>
+</section>
+
+<div class="cut"><span>the bench</span></div>
+<section>
+  <p class="secnote">The ten carrying `top10` are ranked and are what gets picked up next; the bench carrying `on-deck` is what a slot is filled from, unranked until one is promoted; everything else is open work with no claim on either.
+  These cards carry no rank on purpose: the bench is <b>unranked</b>, and ordering it on screen would
+  invent a decision nobody has made.</p>
+  <div class="grid bench">
+    
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/282">#282 the usage analytics run on a cadence, and the page says when it last did</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/281">#281 safetyGraphics and safetyCharts back on CRAN — remove the Tendril chart</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip bad">closed</span><span class="chip">2026q3</span><span class="chip">3/3 sub-issues</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/243">#243 merging is not deploying — the checkout tracks main, and consumers restart when it moves</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">9/10 sub-issues</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/238">#238 the morning fold, and the briefing it produces</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">4/4 sub-issues</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/236">#236 the admiral — a triggered manager, so finished work stops sitting and nobody has to remember to look</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">3/3 sub-issues</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/223">#223 every surface renders honestly on a machine with no history — before the move, not after</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">1/1 sub-issues</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/205">#205 a real &quot;since you last looked&quot; — record page views locally, or say plainly that we cannot</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">2/2 sub-issues</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/199">#199 the agent roster — every agent with its id, status, cost and roadmap impact</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span><span class="chip">1/2 sub-issues</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/194">#194 every worker agent gets a permanent W0001 identity, allocated once and never recycled</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/186">#186 standing sessions survive compaction — continuous state, an explicit setting, and a silent-loss check</a></h3>
+</article>
+<article class="card benchcard">
+  <div class="chips"><span class="chip mute">on the bench</span><span class="chip ok">open</span><span class="chip">2026q3</span></div>
+  <h3><a href="https://github.com/jwildfire/obot.roadmap/issues/184">#184 the worker closeout check — every agent finishes into a PR, a question, or a config request</a></h3>
+</article>
+  </div>
+</section>
+
+<div class="cut"><span>how it moved</span></div>
+<section>
+  <p class="secnote">Every change to the order is a commit against one file, so the file's history is the
+  whole record of how the ranking has moved. The player below replays it. It is a step per commit —
+  <b>not a time axis</b>; the rail at the top of this page is the one thing drawn to scale.</p>
+
+  <details class="player" data-autoplay="off" id="player">
+    <summary>Watch how it moved — 6 frames, one day</summary>
+    <div class="playerbody">
+      <div class="pbar">
+        <button type="button" id="pf-prev" aria-label="previous commit">◀</button>
+        <button type="button" id="pf-play" aria-label="play">▶ play</button>
+        <button type="button" id="pf-next" aria-label="next commit">▶</button>
+        <input type="range" id="pf-scrub" min="1" max="6" value="6" aria-label="commit">
+        <span class="pcount" id="pf-count"></span>
+      </div>
+      <div class="phead">
+        <div class="ptime" id="pf-time"></div>
+        <div class="psubject" id="pf-subject"></div>
+        <div class="psha" id="pf-sha"></div>
+      </div>
+      <div class="pnote" id="pf-note" hidden></div>
+      <ol class="plist" id="pf-list"></ol>
+      <div class="pleft" id="pf-left" hidden></div>
+      <details class="pwhy" id="pf-whywrap"><summary>the commit's own reasoning</summary><pre class="pre" id="pf-why"></pre></details>
+      <p class="plegend"><span class="mv up">▲</span> rose &nbsp; <span class="mv down">▼</span> fell &nbsp;
+      <span class="mv new">new</span> entered the head &nbsp; <span class="mv back">back</span> returned after leaving</p>
+    </div>
+  </details>
+
+  <div class="callout note reversals">
+    <span class="k">reversals</span>
+    <p>An order that only ever moved one way would be a ranking nobody was arguing with. These are the
+    items that left the head and came back:</p>
+    <ul>
+      <li><b>#260</b> left at <code>a0c4d51</code>
+        (2026-08-20 19:41, &ldquo;The laptop IQ to rank 1, a promise kept, and the stylesheet onto the head&rdquo;) and came back at rank
+        6 at <code>39fb645</code> (2026-08-20 21:41,
+        &ldquo;#260 back on the head — prime was wrong, and the evidence arrived the same night&rdquo;) — 2 hours later.</li>
+    </ul>
+    
+  </div>
+
+  <h3>The commits behind the player</h3>
+  <p class="secnote">The same record, without needing the player to read it.</p>
+  <ol class="commits">
+    <li>
+      <div class="ctime">2026-08-20 12:39 &middot; <code>97ed7e3</code></div>
+      <div class="csubject">The ranked head: one declared order, everything else derived (#269)</div>
+      <div class="corder"><span class="ci">1. #278</span><span class="ci">2. #275</span><span class="ci">3. #272</span><span class="ci">4. #279</span><span class="ci">5. #260</span><span class="ci">6. #263</span><span class="ci">7. #264</span><span class="ci">8. #251</span><span class="ci">9. #256</span><span class="ci">10. #274</span></div>
+    </li><li>
+      <div class="ctime">2026-08-20 13:05 &middot; <code>2d95ca6</code></div>
+      <div class="csubject">The first re-rank, and the test that would not let it happen</div>
+      <div class="corder"><span class="ci">1. #272</span><span class="ci">2. #257</span><span class="ci">3. #241</span><span class="ci">4. #252</span><span class="ci">5. #279</span><span class="ci">6. #263</span><span class="ci">7. #260</span><span class="ci">8. #265</span><span class="ci">9. #281</span><span class="ci">10. #274</span></div>
+    </li><li>
+      <div class="ctime">2026-08-20 17:29 &middot; <code>87653d7</code></div>
+      <div class="csubject">Three slots filled — the head after a day that closed seven requirements</div>
+      <div class="corder"><span class="ci">1. #272</span><span class="ci">2. #261</span><span class="ci">3. #280</span><span class="ci">4. #252</span><span class="ci">5. #279</span><span class="ci">6. #263</span><span class="ci">7. #260</span><span class="ci">8. #266</span><span class="ci">9. #281</span><span class="ci">10. #274</span></div>
+    </li><li>
+      <div class="ctime">2026-08-20 18:12 &middot; <code>4e17909</code></div>
+      <div class="csubject">#267 to rank 3, and a bench that is a shelf again rather than a drawer</div>
+      <div class="corder"><span class="ci">1. #272</span><span class="ci">2. #261</span><span class="ci">3. #267</span><span class="ci">4. #252</span><span class="ci">5. #279</span><span class="ci">6. #263</span><span class="ci">7. #260</span><span class="ci">8. #266</span><span class="ci">9. #281</span><span class="ci">10. #274</span></div>
+    </li><li>
+      <div class="ctime">2026-08-20 19:41 &middot; <code>a0c4d51</code></div>
+      <div class="csubject">The laptop IQ to rank 1, a promise kept, and the stylesheet onto the head</div>
+      <div class="corder"><span class="ci">1. #279</span><span class="ci">2. #272</span><span class="ci">3. #261</span><span class="ci">4. #267</span><span class="ci">5. #289</span><span class="ci">6. #252</span><span class="ci">7. #263</span><span class="ci">8. #266</span><span class="ci">9. #281</span><span class="ci">10. #274</span></div>
+    </li><li>
+      <div class="ctime">2026-08-20 21:41 &middot; <code>39fb645</code></div>
+      <div class="csubject">#260 back on the head — prime was wrong, and the evidence arrived the same night</div>
+      <div class="corder"><span class="ci">1. #279</span><span class="ci">2. #272</span><span class="ci">3. #261</span><span class="ci">4. #267</span><span class="ci">5. #289</span><span class="ci">6. #260</span><span class="ci">7. #252</span><span class="ci">8. #263</span><span class="ci">9. #266</span><span class="ci">10. #274</span></div>
+    </li>
+  </ol>
+</section>
+
+
+<div class="cut"><span>membership, the other record</span></div>
+<section>
+  <p class="secnote">The label carries membership and the file carries order — two mechanisms, so they can
+  disagree, and every disagreement is reported rather than quietly resolved. This is what the labels
+  themselves record, read from GitHub's issue events.
+  Each row is one act of labelling: changes made within five minutes of each other are one decision,
+  not eleven.</p>
+  <ol class="acts">
+    <li>
+      <div class="atime">2026-08-18 21:32</div>
+      <div class="achanges"><span class="chg add">+#278 <em>top10</em></span><span class="chg add">+#275 <em>top10</em></span><span class="chg add">+#272 <em>top10</em></span><span class="chg add">+#279 <em>top10</em></span><span class="chg add">+#260 <em>top10</em></span><span class="chg add">+#263 <em>top10</em></span><span class="chg add">+#264 <em>top10</em></span><span class="chg add">+#251 <em>top10</em></span><span class="chg add">+#256 <em>top10</em></span><span class="chg add">+#274 <em>top10</em></span></div>
+      <div class="acount">10 on <code>top10</code> &middot; 0 on <code>on-deck</code></div>
+    </li><li>
+      <div class="atime">2026-08-19 08:21</div>
+      <div class="achanges"><span class="chg add">+#281 <em>on-deck</em></span><span class="chg add">+#282 <em>on-deck</em></span><span class="chg add">+#241 <em>on-deck</em></span><span class="chg add">+#257 <em>on-deck</em></span><span class="chg add">+#266 <em>on-deck</em></span><span class="chg add">+#265 <em>on-deck</em></span><span class="chg add">+#252 <em>on-deck</em></span><span class="chg add">+#238 <em>on-deck</em></span><span class="chg add">+#280 <em>on-deck</em></span><span class="chg add">+#261 <em>on-deck</em></span></div>
+      <div class="acount">10 on <code>top10</code> &middot; 10 on <code>on-deck</code></div>
+    </li><li>
+      <div class="atime">2026-08-20 12:29</div>
+      <div class="achanges"><span class="chg rm">−#251 <em>top10</em></span><span class="chg rm">−#256 <em>top10</em></span><span class="chg rm">−#264 <em>top10</em></span></div>
+      <div class="acount">7 on <code>top10</code> &middot; 10 on <code>on-deck</code></div>
+    </li><li>
+      <div class="atime">2026-08-20 12:42</div>
+      <div class="achanges"><span class="chg rm">−#278 <em>top10</em></span></div>
+      <div class="acount">6 on <code>top10</code> &middot; 10 on <code>on-deck</code></div>
+    </li><li>
+      <div class="atime">2026-08-20 13:02</div>
+      <div class="achanges"><span class="chg add">+#257 <em>top10</em></span><span class="chg rm">−#257 <em>on-deck</em></span><span class="chg add">+#252 <em>top10</em></span><span class="chg rm">−#252 <em>on-deck</em></span><span class="chg add">+#265 <em>top10</em></span><span class="chg rm">−#265 <em>on-deck</em></span><span class="chg add">+#281 <em>top10</em></span><span class="chg rm">−#281 <em>on-deck</em></span><span class="chg add">+#241 <em>top10</em></span><span class="chg rm">−#241 <em>on-deck</em></span><span class="chg rm">−#275 <em>top10</em></span></div>
+      <div class="acount">10 on <code>top10</code> &middot; 5 on <code>on-deck</code></div>
+    </li><li>
+      <div class="atime">2026-08-20 16:42</div>
+      <div class="achanges"><span class="chg rm">−#241 <em>top10</em></span></div>
+      <div class="acount">9 on <code>top10</code> &middot; 5 on <code>on-deck</code></div>
+    </li><li>
+      <div class="atime">2026-08-20 17:28</div>
+      <div class="achanges"><span class="chg add">+#261 <em>top10</em></span><span class="chg rm">−#261 <em>on-deck</em></span><span class="chg add">+#280 <em>top10</em></span><span class="chg add">+#266 <em>top10</em></span><span class="chg rm">−#280 <em>on-deck</em></span><span class="chg rm">−#266 <em>on-deck</em></span><span class="chg rm">−#257 <em>top10</em></span><span class="chg rm">−#265 <em>top10</em></span></div>
+      <div class="acount">10 on <code>top10</code> &middot; 2 on <code>on-deck</code></div>
+    </li><li>
+      <div class="atime">2026-08-20 18:10</div>
+      <div class="achanges"><span class="chg add">+#267 <em>on-deck</em></span><span class="chg add">+#243 <em>on-deck</em></span><span class="chg add">+#194 <em>on-deck</em></span><span class="chg add">+#223 <em>on-deck</em></span><span class="chg add">+#236 <em>on-deck</em></span><span class="chg add">+#186 <em>on-deck</em></span><span class="chg add">+#184 <em>on-deck</em></span><span class="chg add">+#199 <em>on-deck</em></span><span class="chg rm">−#280 <em>top10</em></span><span class="chg add">+#267 <em>top10</em></span><span class="chg rm">−#267 <em>on-deck</em></span><span class="chg add">+#205 <em>on-deck</em></span></div>
+      <div class="acount">10 on <code>top10</code> &middot; 10 on <code>on-deck</code></div>
+    </li><li>
+      <div class="atime">2026-08-20 19:40</div>
+      <div class="achanges"><span class="chg add">+#289 <em>top10</em></span><span class="chg rm">−#260 <em>top10</em></span><span class="chg add">+#260 <em>on-deck</em></span></div>
+      <div class="acount">10 on <code>top10</code> &middot; 11 on <code>on-deck</code></div>
+    </li><li>
+      <div class="atime">2026-08-20 21:41</div>
+      <div class="achanges"><span class="chg add">+#260 <em>top10</em></span><span class="chg rm">−#260 <em>on-deck</em></span><span class="chg rm">−#281 <em>top10</em></span><span class="chg add">+#281 <em>on-deck</em></span></div>
+      <div class="acount">10 on <code>top10</code> &middot; 11 on <code>on-deck</code></div>
+    </li>
+  </ol>
+</section>
+
+<div class="cut"><span>where every number came from</span></div>
+<section class="method">
+  <ul>
+    <li><b>The order and the one-line reason</b> — <code>rank/top10.json</code> in
+      <a href="https://github.com/jwildfire/obot.agent">jwildfire/obot.agent</a>, the single declared store.
+      It holds an order and a reason and nothing else, by test.</li>
+    <li><b>Membership</b> — the <code>top10</code> and <code>on-deck</code> labels on
+      jwildfire/obot.roadmap, one API call each.</li>
+    <li><b>Title, state, milestone, sub-issue progress, blocked</b> — derived from GitHub at build time,
+      read 2026-08-21 00:23. None of it is written into this page by hand, and a field
+      GitHub did not answer for is printed as unanswered rather than left blank.</li>
+    <li><b>The history</b> — every commit that has touched <code>rank/top10.json</code>, with the store's
+      bytes at that commit asked for directly rather than replayed from a patch. A commit whose store
+      will not parse produces a frame that prints its reason; nothing is filled in for it.</li>
+    <li><b>The membership timeline</b> — GitHub's <code>labeled</code> and <code>unlabeled</code> issue events
+      for the two labels, 4 pages of them.
+      This is the only part of this page that reaches back past the store's first commit.</li>
+    <li><b>Two clocks, never merged</b> — how old the order is comes from the commit that last touched the
+      file, never the file's timestamp, which a fresh clone stamps with the moment it was written. How old
+      the state beside it is comes from when GitHub last answered.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Generated 2026-08-21 00:23 EDT by <code>tools/rankviz/build.mjs</code> in
+  jwildfire/obot.agent. Regenerating it re-reads GitHub and re-walks the commits; nothing on this page is
+  hand-maintained. Built for
+  <a href="https://github.com/jwildfire/obot.roadmap/issues/297">requirement #297</a>; the mechanism it reads
+  is <a href="https://github.com/jwildfire/obot.roadmap/issues/278">#278</a>.</p>
+  <hr>
+  <p>Drafted by 👯🤖 W0101 (Claude Code, Opus 5).</p>
+</footer>
+
+</div>
+<script type="application/json" id="rankviz-data">{"tz":"America/New_York","repo":"jwildfire/obot.roadmap","zone":"EDT","history":{"read":true,"why":"","frames":[{"index":1,"sha":"97ed7e356939c7e53924026a956aac45c758de3b","short":"97ed7e3","iso":"2026-08-20T12:39:14-04:00","author":"obotclaw[bot]","subject":"The ranked head: one declared order, everything else derived (#269)","body":"* The ranked head: one declared order, everything else derived\n\nSixty-odd open requirements and no statement of what comes next. This puts the\nnext ten at the bottom of his queue, in order, each with the one line saying why\nit is where it is — read-only, below his three buckets, asking him for nothing.\n\n- rank/top10.json holds the ORDER and the ONE-LINE REASON and nothing else; a\n  test fails on any other key. Title, state, milestone, blocked-ness and\n  sub-issue progress are derived from GitHub at read time off the `top10` label.\n- The order's age comes from the commit that last touched the file, never mtime,\n  which a fresh clone stamps with now. Two clocks, never merged: the order's and\n  the derivation's. An age nobody measured prints \"not known\", never a zero.\n- A `top10` label on a CLOSED issue is a slot open. The sweep reports it and\n  stops: the bench is a count, never a list, so nothing it prints can read as a\n  recommendation, and nothing reaches his config list.\n- One reader of GitHub for both surfaces, spawned out of process by the\n  dashboard, so the page and the sweep cannot disagree about what the ten are.\n\nReproduces the ranking given to @jwildfire on 2026-08-19 exactly, which is the\nrequirement's own acceptance test.\n\nCloses jwildfire/obot.roadmap#278\n\nWorker: W0077\nCo-Authored-By: Claude Opus 5 \u003cnoreply@anthropic.com>\n\n* Clamp the ranked-head title to two lines, as the queue rows are\n\nVerified in an iframe probe at a real 390px viewport: 386px inner width,\n386px document scrollWidth, nothing in the panel extending past the rail.\n\nWorker: W0077\nCo-Authored-By: Claude Opus 5 \u003cnoreply@anthropic.com>\n\n* Record the PR draft for #269\n\nWorker: W0077\nCo-Authored-By: Claude Opus 5 \u003cnoreply@anthropic.com>\n\n---------\n\nCo-authored-by: obotclaw[bot] \u003c198982749+obotclaw[bot]@users.noreply.github.com>\nCo-authored-by: Claude Opus 5 \u003cnoreply@anthropic.com>","first":true,"reconstructed":true,"why":"","order":[{"issue":278,"why":"his instruction, and nothing below it means anything unless the order is real","review":null},{"issue":275,"why":"we consumed his week with no way to see it and nothing that could have stopped a dispatch; nothing unattended runs before it","review":"smaller than this rank assumed — spend measurement does exist; only the cadence and the threshold are missing"},{"issue":272,"why":"his word, critical, and obot.agent/main is where the merge policy lives","review":null},{"issue":279,"why":"gates the session that gates scheduling, and a planning session with him will finalise it, which removes the write-from-memory risk","review":"may need to be earlier"},{"issue":260,"why":"git writes as him","review":null},{"issue":263,"why":"config artifacts","review":null},{"issue":264,"why":"config currency","review":null},{"issue":251,"why":"confirmed kills","review":null},{"issue":256,"why":"invisible work","review":null},{"issue":274,"why":"SafetyCensus design","review":null}],"change":{"known":false,"why":"the first commit in the record — there is no earlier state to compare it against","entered":null,"left":null,"moved":null,"held":null}},{"index":2,"sha":"2d95ca6dd5c02f58ab93e340418c7d86d2d31804","short":"2d95ca6","iso":"2026-08-20T13:05:30-04:00","author":"obotclaw[bot]","subject":"The first re-rank, and the test that would not let it happen","body":"Five requirements closed on 2026-08-20, four of them on the ranked head, so\nthe head needed refilling for the first time since it was declared.\n\nTwo tests made that impossible. `the store reproduces the ranking that already\nexists, exactly` pinned the live store to the ten issues of 2026-08-19, and\n`the two ranks prime has flagged` pinned the review set to exactly [275, 279].\nBoth were right on the day they were written and both froze a file whose whole\npurpose is to change — rank/README.md says prime edits it and that his steering\noverrides the order without discussion.\n\n- #278's acceptance test now runs against a fixture, which is what it was\n  always testing: that the READER reproduces a declared order. The live store\n  is checked for what should always hold — readable, ten rows, no duplicates.\n- The verbatim-reason test now guards against PARAPHRASE over the rows still\n  present, rather than against the membership changing.\n- The review test asserts a flag says something actionable and that flags stay\n  a minority, rather than naming which two rows carry them.\n\nThe new head, with #278/#275/#264/#251/#256 closed and five promoted from the\nbench: 272, 257, 241, 252, 279, 263, 260, 265, 281, 274.\n\nRanked by the stated replacement rule — what gates the thing he wants next,\nthen what prevents a repeat of real damage, then what he touches daily, then\nproduct. #257 and #241 are both promotions of failures he absorbed himself.\n\nWorker: prime\n\nCo-Authored-By: Claude Opus 5 \u003cnoreply@anthropic.com>","first":false,"reconstructed":true,"why":"","order":[{"issue":272,"why":"his word, critical, and obot.agent/main is where the merge policy lives","review":"now one choice away — D0022 is live and the tooling is merged; it needs him to pick A, B or C and nothing else"},{"issue":257,"why":"the org chart went undelivered for a day, and four workers finished on 08-20 with nothing telling him — the same gap twice, and he found it both times","review":null},{"issue":241,"why":"he answered a decision, clicked three times and asked twice whether it had landed — it had not; an answer that reaches disk and nowhere else is the failure he personally absorbed","review":null},{"issue":252,"why":"nobody can write the board, so every requirement's stage is wrong and every surface built on it inherits that","review":null},{"issue":279,"why":"gates the session that gates scheduling, and a planning session with him will finalise it, which removes the write-from-memory risk","review":"may need to be earlier — goes to rank 1 the moment he puts a date on the machine move, because the draft has to exist before that session rather than after"},{"issue":263,"why":"one bullet left and it is his: he has never read a config card and said whether it is better","review":null},{"issue":260,"why":"agent commits still go out under his name, and no token fixes that lane","review":null},{"issue":265,"why":"he answers decisions from the car with no screen and no issue number in his head — the lane he actually uses","review":null},{"issue":281,"why":"he asked for CRAN restoration by name and has already decided the approach; the only user-facing product work on the head","review":null},{"issue":274,"why":"SafetyCensus rebuilt on metrics and reports, and the design needs his answer before any build starts","review":null}],"change":{"known":true,"why":"","entered":[{"issue":257,"rank":2},{"issue":241,"rank":3},{"issue":252,"rank":4},{"issue":265,"rank":8},{"issue":281,"rank":9}],"left":[{"issue":278,"rank":1},{"issue":275,"rank":2},{"issue":264,"rank":7},{"issue":251,"rank":8},{"issue":256,"rank":9}],"moved":[{"issue":272,"from":3,"to":1,"delta":2},{"issue":279,"from":4,"to":5,"delta":-1},{"issue":260,"from":5,"to":7,"delta":-2}],"held":[{"issue":263,"rank":6},{"issue":274,"rank":10}]}},{"index":3,"sha":"87653d77e3ece03cf33757b8a48b88322c69827b","short":"87653d7","iso":"2026-08-20T17:29:11-04:00","author":"obotclaw[bot]","subject":"Three slots filled — the head after a day that closed seven requirements","body":"The sweep reported three open slots and, correctly, refused to fill them:\n#257, #241 and #265 all closed on 2026-08-20 and a closed member of the\nranked head is a computed defect, not a ranking. Choosing the replacement is\nprime's, and this is prime choosing.\n\nPromoted, by the stated replacement rule — what gates the thing he wants\nnext, then what prevents a repeat of real damage, then what he touches\ndaily, then product:\n\n- #261 to rank 2. The laptop IQ moved this from structural to urgent: the\n  workspace CLAUDE.md is the highest-authority file every agent reads, it\n  belongs to no repository, and it currently names an active plan file that\n  does not exist on this machine. It is open question 4 of the migration and\n  a new machine is the cheapest moment to settle ownership.\n- #280 to rank 3. The voice lane shipped today (hub#265), so an episode per\n  open decision is now the difference between three decisions he can answer\n  from the car and three he cannot. It stopped being a nice-to-have the\n  moment its consumer existed.\n- #266 to rank 8. D0021's premise had already expired by the time he read\n  it. A decision argued from a fact that stopped being true spends the one\n  resource only he has.\n\nThe head is now 272, 261, 280, 252, 279, 263, 260, 266, 281, 274.\n\nMembership verified against the label after the swap: ten, all open, exact\nmatch with this file.\n\nNoted and not acted on: the bench is down to two (#238, #282), and #282 may\nalready be covered by what hub#275 delivered today — it wants an audit\nrather than a promotion.\n\nWorker: prime\n\nCo-Authored-By: Claude Opus 5 \u003cnoreply@anthropic.com>","first":false,"reconstructed":true,"why":"","order":[{"issue":272,"why":"his word, critical, and obot.agent/main is where the merge policy lives","review":"now one choice away — D0022 is live and the tooling is merged; it needs him to pick A, B or C and nothing else"},{"issue":261,"why":"the file with the most authority over every agent has no owner and no way to change it safely - and it currently names an active plan that does not exist on this machine","review":null},{"issue":280,"why":"the voice lane shipped today, so an episode per open decision is now the difference between three decisions he can answer from the car and three he cannot","review":null},{"issue":252,"why":"nobody can write the board, so every requirement's stage is wrong and every surface built on it inherits that","review":null},{"issue":279,"why":"gates the session that gates scheduling, and a planning session with him will finalise it, which removes the write-from-memory risk","review":"may need to be earlier — goes to rank 1 the moment he puts a date on the machine move, because the draft has to exist before that session rather than after"},{"issue":263,"why":"one bullet left and it is his: he has never read a config card and said whether it is better","review":null},{"issue":260,"why":"agent commits still go out under his name, and no token fixes that lane","review":null},{"issue":266,"why":"D0021's premise had already expired by the time he read it; a decision argued from a fact that stopped being true wastes the one thing only he can spend","review":null},{"issue":281,"why":"he asked for CRAN restoration by name and has already decided the approach; the only user-facing product work on the head","review":null},{"issue":274,"why":"SafetyCensus rebuilt on metrics and reports, and the design needs his answer before any build starts","review":null}],"change":{"known":true,"why":"","entered":[{"issue":261,"rank":2},{"issue":280,"rank":3},{"issue":266,"rank":8}],"left":[{"issue":257,"rank":2},{"issue":241,"rank":3},{"issue":265,"rank":8}],"moved":[],"held":[{"issue":272,"rank":1},{"issue":252,"rank":4},{"issue":279,"rank":5},{"issue":263,"rank":6},{"issue":260,"rank":7},{"issue":281,"rank":9},{"issue":274,"rank":10}]}},{"index":4,"sha":"4e17909bbdd1e4bdf0675bdcd7068b0807acc8a8","short":"4e17909","iso":"2026-08-20T18:12:15-04:00","author":"obotclaw[bot]","subject":"#267 to rank 3, and a bench that is a shelf again rather than a drawer","body":"hub#280 closed tonight (the voice episodes), vacating rank 3. Two changes,\nboth prime's call and both made on measured evidence rather than preference.\n\nRANK 3 -> #267, the judge seeing the constraints it judges against.\n\nThe Navigator raised it with a second instance: it dispatched a worker onto\nthe hub deploy incident four hours after prime had landed a fix on main, and\nneither knew until the worker found the fix already there. The first\ncollision this week cost a worker an hour of duplicated correction work.\nA collision spends fleet capacity twice on work that was already done, and\nthe rate is now two in a week rather than one anecdote.\n\nBENCH REFILLED from two to ten: #184, #186, #194, #199, #223, #236, #238,\n#243, #267 (now promoted), #282.\n\nIt drained because it worked - eight of the ten labelled on 19 August have\nshipped or been promoted and shipped. That is a good reason to be empty and\nit was still empty, with the sweep correctly reporting an open slot and\nabout to point at an empty shelf.\n\nSelected on what the last three days actually cost:\n\n- #243 - the deploy incident tonight sat under it and stranded five files\n  for four and a half hours.\n- #194 - obot.agent#276 established today that OBOT_WORKER_ID has NEVER been\n  set: every worker ledger write in the file's history recorded a session id.\n- #223 - the laptop IQ found surfaces that render plausibly on a machine with\n  no history, including a spend cap whose denominator regenerates empty.\n- #236 - he asked directly today why the admiral had not caught finished work.\n  The answer was that it fires on problems, so a clean finish never triggers\n  it. That is this requirement.\n- #186 - this session compacted today.\n- #184, #199 - the closeout check and the roster, both load-bearing for a\n  fleet that now runs unattended for hours.\n\nNot promoted, and flagged for AUDIT rather than work: #282 and #206 both\ndescribe a usage artifact refreshing on a cadence, which is close to what\nhub#275 delivered today. Three of four parents audited this morning turned\nout already done; these two deserve the same test before anyone builds.\n\nWorker: prime\n\nCo-Authored-By: Claude Opus 5 \u003cnoreply@anthropic.com>","first":false,"reconstructed":true,"why":"","order":[{"issue":272,"why":"his word, critical, and obot.agent/main is where the merge policy lives","review":"now one choice away — D0022 is live and the tooling is merged; it needs him to pick A, B or C and nothing else"},{"issue":261,"why":"the file with the most authority over every agent has no owner and no way to change it safely - and it currently names an active plan that does not exist on this machine","review":null},{"issue":267,"why":"two workers have now collided on the same fix in one week - the Navigator's and mine, four hours apart on the deploy incident - and each collision spends fleet capacity twice on work that was already done","review":null},{"issue":252,"why":"nobody can write the board, so every requirement's stage is wrong and every surface built on it inherits that","review":null},{"issue":279,"why":"gates the session that gates scheduling, and a planning session with him will finalise it, which removes the write-from-memory risk","review":"may need to be earlier — goes to rank 1 the moment he puts a date on the machine move, because the draft has to exist before that session rather than after"},{"issue":263,"why":"one bullet left and it is his: he has never read a config card and said whether it is better","review":null},{"issue":260,"why":"agent commits still go out under his name, and no token fixes that lane","review":null},{"issue":266,"why":"D0021's premise had already expired by the time he read it; a decision argued from a fact that stopped being true wastes the one thing only he can spend","review":null},{"issue":281,"why":"he asked for CRAN restoration by name and has already decided the approach; the only user-facing product work on the head","review":null},{"issue":274,"why":"SafetyCensus rebuilt on metrics and reports, and the design needs his answer before any build starts","review":null}],"change":{"known":true,"why":"","entered":[{"issue":267,"rank":3}],"left":[{"issue":280,"rank":3}],"moved":[],"held":[{"issue":272,"rank":1},{"issue":261,"rank":2},{"issue":252,"rank":4},{"issue":279,"rank":5},{"issue":263,"rank":6},{"issue":260,"rank":7},{"issue":266,"rank":8},{"issue":281,"rank":9},{"issue":274,"rank":10}]}},{"index":5,"sha":"a0c4d511264a84d6718c0cc4585148579800b199","short":"a0c4d51","iso":"2026-08-20T19:41:37-04:00","author":"obotclaw[bot]","subject":"The laptop IQ to rank 1, a promise kept, and the stylesheet onto the head","body":"Two changes, both driven by things @jwildfire said tonight.\n\n#279 TO RANK 1 - and this is a promise this file made to itself. Its review\nfield has read \"may need to be earlier - goes to rank 1 the moment he puts a\ndate on the machine move\" since the first re-rank this morning. Tonight he\nsaid \"the IQ migration this weekend\". That is the date. The row now records\nthat the promise was honoured rather than silently acting on it.\n\nThe paraphrase guard earned its keep here. Prime rewrote #279's reason to\nmention the weekend and `a reason he was actually given is carried verbatim`\nfailed immediately. That was the correct outcome: the reason is his, the\nweekend is prime's context, and they belong in different fields. His words\nare restored and the change lives in `review`.\n\n#289 ONTO THE HEAD at rank 5 - one stylesheet for every surface he reads,\ndrafted by the Navigator tonight after he asked for it directly. He said\n\"worth doing soon\", so it goes on the head rather than the bench. The\nNavigator's argument for soon rather than eventually is the one that decided\nthe rank: it compounds, because every new surface starts by copying whichever\none was nearest, and the number of surfaces he reads has roughly doubled this\nweek.\n\n#260 OFF THE HEAD, to the bench. Not because it stopped mattering but because\nprime ruled this morning that the new machine fixes it at the root - the IQ\nhandles the git identity at step 17. A head slot spent on work nobody intends\nto do is a slot not spent, and saying that out loud is better than leaving it\nranked and untouched.\n\nHead: 279, 272, 261, 267, 289, 252, 263, 266, 281, 274.\nMembership read back from the label: ten, all open, exact match.\n\nWorker: prime\n\nCo-Authored-By: Claude Opus 5 \u003cnoreply@anthropic.com>","first":false,"reconstructed":true,"why":"","order":[{"issue":279,"why":"gates the session that gates scheduling, and a planning session with him will finalise it, which removes the write-from-memory risk","review":"promise honoured - this row said it went to rank 1 the moment he put a date on the machine move, and on 2026-08-20 he said the migration is this weekend"},{"issue":272,"why":"his word, critical, and obot.agent/main is where the merge policy lives","review":"now one choice away — D0022 is live and the tooling is merged; it needs him to pick A, B or C and nothing else"},{"issue":261,"why":"the file with the most authority over every agent has no owner and no way to change it safely - and it currently names an active plan that does not exist on this machine","review":null},{"issue":267,"why":"two workers have now collided on the same fix in one week - the Navigator's and mine, four hours apart on the deploy incident - and each collision spends fleet capacity twice on work that was already done","review":null},{"issue":289,"why":"he asked for it tonight and it compounds - every new surface starts by copying whichever one was nearest, and the number of surfaces he reads has roughly doubled this week","review":null},{"issue":252,"why":"nobody can write the board, so every requirement's stage is wrong and every surface built on it inherits that","review":null},{"issue":263,"why":"one bullet left and it is his: he has never read a config card and said whether it is better","review":null},{"issue":266,"why":"D0021's premise had already expired by the time he read it; a decision argued from a fact that stopped being true wastes the one thing only he can spend","review":null},{"issue":281,"why":"he asked for CRAN restoration by name and has already decided the approach; the only user-facing product work on the head","review":null},{"issue":274,"why":"SafetyCensus rebuilt on metrics and reports, and the design needs his answer before any build starts","review":null}],"change":{"known":true,"why":"","entered":[{"issue":289,"rank":5}],"left":[{"issue":260,"rank":7}],"moved":[{"issue":279,"from":5,"to":1,"delta":4},{"issue":272,"from":1,"to":2,"delta":-1},{"issue":261,"from":2,"to":3,"delta":-1},{"issue":267,"from":3,"to":4,"delta":-1},{"issue":252,"from":4,"to":6,"delta":-2},{"issue":263,"from":6,"to":7,"delta":-1}],"held":[{"issue":266,"rank":8},{"issue":281,"rank":9},{"issue":274,"rank":10}]}},{"index":6,"sha":"39fb6451267ad43874c8c5179723d408b67c04f3","short":"39fb645","iso":"2026-08-20T21:41:59-04:00","author":"obotclaw[bot]","subject":"#260 back on the head — prime was wrong, and the evidence arrived the same night","body":"Prime moved #260 to the bench on 2026-08-20 arguing the new machine fixes\nthe git identity at the root, so working it on the old one was waste.\n\nThree agent commits landed under @jwildfire's name on obot.roadmap main that\nsame evening, plus a stray branch on the same repo:\n\n  977a054  D0025 - the episode exists now, so the open tail says so\n  cb16034  D0022: link the Q&A thread\n  d87fd9e  D0022: eleven of thirteen governed branches have no protection\n  5e784ce  (branch obot.roadmap/mergeview, unmerged)\n\nAll three on main carry a `Worker:` trailer, so none of them are his - every\none is an agent commit wearing his name. Sixteen commits landed correctly as\nobotclaw[bot] the same day, so the lane works and the failures are workers\nforgetting the -c flags on individual commits.\n\nThe original reasoning was not wrong about the migration. It was wrong about\nthe timing: the fix is days away and the rate is roughly three a day on one\nrepo, and a commit pushed to main is not rewritable here. Waiting costs\nhistory that cannot be corrected later.\n\n#281 leaves the head to make room, on exactly the reasoning that moved #260\noff it: the agent work is complete, D0025 now asks him the question, and\nnothing can proceed until he answers. A head slot where nothing can move is\na slot not spent. It sits on the bench, not in a drawer.\n\nThe row carries the reversal in `review` rather than quietly reappearing -\na rank that changes without saying why is a rank he cannot interrogate.\n\nHead: 279, 272, 261, 267, 289, 260, 252, 263, 266, 274.\n\nWorker: prime\n\nCo-Authored-By: Claude Opus 5 \u003cnoreply@anthropic.com>","first":false,"reconstructed":true,"why":"","order":[{"issue":279,"why":"gates the session that gates scheduling, and a planning session with him will finalise it, which removes the write-from-memory risk","review":"promise honoured - this row said it went to rank 1 the moment he put a date on the machine move, and on 2026-08-20 he said the migration is this weekend"},{"issue":272,"why":"his word, critical, and obot.agent/main is where the merge policy lives","review":"now one choice away — D0022 is live and the tooling is merged; it needs him to pick A, B or C and nothing else"},{"issue":261,"why":"the file with the most authority over every agent has no owner and no way to change it safely - and it currently names an active plan that does not exist on this machine","review":null},{"issue":267,"why":"two workers have now collided on the same fix in one week - the Navigator's and mine, four hours apart on the deploy incident - and each collision spends fleet capacity twice on work that was already done","review":null},{"issue":289,"why":"he asked for it tonight and it compounds - every new surface starts by copying whichever one was nearest, and the number of surfaces he reads has roughly doubled this week","review":null},{"issue":260,"why":"agent commits still go out under his name, and no token fixes that lane","review":"prime moved this to the bench on 2026-08-20 arguing the new machine fixes it at the root; three agent commits landed under his name on the hub that same evening, so it is back"},{"issue":252,"why":"nobody can write the board, so every requirement's stage is wrong and every surface built on it inherits that","review":null},{"issue":263,"why":"one bullet left and it is his: he has never read a config card and said whether it is better","review":null},{"issue":266,"why":"D0021's premise had already expired by the time he read it; a decision argued from a fact that stopped being true wastes the one thing only he can spend","review":null},{"issue":274,"why":"SafetyCensus rebuilt on metrics and reports, and the design needs his answer before any build starts","review":null}],"change":{"known":true,"why":"","entered":[{"issue":260,"rank":6}],"left":[{"issue":281,"rank":9}],"moved":[{"issue":252,"from":6,"to":7,"delta":-1},{"issue":263,"from":7,"to":8,"delta":-1},{"issue":266,"from":8,"to":9,"delta":-1}],"held":[{"issue":279,"rank":1},{"issue":272,"rank":2},{"issue":261,"rank":3},{"issue":267,"rank":4},{"issue":289,"rank":5},{"issue":274,"rank":10}]}}],"span":{"frames":6,"from":"2026-08-20T12:39:14-04:00","to":"2026-08-20T21:41:59-04:00","days":1},"reversals":[{"issue":260,"leftAt":{"index":5,"sha":"a0c4d511264a84d6718c0cc4585148579800b199","short":"a0c4d51","iso":"2026-08-20T19:41:37-04:00","subject":"The laptop IQ to rank 1, a promise kept, and the stylesheet onto the head"},"returnedAt":{"index":6,"sha":"39fb6451267ad43874c8c5179723d408b67c04f3","short":"39fb645","iso":"2026-08-20T21:41:59-04:00","subject":"#260 back on the head — prime was wrong, and the evidence arrived the same night"},"rankOnReturn":6}],"unreconstructed":0,"unseenInReversals":0},"issues":{"184":{"title":"Requirement: the worker closeout check — every agent finishes into a PR, a question, or a config request","url":"https://github.com/jwildfire/obot.roadmap/issues/184","state":"open"},"186":{"title":"Requirement: standing sessions survive compaction — continuous state, an explicit setting, and a silent-loss check","url":"https://github.com/jwildfire/obot.roadmap/issues/186","state":"open"},"194":{"title":"Requirement: every worker agent gets a permanent W0001 identity, allocated once and never recycled","url":"https://github.com/jwildfire/obot.roadmap/issues/194","state":"open"},"199":{"title":"Requirement: the agent roster — every agent with its id, status, cost and roadmap impact","url":"https://github.com/jwildfire/obot.roadmap/issues/199","state":"open"},"205":{"title":"Requirement: a real \"since you last looked\" — record page views locally, or say plainly that we cannot","url":"https://github.com/jwildfire/obot.roadmap/issues/205","state":"open"},"223":{"title":"Requirement: every surface renders honestly on a machine with no history — before the move, not after","url":"https://github.com/jwildfire/obot.roadmap/issues/223","state":"open"},"236":{"title":"Requirement: the admiral — a triggered manager, so finished work stops sitting and nobody has to remember to look","url":"https://github.com/jwildfire/obot.roadmap/issues/236","state":"open"},"238":{"title":"Requirement: the morning fold, and the briefing it produces","url":"https://github.com/jwildfire/obot.roadmap/issues/238","state":"open"},"241":{"title":"Requirement: an answer you clicked that nothing applied has to reach someone","url":"https://github.com/jwildfire/obot.roadmap/issues/241","state":"closed"},"243":{"title":"Requirement: merging is not deploying — the checkout tracks main, and consumers restart when it moves","url":"https://github.com/jwildfire/obot.roadmap/issues/243","state":"closed"},"251":{"title":"Requirement: a kill this house reports is a kill it confirmed — the liveness anchor reports success while the session survives","url":"https://github.com/jwildfire/obot.roadmap/issues/251","state":"closed"},"252":{"title":"Requirement: nobody can write to the board — the App is forbidden and the guard denies the only credential that works","url":"https://github.com/jwildfire/obot.roadmap/issues/252","state":"open"},"256":{"title":"Requirement: work that never reached GitHub is invisible to every check we run","url":"https://github.com/jwildfire/obot.roadmap/issues/256","state":"closed"},"257":{"title":"Requirement: a thing he asked for has a delivery state, and something notices when it goes quiet","url":"https://github.com/jwildfire/obot.roadmap/issues/257","state":"closed"},"260":{"title":"Requirement: git pushes and commits still go out as him — the lane no token fixes","url":"https://github.com/jwildfire/obot.roadmap/issues/260","state":"open"},"261":{"title":"Requirement: the highest-authority file the agents read has no owner, no history and no review path","url":"https://github.com/jwildfire/obot.roadmap/issues/261","state":"open"},"263":{"title":"Requirement: config items are short local artifacts he can decide from, not a field form","url":"https://github.com/jwildfire/obot.roadmap/issues/263","state":"open"},"264":{"title":"Requirement: a config item's claim is checked on a cadence, not asserted on the day it was filed","url":"https://github.com/jwildfire/obot.roadmap/issues/264","state":"closed"},"265":{"title":"Requirement: he answers a decision from the car, by voice, without a screen or an issue number","url":"https://github.com/jwildfire/obot.roadmap/issues/265","state":"closed"},"266":{"title":"Requirement: a decision artifact notices when its own premise expires","url":"https://github.com/jwildfire/obot.roadmap/issues/266","state":"open"},"267":{"title":"Requirement: the judge can see the constraints it is judging against","url":"https://github.com/jwildfire/obot.roadmap/issues/267","state":"closed"},"272":{"title":"Requirement: branch protections, live before any scheduled session runs","url":"https://github.com/jwildfire/obot.roadmap/issues/272","state":"open"},"274":{"title":"Requirement: SafetyCensus stays and is rebuilt on metrics and reports — design first","url":"https://github.com/jwildfire/obot.roadmap/issues/274","state":"open"},"275":{"title":"Requirement: what the fleet spends is measured before it is spent","url":"https://github.com/jwildfire/obot.roadmap/issues/275","state":"closed"},"278":{"title":"Requirement: what comes next is written down — a ranked head, tiers below, before any clock runs","url":"https://github.com/jwildfire/obot.roadmap/issues/278","state":"closed"},"279":{"title":"Requirement: a step-by-step IQ for the new laptop — the chance to fix rather than replicate","url":"https://github.com/jwildfire/obot.roadmap/issues/279","state":"open"},"280":{"title":"Requirement: an open decision artifact has an episode he can answer from a car","url":"https://github.com/jwildfire/obot.roadmap/issues/280","state":"closed"},"281":{"title":"Requirement: safetyGraphics and safetyCharts back on CRAN — remove the Tendril chart","url":"https://github.com/jwildfire/obot.roadmap/issues/281","state":"open"},"282":{"title":"Requirement: the usage analytics run on a cadence, and the page says when it last did","url":"https://github.com/jwildfire/obot.roadmap/issues/282","state":"open"},"289":{"title":"Requirement: one stylesheet for every surface he reads, and a check that keeps it that way","url":"https://github.com/jwildfire/obot.roadmap/issues/289","state":"open"}}}</script>
+<script>
+(function () {
+  var el = document.getElementById('rankviz-data');
+  if (!el) return;
+  var D = JSON.parse(el.textContent);
+  var H = D.history || {};
+  var frames = H.frames || [];
+  if (!frames.length) return;
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var backAt = {};
+  (H.reversals || []).forEach(function (r) { backAt[r.returnedAt.index + ':' + r.issue] = true; });
+
+  var list = document.getElementById('pf-list');
+  var leftBox = document.getElementById('pf-left');
+  var note = document.getElementById('pf-note');
+  var scrub = document.getElementById('pf-scrub');
+  var pool = new Map();
+  var timer = null;
+  var at = frames.length;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function title(n) {
+    var i = (D.issues || {})[String(n)];
+    if (!i || !i.title) return 'title not read for #' + n;
+    return String(i.title).replace(/^Requirement:\s*/, '');
+  }
+  function url(n) {
+    var i = (D.issues || {})[String(n)];
+    return (i && i.url) || 'https://github.com/' + D.repo + '/issues/' + n;
+  }
+  function when(iso) {
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: D.tz, year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false
+      }).format(new Date(iso)).replace(',', '');
+    } catch (e) { return iso; }
+  }
+
+  function markFor(f, issue, rank) {
+    if (backAt[f.index + ':' + issue]) return '<span class="mv back">back</span>';
+    var c = f.change || {};
+    if (!c.known) return '';
+    for (var i = 0; i < (c.entered || []).length; i++) {
+      if (c.entered[i].issue === issue) return '<span class="mv new">new</span>';
+    }
+    for (var j = 0; j < (c.moved || []).length; j++) {
+      var m = c.moved[j];
+      if (m.issue === issue) {
+        return m.delta > 0
+          ? '<span class="mv up">&#9650; ' + m.delta + '</span>'
+          : '<span class="mv down">&#9660; ' + Math.abs(m.delta) + '</span>';
+      }
+    }
+    return '';
+  }
+
+  function rowFor(issue) {
+    var e = pool.get(issue);
+    if (!e) {
+      e = document.createElement('li');
+      e.dataset.issue = String(issue);
+      pool.set(issue, e);
+    }
+    return e;
+  }
+
+  function paint(i) {
+    var f = frames[i - 1];
+    at = i;
+    scrub.value = String(i);
+    document.getElementById('pf-count').textContent = i + ' / ' + frames.length;
+    document.getElementById('pf-time').textContent = when(f.iso) + ' ' + (D.zone || '');
+    document.getElementById('pf-subject').textContent = f.subject;
+    document.getElementById('pf-sha').textContent = f.short + (f.author ? ' \u00b7 ' + f.author : '');
+    var why = document.getElementById('pf-why');
+    why.textContent = f.body || 'this commit recorded no further reasoning';
+    document.getElementById('pf-whywrap').hidden = false;
+
+    // A frame nobody could rebuild shows its reason and NOTHING else. Carrying the
+    // previous order forward here would draw a state that never existed.
+    if (!f.reconstructed || !f.order) {
+      note.hidden = false;
+      note.textContent = 'This frame could not be rebuilt from its commit: ' + (f.why || 'no reason recorded')
+        + '. Nothing is drawn for it, and what changed at it is not stated.';
+      list.replaceChildren();
+      leftBox.hidden = true;
+      return;
+    }
+    note.hidden = true;
+
+    var before = new Map();
+    pool.forEach(function (e, issue) { if (e.isConnected) before.set(issue, e.getBoundingClientRect().top); });
+
+    var next = [];
+    f.order.forEach(function (r, idx) {
+      var e = rowFor(r.issue);
+      e.innerHTML = '<span class="pr">' + (idx + 1) + '</span>'
+        + '<span class="pt"><a href="' + esc(url(r.issue)) + '"><span class="n">#' + r.issue + '</span> '
+        + esc(title(r.issue)) + '</a></span>'
+        + (markFor(f, r.issue, idx + 1) || '<span class="mv hold">&#183;</span>');
+      next.push(e);
+    });
+    list.replaceChildren.apply(list, next);
+
+    if (!reduced) {
+      next.forEach(function (e) {
+        var issue = Number(e.dataset.issue);
+        if (!before.has(issue)) return;
+        var d = before.get(issue) - e.getBoundingClientRect().top;
+        if (!d) return;
+        e.style.transition = 'none';
+        e.style.transform = 'translateY(' + d + 'px)';
+        requestAnimationFrame(function () {
+          e.style.transition = 'transform .48s cubic-bezier(.2,.7,.2,1)';
+          e.style.transform = '';
+        });
+      });
+    }
+
+    var gone = (f.change && f.change.left) || [];
+    if (gone.length) {
+      leftBox.hidden = false;
+      leftBox.innerHTML = '<span class="mv down">left the head</span>' + gone.map(function (g) {
+        return '<a href="' + esc(url(g.issue)) + '">#' + g.issue + '</a> (was rank ' + g.rank + ')';
+      }).join(', ');
+    } else if (f.change && f.change.known === false && !f.first) {
+      leftBox.hidden = false;
+      leftBox.textContent = f.change.why || 'what changed at this commit is not known';
+    } else {
+      leftBox.hidden = true;
+    }
+  }
+
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+    document.getElementById('pf-play').textContent = '\u25b6 play';
+  }
+  function play() {
+    if (timer) return stop();
+    if (at >= frames.length) paint(1);
+    document.getElementById('pf-play').textContent = '\u2016 pause';
+    timer = setInterval(function () {
+      if (at >= frames.length) return stop();
+      paint(at + 1);
+    }, reduced ? 3200 : 2000);
+  }
+
+  document.getElementById('pf-prev').addEventListener('click', function () { stop(); paint(Math.max(1, at - 1)); });
+  document.getElementById('pf-next').addEventListener('click', function () { stop(); paint(Math.min(frames.length, at + 1)); });
+  document.getElementById('pf-play').addEventListener('click', play);
+  scrub.addEventListener('input', function () { stop(); paint(Number(scrub.value)); });
+
+  var player = document.getElementById('player');
+  player.addEventListener('toggle', function () {
+    if (player.open) paint(frames.length);
+    else stop();
+  });
+})();
+</script>
+</body>
+</html>
