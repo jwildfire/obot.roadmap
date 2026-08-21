@@ -81,9 +81,11 @@ for that reason. Every act the page recommends is @jwildfire's own.
   destination configured — the finding carried by
   [the laptop move](../2026-08-20-laptop-migration/). The page raises pushing the branches
   as worth doing under all three answers rather than only under the recommended one.
-- This artifact needs an episode, per
-  [#280](https://github.com/jwildfire/obot.roadmap/issues/280): an open decision artifact
-  has one he can answer from a car.
+- ~~This artifact needs an episode~~ — recorded 2026-08-21 by W0097, per
+  [#280](https://github.com/jwildfire/obot.roadmap/issues/280): "Decision: cran
+  resubmission", 6.4 minutes, on the private show. It is derived from this page as it
+  stands at commit `0c71847`, so a reworded page puts the decision back to owing a fresh
+  episode that opens with the correction.
 - Requirement #281 is not on the roadmap board. Board writes fail for every agent
   credential — [#252](https://github.com/jwildfire/obot.roadmap/issues/252) — so that is a
   known blocked mechanism rather than an oversight.
