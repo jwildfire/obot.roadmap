@@ -108,6 +108,7 @@ PRs, and these.
   forces the author to state it as a command, so "the release is held" stops being a
   belief and becomes a measurement at the moment of writing. The gate is worth having;
   the declaration is the part doing the work.
+
   **What the page then says about them.** The premises are not only for the sweep.
   Every deployed artifact carries a strip above its masthead — before the argument,
   because an expired premise is a reason to distrust what follows — rendered at deploy
