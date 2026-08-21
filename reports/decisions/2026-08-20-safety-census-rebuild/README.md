@@ -1,6 +1,21 @@
 # D0023 — Rebuilding the safety census on metrics and reports
 
-**Status: Awaiting @jwildfire** — six questions (D0023.1–.6), each answerable out loud with a subject word and a named choice: deaths, coverage, thresholds, level, compatibility, charts.
+**Status: Decided 2026-08-20** — he approved all six recommendations (D0023.1–.6), in chat after listening to the audio episode of this page:
+
+> *"I listened to the safety sentence episode and approve the recommendations."*
+
+"safety sentence" is read as "safety census": the episode of this page is titled *Decision: safety census rebuild*, it is the only census episode on his show, and it carries these six recommendations. That is an interpretation of a dictated word rather than a transcription of it, so his sentence is quoted as he said it and the reading is annotated rather than folded in.
+
+What the six now commit the build to, one line each:
+
+- **Deaths (C1)** — the death count is the standard mapping's union of the death domain and the discontinuation-reason match (13 on the bundled study, against the 1 reported today), and a second descriptive metric publishes how many participants the two sources disagree about. The demo study has to start supplying death records.
+- **Coverage (C2)** — "expected" per visit means the participants whose time on study reaches that visit; no study is asked for new data, and the alphabetical visit-ordering defect goes with it. The expected-count source is a declared input, so the visit-schedule definition stays available later.
+- **Thresholds (C3)** — none. Every census number is descriptive: no threshold in any meta, no flag step in any workflow. A completeness threshold is a separate later decision that has to arrive with a clinical reason.
+- **Level (C4)** — study only, thirteen definitions — and the grouping level is a declared setting from the first line, so adding sites later is a copy with one line changed rather than a rewrite. A build that hard-codes the study level meets half this answer and breaks the other half.
+- **Compatibility (C5)** — nothing breaks. The function keeps its name and arguments (column-name arguments deprecated and ignored), the report keeps writing the same payload, the four contract row labels stay word for word with a test behind them, and the demo application is untouched — its figures simply become correct.
+- **Charts (C6)** — no chart in this release, and the chart requirement filed in the same breath: [#291](https://github.com/jwildfire/obot.roadmap/issues/291), with the coverage chart as its first item.
+
+Approval of the design is not approval of a release: `gsm.safety` is clinical work he reviews before production, and nothing in it moves on this answer.
 
 **Requirement:** [jwildfire/obot.roadmap#274](https://github.com/jwildfire/obot.roadmap/issues/274) · **Task:** [#284](https://github.com/jwildfire/obot.roadmap/issues/284) · **Goal:** [#73 increased autonomy](https://github.com/jwildfire/obot.roadmap/issues/73)
 **Q&A:** [#285](https://github.com/jwildfire/obot.roadmap/discussions/285)
