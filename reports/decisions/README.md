@@ -108,6 +108,27 @@ PRs, and these.
   forces the author to state it as a command, so "the release is held" stops being a
   belief and becomes a measurement at the moment of writing. The gate is worth having;
   the declaration is the part doing the work.
+  **What the page then says about them.** The premises are not only for the sweep.
+  Every deployed artifact carries a strip above its masthead — before the argument,
+  because an expired premise is a reason to distrust what follows — rendered at deploy
+  time by `scripts/stamp_premise_status.mjs` from the readings the machine publishes to
+  `data/premise-status.json` ([#301](https://github.com/jwildfire/obot.roadmap/issues/301)).
+  Nothing in the committed page is edited: the strip is injected into the `_site` copy,
+  so an artifact's prose, its recommendation and its recorded decisions stay the record.
+
+  Three things about it are worth knowing while writing a premise:
+
+  - **The sentence a reader sees is the one you write before the `|`.** It is rendered
+    verbatim on the strip, so write it as something a person can judge — "the release is
+    held at the tag pending this decision", not "release check".
+  - **The page cannot check itself as you read it**, so it carries the last reading with
+    its age, recomputed in the reader's browser. Past a day it stops asserting the
+    verdict and says how old the reading is instead. An expired one keeps its alarm
+    whatever its age.
+  - **A premise nothing has measured renders as unmeasured, not as holding**, and a
+    `manual` one renders the instruction you wrote after `manual —`. Write that
+    instruction for a stranger; it is published.
+
 - **A permanent ID, claimed before the page is written** (@jwildfire, 2026-08-15:
   *"Give every decision artifact an ID and then give each question for me a sub ID…
   Use D0001 as the ID"*). The artifact is `D0001`; its questions are `D0001.1`,
