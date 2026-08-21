@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — Back on CRAN</title>
+<meta name="description" content="Both packages have been off CRAN since March. The fix is prepared, checked and audited, and the tarballs sit on one laptop. Submitting them is outside every lane we have and is yours to take — here is what it costs and the order that cannot be reversed.">
+<meta name="premise" content="safetyCharts is still off CRAN, which is the situation this page exists to end | manual — open https://cran.r-project.org/package=safetyCharts; it should still read that the package was removed from the CRAN repository">
+<meta name="premise" content="safetyGraphics is still off CRAN too | manual — open https://cran.r-project.org/package=safetyGraphics; it should still read that the package was removed from the CRAN repository">
+<meta name="premise" content="the requirement this work sits under is still open | gh issue view 281 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<meta name="premise" content="the person outside the program who asked for this is still waiting, with no reply of any kind on their request | gh api repos/SafetyGraphics/safetyGraphics/issues/728 --jq .comments → prints 0">
+<meta name="premise" content="the checked file that would be uploaded to CRAN is still on this laptop | ls .claude/session-notes/2026-08-20-cran-patches/safetyCharts_0.5.0.tar.gz → prints .claude/session-notes/2026-08-20-cran-patches/safetyCharts_0.5.0.tar.gz">
+<meta name="decision-id" content="D0025">
+<style>
+/* obot shared stylesheet — the decision-artifact reading language, in one place.
+ *
+ * Requirement jwildfire/obot.agent#15. @jwildfire, 2026-08-20: "match the css of the
+ * decision docs. Prioritize creating a shared style sheet for the project."
+ *
+ * ## What this is, measured rather than remembered
+ *
+ * Seventeen of the twenty-four decision artifacts under obot.roadmap/reports/decisions
+ * carry the same eleven colours, the same three font stacks, and the same component
+ * vocabulary — byte-identical values, in seventeen separate <style> blocks. That is not
+ * a house style anybody wrote down; it is a paste that happened seventeen times. This
+ * file is that paste, written once. Every value below was read off those pages, and
+ * tools/ops-dashboard/test/shared-css.test.mjs reads them off again on every run, so
+ * the sheet cannot drift from the pages it was extracted from without going red.
+ *
+ * Two things the pages did NOT have, added here deliberately:
+ *
+ *   - A dark theme. Zero of the seventeen answer prefers-color-scheme, so every one of
+ *     them is a white page on a phone at midnight — and he reads them on a phone. The
+ *     palette below is stated three times, per the program's theme contract: the full
+ *     light palette on bare :root, the dark palette under the media query guarded so an
+ *     explicit light choice still wins, and the same dark palette again under
+ *     [data-theme="dark"] so a toggle wins in both directions. No colour is defined only
+ *     inside a theme block.
+ *   - Tokens for the colours the pages hard-coded. #f2eee3 behind inline code, #f4f8f4
+ *     behind a recommendation, rgba(47,111,168,.32) under a link: each was a literal on
+ *     ten to seventeen pages, and a literal is a colour the dark theme cannot reach.
+ *
+ * ## What this is NOT
+ *
+ * This is the *document* language — the one @jwildfire reads decisions and reports in,
+ * and now the one the operations dashboard is dressed in. The program also has an
+ * espresso *keynote* language (paper #faf6f1, espresso #271810, Instrument Serif) that
+ * dresses the public sites: obot.roadmap/site/assets/styles.css, safety.viz/site/site.css
+ * sections 1-4, open.gismo/site/src/style.css. Those are four copies of a second theme
+ * and they still have no shared home. See docs/shared-stylesheet.md.
+ *
+ * ## Consuming it
+ *
+ * Inline it. `import { OBOT_CSS } from '<obot.agent>/assets/obot-css.mjs'` and drop it in
+ * a <style> block. Decision artifacts and config cards are self-contained single files by
+ * contract, so a <link> would break them; a surface that is genuinely multi-page can link
+ * the file instead. Either way the bytes come from here — a consumer that copies them has
+ * re-made the problem, and the greppable string "obot shared stylesheet" is how you find
+ * one that did.
+ *
+ * Layout is the consumer's. This sheet carries palette, type, and the components below;
+ * it sets no grid, no fixed positioning, and no page chrome.
+ */
+
+/* ── Palette ──────────────────────────────────────────────────────────────────
+   The eleven colours, byte for byte off the seventeen pages, plus the surfaces
+   they hard-coded and a terminal ink that four of them invented. */
+:root {
+  --paper:#faf7f0;      /* page ground */
+  --panel:#fffdf9;      /* anything raised off the page: card, callout, table */
+  --ink:#17191c;        /* body text and headings */
+  --ink2:#454a51;       /* secondary text — ledes, card bodies, quotes */
+  --mute:#7b8089;       /* labels, eyebrows, footers: present but not read first */
+  --rule:#e2dccf;       /* hairline */
+  --rule2:#c8bfa9;      /* the heavier rule, for edges that mean something */
+  --blue:#2f6fa8;       /* links, and the primary accent */
+  --bronze:#a95d10;     /* attention without alarm: notes, tags, section marks */
+  --flag:#b83a2e;       /* the thing that is wrong */
+  --go:#2b7a4b;         /* the thing that is settled, passing, or recommended */
+
+  /* Surfaces the pages wrote as literals. */
+  --code-bg:#f2eee3;    /* was #f2eee3 on 13 pages */
+  --pre-bg:#f7f4ec;     /* was #f7f4ec on 6 */
+  --go-soft:#f4f8f4;    /* was #f4f8f4 behind .rec on 10 */
+  --blue-soft:#eef3f8;
+  --bronze-soft:#f8efe3;
+  --flag-soft:#f6ede5;  /* was rgba(184,58,46,.055) over --paper */
+  --link-rule:#b9cbd9;  /* was rgba(47,111,168,.32) on all 17 */
+
+  /* The console block: a real terminal, quoted. Dark in both themes on purpose —
+     it is a picture of a screen, not a surface of this page. */
+  --term-bg:#1c1e22;
+  --term-ink:#e6e3dc;
+  --term-go:#8fd39a;
+  --term-flag:#f2857a;
+  --term-bronze:#e0b070;
+
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+
+  --measure:72ch;       /* prose */
+  --measure-wide:76ch;  /* lists, footers */
+  --measure-lede:68ch;
+  --wrap:960px;
+
+  --radius-sm:3px;
+  --radius:6px;
+  --radius-md:5px;
+}
+
+/* The system's dark theme, unless the reader has explicitly asked for light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#141517;
+    --panel:#1c1e21;
+    --ink:#eceae5;
+    --ink2:#bfc3c9;
+    --mute:#8b9099;
+    --rule:#2b2e33;
+    --rule2:#454a52;
+    --blue:#7fb2e3;
+    --bronze:#dd9a4d;
+    --flag:#f0857b;
+    --go:#79c495;
+    --code-bg:#24272b;
+    --pre-bg:#1e2124;
+    --go-soft:#1c2a22;
+    --blue-soft:#1a232c;
+    --bronze-soft:#2c2317;
+    --flag-soft:#2e1e1c;
+    --link-rule:#3d5266;
+    --term-bg:#0f1113;
+    --term-ink:#e6e3dc;
+    --term-go:#8fd39a;
+    --term-flag:#f2857a;
+    --term-bronze:#e0b070;
+  }
+}
+
+/* An explicit dark choice, which must win even in a light system. Same values as
+   above; the test asserts the two blocks stay identical, because a toggle that
+   renders a third theme is a theme nobody designed. */
+:root[data-theme="dark"] {
+  --paper:#141517;
+  --panel:#1c1e21;
+  --ink:#eceae5;
+  --ink2:#bfc3c9;
+  --mute:#8b9099;
+  --rule:#2b2e33;
+  --rule2:#454a52;
+  --blue:#7fb2e3;
+  --bronze:#dd9a4d;
+  --flag:#f0857b;
+  --go:#79c495;
+  --code-bg:#24272b;
+  --pre-bg:#1e2124;
+  --go-soft:#1c2a22;
+  --blue-soft:#1a232c;
+  --bronze-soft:#2c2317;
+  --flag-soft:#2e1e1c;
+  --link-rule:#3d5266;
+  --term-bg:#0f1113;
+  --term-ink:#e6e3dc;
+  --term-go:#8fd39a;
+  --term-flag:#f2857a;
+  --term-bronze:#e0b070;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+* { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body {
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap { max-width:var(--wrap); margin:0 auto; padding:0 24px; }
+
+a { color:var(--blue); text-decoration:none; border-bottom:1px solid var(--link-rule); }
+a:hover { border-bottom-color:var(--blue); }
+
+h1, h2, h3 { font-family:var(--display); font-weight:700; letter-spacing:-.018em; line-height:1.15; margin:0; }
+h1 { font-size:clamp(28px,4.6vw,42px); margin:14px 0 0; }
+h2 { font-size:clamp(21px,2.8vw,27px); margin-top:4px; }
+h3 { font-size:16.5px; margin:30px 0 0; }
+
+p { max-width:var(--measure); }
+ul, ol { max-width:var(--measure-wide); padding-left:22px; }
+li { margin:7px 0; }
+
+code, .mono { font-family:var(--mono); }
+code {
+  background:var(--code-bg);
+  border:1px solid var(--rule);
+  border-radius:var(--radius-sm);
+  padding:1px 5px;
+  font-size:13.5px;
+  overflow-wrap:anywhere;
+}
+
+blockquote {
+  margin:18px 0 0;
+  padding:12px 18px;
+  border-left:3px solid var(--rule2);
+  color:var(--ink2);
+  max-width:70ch;
+  font-size:15.5px;
+}
+
+section { padding-top:24px; }
+
+/* ── Masthead ─────────────────────────────────────────────────────────────── */
+.mast { padding:56px 0 26px; }
+.eyebrow {
+  font:600 11px/1 var(--mono);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--mute);
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+.eyebrow .dot { width:4px; height:4px; border-radius:50%; background:var(--rule2); }
+.lede { max-width:var(--measure-lede); margin:16px 0 0; font-size:17.5px; color:var(--ink2); }
+.facts {
+  display:flex; flex-wrap:wrap; gap:6px 22px; margin:22px 0 0;
+  font:500 12.5px/1.5 var(--mono); color:var(--mute);
+}
+.facts b { color:var(--ink2); font-weight:600; }
+
+/* The section mark: a dashed rule with a word sitting on it. */
+.cut { position:relative; margin:56px 0 0; height:0; border-top:1px dashed var(--rule2); }
+.cut span {
+  position:absolute; top:-9px; left:0;
+  background:var(--paper); padding-right:14px;
+  font:600 12px/1 var(--mono); color:var(--bronze); letter-spacing:.06em;
+}
+
+/* ── Components ───────────────────────────────────────────────────────────────
+   Four boxes, and they are not interchangeable:
+     .verdict  what was concluded. One per page, near the end.
+     .callout  something the reader must not miss on the way past.
+     .card     one item in a set — an option, a finding, a piece of work.
+     .q        a question being put to the reader, with a recommendation.
+   The decisions README currently tells authors to paste a .callout and notes that
+   pages call the same box .callout, .card or .verdict. They are three components;
+   this is where the difference is written down. */
+
+.verdict {
+  margin:26px 0 0;
+  border:1px solid var(--rule2); border-left:4px solid var(--go);
+  border-radius:var(--radius-md); background:var(--panel);
+  padding:20px 22px;
+}
+.verdict .k { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--go); }
+.verdict p { margin:10px 0 0; font-size:16.5px; }
+
+.callout {
+  margin:22px 0 0;
+  border:1px solid var(--rule2); border-left:4px solid var(--flag);
+  border-radius:var(--radius); background:var(--panel);
+  padding:16px 18px; max-width:100%;
+}
+.callout .k { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--flag); }
+.callout p { margin:8px 0 0; }
+.callout.good { border-left-color:var(--go); }
+.callout.good .k { color:var(--go); }
+.callout.note { border-left-color:var(--bronze); }
+.callout.note .k { color:var(--bronze); }
+
+.card {
+  margin:22px 0 0;
+  border:1px solid var(--rule); border-radius:var(--radius);
+  background:var(--panel); padding:18px 20px;
+}
+.card .tag { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--bronze); }
+.card.block .tag { color:var(--flag); }
+.card.done .tag { color:var(--go); }
+.card h3 { margin-top:8px; }
+.card p { margin:8px 0 0; font-size:15.5px; }
+.card ul { margin:10px 0 0; font-size:15.5px; }
+
+.q {
+  margin:26px 0 0;
+  border:1px solid var(--rule2); border-radius:var(--radius);
+  background:var(--panel); padding:18px 22px;
+}
+.q .qid { font:600 12px/1 var(--mono); color:var(--bronze); letter-spacing:.06em; }
+.q h3 { margin-top:6px; }
+.q .rec { margin:12px 0 0; padding:10px 14px; border-left:3px solid var(--go); background:var(--go-soft); font-size:15px; }
+.q .rec b { color:var(--go); }
+
+/* ── Tables ───────────────────────────────────────────────────────────────────
+   .tbl is not optional. A table wide enough to be worth having is wider than a
+   phone, and without its own scroller it takes the whole page sideways. */
+.tbl { overflow-x:auto; margin:20px 0 0; -webkit-overflow-scrolling:touch; }
+table { border-collapse:collapse; width:100%; min-width:560px; font-size:14.5px; background:var(--panel); }
+th { font:600 11px/1.4 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--mute); text-align:left; }
+th, td { border:1px solid var(--rule); padding:9px 12px; vertical-align:top; }
+td b { font-weight:650; }
+
+/* Verdict words, wherever they appear. */
+.ok { color:var(--go); font-weight:650; }
+.bad { color:var(--flag); font-weight:650; }
+.warn { color:var(--bronze); font-weight:650; }
+
+/* ── Quoted output ────────────────────────────────────────────────────────── */
+.pre {
+  margin:16px 0 0; padding:14px 16px;
+  border:1px solid var(--rule); border-radius:var(--radius-md);
+  background:var(--pre-bg); color:var(--ink2);
+  font:13px/1.6 var(--mono);
+  overflow-x:auto; white-space:pre;
+}
+.term {
+  margin:16px 0 0; padding:16px 18px;
+  border-radius:var(--radius); background:var(--term-bg); color:var(--term-ink);
+  font:13px/1.55 var(--mono);
+  overflow-x:auto; white-space:pre; max-width:100%;
+}
+.term .ok { color:var(--term-go); }
+.term .bad { color:var(--term-flag); }
+.term .warn { color:var(--term-bronze); }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.foot {
+  margin:64px 0 0; padding:22px 0 46px;
+  border-top:1px solid var(--rule);
+  color:var(--mute); font-size:13.5px;
+}
+.foot p { max-width:var(--measure-wide); }
+
+/* ── The phone ────────────────────────────────────────────────────────────────
+   390px is the measurement that matters; 520 is where the page starts giving up
+   horizontal padding to keep the measure. */
+@media (max-width:520px) {
+  .wrap { padding:0 16px; }
+  .verdict, .card, .q, .callout { padding:15px 15px; }
+  .facts { gap:6px 14px; font-size:12px; }
+  .mast { padding:40px 0 18px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-20</span><span class="dot"></span><span>awaiting your decision</span><span class="dot"></span><span>three questions</span></div>
+  <h1>Back on CRAN: the work is done, and the next step is not ours to take</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0025">
+<p>D0025 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0025.1"><a class="did" href="#D0025.1">D0025.1</a><span class="dcode">C1</span><span class="dq">Do the two packages go back to CRAN now, wait until the replacement app's direction is settled, or stay off CRAN for good?</span></li>
+  <li id="D0025.2"><a class="did" href="#D0025.2">D0025.2</a><span class="dcode">C2</span><span class="dq">The chart that caused the archival now raises an error when called rather than a warning. Take that and the five other prepared calls as they stand, or overturn one?</span></li>
+  <li id="D0025.3"><a class="did" href="#D0025.3">D0025.3</a><span class="dcode">C3</span><span class="dq">Someone outside the program has been waiting since 17 August for an answer about this. Do we write the reply for you to post?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">Both packages were removed from CRAN in March because something underneath them was removed. That is fixed: the dependency is gone, both packages pass CRAN's own check as cleanly as a returning package can, and the work was then attacked by an audit that found eight real defects in it and fixed all eight. What is left is an upload through a web form, from repositories our agents may not write to, to an organisation none of our rules cover. That is a non-standard action, and this page asks you for it.</p>
+  <div class="facts">
+    <span><b>Off CRAN since:</b> 25 March 2026</span>
+    <span><b>Ready to submit today:</b> safetyCharts only</span>
+    <span><b>Someone outside has been waiting since:</b> 17 August</span>
+    <span><b>Your part:</b> answer three questions, then about an hour at a keyboard</span>
+  </div>
+</div>
+
+<div class="cut"><span>THE SITUATION</span></div>
+<section id="situation">
+<h2>Three sentences</h2>
+
+<p>safetyGraphics and safetyCharts were both removed from CRAN on 25 March, because a charting package one of them depended on was removed the same day and CRAN takes down whatever is standing on top of it. That dependency is now gone, both packages have been fixed and checked and independently audited, and the exact files that would be uploaded are built and sitting on this laptop. All that is left is the submission itself — a web form on CRAN's site, fed from two repositories our agents are forbidden to write to — so the act is yours, and asking you for it is the entire purpose of this page.</p>
+
+<p>You described this shape yourself tonight, before this page existed:</p>
+
+<blockquote>“Around the safety graphics resubmission stuff, we need to figure out how you get stuff like that added to the queue. I think probably, like, it's not a release in one of our packages, so it probably belongs in a decision artifact where you're just summarizing what was done and asking for approval to do the next step outside of... like, it's basically just a nonstandard action. Right? So you're asking for approval for a nonstandard action, which I think is fine.”</blockquote>
+
+<p>So this is the first page of its kind: a summary of what was done, and a request for approval to take the next step. The rule behind it is written down at the end, beside the three-bucket rule it extends.</p>
+</section>
+
+<div class="cut"><span>WHAT WAS DONE</span></div>
+<section id="done">
+<h2>Both packages are prepared, checked and audited</h2>
+
+<p>The requirement asked for one thing: drop the archived charting package, and make both packages submittable again. That is finished, and it turned out to be larger than the requirement expected — most of the risk was not where anyone thought it was.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th></th><th>safetyCharts</th><th>safetyGraphics</th></tr></thead>
+<tbody>
+<tr><td><b>Version prepared</b></td><td>0.5.0 — CRAN last carried 0.3.0</td><td>2.2.0 — CRAN archived 2.1.1</td></tr>
+<tr><td><b>Check result</b></td><td class="ok">1 note</td><td class="warn">1 warning</td></tr>
+<tr><td><b>What it says</b></td><td>“new submission” and “package was archived on CRAN” — every returning package carries these, and neither can be cleared</td><td>mostly that safetyCharts is not on CRAN yet, which clears the moment safetyCharts is accepted</td></tr>
+<tr><td><b>Submittable today</b></td><td class="ok">yes</td><td class="bad">no — see the order below</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Three problems that were not in the requirement, each of which would have bounced a submission</h3>
+
+<ul>
+<li>The two packages referred to each other — one imports the other, and the other listed the first as optional. With both archived, that is circular and fatal rather than untidy. Nothing in safetyCharts actually used it, so the reference is gone, and that is what lets safetyCharts go first.</li>
+<li>safetyGraphics on GitHub was sitting at exactly the version CRAN archived, with twenty-seven unreleased commits underneath it. CRAN refuses a version it already has, so this was a guaranteed rejection until the version was raised.</li>
+<li>safetyGraphics listed an optional package that has never been on CRAN at all — not archived, never published. Same fatal error. It has been dropped from the declaration, and the feature it powers still works for anyone who installs that package from GitHub.</li>
+</ul>
+
+<h3>And the finished work was attacked before it was handed over</h3>
+
+<p>Five agents went at the branches and the write-up with an independent judging pass. It raised forty-nine items and confirmed eight real defects, including one behaviour change that had been introduced by accident and two false statements in the write-up itself. All eight are fixed, and they are listed on the hand-off rather than quietly folded in.</p>
+
+<div class="callout"><div class="k">Something both packages were about to tell CRAN, untrue for years</div>
+<p>Each repository shipped a file, byte-identical in both, stating “there were no ERRORs, WARNINGs or NOTEs” from a version of R that is four years stale and three test machines that no longer exist. That file is what gets pasted into CRAN's comment box, in your name as maintainer. Both have been replaced with what the checks actually say.</p></div>
+
+<div class="callout good"><div class="k">The chart is not deleted</div>
+<p>The function is still there, still exported and still documented. Calling it raises an error that names the reason, the date, and how to draw the chart yourself from the archived package. The last working version stays in the repository's history under its release tag. Nothing was deleted, in either package.</p></div>
+</section>
+
+<div class="cut"><span>WHERE THE WORK LIVES</span></div>
+<section id="where">
+<h2>Everything prepared exists in exactly one place</h2>
+
+<div class="callout"><div class="k">This matters because of the weekend</div>
+<p>Neither branch was ever pushed. The prepared commits in both repositories exist on this laptop and nowhere else — no remote holds them, and the tarballs, the patch files and the check logs sit in a workspace folder that is not in any repository either. The laptop changes hands this weekend, and the same page that covers that move records that no backup destination is configured anywhere. So holding this decision is only free once the branches are pushed, and pushing them is an act only you can take, for the same reason the submission is.</p></div>
+
+<p>Pushing the two branches costs one command each and commits you to nothing. It is worth doing whichever of the three answers below you choose, including the answer that never submits anything.</p>
+</section>
+
+<div class="cut"><span>THE ORDER</span></div>
+<section id="order">
+<h2>safetyCharts first, and safetyGraphics waits for acceptance</h2>
+
+<p>This is the one part of the whole exercise with no room in it. safetyGraphics requires safetyCharts, so while safetyCharts is merely pending, safetyGraphics has a dependency CRAN cannot see. Its check says so today, in a line that nothing anyone changes in safetyGraphics can clear: it reports safetyCharts as a strong dependency that is not in a mainstream repository. Only safetyCharts actually being on CRAN clears it.</p>
+
+<div class="callout"><div class="k">Accepted, not submitted</div>
+<p>safetyGraphics must wait until safetyCharts has been accepted by CRAN — not until it has been uploaded, and not until the automated pretest comes back green. A CRAN team member has stated in public that the dependency has to be accepted first or the dependents get automatically archived, which would mean archiving one of these packages a second time in the middle of un-archiving it.</p></div>
+
+<p>The prepared work already enforces this rather than trusting anyone to remember. The comment file for safetyGraphics carries a do-not-submit banner at the top and two blanks — the version of safetyCharts and the date it was accepted — which cannot honestly be filled in until the first submission has landed. An earlier draft of that file asserted safetyCharts was already back on CRAN; the audit caught it, and it is now a placeholder behind the banner.</p>
+
+<div class="callout note"><div class="k">How long the gap is, nobody can tell you</div>
+<p>CRAN publishes nothing about how long a review takes. The only quantified figure anywhere is a community statistic — roughly a third of archived packages ever return, with a median of about a month — and that is a statistic about other people's packages, not a forecast for these two. Plan for the second submission being a separate errand on an unknown day rather than the same sitting.</p></div>
+</section>
+
+<div class="cut"><span>WHAT IS NOT KNOWN</span></div>
+<section id="unverified">
+<h2>The route back, and the honest edges of it</h2>
+
+<p>The path was researched from primary sources and then verified adversarially. The important half is established. The rest is not, and it is set out here as not established rather than smoothed over, because a plausible-sounding process presented as fact is exactly the thing that would waste your evening.</p>
+
+<h3>Established, from CRAN's own material or reproduced here</h3>
+
+<ul>
+<li>CRAN documents no un-archive procedure at all. The words “unarchive”, “un-archive”, “reinstate” and “restore” appear zero times in its repository policy, and the word “archiv” appears zero times in its submission checklist. The archived package page says only that the package was removed, and offers no route back.</li>
+<li>The route is therefore the ordinary submission form that every package uses. There is no separate channel, no separate address, and no box on the form marking a package as returning.</li>
+<li>The version must be strictly greater than the highest version in the package's archive. This is R's own incoming check rather than folklore, and it was reproduced here: checking safetyGraphics at its existing version printed “insufficient package version”.</li>
+<li>A returning package reads to CRAN as a new submission and draws new-submission scrutiny. The two commonest reasons a new submission is bounced — undocumented return values and unjustified un-runnable examples — have been cleared from both packages ahead of time.</li>
+<li>A package that depends on a returning package does not come back with it. It has to be submitted itself, at its own new version. Two recent cases from this year confirm it.</li>
+<li>Un-archiving is routine rather than exceptional. CRAN's own machine-readable index records it as an action more than six thousand times.</li>
+</ul>
+
+<h3>UNVERIFIED, in those words</h3>
+
+<ul>
+<li>Whether CRAN requires the reason for the archival in the comment box. UNVERIFIED. Nothing CRAN publishes requires it; every example anyone can find does it, and R Core advice recommends it. Both prepared files do it on that basis, which is convention rather than policy.</li>
+<li>Whether returning packages go to a separate manual review queue. UNVERIFIED.</li>
+<li>Whether there is any waiting period after an archival. UNVERIFIED. CRAN publishes nothing either way; one recent case had a replacement uploaded the same day it was archived and accepted the next.</li>
+<li>How long the human review step takes. UNVERIFIED. No primary source gives a typical interval.</li>
+<li>What the confirmation email says, and what the second and third steps of the submission form ask for. UNVERIFIED, and unknowable without actually uploading — which is yours to do.</li>
+</ul>
+
+<div class="callout note"><div class="k">One gap in the checking, and it is cheap to close</div>
+<p>The checks were run with the version of R on this laptop, which is three releases behind current, and CRAN asks for the check to be run with the current development version of R. There is a standard way to close that: one function call sends each tarball to CRAN's own Windows builder, runs the real check there, and emails you the result. It takes about twenty minutes of waiting and no work. It is an upload to a third party, so it was deliberately left for you rather than done on your behalf.</p></div>
+</section>
+
+<div class="cut"><span>OPTIONS</span></div>
+<section id="options">
+<h2>Three answers, in order of how much they commit you to</h2>
+
+<div class="card done"><div class="tag">Option A — recommended</div>
+<h3>Submit safetyCharts now, and safetyGraphics when it is accepted</h3>
+<p>Push the prepared branch, run the development-version check on the tarball, upload it with the prepared comment, and accept the confirmation email. Then wait for acceptance and repeat for the second package. About an hour now and half an hour later, plus answering whatever CRAN asks in review.</p>
+<p>What review is most likely to ask about: safetyCharts bundles sixteen third-party JavaScript libraries whose copyright holders are not declared anywhere in the package. That is not new — the identical set shipped in the version CRAN accepted in 2022 — but a returning package draws new-submission scrutiny, and this is the kind of thing it draws. Answering it properly means establishing who actually holds copyright on sixteen libraries, which is a project rather than a fix, and is not something to guess at in a submission.</p>
+<ul>
+<li>Forecloses nothing. If CRAN asks for something you answer it; if you later change your mind, a package leaves CRAN by simply not being maintained.</li>
+<li>Ends the wait for the person who asked, and gives them a real answer rather than a promise.</li>
+<li>Restores the ordinary install route for everyone using these packages today.</li>
+</ul>
+</div>
+
+<div class="card"><div class="tag">Option B — hold</div>
+<h3>Preserve the work, and decide after the replacement app's direction is settled</h3>
+<p>Push both branches so the work survives the machine change, and stop there. Nothing is lost on the day, and the decision comes back when there is more to base it on.</p>
+<p>The cost is that the work ages. The checks were run against a moving target — CRAN's checks tighten with every R release — so a submission months from now means re-running the whole verification rather than uploading what is on disk. And the person waiting keeps waiting, or gets told nothing is happening yet.</p>
+<ul>
+<li>Right if you think these two packages are close enough to being replaced that a review cycle is not worth spending.</li>
+<li>The honest risk is drift: this is the option that quietly becomes the next one by never being revisited.</li>
+</ul>
+</div>
+
+<div class="card"><div class="tag">Option C — stay off</div>
+<h3>Do not return to CRAN; install from GitHub only</h3>
+<p>No submission, and the open request outside the program gets a plain answer saying so, so the people waiting can plan.</p>
+<p>The cost falls on a specific group rather than in general. Installing either package the ordinary way stays broken permanently, and anyone in a validated or restricted environment that can only reach CRAN loses these packages outright — which is the population most likely to be using them in the first place.</p>
+<ul>
+<li>Right if the replacement lands soon and these packages are genuinely at the end of their life.</li>
+<li>Reversible in principle, but saying “we are not coming back” and then coming back is worse than having said nothing.</li>
+</ul>
+</div>
+</section>
+
+<div class="cut"><span>THE CALLS ALREADY MADE</span></div>
+<section id="calls">
+<h2>Six choices are baked into the prepared change</h2>
+
+<p>Each is reversible in about a line. Only the first changes what anyone using the package experiences, and it is the one the requirement described differently — the requirement asked for the chart to be deprecated, and what was built raises an error rather than a warning. That substitution is why this is a question rather than a footnote.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>The call</th><th>What was chosen</th><th>What the alternative would have meant</th></tr></thead>
+<tbody>
+<tr><td><b>The chart that caused all this</b></td><td>Calling it raises an error naming the reason, the date, and how to draw it yourself</td><td>A warning that returns nothing, which the app would then try to draw — a confusing failure instead of a clear one. There is nothing left to deprecate towards: the function's whole body was a call into the archived package</td></tr>
+<tr><td><b>safetyCharts version</b></td><td>0.5.0</td><td>Reusing 0.4.0, which is already a public release in which the chart works — two different packages carrying one number</td></tr>
+<tr><td><b>safetyGraphics version</b></td><td>2.2.0</td><td>2.1.2. The unreleased work is features rather than fixes, so a minor bump is the honest description of it</td></tr>
+<tr><td><b>The optional patient-profile tab</b></td><td>The package it needs is dropped from the declared list; the tab still works for anyone who installs that package from GitHub</td><td>Declaring it through an additional repository, which needs a live repository address that does not exist yet</td></tr>
+<tr><td><b>Example code in the help pages</b></td><td>Runs on twenty subjects rather than the full dataset</td><td>The full data, which put two examples within a second of CRAN's five-second limit on hardware faster than CRAN's</td></tr>
+<tr><td><b>What ships inside the tarball</b></td><td>The rendered documentation site and a development scratch folder are excluded from the build, taking it from 1.55 MB to 539 KB</td><td>Shipping them, as the 2022 version did. Nothing is deleted — they are excluded from the build only</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<div class="cut"><span>SOMEONE OUTSIDE IS WAITING</span></div>
+<section id="waiting">
+<h2>An unanswered request, three days old</h2>
+
+<p>On 17 August somebody outside this program opened a request on the safetyGraphics repository asking about exactly this — the CRAN archival and the dependency that caused it. It has no reply, no comment, and no reaction of any kind on it.</p>
+
+<p>Nothing here has answered it and nothing here will. Agents in this program do not write anywhere outside repositories on your own account, and that rule holds even when you say a particular case is fine, because a rule with exceptions to remember is a rule that gets forgotten at the wrong moment. What is offered instead is a drafted reply that you paste.</p>
+
+<p>The draft would say what has been done, that safetyCharts goes first and safetyGraphics follows on its acceptance, and it would not promise a date, because nobody honestly can. If you pick the third option above, the same draft says that instead — which is still a far better answer than silence.</p>
+</section>
+
+<div class="cut"><span>DECISION</span></div>
+<section id="questions">
+
+<div class="q" id="C1">
+  <div class="qid">C1</div>
+  <h3>Do the packages go back to CRAN?</h3>
+  <p>Submit now, hold until the replacement app's direction is settled, or stay off CRAN and say so. This is the approval the page exists for: a submission to an organisation outside every lane we have, from repositories our agents cannot touch.</p>
+  <div class="rec"><b>Recommendation: submit.</b> The work is finished, checked and audited, and it is worth nothing sitting on a laptop. The cost is an hour of your time and a review cycle; the cost of waiting is that the checking ages and has to be redone. Run the development-version check on each tarball before uploading — twenty minutes of waiting, and it closes the one real gap in what was verified.</div>
+</div>
+
+<div class="q" id="C2">
+  <div class="qid">C2</div>
+  <h3>The six calls already made — take them, or overturn one?</h3>
+  <p>Versions, what the retired chart does when called, what ships in the tarball, and how the examples run. Each is a line to reverse, and reversing one means rebuilding and re-checking that package before it goes.</p>
+  <div class="rec"><b>Recommendation: take all six.</b> The only one that changes behaviour for anyone is the first, and the gentler-sounding alternative is actually worse — a warning would leave the application trying to draw a chart that no longer exists. If you want to overturn one, name it and it comes back rebuilt and re-checked rather than patched.</div>
+</div>
+
+<div class="q" id="C3">
+  <div class="qid">C3</div>
+  <h3>The request from outside — do we write the reply for you to post?</h3>
+  <p>Somebody has been waiting since 17 August for an answer that already exists. We cannot post it. We can write it.</p>
+  <div class="rec"><b>Recommendation: yes, and post it whichever way you answer the first question.</b> Silence reads as nobody being on it, which is the one thing that is not true.</div>
+</div>
+
+<h3>What unblocks on each</h3>
+<ul>
+<li>Submit — the branches get pushed, the tarballs go through the development-version check, and safetyCharts is uploaded the same day. The requirement stays open until both packages are actually back, because “submitted” is not the done-condition it was written with.</li>
+<li>Hold — the branches still get pushed, which is the part that has to happen this week regardless, and the requirement is re-scoped to say so rather than sitting open against work nobody intends to finish.</li>
+<li>Stay off — the requirement closes with the reason written down, the reply goes out, and the prepared work stays in the repositories' history for whoever wants it later.</li>
+<li>Any of them — the drafted reply is written and handed to you, since all three answers are answers that person can use.</li>
+</ul>
+</section>
+
+<div class="cut"><span>AFTERWARDS</span></div>
+<section id="afterwards">
+<h2>What you would actually do, in order</h2>
+
+<ol>
+<li>Push the prepared branch in each repository. This is the step that makes the work safe regardless of everything below it.</li>
+<li>Take the “(Upcoming)” marker off the release-notes heading in whichever package you are about to send. CRAN renders that file on the package's own page.</li>
+<li>Run the development-version check on the exact tarball you intend to upload, and wait for the email.</li>
+<li>Upload safetyCharts alone, pasting the prepared comment into the form's optional comment box with the check result filled in.</li>
+<li>Accept the confirmation email. Nothing moves until you click it.</li>
+<li>Wait for acceptance — not for the automated pretest. Then fill in the two blanks in the safetyGraphics comment file, delete its do-not-submit banner, and repeat from step two.</li>
+</ol>
+
+<p>If you change anything on either branch, rebuild the tarball before sending it. CRAN asks for the check to have been run on the file you actually upload, and that is the whole reason the rule exists.</p>
+
+<p>Everything named here is already on disk, and the tarballs were verified to be builds of the branch tips rather than assumed to be:</p>
+
+<div class="pre">~/Documents/obot2/safetyCharts                     branch remove-tendril
+~/Documents/obot2/safetyGraphics                   branch remove-tendril
+~/Documents/obot2/.claude/session-notes/2026-08-20-cran-patches/
+    safetyCharts_0.5.0.tar.gz      safetyGraphics_2.2.0.tar.gz
+    patch sets, and the check logs both suppressed and unsuppressed</div>
+</section>
+
+<div class="cut"><span>THE PATTERN</span></div>
+<section id="pattern">
+<h2>Why this page exists, and what else will now look like it</h2>
+
+<p>Your queue holds three things: release candidates, decisions, and config items. This work fitted none of them. It is not a release of one of our packages, it is not something sitting on your keyboard, and until tonight it was not a decision either — so it fell through, and finished work sat in a chat message and a hand-off page instead of anywhere you would look for it.</p>
+
+<p>Your answer was that it rides the decision bucket rather than becoming a fourth one: a non-standard action becomes a decision artifact that summarises what was done and asks approval for the next step. So the working rule, now written down beside the three-bucket rule itself so the two are read together, is this. A non-standard action is something outside our standard lanes, done or proposed by an agent, that needs your approval and is neither a release nor a config item. It reaches you as a decision artifact with a Q&amp;A thread, exactly like this one, and it carries what was done, what state it is in, and the specific approval being asked for.</p>
+
+<p>The test for whether something is one is simple enough to apply without thinking about it: if an agent has finished work and the next step is an act it cannot take, that step needs your approval, and there is no release and no configuration change in it — it is a non-standard action, and it becomes one of these pages.</p>
+</section>
+
+<div class="foot">
+<p>Sources. The prepared work, the check results and the research on the route back are the worker hand-off of 20 August, read in full rather than summarised from its issue comment. Both CRAN package pages were fetched on 20 August and both still read that the package was removed from the CRAN repository, archived on 25 March as requiring an archived package. The open request outside the program was read from GitHub on 20 August: open, created 17 August, zero comments. The branch state was read locally, and both prepared branches were confirmed to exist on no remote — every branch containing those commits is a local one.</p>
+<p>References. Requirement: <a href="https://github.com/jwildfire/obot.roadmap/issues/281">obot.roadmap#281</a>, and its <a href="https://github.com/jwildfire/obot.roadmap/issues/281#issuecomment-5361087922">outcome comment</a>. Full hand-off, formatted for a phone: <a href="https://claude.ai/code/artifact/ba5bc436-9362-4715-98ce-cc439f5d1aab">the CRAN hand-off page</a>. The three-bucket rule this extends: <a href="https://github.com/jwildfire/obot.roadmap/issues/220">obot.roadmap#220</a>. The machine change and the backup finding: <a href="../2026-08-20-laptop-migration/">the laptop move</a>. The unanswered request: <a href="https://github.com/SafetyGraphics/safetyGraphics/issues/728">SafetyGraphics/safetyGraphics#728</a>. CRAN's package pages: <a href="https://cran.r-project.org/package=safetyCharts">safetyCharts</a>, <a href="https://cran.r-project.org/package=safetyGraphics">safetyGraphics</a>.</p>
+<p>Drafted by 👯🤖 W0095 using Claude Opus 5. Not reviewed by @jwildfire.</p>
+</div>
+
+</div>
+</body></html>
