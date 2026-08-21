@@ -15,6 +15,8 @@
 //                       as a count on the queue page and in the wire's pinned box
 //   session.json        published to the orphan `session-state` branch by the
 //                       heartbeat, fetched client-side by the NOW strip
+//   premise-status.json written by the machine's claim sweep, read at build time,
+//                       rendered as the premise strip on every decision artifact
 //
 // ## Why both are validated HERE, on the public side
 //
@@ -35,7 +37,14 @@
 // text an agent writes about itself while clearing a config item is exactly the
 // text that must never appear.
 //
-// So neither channel is trusted. Each is parsed into a fixed shape here, and
+// The premise channel is the newest and the narrowest. A decision artifact's
+// premise sentences are already public — an author writes them into the page's own
+// head — so the only thing the machine has to add is a verdict, a time and a
+// fingerprint of what it measured. Ids, timestamps, twelve hex characters and a
+// three-member enum: there is nowhere in that shape for the sentence an agent wrote
+// about a config item while it happened to be running the same sweep.
+//
+// So no channel is trusted. Each is parsed into a fixed shape here, and
 // anything that is not a number, a timestamp, or a member of a closed enum is
 // dropped rather than rendered. A compromised, careless, or simply changed
 // producer cannot publish prose through a reader that has nowhere to put prose.
@@ -175,4 +184,132 @@ export function sessionStateValidatorScript() {
       updatedAt: (typeof s.updatedAt === 'string' && s.updatedAt.length < 40) ? s.updatedAt : null,
     };
   };`;
+}
+
+// ------------------------------------------------------- premise readings
+
+/**
+ * Where the machine hands across what it measured. Inside this repo, so the
+ * guard allows it; declared in `check_local_only_guard.mjs` like the count.
+ */
+export const PREMISE_STATUS_PATH = path.join(ROOT, 'data', 'premise-status.json');
+
+/** The contract string. A file that does not name it is not this channel. */
+export const PREMISE_STATUS_SCHEMA = 'obot.roadmap/premise-status@1';
+
+/** The three states a measurement can be in. There is no fourth. */
+export const PREMISE_STATES = ['holds', 'fails', 'unknown'];
+
+/**
+ * Why a measurement is `unknown`, as a closed set rather than a sentence.
+ *
+ * The sweep knows the reason in words and those words are free text written on
+ * his machine, so they do not cross. What crosses is which of three kinds it was,
+ * and the sentence a reader sees is composed on this side from that — the same
+ * rule the config count is under, for the same reason.
+ *
+ *   manual    the premise says `manual — …`; nothing was ever going to run
+ *   refused   the command is not a recognised read-only one, so it was not run
+ *   errored   it ran, or tried to, and did not produce an answer to judge
+ */
+export const PREMISE_UNKNOWN_REASONS = ['manual', 'refused', 'errored'];
+
+/** `D0021.p2` — an artifact id and the premise's position in its own head. */
+const PREMISE_ID = /^D\d{4}\.p\d{1,3}$/;
+/** Twelve lowercase hex characters. A fingerprint has nowhere to put a sentence. */
+const PREMISE_SHA = /^[0-9a-f]{12}$/;
+
+/**
+ * Every premise reading the machine has published, or a stated reason there are none.
+ *
+ * Returns `{ ok: true, asOf, readings: Map<id, {state, at, why, sha}> }` or
+ * `{ ok: false, why }`, and `why` is this site's own words rather than the file's.
+ *
+ * The whole payload is refused if any row is wrong, and deliberately so. A premise
+ * strip that silently dropped the one row it could not read would render "all five
+ * hold" over four readings and a hole, which is the manufactured measurement the
+ * whole mechanism exists to prevent — one layer further out than where the sweep
+ * prevents it.
+ */
+export function readPremiseStatus({ file = PREMISE_STATUS_PATH } = {}) {
+  let raw;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch {
+    return { ok: false, why: 'no premise reading has been published from the machine yet' };
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    return { ok: false, why: 'the published premise readings could not be read' };
+  }
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return { ok: false, why: 'the published premise readings are not in the expected shape' };
+  }
+
+  const keys = Object.keys(payload).sort();
+  const expected = ['_schema', 'asOf', 'readings'];
+  if (keys.length !== expected.length || keys.some((k, i) => k !== expected[i])) {
+    return { ok: false, why: 'the published premise readings carry fields this site does not accept' };
+  }
+  if (payload._schema !== PREMISE_STATUS_SCHEMA) {
+    return { ok: false, why: 'the published premise readings are a version this site does not read' };
+  }
+  if (typeof payload.asOf !== 'string' || !ISO.test(payload.asOf)) {
+    return { ok: false, why: 'the published premise readings are not dated' };
+  }
+  if (!Array.isArray(payload.readings)) {
+    return { ok: false, why: 'the published premise readings are not a list' };
+  }
+
+  const readings = new Map();
+  for (const row of payload.readings) {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) {
+      return { ok: false, why: 'a published premise reading is not in the expected shape' };
+    }
+    const rk = Object.keys(row).sort();
+    const rexp = ['at', 'id', 'sha', 'state', 'why'];
+    if (rk.length !== rexp.length || rk.some((k, i) => k !== rexp[i])) {
+      return { ok: false, why: 'a published premise reading carries fields this site does not accept' };
+    }
+    if (typeof row.id !== 'string' || !PREMISE_ID.test(row.id)) {
+      return { ok: false, why: 'a published premise reading is not identified' };
+    }
+    if (typeof row.sha !== 'string' || !PREMISE_SHA.test(row.sha)) {
+      return { ok: false, why: 'a published premise reading carries no fingerprint of what it measured' };
+    }
+    if (!PREMISE_STATES.includes(row.state)) {
+      return { ok: false, why: 'a published premise reading is in a state this site does not read' };
+    }
+    // A measurement has a time. A premise nothing could run — a manual one, or a
+    // proof the read-only allowlist does not recognise — was never measured, so it
+    // has none, and inventing one would date a reading that does not exist. Null is
+    // allowed there and nowhere else.
+    if (row.at === null) {
+      if (row.state !== 'unknown') return { ok: false, why: 'a published premise reading states a verdict without saying when it was measured' };
+    } else if (typeof row.at !== 'string' || !ISO.test(row.at)) {
+      return { ok: false, why: 'a published premise reading is not dated' };
+    }
+    // `why` belongs to `unknown` and to nothing else: a reason attached to a
+    // measured verdict would be a sentence about a fact the verdict already
+    // states, and this is the one place a sentence could get in.
+    if (row.why !== null && !PREMISE_UNKNOWN_REASONS.includes(row.why)) {
+      return { ok: false, why: 'a published premise reading gives a reason this site does not read' };
+    }
+    if (row.state === 'unknown' && row.why === null) {
+      return { ok: false, why: 'a published premise reading is unknown without saying which kind' };
+    }
+    if (row.state !== 'unknown' && row.why !== null) {
+      return { ok: false, why: 'a published premise reading gives a reason for a verdict that was measured' };
+    }
+    if (readings.has(row.id)) {
+      return { ok: false, why: 'the published premise readings name the same premise twice' };
+    }
+    readings.set(row.id, { state: row.state, at: row.at, why: row.why, sha: row.sha });
+  }
+
+  return { ok: true, asOf: payload.asOf, readings };
 }

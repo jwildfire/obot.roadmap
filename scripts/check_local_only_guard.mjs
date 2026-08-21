@@ -236,6 +236,20 @@ const EMITTED = [
     optional: true, // absent on a fresh clone, and absence is a stated answer
   },
   {
+    // The premise channel (#266). A decision artifact's premise sentences are
+    // written into its own head in this repository and are already public, so the
+    // only thing crossing from the machine is a verdict, a time and a twelve-hex
+    // fingerprint of what was measured. Pinning the row shape here is what keeps it
+    // that way: the day someone adds `why: "<the sweep's own words>"` to make the
+    // page more helpful, the build fails instead of publishing it.
+    file: path.join(ROOT, 'data', 'premise-status.json'),
+    by: 'obot.agent/tools/premise-status',
+    top: ['_schema', 'asOf', 'readings'],
+    rows: { readings: ['id', 'sha', 'state', 'at', 'why'] },
+    freeText: [],
+    optional: true, // absent on a fresh clone, and the strip says so on every page
+  },
+  {
     file: path.join(ROOT, 'site', 'usage', 'usage.json'),
     by: 'scripts/build_usage_data.py',
     top: ['schema', 'project', 'days', 'cells', 'models', 'roleLabels', 'cacheMultipliers', 'totals'],

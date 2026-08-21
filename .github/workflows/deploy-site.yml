@@ -208,6 +208,19 @@ jobs:
           node scripts/check_decision_status.mjs
           node scripts/stamp_decision_status.mjs --check
 
+      # Every decision artifact carries its own premise status, at the top of its own
+      # page (#266, task #301). The sweep on his machine has re-checked these premises
+      # every five minutes since obot.agent#262 and the page itself said nothing, so a
+      # reader met an argument built on a premise that may have expired with no
+      # indication anything had ever looked.
+      #
+      # It rewrites the _site copies in place and never the committed pages: an
+      # artifact's prose, its recommendation and its recorded decisions are the record.
+      # Runs after the decision-status gate so the artifact states it reads have already
+      # been checked against the pages they came from.
+      - name: Stamp the premise status onto every decision artifact
+        run: node scripts/stamp_premise_status.mjs
+
       - name: Build news
         run: node scripts/build_news.mjs
 
@@ -369,6 +382,25 @@ jobs:
           # The decisions folder's landing page is generated too — it drifted to
           # listing 2 of 12 artifacts while it was hand-maintained.
           have reports/decisions/index.html; says reports/decisions/index.html "Waiting on you"
+
+          # Every decision artifact carries its premise strip (#266). Counted against
+          # the registry rather than asserted on one page: a regex that stopped
+          # matching would leave the artifacts looking exactly as they did before this
+          # existed, which is the silent-success shape this repo keeps paying for.
+          arts=$(node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync("reports/decisions/registry.json","utf8")).artifacts.length))')
+          strips=$(grep -l 'data-pcx' _site/reports/decisions/*/index.html 2>/dev/null | wc -l | tr -d ' ')
+          [ "$strips" = "$arts" ] || { echo "::error title=Premise strip missing::$strips of $arts decision artifacts carry the premise strip"; fail=1; }
+          # And it is above the argument rather than in a footer, which is the whole
+          # placement decision: an expired premise is a reason to distrust what
+          # follows, so it has to come before what follows. Asserted against the
+          # page's own headline rather than a byte offset, since each artifact
+          # carries its own inline stylesheet and they are not the same length.
+          for f in _site/reports/decisions/*/index.html; do
+            b=$(grep -n 'data-pcx' "$f" | head -1 | cut -d: -f1)
+            h=$(grep -n '<h1' "$f" | head -1 | cut -d: -f1)
+            [ -n "$b" ] && [ -n "$h" ] && [ "$b" -lt "$h" ] \
+              || { echo "::error title=Premise strip buried::$f does not carry the premise strip above its headline"; fail=1; }
+          done
 
           # The briefing (#247): the one URL he bookmarks on his phone. Asserting
           # the two headline sections rather than the page alone, because an empty
