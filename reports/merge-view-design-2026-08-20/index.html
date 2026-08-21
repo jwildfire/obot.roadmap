@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Merges Tab</title>
+<meta name="description" content="A proposed dashboard tab that reads a whole day of agent merges as one summary — what landed in the harness versus what will ship to users, which agent landed it, and which branch it flows to — with 2026-08-20's real numbers rendered inside it.">
+<style>
+/* obot shared stylesheet — the decision-artifact reading language, in one place.
+ *
+ * Requirement jwildfire/obot.agent#15. @jwildfire, 2026-08-20: "match the css of the
+ * decision docs. Prioritize creating a shared style sheet for the project."
+ *
+ * ## What this is, measured rather than remembered
+ *
+ * Seventeen of the twenty-four decision artifacts under obot.roadmap/reports/decisions
+ * carry the same eleven colours, the same three font stacks, and the same component
+ * vocabulary — byte-identical values, in seventeen separate <style> blocks. That is not
+ * a house style anybody wrote down; it is a paste that happened seventeen times. This
+ * file is that paste, written once. Every value below was read off those pages, and
+ * tools/ops-dashboard/test/shared-css.test.mjs reads them off again on every run, so
+ * the sheet cannot drift from the pages it was extracted from without going red.
+ *
+ * Two things the pages did NOT have, added here deliberately:
+ *
+ *   - A dark theme. Zero of the seventeen answer prefers-color-scheme, so every one of
+ *     them is a white page on a phone at midnight — and he reads them on a phone. The
+ *     palette below is stated three times, per the program's theme contract: the full
+ *     light palette on bare :root, the dark palette under the media query guarded so an
+ *     explicit light choice still wins, and the same dark palette again under
+ *     [data-theme="dark"] so a toggle wins in both directions. No colour is defined only
+ *     inside a theme block.
+ *   - Tokens for the colours the pages hard-coded. #f2eee3 behind inline code, #f4f8f4
+ *     behind a recommendation, rgba(47,111,168,.32) under a link: each was a literal on
+ *     ten to seventeen pages, and a literal is a colour the dark theme cannot reach.
+ *
+ * ## What this is NOT
+ *
+ * This is the *document* language — the one @jwildfire reads decisions and reports in,
+ * and now the one the operations dashboard is dressed in. The program also has an
+ * espresso *keynote* language (paper #faf6f1, espresso #271810, Instrument Serif) that
+ * dresses the public sites: obot.roadmap/site/assets/styles.css, safety.viz/site/site.css
+ * sections 1-4, open.gismo/site/src/style.css. Those are four copies of a second theme
+ * and they still have no shared home. See docs/shared-stylesheet.md.
+ *
+ * ## Consuming it
+ *
+ * Inline it. `import { OBOT_CSS } from '<obot.agent>/assets/obot-css.mjs'` and drop it in
+ * a <style> block. Decision artifacts and config cards are self-contained single files by
+ * contract, so a <link> would break them; a surface that is genuinely multi-page can link
+ * the file instead. Either way the bytes come from here — a consumer that copies them has
+ * re-made the problem, and the greppable string "obot shared stylesheet" is how you find
+ * one that did.
+ *
+ * Layout is the consumer's. This sheet carries palette, type, and the components below;
+ * it sets no grid, no fixed positioning, and no page chrome.
+ */
+
+/* ── Palette ──────────────────────────────────────────────────────────────────
+   The eleven colours, byte for byte off the seventeen pages, plus the surfaces
+   they hard-coded and a terminal ink that four of them invented. */
+:root {
+  --paper:#faf7f0;      /* page ground */
+  --panel:#fffdf9;      /* anything raised off the page: card, callout, table */
+  --ink:#17191c;        /* body text and headings */
+  --ink2:#454a51;       /* secondary text — ledes, card bodies, quotes */
+  --mute:#7b8089;       /* labels, eyebrows, footers: present but not read first */
+  --rule:#e2dccf;       /* hairline */
+  --rule2:#c8bfa9;      /* the heavier rule, for edges that mean something */
+  --blue:#2f6fa8;       /* links, and the primary accent */
+  --bronze:#a95d10;     /* attention without alarm: notes, tags, section marks */
+  --flag:#b83a2e;       /* the thing that is wrong */
+  --go:#2b7a4b;         /* the thing that is settled, passing, or recommended */
+
+  /* Surfaces the pages wrote as literals. */
+  --code-bg:#f2eee3;    /* was #f2eee3 on 13 pages */
+  --pre-bg:#f7f4ec;     /* was #f7f4ec on 6 */
+  --go-soft:#f4f8f4;    /* was #f4f8f4 behind .rec on 10 */
+  --blue-soft:#eef3f8;
+  --bronze-soft:#f8efe3;
+  --flag-soft:#f6ede5;  /* was rgba(184,58,46,.055) over --paper */
+  --link-rule:#b9cbd9;  /* was rgba(47,111,168,.32) on all 17 */
+
+  /* The console block: a real terminal, quoted. Dark in both themes on purpose —
+     it is a picture of a screen, not a surface of this page. */
+  --term-bg:#1c1e22;
+  --term-ink:#e6e3dc;
+  --term-go:#8fd39a;
+  --term-flag:#f2857a;
+  --term-bronze:#e0b070;
+
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+
+  --measure:72ch;       /* prose */
+  --measure-wide:76ch;  /* lists, footers */
+  --measure-lede:68ch;
+  --wrap:960px;
+
+  --radius-sm:3px;
+  --radius:6px;
+  --radius-md:5px;
+}
+
+/* The system's dark theme, unless the reader has explicitly asked for light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#141517;
+    --panel:#1c1e21;
+    --ink:#eceae5;
+    --ink2:#bfc3c9;
+    --mute:#8b9099;
+    --rule:#2b2e33;
+    --rule2:#454a52;
+    --blue:#7fb2e3;
+    --bronze:#dd9a4d;
+    --flag:#f0857b;
+    --go:#79c495;
+    --code-bg:#24272b;
+    --pre-bg:#1e2124;
+    --go-soft:#1c2a22;
+    --blue-soft:#1a232c;
+    --bronze-soft:#2c2317;
+    --flag-soft:#2e1e1c;
+    --link-rule:#3d5266;
+    --term-bg:#0f1113;
+    --term-ink:#e6e3dc;
+    --term-go:#8fd39a;
+    --term-flag:#f2857a;
+    --term-bronze:#e0b070;
+  }
+}
+
+/* An explicit dark choice, which must win even in a light system. Same values as
+   above; the test asserts the two blocks stay identical, because a toggle that
+   renders a third theme is a theme nobody designed. */
+:root[data-theme="dark"] {
+  --paper:#141517;
+  --panel:#1c1e21;
+  --ink:#eceae5;
+  --ink2:#bfc3c9;
+  --mute:#8b9099;
+  --rule:#2b2e33;
+  --rule2:#454a52;
+  --blue:#7fb2e3;
+  --bronze:#dd9a4d;
+  --flag:#f0857b;
+  --go:#79c495;
+  --code-bg:#24272b;
+  --pre-bg:#1e2124;
+  --go-soft:#1c2a22;
+  --blue-soft:#1a232c;
+  --bronze-soft:#2c2317;
+  --flag-soft:#2e1e1c;
+  --link-rule:#3d5266;
+  --term-bg:#0f1113;
+  --term-ink:#e6e3dc;
+  --term-go:#8fd39a;
+  --term-flag:#f2857a;
+  --term-bronze:#e0b070;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+* { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body {
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap { max-width:var(--wrap); margin:0 auto; padding:0 24px; }
+
+a { color:var(--blue); text-decoration:none; border-bottom:1px solid var(--link-rule); }
+a:hover { border-bottom-color:var(--blue); }
+
+h1, h2, h3 { font-family:var(--display); font-weight:700; letter-spacing:-.018em; line-height:1.15; margin:0; }
+h1 { font-size:clamp(28px,4.6vw,42px); margin:14px 0 0; }
+h2 { font-size:clamp(21px,2.8vw,27px); margin-top:4px; }
+h3 { font-size:16.5px; margin:30px 0 0; }
+
+p { max-width:var(--measure); }
+ul, ol { max-width:var(--measure-wide); padding-left:22px; }
+li { margin:7px 0; }
+
+code, .mono { font-family:var(--mono); }
+code {
+  background:var(--code-bg);
+  border:1px solid var(--rule);
+  border-radius:var(--radius-sm);
+  padding:1px 5px;
+  font-size:13.5px;
+  overflow-wrap:anywhere;
+}
+
+blockquote {
+  margin:18px 0 0;
+  padding:12px 18px;
+  border-left:3px solid var(--rule2);
+  color:var(--ink2);
+  max-width:70ch;
+  font-size:15.5px;
+}
+
+section { padding-top:24px; }
+
+/* ── Masthead ─────────────────────────────────────────────────────────────── */
+.mast { padding:56px 0 26px; }
+.eyebrow {
+  font:600 11px/1 var(--mono);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--mute);
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+.eyebrow .dot { width:4px; height:4px; border-radius:50%; background:var(--rule2); }
+.lede { max-width:var(--measure-lede); margin:16px 0 0; font-size:17.5px; color:var(--ink2); }
+.facts {
+  display:flex; flex-wrap:wrap; gap:6px 22px; margin:22px 0 0;
+  font:500 12.5px/1.5 var(--mono); color:var(--mute);
+}
+.facts b { color:var(--ink2); font-weight:600; }
+
+/* The section mark: a dashed rule with a word sitting on it. */
+.cut { position:relative; margin:56px 0 0; height:0; border-top:1px dashed var(--rule2); }
+.cut span {
+  position:absolute; top:-9px; left:0;
+  background:var(--paper); padding-right:14px;
+  font:600 12px/1 var(--mono); color:var(--bronze); letter-spacing:.06em;
+}
+
+/* ── Components ───────────────────────────────────────────────────────────────
+   Four boxes, and they are not interchangeable:
+     .verdict  what was concluded. One per page, near the end.
+     .callout  something the reader must not miss on the way past.
+     .card     one item in a set — an option, a finding, a piece of work.
+     .q        a question being put to the reader, with a recommendation.
+   The decisions README currently tells authors to paste a .callout and notes that
+   pages call the same box .callout, .card or .verdict. They are three components;
+   this is where the difference is written down. */
+
+.verdict {
+  margin:26px 0 0;
+  border:1px solid var(--rule2); border-left:4px solid var(--go);
+  border-radius:var(--radius-md); background:var(--panel);
+  padding:20px 22px;
+}
+.verdict .k { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--go); }
+.verdict p { margin:10px 0 0; font-size:16.5px; }
+
+.callout {
+  margin:22px 0 0;
+  border:1px solid var(--rule2); border-left:4px solid var(--flag);
+  border-radius:var(--radius); background:var(--panel);
+  padding:16px 18px; max-width:100%;
+}
+.callout .k { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--flag); }
+.callout p { margin:8px 0 0; }
+.callout.good { border-left-color:var(--go); }
+.callout.good .k { color:var(--go); }
+.callout.note { border-left-color:var(--bronze); }
+.callout.note .k { color:var(--bronze); }
+
+.card {
+  margin:22px 0 0;
+  border:1px solid var(--rule); border-radius:var(--radius);
+  background:var(--panel); padding:18px 20px;
+}
+.card .tag { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--bronze); }
+.card.block .tag { color:var(--flag); }
+.card.done .tag { color:var(--go); }
+.card h3 { margin-top:8px; }
+.card p { margin:8px 0 0; font-size:15.5px; }
+.card ul { margin:10px 0 0; font-size:15.5px; }
+
+.q {
+  margin:26px 0 0;
+  border:1px solid var(--rule2); border-radius:var(--radius);
+  background:var(--panel); padding:18px 22px;
+}
+.q .qid { font:600 12px/1 var(--mono); color:var(--bronze); letter-spacing:.06em; }
+.q h3 { margin-top:6px; }
+.q .rec { margin:12px 0 0; padding:10px 14px; border-left:3px solid var(--go); background:var(--go-soft); font-size:15px; }
+.q .rec b { color:var(--go); }
+
+/* ── Tables ───────────────────────────────────────────────────────────────────
+   .tbl is not optional. A table wide enough to be worth having is wider than a
+   phone, and without its own scroller it takes the whole page sideways. */
+.tbl { overflow-x:auto; margin:20px 0 0; -webkit-overflow-scrolling:touch; }
+table { border-collapse:collapse; width:100%; min-width:560px; font-size:14.5px; background:var(--panel); }
+th { font:600 11px/1.4 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--mute); text-align:left; }
+th, td { border:1px solid var(--rule); padding:9px 12px; vertical-align:top; }
+td b { font-weight:650; }
+
+/* Verdict words, wherever they appear. */
+.ok { color:var(--go); font-weight:650; }
+.bad { color:var(--flag); font-weight:650; }
+.warn { color:var(--bronze); font-weight:650; }
+
+/* ── Quoted output ────────────────────────────────────────────────────────── */
+.pre {
+  margin:16px 0 0; padding:14px 16px;
+  border:1px solid var(--rule); border-radius:var(--radius-md);
+  background:var(--pre-bg); color:var(--ink2);
+  font:13px/1.6 var(--mono);
+  overflow-x:auto; white-space:pre;
+}
+.term {
+  margin:16px 0 0; padding:16px 18px;
+  border-radius:var(--radius); background:var(--term-bg); color:var(--term-ink);
+  font:13px/1.55 var(--mono);
+  overflow-x:auto; white-space:pre; max-width:100%;
+}
+.term .ok { color:var(--term-go); }
+.term .bad { color:var(--term-flag); }
+.term .warn { color:var(--term-bronze); }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.foot {
+  margin:64px 0 0; padding:22px 0 46px;
+  border-top:1px solid var(--rule);
+  color:var(--mute); font-size:13.5px;
+}
+.foot p { max-width:var(--measure-wide); }
+
+/* ── The phone ────────────────────────────────────────────────────────────────
+   390px is the measurement that matters; 520 is where the page starts giving up
+   horizontal padding to keep the measure. */
+@media (max-width:520px) {
+  .wrap { padding:0 16px; }
+  .verdict, .card, .q, .callout { padding:15px 15px; }
+  .facts { gap:6px 14px; font-size:12px; }
+  .mast { padding:40px 0 18px; }
+}
+
+
+/* Layout is the consumer's; the shared sheet carries palette, type and components. */
+.lanes { display:grid; gap:14px; margin:22px 0 0; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); }
+.lane { border:1px solid var(--rule); border-left:4px solid var(--rule2); border-radius:var(--radius);
+        background:var(--panel); padding:15px 16px; min-width:0; }
+.lane.op   { border-left-color:var(--blue); }
+.lane.prod { border-left-color:var(--flag); }
+.lane.out  { border-left-color:var(--bronze); }
+.lane .k { font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--mute); }
+.lane.op .k   { color:var(--blue); }
+.lane.prod .k { color:var(--flag); }
+.lane.out .k  { color:var(--bronze); }
+.lane .n { font:700 34px/1 var(--display); margin:9px 0 0; letter-spacing:-.02em; }
+.lane.prod .n { color:var(--flag); }
+.lane .sub { margin:7px 0 0; font-size:13.5px; color:var(--ink2); }
+.lane .sub a { font-size:13.5px; }
+
+.mockchrome { margin:26px 0 0; border:1px solid var(--rule2); border-radius:var(--radius); background:var(--panel); overflow:hidden; }
+.mockchrome > .bar { background:var(--code-bg); border-bottom:1px solid var(--rule);
+        padding:9px 14px; font:600 11px/1.4 var(--mono); letter-spacing:.09em; text-transform:uppercase; color:var(--mute);
+        display:flex; gap:9px; flex-wrap:wrap; align-items:center; }
+.mockchrome > .bar .on { color:var(--ink); border-bottom:2px solid var(--bronze); padding-bottom:2px; }
+.mockchrome > .body { padding:6px 16px 20px; }
+.mockchrome h3 { margin:26px 0 0; }
+.mockchrome h3:first-of-type { margin-top:18px; }
+
+details { margin:18px 0 0; border-top:1px solid var(--rule); padding-top:12px; }
+summary { cursor:pointer; font:600 13px/1.4 var(--mono); color:var(--blue); letter-spacing:.02em; }
+summary::marker { color:var(--mute); }
+
+.asof { margin:14px 0 0; font:500 12.5px/1.6 var(--mono); color:var(--mute); }
+.asof b { color:var(--ink2); font-weight:600; }
+dl.calls { margin:14px 0 0; }
+dl.calls dt { font:600 13px/1.5 var(--mono); color:var(--bronze); margin:16px 0 0; }
+dl.calls dd { margin:5px 0 0 0; font-size:15px; color:var(--ink2); max-width:var(--measure); }
+@media (max-width:520px) {
+  .mockchrome > .body { padding:4px 12px 16px; }
+  .lane .n { font-size:29px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>Design</span><span class="dot"></span><span>Operations Dashboard</span><span class="dot"></span><span>2026-08-20</span></div>
+  <h1>The Merges Tab</h1>
+  <p class="lede">A fifth tab that answers one question — what did the agents actually change today, and where is it going — by joining three things the program already records: the agent id, the pull request it merged, and the branch role that decides whether the change ships or waits.</p>
+  <p class="lede" style="font-size:16px">This is a design, not a build. Nothing below is running. The numbers in the mock are tonight's real numbers, so what you are reacting to is true rather than illustrative.</p>
+  <div class="facts">
+    <span><b>Asked for by</b> @jwildfire, 2026-08-20, after the day's briefing</span>
+    <span><b>Worker</b> W0094</span>
+    <span><b>Would live at</b> 127.0.0.1:7326/merges</span>
+  </div>
+</header>
+
+<blockquote>There's no really clean way for me to know exactly what happened&hellip; maybe we just need to work on having a view in the dashboard that shows me metrics for merges&hellip; very directly tying agent IDs to pull requests to packages&hellip; I need a better executive summary of everything you did today where I can drill down easily, but I can also just understand, okay, you made a bunch of changes to these approved branches, and that'll all go out in the scheduled release.</blockquote>
+
+<div class="verdict">
+  <div class="k">What the tab would have told you tonight</div>
+  <p>Twenty merges. Nineteen of them changed the machine you use to run the work; one was your own blog post. Not one of them touched a package that reaches a user, and none of the five product repos has moved in three days. The scheduled release this feeds is the harness release, not a product release.</p>
+</div>
+
+<div class="cut"><span>THE MOCK</span></div>
+
+<section>
+<h2>The view, as it would have rendered tonight</h2>
+<p>Everything inside the frame below is the proposed tab. Every number in it was measured from GitHub and the worker ledger at 20:30 local on 2026-08-20. The design commentary starts again after the frame.</p>
+
+<div class="mockchrome">
+<div class="bar"><span>Queue</span><span>Wire</span><span>Agents</span><span>Catalog&nbsp;&#8599;</span><span>&middot;</span><span>Navigator</span><span class="on">Merges</span></div>
+<div class="body">
+
+<h3>Thursday 20 August &mdash; 20 merges</h3>
+<p class="asof"><b>Day</b> 2026-08-20 00:00&ndash;24:00 America/New&nbsp;York &nbsp;&middot;&nbsp; <b>Source</b> GitHub, read 20:31 local &nbsp;&middot;&nbsp; <b>Covers</b> the whole day so far</p>
+
+<div class="lanes">
+  <div class="lane op">
+    <div class="k">Harness &amp; hub</div>
+    <div class="n">19</div>
+    <p class="sub">obot.agent 17 &middot; obot.roadmap 2. Self-improvement. Reaches you, not users.</p>
+  </div>
+  <div class="lane prod">
+    <div class="k">Ships to users</div>
+    <div class="n">0</div>
+    <p class="sub">safety.viz, gsm.safety, open.gismo, open.csr, demo-301. Last product merge 3 days ago.</p>
+  </div>
+  <div class="lane out">
+    <div class="k">Outside the lanes</div>
+    <div class="n">1</div>
+    <p class="sub">jwildfire.github.io, merged by you. No policy entry, so no lane governs it.</p>
+  </div>
+</div>
+
+<div class="callout">
+  <div class="k">The headline</div>
+  <p>Nothing shipped to users today.</p>
+  <p>Eleven hub issues closed &mdash; nine of them requirements &mdash; and 15,350 lines added, all of it in the harness and the hub. The five repos that produce something a user opens took zero merges, and their release queues are unchanged since Monday.</p>
+</div>
+
+<h3>Where it is going</h3>
+<p style="font-size:15px;color:var(--ink2)">Branch roles are read from <code>obot.agent/scripts/policy.json</code>, never restated here. A merge into a repo's <em>integration</em> branch joins the queue for that repo's next release; a merge into a <em>release</em> branch is one you gated yourself.</p>
+<div class="tbl"><table>
+<thead><tr><th>Repo</th><th>Today</th><th>Landed on</th><th>What happens to it</th><th>Waiting for release</th></tr></thead>
+<tbody>
+<tr><td><b>obot.agent</b><br><span class="mono" style="font-size:12px;color:var(--mute)">harness</span></td>
+    <td class="mono"><b>17</b></td>
+    <td class="mono" style="font-size:12.5px">main<br><span class="ok">integration</span></td>
+    <td>Accumulates on <code>main</code> until you approve a <code>main&nbsp;&rarr;&nbsp;stable</code> promotion. That is the scheduled release.</td>
+    <td class="mono"><b>98 PRs</b><br><span style="font-size:12px;color:var(--mute)">since v0.4.0, 5 days ago</span></td></tr>
+<tr><td><b>obot.roadmap</b><br><span class="mono" style="font-size:12px;color:var(--mute)">hub</span></td>
+    <td class="mono"><b>2</b></td>
+    <td class="mono" style="font-size:12.5px">main<br><span class="ok">integration</span></td>
+    <td>No release branch is declared, so these are live the moment they merge. Already published.</td>
+    <td class="mono">&mdash;<br><span style="font-size:12px;color:var(--mute)">nothing to wait for</span></td></tr>
+<tr><td><b>safety.viz</b><br><span class="mono" style="font-size:12px;color:var(--mute)">ships to users</span></td>
+    <td class="mono">0</td>
+    <td class="mono" style="font-size:12.5px">&mdash;</td>
+    <td>Work would land on <code>dev</code>; <code>main</code> is yours to gate.</td>
+    <td class="mono">0 PRs<br><span style="font-size:12px;color:var(--mute)">v1.7.0 is current</span></td></tr>
+<tr><td><b>gsm.safety</b><br><span class="mono" style="font-size:12px;color:var(--mute)">ships to users</span></td>
+    <td class="mono">0</td>
+    <td class="mono" style="font-size:12.5px">&mdash;</td>
+    <td>Work would land on <code>dev</code>; <code>main</code> is yours to gate.</td>
+    <td class="mono">0 PRs<br><span style="font-size:12px;color:var(--mute)">v1.1.0 is current</span></td></tr>
+<tr><td><b>open.gismo</b><br><span class="mono" style="font-size:12px;color:var(--mute)">ships to users</span></td>
+    <td class="mono">0</td>
+    <td class="mono" style="font-size:12.5px">&mdash;</td>
+    <td>Work would land on <code>dev</code>; <code>main</code> is yours to gate.</td>
+    <td class="mono"><span class="warn">7 PRs</span><br><span style="font-size:12px;color:var(--mute)">never released</span></td></tr>
+<tr><td><b>open.csr</b><br><span class="mono" style="font-size:12px;color:var(--mute)">ships to users</span></td>
+    <td class="mono">0</td>
+    <td class="mono" style="font-size:12.5px">&mdash;</td>
+    <td>Work would land on <code>dev</code>; <code>main</code> is yours to gate.</td>
+    <td class="mono"><span class="warn">2 PRs</span><br><span style="font-size:12px;color:var(--mute)">since v0.2.0, 24 days ago</span></td></tr>
+<tr><td><b>demo-301</b><br><span class="mono" style="font-size:12px;color:var(--mute)">ships to users</span></td>
+    <td class="mono">0</td>
+    <td class="mono" style="font-size:12.5px">&mdash;</td>
+    <td>Work lands on <code>main</code>; <code>site</code> is the live Pages branch and is yours to gate.</td>
+    <td class="mono"><span class="warn">2 PRs</span><br><span style="font-size:12px;color:var(--mute)">no release ever cut</span></td></tr>
+<tr><td><b>jwildfire.github.io</b><br><span class="mono" style="font-size:12px;color:var(--mute)">no policy entry</span></td>
+    <td class="mono"><b>1</b></td>
+    <td class="mono" style="font-size:12.5px">main<br><span class="bad">ungoverned</span></td>
+    <td>Absent from <code>policy.json</code>, so <code>obot-merge</code> would have refused it. You merged it by hand.</td>
+    <td class="mono">&mdash;<br><span style="font-size:12px;color:var(--mute)">no roles defined</span></td></tr>
+</tbody></table></div>
+
+<h3>Who did it</h3>
+<p style="font-size:15px;color:var(--ink2)">Eleven agents merged 15 of tonight's 20. The other five have a named reason, and the reason is not the same for all of them &mdash; which is the whole point of splitting them out rather than calling them all unattributed.</p>
+<div class="tbl"><table>
+<thead><tr><th>Agent</th><th>What it was working on</th><th>Merged</th><th>Into</th><th>Size</th></tr></thead><tbody>
+<tr><td><b>W0077</b><br><span class="mono" style="font-size:12px;color:var(--mute)">rankhead</span></td><td>Build the ranked-head surface (hub #278)</td><td><a href="https://github.com/jwildfire/obot.agent/pull/269">agent#269</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+2011&nbsp;&minus;4<br>14 files</td></tr>
+<tr><td><b>W0078</b><br><span class="mono" style="font-size:12px;color:var(--mute)">spend</span></td><td>Spend cadence + nightly threshold enforcement (hub #275)</td><td><a href="https://github.com/jwildfire/obot.agent/pull/270">agent#270</a> <a href="https://github.com/jwildfire/obot.agent/pull/271">agent#271</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+1978&nbsp;&minus;11<br>12 files</td></tr>
+<tr><td><b>W0079</b><br><span class="mono" style="font-size:12px;color:var(--mute)">protect</span></td><td>Branch-protection state, spec, apply/verify script, decision artifact (hub #272)</td><td><a href="https://github.com/jwildfire/obot.agent/pull/267">agent#267</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+815&nbsp;&minus;0<br>6 files</td></tr>
+<tr><td><b>W0080</b><br><span class="mono" style="font-size:12px;color:var(--mute)">delivery</span></td><td>hub#257 completion has a delivery path that ends at him</td><td><a href="https://github.com/jwildfire/obot.agent/pull/274">agent#274</a> <a href="https://github.com/jwildfire/obot.agent/pull/275">agent#275</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+2534&nbsp;&minus;25<br>19 files</td></tr>
+<tr><td><b>W0082</b><br><span class="mono" style="font-size:12px;color:var(--mute)">answerlands</span></td><td><span class="warn">not recorded in the ledger</span></td><td><a href="https://github.com/jwildfire/obot.agent/pull/278">agent#278</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+641&nbsp;&minus;29<br>9 files</td></tr>
+<tr><td><b>W0083</b><br><span class="mono" style="font-size:12px;color:var(--mute)">carvoice</span></td><td>hub#265 answer a decision by voice from the car</td><td><a href="https://github.com/jwildfire/obot.agent/pull/279">agent#279</a> <a href="https://github.com/jwildfire/obot.agent/pull/280">agent#280</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+3899&nbsp;&minus;86<br>40 files</td></tr>
+<tr><td><b>W0085</b><br><span class="mono" style="font-size:12px;color:var(--mute)">censusdesign</span></td><td><span class="warn">not recorded in the ledger</span></td><td><a href="https://github.com/jwildfire/obot.roadmap/pull/286">roadmap#286</a></td><td class="mono" style="font-size:12.5px">obot.roadmap main</td><td class="mono" style="font-size:12.5px">+484&nbsp;&minus;0<br>4 files</td></tr>
+<tr><td><b>W0086</b><br><span class="mono" style="font-size:12px;color:var(--mute)">deployred</span></td><td><span class="warn">not recorded in the ledger</span></td><td><a href="https://github.com/jwildfire/obot.roadmap/pull/288">roadmap#288</a></td><td class="mono" style="font-size:12.5px">obot.roadmap main</td><td class="mono" style="font-size:12.5px">+101&nbsp;&minus;21<br>4 files</td></tr>
+<tr><td><b>W0087</b><br><span class="mono" style="font-size:12px;color:var(--mute)">decep</span></td><td>hub#280 an open decision artifact has an episode he can answer from the car</td><td><a href="https://github.com/jwildfire/obot.agent/pull/282">agent#282</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+1094&nbsp;&minus;12<br>12 files</td></tr>
+<tr><td><b>W0090</b><br><span class="mono" style="font-size:12px;color:var(--mute)">cfgaudit</span></td><td>audit the 13 config items; fold migration-covered ones into the IQ</td><td><a href="https://github.com/jwildfire/obot.agent/pull/287">agent#287</a> <a href="https://github.com/jwildfire/obot.agent/pull/288">agent#288</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+561&nbsp;&minus;43<br>13 files</td></tr>
+<tr><td><b>W0092</b><br><span class="mono" style="font-size:12px;color:var(--mute)">sharedcss</span></td><td>shared stylesheet (oa#15) + dashboard shows artifacts by default</td><td><a href="https://github.com/jwildfire/obot.agent/pull/285">agent#285</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+856&nbsp;&minus;93<br>8 files</td></tr>
+<tr><td><b>Lead session</b><br><span class="mono" style="font-size:12px;color:var(--mute)">holds no W-id</span></td><td>Ranked-head re-ranks. prime and the Navigator claim no worker id by design, so there is none to stamp &mdash; this is not a gap.</td><td><a href="https://github.com/jwildfire/obot.agent/pull/272">agent#272</a> <a href="https://github.com/jwildfire/obot.agent/pull/281">agent#281</a> <a href="https://github.com/jwildfire/obot.agent/pull/283">agent#283</a> <a href="https://github.com/jwildfire/obot.agent/pull/284">agent#284</a></td><td class="mono" style="font-size:12.5px">obot.agent main</td><td class="mono" style="font-size:12.5px">+94&nbsp;&minus;52<br>5 files</td></tr>
+<tr><td><b>@jwildfire</b><br><span class="mono" style="font-size:12px;color:var(--mute)">not an agent</span></td><td>Merged by hand, in a repo no lane governs.</td><td><a href="https://github.com/jwildfire/jwildfire.github.io/pull/11">jwildfire.github.io#11</a></td><td class="mono" style="font-size:12.5px">jwildfire.github.io main</td><td class="mono" style="font-size:12.5px">+282&nbsp;&minus;8<br>2 files</td></tr>
+<tr><td><b class="ok">Attribution missing</b><br><span class="mono" style="font-size:12px;color:var(--mute)">the #276 lane</span></td><td>A merge from a session that <em>does</em> hold a W-id, whose commit carries no <code>Worker:</code> trailer. This is the only row that would cite <a href="https://github.com/jwildfire/obot.agent/issues/276">obot.agent#276</a>.</td><td class="ok">none today</td><td class="mono" style="font-size:12.5px">&mdash;</td><td class="mono" style="font-size:12.5px">&mdash;</td></tr>
+</tbody></table></div>
+<details>
+<summary>Every merge, in order &mdash; 20 rows</summary>
+<div class="tbl"><table>
+<thead><tr><th>Local</th><th>Merge</th><th>Agent</th><th>Into</th><th>Role</th><th>Size</th></tr></thead><tbody>
+<tr><td class="mono" style="font-size:12.5px">07:41</td><td><a href="https://github.com/jwildfire/jwildfire.github.io/pull/11">jwildfire.github.io#11</a><br><span style="font-size:12.5px;color:var(--ink2)">Diary #8: a second interview with Obot</span></td><td class="mono" style="font-size:12.5px">@jwildfire</td><td class="mono" style="font-size:12.5px">jwildfire.github.io<br>main</td><td class="mono" style="font-size:12px"><span class="bad">ungoverned</span></td><td class="mono" style="font-size:12.5px">+282&nbsp;&minus;8</td></tr>
+<tr><td class="mono" style="font-size:12.5px">12:32</td><td><a href="https://github.com/jwildfire/obot.agent/pull/267">agent#267</a><br><span style="font-size:12.5px;color:var(--ink2)">Branch protection becomes a spec, a plan and a verifier</span></td><td class="mono" style="font-size:12.5px">W0079</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+815&nbsp;&minus;0</td></tr>
+<tr><td class="mono" style="font-size:12.5px">12:39</td><td><a href="https://github.com/jwildfire/obot.agent/pull/269">agent#269</a><br><span style="font-size:12.5px;color:var(--ink2)">The ranked head: one declared order, everything else derived</span></td><td class="mono" style="font-size:12.5px">W0077</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+2011&nbsp;&minus;4</td></tr>
+<tr><td class="mono" style="font-size:12.5px">13:00</td><td><a href="https://github.com/jwildfire/obot.agent/pull/270">agent#270</a><br><span style="font-size:12.5px;color:var(--ink2)">What the fleet spends is measured before it is spent</span></td><td class="mono" style="font-size:12.5px">W0078</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+1975&nbsp;&minus;9</td></tr>
+<tr><td class="mono" style="font-size:12.5px">13:03</td><td><a href="https://github.com/jwildfire/obot.agent/pull/271">agent#271</a><br><span style="font-size:12.5px;color:var(--ink2)">The spend cap&#x27;s scratchpad lines were wearing the Navigator tag twice</span></td><td class="mono" style="font-size:12.5px">W0078</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+3&nbsp;&minus;2</td></tr>
+<tr><td class="mono" style="font-size:12.5px">13:07</td><td><a href="https://github.com/jwildfire/obot.agent/pull/272">agent#272</a><br><span style="font-size:12.5px;color:var(--ink2)">The first re-rank, and the test that would not let it happen</span></td><td class="mono" style="font-size:12.5px">Lead session</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+77&nbsp;&minus;35</td></tr>
+<tr><td class="mono" style="font-size:12.5px">13:36</td><td><a href="https://github.com/jwildfire/obot.agent/pull/274">agent#274</a><br><span style="font-size:12.5px;color:var(--ink2)">A finish reaches a person, as a sentence rather than a number</span></td><td class="mono" style="font-size:12.5px">W0080</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+2458&nbsp;&minus;20</td></tr>
+<tr><td class="mono" style="font-size:12.5px">13:48</td><td><a href="https://github.com/jwildfire/obot.agent/pull/275">agent#275</a><br><span style="font-size:12.5px;color:var(--ink2)">The landing check is bounded in wall-clock, not only in count</span></td><td class="mono" style="font-size:12.5px">W0080</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+76&nbsp;&minus;5</td></tr>
+<tr><td class="mono" style="font-size:12.5px">14:49</td><td><a href="https://github.com/jwildfire/obot.agent/pull/278">agent#278</a><br><span style="font-size:12.5px;color:var(--ink2)">An unapplied answer of his reaches an actor, not a file</span></td><td class="mono" style="font-size:12.5px">W0082</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+641&nbsp;&minus;29</td></tr>
+<tr><td class="mono" style="font-size:12.5px">15:43</td><td><a href="https://github.com/jwildfire/obot.agent/pull/279">agent#279</a><br><span style="font-size:12.5px;color:var(--ink2)">He answers a decision from the car, by voice, with no screen and no number</span></td><td class="mono" style="font-size:12.5px">W0083</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+2765&nbsp;&minus;11</td></tr>
+<tr><td class="mono" style="font-size:12.5px">16:13</td><td><a href="https://github.com/jwildfire/obot.agent/pull/280">agent#280</a><br><span style="font-size:12.5px;color:var(--ink2)">Four ways the car lane could have answered the wrong decision, closed</span></td><td class="mono" style="font-size:12.5px">W0083</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+1134&nbsp;&minus;75</td></tr>
+<tr><td class="mono" style="font-size:12.5px">17:02</td><td><a href="https://github.com/jwildfire/obot.roadmap/pull/286">roadmap#286</a><br><span style="font-size:12.5px;color:var(--ink2)">D0023: the SafetyCensus rebuild design — metrics, a report, and six questions</span></td><td class="mono" style="font-size:12.5px">W0085</td><td class="mono" style="font-size:12.5px">obot.roadmap<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+484&nbsp;&minus;0</td></tr>
+<tr><td class="mono" style="font-size:12.5px">17:23</td><td><a href="https://github.com/jwildfire/obot.roadmap/pull/288">roadmap#288</a><br><span style="font-size:12.5px;color:var(--ink2)">The briefing&#x27;s count is handed in, so no committed file can decide whether its test runs</span></td><td class="mono" style="font-size:12.5px">W0086</td><td class="mono" style="font-size:12.5px">obot.roadmap<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+101&nbsp;&minus;21</td></tr>
+<tr><td class="mono" style="font-size:12.5px">17:31</td><td><a href="https://github.com/jwildfire/obot.agent/pull/281">agent#281</a><br><span style="font-size:12.5px;color:var(--ink2)">Three slots filled — the head after a day that closed seven requirements</span></td><td class="mono" style="font-size:12.5px">Lead session</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+6&nbsp;&minus;6</td></tr>
+<tr><td class="mono" style="font-size:12.5px">18:07</td><td><a href="https://github.com/jwildfire/obot.agent/pull/282">agent#282</a><br><span style="font-size:12.5px;color:var(--ink2)">An open decision has an episode he can answer from the car</span></td><td class="mono" style="font-size:12.5px">W0087</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+1094&nbsp;&minus;12</td></tr>
+<tr><td class="mono" style="font-size:12.5px">18:14</td><td><a href="https://github.com/jwildfire/obot.agent/pull/283">agent#283</a><br><span style="font-size:12.5px;color:var(--ink2)">#267 to rank 3, and a bench that is a shelf again rather than a drawer</span></td><td class="mono" style="font-size:12.5px">Lead session</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+2&nbsp;&minus;2</td></tr>
+<tr><td class="mono" style="font-size:12.5px">19:51</td><td><a href="https://github.com/jwildfire/obot.agent/pull/284">agent#284</a><br><span style="font-size:12.5px;color:var(--ink2)">The laptop IQ to rank 1, a promise kept, and the stylesheet onto the head</span></td><td class="mono" style="font-size:12.5px">Lead session</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+9&nbsp;&minus;9</td></tr>
+<tr><td class="mono" style="font-size:12.5px">20:06</td><td><a href="https://github.com/jwildfire/obot.agent/pull/285">agent#285</a><br><span style="font-size:12.5px;color:var(--ink2)">One stylesheet for the decision language, and the dashboard wearing it</span></td><td class="mono" style="font-size:12.5px">W0092</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+856&nbsp;&minus;93</td></tr>
+<tr><td class="mono" style="font-size:12.5px">20:10</td><td><a href="https://github.com/jwildfire/obot.agent/pull/287">agent#287</a><br><span style="font-size:12.5px;color:var(--ink2)">Config items lead with why they matter, not with what to type</span></td><td class="mono" style="font-size:12.5px">W0090</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+560&nbsp;&minus;42</td></tr>
+<tr><td class="mono" style="font-size:12.5px">20:12</td><td><a href="https://github.com/jwildfire/obot.agent/pull/288">agent#288</a><br><span style="font-size:12.5px;color:var(--ink2)">Rename the posted PR draft to its number</span></td><td class="mono" style="font-size:12.5px">W0090</td><td class="mono" style="font-size:12.5px">obot.agent<br>main</td><td class="mono" style="font-size:12px"><span class="ok">integration</span></td><td class="mono" style="font-size:12.5px">+1&nbsp;&minus;1</td></tr>
+</tbody></table></div><p style="font-size:14px;color:var(--mute);margin-top:12px">Each row opens the pull request. Times are local. <span class="ok">integration</span> flows into a scheduled release; <span class="warn">release</span> is a branch you gate; <span class="bad">ungoverned</span> has no lane at all.</p>
+</details>
+
+</div>
+</div>
+<p style="font-size:14px;color:var(--mute);margin-top:12px">End of mock. Design commentary resumes below.</p>
+</section>
+
+<div class="cut"><span>THE CALLS</span></div>
+
+<section>
+<h2>Four decisions the design makes, and why</h2>
+<p>Three of these you named. The fourth turned up while measuring, and it is the one that would have embarrassed the tab on its first day.</p>
+
+<div class="card">
+<div class="tag">Call 1 &mdash; attribution</div>
+<h3>A merge with no agent id is sorted by cause, never pooled into one &ldquo;unattributed&rdquo; bucket</h3>
+<p>The brief said the agent&nbsp;&rarr;&nbsp;PR join is broken, so the tab must not silently drop what it cannot attribute. Measuring it changed the answer, and the change is worth stating plainly rather than designing around a defect that is not there.</p>
+<p>The join through git history works. Across the last 30 merges to <code>obot.agent&nbsp;main</code>, 26 carry a <code>Worker:&nbsp;W00xx</code> trailer in the merge commit, and among merges made by a worker the rate is 26 of 26, unbroken since 2026-08-18. It works because an agent types the trailer into the commit, so nothing about it depends on an environment variable surviving a daemon respawn.</p>
+<p>The four that carry no trailer are the ranked-head re-ranks, made by prime and the Navigator. Those actors hold no worker id by design &mdash; <code>tools/worker-id</code> says so in its own docstring &mdash; so they have nothing to stamp. Filing them as unattributed would invent a defect and, worse, would cite <a href="https://github.com/jwildfire/obot.agent/issues/276">obot.agent#276</a> as its cause. #276 is real, but it is about a different join: <code>OBOT_WORKER_ID</code> is never set, so ledger writes record a session id. That breaks worker&nbsp;&rarr;&nbsp;blocker and worker&nbsp;&rarr;&nbsp;journal. It does not touch the commit trailer.</p>
+<p>So the tab carries three non-worker lanes instead of one:</p>
+<dl class="calls">
+<dt>Lead session &mdash; holds no W-id</dt>
+<dd>prime, the Navigator, the admiral. Expected, permanent, and labelled as such. Four rows tonight.</dd>
+<dt>Not an agent</dt>
+<dd>A human merge. One row tonight, and it is yours.</dd>
+<dt>Attribution missing &mdash; the #276 lane</dt>
+<dd>A merge from a session that <em>does</em> hold a worker id, whose commit carries no trailer. This is the only lane that cites #276, and the only one that means something is wrong. It reads zero tonight, and a zero here is a real fact rather than an empty bucket.</dd>
+</dl>
+<p>The header line never presents attributed counts as a total: it reads <em>20 merges &mdash; 15 by 11 agents, 4 by the lead session, 1 by you</em>, and those five numbers add up in front of you.</p>
+</div>
+
+<div class="callout note">
+<div class="k">One thing this lane cannot see yet</div>
+<p><code>worker-id --audit</code> reports today that <code>W0067</code> is carried by two different workers &mdash; a lead put an id into a session name it had not claimed. A lane keyed on the worker id fuses two agents into one row and shows a drill-down that mixes their work. The tab should run the same read-only audit at render and give a conflicted id its own flagged row rather than a clean one.</p>
+</div>
+
+<div class="card">
+<div class="tag">Call 2 &mdash; the window</div>
+<h3>A day is midnight to midnight in America/New York, and the page says so on its face</h3>
+<p>You ask what happened today while sitting in that timezone, so that is what the day means. It is not a cosmetic choice. Three of tonight's 17 <code>obot.agent</code> merges &mdash; 20:06, 20:10 and 20:12 local &mdash; carry a UTC date of 2026-08-21. A UTC day would have shown you 14 and been quietly, confidently wrong by the three most recent things that happened.</p>
+<p>That is not hypothetical: the existing Navigator panels bucket by UTC, using <code>new&nbsp;Date(t).toISOString().slice(0,10)</code>. So the tab has an obligation beyond stating its own rule &mdash; it has to state the disagreement, because the same merge will sit on a different day one tab over. The header line carries both: the local day it is showing, and a note that three of tonight's merges appear on the Navigator tab under tomorrow's date.</p>
+<p>Two mechanics follow from the call. The zone is pinned as the IANA name through <code>Intl.DateTimeFormat</code> rather than a hardcoded offset, so 2026-11-01 does not silently shift every boundary by an hour. And the header renders from the same value the bucketer used, so the line cannot describe a rule the code is not applying.</p>
+</div>
+
+<div class="callout">
+<div class="k">The freshness trap behind the timezone question</div>
+<p>The timezone is the visible half of this problem. The invisible half is worse, and it would have produced the identical wrong number by a different route.</p>
+<p>The cache the Navigator panels read, <code>.claude/session-hub/cache/metrics.json</code>, was last written at 19:47 local tonight. The three merges at 20:06, 20:10 and 20:12 are not in it. A tab built on that cache would have shown 14 &mdash; not because of UTC, but because it was reading a file older than the day it was describing.</p>
+<p>So the design's rule is that the page prints its as-of stamp and refuses rather than rounds: when the source is older than the boundary of the day it is showing, it says how much of the day it cannot see instead of printing a count that looks whole.</p>
+</div>
+
+<div class="card">
+<div class="tag">Call 3 &mdash; scope</div>
+<h3>It reports. It never asks you for anything.</h3>
+<p>You have three buckets that can demand action &mdash; release candidates, decisions, config &mdash; and a fourth would cost more than it returns. Nothing on this tab is a checkbox, an approve button, or a row that stays red until you clear it. Every link is a drill-down to a pull request or an issue; none of them is a &ldquo;do&rdquo;.</p>
+<p>That has a consequence worth accepting on purpose. The tab will surface things that look like they need doing &mdash; 98 pull requests waiting on a harness release, a product repo that has not moved in three days, a merge in a repo no lane governs. It does not adopt them. Each such row cites the queue item or requirement that already owns it; a row with nothing to cite says so, and an unowned row is a filing gap for the Navigator to pick up, not a button here.</p>
+<p>One honest qualification, because &ldquo;read-only&rdquo; will otherwise read as a safety property it does not have. The dashboard writes a local last-look record on every page fetch. That is unchanged for this tab, and it means the drill-down must vary by query string rather than by path &mdash; per-agent and per-day URLs as new path segments would generate unbounded surface keys and evict real surfaces from a 64-entry record. Read-only here means no GitHub writes and nothing entering your queue.</p>
+</div>
+
+<div class="card">
+<div class="tag">Call 4 &mdash; the denominator</div>
+<h3>The tab counts every merge in the workspace, not only the governed ones</h3>
+<p>This is the call the brief did not ask for, and the one that decides whether the summary is trustworthy. The obvious implementation scopes to the seven repos in <code>policy.json</code>. Tonight that would have printed 19 and been wrong by exactly the merge that most deserved your attention: a merge into <code>jwildfire.github.io</code>, a repo absent from the policy file, which <code>obot-merge</code> would have refused outright.</p>
+<p>Scoping to the governed set institutionalises that blind spot. Scoping to &ldquo;repos cloned on this machine&rdquo; drifts as clones come and go. So the tab states its denominator out loud &mdash; every repo in the <code>jwildfire</code> org &mdash; and renders an ungoverned merge as its own state, in its own colour, rather than as an omission.</p>
+<p>Three related edges get the same treatment, because each has a shape where a zero would be a lie:</p>
+<dl class="calls">
+<dt>obot.roadmap declares no release branch</dt>
+<dd>Its integration-versus-release delta is undefined, not zero. The cell reads &ldquo;nothing to wait for&rdquo;, because the hub publishes on merge.</dd>
+<dt>demo-301's site branch shares no ancestor with main</dt>
+<dd>The comparison returns a 404, permanently. That is neither an error to log nor a zero to print; the cell says the two branches are not comparable.</dd>
+<dt>Zero merges and unread source must never render alike</dt>
+<dd>A quiet Sunday and a dead collector both produce an empty page. Only one of them is news. The house rule already covers it &mdash; absence is believable only from a genuine not-found &mdash; and this tab inherits it.</dd>
+</dl>
+</div>
+
+<div class="callout note">
+<div class="k">A unit trap this design deliberately avoids</div>
+<p>The tempting number for &ldquo;how much is waiting for the harness release&rdquo; is the branch delta: <code>main</code> is 193 commits ahead of <code>stable</code>. Putting 193 next to today's 17 puts commits next to pull requests in adjacent columns, which invites a subtraction that means nothing.</p>
+<p>Worse, the raw delta is not the measure it appears to be. On <code>safety.viz</code>, <code>dev</code> is 0 ahead of <code>main</code> and 12 behind &mdash; which looks like an inverted branch model and is not: those 12 are the promotion merge commits themselves, which never travel back to <code>dev</code>. Reading them as a backlog would raise a false alarm on a healthy repo.</p>
+<p>So the queue is measured in the unit the release is cut in: pull requests merged into the integration branch since the last release tag. That is 98 for <code>obot.agent</code>, 0 for <code>safety.viz</code>, and 7 for <code>open.gismo</code>, which has never cut a release at all.</p>
+</div>
+</section>
+
+<div class="cut"><span>WHAT IT WOULD TAKE</span></div>
+
+<section>
+<h2>The one thing that has to exist first</h2>
+<p>The tab is a small amount of work sitting on top of a gap. Being specific about the gap is more useful than estimating the tab.</p>
+
+<div class="callout">
+<div class="k">No cache in the program can answer this question today</div>
+<p>The Navigator's metrics cache stores each pull request as <code>{repo,&nbsp;number,&nbsp;createdAt,&nbsp;lane,&nbsp;state}</code>. The merge timestamp is collapsed into the string <code>state:&nbsp;'merged'</code> and discarded; the target branch is read to compute a lane and then thrown away.</p>
+<p>So there is no <code>mergedAt</code> and no <code>baseRefName</code> anywhere on disk. Not a timezone problem &mdash; the data required to bucket a merge into any day at all is not collected.</p>
+</div>
+
+<p>Two fields on the collector close it, and they are additive rather than a migration: keep <code>mergedAt</code> and <code>baseRefName</code> on each pull-request record. The branch role, the class, and the release lane are all derivable from <code>policy.json</code> once the base branch is known, so nothing else needs storing and nothing gets restated.</p>
+
+<p>After that the tab is one entry in the dashboard's <code>TABS</code> list and one route, which is the shape the dashboard was built for. It goes after the divider, beside Navigator, because it is a local-only view and the spine is asserted against the hub's sub-nav.</p>
+
+<h3>What it reuses rather than reinvents</h3>
+<ul>
+<li>The shared stylesheet, inlined the way every other dashboard shell inlines it &mdash; this page is dressed in it, so what you are reading is what the tab would look like.</li>
+<li>The existing not-attributable convention, which already refuses to render an unanswerable series as zero.</li>
+<li>The branch roles in <code>policy.json</code>, read rather than restated, so a repo promoted or demoted tomorrow changes this tab with no edit.</li>
+<li>The worker ledger's slug and task fields, which give an agent row a plain-English subject instead of an id.</li>
+</ul>
+
+<div class="callout note">
+<div class="k">A weak join worth knowing about before you rely on it</div>
+<p>Agent&nbsp;&rarr;&nbsp;pull request is solid. Agent&nbsp;&rarr;&nbsp;requirement is not. The worker ledger records a free-text task for most claims, but three of tonight's eleven agents have no task recorded at all, and pull-request bodies cite requirement numbers for context as often as for ownership &mdash; one of tonight's PRs names four hub issues and is delivering one of them.</p>
+<p>The tab therefore shows the requirement where the ledger records one and says &ldquo;not recorded&rdquo; where it does not. It does not guess from the body text, because a plausible wrong requirement is worse here than a blank.</p>
+</div>
+</section>
+
+<div class="cut"><span>YOUR CALL</span></div>
+
+<section>
+<h2>Four questions, each with a recommendation</h2>
+
+<div class="q">
+<div class="qid">Q1</div>
+<h3>Is a fifth tab the right home, or should this replace something?</h3>
+<p>The Navigator tab already carries release metrics and a change feed, and you have said before that it read like an audit log for bots. This tab overlaps it: same data, different question.</p>
+<div class="rec"><b>Recommendation:</b> a separate tab. The Navigator tab answers &ldquo;how is the program trending&rdquo; over 1/3/7/30/365 days; this one answers &ldquo;what happened today&rdquo;. Merging them would put a trend chart above a daily summary and neither would be first.</div>
+</div>
+
+<div class="q">
+<div class="qid">Q2</div>
+<h3>Should a day with zero product merges be visually loud, or just accurate?</h3>
+<p>The mock renders the product lane in the alarm colour whenever it reads zero. That is honest tonight. It would also be red on any weekend, on any day the work is deliberately harness-first, and for most of the last week.</p>
+<div class="rec"><b>Recommendation:</b> colour it by streak, not by the single day. A zero after a product merge yesterday is normal and stays neutral; a zero on the fifth consecutive day is the thing worth seeing, and the lane says &ldquo;fifth day&rdquo; rather than just being red.</div>
+</div>
+
+<div class="q">
+<div class="qid">Q3</div>
+<h3>Do you want this as a page you visit, or as something that reaches you?</h3>
+<p>The design as written is a page. The same summary would fit the evening briefing episode you already listen to, and the headline sentence at the top of this mock is roughly one paragraph of audio.</p>
+<div class="rec"><b>Recommendation:</b> build the page first, then let the briefing read its headline block. One source, two surfaces &mdash; and the page stays the thing you drill into when the sentence makes you curious.</div>
+</div>
+
+<div class="q">
+<div class="qid">Q4</div>
+<h3>Should the ungoverned lane push toward adding those repos to policy.json?</h3>
+<p>Tonight's ungoverned merge is your own blog post, which is benign. But the lane will also catch anything an agent lands somewhere no lane covers, and that is exactly what it is for.</p>
+<div class="rec"><b>Recommendation:</b> leave the tab reporting only. If a repo shows up in that lane repeatedly, that is a requirement to file, not a prompt for this page to raise &mdash; consistent with Call 3.</div>
+</div>
+</section>
+
+<div class="foot">
+<p>Measured 2026-08-20 between 20:15 and 21:00 local from the GitHub API, <code>obot.agent/scripts/policy.json</code>, and <code>.claude/workers.journal</code>. Every count in the mock is reproducible from those three sources. The mock is a static rendering: nothing on this page is live, and no such tab exists yet.</p>
+<p>Corrections this design absorbed while being written: the commit-trailer join was assumed broken and is not; the four untrailered merges were assumed to be an attribution failure and are the lead session; <code>safety.viz</code>'s branch delta looked like an inverted branch model and is the normal promotion-commit residue.</p>
+<hr style="border:none;border-top:1px solid var(--rule);margin:22px 0 0">
+<p>Drafted by worker W0094 (Claude Code using Opus 5) for @jwildfire.</p>
+</div>
+
+</div>
+</body>
+</html>
