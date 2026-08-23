@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gsm.safety v1.2.0 — annotated demo</title>
+<meta name="description" content="The liver chart in R was reading two participants' own baseline as their on-treatment peak; this release stops it. Both chart bundles run side by side on the same data, with the records that caused it and the two new charts the release adds.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;
+  --espresso:#3d2b1f;
+  --bronze:#b05515;
+  --flag:#b83a2e;
+  --amber:#9a7a1e;
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:17px;margin:34px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--espresso);line-height:0}
+.frame img{display:block;width:100%;height:auto}
+.pin{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:23px;height:23px;border-radius:50%;background:var(--paper);color:var(--ink);
+  display:grid;place-items:center;font:700 12px/1 var(--mono);
+  box-shadow:0 0 0 3px var(--espresso),0 1px 4px rgba(0,0,0,.4)}
+figcaption{margin-top:12px}
+.keys{margin:0;padding:0;list-style:none;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 26px}
+.keys li{position:relative;padding-left:28px;font-size:14px;color:var(--ink2);line-height:1.45}
+.keys b{position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:50%;
+  background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font:700 11px/1 var(--mono)}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.cap b{color:var(--ink2);font-weight:600}
+
+table.counts{border-collapse:collapse;margin:18px 0 0;font-size:14.5px;min-width:420px}
+table.counts th{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  text-align:left;padding:8px 18px 8px 0;border-bottom:1px solid var(--rule2)}
+table.counts td{padding:8px 18px 8px 0;border-bottom:1px solid var(--rule);color:var(--ink2)}
+table.counts td.n{font-family:var(--mono)}
+table.counts td.red{color:var(--flag);font-weight:600;font-family:var(--mono)}
+.tablewrap{overflow-x:auto}
+
+.strip{display:grid;grid-template-columns:1fr 340px;gap:0;margin:34px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+pre{background:var(--espresso);color:#f2e9df;border-radius:5px;padding:18px 20px;overflow-x:auto;
+  font:13px/1.7 var(--mono);margin:18px 0 0}
+pre .c{color:#a89887}
+pre .add{color:#8fd6a8}
+pre .mv{color:#f0b46a}
+
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pin{width:20px;height:20px;font-size:10px}
+  .mast{padding-top:36px}
+}
+/* --- W0124 additions to the family stylesheet ------------------------- */
+.callout{border:1px solid var(--rule2);border-left:4px solid var(--bronze);border-radius:5px;
+  background:var(--panel);padding:16px 20px;margin:22px 0 0}
+.callout .lbl{margin-bottom:8px}
+.callout p{margin:0;font-size:15px;color:var(--ink2);max-width:66ch}
+.callout p+p{margin-top:9px}
+.callout ul{margin:8px 0 0;padding-left:18px;font-size:15px;color:var(--ink2)}
+.callout li+li{margin-top:5px}
+.pair{display:grid;grid-template-columns:1fr;gap:22px;margin:22px 0 0}
+.pair figure{margin:0}
+.pair .tag{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  display:inline-block;padding:5px 9px;border-radius:3px;margin:0 0 9px}
+.tag.old{background:#f0e7d8;color:#7d5a1e}
+.tag.new{background:#dcefe2;color:#1f5f3c}
+table.counts td.was{color:var(--mute);font-family:var(--mono)}
+table.counts td.now{color:var(--go);font-weight:600;font-family:var(--mono)}
+table.counts caption{caption-side:top;text-align:left;font-size:14px;color:var(--mute);
+  padding:0 0 10px;max-width:78ch}
+table.counts tr.gone td{color:var(--flag)}
+ul.plain{margin:12px 0 0;padding-left:18px;font-size:15px;color:var(--ink2);max-width:74ch}
+ul.plain li+li{margin-top:6px}
+.facts a{border-bottom-color:rgba(47,111,168,.3)}
+@media (min-width:820px){ .pair{grid-template-columns:1fr 1fr} .pair.stack{grid-template-columns:1fr} }
+@media (max-width:640px){
+  table.counts{font-size:13.5px;min-width:0}
+  table.counts th,table.counts td{padding:7px 10px 7px 0}
+  pre{font-size:11.5px;padding:14px 14px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">gsm.safety <span class="dot"></span> release review <span class="dot"></span> 2026-08-22</p>
+  <h1>What <span class="v">v1.2.0</span> corrects, annotated</h1>
+  <p class="lede">gsm.safety's composite liver view has been reading some participants' own baseline as if it were an on-treatment peak. It cannot any more. This release swaps the chart library under all eleven widgets from safety.viz v1.4.0 to v1.7.0, where the rule was corrected, and adds two charts that had no R binding at all. Everything below is a run performed for this page on 2026-08-22 — both bundles, the same data, the same widget code.</p>
+  <p class="facts">
+    <span><b>2</b> participants leave the plot</span>
+    <span><b>9</b> plotted peaks move, none upward</span>
+    <span><b>0</b> quadrant classifications change</span>
+    <span>candidate <a href="https://github.com/jwildfire/gsm.safety/pull/68">gs#68</a>, <code>release/v1.2.0</code> → <code>main</code></span>
+  </p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#correction"><span class="ref">sv#91</span><span class="t">The correction</span><span class="s">Same data, two bundles, side by side</span></a>
+  <a href="#mechanism"><span class="ref">the cause</span><span class="t">Three participants' records</span><span class="s">Why a baseline became a peak</span></a>
+  <a href="#ledger"><span class="ref">the ledger</span><span class="t">Every value that moves</span><span class="s">Named, with both numbers</span></a>
+  <a href="#widgets"><span class="ref">gs#49</span><span class="t">Two charts R never had</span><span class="s">ALT waterfall, KDIGO explorer</span></a>
+</nav>
+
+<!-- ============================================================ 1 ======= -->
+<div class="cut"><span>sv#91 <em>· the clinical change</em></span></div><section id="correction">
+  <div class="hd"><h2>The same chart, drawn by the old bundle and the new one</h2></div>
+  <p class="what">Both captures below come from one report file. The widget code, the settings and all 57 929 rows of the example data are byte-identical between them — the two copies differ only in which <code>safety.viz.js</code> they load. Read the grey line above each chart pair: it is the module's own count of who made it into the plot.</p>
+
+  <div class="pair stack">
+    <figure>
+      <span class="tag old">Before · safety.viz 1.4.0</span>
+      <div class="frame"><img src="media/composite-1.4.0.jpg" alt="The composite eDISH view drawn by the safety.viz 1.4.0 bundle. The note above the charts reads: 295 of 364 participants shown in the composite plot. 69 participants excluded (missing baseline or on-treatment ALT/total bilirubin)." width="1900" height="741" loading="lazy"></div>
+      <figcaption class="cap">295 of 364 shown, 69 excluded. This is what gsm.safety v1.1.0 draws today.</figcaption>
+    </figure>
+    <figure>
+      <span class="tag new">After · safety.viz 1.7.0</span>
+      <div class="frame"><img src="media/composite-1.7.0.jpg" alt="The composite eDISH view drawn by the safety.viz 1.7.0 bundle. The note above the charts reads: 293 of 364 participants shown in the composite plot. 71 participants excluded (missing baseline or on-treatment ALT/total bilirubin)." width="1900" height="741" loading="lazy"></div>
+      <figcaption class="cap">293 of 364 shown, 71 excluded. Two participants who never had an on-treatment measurement are no longer drawn as though they did.</figcaption>
+    </figure>
+  </div>
+
+  <div class="callout">
+    <p class="lbl">What the difference is</p>
+    <p>A participant's on-treatment peak used to be the largest value recorded after study day zero. For a participant whose earliest liver record is <em>not</em> on day zero, that rule kept their baseline record in the on-treatment set — so their own starting value could be reported as their peak, and their peak could never come out below baseline. The rule is now: on-treatment is every record that is not the baseline record.</p>
+    <p>The two participants who leave the plot each have exactly one liver measurement. Under the old rule that single record served as both their baseline and their peak.</p>
+  </div>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>Measured for this page on 2026-08-22 by opening both reports in Chromium and reading the composite view's own reduction out of each bundle.</caption>
+    <thead><tr><th>Composite eDISH view</th><th>safety.viz 1.4.0</th><th>safety.viz 1.7.0</th></tr></thead>
+    <tbody>
+      <tr><td>Participants plotted</td><td class="was">295</td><td class="now">293</td></tr>
+      <tr><td>Participants excluded</td><td class="was">69</td><td class="now">71</td></tr>
+      <tr><td>On-treatment: Normal &amp; NN</td><td class="was">248</td><td class="now">246</td></tr>
+      <tr><td>On-treatment: Hy's Law</td><td class="was">13</td><td class="was">13</td></tr>
+      <tr><td>On-treatment: Temple's Corollary</td><td class="was">19</td><td class="was">19</td></tr>
+      <tr><td>On-treatment: Cholestasis</td><td class="was">15</td><td class="was">15</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="cap">No participant changes quadrant. The Normal &amp; Not-Notable count falls by two because the two participants who leave the plot were being counted there. Both halves matter: a reader checking the quadrant counts against the chart would find them moved, and a reader asking whether anyone's clinical classification changed would find that nobody's did.</p>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>eDISH is read by eye. A point that sits at its own baseline is indistinguishable from a point that genuinely peaked there, and a participant who improved on treatment could not be drawn below the diagonal at all. On this data nobody crosses into Hy's Law because of it — but that is a property of this study, not of the rule.</p>
+      <p>The same corrected reduction feeds the migration view and the new ALT waterfall. The plain eDISH scatter uses a different per-record path and is unaffected.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <ol>
+        <li>Open the <a href="https://jwildfire.github.io/safety.viz/examples/hep-explorer.html">hep-explorer demo</a> on the safety.viz site — it runs the corrected bundle.</li>
+        <li>Choose <em>Composite plot (baseline-referenced)</em> from the View control.</li>
+        <li>Read the count line above the charts, then compare it with the capture on the left.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 ======= -->
+<div class="cut"><span>the cause <em>· three participants' own records</em></span></div><section id="mechanism">
+  <div class="hd"><h2>Why a baseline became a peak, in the data itself</h2></div>
+  <p class="what">The example data records a study day for every measurement. These are every ALT record the three affected participants have — read out of the package's own <code>ExampleData("adbds")</code> on 2026-08-22, nothing else selected or filtered.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>01-701-1341 — the participant whose reported peak fell the furthest.</caption>
+    <thead><tr><th>Visit</th><th>Study day</th><th>ALT (U/L)</th><th>ULN</th><th>×ULN</th><th>Old rule</th><th>New rule</th></tr></thead>
+    <tbody>
+      <tr><td>Unscheduled 1.1</td><td class="n">1.1</td><td class="n">43</td><td class="n">43</td><td class="n">1.0000</td><td class="was">counted as on-treatment</td><td class="now">baseline</td></tr>
+      <tr><td>Week 2</td><td class="n">4.0</td><td class="n">15</td><td class="n">43</td><td class="n">0.3488</td><td class="was">on-treatment</td><td class="now">on-treatment</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="cap">There is no day-zero record, so the baseline resolves to the day-1.1 measurement. Because 1.1 is after day zero, the old rule kept that same record in the on-treatment set and reported the peak as 1.0000 ×ULN — the participant's own starting value. The peak is 0.3488 ×ULN, and this participant improved rather than peaked.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>01-703-1197 and 01-708-1236 — the two who leave the plot. Each has exactly one ALT record.</caption>
+    <thead><tr><th>Participant</th><th>Visit</th><th>Study day</th><th>ALT (U/L)</th><th>×ULN</th><th>Old rule</th><th>New rule</th></tr></thead>
+    <tbody>
+      <tr><td>01-703-1197</td><td>Unscheduled 1.1</td><td class="n">1.1</td><td class="n">18</td><td class="n">0.5625</td><td class="was">baseline <em>and</em> peak, both 0.5625</td><td class="now">baseline only — no on-treatment record</td></tr>
+      <tr><td>01-708-1236</td><td>Unscheduled 1.1</td><td class="n">1.1</td><td class="n">13</td><td class="n">0.4062</td><td class="was">baseline <em>and</em> peak, both 0.4062</td><td class="now">baseline only — no on-treatment record</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="cap">Total bilirubin behaves the same way for both: one record, serving as its own peak. A participant with no measurement after baseline has no on-treatment peak to plot, and is now counted among the excluded rather than drawn at their starting position.</p>
+
+  <div class="callout">
+    <p class="lbl">How far this reaches</p>
+    <ul>
+      <li>24 of the 318 participants carrying liver measurements have no day-zero record. Those 24 are exactly the population the two rules treat differently.</li>
+      <li>Of the 24, eleven are visible in the composite view: nine whose peak moves and two who leave it. The rest already had their baseline outranked by a later value, so both rules pick the same peak.</li>
+      <li>The count of 71 excluded is against all 364 participants in the dataset. 46 of them carry no liver measurements at all; among the 318 who do, the drop goes from 23 to 25.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ 3 ======= -->
+<div class="cut"><span>the ledger <em>· every value that moves</em></span></div><section id="ledger">
+  <div class="hd"><h2>The eleven participants, named</h2></div>
+  <p class="what">Read out of each bundle's own reduction — the function whose return value the composite view hands to the chart — for the same 364 participants. Values are peak on-treatment, in multiples of the upper limit of normal.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <thead><tr><th>Participant</th><th>Peak ALT was</th><th>is now</th><th>Peak bilirubin was</th><th>is now</th><th>Quadrant</th></tr></thead>
+    <tbody>
+      <tr><td>01-701-1341</td><td class="was">1.0000</td><td class="now">0.3488</td><td class="was">0.4071</td><td class="was">0.4071</td><td>unchanged</td></tr>
+      <tr><td>01-702-1082</td><td class="was">1.1562</td><td class="now">1.0938</td><td class="was">0.4886</td><td class="was">0.4886</td><td>unchanged</td></tr>
+      <tr><td>01-703-1096</td><td class="was">0.3438</td><td class="now">0.3125</td><td class="was">0.3257</td><td class="was">0.3257</td><td>unchanged</td></tr>
+      <tr><td>01-703-1100</td><td class="was">0.5625</td><td class="now">0.5312</td><td class="was">0.6514</td><td class="now">0.4071</td><td>unchanged</td></tr>
+      <tr><td>01-704-1008</td><td class="was">0.5000</td><td class="now">0.4688</td><td class="was">0.7329</td><td class="was">0.7329</td><td>unchanged</td></tr>
+      <tr><td>01-705-1349</td><td class="was">1.2188</td><td class="was">1.2188</td><td class="was">1.3029</td><td class="now">1.1400</td><td>unchanged</td></tr>
+      <tr><td>01-708-1348</td><td class="was">0.4688</td><td class="now">0.4375</td><td class="was">0.4071</td><td class="was">0.4071</td><td>unchanged</td></tr>
+      <tr><td>01-709-1301</td><td class="was">1.8529</td><td class="was">1.8529</td><td class="was">0.4886</td><td class="now">0.4071</td><td>unchanged</td></tr>
+      <tr><td>01-711-1012</td><td class="was">0.4706</td><td class="was">0.4706</td><td class="was">0.4071</td><td class="now">0.3257</td><td>unchanged</td></tr>
+      <tr class="gone"><td>01-703-1197</td><td>0.5625</td><td>not plotted</td><td>0.3257</td><td>not plotted</td><td>leaves the plot</td></tr>
+      <tr class="gone"><td>01-708-1236</td><td>0.4062</td><td>not plotted</td><td>0.3257</td><td>not plotted</td><td>leaves the plot</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="cap">Nine peaks move and not one of them rises. Every other participant's plotted position is identical between the two bundles, which is the other half of the claim worth checking: the rule change is confined to the participants it was meant to reach.</p>
+
+  <div class="callout">
+    <p class="lbl">What is being shipped is what was measured</p>
+    <ul>
+      <li>The bundle vendored in this release hashes to <code>ecd740ff…</code>, and the bundle the public safety.viz demo serves today hashes to the same value — checked by downloading it while writing this page.</li>
+      <li>That bundle contains the corrected identity check once. The v1.4.0 bundle gsm.safety ships today contains it zero times.</li>
+      <li>Both report files used for the captures are the same 6 984 049 bytes and differ only in the name of the directory they load the library from.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ 4 ======= -->
+<div class="cut"><span>gs#49 <em>· two charts R never had</em></span></div><section id="widgets">
+  <div class="hd"><h2>The hepatic ALT waterfall and the KDIGO nephrotoxicity explorer</h2></div>
+  <p class="what">Both existed in the JavaScript library and had no R binding. Both captures below were produced by running the package's own report workflows on 2026-08-22 with the release's code and the release's bundled example data.</p>
+
+  <figure>
+    <div class="frame"><img src="media/hep-waterfall.jpg" alt="The hepatic ALT waterfall: 58 participants ranked by baseline ALT, placebo ascending on the left and study drug descending on the right, each bar spanning baseline to maximum on-treatment ALT, with green bars marking new-onset jaundice and flanking box plots summarising each arm." width="1700" height="887" loading="lazy"></div>
+    <figcaption class="cap"><code>Widget_HepWaterfall()</code> on the synthetic abnormal-baseline cohort: 58 of 80 participants plotted, 22 excluded for abnormal baseline bilirubin per the source paper's Table 1, seven marked as developing new-onset jaundice. The chart exists for trials where a normal-baseline eDISH cannot be formed at all.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="frame"><img src="media/nep-explorer.jpg" alt="The KDIGO nephrotoxicity explorer: maximum fold change in creatinine against maximum absolute change, with shaded stage 1, 2 and 3 zones, and a KDIGO stage summary table below giving counts and percentages by fold change, absolute change and combined stage." width="1700" height="1064" loading="lazy"></div>
+    <figcaption class="cap"><code>Widget_NepExplorer()</code>: 276 participants staged, 24 that could not be plotted named rather than dropped silently, and a summary table that says in words that its first two column pairs are separate marginal distributions rather than a cross-tabulation.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <p class="lbl">Both are marked provisional upstream, and the widgets carry that through</p>
+    <p>The waterfall renders behind a prototype banner and the nephrotoxicity explorer is marked experimental pending clinical confirmation of the KDIGO staging ladder. That is the chart library's own labelling, visible on the capture, and wrapping them in R does not promote them.</p>
+  </div>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">The part that outlives the release</p>
+      <p>Eleven of safety.viz's thirteen renderers now have an R widget, and a check runs weekly against the latest safety.viz release: a renderer with no widget fails it unless a deferral names a filed requirement. A deferral that cites nothing is refused, so falling behind quietly stops being available.</p>
+      <p>The two still unwrapped are the participant profile and the time-to-event chart. Both need two datasets where the widget contract carries one, which is a design question rather than a missing wrapper.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try them</p>
+      <ol>
+        <li><a href="https://jwildfire.github.io/safety.viz/hep-waterfall/">The ALT waterfall demo</a> — drag the jaundice threshold and watch the green bars change.</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/nep-explorer/">The KDIGO explorer demo</a> — click a point in a stage zone for that participant's creatinine records.</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/hep-explorer/">The eDISH demo</a> — the chart this release corrects.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ end ===== -->
+<div class="cut"><span>notes</span></div><section>
+  <div class="hd"><h2>Reading this page</h2></div>
+
+  <div class="callout">
+    <p class="lbl">What produced the numbers</p>
+    <ul>
+      <li>gsm.safety 1.2.0, built from <code>release/v1.2.0</code> at <code>4a436ce</code>, and gsm.safety 1.1.0 at the <code>v1.1.0</code> tag for the older bundle.</li>
+      <li>gsm.core 1.3.1 and gsm.mapping 1.1.6, built from the Gilead-BioStats <code>main</code> branches into a scratch library — the same versions this package's <code>Remotes</code> resolve to in CI. Both are byte-identical to their release tags, checked while writing this page.</li>
+      <li>R 4.3.3, Chromium via Playwright, on 2026-08-22. Every figure comes from one of those runs; nothing is quoted from the release notes.</li>
+    </ul>
+  </div>
+
+  <p class="what" style="margin-top:26px">Repeat the comparison from a clean checkout. The second step is the whole method: build the report once, then give the copy the older library.</p>
+<pre><span class="c"># the chart the release corrects, from the package's own workflow</span>
+Rscript -e 'lW &lt;- yaml::read_yaml(system.file("workflow","4_modules","hep_explorer.yaml", package="gsm.safety"));
+            w  &lt;- gsm.safety::Widget_HepExplorer(gsm.safety::ExampleData("adbds"), lW$meta$lSettings);
+            htmlwidgets::saveWidget(w, "after/hep_explorer.html", selfcontained = FALSE)'
+
+<span class="c"># the same report, drawn by the bundle gsm.safety ships today</span>
+cp -R after before
+mv before/hep_explorer_files/safety-viz-1.7.0 before/hep_explorer_files/safety-viz-1.4.0
+cp &lt;v1.1.0&gt;/inst/htmlwidgets/lib/safety.viz-1.4.0/safety.viz.js \
+   before/hep_explorer_files/safety-viz-1.4.0/safety.viz.js
+sed -i '' 's|safety-viz-1\.7\.0|safety-viz-1.4.0|g' before/hep_explorer.html
+
+<span class="c"># open both, choose the composite view, read the count line above the charts</span></pre>
+
+  <div class="close" style="margin-top:34px">
+    <div>
+      <h3>Also in the release, not shown here</h3>
+      <ul>
+        <li>The bundle moves for all eleven widgets, not only the liver ones — participant-profile drill-down on six charts, draggable eDISH cut-lines, study-day playback, a log-base picker, axis-limit prefill.</li>
+        <li>Three changes could move a value on other data and provably do not here: below-detection-limit imputation (nothing imputed on this data), a new treatment-arm column candidate (this data carries none), and a QT example-data rederivation already in the package.</li>
+        <li>The parity guard: a declared library version in <code>DESCRIPTION</code>, an offline test keeping the declaration, the vendored bundle and every binding in agreement, and a weekly check against the latest safety.viz release.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>One thing this page cannot show you</h3>
+      <ul>
+        <li>The package's own documentation site is stale at v1.0.0 — last built on 2026-07-23 — because four of its workflows have been failing at startup since before this branch existed (<a href="https://github.com/jwildfire/gsm.safety/issues/55">gs#55</a>). That is open, milestoned, and not fixed by this release.</li>
+        <li>So the two new widgets have no published R reference page yet. The captures above are the release's code running, which is the part that matters for the decision; the reference pages follow when #55 is diagnosed.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="strip" style="margin-top:30px">
+    <div class="why">
+      <p class="lbl">Where this fits</p>
+      <p>This page is the review surface for <a href="https://github.com/jwildfire/gsm.safety/pull/68">gs#68</a>, which promotes <code>release/v1.2.0</code> to <code>main</code> and tags v1.2.0. gsm.safety is a clinical repo: nothing reaches <code>main</code> without your review, and the release notes publish from <code>NEWS.md</code> on the tag.</p>
+      <p>It is the first of two candidates. The second, <a href="https://github.com/jwildfire/gsm.safety/pull/69">gs#69</a>, contains this one and has to merge after it.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">The rest of the candidate</p>
+      <ol>
+        <li><a href="https://github.com/jwildfire/gsm.safety/pull/51">gs#51</a> — the increment, with the measurement this page re-ran independently</li>
+        <li><a href="https://github.com/jwildfire/safety.viz/issues/91">safety.viz#91</a> — the upstream correction</li>
+        <li><a href="https://jwildfire.github.io/obot.roadmap/reports/gs-v1.3-demo/">The v1.3.0 demo</a> — the census release stacked on top of this one</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Written and measured by Claude Code using Opus 5 (session 👯🤖 W0124) on 2026-08-22, against the gsm.safety v1.2.0 release candidate — for @jwildfire's review. The example data is CDISC Pilot 01 with synthetic augmentation; no real participant data appears on this page.</p>
+</footer>
+
+</div>
+
+</body></html>

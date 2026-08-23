@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gsm.safety v1.3.0 — annotated demo</title>
+<meta name="description" content="The safety overview said four deaths on a study with thirteen; this release rebuilds every figure on that page as a metric that publishes its own numerator, denominator and provenance. The before and after run side by side on the same study.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;
+  --espresso:#3d2b1f;
+  --bronze:#b05515;
+  --flag:#b83a2e;
+  --amber:#9a7a1e;
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:17px;margin:34px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--espresso);line-height:0}
+.frame img{display:block;width:100%;height:auto}
+.pin{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:23px;height:23px;border-radius:50%;background:var(--paper);color:var(--ink);
+  display:grid;place-items:center;font:700 12px/1 var(--mono);
+  box-shadow:0 0 0 3px var(--espresso),0 1px 4px rgba(0,0,0,.4)}
+figcaption{margin-top:12px}
+.keys{margin:0;padding:0;list-style:none;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 26px}
+.keys li{position:relative;padding-left:28px;font-size:14px;color:var(--ink2);line-height:1.45}
+.keys b{position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:50%;
+  background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font:700 11px/1 var(--mono)}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.cap b{color:var(--ink2);font-weight:600}
+
+table.counts{border-collapse:collapse;margin:18px 0 0;font-size:14.5px;min-width:420px}
+table.counts th{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  text-align:left;padding:8px 18px 8px 0;border-bottom:1px solid var(--rule2)}
+table.counts td{padding:8px 18px 8px 0;border-bottom:1px solid var(--rule);color:var(--ink2)}
+table.counts td.n{font-family:var(--mono)}
+table.counts td.red{color:var(--flag);font-weight:600;font-family:var(--mono)}
+.tablewrap{overflow-x:auto}
+
+.strip{display:grid;grid-template-columns:1fr 340px;gap:0;margin:34px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+pre{background:var(--espresso);color:#f2e9df;border-radius:5px;padding:18px 20px;overflow-x:auto;
+  font:13px/1.7 var(--mono);margin:18px 0 0}
+pre .c{color:#a89887}
+pre .add{color:#8fd6a8}
+pre .mv{color:#f0b46a}
+
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pin{width:20px;height:20px;font-size:10px}
+  .mast{padding-top:36px}
+}
+/* --- W0124 additions to the family stylesheet ------------------------- */
+.callout{border:1px solid var(--rule2);border-left:4px solid var(--bronze);border-radius:5px;
+  background:var(--panel);padding:16px 20px;margin:22px 0 0}
+.callout .lbl{margin-bottom:8px}
+.callout p{margin:0;font-size:15px;color:var(--ink2);max-width:66ch}
+.callout p+p{margin-top:9px}
+.callout ul{margin:8px 0 0;padding-left:18px;font-size:15px;color:var(--ink2)}
+.callout li+li{margin-top:5px}
+.pair{display:grid;grid-template-columns:1fr;gap:22px;margin:22px 0 0}
+.pair figure{margin:0}
+.pair .tag{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  display:inline-block;padding:5px 9px;border-radius:3px;margin:0 0 9px}
+.tag.old{background:#f0e7d8;color:#7d5a1e}
+.tag.new{background:#dcefe2;color:#1f5f3c}
+table.counts td.was{color:var(--mute);font-family:var(--mono)}
+table.counts td.now{color:var(--go);font-weight:600;font-family:var(--mono)}
+table.counts caption{caption-side:top;text-align:left;font-size:14px;color:var(--mute);
+  padding:0 0 10px;max-width:78ch}
+table.counts tr.gone td{color:var(--flag)}
+ul.plain{margin:12px 0 0;padding-left:18px;font-size:15px;color:var(--ink2);max-width:74ch}
+ul.plain li+li{margin-top:6px}
+.facts a{border-bottom-color:rgba(47,111,168,.3)}
+@media (min-width:820px){ .pair{grid-template-columns:1fr 1fr} .pair.stack{grid-template-columns:1fr} }
+@media (max-width:640px){
+  table.counts{font-size:13.5px;min-width:0}
+  table.counts th,table.counts td{padding:7px 10px 7px 0}
+  pre{font-size:11.5px;padding:14px 14px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">gsm.safety <span class="dot"></span> release review <span class="dot"></span> 2026-08-22</p>
+  <h1>What <span class="v">v1.3.0</span> corrects, annotated</h1>
+  <p class="lede">A safety overview leads with denominators — how many participants, how many dosed, how many died. gsm.safety computed those inside one function, from whatever columns it was handed, and got several of them wrong. This release replaces every one with a metric that publishes its own numerator, its own denominator and a record of where the figure came from. Both versions were run for this page on 2026-08-22, on the same study, in the same session.</p>
+  <p class="facts">
+    <span>deaths <b>4 → 13</b> of 762</span>
+    <span><b>5</b> published figures move</span>
+    <span><b>12</b> census metrics, each qualified twice</span>
+    <span>candidate <a href="https://github.com/jwildfire/gsm.safety/pull/69">gs#69</a>, <code>release/v1.3.0</code> → <code>main</code></span>
+  </p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#deaths"><span class="ref">the headline</span><span class="t">Four deaths, or thirteen</span><span class="s">Where the other nine were</span></a>
+  <a href="#moves"><span class="ref">gs#56 #58</span><span class="t">Every figure that moves</span><span class="s">Both numbers, side by side</span></a>
+  <a href="#page"><span class="ref">gs#61</span><span class="t">The page it produces</span><span class="s">Every number beside its denominator</span></a>
+  <a href="#absent"><span class="ref">gs#66</span><span class="t">Absent is not zero</span><span class="s">What a missing domain now does</span></a>
+</nav>
+
+<!-- ============================================================ 1 ======= -->
+<div class="cut"><span>the headline <em>· gs#56</em></span></div><section id="deaths">
+  <div class="hd"><h2>The death count</h2></div>
+  <p class="what">On the ecosystem's bundled study, the safety overview reported four deaths. Thirteen enrolled participants have a death recorded. The old count never opened the death domain at all: it matched the text of a discontinuation reason and counted whoever it found, enrolled or not.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>Measured for this page on 2026-08-22 by two routes that share no code — the study's records read directly with base R, and the standard mapping run through the metric workflow end to end. Both give 13.</caption>
+    <thead><tr><th>Where a death is recorded</th><th>Participants</th><th>Of them enrolled</th></tr></thead>
+    <tbody>
+      <tr><td>The death domain</td><td class="n">12</td><td class="n">10</td></tr>
+      <tr><td>Discontinuation reason reads "Death"</td><td class="n">4</td><td class="n">3</td></tr>
+      <tr><td>Named by both</td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td>Union</td><td class="n">16</td><td class="now">13</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="cap">Three of the sixteen were never enrolled — S42425, S97688 and S78705 — and the metric anchors every figure to the enrolled population of 762, so the published number is 13. The old count did not anchor, which is why it reported all four of its matches including the one who was never enrolled.</p>
+
+  <div class="callout">
+    <p class="lbl">The correction is four to thirteen, and it is stated that way deliberately</p>
+    <p>An earlier version of this work said the function reported one death, and that version circulated for about a day before being corrected. One is what it reported on gsm.core 1.2.0, where a single participant's discontinuation reason said Death. The bundled study moved between gsm.core versions under the same name: on 1.3.1 four participants carry that reason, and 762 are enrolled rather than 760.</p>
+    <p>So this is a threefold correction to a published clinical figure, not a thirteenfold one. The metric's own figure of 13 was re-measured on 1.3.1 and did not move.</p>
+  </div>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>The same code, run twice for this page: once against this machine's own R library, once against the versions the release was qualified on.</caption>
+    <thead><tr><th>The bundled study <code>AA-AA-000-0000</code></th><th>gsm.core 1.2.0</th><th>gsm.core 1.3.1</th></tr></thead>
+    <tbody>
+      <tr><td>Participants in the subject domain</td><td class="n">1000</td><td class="n">1000</td></tr>
+      <tr><td>Enrolled</td><td class="was">760</td><td class="now">762</td></tr>
+      <tr><td>Discontinuation reason reads "Death"</td><td class="was">1</td><td class="now">4</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="cap">This is the trap the release exists to close, and it is also the reason this page was not built on the machine's own library: rendering the census here would have republished the superseded figures.</p>
+</section>
+
+<!-- ============================================================ 2 ======= -->
+<div class="cut"><span>gs#56 <em>· gs#58 · every figure that moves</em></span></div><section id="moves">
+  <div class="hd"><h2>The census, before and after, in one session</h2></div>
+  <p class="what">Both runs call <code>SafetyCensus()</code> on the same mapped domains from the same study, minutes apart: gsm.safety 1.2.0 first, then 1.3.0. Nothing below is copied from the release notes or the qualification records — those were read afterwards, to check this run against them.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <thead><tr><th>Figure on the safety overview</th><th>v1.2.0</th><th>v1.3.0</th><th>What the old number was doing</th></tr></thead>
+    <tbody>
+      <tr><td>Enrolled participants</td><td class="was">762</td><td class="was">762</td><td>unchanged</td></tr>
+      <tr><td>Randomised to an arm</td><td class="was">blank</td><td class="now">577</td><td>read a treatment-arm column no standard domain carries</td></tr>
+      <tr><td>Received study drug</td><td class="was">744</td><td class="now">762</td><td>inferred dosing from time on treatment exceeding zero</td></tr>
+      <tr><td>Deaths</td><td class="was">4</td><td class="now">13</td><td>matched a discontinuation reason, never read the death domain</td></tr>
+      <tr><td>Person-years on study</td><td class="was">73.2</td><td class="was">73.2</td><td>unchanged</td></tr>
+      <tr><td>Person-years on treatment</td><td class="was">29.5</td><td class="was">29.5</td><td>unchanged</td></tr>
+      <tr><td>Participants with a lab result</td><td class="was">598</td><td class="was">598</td><td>unchanged</td></tr>
+      <tr><td>Participants with an ECG</td><td class="was">blank, of 762</td><td class="now">absent, and it says so</td><td>published a blank where the domain is missing</td></tr>
+      <tr><td>Participants with a reported AE</td><td class="was">661</td><td class="was">661</td><td>unchanged</td></tr>
+      <tr><td>Participants with a disposition record</td><td class="was">100</td><td class="now">76</td><td>counted every identifier in the domain, enrolled or not</td></tr>
+      <tr><td>Completed</td><td class="was">22</td><td class="now">19</td><td>counted the same way, and inside a table rather than as a figure</td></tr>
+      <tr><td>Discontinued</td><td class="was">10</td><td class="now">9</td><td>counted the same way, and inside a table rather than as a figure</td></tr>
+      <tr class="gone"><td>Median days on treatment</td><td>15</td><td>no longer published</td><td>wants an averaging step no metric performs yet</td></tr>
+      <tr class="gone"><td>Ongoing / Not in the disposition domain</td><td>64 / 662</td><td>no longer published</td><td>read out of free text, and a subtraction</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <p class="lbl">Two figures left the page rather than moving, and they are named rather than dropped</p>
+    <ul>
+      <li>The median days on treatment needs an averaging step in the metric layer. Publishing it from the report would put a second counting lane back, which is the defect this release removes.</li>
+      <li>The per-visit data-coverage table is the thirteenth census figure and is carried. Under the standard mapping the lab domain arrives with no visit column at all, so a coverage figure cannot key on a visit — and the expected count needs a scheduled study day no domain supplies. The page renders with no coverage section rather than an empty table, because an empty table reads as a study with no data.</li>
+    </ul>
+  </div>
+
+  <p class="what" style="margin-top:26px">Every figure that is published was measured twice, by routes that share no code, and the pair has to agree or the script exits non-zero. Run either yourself from the branch:</p>
+<pre><span class="c"># the records read directly with base R, against the pipeline, figure by figure</span>
+Rscript tools/qualify-census-metrics.R
+Rscript tools/qualify-death-count.R
+
+<span class="c">#   AGREE - every figure measured twice, and saf0011 stops rather than publishing a zero.</span>
+<span class="c">#   AGREE - 13 participants, of 762 enrolled.</span></pre>
+  <p class="cap">Both were run for this page and both agreed. Every row measured matches what <code>inst/qualification/</code> records, including the eleven figures in the metrics record and all four counts in the death record.</p>
+</section>
+
+<!-- ============================================================ 3 ======= -->
+<div class="cut"><span>gs#61 <em>· the page it produces</em></span></div><section id="page">
+  <div class="hd"><h2>The census report, rendered</h2></div>
+  <p class="what">One report, reading what the metrics published and computing nothing of its own. Rendered for this page by running the whole pipeline — the standard mapping, the eleven census metrics with a domain on this study, the reporting model, then the report workflow.</p>
+
+  <figure>
+    <div class="frame"><img src="media/census-report.jpg" alt="The rendered Safety Census page for study AA-AA-000-0000: Population, Exposure and Follow-up sections, each figure shown with its value, its denominator and what the denominator counts; then a What the metrics published table listing each metric ID with its numerator, denominator and status, including saf0011 marked not run for this study." width="1700" height="1601" loading="lazy"></div>
+    <figcaption>
+      <ul class="plain">
+        <li>Every figure sits beside the denominator its own metric published, and beside what that denominator counts.</li>
+        <li>Person-time is published in days and presented in years — both numbers are on the page.</li>
+        <li>The foot of the page lists what each metric published verbatim, including the one that published nothing.</li>
+      </ul>
+      <p class="cap">The page carries no flag column and no cut-point. These metrics declare no threshold and publish an empty flag, so a census figure cannot move a site's risk score — and a result arriving with a flag is refused rather than presented.</p>
+    </figcaption>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>A figure that is wrong is now wrong in exactly one place. Before, the same count could be produced by a function and by a metric and the two could disagree without anything noticing. Now the function runs the metrics and reads what they published, so there is one counting lane and the page is a reader of it.</p>
+      <p>The test that proves it is not the one that checks the numbers. A structural check reads the function's body and every helper it calls, and fails if an arithmetic operator or an aggregating function appears in any of them. A rebuild that left the counting in place and put a workflow beside it would pass an arithmetic test by accident; it cannot pass that one.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <ol>
+        <li>Compare the top table with the foot of the page: 73.2 person-years above, 26 754 participant-days below, the same figure twice.</li>
+        <li>Find <code>saf0011</code> in the foot: it reads "not run for this study" rather than reporting a zero.</li>
+        <li>Read the denominator column — every figure is <em>of 762</em>, and the page says what 762 counts.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 ======= -->
+<div class="cut"><span>gs#66 <em>· absent is not zero</em></span></div><section id="absent">
+  <div class="hd"><h2>What happens when a study does not collect something</h2></div>
+  <p class="what">A zero means measured and found none. A blank means the reader has to guess. Both were being published where the honest answer is that nothing was collected. Run for this page: the same call, the same study, with the death domain withheld.</p>
+
+<pre><span class="c"># the death domain supplied</span>
+Deaths                     <span class="add">13</span>  of 762
+
+<span class="c"># the death domain withheld — the same call, everything else identical</span>
+Deaths                     <span class="mv">NA</span>
+
+<span class="c"># and it says so, rather than leaving the reader to notice:</span>
+Warning: No domain was supplied for Deaths (Study) (Mapped_Death);
+         Participants With an ECG (Study) (Mapped_EG).
+         Those figures are absent rather than zero.</pre>
+
+  <div class="callout">
+    <p class="lbl">Three states, kept apart, and checked in the strongest form available</p>
+    <ul>
+      <li>Every column every census definition declares is dropped in turn, and the metric has to stop rather than publish — 34 combinations across the eleven metrics, plus four for the death count.</li>
+      <li>This matters because the underlying check only warns on a missing column: it stops on a missing data frame, but a domain arriving without a column it needs would otherwise sail through. That was verified again on gsm.core 1.3.1 rather than taken from the design, which had called the false-zero problem fixed by construction.</li>
+      <li>The ECG metric is written, declares its domain, and stops on every study available today — no mapping package ships an ECG mapping and the bundled study has no ECG records. Its qualification is structural rather than measured, and the suite fails if a bundled ECG domain ever appears, so it cannot sit there passing on nothing.</li>
+    </ul>
+  </div>
+
+  <p class="cap">On a study that maps no death domain, the death figure now reads as not collected instead of reading a discontinuation reason. That is correct, and it is also a visible change: the demo study's deaths and randomised tiles will read as not collected until its mapping phase adds those two domains.</p>
+</section>
+
+<!-- ============================================================ end ===== -->
+<div class="cut"><span>notes</span></div><section>
+  <div class="hd"><h2>Reading this page</h2></div>
+
+  <div class="callout">
+    <p class="lbl">What produced the numbers</p>
+    <ul>
+      <li>gsm.safety 1.3.0, built from <code>release/v1.3.0</code> at <code>9f76d42</code>, and gsm.safety 1.2.0 from <code>release/v1.2.0</code> at <code>4a436ce</code> for the before column.</li>
+      <li>gsm.core 1.3.1 and gsm.mapping 1.1.6, built from the Gilead-BioStats <code>main</code> branches into a scratch library, with gsm.reporting 1.1.5. Both main branches are byte-identical to their release tags, checked while writing this page, so this is what CI installs.</li>
+      <li>R 4.3.3, on 2026-08-22. Every figure comes from one of those runs; the qualification records were read afterwards, to check the run against them, and every row agreed.</li>
+    </ul>
+  </div>
+
+  <div class="close" style="margin-top:34px">
+    <div>
+      <h3>Also in the release, not shown here</h3>
+      <ul>
+        <li>The qualification records now ship inside the package rather than in a directory the build excludes, so the checks that compare them with the code run everywhere the suite runs — including the package check the merge is gated on, where they had been silently skipping.</li>
+        <li>Every document-agreement check prints a line naming the record and how many figures it compared, so a skipped check is visible in a log rather than being one line inside a list of sixteen.</li>
+        <li>Ten column arguments are deprecated and ignored rather than removed: a call that passed one still runs, warns, and changes no figure.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What is deliberately not finished</h3>
+      <ul>
+        <li>Data completeness, the thirteenth census figure, is carried with the reason written down: the lab domain carries no visit column under the standard mapping, and the expected count needs a scheduled study day no domain supplies. Both are definitional choices rather than code to write.</li>
+        <li>Migrating off two deprecated pipeline functions is not in this release at all — its 30 warnings are still visible in this branch's logs — and it no longer carries this release's milestone.</li>
+        <li>The counts pinned in the suite are pinned to gsm.core 1.3.1. A different version skips those assertions with both numbers named in the skip reason, so re-qualifying is a deliberate act by a person. Worth knowing: the development branch of gsm.core already carries a much larger bundled study, so the next release will move it a third time.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="strip" style="margin-top:30px">
+    <div class="why">
+      <p class="lbl">Where this fits</p>
+      <p>This page is the review surface for <a href="https://github.com/jwildfire/gsm.safety/pull/69">gs#69</a>, which promotes <code>release/v1.3.0</code> to <code>main</code> and tags v1.3.0. gsm.safety is a clinical repo: nothing reaches <code>main</code> without your review.</p>
+      <p>It is the second of two candidates and contains the first, so <a href="https://github.com/jwildfire/gsm.safety/pull/68">gs#68</a> has to merge and be tagged before this one. Merging them the other way round swallows the widget release.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">The rest of the candidate</p>
+      <ol>
+        <li><a href="https://github.com/jwildfire/gsm.safety/tree/release/v1.3.0/inst/qualification">The qualification records</a> — three, shipping inside the package</li>
+        <li><a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-20-safety-census-rebuild/">D0023</a> — the design, carrying its own dated correction about the study that moved</li>
+        <li><a href="https://jwildfire.github.io/obot.roadmap/reports/gs-v1.2-demo/">The v1.2.0 demo</a> — the candidate this one is stacked on</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Written and measured by Claude Code using Opus 5 (session 👯🤖 W0124) on 2026-08-22, against the gsm.safety v1.3.0 release candidate — for @jwildfire's review. <code>AA-AA-000-0000</code> is the ecosystem's synthetic bundled study; no real participant data appears on this page.</p>
+</footer>
+
+</div>
+
+</body></html>
