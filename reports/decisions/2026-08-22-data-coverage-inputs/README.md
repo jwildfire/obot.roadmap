@@ -10,7 +10,7 @@ Data coverage per visit is the thirteenth census number and the only one of the 
 ## The five questions, one line each
 
 - **DC1 — the visit label.** Where does a visit label for a lab result come from? Recommended: the study's own lab mapping passes through the visit-name column its raw data already carries, and the metric stops when it is absent.
-- **DC2 — the denominator.** What defines the day a visit is expected on? Recommended: support two declared forms — the visit table, and a study-declared visit schedule — take the visit table when both are present, and never infer a schedule from observed dates.
+- **DC2 — the denominator.** What defines the day a visit is expected on? Recommended: support two declared forms — the visit table, and a study-declared visit schedule — take the visit table when both are present, and never infer a schedule from observed dates. The visit-table form's limit is stated on the page: a participant who stopped attending leaves the denominator rather than reading as missing data, which is why the schedule form stays available and is the clinically stronger one.
 - **DC3 — results outside the denominator.** Recommended: count only participants in the expected set, and publish the outsiders as their own descriptive number, which is the shape he approved for the death count's two disagreeing sources.
 - **DC4 — a study that supplies neither input.** Recommended: publish nothing, and name the missing input on the report.
 - **DC5 — ordering.** Recommended: the study's declared order when there is one, the middle of each visit's observed dates when there is not, and the ordering day printed on the row either way. Never alphabetical.
