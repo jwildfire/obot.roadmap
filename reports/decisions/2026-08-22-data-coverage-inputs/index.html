@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — Where the data-coverage numbers come from</title>
+<meta name="description" content="The thirteenth census number is the one that could not be built: no standard domain says which visit a lab result belongs to. Five questions, every option measured on two real studies, and a recommendation that needs nothing from anyone else's package.">
+<meta name="decision-id" content="D0027">
+<meta name="premise" scope="live" content="the requirement this page answers is still open | gh issue view 306 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<meta name="premise" scope="live" content="the thirteenth census metric is still unbuilt, so this answer is what it is waiting on | gh issue view 58 -R jwildfire/gsm.safety --json state --jq .state → prints OPEN">
+<meta name="premise" scope="live" content="the data-coverage chart requirement, whose first item this is, is still open | gh issue view 291 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<meta name="premise" scope="live" content="the live demo study supplies its own lab mapping rather than taking the standard one, which is what the recommended answer builds on | gh api repos/jwildfire/demo-301/contents/workflows/1_mappings/LB.yaml --jq .name → prints LB.yaml">
+<meta name="premise" scope="live" content="the package still ships fifteen metric definitions and no coverage metric among them, so nothing is publishing a coverage number in the meantime | gh api repos/jwildfire/gsm.safety/contents/inst/workflow/2_metrics?ref=dev --jq length → prints 15">
+<meta name="premise" scope="history" content="the standard lab mapping carries no visit column, which is the fact the whole page rests on | manual — in gsm.mapping 1.1.6, inst/workflow/1_mappings/LB.yaml declares studyid, subjid, toxgrg_nsv and lb_dt under Raw_LB and nothing else; that package belongs to another organisation and its API is blocked here, so read it from an installed copy at system.file(&quot;workflow&quot;, &quot;1_mappings&quot;, &quot;LB.yaml&quot;, package = &quot;gsm.mapping&quot;)">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout ul{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.callout.blue{border-left-color:var(--blue)}
+.callout.blue .k{color:var(--blue)}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+.pre{margin:16px 0 0;padding:14px 16px;border:1px solid var(--rule);border-radius:5px;background:#f7f4ec;
+  font:13px/1.6 var(--mono);color:var(--ink2);overflow-x:auto;white-space:pre}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .card,.q,.callout{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+  table{min-width:440px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-22</span><span class="dot"></span><span>awaiting your answer</span><span class="dot"></span><span>five questions</span></div>
+  <h1>Where the data-coverage numbers come from</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0027">
+<p>D0027 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0027.1"><a class="did" href="#D0027.1">D0027.1</a><span class="dcode">DC1</span><span class="dq">Where does a visit label for a lab result come from?</span></li>
+  <li id="D0027.2"><a class="did" href="#D0027.2">D0027.2</a><span class="dcode">DC2</span><span class="dq">What defines the day a visit is expected on, and does a study have to supply it?</span></li>
+  <li id="D0027.3"><a class="did" href="#D0027.3">D0027.3</a><span class="dcode">DC3</span><span class="dq">What does the page do with a result from someone the denominator says is not there?</span></li>
+  <li id="D0027.4"><a class="did" href="#D0027.4">D0027.4</a><span class="dcode">DC4</span><span class="dq">If a study supplies neither input, does coverage report nothing or report what it can?</span></li>
+  <li id="D0027.5"><a class="did" href="#D0027.5">D0027.5</a><span class="dcode">DC5</span><span class="dq">What puts the visits in order?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">Twelve of the thirteen census numbers are built and merged. The thirteenth — how completely the data was collected, visit by visit — could not be, because no standard domain says which visit a lab result belongs to, and the definition of “expected” you approved needs a scheduled day that no standard domain carries either. Both gaps can be closed by guessing, and a guessed coverage figure looks exactly like a measured one. So this page measures what every guess would actually produce, on both studies we have, and asks you five questions instead.</p>
+  <div class="facts">
+    <span><b>Lab rows in the bundled study:</b> 405,720</span>
+    <span><b>That carry a visit label after the standard mapping:</b> 0</span>
+    <span><b>Coverage the approved definition produces at one visit:</b> 1,220%</span>
+    <span><b>Change needed in a package we do not own:</b> none</span>
+  </div>
+</div>
+
+<div class="callout blue"><div class="k">Answering this releases two items from the ranked ten</div>
+<p>The thirteenth census metric sits under the census rebuild, which is second on the ranked list; the data-coverage chart, whose first item this is, is third. Nothing else in the census is waiting: all four steps of the rebuild are merged and only this number is outstanding.</p></div>
+
+<div class="cut"><span>THE SITUATION</span></div>
+<section id="situation">
+<h2>Three sentences</h2>
+<p>The safety census now publishes twelve numbers as metrics the pipeline computes and can check one at a time, and the thirteenth — data coverage per visit, the number that tells a reader whether a quiet visit is reassuring or empty — is the only one that was not built. It was not built because the lab domain, as the standard mapping delivers it, carries a study identifier, a participant identifier, a toxicity grade and a date, and nothing that says which visit a result came from; and because “expected”, which you defined as the participants whose time on study reaches that visit, needs a scheduled day for each visit that no standard domain supplies. Both missing pieces can be reconstructed by inference, and this page exists because an inferred coverage figure is indistinguishable on the page from a measured one — which is the defect the whole rebuild was written against.</p>
+</section>
+
+<div class="cut"><span>WHAT THE DOMAINS ACTUALLY CARRY</span></div>
+<section id="domains">
+<h2>Measured, not read off a specification</h2>
+<p>Everything below was produced by running the standard mapping over the ecosystem’s own bundled study and looking at what came out, on the package versions the automation installs today. The three previous sessions on this question each found a documented claim that turned out not to be true, so nothing here is relayed.</p>
+
+<div class="tbl"><table>
+<tr><th>Domain, after the standard mapping</th><th>What it carries</th><th>A visit label?</th></tr>
+<tr><td>Labs</td><td>study, participant, toxicity grade, result date</td><td class="bad">No</td></tr>
+<tr><td>Visits</td><td>study, participant, visit date, visit name, site</td><td class="ok">Yes — the visit name</td></tr>
+<tr><td>Participants</td><td>site, country, time on study, time on treatment, first-dose date, age, sex, race</td><td>Not applicable</td></tr>
+<tr><td>Enrolment</td><td>study, participant, site, country, enrolled flag, enrolment date</td><td>Not applicable</td></tr>
+<tr><td>Adverse events</td><td>seriousness, grade, relatedness, start and end dates</td><td class="bad">No</td></tr>
+<tr><td>ECG</td><td colspan="2">There is no standard ECG mapping at all. The domain does not exist for any study on the stock configuration.</td></tr>
+</table></div>
+
+<h3>The visit label the lab rows do carry, and where it goes</h3>
+<p>The raw lab table in the bundled study has a visit-name column on every one of its 405,720 rows. The standard lab mapping declares four columns — study, participant, toxicity grade, result date — and the ingest step keeps only what the mapping declares, so the visit name is dropped on the way in. The label is not missing from the study. It is discarded by a specification we do not control.</p>
+
+<div class="callout note"><div class="k">The same is true of the live demo study, in the other direction</div>
+<p>Our own demo study writes its own lab mapping rather than taking the standard one, and that mapping already declares a visit name, a visit number and a study day on every lab row. It has been carrying the exact inputs this number needs since it was built. What it does not have is a visit domain: it ships no visit table at all.</p></div>
+
+<h3>Declaring the column in the metric does not get it back, and fails quietly</h3>
+<p>The obvious repair is for the coverage metric to declare the visit column in its own definition, the way every other census metric declares the columns it reads. That does not work, because the column was already dropped before any metric runs — and the way it does not work is the dangerous part. Running a metric that declares the visit column against the standard mapped data produces this:</p>
+<div class="pre">[INFO]  Checking data against spec          &lt;- passes
+[INFO]  Workflow Step 1 of 1
+[FATAL] Error executing query: Referenced column "visnam" not found
+[INFO]  NULL of length 0 saved as `lData$Result`
+[INFO]  Completed Workflow                   &lt;- no error raised to the caller</div>
+<p>The specification check passes. The step fails. The workflow returns nothing and reports success. A report built on that would render with no coverage rows and no explanation, which is the failure mode this programme keeps meeting: an operation that reports success while doing nothing.</p>
+
+<div class="callout"><div class="k">Why this is not solved by fixing the mapping</div>
+<p>The cleanest repair in the whole problem is four lines: add the visit name and visit number to the standard lab and ECG specifications, and every study on the stock configuration gets coverage for free. That file belongs to another organisation and this programme does not write there. If you want it, it is a request you would make to them, not work anyone here can schedule — and everything below is designed so that we never need it.</p></div>
+</section>
+
+<div class="cut"><span>THE FIRST INFERENCE, MEASURED</span></div>
+<section id="datematch">
+<h2>Attaching a lab result to a visit by its date</h2>
+<p>If the lab row has a date and the visit table has dates, a lab result can be attributed to the visit it falls on. That is the inference the last session left on the table, and it is the one that would be invisible on the finished page. Here is what it does on the bundled study.</p>
+
+<div class="tbl"><table>
+<tr><th>What was tried</th><th>Result</th></tr>
+<tr><td>Lab rows whose date exactly matches a visit date for the same participant</td><td class="bad">0 of 405,720</td></tr>
+<tr><td>Attributing each lab row to that participant’s nearest visit date instead</td><td class="bad">12.5% correct</td></tr>
+<tr><td>What 12.5% is</td><td>one in eight, on a study with eight visits — chance</td></tr>
+<tr><td>Median distance from a lab result to the nearest visit</td><td>50 days</td></tr>
+</table></div>
+
+<p>The reason is worth knowing, because it is not a rounding problem. The bundled study’s entire lab domain carries three distinct dates. Sixty-one per cent of lab rows are dated on the participant’s enrolment date, and the median participant has exactly one distinct lab date across all eight of their visits. The lab date in that study is not a visit date at all, and no matching rule can recover a visit from it.</p>
+
+<p>The correctness figure above is measurable only because the raw lab rows carry the true visit label — so the guess can be scored against the answer. That is the whole argument against shipping the guess: on this study it is checkable and it is wrong, and on a study where it is not checkable it would publish anyway, with nothing on the page to say which kind of study a reader is looking at.</p>
+</section>
+
+<div class="cut"><span>THE DEFINITION YOU APPROVED, MEASURED</span></div>
+<section id="expected">
+<h2>“Expected” means the participants whose time on study reaches that visit</h2>
+<p>That was your answer on the census design, and it was the right instinct: a study that enrolled half its participants last month should not read as though it were missing half its data. It was also recommended to you on the grounds that it asks no study for anything new, because time on study is already on the standard participant mapping. That second half does not survive measurement, and you should see why before you decide anything else on this page.</p>
+
+<p>To ask whether a participant’s time on study reaches a visit, you need to know what day that visit falls on. No standard domain carries one. The visit table gives the date each participant attended, not the day the visit was scheduled for. So the scheduled day has to come from somewhere, and the only source available without asking a study for it is the observed dates themselves — the middle of the range at which participants actually attended. Doing exactly that, on the bundled study, produces this coverage table:</p>
+
+<div class="tbl"><table>
+<tr><th>Visit</th><th>Inferred day</th><th>Expected</th><th>With a lab result</th><th>Coverage</th></tr>
+<tr><td>Screening</td><td>1</td><td>755</td><td>598</td><td>79%</td></tr>
+<tr><td>Visit 1</td><td>7</td><td>674</td><td>598</td><td>89%</td></tr>
+<tr><td>Visit 2</td><td>26</td><td>421</td><td>598</td><td class="bad">142%</td></tr>
+<tr><td>Visit 3</td><td>48</td><td>237</td><td>598</td><td class="bad">252%</td></tr>
+<tr><td>Visit 4</td><td>59</td><td>152</td><td>598</td><td class="bad">393%</td></tr>
+<tr><td>Visit 5</td><td>79</td><td>49</td><td>598</td><td class="bad">1,220%</td></tr>
+<tr><td>End of treatment</td><td>92</td><td>0</td><td>598</td><td class="bad">no denominator</td></tr>
+<tr><td>Follow-up</td><td>117</td><td>0</td><td>598</td><td class="bad">no denominator</td></tr>
+</table></div>
+
+<p>The cause is not the inference. It is the study: every one of its 762 enrolled participants has a visit calendar spanning longer than their own recorded time on study — a median of 117 days of visits against a median of 30 days on study. The visit table and the time-on-study column describe two different studies. So on the study every census figure is qualified against, the definition cannot be checked at all, whether the scheduled day is guessed or handed to us.</p>
+
+<div class="callout"><div class="k">Why this matters more than a bad table</div>
+<p>Every one of the twelve census numbers that shipped was measured twice, by two routes sharing no code, and the two had to agree. That is what qualifying a number means here. This definition, on the only study available to qualify it against, produces coverage above one hundred per cent at three visits and divides by zero at two more. A number that cannot be qualified cannot be released under the rule the rest of the census was built to.</p></div>
+
+<h3>The live demo study is better behaved, and still not clean</h3>
+<p>Our demo study carries an exact scheduled day on every lab row — the same day for every participant at a given visit, which is a real visit schedule sitting in the data. Applying your definition there works far better, and still breaks at the tail:</p>
+
+<div class="tbl"><table>
+<tr><th>Visit</th><th>Day</th><th>Expected</th><th>With a lab result</th><th>Coverage</th></tr>
+<tr><td>Baseline</td><td>1</td><td>751</td><td>751</td><td class="ok">100%</td></tr>
+<tr><td>Week 1</td><td>8</td><td>651</td><td>646</td><td class="ok">99%</td></tr>
+<tr><td>Week 2</td><td>15</td><td>565</td><td>560</td><td class="ok">99%</td></tr>
+<tr><td>Week 3</td><td>22</td><td>484</td><td>479</td><td class="ok">99%</td></tr>
+<tr><td>Week 4</td><td>29</td><td>397</td><td>397</td><td class="ok">100%</td></tr>
+<tr><td>Week 6</td><td>43</td><td>287</td><td>264</td><td>92%</td></tr>
+<tr><td>Week 8</td><td>57</td><td>286</td><td>158</td><td class="warn">55%</td></tr>
+<tr><td>Week 12</td><td>85</td><td>158</td><td>17</td><td class="warn">11%</td></tr>
+<tr><td>Week 16</td><td>113</td><td>17</td><td>17</td><td class="ok">100%</td></tr>
+</table></div>
+
+<p>Two hundred and eighty-six of that study’s 765 enrolled participants have at least one lab result dated after their recorded time on study ends, and 269 of the 286 participants with a week-16 lab are outside the expected set by that measure. Counted the naive way — everybody with a result, over everybody expected — week 16 reads 1,682%. Counted as the table above does it, by only counting participants who are in the expected set, it reads 100% and the 269 disappear silently.</p>
+
+<p>That is a design decision hiding inside an arithmetic, and it is the third question below. Dirty source data is normal in trials and is not a reason to escalate anything; what it is a reason for is deciding, once and in writing, what the page does with a result that falls outside its own denominator.</p>
+</section>
+
+<div class="cut"><span>WHAT WORKS WITH THE DOMAINS AS THEY ARRIVE</span></div>
+<section id="works">
+<h2>One shape that needs nothing invented and nothing from upstream</h2>
+<p>There is a version of this number that infers nothing at all. It has two halves, and both of them are things a study says rather than things we work out.</p>
+<ul>
+  <li><b>The visit label comes from the study’s own lab mapping.</b> The label is already in the raw data on both studies we have; the study’s mapping either passes it through or it does not. Our demo study already passes it through. A study on the stock configuration does not, and gets no coverage number until it says what a visit is.</li>
+  <li><b>“Expected” comes from the visit table.</b> A participant is expected at a visit when the study’s visit records say that visit happened for them. Nothing is guessed about schedules, nothing is derived from time on study, and no participant is counted as missing a result for a visit they never reached.</li>
+</ul>
+<p>On the bundled study, with the visit label restored by one line in a study-level lab mapping, that produces the following — and every figure in it comes from a domain reading rather than a calculation:</p>
+
+<div class="tbl"><table>
+<tr><th>Visit</th><th>Attended, of the enrolled</th><th>With a lab result</th><th>Coverage</th></tr>
+<tr><td>Screening</td><td>762</td><td>598</td><td>78.5%</td></tr>
+<tr><td>Visit 1</td><td>762</td><td>598</td><td>78.5%</td></tr>
+<tr><td>Visit 2</td><td>762</td><td>598</td><td>78.5%</td></tr>
+<tr><td>Visit 3</td><td>762</td><td>598</td><td>78.5%</td></tr>
+<tr><td>Visit 4</td><td>762</td><td>598</td><td>78.5%</td></tr>
+<tr><td>Visit 5</td><td>762</td><td>598</td><td>78.5%</td></tr>
+<tr><td>End of treatment</td><td>762</td><td>598</td><td>78.5%</td></tr>
+<tr><td>Follow-up</td><td>762</td><td>598</td><td>78.5%</td></tr>
+</table></div>
+
+<p>The flatness is the study, not the method: every participant in it attends all eight visits and 598 of the 762 have any lab record at all, so the same 164 participants are missing at every visit. It is a dull table and it is a true one, and it can be checked against the domains by a second route — which is the bar the other twelve numbers cleared.</p>
+
+<div class="callout note"><div class="k">Neither study we have supports both halves today</div>
+<p>The bundled study has the visit table but drops the lab visit label under the standard mapping. The demo study passes the lab visit label through but ships no visit table. Each is one small, ordinary piece of study configuration away from supporting this number, and neither piece is in a package we do not own.</p></div>
+
+<h3>What a study has to supply, written down rather than discovered later</h3>
+<p>This is the part your requirement asked to be explicit, so it is stated here as the contract rather than left to whoever builds it.</p>
+<div class="tbl"><table>
+<tr><th>Input</th><th>Where it comes from</th><th>If a study does not supply it</th></tr>
+<tr><td>A visit label on each lab record</td><td>the study’s lab mapping passes through the visit-name column its raw data already has</td><td>no coverage rows at all; the metric stops and says which column it wanted</td></tr>
+<tr><td>Which participants reached which visit</td><td>the study maps its visit table, which the standard mapping already supports</td><td>fall back to the schedule form below, or publish nothing</td></tr>
+<tr><td>A visit schedule — label, order, scheduled day</td><td>the study declares it; our demo study already has the days sitting in its lab data and would be writing them down, not inventing them</td><td>only needed when there is no visit table</td></tr>
+<tr><td>An ECG visit label</td><td>the study’s own ECG mapping, since no standard one exists</td><td>coverage covers labs only, and says so</td></tr>
+</table></div>
+</section>
+
+<div class="cut"><span>THE QUESTIONS</span></div>
+<section id="questions">
+<h2>Five things this cannot settle without you</h2>
+<p>Each carries a recommendation. Answering “all as recommended” is a complete answer; so is varying any one of them.</p>
+
+<div class="q" id="q-dc1">
+  <div class="qid">DC1 · the visit label</div>
+  <h3>Where does a visit label for a lab result come from?</h3>
+  <p>A coverage table has a row per visit, so every lab result has to be attributable to one. The standard mapping does not carry that attribution and we cannot change the standard mapping. Three ways to get one:</p>
+  <ul>
+    <li><b>The study says so.</b> The study’s lab mapping passes through the visit-name column its raw data already has, and the coverage metric declares it as a required column and stops if it is absent. Nothing is inferred anywhere. The cost is that a study on the stock configuration publishes no coverage until it opts in.</li>
+    <li><b>Infer it from dates.</b> Match each lab result to the visit whose date it falls on or nearest to. Costs nothing to build and works on no study we have: zero exact matches out of 405,720 lab rows, and 12.5% correct — chance — when matched to the nearest visit.</li>
+    <li><b>Do not attribute lab results at all.</b> Report visit attendance from the visit table and drop the idea of per-visit lab coverage. Cheap, honest, and it answers a different question than the one the census asked.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: the study says so.</b> It is the only one of the three that can be qualified, and the demand is not a new one — two of the package’s three existing safety metrics already require lab and ECG columns the standard mapping does not supply, and the live demo study already passes the visit label through. The opt-in cost is real and it is small: one line in a mapping file, in the study’s own configuration, for a study that wants the number.</div>
+</div>
+
+<div class="q" id="q-dc2">
+  <div class="qid">DC2 · the denominator</div>
+  <h3>What defines the day a visit is expected on, and does a study have to supply it?</h3>
+  <p>You answered a version of this already: expected means the participants whose time on study reaches that visit. Carrying it out needs a scheduled day per visit, and the measurements above are the reason this is being put back to you rather than built — on the study every census number is qualified against, that definition produces coverage of 1,220% at one visit and no denominator at all at two more, because that study’s visit calendar and its time-on-study column disagree with each other for every participant in it.</p>
+  <ul>
+    <li><b>The visit table is the denominator.</b> Expected at a visit means the study’s visit records show that visit happening for that participant. No schedule, no scheduled day, no inference. Works on the bundled study today; needs the demo study to start mapping a visit table.</li>
+    <li><b>A declared visit schedule.</b> The study supplies a small table — visit label, order, scheduled day — and expected is your definition applied against it. This is clinically the better answer and it keeps your original one intact. It needs each study to write its schedule down; our demo study would be transcribing days that are already exact in its data rather than inventing them.</li>
+    <li><b>Infer the schedule from observed dates.</b> The cheapest, and the one that produced the 1,220%. It is also the one that would look identical to the other two on the finished page.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: support the first two as declared inputs, take the visit table when both are present, and never the third.</b> That is a variation on what you approved, not an execution of it, which is why it is here: your definition survives as the second form and becomes the one a study opts into by declaring a schedule, while the first form gives every study that maps its visits a coverage number that can be checked. If you would rather hold to time on study as the only definition, say so and the demo study gets a declared schedule as part of this work — but the bundled study cannot qualify that number, and the metric would ship without a second route behind it.</div>
+</div>
+
+<div class="q" id="q-dc3">
+  <div class="qid">DC3 · results outside the denominator</div>
+  <h3>What does the page do with a result from someone the denominator says is not there?</h3>
+  <p>On the live demo study, 286 of 765 enrolled participants have a lab result dated after their recorded time on study ends. Whatever defines expected, some results will fall outside it. There are three things a coverage table can do, and they produce different numbers from the same data.</p>
+  <ul>
+    <li><b>Count only participants who are in the expected set.</b> Coverage never exceeds 100%, and on the demo study’s last visit 269 participants with a real lab result are silently not counted.</li>
+    <li><b>Count everyone with a result.</b> Nothing is hidden and coverage reads 1,682% at that visit, which tells a reader nothing except that something is wrong.</li>
+    <li><b>Count only the expected, and publish the outsiders as their own number.</b> Coverage stays interpretable and the discarded results become a visible data-quality figure instead of a silent subtraction.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: the third.</b> It is the shape you already approved once on this rebuild, when the death count published the disagreement between its two sources as a number of its own rather than resolving it quietly. The same reasoning applies here and the cost is one extra descriptive figure.</div>
+</div>
+
+<div class="q" id="q-dc4">
+  <div class="qid">DC4 · a study that supplies neither</div>
+  <h3>If a study supplies no visit label and no expected count, does coverage report nothing, or report what it can?</h3>
+  <ul>
+    <li><b>Nothing.</b> No coverage rows, the report renders without the section — which is what it does today — and one line names the input the study did not supply.</li>
+    <li><b>The counts without a denominator.</b> Publish how many participants have a result at each visit, labelled as a count rather than as coverage, when a visit label exists but no expected count does.</li>
+    <li><b>Fall back to total enrolment.</b> What the function did before this rebuild, and what your earlier answer removed.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: nothing, and say which input was missing.</b> The census already keeps absent, empty and zero apart in all twelve of its shipped numbers, and this is the same rule: a study that has not said what a visit is has not measured coverage, and a page that shows a bare count invites the reader to supply the missing denominator from memory — which is exactly the wrong denominator this question exists to remove. The third option is out on your own earlier answer.</div>
+</div>
+
+<div class="q" id="q-dc5">
+  <div class="qid">DC5 · ordering</div>
+  <h3>What puts the visits in order?</h3>
+  <p>A coverage table is read left to right in time, and the old function ordered visits alphabetically. On the bundled study alphabetical order puts “End of Treatment” and “Follow-up” before “Screening”. The fix is not automatic: a visit label on its own carries no order.</p>
+  <ul>
+    <li><b>The study declares the order</b>, as a visit number beside the label or as the scheduled days in a declared schedule. Our demo study already carries a visit number; the bundled study does not.</li>
+    <li><b>Order by the middle of each visit’s observed dates.</b> Measured on the bundled study, this recovers the correct clinical order. It is still an inference, and it can inverse two visits whose dates overlap heavily — an early-termination visit against a late scheduled one, for instance.</li>
+  </ul>
+  <div class="rec"><b>Recommendation: the study’s declared order when there is one, the observed middle when there is not, and the day it ordered on printed on the row either way.</b> An ordering a reader can see the basis of is not the same kind of risk as a denominator they cannot; publishing the key is what keeps it from being a hidden assumption. Alphabetical is not among the options.</div>
+</div>
+</section>
+
+<div class="cut"><span>WHAT UNBLOCKS</span></div>
+<section id="unblocks">
+<h2>What each answer releases, and what it costs</h2>
+<div class="tbl"><table>
+<tr><th>If you answer</th><th>What starts</th><th>What it costs</th></tr>
+<tr><td>All five as recommended</td><td>The thirteenth census metric can be written and qualified against the bundled study, and the coverage chart above it has a defined input. Both ranked items move.</td><td>One line in the demo study’s configuration to map its visit table, and an extra descriptive figure for the results that fall outside the denominator.</td></tr>
+<tr><td>Time on study as the only definition of expected</td><td>The metric can still be written, and the demo study gets a declared schedule as part of the work.</td><td>The number ships without a second route behind it, because the bundled study cannot produce a coherent one. That is a departure from how the other twelve were qualified, and it should be a deliberate one.</td></tr>
+<tr><td>Publish counts without a denominator when a study has no expected count</td><td>Coverage appears on more studies sooner, including the demo study before it maps a visit table.</td><td>The report carries a per-visit number that is not coverage, and readers supply their own denominator.</td></tr>
+<tr><td>Nothing until the standard mapping carries a visit column</td><td>Nothing here; the question moves to another organisation’s queue.</td><td>The thirteenth number and the chart stay unbuilt for as long as that takes, and neither ranked item moves.</td></tr>
+</table></div>
+</section>
+
+<div class="cut"><span>WHAT THE RECOMMENDATION STILL INFERS</span></div>
+<section id="inference">
+<h2>One inference survives, and here is what the page shows when it is wrong</h2>
+<p>The recommended design infers nothing about which visit a result belongs to and nothing about who is expected. It infers one thing: when a study declares no visit order, the visits are ordered by the middle of their observed dates.</p>
+<ul>
+  <li><b>What is inferred.</b> The sequence the visits are drawn in, and nothing else. No count, no denominator and no percentage depends on it.</li>
+  <li><b>What it would take to be wrong.</b> Two visits whose dates overlap enough that their midpoints invert — an unscheduled or early-termination visit sitting inside the window of a scheduled one. On the bundled study the inferred order is the correct clinical order for all eight visits.</li>
+  <li><b>What a reader sees when it is wrong.</b> The day each visit was ordered on is printed on its own row, so a visit sitting in the wrong place shows its own reason. A study that declares its order never reaches this path at all.</li>
+</ul>
+<p>Everything else that could have been inferred is refused rather than defaulted: the metric stops when the visit label is absent, and publishes nothing rather than a fallback denominator when no expected count exists.</p>
+</section>
+
+<div class="cut"><span>CORRECTIONS</span></div>
+<section id="corrections">
+<h2>Four things written down before this were not right</h2>
+<p>None of them changes what you decided; all of them change something that was argued in front of you or written into an issue.</p>
+<ul>
+  <li><b>“It cannot key on a visit label at all without a change upstream.”</b> Written on the census-metrics issue when the coverage number was deferred. It can: the visit label is in the raw lab data on both studies we have, and a study’s own mapping decides whether it survives. Our demo study has been doing it since it was built. This is the correction the rest of this page is built on.</li>
+  <li><b>“Nothing new is asked of any study.”</b> The reason given for the definition of expected you approved. Something new is asked of every study — a scheduled day per visit, which no standard domain carries and which the observed dates cannot supply reliably.</li>
+  <li><b>“The alphabetical visit-ordering defect goes with it.”</b> Also part of that recommendation. Changing the denominator does not order anything: the coverage table still has to name its visits and put them in sequence, so the ordering defect is a live question and it is the fifth one above.</li>
+  <li><b>“The participant domain carries no enrolment date”</b>, from the requirement, read as meaning there is no anchor date to measure a study day from. The participant domain does carry a first-dose date, and the standard enrolment domain carries an enrolment date. Anchors exist. What is missing is the scheduled day to compare them against, which is a different gap and a smaller one.</li>
+</ul>
+<p>One claim held exactly as written: a metric that declares a column the mapping dropped does not receive it. What was not recorded is that it fails silently — the specification check passes, the step logs a fatal error, and the workflow returns nothing while reporting completion.</p>
+</section>
+
+<div class="cut"><span>HOW EVERY FIGURE HERE WAS MEASURED</span></div>
+<section id="method">
+<h2>Reproducible, on stated versions</h2>
+<ul>
+  <li><b>Versions.</b> gsm.core 1.3.1 and gsm.mapping 1.1.6 — the versions the automation installs today — with R 4.3.3, both installed from source into a scratch library so nothing on this machine was changed.</li>
+  <li><b>The bundled study.</b> The ecosystem’s own example source, run through the standard mapping for the participant, visit, enrolment, lab, adverse-event, randomisation, death, study-completion and overall-response domains, and then read directly. The 762 enrolled participants are the same anchor the twelve shipped metrics use.</li>
+  <li><b>The demo study.</b> Its raw lab, ECG and participant files as they stand on the main branch, read directly rather than through the pipeline, so the figures are of the data the site is built from.</li>
+  <li><b>The date-match figures.</b> Every lab row joined to the visit table on participant and exact date for the first; a 60-participant sample of 31,680 lab rows for the nearest-visit figure, scored against the true visit label the raw lab rows carry.</li>
+  <li><b>The silent-failure trace.</b> A one-step workflow declaring the visit column, run against the standard mapped data, with its log captured verbatim.</li>
+  <li><b>Nothing was relayed.</b> Every figure on this page was produced in this session. Where it disagrees with something previously written, the disagreement is in the corrections above rather than resolved quietly.</li>
+</ul>
+</section>
+
+<div class="foot">
+<p><b>Requirement:</b> where the data-coverage numbers come from, on the roadmap — <a href="https://github.com/jwildfire/obot.roadmap/issues/306">#306</a>. <b>Blocked by it:</b> the thirteenth census metric, <a href="https://github.com/jwildfire/gsm.safety/issues/58">gsm.safety#58</a>, under the census rebuild <a href="https://github.com/jwildfire/obot.roadmap/issues/274">#274</a>; and the data-coverage chart, <a href="https://github.com/jwildfire/obot.roadmap/issues/291">#291</a>. <b>Answers on:</b> the census design, <a href="../2026-08-20-safety-census-rebuild/">D0023</a>, question C2.</p>
+<p>Drafted by 👯🤖 Claude Code (Claude Opus 5, worker W0121) for 🧭🤖 obot-navigator. Not reviewed by @jwildfire before publication.</p>
+</div>
+
+</div>
+</body></html>
