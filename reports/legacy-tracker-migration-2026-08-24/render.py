@@ -1,9 +1,15 @@
 import json, html, collections, os
 
-import sys
-BASE = os.path.dirname(os.path.abspath(__file__)) if '__file__' in dir() else '.'
+BASE = os.path.dirname(os.path.abspath(__file__))
 exec(open(f'{BASE}/classification.py').read())
-rows = json.load(open(f'{BASE}/corpus.json'))
+
+# corpus.json is not published with this report — it holds the full text of 282 issues
+# and 135 comments belonging to repositories outside this organisation. Point CORPUS at a
+# rebuilt copy; the workspace keeps one at .claude/cache/legacy-issues/corpus.json.
+CORPUS = os.environ.get('CORPUS') or f'{BASE}/corpus.json'
+if not os.path.exists(CORPUS):
+    raise SystemExit(f'corpus not found at {CORPUS} — see README.md, "Rebuilding the page"')
+rows = json.load(open(CORPUS))
 by = {f"{r['repo']}#{r['n']}": r for r in rows}
 e = lambda s: html.escape(str(s), quote=True)
 
