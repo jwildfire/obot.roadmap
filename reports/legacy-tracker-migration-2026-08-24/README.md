@@ -62,3 +62,25 @@ in `safety.viz` either: @jwildfire's review gates any filing, per the requiremen
 Drafted by Claude Code using Opus 5 in an unattended session and not yet reviewed by
 @jwildfire. The classifications are an LLM's judgement; each one prints the evidence
 behind it so it can be checked and disagreed with.
+
+## Rebuilding the page
+
+The page is generated, not hand-written, so the 282 judgements can be audited and
+re-rendered:
+
+- `classification.py` — the judgement for every issue: class, target module, the reason,
+  the evidence string, and whether the call was checked against code. This is the file to
+  argue with.
+- `render.py` — turns that plus the corpus into `index.html`. It refuses to write the
+  page if any item field contains unescaped markup, because that failure is invisible:
+  one raw `<title>` in an evidence string truncated the first published version at 172 of
+  282 items — the file was complete, the deploy was green, and the page looked finished.
+- `template.html` — the page shell the renderer fills.
+
+`corpus.json` is deliberately **not** published here: it holds the full text of 282 issues
+and 135 comments from repositories outside this organisation, and the report quotes from
+them selectively and with attribution rather than republishing them wholesale. Rebuild it
+from the trackers — the twelve `GET /repos/{owner}/{repo}/issues?state=open` calls, with
+pull requests filtered out, plus `GET /repos/{owner}/{repo}/issues/{n}/comments` for the
+90 issues that have comments. A copy with the comments merged in is kept in the workspace
+at `.claude/cache/legacy-issues/`.
