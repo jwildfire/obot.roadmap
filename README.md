@@ -15,6 +15,15 @@ The workflow mirrors [Gilead-BioStats/gsm.roadmap](https://github.com/Gilead-Bio
 | [`safety-histogram`](https://github.com/jwildfire/safety-histogram) (archived 2026-08-15) | Retired P004 pilot fork — its renderer lives on as safety.viz's histogram module |
 | `obot-claw/*` (archived) | Legacy RhoInc renderer forks and the retired hub — read-only reference |
 
+# Daily check-in by voice
+
+The spoken standup — what is running, what is blocked, what needs a decision, and which
+release candidates are waiting — is regenerated every five minutes and published as plain
+text. [STANDUP.md](STANDUP.md) is the address; the file itself is `standup.md` on the
+`session-state` branch. A note dictated back goes to the
+[Ideas discussions](https://github.com/jwildfire/obot.roadmap/discussions/categories/ideas),
+where the existing triage picks it up.
+
 Automation acts through the [`obotclaw`](https://github.com/apps/obotclaw) GitHub App
 (`obotclaw[bot]`), installed only on the repos above — see
 [AGENTS.md → Identities](AGENTS.md#identities) and requirement
