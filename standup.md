@@ -2,7 +2,7 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 9:31 pm on Monday the 24th of August. The reading behind it was taken at 9:30 pm, one minute ago.
+Read at 9:36 pm on Monday the 24th of August. The reading behind it was taken at 9:36 pm, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
@@ -14,11 +14,7 @@ No session is parked on a permission prompt, so nothing is held up waiting for y
 
 ## What is blocked
 
-Two items on the ranked list are marked blocked on GitHub.
-
-gsm.safety v1.2.0 — safety.viz v1.6.0 widget parity + parity guard. The roadmap issue records what it is waiting on, and I can read that to you if you ask.
-
-demo-301's scheduled pipeline has failed silently since 2026-08-03 — and the repo belongs to no goal. The roadmap issue records what it is waiting on, and I can read that to you if you ask.
+Nothing on the ranked list is marked blocked.
 
 ## What needs a decision from you
 
