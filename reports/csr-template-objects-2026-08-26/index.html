@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSR template objects — what the report framework still has to be taught (2026-08-26)</title>
+<meta name="description" content="A study produces about a dozen documents and open.csr could build one. The second shipped tonight: an ICH E3 synopsis built from the same numbers as the report — plus which of the rest the R Consortium pilots could seed, and why their licences say almost none.">
+<style>
+:root {
+  --ground:#f4f6f7; --surface:#ffffff; --surface-2:#eef2f3;
+  --ink:#16232d; --muted:#536470; --faint:#7f929e;
+  --border:#dde4e7; --hairline:#e8edef;
+  --accent:#0e7c86; --accent-deep:#0a5b63; --accent-tint:#e2f1f2;
+  --p1:#2a78d6; --p1-tint:#e6effb;
+  --p2:#eda100; --p2-tint:#fbf1dc;
+  --p3:#1baf7a; --p3-tint:#e4f6ef;
+  --p4:#8a5cd6; --p4-tint:#efe8fb;
+  --warn:#b4520f; --warn-tint:#fbecdf;
+  --f-display:"SF Pro Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(20,40,55,.05), 0 8px 24px -12px rgba(20,40,55,.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831;
+    --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+    --border:#263640; --hairline:#1f2d36;
+    --accent:#3cc3d0; --accent-deep:#7fd8e0; --accent-tint:#0f2e33;
+    --p1:#5f9ff0; --p1-tint:#16273a;
+    --p2:#d9a52c; --p2-tint:#2e2109;
+    --p3:#3ec89a; --p3-tint:#0e2a20;
+    --p4:#a687e4; --p4-tint:#221a35;
+    --warn:#e08a4a; --warn-tint:#33210f;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831;
+  --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+  --border:#263640; --hairline:#1f2d36;
+  --accent:#3cc3d0; --accent-deep:#7fd8e0; --accent-tint:#0f2e33;
+  --p1:#5f9ff0; --p1-tint:#16273a;
+  --p2:#d9a52c; --p2-tint:#2e2109;
+  --p3:#3ec89a; --p3-tint:#0e2a20;
+  --p4:#a687e4; --p4-tint:#221a35;
+  --warn:#e08a4a; --warn-tint:#33210f;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--f-display); font-size:16px; line-height:1.62;
+  -webkit-text-size-adjust:100%;
+}
+.wrap { max-width:60rem; margin:0 auto; padding:2rem 1.15rem 4rem; }
+a { color:var(--accent-deep); text-underline-offset:2px; }
+h1 { font-size:clamp(1.7rem,5vw,2.5rem); line-height:1.15; margin:.2rem 0 .6rem; letter-spacing:-.015em; }
+h2 { font-size:clamp(1.2rem,3.4vw,1.55rem); margin:0 0 .7rem; letter-spacing:-.01em; }
+h3 { font-size:1.02rem; margin:1.3rem 0 .35rem; }
+p { margin:0 0 .85rem; }
+ul, ol { margin:0 0 .9rem; padding-left:1.15rem; }
+li { margin:0 0 .4rem; }
+code, .mono { font-family:var(--f-mono); font-size:.88em; }
+code { background:var(--surface-2); border-radius:4px; padding:.08em .32em; }
+.masthead { border-bottom:1px solid var(--border); padding-bottom:1.4rem; margin-bottom:1.6rem; }
+.kicker { font-size:.78rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; }
+.standfirst { font-size:1.06rem; color:var(--muted); max-width:46rem; }
+.byline { font-size:.85rem; color:var(--faint); margin-bottom:0; }
+section.panel {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:1.3rem 1.25rem; margin-bottom:1.4rem; box-shadow:var(--shadow);
+}
+.callout {
+  border-left:4px solid var(--accent); background:var(--accent-tint);
+  border-radius:0 8px 8px 0; padding:.85rem 1rem; margin:1rem 0;
+}
+.callout .label {
+  display:block; font-size:.74rem; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--accent-deep); font-weight:700; margin-bottom:.25rem;
+}
+.callout.warn { border-left-color:var(--warn); background:var(--warn-tint); }
+.callout.warn .label { color:var(--warn); }
+.callout p:last-child { margin-bottom:0; }
+figure { margin:1.1rem 0; }
+figure.code { margin:.9rem 0; }
+figure.code figcaption {
+  font-family:var(--f-mono); font-size:.76rem; color:var(--faint);
+  background:var(--surface-2); border:1px solid var(--border); border-bottom:0;
+  border-radius:8px 8px 0 0; padding:.35rem .7rem;
+}
+pre {
+  margin:0; background:var(--surface-2); border:1px solid var(--border);
+  border-radius:8px; padding:.8rem .85rem; overflow-x:auto;
+  font-family:var(--f-mono); font-size:.8rem; line-height:1.55;
+}
+figure.code pre { border-radius:0 0 8px 8px; }
+figcaption.cap { font-size:.82rem; color:var(--faint); margin-top:.5rem; }
+.scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table { border-collapse:collapse; width:100%; font-size:.88rem; min-width:34rem; }
+th, td { text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--hairline); vertical-align:top; }
+th { font-size:.76rem; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
+tbody tr:last-child td { border-bottom:0; }
+.facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr)); gap:.7rem; margin:1.2rem 0 1.6rem; }
+.fact { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.7rem .8rem; }
+.fact .n { font-size:1.5rem; font-weight:700; line-height:1.1; letter-spacing:-.02em; }
+.fact .l { font-size:.78rem; color:var(--muted); line-height:1.35; display:block; margin-top:.15rem; }
+.parts { display:grid; grid-template-columns:repeat(auto-fit,minmax(14rem,1fr)); gap:.8rem; margin:1rem 0; }
+.part { border:1px solid var(--border); border-radius:10px; padding:.85rem .9rem; background:var(--surface-2); }
+.part h3 { margin:0 0 .3rem; font-size:.95rem; }
+.part .path { font-family:var(--f-mono); font-size:.75rem; color:var(--faint); display:block; margin-bottom:.45rem; word-break:break-all; }
+.part ul { margin:0; padding-left:1rem; font-size:.87rem; }
+.part.p1 { border-top:3px solid var(--p1); }
+.part.p2 { border-top:3px solid var(--p2); }
+.part.p3 { border-top:3px solid var(--p3); }
+.part.p4 { border-top:3px solid var(--p4); }
+.diagram { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:.6rem; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.diagram svg { display:block; width:100%; min-width:44rem; height:auto; }
+.finding { border:1px solid var(--border); border-left:4px solid var(--warn); border-radius:0 10px 10px 0; padding:.9rem 1rem; margin:0 0 .9rem; background:var(--surface-2); }
+.finding h3 { margin:0 0 .35rem; font-size:.98rem; }
+.finding p:last-child { margin-bottom:0; }
+.foot { border-top:1px solid var(--border); padding-top:1.1rem; margin-top:2rem; font-size:.85rem; color:var(--faint); }
+.toc { font-size:.9rem; }
+.toc ol { padding-left:1.2rem; }
+@media (max-width:430px) {
+  .wrap { padding:1.2rem .85rem 3rem; }
+  section.panel { padding:1rem .85rem; border-radius:10px; }
+  pre { font-size:.74rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">open.csr · design report</p>
+  <h1>CSR template objects — what the report framework still has to be taught</h1>
+  <p class="standfirst">A study does not produce one document. It produces a dozen, and until this evening open.csr could build one of them. This is what the second one turned out to be, what the other ten would take, and why the R Consortium submission pilots — the obvious place to borrow from — turn out to be almost entirely off limits.</p>
+  <p class="byline">2026-08-26 · companion to <a href="https://github.com/jwildfire/open.csr/pull/29">open.csr PR #29</a> and <a href="https://github.com/jwildfire/open.csr/issues/28">issue #28</a> · read-only research, nothing filed outside the jwildfire org</p>
+</header>
+
+<div class="facts">
+  <div class="fact"><span class="n">1 → 2</span><span class="l">template objects in the library, after tonight</span></div>
+  <div class="fact"><span class="n">12</span><span class="l">document types a CSR framework plausibly needs</span></div>
+  <div class="fact"><span class="n">26</span><span class="l">R Consortium submission repositories examined</span></div>
+  <div class="fact"><span class="n">0</span><span class="l">of them reusable in open.csr as it is licensed</span></div>
+  <div class="fact"><span class="n">31 + 1</span><span class="l">displays the reference report for our test study contains</span></div>
+  <div class="fact"><span class="n">6</span><span class="l">of them open.csr can produce today</span></div>
+</div>
+
+<section class="panel">
+  <h2>The question underneath the ask</h2>
+  <p>@jwildfire asked for additional template objects for the test study, referencing the consortium submission projects, before showing open.csr to colleagues. The literal ask is small. The question underneath it is not, and it is worth stating before the answer: <em>is the template layer a framework, or is it one ICH E3 file with two names?</em></p>
+  <p>Until tonight there was no way to tell. A template object in open.csr is a pair of files — a document model that says what this kind of document <em>is</em>, and an assembly that says what <em>this</em> report puts in it — and the code that walks that pair is entirely generic. But the library held exactly one instance, and the assembler hard-coded its path. Generic was a property of the code, not a property anything checked.</p>
+  <div class="callout">
+    <span class="label">What shipped</span>
+    <p>A second real template object: the ICH E3 Annex I study synopsis, twenty-five sections, assembled against the same test study, from the same analysis results datasets, through the same gates. It is the smallest document that exercises every part of the framework at once, and the two documents now share a value store — so where they quote the same quantity they quote the same number, and the build fails if that stops being true.</p>
+  </div>
+  <div class="toc">
+    <ol>
+      <li><a href="#what">What a template object actually is</a></li>
+      <li><a href="#synopsis">The second one, and what it proves</a></li>
+      <li><a href="#needs">The twelve documents a CSR framework plausibly needs</a></li>
+      <li><a href="#consortium">What the consortium actually publishes</a></li>
+      <li><a href="#licence">The licence position, which decides most of this</a></li>
+      <li><a href="#legit">What the consortium work does give us</a></li>
+      <li><a href="#steps">Steps to the next template object</a></li>
+      <li><a href="#gaps">What I could not establish</a></li>
+    </ol>
+  </div>
+</section>
+
+<section class="panel" id="what">
+  <h2>1 · What a template object actually is</h2>
+  <p>Two YAML files in a directory under <code>library/templates/</code>. That is the whole contract, and it is worth reading once because everything below depends on the split.</p>
+  <div class="parts">
+    <div class="part p1">
+      <h3>The document model</h3>
+      <span class="path">sections.yaml</span>
+      <p style="margin:.2rem 0 .4rem;font-size:.88rem">What this <em>kind</em> of document is. A flat list of sections, each with a number, a title, a stable slug, and a declaration of what content it can hold: narrative, an in-text display, a container for post-text displays, or assembler-generated provenance.</p>
+      <ul><li>Reusable across every study</li><li>Encodes a standard, not a report</li></ul>
+    </div>
+    <div class="part p2">
+      <h3>The assembly</h3>
+      <span class="path">assembly.yaml</span>
+      <p style="margin:.2rem 0 .4rem;font-size:.88rem">What <em>this</em> report puts in it. Which text blocks fill which sections, which displays render in-text, which displays occupy which post-text slot, and the study's own identifying facts.</p>
+      <ul><li>One per report</li><li>Names nothing it does not populate</li></ul>
+    </div>
+  </div>
+  <p>The split is what makes the numbering claim possible. A display is identified by its slug, never by its number; the number is assigned at build time from the order it appears in the assembly. That is design decision D6, and until tonight it was a claim in a comment.</p>
+</section>
+
+<section class="panel" id="synopsis">
+  <h2>2 · The second one, and what it proves</h2>
+  <p>The ICH E3 Annex I synopsis. E3 prints it as a labelled form — sponsor, title, investigators, studied period, phase, objectives, methodology, number of patients, and so on to the conclusion and the date of the report. Encoding that form as a document model gives a document that is short enough to read in two minutes and complete enough to exercise everything.</p>
+  <p>Three things it demonstrates that a second copy of the CSR model would not have:</p>
+  <h3>Two documents cannot disagree about a number</h3>
+  <p>The synopsis and the report both draw from one store of named values. 254 randomised, 43.3% completed, 217 patients with a treatment-emergent adverse event: the same figures appear in both because both bind the same value, not because someone checked. Every value is re-derived from the committed analysis results dataset at build time, so a value that has drifted fails both builds in the same breath.</p>
+  <h3>The same display carries a different number in each</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Display</th><th>In the clinical study report</th><th>In the synopsis</th></tr></thead>
+    <tbody>
+      <tr><td><code>t-disposition</code></td><td>Table 14.1.1</td><td>Table 13.1</td></tr>
+      <tr><td><code>t-demographics</code></td><td>Table 14.1.2</td><td>Table 13.2</td></tr>
+      <tr><td><code>t-exposure</code></td><td>Table 14.3.1.1</td><td>Table 13.3</td></tr>
+      <tr><td><code>t-ae-overview</code></td><td>Table 14.3.1.2</td><td>Table 13.4</td></tr>
+      <tr><td><code>t-ae-common</code></td><td>Table 14.3.1.3</td><td>Table 13.5</td></tr>
+      <tr><td><code>l-ae-serious</code></td><td>Listing 14.3.2.1</td><td>Listing 13.6</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>From the same display specifications and the same unchanged prose. Nothing in <code>library/tfl/</code> knows which document it is in.</p>
+  <h3>A gap stays visible instead of disappearing</h3>
+  <p>Both documents declare their efficacy sections and leave them marked unpopulated. No efficacy analysis dataset exists for this study in <code>pharmaverseadam</code>, and the reference report for the same study devotes thirteen tables to efficacy. A synopsis that quietly dropped the efficacy headings would have looked more finished and told the reader less.</p>
+  <div class="callout warn">
+    <span class="label">Not reviewed</span>
+    <p>The eighteen text blocks written for the synopsis are all marked <code>draft</code>, and every build prints a draft warning for each one. They are agent-drafted prose. The sentences most worth a read are the ones where the analysis datasets cannot supply an Annex I answer — planned sample size, enrolment dates, batch numbers — which say so plainly rather than inventing a number.</p>
+  </div>
+</section>
+
+<section class="panel" id="needs">
+  <h2>3 · The twelve documents a CSR framework plausibly needs</h2>
+  <p>Written from what a study actually has to produce, not from what would be easy. The last column is the honest one: what stands between open.csr and building it.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Document</th><th>What it is</th><th>Structure comes from</th><th>Status here</th><th>What it would take</th></tr></thead>
+    <tbody>
+      <tr><td>Clinical study report</td><td>The full report</td><td>ICH E3, public</td><td>Built</td><td>—</td></tr>
+      <tr><td>Study synopsis</td><td>The three-page summary; often circulated alone</td><td>ICH E3 Annex I, public</td><td>Built tonight</td><td>—</td></tr>
+      <tr><td>Post-text display package</td><td>The Section 14 tables, figures and listings as a standalone deliverable — what a statistician reviews before the report exists</td><td>The study's own SAP</td><td>Not built</td><td>Mechanical. A display-only model with no narrative; the framework already assembles a post-text index</td></tr>
+      <tr><td>Abbreviated / integrated report</td><td>The reduced report E3 permits for studies not intended to support a claim</td><td>ICH E3 §1, public</td><td>Not built</td><td>Mechanical. A subset model over the same text and display libraries</td></tr>
+      <tr><td>Plain-language summary</td><td>The lay summary EU CTR requires for every trial</td><td>EU CTR Annex V, public</td><td>Not built</td><td>Needs a decision. Its content rules are about reading level and non-promotional language, which no gate here can check</td></tr>
+      <tr><td>Analysis Data Reviewer's Guide</td><td>Explains the analysis datasets to a regulatory reviewer; ships in every consortium pilot</td><td>PHUSE ADRG template</td><td>Not built</td><td>Needs a decision, and a licence check on the PHUSE template. Also needs dataset-level metadata open.csr does not hold</td></tr>
+      <tr><td>Study Data Reviewer's Guide</td><td>The same for the tabulation datasets</td><td>PHUSE SDRG template</td><td>Not built</td><td>As above, plus SDTM metadata the framework never sees</td></tr>
+      <tr><td>Statistical analysis plan</td><td>The pre-specification the displays are supposed to satisfy</td><td>House template; no public standard</td><td>Not built</td><td>Needs a decision. It is upstream of everything here, and modelling it would change what a display specification is</td></tr>
+      <tr><td>Display shells</td><td>The empty table layouts the SAP defines and the report fills</td><td>The SAP</td><td>Partly present</td><td>Mechanical. <code>display.yaml</code> already carries the layout; a shell is that rendered without an ARD</td></tr>
+      <tr><td>Analysis results metadata</td><td>Machine-readable description of what each result is; CDISC ARS is the emerging standard</td><td>CDISC ARS</td><td>Not built</td><td>Needs a decision on whether open.csr's <code>analysis.yaml</code> becomes an ARS profile or stays its own thing</td></tr>
+      <tr><td>Protocol</td><td>Now machine-readable in its own right</td><td>ICH M11, Step 4, Nov 2025</td><td>Out of scope</td><td>Different tool. Worth naming because M11 is what a CSR standard would be modelled on if one existed</td></tr>
+      <tr><td>Submission cover letter and eCTD skeleton</td><td>What actually goes to the agency</td><td>Regional guidance</td><td>Out of scope</td><td>Different tool</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout">
+    <span class="label">The cheapest next two</span>
+    <p>The post-text display package and the abbreviated report. Both are subset models over libraries that already exist, both assemble from the six displays already built, and neither needs a decision from @jwildfire or a licence from anyone. Between them they would take the library from two template objects to four without authoring a single new sentence of prose.</p>
+  </div>
+</section>
+
+<section class="panel" id="consortium">
+  <h2>4 · What the consortium actually publishes</h2>
+  <p>The R Consortium Submissions Working Group runs a series of pilots that submit R-based analyses to the FDA and publish the whole package. Twenty-six repositories under the <code>RConsortium</code> organisation carry <code>submission</code> in their name. Each pilot splits in two: a development repository, and a <code>-to-fda</code> repository holding the eCTD package as submitted.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Pilot</th><th>What it demonstrates</th><th>Document artifacts published</th></tr></thead>
+    <tbody>
+      <tr><td>Pilot 1</td><td>R-based analyses in a submission package</td><td>Cover letter, a TLF report PDF, an ADRG PDF, <code>define.xml</code>, four TLF programs, four rendered outputs</td></tr>
+      <tr><td>Pilot 2</td><td>A Shiny application as a submitted artifact</td><td>eCTD package, app source</td></tr>
+      <tr><td>Pilot 3</td><td>ADaM datasets and an extended define</td><td>eCTD package, ADaM programs</td></tr>
+      <tr><td>Pilot 4</td><td>The app again, as WebAssembly and as a container</td><td>eCTD packages, app source</td></tr>
+      <tr><td>Pilot 5</td><td>Dataset-JSON as the transport format</td><td>eCTD package, utilities, a Quarto website</td></tr>
+      <tr><td>Pilot 6</td><td>Expanding the ADaM and TLF programs for future submissions</td><td>Nine ADaM programs, one table program, an ARD, a define, the CDISC pilot study's own SAP and CSR PDFs</td></tr>
+      <tr><td>Pilot 7</td><td>Synthetic data</td><td>In progress</td></tr>
+      <tr><td>ADRG pipeline</td><td>Automating the reviewer's guide</td><td>Pipeline source</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The artifact closest to what open.csr does is Pilot 1's four TLF programs — <code>tlf-demographic</code>, <code>tlf-primary</code>, <code>tlf-efficacy</code>, <code>tlf-kmplot</code> — and Pilot 6's <code>t_14_1_1.r</code>, which builds an analysis results dataset and renders from it, the same shape open.csr uses. That is a genuine convergence and worth saying out loud: two independent efforts arrived at ARD-first rendering.</p>
+</section>
+
+<section class="panel" id="licence">
+  <h2>5 · The licence position, which decides most of this</h2>
+  <p>open.csr is Apache-2.0, in <code>LICENSE</code>, in <code>package.json</code> and in the R package <code>DESCRIPTION</code>. Every consortium repository was checked against the GitHub API rather than assumed.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Repository</th><th>Licence</th><th>Can open.csr incorporate it?</th></tr></thead>
+    <tbody>
+      <tr><td><code>submissions-pilot1</code>, <code>-pilot2</code>, <code>-pilot3-adam</code>, <code>-pilot3-utilities</code>, <code>-pilot5-datasetjson-to-fda</code></td><td>GPL-3.0</td><td>No — one-way incompatible. Apache-2.0 code may be taken into a GPL-3.0 project; GPL-3.0 code may not come the other way without relicensing open.csr entirely</td></tr>
+      <tr><td><code>submissions-pilot5-utilities</code></td><td>AGPL-3.0</td><td>No — stricter still</td></tr>
+      <tr><td><code>submissions-wg</code>, <code>-pilot1-to-fda</code>, <code>-pilot2-to-fda</code>, <code>-pilot4</code>, <code>-pilot4-webR</code>, <code>-pilot4-container</code>, <code>-pilot5-datasetjson</code>, <code>-pilot5-website</code>, <code>-pilot6-adams-tlfs</code>, <code>-pilot7-synthetic-data</code>, <code>-adrg-generation-pipeline</code>, <code>pilot1-to-pmda-submission</code>, and the remaining <code>-to-fda</code> packages</td><td>None</td><td>No — a public repository with no licence file is all rights reserved under GitHub's terms. Being able to read it is not permission to reuse it</td></tr>
+      <tr><td><code>submissions-git-collab-power</code>, <code>submission-transparency</code></td><td>MIT</td><td>Yes, but they are webinar and transparency materials with nothing a template object would want</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout warn">
+    <span class="label">The counter-intuitive half</span>
+    <p>The repositories holding the most useful artifacts — the ADRG, the define, the eCTD skeletons, Pilot 6's ARD-based table program — are the ones with no licence at all. The submission packages are published so people can read a real submission, and that purpose does not need a licence, so nobody added one. The result is that the most reusable-looking material is the least reusable.</p>
+  </div>
+  <p>Nothing in tonight's pull request derives from any of it. Both document models are encoded from ICH E3, a public guideline, on the same footing the existing model already used, and the pull request says so in the file header where a future reader will find it.</p>
+  <p>This is a question worth asking the working group rather than working around. Several of these repositories would probably carry a permissive licence if someone asked; none of them will start doing so on their own.</p>
+</section>
+
+<section class="panel" id="legit">
+  <h2>6 · What the consortium work does give us</h2>
+  <p>Three things, none of which required copying anything.</p>
+  <h3>The test-study data, under a licence that works</h3>
+  <p>open.csr already builds on <code>pharmaverseadam</code>, which is Apache-2.0 — the same licence open.csr uses. That is the one clean lane, and it is the one already in use.</p>
+  <h3>A convergent design, independently arrived at</h3>
+  <p>Pilot 6 computes an analysis results dataset and renders the table from it, rather than computing inside the table program. open.csr does the same. Two efforts reaching the same architecture is worth a sentence in the README, and costs nothing.</p>
+  <h3>An honest measure of how far along we are</h3>
+  <p>Pilot 6 carries the CDISC pilot study's own statistical analysis plan, which lists the displays a real report for our test study contains: thirty-one tables and one figure, in seven groups. Reading that as a fact about the study — not copying it — gives a gap analysis nothing else could:</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Display group in the reference report</th><th>Displays</th><th>open.csr today</th></tr></thead>
+    <tbody>
+      <tr><td>Populations and disposition</td><td>3</td><td>1 — <code>t-disposition</code></td></tr>
+      <tr><td>Demographics and baseline characteristics</td><td>1</td><td>1 — <code>t-demographics</code></td></tr>
+      <tr><td>Efficacy</td><td>13</td><td>0 — no efficacy analysis dataset exists (D12)</td></tr>
+      <tr><td>Exposure</td><td>1</td><td>1 — <code>t-exposure</code></td></tr>
+      <tr><td>Adverse events</td><td>2</td><td>3 — <code>t-ae-overview</code>, <code>t-ae-common</code>, <code>l-ae-serious</code></td></tr>
+      <tr><td>Laboratory</td><td>6</td><td>0</td></tr>
+      <tr><td>Vital signs, weight, concomitant medications</td><td>4</td><td>0</td></tr>
+      <tr><td>Figures</td><td>1</td><td>0</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Six of thirty-two, and the six are the safety spine. That is a fair position for a framework at this stage, and it is a far more useful sentence to put in front of a colleague than a claim that the framework is complete.</p>
+</section>
+
+<section class="panel" id="steps">
+  <h2>7 · Steps to the next template object</h2>
+  <p>Written so someone could execute them, and split by whether they need @jwildfire.</p>
+  <h3>Mechanical — no decision required</h3>
+  <ol>
+    <li>Create <code>library/templates/&lt;id&gt;/sections.yaml</code> with the document's sections. Numbers must be dotted and numeric, slugs unique and permanent, and every section declares what content it accepts.</li>
+    <li>Create <code>library/templates/&lt;id&gt;/assembly.yaml</code> naming only the sections this report populates. A section left unclaimed appears as a heading marked unpopulated, which is the honest default.</li>
+    <li>Declare a section that accepts generated provenance, and point <code>provenance_section</code> at it. The assembler refuses to build without one.</li>
+    <li>Run <code>node scripts/assemble.mjs --template &lt;id&gt;</code>. Every gate runs. Cross-references are the usual first failure: a text block written for another document may point at a section this model has not got.</li>
+    <li>Add requirement rows and a test file carrying their IDs. The requirement checker fails on an ID no test references and on a test referencing an ID no matrix row defines.</li>
+  </ol>
+  <h3>Needs a decision</h3>
+  <ul>
+    <li><strong>Whether prose is shared or per-document.</strong> Tonight's synopsis got its own eighteen blocks because the report's blocks cross-reference E3 section numbers a synopsis has not got. The alternative is a cross-reference that resolves per-document, which is a real design change and should not be made by accident.</li>
+    <li><strong>Whether the Text Library stays flat.</strong> Two document models share one directory, distinguished only by an id prefix. A third would want a per-model index.</li>
+    <li><strong>Whether to ask the working group about licensing.</strong> Reusing their ADRG structure or their eCTD skeleton is blocked on a licence nobody has been asked for.</li>
+    <li><strong>Whether the reviewer's guides are in scope at all.</strong> They need dataset-level metadata open.csr does not currently hold, which is a bigger commitment than a template object.</li>
+  </ul>
+</section>
+
+<section class="panel" id="gaps">
+  <h2>8 · What I could not establish</h2>
+  <div class="finding">
+    <h3>The PHUSE ADRG template's licence terms</h3>
+    <p>Every consortium pilot ships an ADRG built from the PHUSE template. PHUSE deliverables are generally published for free use, but I did not establish the actual terms, so no ADRG template object was designed here beyond naming what it would need. Anyone picking that up should establish the terms first.</p>
+  </div>
+  <div class="finding">
+    <h3>The CDISC pilot study material's terms</h3>
+    <p>The statistical analysis plan and mock report for our test study are CDISC publications, redistributed inside an unlicensed consortium repository. I read them to establish what displays the study has and cited that as a fact; I copied no structure, no title list and no text into the repository. If display titles from that document were ever wanted in shipped YAML, the terms would need establishing first.</p>
+  </div>
+  <div class="finding">
+    <h3>Whether the missing licences are deliberate</h3>
+    <p>I did not ask, and would not have: writes outside the jwildfire organisation are out of bounds for this work, issues and comments included. The observation stands as an observation.</p>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Where this leaves the ask</h2>
+  <ul>
+    <li>A template was delivered, not a plan for one. <a href="https://github.com/jwildfire/open.csr/pull/29">open.csr PR #29</a> adds the synopsis, assembles it against the test study, and puts every template object in the library through CI.</li>
+    <li>The consortium reference was researched read-only, and its answer is a licence answer rather than a design one. Nothing was adapted, quietly or otherwise.</li>
+    <li>Two more template objects are within reach with no new prose and no decision — the post-text display package, and the abbreviated report.</li>
+    <li>The synopsis is not yet reachable from the demo site, which still reads a single assembled document. That is the one visible loose end, and it is deliberate: a parallel session was editing the site this evening.</li>
+  </ul>
+</section>
+
+<div class="foot">
+  <p>Sources: the <code>RConsortium</code> organisation's twenty-six <code>submission*</code> repositories, read through the GitHub API on 2026-08-26; <code>pharmaverse/pharmaverseadam</code>; ICH E3 (1995), Step 4, Section 2 and Annex I; the CDISC pilot statistical analysis plan carried in <code>submissions-pilot6-adams-tlfs</code>; and the open.csr repository at branch <code>csrtemplates</code>.</p>
+  <p>Read-only outside the jwildfire organisation. No issue, comment, pull request or fork was created in any RConsortium, CDISC, PHUSE or pharmaverse repository.</p>
+  <hr style="border:0;border-top:1px solid var(--border);margin:1rem 0">
+  <p>Drafted by Claude Code (Opus 5) as worker W0131.</p>
+</div>
+
+</div>
+</body>
+</html>
