@@ -144,7 +144,7 @@ tbody tr:last-child td { border-bottom:0; }
     <li><strong>Displays.</strong> A table is declared twice &mdash; what to compute, and how to show it &mdash; and the pipeline turns that pair into a dataset of statistics called an ARD, then into a rendered table.</li>
     <li><strong>Addresses.</strong> Every statistic in that ARD can be named precisely. Prose never types a number; it cites the address, and the build substitutes the value.</li>
     <li><strong>Values.</strong> A number the report reuses gets a name in one small central file, so a writer cites <code>randomised-n</code> instead of re-deriving the address in every sentence.</li>
-    <li><strong>Templates.</strong> One file says what an ICH&nbsp;E3 report is; a second says what this particular report puts in each of its sections. Table numbers are assigned at build time, never typed.</li>
+    <li><strong>Templates.</strong> One file says what a document of this kind is; a second says what this particular study puts in each of its sections. Table numbers are assigned at build time, never typed &mdash; so one display specification serves the full report and its synopsis, numbered differently in each.</li>
     <li><strong>Gates.</strong> CI fails the build if any digit in the finished prose did not come from one of those bindings.</li>
   </ul>
   <div class="callout">
@@ -228,15 +228,15 @@ tbody tr:last-child td { border-bottom:0; }
       <text x="348" y="259" text-anchor="middle" font-size="10.5" fill="var(--muted)">cited by name</text>
 
       <rect x="40" y="458" width="792" height="132" rx="10" fill="var(--p4-tint)" stroke="var(--p4)" stroke-width="1.5"/>
-      <text x="56" y="480" font-size="11" font-weight="700" fill="var(--p4)">4 &middot; TEMPLATE</text>
-      <text x="56" y="500" font-size="11.5">sections.yaml &mdash; what an ICH E3 report is: 119 numbered sections and what each may contain</text>
-      <text x="56" y="521" font-size="11.5">assembly.yaml &mdash; what THIS report puts in them: which prose, which display, in which slot</text>
-      <text x="56" y="546" font-size="11" fill="var(--muted)">Table and figure numbers are assigned here at build time from the order of the slots &mdash; never written into a file.</text>
-      <text x="56" y="571" font-size="10.5" fill="var(--muted)">library/templates/ich-e3/</text>
+      <text x="56" y="480" font-size="11" font-weight="700" fill="var(--p4)">4 &middot; TEMPLATE OBJECTS</text>
+      <text x="56" y="500" font-size="11.5">sections.yaml &mdash; what a document of this kind is: its numbered sections and what each may contain</text>
+      <text x="56" y="521" font-size="11.5">assembly.yaml &mdash; what THIS study puts in them: which prose, which display, in which slot</text>
+      <text x="56" y="546" font-size="11" fill="var(--muted)">Two objects today: ich-e3 (119 sections) and e3-synopsis (25). Numbers are assigned per document at build time.</text>
+      <text x="56" y="571" font-size="10.5" fill="var(--muted)">library/templates/&lt;id&gt;/</text>
 
       <rect x="296" y="626" width="280" height="46" rx="10" fill="var(--surface-2)" stroke="var(--border)"/>
-      <text x="436" y="645" text-anchor="middle" font-size="12.5" font-weight="600">assembled report</text>
-      <text x="436" y="662" text-anchor="middle" font-size="11" fill="var(--muted)">docs/assembled/csr.html &middot; the site</text>
+      <text x="436" y="645" text-anchor="middle" font-size="12.5" font-weight="600">assembled documents</text>
+      <text x="436" y="662" text-anchor="middle" font-size="11" fill="var(--muted)">docs/assembled/ &middot; the site</text>
 
       <rect x="700" y="268" width="132" height="124" rx="10" fill="var(--surface)" stroke="var(--border)" stroke-dasharray="4 3"/>
       <text x="716" y="290" font-size="11" font-weight="700" fill="var(--muted)">CI GATES</text>
@@ -505,7 +505,19 @@ Women accounted for 143 patients (56.3%) overall.</pre></figure>
 
 <section class="panel">
   <h2>Part 5 &middot; The template &mdash; what assembles all four</h2>
-  <p>Two files, and the division between them is the useful part.</p>
+  <p>A template object is a directory under <code>library/templates/</code> holding two files, and the division between them is the useful part.</p>
+
+  <div class="callout">
+    <span class="label">Updated the same evening</span>
+    <p>This page first described a library with one template object in it. A second landed 45 seconds before the companion pull request merged, so the section below is written for the pair. The library holds <code>ich-e3</code>, the full 119-section Clinical Study Report, and <code>e3-synopsis</code>, the 25-section ICH&nbsp;E3 Annex&nbsp;I synopsis of the same study. <code>node scripts/assemble.mjs --template &lt;id&gt;</code> builds one; <code>--all</code> builds every object, which is what CI runs.</p>
+  </div>
+
+  <p>Two properties of that pair are the reason a second object exists at all, and both are the framework paying off rather than new machinery:</p>
+  <ul>
+    <li><strong>One display specification, numbered per document.</strong> <code>t-disposition</code> is Table 14.1.1 in the report and Table 13.1 in the synopsis, from the same unchanged spec, because a display's identity is its slug and its number is assigned at build time.</li>
+    <li><strong>The two documents cannot quote the same quantity differently.</strong> Where both state a number they state it through the same named value, so a disagreement between the report and its synopsis is a build failure rather than a review finding.</li>
+  </ul>
+  <p>Gates judge the document being assembled rather than the whole Text Library &mdash; an E3 block legitimately cross-references Section 16.2.1 and must not fail against a synopsis model that has no Section 16. A block the library holds but this build did not assemble is reported as a warning, so &ldquo;not gated&rdquo; cannot read as &ldquo;gated and clean&rdquo;. The rest of this section walks <code>ich-e3</code>.</p>
 
   <div class="parts">
     <div class="part p4">
@@ -562,7 +574,7 @@ post_text:
 
   <p>The assembler also writes a provenance appendix into Section 16.1.9 with no human involvement: for each display, its number, the hashes of both specs, the input datasets with their versions and hashes, the R environment, and the commit. It is the audit trail as a generated section of the document rather than a separate exercise.</p>
 
-  <p>One command does all of it. <code>node scripts/assemble.mjs</code> walks the section model, resolves the text library against the current ARDs, places the display variants, assigns the numbering, runs the gates, and writes <code>docs/assembled/csr.json</code> and <code>csr.html</code>. It exits non-zero if any gate fails, and CI runs it on every pull request.</p>
+  <p>One command does all of it. <code>node scripts/assemble.mjs --all</code> walks each object's section model, resolves the text library against the current ARDs, places the display variants, assigns the numbering, runs the gates, and writes the assembled JSON and HTML for every template object. It exits non-zero if any gate fails in any document, and CI runs it on every pull request.</p>
 </section>
 
 <section class="panel">
@@ -581,7 +593,7 @@ post_text:
 
 <section class="panel">
   <h2>Where the code and the documentation disagree</h2>
-  <p>These came out of reading the code against the written contracts. None of them is a defect in the framework; all four are things a reviewing colleague would otherwise trip over, and the first is the one worth acting on.</p>
+  <p>These came out of reading the code against the written contracts. None is a defect in the framework; all five are things a reviewing colleague would otherwise trip over, and the first is the one worth acting on.</p>
 
   <div class="finding">
     <h3>1 &middot; Not one committed artifact names its commit</h3>
@@ -591,9 +603,10 @@ post_text:
   </div>
 
   <div class="finding">
-    <h3>2 &middot; The named-value store reaches no approved sentence</h3>
-    <p>Fifteen values are declared, thirteen bound to ARD addresses and two derived. The store is generated, hashed and gated on every build, and the gate passes. But only seven of the fifteen are cited by any prose, and all seven citations live in one block &mdash; a model-generated draft that has not been approved, and is therefore correctly excluded from assembly.</p>
-    <p>So the assembled report contains no resolved <code>{{value:}}</code> token at all. The feature is complete and enforced; it is simply not yet in use where a reader would see it. Approving that one block, or moving a handful of the repeated ARD addresses in the approved blocks over to named values, would make the fourth part of the framework visible in the product rather than only in the source.</p>
+    <h3>2 &middot; Named values reach the synopsis, not the report</h3>
+    <p>Fifteen values are declared, thirteen bound to ARD addresses and two derived. The store is generated, hashed and gated on every build, and the gate passes.</p>
+    <p>The Annex I synopsis cites eleven of the fifteen across two blocks, and the two derived values are doing real work there: <code>ae-any-n-xanomeline</code> resolves to 152 and <code>ae-excess-high-vs-placebo</code> to 3, in assembled prose. The full ICH E3 report resolves none &mdash; its only <code>{{value:}}</code> citations sit in one model-generated draft that has not been approved and is therefore correctly excluded from assembly. Approving or retiring that block is what would close the report side.</p>
+    <p class="cap">Written earlier the same day as &ldquo;the named-value store reaches no approved sentence&rdquo;, which was true of the whole library until the synopsis template object landed that evening. Corrected rather than deleted, because what was observed and when is part of the record.</p>
   </div>
 
   <div class="finding">
@@ -610,6 +623,12 @@ post_text:
       <li>Variant configuration is documented as taking a <code>filter</code> only. The renderer also honours <code>title</code> and <code>footnotes</code>, and five of the six displays use <code>title</code>.</li>
       <li>The assembler's own header comment lists five gates on the assembled document; the code emits six. The values gate is described in the contracts' prose but missing from that shape.</li>
     </ul>
+  </div>
+
+  <div class="finding">
+    <h3>5 &middot; A named-value citation leaves no entry in a block's bindings list</h3>
+    <p>The <code>bindings</code> array the assembler writes for each block indexes ARD bindings only. The synopsis block that resolves six named values reports an empty array, so anything counting citations from the assembled JSON undercounts what the sentence actually cites.</p>
+    <p>The substitution is span-tracked either way, so the numeric-fidelity gate is unaffected. This is an index gap rather than a gate gap &mdash; worth knowing before anyone builds a coverage report on that array.</p>
   </div>
 </section>
 
