@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open.csr data design framework: how a number reaches a sentence (2026-08-26)</title>
+<meta name="description" content="A walkthrough of how open.csr turns a study dataset into a clinical study report: the four kinds of file you edit, how a table's numbers get bound into sentences instead of retyped, and the places the shipped code and the written contracts disagree.">
+<style>
+:root {
+  --ground:#f4f6f7; --surface:#ffffff; --surface-2:#eef2f3;
+  --ink:#16232d; --muted:#536470; --faint:#7f929e;
+  --border:#dde4e7; --hairline:#e8edef;
+  --accent:#0e7c86; --accent-deep:#0a5b63; --accent-tint:#e2f1f2;
+  --p1:#2a78d6; --p1-tint:#e6effb;
+  --p2:#eda100; --p2-tint:#fbf1dc;
+  --p3:#1baf7a; --p3-tint:#e4f6ef;
+  --p4:#8a5cd6; --p4-tint:#efe8fb;
+  --warn:#b4520f; --warn-tint:#fbecdf;
+  --f-display:"SF Pro Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(20,40,55,.05), 0 8px 24px -12px rgba(20,40,55,.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831;
+    --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+    --border:#263640; --hairline:#1f2d36;
+    --accent:#3cc3d0; --accent-deep:#7fd8e0; --accent-tint:#0f2e33;
+    --p1:#5f9ff0; --p1-tint:#16273a;
+    --p2:#d9a52c; --p2-tint:#2e2109;
+    --p3:#3ec89a; --p3-tint:#0e2a20;
+    --p4:#a687e4; --p4-tint:#221a35;
+    --warn:#e08a4a; --warn-tint:#33210f;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831;
+  --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+  --border:#263640; --hairline:#1f2d36;
+  --accent:#3cc3d0; --accent-deep:#7fd8e0; --accent-tint:#0f2e33;
+  --p1:#5f9ff0; --p1-tint:#16273a;
+  --p2:#d9a52c; --p2-tint:#2e2109;
+  --p3:#3ec89a; --p3-tint:#0e2a20;
+  --p4:#a687e4; --p4-tint:#221a35;
+  --warn:#e08a4a; --warn-tint:#33210f;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--f-display); font-size:16px; line-height:1.62;
+  -webkit-text-size-adjust:100%;
+}
+.wrap { max-width:60rem; margin:0 auto; padding:2rem 1.15rem 4rem; }
+a { color:var(--accent-deep); text-underline-offset:2px; }
+h1 { font-size:clamp(1.7rem,5vw,2.5rem); line-height:1.15; margin:.2rem 0 .6rem; letter-spacing:-.015em; }
+h2 { font-size:clamp(1.2rem,3.4vw,1.55rem); margin:0 0 .7rem; letter-spacing:-.01em; }
+h3 { font-size:1.02rem; margin:1.3rem 0 .35rem; }
+p { margin:0 0 .85rem; }
+ul, ol { margin:0 0 .9rem; padding-left:1.15rem; }
+li { margin:0 0 .4rem; }
+code, .mono { font-family:var(--f-mono); font-size:.88em; }
+code { background:var(--surface-2); border-radius:4px; padding:.08em .32em; }
+.masthead { border-bottom:1px solid var(--border); padding-bottom:1.4rem; margin-bottom:1.6rem; }
+.kicker { font-size:.78rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; }
+.standfirst { font-size:1.06rem; color:var(--muted); max-width:46rem; }
+.byline { font-size:.85rem; color:var(--faint); margin-bottom:0; }
+section.panel {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:1.3rem 1.25rem; margin-bottom:1.4rem; box-shadow:var(--shadow);
+}
+.callout {
+  border-left:4px solid var(--accent); background:var(--accent-tint);
+  border-radius:0 8px 8px 0; padding:.85rem 1rem; margin:1rem 0;
+}
+.callout .label {
+  display:block; font-size:.74rem; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--accent-deep); font-weight:700; margin-bottom:.25rem;
+}
+.callout.warn { border-left-color:var(--warn); background:var(--warn-tint); }
+.callout.warn .label { color:var(--warn); }
+.callout p:last-child { margin-bottom:0; }
+figure { margin:1.1rem 0; }
+figure.code { margin:.9rem 0; }
+figure.code figcaption {
+  font-family:var(--f-mono); font-size:.76rem; color:var(--faint);
+  background:var(--surface-2); border:1px solid var(--border); border-bottom:0;
+  border-radius:8px 8px 0 0; padding:.35rem .7rem;
+}
+pre {
+  margin:0; background:var(--surface-2); border:1px solid var(--border);
+  border-radius:8px; padding:.8rem .85rem; overflow-x:auto;
+  font-family:var(--f-mono); font-size:.8rem; line-height:1.55;
+}
+figure.code pre { border-radius:0 0 8px 8px; }
+figcaption.cap { font-size:.82rem; color:var(--faint); margin-top:.5rem; }
+.scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table { border-collapse:collapse; width:100%; font-size:.88rem; min-width:34rem; }
+th, td { text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--hairline); vertical-align:top; }
+th { font-size:.76rem; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
+tbody tr:last-child td { border-bottom:0; }
+.facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr)); gap:.7rem; margin:1.2rem 0 1.6rem; }
+.fact { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.7rem .8rem; }
+.fact .n { font-size:1.5rem; font-weight:700; line-height:1.1; letter-spacing:-.02em; }
+.fact .l { font-size:.78rem; color:var(--muted); line-height:1.35; display:block; margin-top:.15rem; }
+.parts { display:grid; grid-template-columns:repeat(auto-fit,minmax(14rem,1fr)); gap:.8rem; margin:1rem 0; }
+.part { border:1px solid var(--border); border-radius:10px; padding:.85rem .9rem; background:var(--surface-2); }
+.part h3 { margin:0 0 .3rem; font-size:.95rem; }
+.part .path { font-family:var(--f-mono); font-size:.75rem; color:var(--faint); display:block; margin-bottom:.45rem; word-break:break-all; }
+.part ul { margin:0; padding-left:1rem; font-size:.87rem; }
+.part.p1 { border-top:3px solid var(--p1); }
+.part.p2 { border-top:3px solid var(--p2); }
+.part.p3 { border-top:3px solid var(--p3); }
+.part.p4 { border-top:3px solid var(--p4); }
+.diagram { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:.6rem; }
+.diagram svg { display:block; width:100%; height:auto; }
+.finding { border:1px solid var(--border); border-left:4px solid var(--warn); border-radius:0 10px 10px 0; padding:.9rem 1rem; margin:0 0 .9rem; background:var(--surface-2); }
+.finding h3 { margin:0 0 .35rem; font-size:.98rem; }
+.finding p:last-child { margin-bottom:0; }
+.foot { border-top:1px solid var(--border); padding-top:1.1rem; margin-top:2rem; font-size:.85rem; color:var(--faint); }
+.toc { font-size:.9rem; }
+.toc ol { padding-left:1.2rem; }
+@media (max-width:430px) {
+  .wrap { padding:1.2rem .85rem 3rem; }
+  section.panel { padding:1rem .85rem; border-radius:10px; }
+  pre { font-size:.74rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">open.csr &middot; data design framework &middot; 2026-08-26</div>
+  <h1>How a number reaches a sentence</h1>
+  <p class="standfirst">open.csr assembles a Clinical Study Report from four kinds of file, and nothing else. This page walks all four, end to end, using one real display from the demo study &mdash; the demographics table &mdash; and follows a single number from the ADaM dataset it is computed from to the sentence in Section&nbsp;11.2 that quotes it.</p>
+  <p class="byline">Written for a colleague who has never opened the repository. Every file path, number and code path on this page was read from <a href="https://github.com/jwildfire/open.csr">jwildfire/open.csr</a> on 2026-08-26; nothing is illustrative.</p>
+</header>
+
+<section class="panel">
+  <h2>The short version</h2>
+  <ul>
+    <li><strong>Displays.</strong> A table is declared twice &mdash; what to compute, and how to show it &mdash; and the pipeline turns that pair into a dataset of statistics called an ARD, then into a rendered table.</li>
+    <li><strong>Addresses.</strong> Every statistic in that ARD can be named precisely. Prose never types a number; it cites the address, and the build substitutes the value.</li>
+    <li><strong>Values.</strong> A number the report reuses gets a name in one small central file, so a writer cites <code>randomised-n</code> instead of re-deriving the address in every sentence.</li>
+    <li><strong>Templates.</strong> One file says what an ICH&nbsp;E3 report is; a second says what this particular report puts in each of its sections. Table numbers are assigned at build time, never typed.</li>
+    <li><strong>Gates.</strong> CI fails the build if any digit in the finished prose did not come from one of those bindings.</li>
+  </ul>
+  <div class="callout">
+    <span class="label">The one idea</span>
+    <p>Numbers and words are not kept consistent by checking. They are kept consistent because the words never contain a number in the first place &mdash; only a pointer to one. Consistency stops being a QC activity and becomes a property of the file format.</p>
+  </div>
+</section>
+
+<div class="facts">
+  <div class="fact"><div class="n">6</div><span class="l">displays in the demo library</span></div>
+  <div class="fact"><div class="n">15</div><span class="l">prose blocks, 10 of them approved into the report</span></div>
+  <div class="fact"><div class="n">15</div><span class="l">named values &mdash; 13 bound, 2 arithmetic</span></div>
+  <div class="fact"><div class="n">181</div><span class="l">number bindings resolved at build</span></div>
+  <div class="fact"><div class="n">119</div><span class="l">E3 sections modelled, 18 filled by the demo</span></div>
+</div>
+
+<section class="panel">
+  <h2>The picture</h2>
+  <figure class="diagram">
+  <svg viewBox="0 0 940 700" role="img" aria-labelledby="dgt dgd" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <title id="dgt">The four parts of the open.csr framework and how they connect</title>
+    <desc id="dgd">Study data flows into a display specification, which the R pipeline turns into an ARD of statistics and a rendered table. Statistics in the ARD are addressed by named values and by prose bindings in text blocks. The template combines displays, values and text into the assembled report.</desc>
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <g color="var(--faint)" stroke="currentColor" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+      <path d="M150,74 L150,104"/>
+      <path d="M300,168 L356,168"/>
+      <path d="M516,168 L572,168"/>
+      <path d="M436,214 L436,268"/>
+      <path d="M436,214 L436,240 L170,240 L170,268"/>
+      <path d="M320,326 L376,326"/>
+      <path d="M170,392 L170,458"/>
+      <path d="M516,392 L516,458"/>
+      <path d="M70,214 L70,234 L22,234 L22,470 L36,470"/>
+      <path d="M436,590 L436,626"/>
+    </g>
+
+    <g font-size="13" fill="var(--ink)">
+      <rect x="40" y="34" width="220" height="40" rx="8" fill="var(--surface-2)" stroke="var(--border)"/>
+      <text x="150" y="52" text-anchor="middle" font-size="12.5" font-weight="600">ADaM study data</text>
+      <text x="150" y="67" text-anchor="middle" font-size="11" fill="var(--muted)">pharmaverseadam &middot; CDISCPILOT01</text>
+
+      <rect x="40" y="104" width="260" height="110" rx="10" fill="var(--p1-tint)" stroke="var(--p1)" stroke-width="1.5"/>
+      <text x="56" y="126" font-size="11" font-weight="700" fill="var(--p1)">1 &middot; DISPLAY SPEC</text>
+      <text x="56" y="145" font-size="11.5">analysis.yaml &mdash; what to compute</text>
+      <text x="56" y="163" font-size="11.5">display.yaml &mdash; how to show it</text>
+      <text x="56" y="181" font-size="11.5">iterations.yaml &mdash; every rebuild</text>
+      <text x="56" y="202" font-size="10.5" fill="var(--muted)">library/tfl/&lt;slug&gt;/</text>
+
+      <rect x="356" y="128" width="160" height="80" rx="10" fill="var(--surface-2)" stroke="var(--border)"/>
+      <text x="436" y="152" text-anchor="middle" font-size="12.5" font-weight="600">ard.json</text>
+      <text x="436" y="169" text-anchor="middle" font-size="11" fill="var(--muted)">one row per statistic</text>
+      <text x="436" y="185" text-anchor="middle" font-size="11" fill="var(--muted)">plus its provenance</text>
+
+      <rect x="572" y="128" width="200" height="80" rx="10" fill="var(--surface-2)" stroke="var(--border)"/>
+      <text x="672" y="152" text-anchor="middle" font-size="12.5" font-weight="600">rendered display</text>
+      <text x="672" y="169" text-anchor="middle" font-size="11" fill="var(--muted)">table.html &middot; table.rtf</text>
+      <text x="672" y="185" text-anchor="middle" font-size="11" fill="var(--muted)">manifest.json</text>
+
+      <text x="452" y="238" font-size="10.5" fill="var(--muted)">each row addressed as display:analysis:stat</text>
+
+      <rect x="40" y="268" width="280" height="124" rx="10" fill="var(--p2-tint)" stroke="var(--p2)" stroke-width="1.5"/>
+      <text x="56" y="290" font-size="11" font-weight="700" fill="var(--p2)">2 &middot; VALUES</text>
+      <text x="56" y="309" font-size="11.5">a number the report reuses,</text>
+      <text x="56" y="327" font-size="11.5">given a name once</text>
+      <text x="56" y="349" font-size="11" fill="var(--muted)">source: an ARD address</text>
+      <text x="56" y="365" font-size="11" fill="var(--muted)">derived: declared arithmetic</text>
+      <text x="56" y="383" font-size="10.5" fill="var(--muted)">library/values/values.yaml</text>
+
+      <rect x="376" y="268" width="280" height="124" rx="10" fill="var(--p3-tint)" stroke="var(--p3)" stroke-width="1.5"/>
+      <text x="392" y="290" font-size="11" font-weight="700" fill="var(--p3)">3 &middot; TEXT</text>
+      <text x="392" y="309" font-size="11.5">prose blocks keyed to an</text>
+      <text x="392" y="327" font-size="11.5">ICH E3 section</text>
+      <text x="392" y="349" font-size="11" fill="var(--muted)">numbers arrive as bindings,</text>
+      <text x="392" y="365" font-size="11" fill="var(--muted)">never as typed digits</text>
+      <text x="392" y="383" font-size="10.5" fill="var(--muted)">library/text/TXT-E3-&lt;section&gt;.md</text>
+
+      <text x="348" y="259" text-anchor="middle" font-size="10.5" fill="var(--muted)">cited by name</text>
+
+      <rect x="40" y="458" width="792" height="132" rx="10" fill="var(--p4-tint)" stroke="var(--p4)" stroke-width="1.5"/>
+      <text x="56" y="480" font-size="11" font-weight="700" fill="var(--p4)">4 &middot; TEMPLATE</text>
+      <text x="56" y="500" font-size="11.5">sections.yaml &mdash; what an ICH E3 report is: 119 numbered sections and what each may contain</text>
+      <text x="56" y="521" font-size="11.5">assembly.yaml &mdash; what THIS report puts in them: which prose, which display, in which slot</text>
+      <text x="56" y="546" font-size="11" fill="var(--muted)">Table and figure numbers are assigned here at build time from the order of the slots &mdash; never written into a file.</text>
+      <text x="56" y="571" font-size="10.5" fill="var(--muted)">library/templates/ich-e3/</text>
+
+      <rect x="296" y="626" width="280" height="46" rx="10" fill="var(--surface-2)" stroke="var(--border)"/>
+      <text x="436" y="645" text-anchor="middle" font-size="12.5" font-weight="600">assembled report</text>
+      <text x="436" y="662" text-anchor="middle" font-size="11" fill="var(--muted)">docs/assembled/csr.html &middot; the site</text>
+
+      <rect x="700" y="268" width="132" height="124" rx="10" fill="var(--surface)" stroke="var(--border)" stroke-dasharray="4 3"/>
+      <text x="716" y="290" font-size="11" font-weight="700" fill="var(--muted)">CI GATES</text>
+      <text x="716" y="311" font-size="10.5" fill="var(--muted)">every binding</text>
+      <text x="716" y="326" font-size="10.5" fill="var(--muted)">resolves once</text>
+      <text x="716" y="346" font-size="10.5" fill="var(--muted)">every digit in</text>
+      <text x="716" y="361" font-size="10.5" fill="var(--muted)">prose traces to</text>
+      <text x="716" y="376" font-size="10.5" fill="var(--muted)">a binding</text>
+    </g>
+  </svg>
+  </figure>
+  <figcaption class="cap">The R pipeline owns the top band, from study data to a rendered table. The Node build owns everything below it, from the first binding to the assembled report. The two halves meet at one file per display, <code>ard.json</code>, and at one address format.</figcaption>
+</section>
+
+<section class="panel">
+  <h2>Part 1 &middot; The atoms</h2>
+
+  <h3>What an ARD is here</h3>
+  <p>An Analysis Results Dataset is the table of numbers before it is a table. Instead of a formatted grid, it is a long dataset with one row per computed statistic, and enough columns on each row to say exactly which statistic it is: which analysis produced it, which treatment group it belongs to, which variable and which level of that variable, and what the statistic is called.</p>
+  <p>open.csr uses the <code>{cards}</code> package to compute them and serializes them to a JSON file it owns, so the shape is fixed and the JavaScript half of the build can rely on it. Every row carries the same thirteen keys. Here are three real rows from the demographics display:</p>
+
+  <figure class="code"><figcaption>outputs/t-demographics/v002/ard.json &mdash; 3 of 236 rows</figcaption><pre>{"analysis":"age","group1":"TRT01A","group1_level":"Total","group2":null,"group2_level":null,
+ "variable":"AGE","variable_level":null,"context":"continuous",
+ "stat_name":"N","stat_label":"N","stat":254,"warning":null,"error":null}
+
+{"analysis":"age","group1":"TRT01A","group1_level":"Total", ... "variable":"AGE",
+ "stat_name":"mean","stat_label":"Mean","stat":75.0866141732284, ...}
+
+{"analysis":"sex","group1":"TRT01A","group1_level":"Total", ... "variable":"SEX",
+ "variable_level":"F","context":"categorical",
+ "stat_name":"p","stat_label":"%","stat":0.562992125984252, ...}</pre></figure>
+
+  <p>Two properties of that file matter more than they look:</p>
+  <ul>
+    <li><strong>Nothing is rounded.</strong> The mean age is stored to full precision and percentages are stored as proportions between 0 and 1. Rounding and scaling are decisions the display or the sentence makes, so the same stored number can appear as <code>75.1</code> in a table and <code>75.09</code> in a sentence without either of them being a different number.</li>
+    <li><strong>Every row is addressable.</strong> <code>t-demographics:sex:p;variable_level=F;group=Total</code> selects exactly one of those 236 rows. That address is the only way a number ever leaves this file. If it selects zero rows or more than one, the build fails.</li>
+  </ul>
+  <p>Alongside the rows, the same file carries a provenance envelope: the hash of each spec that produced it, the hash and row count of every input dataset with the package version it came from, the R version and package versions of the session, and the git commit &mdash; or <code>null</code> where the working tree was dirty and the artifact cannot honestly name one.</p>
+
+  <h3>The three files that declare a display</h3>
+  <p>A display lives in one directory named for its slug &mdash; <code>library/tfl/t-demographics/</code> &mdash; and holds three files. The split is the point: a statistician changes the first, a medical writer or a shell reviewer changes the second, and neither has to read the other to work.</p>
+
+  <div class="parts">
+    <div class="part p1">
+      <h3>analysis.yaml</h3>
+      <span class="path">what to compute</span>
+      <ul>
+        <li>Which prepared dataset and which analysis population</li>
+        <li>Which column defines the treatment columns, and whether a total column is added</li>
+        <li>An ordered list of analyses, each naming a method from a fixed vocabulary</li>
+      </ul>
+    </div>
+    <div class="part p1">
+      <h3>display.yaml</h3>
+      <span class="path">how to show it</span>
+      <ul>
+        <li>Title, study, population label, cut-off, footnotes, source line</li>
+        <li>Column order, row order, labels, indentation, section headers</li>
+        <li>Number formats and decimal places</li>
+        <li>Variants: the full Section 14 table, and a reduced in-text one</li>
+      </ul>
+    </div>
+    <div class="part p1">
+      <h3>iterations.yaml</h3>
+      <span class="path">every rebuild, in order</span>
+      <ul>
+        <li>One entry per regeneration: version, timestamp, who ran it</li>
+        <li>The change request in plain words</li>
+        <li>Hashes of the two specs and of the ARD produced</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>The demographics display declares six analyses. This is the whole of what it asks to be computed:</p>
+
+  <figure class="code"><figcaption>library/tfl/t-demographics/analysis.yaml (abridged)</figcaption><pre>id: t-demographics
+regulatory_id: DMT01
+type: table
+dataset: adsl
+analysis_set: safety
+denominator: adsl
+group: [TRT01A]
+total: true
+analyses:
+  - { name: age,      method: continuous,  label: "Age (years)",  variables: [AGE] }
+  - { name: agegr,    method: categorical, label: "Age group",    variables: [AGEGR1] }
+  - { name: sex,      method: categorical, label: "Sex",          variables: [SEX] }
+  - { name: race,     method: categorical, label: "Race",         variables: [RACE] }
+  - { name: ethnic,   method: categorical, label: "Ethnicity",    variables: [ETHNIC] }
+  - { name: baseline, method: continuous,  label: "Baseline vital signs",
+      variables: [BLWT, BLHT, BLBMI] }</pre></figure>
+
+  <p>There are six built-in methods &mdash; a continuous summary, a categorical breakdown, a unique-subject count with denominator and percentage, a nested count for system-organ-class over preferred term, a row passthrough for listings, and a figure. Anything a method cannot express is written as an R function in a <code>custom.R</code> file beside the two YAML files, and named from the analysis; it receives the data and the spec and must hand back an ARD like any other analysis. One of the six demo displays uses that escape hatch.</p>
+
+  <p><code>display.yaml</code> then says how those numbers become a page. Its <code>rows</code> block is a printing plan, not a computation:</p>
+
+  <figure class="code"><figcaption>library/tfl/t-demographics/display.yaml (abridged)</figcaption><pre>columns:
+  order: [Placebo, "Xanomeline Low Dose", "Xanomeline High Dose", Total]
+format:
+  digits: { p: 1, mean: 1, sd: 2, median: 1, min: 0, max: 0 }
+rows:
+  - { label: "Age (years)", section: true }
+  - { analysis: age, variable: AGE, pattern: "{N}",   label: "n",         indent: 1 }
+  - { analysis: age, variable: AGE, pattern: mean_sd, label: "Mean (SD)", indent: 1 }
+  - { label: "Sex, n (%)", section: true }
+  - { analysis: sex, variable: SEX, levels: all, pattern: n_pct, indent: 1,
+      level_order: [F, M] }
+variants:
+  post_text: {}
+  in_text:
+    title: "Demographic Characteristics (Summary)"</pre></figure>
+
+  <p><code>pattern</code> names a cell template. Eleven are built in &mdash; <code>n</code>, <code>N</code>, <code>n_pct</code>, <code>pct</code>, <code>continuous</code>, <code>mean_sd</code>, <code>median</code>, <code>median_range</code>, <code>range</code>, <code>q1_q3</code> and <code>value</code> &mdash; and the display's own <code>format</code> block can add to or override any of them with a template such as <code>"{n} ({p}%)"</code>. There are no functions in a spec, which is what makes a spec reviewable as a diff.</p>
+
+  <div class="callout">
+    <span class="label">A trap the format inherits from YAML</span>
+    <p>An unquoted <code>pattern: n</code> parses as the boolean false under YAML 1.1, not as the string &ldquo;n&rdquo;. The pipeline rejects a non-string row key with an explicit message rather than producing a silently wrong table, but a spec author needs to know to quote it.</p>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Part 2 &middot; How a display becomes an output</h2>
+  <p>One R function does the whole of it. <code>regenerate("t-demographics")</code> reads the two specs, validates them and checks they agree with each other, prepares only the datasets this display asks for, computes the ARD, allocates the next version directory, and writes eight files into it.</p>
+
+  <figure class="code"><figcaption>outputs/t-demographics/v002/ &mdash; what one regeneration writes</figcaption><pre>analysis.yaml         a byte copy of the spec that produced this, not a reference to it
+display.yaml          likewise
+ard.json              236 rows + the provenance envelope
+table.html            the Section 14 variant, rendered
+table.rtf             the same rendered cells as a submission artifact
+table-in-text.html    the reduced variant used inside the narrative
+table-in-text.rtf
+manifest.json         who, why, when, which hashes, how many rows, which variants</pre></figure>
+
+  <ul>
+    <li><strong>Versions accumulate; they do not replace.</strong> <code>v001</code> stays exactly as it was when <code>v002</code> is written, and <code>current.json</code> is a one-line pointer at whichever is live. A display's history is a directory listing rather than a git archaeology exercise.</li>
+    <li><strong>The specs are copied in, not referenced.</strong> An iteration can be read years later without resolving a commit, and the copy is what the hashes in the manifest are taken over.</li>
+    <li><strong>One render, two formats.</strong> The RTF and the HTML come from the same rendered cells in the same loop, so the submission artifact and the on-screen table cannot disagree, and the manifest stores the SHA-256 of the RTF as written &mdash; a test re-hashes every committed RTF against it, so a hand-edited file is caught.</li>
+    <li><strong>The change request travels with the version.</strong> <code>iterations.yaml</code> records, in the author's words, why <code>v002</code> exists.</li>
+  </ul>
+
+  <p>The reason this matters for the rest of the framework: everything downstream binds against the <em>current</em> iteration's ARD. Regenerating a display is therefore the event that can move a number in a sentence, and it is a single, dated, attributed, hashed act.</p>
+</section>
+
+<section class="panel">
+  <h2>Part 3 &middot; Values &mdash; a number with a name</h2>
+  <p>An address is precise but unfriendly. <code>t-disposition:randomised:n;group=Total</code> is the number of subjects randomised, and a writer who wants that number in four different sentences would otherwise retype the address four times &mdash; and, worse, would have to re-derive it if the disposition display were restructured.</p>
+  <p><code>library/values/values.yaml</code> gives such a number a name, once, centrally. It is source: a human or an agent edits it, and the pipeline regenerates the store. There are two kinds of entry, and exactly one kind per value.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Kind</th><th>Declares</th><th>Real example</th><th>Resolves to</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>source</code></td>
+        <td>An ARD address, including the display it comes from</td>
+        <td><code>randomised-n</code> &rarr; <code>t-disposition:randomised:n;group=Total</code></td>
+        <td>254</td>
+      </tr>
+      <tr>
+        <td><code>derived</code></td>
+        <td>An operation over other named values</td>
+        <td><code>ae-any-n-xanomeline</code> &rarr; <code>sum</code> of the low-dose and high-dose counts</td>
+        <td>152</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure class="code"><figcaption>library/values/values.yaml (abridged)</figcaption><pre>values:
+  - id: randomised-n
+    label: "Subjects randomised"
+    source: t-disposition:randomised:n;group=Total
+    format: { digits: 0 }
+    notes: "The denominator for every disposition percentage in section 10.1."
+
+  - id: completed-pct
+    label: "Percentage of randomised subjects who completed"
+    source: t-disposition:completed:p;group=Total
+    format: { scale: 100, digits: 1 }
+
+  - id: ae-any-n-xanomeline
+    label: "Subjects with at least one adverse event, both xanomeline arms"
+    derived: { op: sum, inputs: [ae-any-n-low, ae-any-n-high] }
+    format: { digits: 0 }</pre></figure>
+
+  <h3>Why the arithmetic is declared rather than written</h3>
+  <p>The derivation vocabulary is deliberately closed: <code>sum</code>, <code>difference</code>, <code>ratio</code>, <code>percent</code>, and nothing else. It would have been easier to allow a free-text expression. The reason it is a fixed list is that two different programs have to agree about the answer without running each other's code:</p>
+  <ul>
+    <li>The R pipeline evaluates the derivation when it builds the store.</li>
+    <li>The JavaScript build re-evaluates it, independently, when it assembles the report and re-checks every value against the committed ARDs.</li>
+  </ul>
+  <p>An arbitrary expression would mean either a shared interpreter or a trusted single implementation. A four-operator vocabulary means both sides can implement it correctly and a disagreement between them is a build failure rather than a silently different number. A derived value's inputs are themselves named values, so the chain back to an ARD row never breaks.</p>
+
+  <h3>Why the generated store is never edited</h3>
+  <p><code>outputs/values/values.json</code> is what the store looks like after the pipeline runs it. Each entry carries the resolved number, the formatted string, and the citation: the address, the display, the iteration, the ARD file it was read from and that file's hash.</p>
+
+  <figure class="code"><figcaption>outputs/values/values.json &mdash; one entry</figcaption><pre>{ "id": "randomised-n", "label": "Subjects randomised", "kind": "ard",
+  "value": 254, "formatted": "254", "format": { "scale": 1, "digits": 0 },
+  "source": { "address": "t-disposition:randomised:n;group=Total",
+              "display": "t-disposition", "analysis": "randomised",
+              "iteration": "v002", "ard_file": "outputs/t-disposition/v002/ard.json",
+              "ard_hash": "sha256:..." } }</pre></figure>
+
+  <div class="callout">
+    <span class="label">The rule, and the reason for it</span>
+    <p>Editing the generated store by hand would produce a number that cites an ARD it did not come from &mdash; a citation that is false in exactly the way the whole framework exists to prevent. So the build re-derives every value from the same committed ARDs the report is built from, and fails if the address now resolves to zero rows or several, if the ARD row no longer equals the stored value, if the cited hash is not the committed one, if the formatted string does not match its own declared format, or if a derived value no longer equals its own arithmetic.</p>
+  </div>
+  <p>The same principle covers <code>outputs/</code>, <code>docs/assembled/</code>, <code>docs/evidence/</code> and the built site: they are all generated, all overwritten on the next run, and the repository's standing instruction to agents is that they may write source and only source. The pipeline is the only thing that regenerates.</p>
+</section>
+
+<section class="panel">
+  <h2>Part 4 &middot; Text &mdash; a sentence that binds a number</h2>
+  <p>A text block is a markdown file with a YAML header, named for the ICH E3 section it belongs to. <code>library/text/TXT-E3-1102.md</code> is Section 11.2, Demographic and Other Baseline Characteristics.</p>
+  <p>The header carries what a reviewer needs to know about the block, not about its prose: which E3 section it fills, which displays it depends on, which requirements it satisfies, its approval state and who granted it, whether it was model-generated and with what prompt, and any digits it is explicitly allowed to state in words.</p>
+
+  <figure class="code"><figcaption>library/text/TXT-E3-1102.md &mdash; header and the first sentences</figcaption><pre>---
+id: TXT-E3-1102
+e3_section: "11.2"
+title: "Demographic and Other Baseline Characteristics"
+tier: parameterized
+displays: [t-demographics]
+allow_digits: []
+approval: { state: approved, by: "@jwildfire", at: "2026-07-25" }
+provenance: { model: null, prompt: null }
+requirements: [TXT-DEMO-001]
+---
+
+Demographic and baseline characteristics were comparable across the three treatment
+groups in the safety analysis set of
+{{ard:t-demographics:age:N;group=Total}} patients.
+
+Women accounted for {{ard:t-demographics:sex:n;variable_level=F;group=Total}} patients
+({{ard:t-demographics:sex:p;variable_level=F;group=Total;scale=100;digits=1}}%) overall.</pre></figure>
+
+  <p>At build time that becomes:</p>
+  <figure class="code"><figcaption>docs/assembled/csr.json &mdash; section 11.2, resolved</figcaption><pre>Demographic and baseline characteristics were comparable across the three treatment
+groups in the safety analysis set of 254 patients.
+
+Women accounted for 143 patients (56.3%) overall.</pre></figure>
+
+  <p>Three kinds of token can appear in prose, and all three are the same idea &mdash; the sentence names something the build owns rather than stating it:</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Token</th><th>Names</th><th>Fails the build when</th></tr></thead>
+    <tbody>
+      <tr><td><code>{{ard:...}}</code></td><td>One row of one display's current ARD</td><td>It matches zero rows, or more than one</td></tr>
+      <tr><td><code>{{value:...}}</code></td><td>An entry in the named-value store</td><td>The name is unknown, or the store disagrees with the ARD</td></tr>
+      <tr><td><code>{{xref:...}}</code></td><td>A display's assigned table number, or another section</td><td>The target does not exist in this report</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Two qualifiers ride on an address and are worth separating in your head, because only one of them can change which number you get:</p>
+  <ul>
+    <li><strong>Selection.</strong> <code>group</code>, <code>group2</code>, <code>variable</code> and <code>variable_level</code> narrow which ARD row is meant. Get these wrong and the build stops.</li>
+    <li><strong>Presentation.</strong> <code>scale</code> multiplies (a proportion of 0.563 becomes 56.3) and <code>digits</code> rounds. They never touch the stored value, so the same row can be quoted to different precision in different sentences without any of them being inconsistent.</li>
+  </ul>
+
+  <h3>The gate that makes it stick</h3>
+  <p>None of this would hold if a writer could simply type a number, so the build checks. After the bindings are substituted, it scans the rendered prose for digits and requires every digit run to have come from a resolved binding, a cross-reference, or a short explicit allow-list in the block's header for things that genuinely are text &mdash; an E3 section number, a protocol identifier, a threshold like &ldquo;30 days&rdquo; in a block about exposure windows. Digits inside inline code and markdown links are exempt.</p>
+  <p>The consequence is the thing worth telling a colleague: a typed number does not become a QC finding weeks later, it becomes a red build, in the pull request that typed it.</p>
+
+  <h3>Tiers and approval</h3>
+  <p>A block declares one of three tiers &mdash; <code>boilerplate</code> (standing text), <code>parameterized</code> (prose written once, numbers bound), <code>generated</code> (drafted by a model). A generated block that is not approved is not a failure; it is excluded from the assembled report and reported as pending review. In the current demo, 10 of the 15 blocks are in the report and 5 generated-tier drafts are held out, each named with the reason.</p>
+</section>
+
+<section class="panel">
+  <h2>Part 5 &middot; The template &mdash; what assembles all four</h2>
+  <p>Two files, and the division between them is the useful part.</p>
+
+  <div class="parts">
+    <div class="part p4">
+      <h3>sections.yaml</h3>
+      <span class="path">what an ICH E3 report is</span>
+      <ul>
+        <li>119 sections: number, title, a stable slug, and what kind of content each may hold</li>
+        <li>Written once for the standard, reusable by any study</li>
+        <li>Encoded from ICH E3 itself &mdash; nothing copied from a proprietary template</li>
+      </ul>
+    </div>
+    <div class="part p4">
+      <h3>assembly.yaml</h3>
+      <span class="path">what this report puts in them</span>
+      <ul>
+        <li>The study's own facts: title, phase, indication, arms, cut-off, scope notes</li>
+        <li>Narrative slots: which text blocks and which in-text displays fill which section</li>
+        <li>Section 14 slots: which displays sit under which post-text heading, in order</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>A section in <code>sections.yaml</code> declares its content model from a four-word vocabulary: <code>text</code> for narrative supplied by the Text Library, <code>in_text_display</code> for a reduced display rendered inline, <code>post_text_index</code> for a Section 14 container, and <code>generated_provenance</code> for the appendix the assembler writes itself. An empty list means a structural heading. Across the 119 sections that comes out as 62 text-only, 20 text plus an in-text display, 15 post-text containers, 21 structural headings and one provenance appendix.</p>
+
+  <figure class="code"><figcaption>library/templates/ich-e3/sections.yaml and assembly.yaml (abridged)</figcaption><pre># sections.yaml — the standard
+- number: "11.2"
+  title: "Demographic and Other Baseline Characteristics"
+  slug: demographics
+  content: [text, in_text_display]
+
+# assembly.yaml — this report
+slots:
+  - section: "11.2"
+    text: [TXT-E3-1102]
+    displays: [t-demographics]     # rendered here as the in_text variant
+
+post_text:
+  - section: "14.1"
+    displays: [t-disposition, t-demographics]</pre></figure>
+
+  <h3>What a section actually pulls in</h3>
+  <p>Section 11.2 of the demo report, assembled, is:</p>
+  <ul>
+    <li>The E3 heading and number, from <code>sections.yaml</code>.</li>
+    <li>The block <code>TXT-E3-1102</code>, with its 16 bindings resolved against the current demographics ARD, rendered from markdown, and carrying its own approval state and fidelity result alongside the prose.</li>
+    <li>The demographics display, <code>in_text</code> variant &mdash; the same ARD as Section 14, rendered under the shorter title the display declares for narrative use.</li>
+    <li>A cross-reference in the last sentence that resolves to <em>Table 14.1.2</em>, because <code>t-demographics</code> is the second display listed under the 14.1 slot.</li>
+  </ul>
+
+  <div class="callout">
+    <span class="label">Numbering is derived, never typed</span>
+    <p>No file in the repository contains the string &ldquo;Table 14.1.2&rdquo;. The display's identity is its slug; the number is assigned from the order of the <code>post_text</code> lists at build time, and any sentence that mentions the table asks for it by slug. Reordering Section 14 is a one-line diff, and every cross-reference in the narrative follows automatically. A number that collides with a real E3 section number is treated as a build failure.</p>
+  </div>
+
+  <p>The assembler also writes a provenance appendix into Section 16.1.9 with no human involvement: for each display, its number, the hashes of both specs, the input datasets with their versions and hashes, the R environment, and the commit. It is the audit trail as a generated section of the document rather than a separate exercise.</p>
+
+  <p>One command does all of it. <code>node scripts/assemble.mjs</code> walks the section model, resolves the text library against the current ARDs, places the display variants, assigns the numbering, runs the gates, and writes <code>docs/assembled/csr.json</code> and <code>csr.html</code>. It exits non-zero if any gate fails, and CI runs it on every pull request.</p>
+</section>
+
+<section class="panel">
+  <h2>What CI enforces, in one list</h2>
+  <p>Six checks stand between a change and a merged report. None of them is a review activity; all of them are a red build.</p>
+  <ul>
+    <li><strong>Structure.</strong> Every section referenced by the assembly exists in the E3 model, and no assigned table number collides with a section number.</li>
+    <li><strong>Binding resolution.</strong> Every <code>{{ard:...}}</code> address matches exactly one row of the display's current ARD.</li>
+    <li><strong>Named values.</strong> Every value in the store is re-derived from the committed ARDs, its cited hash checked, its formatting re-applied, and its arithmetic re-evaluated.</li>
+    <li><strong>Numeric fidelity.</strong> Every digit in the rendered prose traces back to a binding, a cross-reference, or a declared exemption.</li>
+    <li><strong>Cross-references.</strong> Every <code>{{xref:...}}</code> resolves to a display or section that exists in this report.</li>
+    <li><strong>Approval.</strong> Model-generated blocks without an approval record are excluded and reported, rather than quietly included.</li>
+  </ul>
+  <p>Alongside those, the R suite is re-run from scratch and compared against its committed results, so the evidence in the repository can never be stale, and the site build fails on a broken internal link or any reference to an external host.</p>
+</section>
+
+<section class="panel">
+  <h2>Where the code and the documentation disagree</h2>
+  <p>These came out of reading the code against the written contracts. None of them is a defect in the framework; all four are things a reviewing colleague would otherwise trip over, and the first is the one worth acting on.</p>
+
+  <div class="finding">
+    <h3>1 &middot; Not one committed artifact names its commit</h3>
+    <p>Provenance is designed to be honest: when the working tree is dirty, the pipeline records <code>git_commit</code> as null rather than guessing. That mechanism is working. The consequence, which is not written down anywhere, is that <em>every</em> artifact currently in the repository was generated from a dirty tree &mdash; all 13 ARDs across the six displays record a null commit, all 13 iteration-ledger entries record an empty one, and so does the values store.</p>
+    <p>The README says each iteration is &ldquo;reproducible from its commit.&rdquo; As a design property that is true. As a statement about the files a colleague will open today, it is not yet: the field that would let them do it is empty in every one. A single regeneration from a clean tree, committed, would close it.</p>
+    <p>A second, smaller half of the same finding: the ARD and the manifest write <code>null</code> for an unknown commit while the iteration ledger writes an empty string. Two spellings of the same absence, and neither is documented in the contracts.</p>
+  </div>
+
+  <div class="finding">
+    <h3>2 &middot; The named-value store reaches no approved sentence</h3>
+    <p>Fifteen values are declared, thirteen bound to ARD addresses and two derived. The store is generated, hashed and gated on every build, and the gate passes. But only seven of the fifteen are cited by any prose, and all seven citations live in one block &mdash; a model-generated draft that has not been approved, and is therefore correctly excluded from assembly.</p>
+    <p>So the assembled report contains no resolved <code>{{value:}}</code> token at all. The feature is complete and enforced; it is simply not yet in use where a reader would see it. Approving that one block, or moving a handful of the repeated ARD addresses in the approved blocks over to named values, would make the fourth part of the framework visible in the product rather than only in the source.</p>
+  </div>
+
+  <div class="finding">
+    <h3>3 &middot; The framework has four parts; the README and the site describe three</h3>
+    <p>Both open with &ldquo;the three components&rdquo; &mdash; the TFL library, the text library and the template library &mdash; and the architecture cards on the site homepage repeat exactly those three. The values store is a fourth source directory with its own schema, its own R builder, its own JavaScript gate and its own binding token, and it appears in neither. A colleague reading either surface would not learn it exists. The pull request that publishes this page adds it to both.</p>
+  </div>
+
+  <div class="finding">
+    <h3>4 &middot; Four checkable gaps in the interface contracts</h3>
+    <p>The contracts document is unusually good and mostly ahead of its peers, so these are worth naming precisely rather than generally:</p>
+    <ul>
+      <li><code>iterations.yaml</code> is one of the three files that define a display and has no schema section &mdash; it appears only as a filename in the layout listing, with its fields described in prose in the design document.</li>
+      <li>The <code>pattern</code> row key is documented as optional but its vocabulary is never listed; there are eleven built-ins, and knowing them is the difference between writing a display spec and guessing at one.</li>
+      <li>Variant configuration is documented as taking a <code>filter</code> only. The renderer also honours <code>title</code> and <code>footnotes</code>, and five of the six displays use <code>title</code>.</li>
+      <li>The assembler's own header comment lists five gates on the assembled document; the code emits six. The values gate is described in the contracts' prose but missing from that shape.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Where to read next</h2>
+  <ul>
+    <li><a href="https://github.com/jwildfire/open.csr/blob/main/docs/design/framework.md">The framework, in the repository</a> &mdash; the same walkthrough as a document that sits beside the code and is published on the project site.</li>
+    <li><a href="https://github.com/jwildfire/open.csr/blob/main/docs/design/contracts.md">Interface contracts</a> &mdash; the normative file formats and schemas. This is what to read before changing anything.</li>
+    <li><a href="https://github.com/jwildfire/open.csr/blob/main/docs/design/design.md">Design</a> &mdash; the architecture and the twelve design decisions behind it, including why the ARD serialization is owned rather than borrowed and why numbering is derived.</li>
+    <li><a href="https://jwildfire.github.io/open.csr/">The project site</a> &mdash; the assembled demo report, the display gallery with the ARD behind every table, and the requirements-to-evidence pages.</li>
+    <li><a href="https://github.com/jwildfire/open.csr/tree/main/library">library/</a> &mdash; the four source directories themselves. They are small, and reading <code>t-demographics</code> plus <code>TXT-E3-1102.md</code> plus <code>assembly.yaml</code> is about twenty minutes.</li>
+  </ul>
+  <p>The demo study is CDISCPILOT01 from <code>{pharmaverseadam}</code> &mdash; public, regenerable, and the only data anywhere in the repository.</p>
+</section>
+
+<footer class="foot">
+  <hr style="border:0;border-top:1px solid var(--border);margin:0 0 1rem">
+  <p>Drafted by Claude Code using Opus 5, background session <span class="mono">👯🤖 W0130 csrframework</span>, 2026-08-26. Every path, count and code behaviour on this page was read from the <code>dev</code> branch of <a href="https://github.com/jwildfire/open.csr">jwildfire/open.csr</a> at the time of writing.</p>
+</footer>
+
+</div>
+</body>
+</html>
