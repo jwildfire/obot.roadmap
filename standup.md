@@ -2,13 +2,13 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 12:40 pm on Thursday the 27th of August. The reading behind it was taken at 12:39 pm, one minute ago.
+Read at 1:20 pm on Thursday the 27th of August. The reading behind it was taken at 1:19 pm, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
 ## What is running
 
-No agent session is working right now.
+One agent session is working.
 
 No session is parked on a permission prompt, so nothing is held up waiting for you to approve it.
 
@@ -35,6 +35,8 @@ The laptop move: what has to be settled before the weekend. 11 questions in tota
 Putting safetyCharts and safetyGraphics back on CRAN. Three questions in total. It has been waiting seven days. Answer it on discussion 293. There is a six minute episode if you would rather listen than read.
 
 Scheduled sessions: what is ready, what is not, and what would make it ready — partly decided, so some of its questions are still yours and the page says which. Five questions in total. It has been waiting 11 days. Answer it on discussion 222. An episode shipped for it, but the page has changed since, so it is out of date and I have not offered it.
+
+One caveat on that list: the copy of the roadmap this was read from is one commit behind GitHub, so a decision published since the last fetch would be invisible here rather than absent.
 
 ## Release candidates waiting for you
 
