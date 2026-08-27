@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — The SAP, and what a display looks like with no numbers in it</title>
+<meta name="description" content="Most of the analysis plan is already in open.csr, dispersed across the seventeen displays citing it by section. Whether a display can shell from its spec alone decides the rest — so the shells were built, not argued.">
+<meta name="decision-id" content="D0030">
+<meta name="premise" scope="live" content="the requirement this page answers is still open | gh issue view 57 -R jwildfire/open.csr --json state --jq .state | OPEN">
+<meta name="premise" scope="live" content="the SAP is still declared and unbuilt in the site registry | gh api repos/jwildfire/open.csr/contents/site/config.json --jq '.content' | base64 -d | python3 -c \"import json,sys;print([d['status'] for d in json.load(sys.stdin)['documents'] if d['id']=='sap'][0])\" | planned">
+<meta name="premise" scope="live" content="total: still predicts the Total column on every display, which is what makes a shell's columns derivable | see the build section | 26 of 26">
+<meta name="premise" scope="history" content="the shells on this page were built from the specs alone, with no ARD and no outputs directory, on open.csr dev at b9ecbfa">
+<style>
+
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout ul{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.callout.blue{border-left-color:var(--blue)}
+.callout.blue .k{color:var(--blue)}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+.pre{margin:16px 0 0;padding:14px 16px;border:1px solid var(--rule);border-radius:5px;background:#f7f4ec;
+  font:13px/1.6 var(--mono);color:var(--ink2);overflow-x:auto;white-space:pre}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .card,.q,.callout{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+  table{min-width:440px}
+}
+
+/* This page only: the shell blocks, which have to survive a 390px screen. */
+/* The house sheet gives `code` no wrapping rule. This page names file paths, and
+   pipeline/inst/extdata/phuse-cdiscpilot01/ is 41 monospace characters — enough to
+   push the body sideways on a 390px screen, where he reads these. */
+code{overflow-wrap:anywhere;word-break:break-word}
+
+.shell{border:1px solid var(--rule2);border-radius:6px;background:var(--panel);margin:14px 0;overflow:hidden}
+.shell .sh-head{padding:8px 12px;border-bottom:1px solid var(--rule);background:rgba(0,0,0,.02)}
+.shell .sh-head b{font-family:var(--display)}
+.shell .sh-head span{display:block;color:var(--mute);font:12px/1.5 var(--mono)}
+.shell .sh-body{overflow-x:auto}
+.shell table{border-collapse:collapse;width:100%;min-width:520px;font:13px/1.5 var(--mono)}
+.shell th,.shell td{border-bottom:1px solid var(--rule);padding:6px 10px;text-align:left;white-space:nowrap}
+.shell th{color:var(--ink2);font-weight:600;background:rgba(0,0,0,.015)}
+.shell td.lab{white-space:normal}
+.shell td.blank{color:var(--rule2)}
+.shell .derived{color:var(--bronze);font-style:italic;white-space:normal}
+@media (max-width:430px){ .shell table{min-width:440px} }
+</style>
+</head><body>
+
+<header class="mast"><div class="wrap">
+  <p class="eyebrow">Decision · D0030 · 2026-08-27 · <a href="https://github.com/jwildfire/open.csr/issues/57">open.csr #57</a> · milestone v0.4.0</p>
+  <h1>The SAP, and what a display looks like with no numbers in it</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0030">
+<p>D0030 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0030.1"><a class="did" href="#D0030.1">D0030.1</a><span class="dcode">D-SAP1</span><span class="dq">Is a shell a state of a display, or a second artifact that can be wrong?</span></li>
+  <li id="D0030.2"><a class="did" href="#D0030.2">D0030.2</a><span class="dcode">D-SAP2</span><span class="dq">Where do a shell's columns come from when no study has run?</span></li>
+  <li id="D0030.3"><a class="did" href="#D0030.3">D0030.3</a><span class="dcode">D-SAP3</span><span class="dq">Does the SAP carry every display, or only the ones its assembly names?</span></li>
+  <li id="D0030.4"><a class="did" href="#D0030.4">D0030.4</a><span class="dcode">D-SAP4</span><span class="dq">Can the SAP share the report's text blocks, or does it need its own?</span></li>
+  <li id="D0030.5"><a class="did" href="#D0030.5">D0030.5</a><span class="dcode">D-SAP5</span><span class="dq">Is the pilot's own SAP a reference to reproduce, the way the 2006 report is?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede"><b>Recommendation in one paragraph:</b> build the SAP as a fourth template over the libraries that already exist, and make a shell a <b>state</b> of a display rather than a separate artifact — because a shell turns out to be derivable from the spec alone, so nothing needs authoring twice and the two documents cannot disagree about what will be produced. Give the SAP its own text blocks: twenty-four of the thirty-three the report uses are written in the past tense about what happened, and only nine could be shared. Do not vendor the pilot's own SAP.</p>
+</div></header>
+
+<main class="wrap">
+
+<section id="situation">
+<h2>What is already here</h2>
+<p><b>Most of the statistical analysis plan is in this repository, dispersed.</b> Seventeen of the twenty-six displays cite the CDISCPILOT01 statistical analysis plan by section, at real precision — §9.7.1.2 for the disposition test, §10.1.1 for the ADAS-Cog model, §10.2.1 for the NPI-X windowing, Appendix 1 §14.1.2 for the CIBIC+ scale — spanning its sections 8 through 14.</p>
+<p>What does not exist is the document that assembles them. To learn what this study planned, a reader opens twenty-six display specifications and reads their footnotes.</p>
+<p><code>site/config.json</code> has declared a Statistical Analysis Plan since v0.1, as <code>status: planned</code>, with the note <em>"Needs a SAP template in <code>library/templates/</code> before it can assemble."</em> This page is about what that template would have to be able to do.</p>
+<div class="callout note"><p>The claim worth making is the one the framework was built for: <b>the SAP and the report are the same objects in different states.</b> One says what will be produced; the other reports what was. Assembled from one library they cannot disagree about the first — which is drift a real programme spends continuous effort policing.</p></div>
+</section>
+
+<section id="method">
+<h2>How this was decided</h2>
+<p>By building the thing, not by reasoning about it. The load-bearing question is whether a display can render as a <b>shell</b> — its own rows and columns with no numbers in them — from its specification alone, before any study has run.</p>
+<p>So a shell builder was written that reads only <code>analysis.yaml</code> and <code>display.yaml</code>, with no access to any ARD or <code>outputs/</code> directory, and run against all twenty-six displays on <code>dev</code> at <code>b9ecbfa</code>. Everything below is what it produced or what the specs measured; nothing here is a projection.</p>
+</section>
+<section id="build">
+<h2>What the shell builder produced</h2>
+
+<p>Three shapes of display exist in the library, and all three shell cleanly. These are real output, reformatted for the page.</p>
+
+<div class="shell">
+  <div class="sh-head"><b>t-populations</b> — every row named in the spec<span>21 of the 26 displays are this shape</span></div>
+  <div class="sh-body"><table>
+    <tr><th></th><th>Placebo</th><th>Xanomeline Low Dose</th><th>Xanomeline High Dose</th><th>Total</th></tr>
+    <tr><td class="lab">Intent-To-Treat (ITT)</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td></tr>
+    <tr><td class="lab">Safety</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td></tr>
+    <tr><td class="lab">Efficacy</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td></tr>
+    <tr><td class="lab">Complete Week 24</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td></tr>
+    <tr><td class="lab">Complete Study</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td></tr>
+  </table></div>
+</div>
+
+<div class="shell">
+  <div class="sh-head"><b>t-ae-common</b> — a hierarchy rather than rows<span>4 of the 26: t-ae-common, t-cibic-categorical, t-conmeds, t-demographics</span></div>
+  <div class="sh-body"><table>
+    <tr><th></th><th>Placebo</th><th>Xanomeline Low Dose</th><th>Xanomeline High Dose</th><th>Total</th></tr>
+    <tr><td class="derived">one row per system organ class, then per preferred term</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td><td class="blank">—</td></tr>
+  </table></div>
+</div>
+
+<div class="shell">
+  <div class="sh-head"><b>l-ae-serious</b> — a listing, columns declared outright<span>1 of the 26; it has no rows block at all, which is correct for a listing</span></div>
+  <div class="sh-body"><table>
+    <tr><th>USUBJID</th><th>TRT01A</th><th>AGE</th><th>SEX</th><th>AEBODSYS</th><th>AEDECOD</th><th>AESEV</th><th>AEREL</th><th>ASTDY</th><th>AENDY</th><th>AEOUT</th></tr>
+    <tr><td class="derived" colspan="11">one row per serious adverse event</td></tr>
+  </table></div>
+</div>
+
+<div class="callout good"><p><b>The hierarchical case is not a limitation, it is the convention.</b> A real SAP shell says "adverse events by system organ class and preferred term" and does not list which terms, because nobody knows them yet. The four displays whose rows come from the data are the four whose shells are <em>most</em> obviously right.</p></div>
+
+<h3>Where the columns come from, which was the one open gap</h3>
+<p>Columns are derived from the data today — <code>render.R</code> takes them from the distinct <code>group1_level</code> values present in the ARD. A shell has no data, so this had to be answered before anything else. Three sources were checked against all twenty-six displays:</p>
+
+<div class="tbl"><table>
+<tr><th>Candidate source</th><th>What it actually yields</th><th>Verdict</th></tr>
+<tr><td>The spec's <code>group:</code> key</td><td>Names a <em>variable</em>, not levels — and three different ones are in use: <code>TRT01A</code> on 10 displays, <code>TRTP</code> on 9, <code>TRT01P</code> on 6, and empty on the listing.</td><td>Not sufficient alone</td></tr>
+<tr><td>A declared treatment vocabulary</td><td>All 25 grouped displays yield exactly <b>Placebo, Xanomeline Low Dose, Xanomeline High Dose</b> — identical across every one, and already a function in the pipeline (<code>trt_levels()</code>).</td><td>Sufficient for the treatment columns</td></tr>
+<tr><td>The spec's <code>total:</code> key for the extra column</td><td>Predicts whether a <b>Total</b> column appears on <b>26 of 26</b> displays. No exceptions.</td><td>Sufficient for the rest</td></tr>
+</table></div>
+
+<p>So the column set is fully derivable: the treatment vocabulary, plus <code>total:</code>, plus — on the single display that carries one — a p-value column that exists because the spec declares a p-value analysis. The listing declares its columns outright and needs none of this.</p>
+</section>
+<section id="questions">
+<h2>Five, each with a recommendation</h2>
+
+<div class="q" id="q-sap1">
+<div class="qid">D-SAP1 · state or artifact</div>
+<h3>Is a shell a state of a display, or a second thing that can be wrong?</h3>
+<p>This is the fork the rest follows from, and it is cheap now and expensive in a year.</p>
+<ul>
+<li><b>A state.</b> One display object, rendered with numbers for the report and without them for the plan. Nothing is authored twice, so the two documents cannot disagree about structure — the disagreement is not caught, it is impossible.</li>
+<li><b>An artifact.</b> A shell file per display, reviewable and signable as its own thing. Costs the guarantee: the moment a shell is a separate file it can fall behind the display, and the programme acquires a drift check it did not need.</li>
+</ul>
+<div class="rec"><b>Recommendation: a state.</b> The build above is the argument — a shell came out of every one of the twenty-six specs with no ARD in reach, so the second object would carry no information the first does not already hold. A signable artifact can still be <em>produced from</em> the state later, if a sponsor needs one to sign; that is a rendering question and it stays open.</div>
+</div>
+
+<div class="q" id="q-sap2">
+<div class="qid">D-SAP2 · columns without data</div>
+<h3>Where do a shell's columns come from when no study has run?</h3>
+<ul>
+<li><b>From a declared treatment vocabulary plus the spec's own keys.</b> Measured above: the vocabulary covers every grouped display, <code>total:</code> covers the extra column on 26 of 26, and listings declare their columns outright.</li>
+<li><b>From the study model in <code>site/config.json</code>.</b> Equivalent in effect, and puts the vocabulary where a second study would have to change it anyway.</li>
+<li><b>Leave columns out of the shell.</b> Honest, and useless — a shell with no columns cannot show what the table will look like, which is the only reason to draw one.</li>
+</ul>
+<div class="rec"><b>Recommendation: the declared vocabulary, sourced from the study model rather than hard-coded.</b> <code>trt_levels()</code> already exists in the pipeline and is already the single source for the report's own column order, so this is a move rather than a new concept. The only real work is teaching the renderer to take levels from the model when there is no ARD — one branch, in one function.</div>
+</div>
+
+<div class="q" id="q-sap3">
+<div class="qid">D-SAP3 · what it carries</div>
+<h3>Does the SAP carry every display, or only the ones its analyses name?</h3>
+<p>The existing templates differ widely, so there is no house answer to inherit: the report and the display package carry 26, the abbreviated report 22, the synopsis 6.</p>
+<ul>
+<li><b>Every display in the library.</b> Simple, and wrong the first time a display is built that the plan never promised.</li>
+<li><b>Only what its assembly names, like every other template.</b> Consistent with how the other four work, and it makes "planned but not produced" and "produced but not planned" both visible as a difference between two assemblies.</li>
+</ul>
+<div class="rec"><b>Recommendation: only what its assembly names.</b> And add the check that falls out of it for free — a display in the report's assembly and absent from the SAP's is either an unplanned analysis or a gap in the plan, and both are worth a build failure rather than a silence.</div>
+</div>
+
+<div class="q" id="q-sap4">
+<div class="qid">D-SAP4 · the words</div>
+<h3>Can the SAP share the report's text blocks?</h3>
+<p>Measured rather than assumed, across all 33 blocks in the text library: <b>24 are past-tense only</b> — <em>was, were, showed, occurred, discontinued</em> — <b>9 are tense-neutral</b>, and <b>none</b> uses <em>will</em> or <em>shall</em>. The library was written to report a study that had finished.</p>
+<ul>
+<li><b>Share the library, add a tense variant per block.</b> Keeps one home for the words. Costs a variant mechanism on every block to serve nine that need none.</li>
+<li><b>A separate SAP text library, sharing only where a block is genuinely tenseless.</b> Two homes, and the nine shared blocks are shared honestly rather than by a switch.</li>
+</ul>
+<div class="rec"><b>Recommendation: a separate library, sharing the nine.</b> The measurement says the overlap is the exception. A tense switch on twenty-four blocks would be a mechanism built to disguise the fact that these are different sentences about different things — and a plan that reads as though the study already happened is a real review finding, not a formatting quibble.</div>
+</div>
+
+<div class="q" id="q-sap5">
+<div class="qid">D-SAP5 · the reference</div>
+<h3>Is the pilot's own SAP a reference to reproduce, the way the 2006 report is?</h3>
+<p>Established: no SAP is vendored. The eleven files in <code>pipeline/inst/extdata/phuse-cdiscpilot01/</code> are the transport datasets and their provenance record, and none is the plan. Its content reaches the repository only as the section citations in seventeen displays' footnotes.</p>
+<p>Not established, and not assumed here: whether the document is redistributable at all. The data is MIT via <code>phuse-org/phuse-scripts</code>; that says nothing about the study documentation, and the 2006 report was handled by extracting figures mechanically rather than by vendoring it.</p>
+<div class="rec"><b>Recommendation: no.</b> The displays already cite it by section, which is the useful part and costs no licence question. Reproducing it would mean claiming our assembled plan matches a document the repository does not hold and may not be able to hold — and that is a qualification claim with nothing behind it.</div>
+</div>
+</section>
+<section id="cost">
+<h2>What it costs, and what it does not</h2>
+<ul>
+<li><b>One branch in one function.</b> Taking column levels from the study model when no ARD is present is the whole of the renderer change these recommendations need. Everything else is a template model and its text.</li>
+<li><b>A second text library</b>, and the honesty tax of writing twenty-four blocks in the future tense that already exist in the past.</li>
+<li><b>No change to any display specification.</b> That is the finding, not a hope: the shells above came out of the specs exactly as they are.</li>
+<li><b>It does not make open.csr a planning tool.</b> The SAP here is a demonstration that one library can carry both documents. A real SAP has sections — randomisation, blinding, interim analyses, multiplicity, sample size — that no display implies and this repository has no source for.</li>
+</ul>
+<div class="callout"><p><b>The honest limit.</b> A shell shows what a table will look like. It cannot show that the analysis behind it is the right one — that judgement is what the plan's prose is for, and none of it is derivable from a spec. This work makes the structure of a plan free; it makes none of the statistics free.</p></div>
+</section>
+
+<section id="sources">
+<h2>Where each number came from</h2>
+<div class="tbl"><table>
+<tr><th>Claim</th><th>How it was measured</th></tr>
+<tr><td>17 of 26 displays cite the SAP by section</td><td><code>git grep</code> for "statistical analysis plan" across <code>library/tfl/</code>, counted by display directory</td></tr>
+<tr><td>21 name every row, 4 declare a hierarchy, 1 is a listing</td><td>The <code>rows:</code> block of every <code>display.yaml</code>, classified by whether it carries <code>label:</code> or <code>levels:</code></td></tr>
+<tr><td>Three grouping variables, one set of levels</td><td><code>group:</code> in each <code>analysis.yaml</code> against the distinct <code>group1_level</code> values in each committed ARD</td></tr>
+<tr><td><code>total:</code> predicts the Total column on 26 of 26</td><td>Each spec's <code>total:</code> compared with whether <code>Total</code> appears in that display's ARD levels</td></tr>
+<tr><td>24 past-tense, 9 neutral, 0 future, of 33</td><td>Every <code>library/text/*.md</code> body scanned for past-tense verbs and for <em>will</em>/<em>shall</em></td></tr>
+<tr><td>Templates carry 26, 26, 22 and 6</td><td><code>loadAssembly()</code> on each of the four template models, displays counted across slots and post-text</td></tr>
+<tr><td>No SAP is vendored</td><td>The 11 entries in <code>PROVENANCE.json</code> under <code>pipeline/inst/extdata/phuse-cdiscpilot01/</code></td></tr>
+</table></div>
+<p class="foot">Measured against <code>jwildfire/open.csr</code> <code>dev</code> at <code>b9ecbfa</code> on 2026-08-27. Nothing was filed, built or changed in open.csr for this page; the shell builder was a throwaway script in a scratch worktree and is not committed.</p>
+</section>
+
+</main>
+
+<footer class="mast"><div class="wrap">
+<p class="foot">Requirement <a href="https://github.com/jwildfire/open.csr/issues/57">open.csr #57</a> · milestone v0.4.0 · follows the release of <a href="https://github.com/jwildfire/open.csr/releases/tag/v0.3.0">v0.3.0</a>, which took the library from six displays to twenty-six.</p>
+<p class="foot">Drafted by Claude Code using Opus 5 and reviewed by @jwildfire.</p>
+</div></footer>
+
+</body></html>
