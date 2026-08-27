@@ -732,7 +732,9 @@
     var body = rs.map(function (r) {
       var k = d + '.' + r.col, b = st(k);
       var line = '    <span class="k">' + esc(r.col) + ':</span>\n      <span class="k">type:</span> ' + esc(r.type);
-      if (b.mode === 'bound' && norm(b.src) !== norm(r.col)) line += '\n      <span class="k">source_col:</span> <span class="add">' + esc(b.src) + '</span>';
+      // Exact match, not normalised: a case difference still gets an explicit
+      // source_col rather than relying on DuckDB folding it.
+      if (b.mode === 'bound' && b.src !== r.col) line += '\n      <span class="k">source_col:</span> <span class="add">' + esc(b.src) + '</span>';
       if (b.mode === 'bound') line += '  <span class="c"># ' + esc(b.via) + ', ' + esc(b.file) + '</span>';
       if (b.mode === 'derived') line = '    <span class="c"># ' + esc(r.col) + ': derived — see the query step below</span>';
       if (b.mode === 'const') line += '  <span class="c"># constant: ' + esc(b.value) + '</span>';
