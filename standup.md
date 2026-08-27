@@ -2,7 +2,7 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 6:04 pm on Wednesday the 26th of August. The reading behind it was taken at 6:04 pm, one minute ago.
+Read at 8:20 pm on Wednesday the 26th of August. The reading behind it was taken at 8:19 pm, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
@@ -20,19 +20,19 @@ Nothing on the ranked list is marked blocked.
 
 Seven decisions are waiting on you: six open, and one that you have partly decided.
 
-The widget that has to carry two tables. Four questions in total. It has been waiting three days. No thread has been opened for it yet, so the answer goes on the artifact page. No episode has been made for it yet.
+The widget that has to carry two tables. Four questions in total. It has been waiting four days. No thread has been opened for it yet, so the answer goes on the artifact page. No episode has been made for it yet.
 
-Where the data-coverage numbers come from. Five questions in total. It has been waiting four days. Answer it on discussion 307. No episode has been made for it yet.
+Where the data-coverage numbers come from. Five questions in total. It has been waiting five days. Answer it on discussion 307. No episode has been made for it yet.
 
-Clinical work, not scaffold — the refocused ten and the v1.0 question. Five questions in total. It has been waiting five days. Answer it on discussion 304. There is a seven minute episode if you would rather listen than read.
+Clinical work, not scaffold — the refocused ten and the v1.0 question. Five questions in total. It has been waiting six days. Answer it on discussion 304. There is a seven minute episode if you would rather listen than read.
 
-Branch protections: what gets locked down before the clock starts. One question in total. It has been waiting six days. Answer it on discussion 283. There is a four minute episode if you would rather listen than read.
+Branch protections: what gets locked down before the clock starts. One question in total. It has been waiting seven days. Answer it on discussion 283. There is a four minute episode if you would rather listen than read.
 
-The laptop move: what has to be settled before the weekend. 11 questions in total. It has been waiting six days. Answer it on discussion 290. There is an eight minute episode if you would rather listen than read.
+The laptop move: what has to be settled before the weekend. 11 questions in total. It has been waiting seven days. Answer it on discussion 290. There is an eight minute episode if you would rather listen than read.
 
-Putting safetyCharts and safetyGraphics back on CRAN. Three questions in total. It has been waiting six days. Answer it on discussion 293. There is a six minute episode if you would rather listen than read.
+Putting safetyCharts and safetyGraphics back on CRAN. Three questions in total. It has been waiting seven days. Answer it on discussion 293. There is a six minute episode if you would rather listen than read.
 
-Scheduled sessions: what is ready, what is not, and what would make it ready — partly decided, so some of its questions are still yours and the page says which. Five questions in total. It has been waiting ten days. Answer it on discussion 222. An episode shipped for it, but the page has changed since, so it is out of date and I have not offered it.
+Scheduled sessions: what is ready, what is not, and what would make it ready — partly decided, so some of its questions are still yours and the page says which. Five questions in total. It has been waiting 11 days. Answer it on discussion 222. An episode shipped for it, but the page has changed since, so it is out of date and I have not offered it.
 
 ## Release candidates waiting for you
 
