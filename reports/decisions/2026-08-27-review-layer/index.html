@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — The review layer</title>
+<meta name="description" content="Recording that a person looked at a finding, and telling them what changed since. The published snapshot names turn out not to be stable — one has meant four different datasets — so a review is keyed to the data itself. Six questions.">
+<meta name="decision-id" content="D0029">
+<meta name="premise" scope="live" content="the requirement this page answers is still open | gh issue view 139 -R jwildfire/obot.roadmap --json state --jq .state → prints OPEN">
+<meta name="premise" scope="live" content="the publisher still replaces only the directories it names, which is why a review record kept beside them survives a publish | grep -c ROOT_DIRS demo-301/scripts/publish-snapshot.py → prints 2">
+<meta name="premise" scope="live" content="the rebuild still deletes every published snapshot directory and re-issues the names from one | grep -c unlink demo-301/scripts/rebuild-snapshots.sh → prints 3">
+<meta name="premise" scope="live" content="the snapshot comparison this design reuses already exists, so the personal watermark is a change of argument rather than a new function | grep -ac flagDeltas open.gismo/site/src/flags.js → prints 1">
+<meta name="premise" scope="live" content="the study site is still served straight from a public branch, which is what makes the question about publishing a review real | gh api repos/jwildfire/demo-301/pages --jq .source.branch → prints site">
+<meta name="premise" scope="history" content="the published snapshot name this page refuses to key a review to had already meant four different datasets when this was written | manual — on 2026-08-27, git log --oneline origin/site -- ps-001 in a demo-301 checkout listed five commits, and hashing ps-001/output/3_reporting/Results/Reporting_Results.csv at each gave four distinct datasets: 1,898 rows, 1,898 again, then 1,918, 1,920 and 3,835">
+<meta name="premise" scope="history" content="the write path this design proposes has a hard size ceiling, which is why a review session is bounded rather than unlimited | manual — measured on 2026-08-27 against jwildfire/demo-301 by binary search on the prefilled new-file link: 8,000 characters of content accepted and echoed back intact, 8,250 refused with a request-too-long status, nothing committed">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout ul{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.callout.blue{border-left-color:var(--blue)}
+.callout.blue .k{color:var(--blue)}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+.pre{margin:16px 0 0;padding:14px 16px;border:1px solid var(--rule);border-radius:5px;background:#f7f4ec;
+  font:13px/1.6 var(--mono);color:var(--ink2);overflow-x:auto;white-space:pre}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .card,.q,.callout{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+  table{min-width:440px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="eyebrow"><span>Decision artifact</span><span class="dot"></span><span>2026-08-27</span><span class="dot"></span><span>awaiting your answer</span><span class="dot"></span><span>six questions</span></div>
+  <h1>The review layer</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0029">
+<p>D0029 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0029.1"><a class="did" href="#D0029.1">D0029.1</a><span class="dcode">RL1</span><span class="dq">Where does a reviewer's record live, and who is allowed to write it?</span></li>
+  <li id="D0029.2"><a class="did" href="#D0029.2">D0029.2</a><span class="dcode">RL2</span><span class="dq">What does a review attach to, when a snapshot name has already meant four different datasets?</span></li>
+  <li id="D0029.3"><a class="did" href="#D0029.3">D0029.3</a><span class="dcode">RL3</span><span class="dq">What kind of change should reopen a finding someone has already signed off?</span></li>
+  <li id="D0029.4"><a class="did" href="#D0029.4">D0029.4</a><span class="dcode">RL4</span><span class="dq">Which parts of a review may appear on a world-readable page?</span></li>
+  <li id="D0029.5"><a class="did" href="#D0029.5">D0029.5</a><span class="dcode">RL5</span><span class="dq">Who counts as a reviewer in the first version, when the site has no login?</span></li>
+  <li id="D0029.6"><a class="did" href="#D0029.6">D0029.6</a><span class="dcode">RL6</span><span class="dq">Which number belongs at the top — how much has been reviewed, or what is still outstanding?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede">The app finds the risks and then forgets that anyone looked. Of the ten review-workflow capabilities the platform survey scored, this portfolio has none, and the survey called that its strongest single finding. This page designs the two smallest pieces that would change how a reviewer actually works — a durable record that someone looked, and a comparison against what they saw rather than against last week — and it starts with a measurement that moves the hard problem somewhere unexpected.</p>
+  <div class="facts">
+    <span><b>Review capabilities we have:</b> none of ten</span>
+    <span><b>Datasets the snapshot named ps-001 has meant:</b> four</span>
+    <span><b>Row counts under that one name:</b> 1,898 → 1,918 → 1,920 → 3,835</span>
+    <span><b>Code that would need writing to reuse the existing comparison:</b> one argument</span>
+  </div>
+</div>
+
+<div class="callout"><div class="k">The finding that reorganised this page</div>
+<p>The requirement frames the hard problem as mutable review state living beside immutable snapshots. Measuring it found the opposite difficulty: the snapshots are not immutable. The published snapshot named ps-001 was published once and then rewritten four more times, and the data underneath that single name went from 1,898 rows to 1,918, to 1,920, to 3,835. The rebuild script deletes every snapshot directory and re-issues the names starting again from one.</p>
+<p>So a review recorded today against ps-001 would, after the next rebuild, assert that a named person approved data they never saw. That is not a storage problem. It is the reason the first recommendation on this page is about what a review points at, not about where it is kept.</p></div>
+
+<div class="cut"><span>THE SITUATION</span></div>
+<section id="situation">
+<h2>Three sentences</h2>
+<p>The study app surfaces flagged sites and flagged participants at every data cut, but nothing anywhere records that a human looked at one, what they concluded, or what they did — so the same rows demand attention again at the next cut and the reasoning behind every decision lives in a meeting, an email, or nowhere. The survey of thirteen safety and monitoring platforms scored ten review-workflow capabilities and found this portfolio has none of them, while the single capability with the broadest support across those platforms is the one that tells a returning reviewer what has changed since they last looked. This page proposes the two smallest pieces of that layer, and asks six questions whose answers determine whether the record is trustworthy or merely present.</p>
+</section>
+
+<div class="cut"><span>WHAT THE OTHER PLATFORMS ACTUALLY DO</span></div>
+<section id="platforms">
+<h2>Nine of thirteen, and thinner than it sounds</h2>
+<p>Only nine of the thirteen surveyed platforms touch review workflow at all. The four open-source clinical packages closest to this project — the safetyGraphics family, Roche's teal, Boehringer's DaVinci modules and Biogen's tidyCDISC — carry none of it. What they have instead is state persistence, which is a different thing: teal has named snapshots and report cards, DaVinci has a bookmark manager. Those remember a view. None of them remembers a judgment.</p>
+<p>Among the nine that do, the depth varies enormously, and the survey is careful that a platform was scored as having a capability because its documentation describes one. Nothing was tested, and the report says plainly that vendor documentation flatters.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>Platform</th><th>Of the ten</th><th>What it actually describes doing</th></tr></thead>
+<tbody>
+<tr><td><b>elluminate</b></td><td>9</td><td>A digital review plan where each objective links to the displays that satisfy it, with completion tracking; role-based review; issue management; and identification of data changes since the last review.</td></tr>
+<tr><td><b>JReview</b></td><td>6</td><td>A per-patient "I-Reviewed" checkbox; patients with new data since the last review highlighted; colour-coding and comments on patients.</td></tr>
+<tr><td><b>CluePoints</b></td><td>5</td><td>Issue tracking integrated across detection modules, findings and corrective actions in one place, automatic breach documentation with justification and evidence.</td></tr>
+<tr><td><b>Oracle Empirica</b></td><td>5</td><td>Tracked versus informational alerts monitored across successive data updates, so a reviewer sees how a signal moves; plus an alerts-reviewed completeness measure per product.</td></tr>
+<tr><td><b>Veeva CDB</b></td><td>5</td><td>Change detection feeding an automated query lifecycle. The change is consumed by automation rather than shown to a reviewer as new.</td></tr>
+<tr><td><b>JMP Clinical</b></td><td>3</td><td>One subject selection broadcast to every report in a review, patient profiles, auto-generated narratives.</td></tr>
+<tr><td><b>clinDataReview</b></td><td>1</td><td>Comparison across two data batches — the interim-refresh diff, and the only one of these in an open-source package.</td></tr>
+<tr><td><b>Spotfire, Medidata</b></td><td>1 each</td><td>Bookmarked filter selections that persist between sessions; alert criteria. Medidata publishes almost nothing here.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>What "since I last looked" turns out to mean</h3>
+<p>Five platforms carry this capability and the survey describes three genuinely different mechanisms plus one bare assertion. They are worth separating, because the differences are the whole design.</p>
+<ul>
+<li><b>A watermark belonging to a person.</b> JReview is the only one that ties the comparison to a review mark: a checkbox per patient, and patients with new data since that review highlighted. The grain is the patient. What counts as new data, whether the mark is per-user or shared, and whether it clears itself are not stated.</li>
+<li><b>A diff between two data batches, with no person in it.</b> clinDataReview compares two refreshes. This is impersonal and needs no review state at all. It is also the only one of the five that is open source and therefore readable.</li>
+<li><b>Change detection consumed by automation.</b> Veeva raises queries from detected changes. A reviewer never sees a "new since you looked" view; the machine acts on it.</li>
+<li><b>Movement of an alert across refreshes.</b> Empirica tracks how a signal moves rather than where it stands, which is about the finding's own history rather than about any reviewer's visit.</li>
+<li><b>Named and nothing more.</b> elluminate's entry is the phrase "identification of data changes since the last review." That is the entire published evidence.</li>
+</ul>
+
+<div class="callout note"><div class="k">Something this page must not claim</div>
+<p>The design proposed below — compare the current data against the snapshot a particular reviewer last signed, per finding — is not an observed platform behaviour. No surveyed platform is documented as doing that. It is the survey's own proposal and it is this page's proposal; it should not be attributed to JReview or to anyone else, and the requirement's description of a Veeva product reverting a changed row to incomplete describes a different Veeva product from the one the survey scored.</p></div>
+
+<h3>Where each approach breaks</h3>
+<ul>
+<li><b>A checkbox with no content behind it</b> tells you someone ticked a box, not what they saw. When the data changes it either clears — and the reviewer loses a conclusion that may still be correct — or it does not, and the tick silently becomes a lie. Neither branch is recoverable, because nothing recorded what the tick was about.</li>
+<li><b>A batch-to-batch diff with no person in it</b> answers "what changed last week", which is only the same question as "what changed since I looked" for a reviewer who looks exactly weekly and never misses one.</li>
+<li><b>A completeness percentage</b> reaches a hundred per cent when everything has been dismissed, so the number rewards the act rather than the finding, and it cannot fall when new data arrives without also punishing a reviewer who is up to date.</li>
+<li><b>Change detection wired to automation</b> requires an automated consumer. This portfolio publishes static files and has no query system to raise anything into.</li>
+</ul>
+</section>
+
+<div class="cut"><span>THE ARCHITECTURAL PROBLEM</span></div>
+<section id="architecture">
+<h2>The state is not actually mutable, and the snapshots are not actually immutable</h2>
+<p>The requirement names the central tension: review state is mutable and per-person, while the whole data architecture rests on immutable published snapshots that can be re-run and reproduced. Both halves of that sentence turn out to need correcting, and correcting them is what makes the design small.</p>
+
+<h3>Nothing mutable has to be stored</h3>
+<p>A review is not a state. It is an event: at a moment, a named person asserted something about a named finding as that finding stood in a particular set of data. An event is a fact, and facts do not change. What people want to see is a status — reviewed, escalated, outstanding — and a status is not a stored thing either. It is a fold over the events, joined against whatever the data says now, computed when the page renders.</p>
+<p>That leaves two immutable inputs and one derived view, which is precisely the shape the pipeline already has. Nothing in the design ever writes a field twice, and nothing ever needs a lock, a merge or a last-writer-wins rule.</p>
+
+<h3>But the snapshots are not immutable, and that is measured</h3>
+<p>The published site holds three snapshots under the names ps-001, ps-002 and ps-003, and the app addresses history by those names. Reading the publish history of the first one shows it was published once and rewritten four times afterwards. Hashing the results file at each of those five commits shows four genuinely different datasets under the one name.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>Commit to the published branch</th><th>Rows in the results file</th><th>Same data as before?</th></tr></thead>
+<tbody>
+<tr><td>Publish ps-001 (cut-1)</td><td>1,898</td><td>—</td></tr>
+<tr><td>Pin one package to a tagged version</td><td>1,898</td><td class="ok">yes</td></tr>
+<tr><td>Republish from the unified raw layer</td><td>1,918</td><td class="bad">no</td></tr>
+<tr><td>Republish with real tolerance limits and a real denominator</td><td>1,920</td><td class="bad">no</td></tr>
+<tr><td>Republish with the safety overview and participant metrics</td><td>3,835</td><td class="bad">no</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The rebuild script makes this structural rather than accidental: it deletes every snapshot directory on the published branch, deletes the index that lists them, and re-issues the names from one. A review recorded against a snapshot name therefore has no defence at all. After a rebuild it points at whatever now holds that name, and the page would show a person's name and a date beside data they have never seen.</p>
+
+<div class="callout"><div class="k">This is the cost the review layer imposes, and it is not optional</div>
+<p>The published site says of itself that every number on it comes from the snapshot tree, and the design record describes a snapshot as an immutable static tree that is the only data interface. Nothing currently checks either sentence, and nothing can: no part of the pipeline, the published tree, the charts or the site hashes anything. The only cryptographic identifiers anywhere in the system pin the package versions, which identify the code and say nothing about the data.</p>
+<p>A review layer is the first feature that makes those sentences load-bearing, because it is the first feature where a person's name is attached to a claim about specific data. It does not create the weakness. It is what makes the weakness visible.</p></div>
+
+<h3>What a review should point at instead</h3>
+<p>A finding needs two identifiers and they do different jobs.</p>
+<ul>
+<li><b>What the review is about.</b> The study, the level, the group and the metric. This is already the ecosystem's own answer: the function that compares results across snapshots declares exactly that four-part key, and it is unique in the published data — every one of the 4,273 rows in the bundled study has a distinct one. It stays the same when the finding gets better or worse, which is what makes persisting and resolved mean anything.</li>
+<li><b>What the reviewer saw.</b> A digest of the values that were on the screen. This is what makes the entry falsifiable later, and it is what a snapshot name cannot do.</li>
+</ul>
+<p>Note what this excludes. The requirement proposes putting the flag into the key. It should not be there: across the three published snapshots, 310 findings carry two different flag values and 13 carry three, so keying on the flag detaches a reviewer's conclusion at precisely the moment the flag flips, which is the one moment they care about. The flag is something the reviewer saw, not something that names the thing they looked at.</p>
+<p>The same correction collapses the requirement's second key. It proposes a separate identity for participant-level safety findings, but those already publish through the identical seven columns, with the participant identifier sitting in the group field. There is one key, not two, and it already covers 1,930 published participant findings alongside the site and country ones.</p>
+</section>
+
+<div class="cut"><span>WHAT COUNTS AS CHANGED</span></div>
+<section id="changed">
+<h2>The trap that makes this feature worthless if it is built the obvious way</h2>
+<p>The obvious implementation hashes the whole result row and reopens the finding when the hash moves. On this data that reverts essentially every finding to unreviewed at essentially every snapshot, because a site that is still enrolling has a different denominator every time the pipeline runs. The feature would then mark everything as changed, a reviewer would learn within two cuts to ignore it, and the capability would be worse than not having it.</p>
+<p>The mechanism the requirement admires — a changed row reverting its listing to incomplete — works in the product it comes from because that product watches source data records, where a change means somebody corrected a value. A risk-indicator row is a derived aggregate that moves by construction. Copying the mechanism across that difference without noticing it is the failure mode here.</p>
+<p>So materiality has to be declared rather than computed, and it belongs next to the metric's threshold, because deciding what counts as a meaningful move is the same kind of judgment as deciding where the threshold sits. Three tiers are enough.</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>Tier</th><th>What moved</th><th>What should happen</th></tr></thead>
+<tbody>
+<tr><td><b>The verdict</b></td><td>The flag, in either direction</td><td>Always reopens. Not configurable — this is the finding changing its mind.</td></tr>
+<tr><td><b>The magnitude</b></td><td>The score or the rate, by more than a tolerance the metric declares</td><td>Reopens by default, and the metric may set the tolerance or opt out.</td></tr>
+<tr><td><b>The substrate</b></td><td>The numerator, the denominator, the participants underneath</td><td>Noted on the row, never reopens by default. This is the one that moves every single cut.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout note"><div class="k">A defect in the comparison that already ships, found by writing this</div>
+<p>The site already computes a snapshot-to-snapshot comparison and renders it as a "since the last snapshot" section. It compares flag levels and nothing else, and it skips any finding whose flag level did not change.</p>
+<p>That is fine as far as it goes, but the statistical bounds are recomputed at every snapshot from that snapshot's own results — the flagging is relative to peers. On the bundled study the boundary curve for one indicator moved by more than half its range across three cuts. A site can therefore go from amber to red with no change whatever in its own numbers, purely because the other sites improved. The comparison reports that the flag moved; it cannot say whether this site got worse or the field got better, and those two findings call for opposite actions. Whatever is built here should name which, and today nothing can.</p></div>
+</section>
+
+<div class="cut"><span>WHAT TO ACTUALLY BUILD</span></div>
+<section id="build">
+<h2>Two pieces, and the first one is nearly free</h2>
+
+<div class="card done"><div class="tag">Piece one · the comparison already exists</div>
+<h3>Compare against what this reviewer last saw, not against last week</h3>
+<p>The function that compares two snapshots takes the two sets of rows as its first two arguments. Today the page hands it the previous snapshot. Handing it instead the results of the snapshot a particular reviewer last signed turns an impersonal weekly diff into a personal one, and the function itself needs no change at all.</p>
+<p>The watermark this needs is not a session, a cookie or a page view. It is the digest recorded on that reviewer's most recent entry. That makes it durable, auditable, portable between machines, and computable with no login and no server — and it means a reviewer who was away for a month sees one month of change rather than one week of it.</p>
+<p>This matters beyond convenience: the roadmap item that records what you personally have looked at is explicitly local-only and says the public static site cannot do that even in principle, and should not, because per-visitor tracking has no place on a public page. A watermark taken from a signed record rather than from a visit is how the same capability arrives on the static side without any tracking at all.</p>
+</div>
+
+<div class="card"><div class="tag">Piece two · the record</div>
+<h3>An entry that says who, what, why, and what they did about it</h3>
+<p>One append-only entry per finding reviewed, carrying the four-part key, the digest of what was on screen, the state, a reason from a short controlled list, free text, and the action taken or recommended. Those fields are not invented: the regulator's own question-and-answer on risk-based monitoring asks for the date, the individuals involved, a summary of the data reviewed, a description of the deficiency and a description of the actions taken, to be taken, or recommended, and the entry maps onto that field for field.</p>
+<p>The controlled reason list is the part that earns its keep. Free text alone cannot be counted; a short vocabulary lets the study say that most dismissals of one indicator were the same known site practice, which is itself a finding about the study. Requiring a reason before a dismissal is the mechanism that makes a dismissal worth reading, and it is proven — it is what the code-scanning workflow this project already lives inside requires.</p>
+<p>Four states are enough to start: outstanding, which is the default and is recorded nowhere; acknowledged, meaning seen and no action needed; escalated, meaning seen and action required; and resolved, meaning the action happened or the finding cleared.</p>
+</div>
+
+<div class="callout good"><div class="k">Suppression should not be a separate switch</div>
+<p>One surveyed platform offers a flag that hides a finding from future refreshes. This design should decline it. Acknowledged already means do not show me this again unless it changes, because the digest is what brings it back. Adding a second way to hide a row creates a second thing to audit and a second way for a finding to disappear quietly.</p></div>
+
+<h3>Writing it, with no server and no password</h3>
+<p>The site is static by contract, stated in the requirements, in the publishing notes and in the design record, and it is served from a branch verbatim with no build step. That rules out a form that posts somewhere. It does not rule out writing, because the hosting platform will accept a fully composed file through a link.</p>
+<p>This was executed rather than assumed. Opening a prefilled new-file link against the demo study repository opens the platform's own editor with the path and the entry already filled in, under whatever account the reviewer is already signed into. Nothing was committed. No credential is ever handled by the page, and there is no authentication code to write.</p>
+<p>Then the failure direction, by binary search on the same link:</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>Entry content carried in the link</th><th>What the platform did</th></tr></thead>
+<tbody>
+<tr><td>2,000 characters</td><td class="ok">Accepted, content intact</td></tr>
+<tr><td>8,000 characters</td><td class="ok">Accepted, content intact</td></tr>
+<tr><td>8,250 characters</td><td class="bad">Refused — request too long</td></tr>
+<tr><td>16,000 and 32,000 characters</td><td class="bad">Refused</td></tr>
+<tr><td>64,000 characters</td><td class="bad">Connection dropped before any reply</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>A realistic entry carrying the full regulatory field set is 400 characters, which becomes 580 once encoded into a link, so one hand-off carries about thirteen findings. That is a real bound and the design should state what happens above it rather than discover it in front of a user: the page splits a longer session into a second hand-off. It is also the reason the record is one file per review session rather than one file per finding, which has a second benefit — two reviewers working at once never touch the same file, so a conflict between them is not merely unlikely but structurally impossible.</p>
+
+<h3>Where the file goes, and why not the obvious place</h3>
+<p>The study repository has a source branch and a published branch, and the published one is arranged by a script. That script replaces exactly three named directories and copies four named files; it never enumerates the published root to remove anything unknown. A review folder kept at that root would therefore survive every publish — while the rebuild deletes every snapshot directory beside it.</p>
+<p>That makes the published branch a survivable address but a bad home, for four reasons that all point the same way: everything on it is world-readable, the pipeline pushes to it without rebasing so a reviewer's commit landing at the wrong moment breaks the next publish, that branch is the one branch policy reserves for your approval so no reviewer could write to it unattended anyway, and it holds generated output rather than authored material.</p>
+<p>The review record is authored. It belongs on the source branch with the other authored things, where changes arrive as pull requests on the ordinary lane, and the publish step should carry a derived projection of it onto the site the same way it carries everything else. That resolves the visibility question, the race, and the policy collision in one move, and it costs one thing worth naming: a review recorded on Tuesday does not appear on the site until the pipeline next runs, which today is Monday.</p>
+</section>
+
+<div class="cut"><span>WHAT IT COSTS</span></div>
+<section id="cost">
+<h2>Named honestly, including what it does to the provenance claim</h2>
+<ul>
+<li><b>The site stops being a pure function of the pipeline.</b> Today every number on the page derives from the pinned packages and the named input. With a review layer the page also derives from a record that people wrote. The snapshot tree itself stays untouched — the record is never inside it — but the sentence on the masthead becomes true only of the numbers and not of the page. The provenance chip has to distinguish two sources, and the honest version of that sentence is longer than the current one.</li>
+<li><b>Snapshot identity has to become real.</b> This is the largest cost and it is owed anyway. Either published snapshots genuinely stop being rewritten, or a digest of the results is published alongside them so a review can name the data rather than the directory. The digest is cheap — a few lines in the publisher — and it has the side benefit of making the immutability claim checkable for the first time.</li>
+<li><b>A finding's evidence is not in the finding.</b> The summarising step keeps the verdict and drops the reasoning: a participant flagged by the liver-signal metric publishes as three numbers and a flag, while the peak enzyme values, the ratio and the quadrant that produced it do not survive into the published row. A reviewer acknowledging that finding is signing against a row that does not contain the clinical facts. The entry should therefore carry a deep link to the display that does — which the app already supports, and whose source comment already says such links can be pasted into a review comment.</li>
+<li><b>Integrity is tamper-evident, not tamper-proof.</b> History on a branch can be rewritten by anyone able to force-push. The claim worth making is that the record is attributable, timestamped, and detectably altered under branch protection. Anything stronger would be a claim about a system nobody here has validated.</li>
+<li><b>No electronic-signature claim.</b> Identity provisioning is not controlled here, signature manifestation is not implemented, and there is no validation package. Declining that in writing is the same posture the change-request work already adopted, and it should be stated in the product's own documentation rather than left to be inferred.</li>
+<li><b>Every acknowledgement becomes a pull request.</b> That is the audit trail and also the friction. Batching a session into one file keeps it to one request per sitting rather than one per finding, bounded at about thirteen.</li>
+</ul>
+
+<h3>What should wait, on the record</h3>
+<p>Of the ten capabilities, this design proposes two and deliberately defers the rest. A review plan with objectives linked to displays is the rarest thing in the survey and the closest analogue to this project's own traceability, but it needs the record to exist first. Role-based assignment needs roles, which needs accounts. An audit trail with electronic signatures is a gate on adoption rather than a display and is declined above. Participant-level alerting needs a notion of a refresh that this design supplies and should be designed after it. Raising a query back into the data-capture system is out of scope and should stay out. Annotation should never be built at all as a separate feature — an entry with a note is the annotation, and building both would be two records of the same thing. Issue tracking with a documented resolution comes almost free: an escalation opens an issue in the same study repository, which is the mechanism the study-level repository work already proposes for change requests and sign-offs.</p>
+</section>
+
+<div class="cut"><span>THE QUESTIONS</span></div>
+<section id="questions">
+<h2>Six, each with a recommendation</h2>
+
+<div class="q" id="q-rl1"><div class="qid">RL1 · where the record lives</div>
+<h3>Where does a reviewer's record live, and who is allowed to write it?</h3>
+<p>This is the fork everything else follows from. The record can be authored material in the study repository, or generated material on the published branch, or it can leave the repository entirely for a database, which would end the static-hosting contract.</p>
+<ul>
+<li><b>Authored on the source branch, projected to the site when the pipeline publishes.</b> Costs a delay between recording and seeing, currently up to a week. Forecloses nothing; the projection can be made more frequent later.</li>
+<li><b>Written straight to the published branch.</b> Immediate, and it does survive the publisher. Costs world-readability for every field, a race against the pipeline's own push, and a collision with the policy that reserves that branch for your approval.</li>
+<li><b>Kept as issues rather than files.</b> Gets comments, assignment and notifications free. Costs the audit trail: an issue body can be edited afterwards and the edit leaves no event in the ordinary history.</li>
+<li><b>An external store.</b> Ends the no-server contract, which is stated in four places and is the reason the whole thing can be forked and hosted by anyone.</li>
+</ul>
+<div class="rec"><b>Recommendation: authored on the source branch, projected on publish.</b> It puts review on the ordinary merge lane, keeps the published branch generated, and lets the projection decide what becomes public. Issues stay in the design but as the escalation path, not as the record.</div>
+</div>
+
+<div class="q" id="q-rl2"><div class="qid">RL2 · what a review points at</div>
+<h3>What does a review attach to, when a snapshot name has already meant four different datasets?</h3>
+<p>A review has to name the data it was written against, or it cannot be checked later. The published names are currently reused.</p>
+<ul>
+<li><b>A digest of the results the reviewer saw, published alongside each snapshot.</b> Costs a few lines in the publisher. A rebuild producing the same data keeps the review attached; a rebuild producing different data correctly detaches it.</li>
+<li><b>The snapshot name, plus a promise to stop rewriting them.</b> Costs nothing today and relies on a discipline that has already failed five times on the only study we have.</li>
+<li><b>The data-cut date carried inside the results.</b> Costs correctness: two of the three published snapshots carry the same date, so it cannot tell them apart.</li>
+</ul>
+<div class="rec"><b>Recommendation: the digest.</b> It is the only option that makes a false record impossible rather than merely discouraged, and it makes the site's own immutability claim checkable as a side effect.</div>
+</div>
+
+<div class="q" id="q-rl3"><div class="qid">RL3 · what brings a finding back</div>
+<h3>What kind of change should reopen a finding someone has already signed off?</h3>
+<p>Too sensitive and everything is permanently unreviewed; too blunt and a signature quietly outlives the thing it was about.</p>
+<ul>
+<li><b>Flag changes reopen; magnitude beyond a declared tolerance reopens; everything underneath is noted only.</b> Costs a tolerance decision per metric, made once, beside the threshold.</li>
+<li><b>Any change to any published value reopens.</b> Costs the feature: an enrolling site changes its denominator every cut, so this marks everything as changed forever.</li>
+<li><b>Only flag changes reopen.</b> Simplest, and misses a site that doubled its rate while staying inside the boundary.</li>
+</ul>
+<div class="rec"><b>Recommendation: the three tiers.</b> And whichever is chosen, the page should name the field that moved rather than showing a bare changed marker, so the reviewer can tell in one glance whether it was worth their attention.</div>
+</div>
+
+<div class="q" id="q-rl4"><div class="qid">RL4 · what becomes public</div>
+<h3>Which parts of a review may appear on a world-readable page?</h3>
+<p>The demo study is a public repository served verbatim, so anything the site carries is published rather than stored. A clinical judgment about a named participant is not obviously something to publish, and blinding is already treated elsewhere as a property enforced where the data is written out.</p>
+<ul>
+<li><b>Publish the fact and the controlled reason; keep free text in the repository unless the study opts in.</b> Costs a reader the reasoning behind a dismissal on the public page, and keeps it one click away for anyone with repository access.</li>
+<li><b>Publish everything.</b> Costs a permanent, indexed, public record of clinical reasoning about identified participants, on a study whose blinding status the app does not currently reason about.</li>
+<li><b>Publish nothing; the record is repository-only.</b> Costs the whole point — the reviewer never sees their own state on the page they work in.</li>
+</ul>
+<div class="rec"><b>Recommendation: publish the fact and the reason, hold the free text behind a per-study switch that defaults to off.</b> This is the question on this page with real downside risk, and the default should be the safe one.</div>
+</div>
+
+<div class="q" id="q-rl5"><div class="qid">RL5 · who is a reviewer</div>
+<h3>Who counts as a reviewer in the first version, when the site has no login?</h3>
+<p>The write path borrows the hosting platform's identity, so attribution is genuine and free, but it only exists for people with an account there.</p>
+<ul>
+<li><b>Account holders only, said in writing.</b> Costs the medical monitor who has no such account, which may be most of the eventual audience. Forecloses nothing later.</li>
+<li><b>Allow an entry to name someone other than whoever committed it.</b> Costs the one thing this design has that the surveyed platforms mostly do not — attribution that is mechanically true rather than asserted.</li>
+<li><b>Wait for a proper identity story.</b> Costs the whole layer for a version or two.</li>
+</ul>
+<div class="rec"><b>Recommendation: account holders only, stated plainly, plus a publish check that refuses an entry whose named author is not the person who committed it.</b> A check that can fail is what separates this from a text field.</div>
+</div>
+
+<div class="q" id="q-rl6"><div class="qid">RL6 · the number at the top</div>
+<h3>Which number belongs at the top — how much has been reviewed, or what is still outstanding?</h3>
+<p>One surveyed platform makes a reviewed-completeness percentage its headline tile. A different tradition scopes the count to the period under review so that it shrinks to zero when the work is done.</p>
+<ul>
+<li><b>Outstanding findings that are new or changed since you last signed.</b> Bounded, reaches zero honestly, and rises only when the data moves. Costs nothing extra — it falls out of the watermark.</li>
+<li><b>Percentage reviewed.</b> Familiar to anyone from that platform. Costs meaning: it reaches a hundred by dismissing everything, and it makes the act the goal.</li>
+<li><b>Both.</b> Costs the reader's attention on the one number that should drive behaviour.</li>
+</ul>
+<div class="rec"><b>Recommendation: the outstanding count, scoped to what changed since that reviewer last signed.</b> A number a person can drive to zero by doing the work, and that cannot be inflated by doing nothing.</div>
+</div>
+</section>
+
+<div class="cut"><span>WHAT UNBLOCKS</span></div>
+<section id="unblocks">
+<h2>What starts on each answer</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>If you answer</th><th>What starts</th><th>What it costs</th></tr></thead>
+<tbody>
+<tr><td><b>RL2 alone</b> — key to a digest</td><td>Publishing a results digest with each snapshot, which is independently worth having and needs no review layer to justify it</td><td>A few lines in the study's publisher, plus a decision about whether the digest is asserted or checked</td></tr>
+<tr><td><b>RL1, RL2, RL5</b></td><td>The record: an entry schema, the compose-and-hand-off write path, and the publish check that makes attribution true</td><td>The bulk of the build, and a per-study decision about repository access</td></tr>
+<tr><td><b>RL3 and RL6</b></td><td>The personal watermark and the outstanding count, reusing the comparison that already ships</td><td>A tolerance per metric, decided once beside each threshold</td></tr>
+<tr><td><b>RL4</b></td><td>The projection onto the published site, and with it the first honest answer to what a public study site may say about a participant</td><td>A per-study switch, and a revision to the provenance chip so two sources are distinguishable</td></tr>
+<tr><td><b>Defer the whole thing</b></td><td>Nothing here. The gap analysis's strongest finding stays open, and the requirement stays in the backlog</td><td>Nothing immediately — except that the snapshot-name weakness measured on this page remains unaddressed, and it is a defect in the provenance story whether or not a review layer is ever built</td></tr>
+</tbody>
+</table>
+</div>
+<p>This page is also the answer to the fifth question on the clinical-priorities artifact, which asked whether the review layer becomes first-release scope or is deferred in writing. The recommendation here is the narrow middle: the digest and the record are worth building, the remaining eight capabilities are deferred in writing above, and nothing in this design gates a clinical release.</p>
+</section>
+
+<div class="cut"><span>CLAIMS FOUND WRONG</span></div>
+<section id="corrections">
+<h2>Three things previously written that this page contradicts</h2>
+<ul>
+<li><b>That the finding key includes the flag.</b> The requirement proposes it for both the risk and safety cases. The ecosystem's own comparison function declares the key without it, and the flag is unstable for a fixed finding across the three published snapshots — 310 findings carry two values and 13 carry three. Putting it in the key breaks review state exactly when the flag flips.</li>
+<li><b>That safety findings need a second key.</b> They publish through the identical columns with the participant identifier in the group field, so there is one key covering all four levels, and 1,930 participant findings are already published under it.</li>
+<li><b>That the published snapshots are immutable.</b> Stated on the site and in the design record; contradicted by five commits to one snapshot name carrying four different datasets, and by a rebuild script that deletes the directories and re-issues the names from one.</li>
+</ul>
+</section>
+
+<div class="cut"><span>METHOD</span></div>
+<section id="method">
+<h2>What was measured here rather than relayed</h2>
+<ul>
+<li><b>The snapshot rewrite.</b> Every commit touching the first published snapshot was listed, and its results file hashed at each one, giving four distinct datasets across five commits.</li>
+<li><b>The write path.</b> A prefilled link was opened against the real study repository and the editor confirmed to prefill both the path and the content. Nothing was committed. The size ceiling was then found by binary search on the same link, and the entry cost measured against the regulator's field set.</li>
+<li><b>What survives a publish.</b> The publishing script and the rebuild script were read directly to establish which paths each destroys and which it leaves alone.</li>
+<li><b>The comparison that already ships.</b> Its definition was read to confirm it takes both row sets as arguments and compares flag levels only.</li>
+<li><b>The identity claims.</b> Column names, key uniqueness, flag instability, participant-finding counts and the movement of the boundary curve were all taken from the published data and the installed packages rather than from documentation.</li>
+<li><b>What the platforms do.</b> Taken from the frozen survey, including its own statement that a platform was scored on what its documentation describes and that nothing was tested.</li>
+<li><b>What this page does not know.</b> Whether any surveyed platform compares against a per-reviewer baseline; the survey does not say, and this page does not claim it.</li>
+</ul>
+</section>
+
+<div class="foot">
+<p><b>Requirement:</b> the action log, on the roadmap — <a href="https://github.com/jwildfire/obot.roadmap/issues/139">#139</a>. <b>Answers:</b> the fifth question on the clinical-priorities artifact, <a href="../2026-08-21-clinical-priorities/">D0026</a>. <b>Sources:</b> the platform gap analysis, <a href="../../platform-gap-analysis-2026-07-25/">survey of thirteen platforms</a>; the dashboard design that filed this requirement, <a href="../../app-dashboard-design-2026-07-28/">app dashboard design</a>. <b>Adjacent:</b> study-level repositories <a href="https://github.com/jwildfire/obot.roadmap/issues/131">#131</a>, blinding as a published property <a href="https://github.com/jwildfire/obot.roadmap/issues/144">#144</a>, what you personally last looked at <a href="https://github.com/jwildfire/obot.roadmap/issues/205">#205</a>, and the repeated-snapshot problem in the demo study <a href="https://github.com/jwildfire/demo-301/issues/8">demo-301#8</a>.</p>
+<p>Drafted by 👯🤖 Claude Code (Claude Opus 5, worker W0139). Not reviewed by @jwildfire before publication.</p>
+</div>
+
+</div>
+</body></html>
