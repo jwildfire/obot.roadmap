@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The intake report — open.gismo reads your data and tells you what it found</title>
+<meta name="description" content="A design direction for loading your own study into open.gismo: never reject a folder, profile everything in it, and answer in one costed document — priced in the charts each gap turns off. Measured against a six-file CRO delivery.">
+<link rel="stylesheet" href="assets/report.css?v=2">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">open.gismo · data loading · direction C · 2026-08-27</div>
+  <h1>Read their data. Report back.</h1>
+  <p class="standfirst">Hand open.gismo v0.2.0 a real CRO delivery today — six files, 60,938 rows, a SAS transport and three lab vendors — and it replies with twelve lines of <span class="mono">file not found</span> and no mention of a single thing you gave it. This direction inverts that. The product reads whatever is in the folder, and answers with one document: here is what I found, here is what I can already build from it, here is what I cannot use and exactly what that costs you.</p>
+  <p class="byline">Requested by @jwildfire, 2026-08-26: <i>&ldquo;Maybe a ultradesign session for open.gismo? re-visit the research comparing other sites and do some mockups on how users will load their own data?&rdquo;</i> &middot; One of four competing directions. Design only — nothing was built, filed, or changed in any repository.</p>
+  <nav class="parts">
+    <a href="index.html" aria-current="page">The direction</a>
+    <a href="report.html">The mockup — an intake report</a>
+    <a href="#hard">The hard case</a>
+    <a href="#weak">Where it is weakest</a>
+  </nav>
+</header>
+
+<p><span class="dirtag">Direction C · read and report</span></p>
+
+<div class="commit">
+  <p>The front door is not a wizard, an uploader, or a mapping grid. It is a report the product writes about your data, and every correction is made by answering a question inside it.</p>
+  <p>One command, <span class="mono">og_read()</span>, which never fails and always produces an artifact. Three verdicts per thing, never a pass/fail. Every gap priced in the charts it turns off. No guessing — proposals carry their evidence and wait for a human.</p>
+</div>
+
+<section class="tldr">
+  <h2>Why this direction and not a wizard</h2>
+  <ul class="bullets">
+    <li>The information a mapping wizard needs does not exist until someone has read the data. A wizard that opens by asking &ldquo;which column is your subject ID?&rdquo; has already assumed the answer is a column, in one file, spelled consistently. In the delivery below it is four columns in five files, and one of them is spelled differently enough to silently destroy the study.</li>
+    <li>The most expensive failures in this pipeline are invisible to names and visible to values. The flagship hepatic explorer passes every name-based check on this delivery and renders zero of its four series, because the lab vendor writes <span class="mono">ALT</span> where the chart asks for <span class="mono">Alanine Aminotransferase</span>. A surface that only reconciles column names ships that failure straight through.</li>
+    <li>This program already values being honest about gaps, and already ships evidence pages, provenance chips and snapshot history. A report is the artifact shape the product is already built around. A wizard is a session; a report is a file you commit, diff, and put in front of a colleague.</li>
+    <li>The forgiveness layer is half-built and pointed the wrong way. <span class="mono">og_validate()</span> already reads the workflow specs and writes a per-domain verdict — it just reads our filenames instead of their data, and ends in an imperative rather than a choice.</li>
+  </ul>
+</section>
+
+<h2>What open.gismo says today, verbatim</h2>
+<p class="lede">Six real files were built from <span class="mono">demo-301</span>&rsquo;s own study data, re-shaped the way a sponsor actually receives it — an SDTM-ish demographics transport, an EDC adverse-event extract, and one liver panel split across three lab vendors. They were copied into a fresh project&rsquo;s <span class="mono">input/</span>, which is what the README tells a user to do. This is the reply, unedited.</p>
+
+<div class="tablewrap">
+<table class="grid">
+  <thead><tr><th>What was in the folder</th><th class="num">Rows</th><th class="num">Cols</th><th>Format</th><th>Shape</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">dm.xpt</td><td class="num">1,005</td><td class="num">11</td><td>SAS transport</td><td>SDTM-ish subject file — <span class="mono">USUBJID</span>, <span class="mono">SITEID</span>, <span class="mono">ARMCD</span></td></tr>
+    <tr><td class="mono">ae.csv</td><td class="num">2,583</td><td class="num">11</td><td>CSV</td><td>EDC events — coded, no toxicity grade</td></tr>
+    <tr><td class="mono">lab_central.csv</td><td class="num">28,600</td><td class="num">11</td><td>CSV</td><td>Central chemistry — short analyte codes, ranges present</td></tr>
+    <tr><td class="mono">lab_haem.csv</td><td class="num">21,450</td><td class="num">6</td><td>CSV</td><td>Haematology — site-prefixed IDs, no reference ranges</td></tr>
+    <tr><td class="mono">lab_specialty.csv</td><td class="num">7,150</td><td class="num">7</td><td>CSV</td><td>Bilirubin and GGT — SI units, own vocabulary</td></tr>
+    <tr><td class="mono">site_list.csv</td><td class="num">150</td><td class="num">4</td><td>CSV</td><td>CTMS site export</td></tr>
+  </tbody>
+</table>
+</div>
+
+<pre class="term">&gt; og_validate("~/brightstar")
+
+open.gismo validation — open.gismo Demo Study
+/private/tmp/ogdesign/brightstar/study
+
+  <span class="c-bad">✖</span>  Raw_AE        input/Raw_AE.csv        <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_DATACHG   input/Raw_DATACHG.csv   <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_DATAENT   input/Raw_DATAENT.csv   <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_ENROLL    input/Raw_ENROLL.csv    <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_LB        input/Raw_LB.csv        <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_PD        input/Raw_PD.csv        <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_QUERY     input/Raw_QUERY.csv     <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_SDRGCOMP  input/Raw_SDRGCOMP.csv  <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_SITE      input/Raw_SITE.csv      <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_STUDCOMP  input/Raw_STUDCOMP.csv  <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_STUDY     input/Raw_STUDY.csv     <span class="c-dim">file not found</span>
+  <span class="c-bad">✖</span>  Raw_SUBJ      input/Raw_SUBJ.csv      <span class="c-dim">file not found</span>
+
+  <span class="c-ok">✔</span> 0 ready   <span class="c-bad">✖</span> 12 need attention
+
+Fix these before og_run():
+  <span class="c-dim">• Raw_AE — file not found
+  • Raw_DATACHG — file not found …</span></pre>
+
+<div class="callout hot">
+  <span class="label">✗ The whole argument, in one screen</span>
+  <p>Four megabytes are sitting in that directory. 1,005 participants, 2,583 adverse events, 57,200 lab results across three vendors. The report names none of them. It does not say &ldquo;I see six files&rdquo;; it does not say &ldquo;<span class="mono">dm.xpt</span> looks like your subject file&rdquo;; it does not say &ldquo;I cannot read <span class="mono">.xpt</span>&rdquo; — it in fact could, since <span class="mono">haven</span> is already an installed dependency of the stack, just never called. Twelve lines about the absence of files nobody was told to create, and silence about the files that are there.</p>
+  <p>Every other direction in this session fixes this by giving the user somewhere to type the mapping. This one fixes it by making the product look first.</p>
+</div>
+
+<h2>The four detectors</h2>
+<p class="lede">Each was written and run against the delivery above. The numbers are measurements, not estimates. Order matters — they are listed in the order they earn their keep, which is not the order a mapping surface would run them.</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>1 · Inventory</h3>
+    <p>Read every file in the folder, whatever the extension, and profile every column: distinct values, missing count, three examples, an inferred type. Never look for our filenames.</p>
+    <p class="note">Measured: 6 of 6 files read, including the SAS transport. 50 columns profiled. This is the step the product does not currently take at all.</p>
+  </div>
+  <div class="card">
+    <h3>2 · Key graph</h3>
+    <p>Take every column that could be an identifier and intersect its values against every candidate in every other file. Report the ones that join. Then re-test the ones that do not, after stripping a leading prefix — a zero overlap that becomes a total overlap once <span class="mono">0301-</span> comes off is not a coincidence, it is a defect.</p>
+    <p class="note">Measured: 15 candidate keys, 12 relationships found, 4 flagged as broken-by-prefix, no false positives. This runs before anything is mapped and before anything is run.</p>
+  </div>
+  <div class="card">
+    <h3>3 · Vocabulary</h3>
+    <p>For every categorical column, read the distinct values and compare them against the literal strings the charts require. The hepatic explorer&rsquo;s <span class="mono">measure_values</span> block names four analytes by full text; the outlier explorer needs grades <span class="mono">"3"</span> and <span class="mono">"4"</span> as characters.</p>
+    <p class="note">Measured: the delivery contains 15 distinct analyte names and shares 0 of the 4 the eDISH chart asks for. Every column-name check on this file passes.</p>
+  </div>
+  <div class="card">
+    <h3>4 · Derivation</h3>
+    <p>When nothing carries a required column but everything it is made of is present, propose the derivation rather than asking for the column. Days-on-study from two dates. A CTCAE grade from a result and its upper limit.</p>
+    <p class="note">Measured: 5 such columns, unlocking 10 of the 39 charts and metrics. Each carries a stated assumption the report records — because two of these derivations are not facts.</p>
+  </div>
+</div>
+
+<h2>What comes out: three verdicts, and a price on each</h2>
+<p class="lede">The unit of the report is not a column. It is a chart. This is the part no other direction gives you, and it is the part that required real work: a resolver that chains every metric and module spec back through the mapping workflows to the raw columns that feed it, so a gap can be quoted in what it costs rather than in what it is.</p>
+
+<div class="ledger four">
+  <div class="led a"><div class="cnt">3</div><div class="ttl">✔ Renders, complete</div><div class="txt">Everything present, nothing ambiguous, no decision needed. Two country-level enrolment metrics and the QTL report.</div></div>
+  <div class="led b"><div class="cnt">6</div><div class="ttl">⚠ Renders, wrong</div><div class="txt">Reachable on names alone and therefore invisible to every name-based check — and each would produce output that looks fine and is not. The hepatic explorer and Hy&rsquo;s Law are here.</div></div>
+  <div class="led b"><div class="cnt">10</div><div class="ttl">◐ One answer away</div><div class="txt">Blocked only by a column nothing carries but everything is present to derive. Both AE timeline charts and the Grade 3+ Lab Abnormality Rate.</div></div>
+  <div class="led c"><div class="cnt">20</div><div class="ttl">✖ No data at all</div><div class="txt">Seven domains are simply not in the folder — queries, data entry lag, data changes, protocol deviations, disposition, ECG, eligibility. No surface can fix this. The report says so and stops asking.</div></div>
+</div>
+<p class="note">Four states, thirty-nine displays, each counted once. The second column is the point of this direction: nine displays are reachable from column names alone, and six of those nine would render wrongly — so a surface that stops at reconciling names reports nine successes and ships six silent failures. An earlier draft of this page carried the nine and the six in separate columns and did not add up; the arithmetic error is noted here rather than quietly corrected.</p>
+
+<p class="note">Counted on 2026-08-27 against <span class="mono">demo-301/workflows/</span>: 29 metric workflows and 10 report modules, resolved through the 15 mapping workflows to 56 distinct <span class="mono">Raw_*</span> columns that a chart or metric actually consumes. The mapping specs declare far more columns than that; three quarters of them feed labels and reporting, not analysis. Twelve spec entries resolve to no raw column at all because they are derived inside the mapping SQL — the report must call those unknown-provenance rather than satisfied, or it will over-promise.</p>
+
+<h2 id="hard">The hard case, all the way through</h2>
+<p class="lede">The liver panel from three labs. This is the case that defeats every naming surface, and it takes down <span class="mono">hep-explorer</span> — the portfolio&rsquo;s differentiator. Six steps. What the user does, what the product does, and what they see when it goes wrong.</p>
+
+<div class="find sev3">
+  <h4><span>Step 1</span> The user runs one command <span class="cost">0 questions asked</span></h4>
+  <p><span class="mono">og_read("~/brightstar")</span>. There is no upload, no dialog, no format requirement. The folder is pointed at, and the product reads. Fifteen seconds later there is a file at <span class="mono">intake/report.html</span> and a line in the console: <i>six files, 60,938 rows, 50 columns. Of 39 displays: 3 ready, 6 will render wrongly, 10 need one answer, 20 need data you did not send. Open the report.</i></p>
+  <p>The first thing the report shows is not a problem. It is the inventory — every file, every column, three example values. Before a single complaint, the user can see that the product understood what they sent.</p>
+</div>
+
+<div class="find sev1">
+  <h4><span>Step 2</span> The first finding is the one that would have destroyed the study <span class="cost">cost: 4 displays</span></h4>
+  <p>The key graph puts this at the top, above everything about column names, because it is the most expensive and the least visible.</p>
+  <pre class="term"><span class="c-bad">✖ BROKEN KEY</span>  lab_haem.csv.SUBJID does not join to anything
+
+  1,005 subject identifiers in dm.xpt        e.g. S1000 · S1001 · S1002
+  1,005 subject identifiers in lab_haem.csv  e.g. <span class="c-warn">0301-</span>S1000 · <span class="c-warn">0301-</span>S1001 · <span class="c-warn">0301-</span>S1002
+  overlap as delivered ....... <span class="c-bad">0.00</span>   (0 of 1,005 match)
+  overlap after removing "0301-" <span class="c-ok">1.00</span>   (1,005 of 1,005 match)
+
+  The mapping joins labs to participants with an inner join. As delivered,
+  that join returns 0 rows. Every check on this file passes: the column is
+  present, typed, complete. You would find out from an empty chart.
+
+  <span class="c-ok">→ Apply "strip leading 0301-" to lab_haem.csv.SUBJID?</span>   [ apply ]  [ not this ]</pre>
+  <p>Today this is undetectable before a run, and after a run it is indistinguishable from a study with no lab data. The detector costs one pass over two columns.</p>
+</div>
+
+<div class="find sev1">
+  <h4><span>Step 3</span> The moment of highest friction: the chart that is ready and produces nothing <span class="cost">cost: 2 displays</span></h4>
+  <p>The hepatic explorer clears every check a mapping surface can run. Its nine required columns all resolve. It is in the ready-now column. And it would render an empty canvas, because the chart does not ask for a column — it asks for four literal strings inside one. The same four strings are the default <span class="mono">lMeasureValues</span> of <span class="mono">gsm.safety::Input_HysLaw</span>, so the Hy&rsquo;s Law Candidate metric fails in exactly the same way at exactly the same moment, and for the same invisible reason.</p>
+  <pre class="term"><span class="c-warn">◐ VOCABULARY MISMATCH</span>  hep_explorer will render 0 of 4 series
+
+  the chart names, in workflows/4_modules/hep_explorer.yaml:
+    ALT → "Alanine Aminotransferase"     AST → "Aspartate Aminotransferase"
+    TB  → "Bilirubin"                    ALP → "Alkaline Phosphatase"
+
+  your analyte columns hold 15 distinct values across 3 files:
+    lab_central.csv TEST      ALB ALKP <span class="c-warn">ALT</span> <span class="c-warn">AST</span> CREAT GLUC K
+    lab_specialty.csv ANALYTE <span class="c-warn">TBILI</span> GGT
+    lab_haem.csv LBTEST       Hematocrit Hemoglobin Lymphocytes Neutrophils …
+
+  matched: <span class="c-bad">0 of 4</span>. Every column check on these files passes.
+  <span class="c-ok">→ ALT = "ALT"?  AST = "AST"?  TB = "TBILI"?  ALP = "ALKP"?</span>   [ confirm all 4 ]
+
+  <span class="c-warn">⚠</span> and the units do not agree: TBILI is umol/L, the chart's cut-points
+    are multiples of the upper limit, so this one is safe. GGT is ukat/L
+    with a ukat/L limit — also safe. Recorded, not corrected.</pre>
+  <p>This is the highest-friction moment in the whole flow, and it is friction the user does not know they have. There is no error, no warning, no missing column. The only signal available anywhere in the product today is an eDISH plot with no points on it, and a person seeing that will reasonably conclude the tool is broken rather than that their lab vendor uses abbreviations.</p>
+  <p>Reading values instead of names is the entire reason this direction exists. Note what the report does <i>not</i> do: it does not auto-apply the match. <span class="mono">TBILI</span> to <span class="mono">Bilirubin</span> is a clinical assertion — total versus direct bilirubin is a real distinction — so it is proposed with the evidence attached and a human confirms it. Honest about gaps means an unconfirmed guess stays visibly unconfirmed.</p>
+</div>
+
+<div class="find sev2">
+  <h4><span>Step 4</span> Three files, one domain <span class="cost">required by all 6</span></h4>
+  <p>The panel arrives split. Central chemistry, haematology, and a specialty vendor for bilirubin and GGT. Nothing in open.gismo today can express &ldquo;<span class="mono">Raw_LB</span> is these three files&rdquo; — <span class="mono">data-config.yaml</span> maps one domain to one path.</p>
+  <p>The report handles this as a finding, not a form. It has already noticed that three files share a column shape — an identifier, an analyte name, a numeric result, a visit — and proposes the union, showing exactly what the stacked domain would contain and which of the three contributes each required column. The reference-range columns come from two of the three files; the haematology file has none, so the union carries nulls there, and the report says which analytes will therefore have no normal range rather than discovering it later.</p>
+</div>
+
+<div class="find sev2">
+  <h4><span>Step 5</span> Five columns nothing carries, that everything is present to derive <span class="cost">unlocks 10 displays</span></h4>
+  <p>This class is invisible to a mapping grid, because there is no source column to point at. The report proposes the derivation and records the assumption in the same breath.</p>
+  <div class="tablewrap">
+  <table class="grid">
+    <thead><tr><th>Wanted</th><th>Derivation offered</th><th>Coverage measured</th><th>What the report warns</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">Raw_SUBJ.timeonstudy</td><td>last dated record minus <span class="mono">RFSTDTC</span></td><td class="num">765 / 765 dosed</td><td><span class="pill mid">◐ assumption</span> <span class="mono">RFENDTC</span> is empty for all 1,005 rows — there is no exit date in this delivery, so &ldquo;last dated record&rdquo; stands in for it. Median 28 days, max 119. If a participant left the study, this overstates nothing but assumes they did not.</td></tr>
+      <tr><td class="mono">Raw_LB.toxgrg_nsv</td><td>CTCAE v5 bands from result ÷ upper limit</td><td class="num">3,575 ALT rows</td><td><span class="pill mid">◐ partial</span> works for chemistry, where ranges are present. The haematology file has no reference range at all, so those analytes get no grade and the report says which.</td></tr>
+      <tr><td class="mono">Raw_AE.aetoxgr</td><td>from <span class="mono">AESEV</span></td><td class="num">2,583 / 2,583</td><td><span class="pill no">✖ lossy</span> severity is not toxicity grade. Mild/moderate/severe has three levels; CTCAE has five. The report offers it, labels it a substitution, and stamps the substitution onto every display that uses it.</td></tr>
+      <tr><td class="mono">Raw_AE.aest_dy</td><td><span class="mono">AESTDTC</span> minus <span class="mono">RFSTDTC</span></td><td class="num">2,583 / 2,583</td><td><span class="pill ok">✔ clean</span> both dates present and joinable for every row.</td></tr>
+      <tr><td class="mono">Raw_AE.aeen_dy</td><td><span class="mono">AEENDTC</span> minus <span class="mono">RFSTDTC</span></td><td class="num">2,583 / 2,583</td><td><span class="pill ok">✔ clean</span> ongoing events carry no end date and stay null, as they should.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The lossy one is the interesting design case. A wizard would either refuse it or silently accept it. The report does neither: it accepts it, marks it, and carries the mark forward, so that when the AE grade distribution appears on the study site it arrives with a note saying it was substituted from severity. That is the honest-about-gaps property applied past the front door.</p>
+</div>
+
+<div class="find sev3">
+  <h4><span>Step 6</span> Twenty displays that are not coming, and the report stops asking <span class="cost">no action available</span></h4>
+  <p>Seven domains are absent — protocol deviations, query management, data entry lag, data change rate, study and drug completion, ECG, eligibility. Twenty of the 39 displays depend on them. No mapping, derivation or vocabulary work can conjure them.</p>
+  <p>The report&rsquo;s job here is to be a shopping list, not a nag. It groups them by the extract that would supply them, prices each group in displays, and offers one action: acknowledge. Acknowledging writes the decision into the project config, so the next run does not re-raise it, and the study site prints &ldquo;not supplied&rdquo; in the place the metric would have appeared instead of silently omitting the tile.</p>
+  <div class="tablewrap">
+  <table class="grid">
+    <thead><tr><th>Missing extract</th><th class="num">Displays</th><th>What it would unlock</th></tr></thead>
+    <tbody>
+      <tr><td>EDC audit trail (query, data entry, data change)</td><td class="num">8</td><td>Query rate and age, data entry lag, data change rate — site and country levels</td></tr>
+      <tr><td>Protocol deviations</td><td class="num">4</td><td>Important and total PD rates</td></tr>
+      <tr><td>Disposition (study and study drug completion)</td><td class="num">5</td><td>Completion rates plus one quality tolerance limit</td></tr>
+      <tr><td>ECG</td><td class="num">2</td><td>The QT explorer and the QTc metric</td></tr>
+      <tr><td>Eligibility criteria</td><td class="num">1</td><td>The eligibility-violation tolerance limit</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="callout warm">
+  <span class="label">◐ Where the study ends up</span>
+  <p>After the three confirmations in steps 2, 3 and 5 — one prefix strip, four analyte confirmations, five derivations with two of them marked — the delivery runs. Nineteen of 39 displays render, including the full hepatic explorer with all four series and both AE timeline charts. Twenty are dark, each labelled on the site with the extract that would light it.</p>
+  <p>Total questions put to the user: three screens, ten confirmations. Total columns the user typed: zero.</p>
+</div>
+
+<h2>Automatic versus asked</h2>
+<div class="m-2col">
+  <div>
+    <h3>Done without asking</h3>
+    <ul class="bullets">
+      <li>Reading every file, in any format the R stack can already open — CSV, SAS transport, SAS7BDAT, Excel, Parquet. <span class="mono">haven</span> and <span class="mono">arrow</span> are installed in this stack today and never called.</li>
+      <li>Profiling all 50 columns: type, cardinality, completeness, examples.</li>
+      <li>Building the key graph and testing the prefix hypothesis on every non-joining pair.</li>
+      <li>Resolving the full dependency chain from each of the 39 displays back to the raw columns it needs, so every finding has a price attached.</li>
+      <li>Matching column names through the alias table, and reporting the confidence with the evidence that produced it.</li>
+      <li>Detecting the three-files-one-domain shape and the vocabulary mismatch.</li>
+      <li>Writing the report, and writing nothing else. The folder is not modified until a human answers something.</li>
+    </ul>
+  </div>
+  <div>
+    <h3>Always asked</h3>
+    <ul class="bullets">
+      <li>Every column match, however confident. A high-confidence match is pre-selected and one click confirms the batch; it is never applied silently.</li>
+      <li>Every value-level assertion, because these are clinical claims. <span class="mono">TBILI</span> is total bilirubin only if the person says so.</li>
+      <li>Every derivation, with its assumption stated in the question, not in a footnote.</li>
+      <li>Every lossy substitution, twice — once to accept it, and once more as a mark that follows it onto the site.</li>
+      <li>Going without a domain. This is a decision that gets recorded, not a warning that gets thrown.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout hot">
+  <span class="label">✗ Naming the friction, since a design that hides it has not engaged</span>
+  <p>The moment of highest friction is not the first screen. It is step 3 — the chart that passes every check and draws nothing. It is worst precisely because the product currently gives the user no reason to look. The direction&rsquo;s answer is that the vocabulary detector runs unconditionally, on every categorical column named by any chart&rsquo;s settings block, and its findings are ranked by the number of displays affected rather than by how confident the matcher is. A zero-of-four match on the flagship outranks a ninety-percent-confident column rename, every time.</p>
+  <p>The second-worst moment is the one this direction is most exposed on, and it is honest to say so here rather than in the weaknesses section alone: the first report on a real study is long. Fifty columns, thirty-nine displays, twelve key relationships. See <a href="#weak">W1</a>.</p>
+</div>
+
+<h2>What it costs to build</h2>
+
+<h3>Leans on, does not rebuild</h3>
+<ul class="bullets">
+  <li><span class="mono">gsm.mapping::ApplySpec()</span> and its <span class="mono">source_col</span> key. Every column rename this report produces is one existing, exercised spec line. No second mapping layer.</li>
+  <li><span class="mono">gsm.mapping::CombineSpecs()</span> and the workflow <span class="mono">spec:</span> blocks. The required-column set is computed from the user&rsquo;s own snapshotted workflows, so a study that adds a metric automatically extends the contract.</li>
+  <li><span class="mono">og_validate()</span>&rsquo;s internals. <span class="mono">.og_input_specs()</span> and <span class="mono">.og_inspect_csv()</span> are most of the plumbing already, and the print method is the report&rsquo;s console form.</li>
+  <li><span class="mono">config/data-config.yaml</span> for domain-to-file routing, and the project folder&rsquo;s existing snapshot and provenance machinery for versioning the report.</li>
+  <li>The column conventions are fixed and not up for discussion: <span class="mono">subjid</span>, <span class="mono">invid</span>, <span class="mono">studyid</span>, grouping through <span class="mono">strGroupCol</span>.</li>
+</ul>
+
+<h3>New, in rough order of size</h3>
+<div class="tablewrap">
+<table class="grid">
+  <thead><tr><th>Piece</th><th>Size</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>The cost resolver — chart and metric specs chained back to raw columns</td><td><span class="pill mid">◐ medium</span></td><td>The load-bearing new capability, and the one nothing else in the ecosystem has. Roughly 80 lines of graph-walking plus the two special cases below. Written and run for this design.</td></tr>
+    <tr><td>The report writer — HTML plus a machine-readable <span class="mono">findings.yaml</span></td><td><span class="pill mid">◐ medium</span></td><td>The HTML is a template over the findings file. The findings file is the real interface and is what makes the report diffable.</td></tr>
+    <tr><td>Detectors 1–4</td><td><span class="pill mid">◐ medium</span></td><td>All four exist as working prototypes from this session. The key graph and the vocabulary check are each under 40 lines.</td></tr>
+    <tr><td>The answer writer — turning a confirmed finding into YAML in the project</td><td><span class="pill ok">✔ small</span></td><td>For column renames, one <span class="mono">source_col:</span> line. For file routing, one <span class="mono">data-config.yaml</span> entry. For value-level and derivation, see W2 — this is where it gets expensive.</td></tr>
+    <tr><td>The alias sidecar table</td><td><span class="pill mid">◐ medium, and ongoing</span></td><td>gsm.mapping has no standard-to-source dictionary. safetyGraphics has one — <span class="mono">safetyCharts::meta_*</span> carries <span class="mono">standard_adam</span> and <span class="mono">standard_sdtm</span> per field, which is why its detector can pre-fill. Ours has to be built and maintained. Lives in open.gismo first; upstream later.</td></tr>
+    <tr><td>Format readers at the door</td><td><span class="pill ok">✔ small</span></td><td><span class="mono">haven</span> and <span class="mono">arrow</span> are installed but undeclared. Every read in the package today is <span class="mono">utils::read.csv</span>.</td></tr>
+    <tr><td>The <span class="mono">og_validate()</span> blindness fix</td><td><span class="pill ok">✔ small</span></td><td>It never reads <span class="mono">source_col</span>, so a correctly mapped project can never reach green. Worth fixing before any surface is designed, whichever direction wins.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>What could go wrong</h3>
+<ul class="bullets">
+  <li>The site risk score is invisible to the cost resolver. <span class="mono">srs0001</span> has no <span class="mono">spec:</span> block at all — it weights every <span class="mono">kri*</span> that ran, so a partial mapping changes its denominator rather than failing. The resolver has to special-case it with a hand-written rule, and that rule is a wart that will rot. The alternative — refusing to run the risk score at all when any KRI is dark — is defensible and should be considered on its own.</li>
+  <li>Twelve spec entries resolve to no raw column, because the mapping SQL derives them. If the report treats unresolved as satisfied it over-promises; if it treats them as missing it will nag about columns nobody can supply. They have to be a third state, and someone has to keep them accurate as the workflows change.</li>
+  <li>The prefix hypothesis is one heuristic. A suffix, a zero-pad difference, or a case difference in identifiers will not be caught by it, and each new hypothesis raises the false-positive rate. The measured zero false positives above came after tightening the candidate-key filter twice; the loose version produced spurious matches between an age column and a lab result.</li>
+  <li>A silent success is the failure mode this program keeps hitting. The report itself has to be verified by effect: a run that produces 19 displays must be checked against a report that promised 19, and a disagreement should fail the run rather than be reported anywhere.</li>
+</ul>
+
+<h2 id="weak">Where this direction is weakest</h2>
+<p class="lede">Five, and the first two are serious enough that a reader who wants to reject this direction should reject it on one of them.</p>
+
+<div class="weak">
+  <h4>W1 · The first report is a wall</h4>
+  <p>Fifty columns, thirty-nine displays, twelve key relationships, five derivations, seven absent domains. A wizard hands you one decision at a time and gets you to a chart in four screens. This hands you a document and asks you to read it. For a person who has been given a folder and told to have something by Thursday, that is a worse first ten minutes.</p>
+  <span class="verdict">Partial answer: rank findings by displays-unlocked, surface the top three, collapse everything else, and put the ready-now count in the console line so the first thing seen is a number of working charts and not a list of problems. It does not fully close the gap. A wizard genuinely beats this on time-to-first-chart, and if that is the metric that matters, this direction loses.</span>
+</div>
+
+<div class="weak">
+  <h4>W2 · The answers have nowhere to go</h4>
+  <p>A gsm.mapping column spec accepts exactly two keys, <span class="mono">type</span> and <span class="mono">source_col</span>. That covers renaming and nothing else. Everything this direction is proudest of detecting — the prefix strip, the analyte vocabulary, the CTCAE derivation — has no declarative home. Writing them means generating a <span class="mono">steps:</span> entry with literal SQL or an R call into the study&rsquo;s own mapping YAML, which is a much bigger promise than &ldquo;we add one line&rdquo;: the product would be generating code on the user&rsquo;s behalf, and that code has to be reviewable, re-generatable and not clobber hand edits.</p>
+  <span class="verdict">This needs a <span class="mono">recode:</span> or <span class="mono">transform:</span> key in the gsm.mapping spec, which is outside this program&rsquo;s write scope. The proposal should be drafted and handed to @jwildfire to file upstream, not filed by an agent. Until it exists, this direction can detect far more than it can fix, and a report that names problems it cannot resolve is exactly the &ldquo;tells you what is wrong and gives you nowhere to fix it&rdquo; failure it was built to escape.</span>
+</div>
+
+<div class="weak">
+  <h4>W3 · Reading and reporting is passive when the user wants a picture</h4>
+  <p>&ldquo;Three of thirty-nine displays are ready&rdquo; is an honest sentence and a demoralising one. The obvious fix is to run what does work and put it behind the report, so the first artifact is charts rather than prose. That is an <span class="mono">og_run()</span> change, and a partial run walks straight into the site-risk-score denominator problem above.</p>
+  <span class="verdict">Probably the right move anyway, and it should be scoped with this direction rather than after it — but it makes the build materially larger and couples it to a defect that is not this feature&rsquo;s fault.</span>
+</div>
+
+<div class="weak">
+  <h4>W4 · The alias table is a dependency this direction does not control</h4>
+  <p>The 66% name-match rate measured above is <i>with</i> a hand-written alias table of about sixty entries. Without it the rate is near zero, because the gsm raw vocabulary is neither SDTM nor ADaM — a perfectly conformant CDISC package matches on almost no column name. That table has to be built, curated, and kept current against a moving target of CRO conventions, and its quality decides whether the automatic half of this design works at all.</p>
+  <span class="verdict">True of every direction in this session, so it is not a reason to prefer another one — but it is a real, unowned, ongoing cost and this design leans on it harder than a direction that just asks the user to point at columns.</span>
+</div>
+
+<div class="weak">
+  <h4>W5 · The detectors cost a full read</h4>
+  <p>The key graph hashes the distinct values of every candidate identifier in every file. On 60,938 rows that is instant. On a four-million-row lab file with thirty candidate columns it is not, and sampling breaks the guarantee — a sampled overlap can miss a partial key break, which is the exact failure the detector exists to catch.</p>
+  <span class="verdict">Needs a stated performance envelope, which the platform gap analysis already flags as missing across the whole portfolio (row D10). Honest position: sample by default, report that the check was sampled, and offer a full pass.</span>
+</div>
+
+<h2>Decisions this direction needs</h2>
+
+<div class="decision">
+  <span class="id">C1</span>
+  <div>
+    <h4>Does the front door produce an artifact or a session?</h4>
+    <p>This direction says the report is a committed file in the project, versioned alongside the snapshots, that a colleague can be sent. The alternative is a live surface in the app that leaves no trace. The whole direction rests on this answer.</p>
+  </div>
+</div>
+
+<div class="decision">
+  <span class="id">C2</span>
+  <div>
+    <h4>Never auto-apply, even at high confidence?</h4>
+    <p>This direction commits to never applying a match without a human answer, including obvious ones like <span class="mono">USUBJID</span> to <span class="mono">subjid</span>. That costs clicks and buys the honest-about-gaps property. The opposite position — auto-apply above a threshold and show what was applied — is faster and is what safetyGraphics does.</p>
+  </div>
+</div>
+
+<div class="decision">
+  <span class="id">C3</span>
+  <div>
+    <h4>Do lossy substitutions get carried onto the study site?</h4>
+    <p>Severity standing in for toxicity grade is defensible, and a chart built on it should probably say so where it appears. That is a change to the site renderer, not the intake surface, and it is the most distinctive thing in this direction.</p>
+  </div>
+</div>
+
+<div class="decision">
+  <span class="id">C4</span>
+  <div>
+    <h4>Should a broken key refuse the run, or warn?</h4>
+    <p>Today a missing domain warns and continues. A zero-overlap join is worse than a missing domain, because it looks like success. This direction says refuse, and let the user override with a recorded decision. That is a behaviour change to <span class="mono">og_run()</span> and is worth doing regardless of which direction wins.</p>
+  </div>
+</div>
+
+<div class="decision">
+  <span class="id">C5</span>
+  <div>
+    <h4>Who drafts the <span class="mono">recode:</span> proposal to gsm.mapping?</h4>
+    <p>Per W2, this is the one piece reaching outside the portfolio, and this program does not write to Gilead-BioStats. The proposal should be drafted here and handed over for @jwildfire to file.</p>
+  </div>
+</div>
+
+<h2>How the numbers on this page were produced</h2>
+<ul class="bullets">
+  <li>Read against <span class="mono">open.gismo</span> at <span class="mono">dev</span> (v0.2.0) with <span class="mono">gsm.core 1.2.0</span>, <span class="mono">gsm.mapping 1.1.3</span>, <span class="mono">gsm.kri 1.5.0</span>, <span class="mono">gsm.reporting 1.1.5</span> and <span class="mono">workr 1.0.0</span> installed.</li>
+  <li>The six-file delivery was generated from <span class="mono">demo-301</span>&rsquo;s own <span class="mono">input/</span> data and re-shaped: an SDTM-ish <span class="mono">dm.xpt</span> written with <span class="mono">haven::write_xpt()</span>, an EDC-style <span class="mono">ae.csv</span> with the toxicity grade removed, and the sixteen-analyte lab panel split across three vendors with different naming, different units and one site-prefixed identifier.</li>
+  <li>The terminal output above is the unedited result of <span class="mono">og_init(example = FALSE)</span>, copying those six files into <span class="mono">input/</span>, and calling <span class="mono">og_validate()</span>.</li>
+  <li>The 39 displays, the 56 consumed columns and the four-way classification comes from a resolver that parses the 15 mapping, 29 metric and 10 module workflows in <span class="mono">demo-301/workflows/</span> and chains each consumer&rsquo;s <span class="mono">spec:</span> back to its raw columns.</li>
+  <li>Every detector result — 6 of 6 files read, 15 candidate keys, 12 relationships, 4 broken, 0 of 4 analytes matched, 5 derivable columns with their coverage — was produced by running prototype code against the delivery, not estimated.</li>
+  <li>One correction to an earlier number in this session: an intermediate count of 7,150 ALT rows was an R <span class="mono">NA</span>-subsetting artifact. The file holds 3,575, all with an upper limit, and the CTCAE bands quoted sum to exactly that.</li>
+</ul>
+
+<div class="foot">
+  <p>Direction C of four, for the open.gismo data-loading design session. Extends row D1 of the <a href="../platform-gap-analysis-2026-07-25/">platform gap analysis</a> — the data-mapping surface — and shares its brief with <a href="../open-gismo-data-loading-2026-08-27/">the four-screen fit direction</a> and <a href="../og-data-loading-design-2026-08-27/">the bring-your-own-study direction</a>, which cover the competitor landscape and the engine-seam evidence this page deliberately does not repeat.</p>
+  <p>Nothing in <span class="mono">open.gismo</span>, <span class="mono">demo-301</span> or any upstream repository was modified. The fixture and prototypes live outside every repository, in a scratch directory.</p>
+  <hr>
+  <p class="small">Drafted by Claude Code using Opus 5 and reviewed by @jwildfire</p>
+</div>
+
+</div>
+</body>
+</html>

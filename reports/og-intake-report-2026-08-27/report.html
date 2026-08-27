@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>An intake report for BRIGHTSTAR-2</title>
+<meta name="description" content="A clickable mock of the document open.gismo would write after reading a six-file CRO delivery: the inventory it profiled, four findings ranked by the charts they cost, and a live ledger that moves as each one is answered.">
+<link rel="stylesheet" href="assets/report.css?v=2">
+<style>
+/* ---- the intake report mock, in open.gismo's espresso theme ---------- */
+.mock-main.ir { padding: 0; }
+.ir-page { background: var(--m-paper); padding: 1.2rem 1.3rem 1.6rem; }
+@media (max-width:40rem){ .ir-page { padding: 1rem .8rem 1.2rem; } }
+
+.ir-head { border-bottom: 1px solid var(--m-rule); padding-bottom: .9rem; }
+.ir-head .ir-kick { font-family: var(--m-mono); font-size: .66rem; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--m-accent); }
+.ir-head h2 { font-family: var(--m-serif); font-weight: 400; font-size: 1.7rem; line-height: 1.1;
+  margin: .3rem 0 .35rem; color: var(--m-ink); letter-spacing: -.01em; }
+.ir-head .ir-meta { font-family: var(--m-mono); font-size: .72rem; color: var(--m-faint); }
+.ir-lede { color: var(--m-muted); font-size: .9rem; line-height: 1.6; margin: .7rem 0 0; max-width: 44rem; }
+
+.ir-ledger { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: .6rem; margin: 1.1rem 0 .4rem; }
+@media (max-width:60rem){ .ir-ledger { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width:32rem){ .ir-ledger { grid-template-columns: 1fr; } }
+.ir-l { background: var(--m-card); border: 1px solid var(--m-rule); border-radius: 10px; padding: .75rem .85rem; }
+.ir-l .n { font-family: var(--m-serif); font-size: 2.1rem; line-height: 1; transition: color .25s; }
+.ir-l .t { font-size: .78rem; font-weight: 600; margin-top: .3rem; color: var(--m-ink); }
+.ir-l .d { font-size: .74rem; color: var(--m-muted); line-height: 1.45; margin-top: .2rem; }
+.ir-l.g { border-top: 3px solid var(--m-good); } .ir-l.g .n { color: var(--m-good); }
+.ir-l.w { border-top: 3px solid var(--m-warn); } .ir-l.w .n { color: var(--m-warn); }
+.ir-l.b { border-top: 3px solid var(--m-bad); }  .ir-l.b .n { color: var(--m-bad); }
+.ir-l .delta { font-family: var(--m-mono); font-size: .68rem; margin-left: .4rem; opacity: 0; transition: opacity .3s; }
+.ir-l .delta.show { opacity: 1; }
+
+.ir-sec { margin-top: 1.5rem; }
+.ir-sec > h3 { font-family: var(--m-serif); font-weight: 400; font-size: 1.2rem; margin: 0 0 .2rem;
+  color: var(--m-ink); }
+.ir-sec > .sub { font-size: .8rem; color: var(--m-muted); margin: 0 0 .7rem; }
+
+.ir-files { width: 100%; border-collapse: collapse; font-size: .78rem; }
+.ir-files th { text-align: left; font-family: var(--m-mono); font-size: .64rem; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--m-faint); padding: .35rem .5rem; border-bottom: 1px solid var(--m-rule); }
+.ir-files td { padding: .4rem .5rem; border-bottom: 1px solid var(--m-rule); vertical-align: top; color: var(--m-ink); }
+.ir-files td.n { text-align: right; font-family: var(--m-mono); font-size: .74rem; }
+.ir-files tr.cols td { background: var(--m-panel); padding: .55rem .7rem; }
+.ir-files summary { cursor: pointer; color: var(--m-accent); font-size: .76rem; }
+.ir-colgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: .35rem .8rem; margin-top: .5rem; }
+.ir-colgrid div { font-family: var(--m-mono); font-size: .68rem; color: var(--m-muted); line-height: 1.4; }
+.ir-colgrid b { color: var(--m-ink); font-weight: 600; }
+
+.ir-find { background: var(--m-card); border: 1px solid var(--m-rule); border-radius: 10px;
+  margin: .7rem 0; overflow: hidden; }
+.ir-find > header { display: flex; gap: .6rem; align-items: flex-start; padding: .8rem .9rem .55rem; }
+.ir-find .mark { font-size: .95rem; line-height: 1.3; }
+.ir-find h4 { margin: 0; font-size: .92rem; font-weight: 650; color: var(--m-ink); line-height: 1.35; }
+.ir-find .price { margin-left: auto; font-family: var(--m-mono); font-size: .66rem; white-space: nowrap;
+  background: var(--m-panel); color: var(--m-muted); border-radius: 5px; padding: .25rem .45rem; }
+.ir-find .why { padding: 0 .9rem; font-size: .82rem; color: var(--m-muted); line-height: 1.6; margin: 0 0 .6rem; }
+.ir-find .ev { margin: 0 .9rem .7rem; background: #221812; color: #ded2c6; border-radius: 8px;
+  padding: .65rem .8rem; font-family: var(--m-mono); font-size: .7rem; line-height: 1.55; overflow-x: auto;
+  white-space: pre; }
+.ir-find .ev .hi { color: #fdba74; } .ir-find .ev .bad { color: #fca5a5; } .ir-find .ev .ok { color: #86efac; }
+.ir-find .ev .dim { color: #8d7f74; }
+.ir-find footer { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center;
+  padding: .55rem .9rem .8rem; border-top: 1px solid var(--m-rule); background: var(--m-panel); }
+.ir-find footer .ask { font-size: .8rem; color: var(--m-ink); margin-right: auto; }
+.ir-find button { font: inherit; font-size: .78rem; cursor: pointer; border-radius: 7px; padding: .35rem .75rem;
+  border: 1px solid var(--m-rule); background: var(--m-card); color: var(--m-ink); }
+.ir-find button.go { background: var(--m-accent); border-color: var(--m-accent); color: #fff; font-weight: 600; }
+.ir-find button:hover { border-color: var(--m-accent); }
+.ir-find button.go:hover { background: #9a3412; }
+.ir-find button[disabled] { opacity: .45; cursor: default; }
+.ir-find.sev1 { border-left: 3px solid var(--m-bad); }
+.ir-find.sev2 { border-left: 3px solid var(--m-warn); }
+.ir-find.sev3 { border-left: 3px solid var(--m-accent); }
+.ir-find.settled { border-left-color: var(--m-good); }
+.ir-find.settled .mark::before { content: "✔"; }
+.ir-find .done { display: none; font-size: .78rem; color: var(--m-good); font-weight: 600; }
+.ir-find.settled .done { display: inline; }
+.ir-find.settled footer button { display: none; }
+.ir-find.declined { border-left-color: var(--m-faint); opacity: .78; }
+.ir-find.declined .skipped { display: inline; }
+.ir-find .skipped { display: none; font-size: .78rem; color: var(--m-muted); font-weight: 600; }
+.ir-find.declined footer button { display: none; }
+
+.ir-diff { background: #221812; color: #ded2c6; border-radius: 10px; padding: .8rem .9rem;
+  font-family: var(--m-mono); font-size: .7rem; line-height: 1.6; overflow-x: auto; white-space: pre; }
+.ir-diff .add { color: #86efac; } .ir-diff .file { color: #fdba74; } .ir-diff .dim { color: #8d7f74; }
+
+.ir-cannot { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem,1fr)); gap: .55rem; }
+.ir-cannot div { background: var(--m-card); border: 1px solid var(--m-rule); border-left: 3px solid var(--m-faint);
+  border-radius: 8px; padding: .6rem .7rem; font-size: .78rem; color: var(--m-muted); line-height: 1.5; }
+.ir-cannot div b { display: block; color: var(--m-ink); font-size: .82rem; margin-bottom: .15rem; }
+.ir-cannot div i { font-family: var(--m-mono); font-style: normal; font-size: .68rem; color: var(--m-accent); }
+
+.ir-reset { margin-top: 1rem; font-size: .78rem; }
+.ir-reset button { font: inherit; font-size: .76rem; cursor: pointer; border: 1px solid var(--m-rule);
+  background: var(--m-card); color: var(--m-muted); border-radius: 7px; padding: .3rem .7rem; }
+.ir-note { font-size: .74rem; color: var(--m-faint); line-height: 1.5; margin-top: .6rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">open.gismo · data loading · direction C · mockup</div>
+  <h1>The report is the interface</h1>
+  <p class="standfirst">This is the document <span class="mono">og_read()</span> would write after being pointed at a six-file CRO delivery — an HTML file in the project at <span class="mono">intake/report.html</span>, committed alongside the workflows. It is clickable. Answer a finding and the ledger at the top moves, and the diff at the bottom shows the YAML that answering wrote into the project.</p>
+  <nav class="parts">
+    <a href="index.html">The direction</a>
+    <a href="report.html" aria-current="page">The mockup</a>
+  </nav>
+</header>
+
+<p class="lede">Every number below is measured. The inventory is generated from the actual profile of the actual fixture; the display counts come from resolving <span class="mono">demo-301</span>&rsquo;s 39 metric and module workflows back to the raw columns they consume. Nothing here is illustrative.</p>
+
+<div class="mock">
+  <div class="mock-chrome"><span class="dots"><i></i><i></i><i></i></span><span class="path">~/brightstar/intake/report.html</span></div>
+  <div class="mock-body">
+    <nav class="mock-side">
+      <span class="wordmark">open<b>.</b>gismo</span>
+      <div class="grp">Study</div>
+      <span class="item">Overview</span>
+      <span class="item">Displays</span>
+      <span class="item">Snapshots</span>
+      <div class="grp">Data</div>
+      <span class="item on">Intake report</span>
+      <span class="item">Workflows</span>
+      <span class="item">Provenance</span>
+    </nav>
+    <div class="mock-main ir">
+      <div class="ir-page">
+
+        <div class="ir-head">
+          <div class="ir-kick">Intake report · read 2026-08-27 09:14 · og_read() v0.3.0</div>
+          <h2>I read six files and understood most of them.</h2>
+          <div class="ir-meta">~/brightstar · 60,938 rows · 50 columns · 4.08 MB · nothing in this folder was modified</div>
+          <p class="ir-lede">Four things need an answer from you. Each one is priced in the displays it costs, biggest first. Twenty displays are not available at all and there is nothing to answer about them — they are listed at the bottom so you know what they would have been.</p>
+        </div>
+
+        <div class="ir-ledger">
+          <div class="ir-l g"><div class="n"><span id="n-ready">3</span><span class="delta" id="d-ready"></span></div><div class="t">✔ Will render, complete</div><div class="d">Everything these need is present and unambiguous.</div></div>
+          <div class="ir-l w"><div class="n"><span id="n-flawed">6</span><span class="delta" id="d-flawed"></span></div><div class="t">⚠ Will render, wrong</div><div class="d">These will produce output that looks fine and is not. Answering findings 1 to 3 fixes them.</div></div>
+          <div class="ir-l w"><div class="n"><span id="n-blocked">10</span><span class="delta" id="d-blocked"></span></div><div class="t">◐ Blocked, one answer away</div><div class="d">Waiting on a column nothing carries but everything is here to build. Finding 4.</div></div>
+          <div class="ir-l b"><div class="n">20</div><div class="t">✖ Cannot render</div><div class="d">Seven extracts were not supplied. No answer here can change this.</div></div>
+        </div>
+        <p class="ir-note">Thirty-nine displays, each counted once. The second number is the one that matters. A display that renders wrongly is more expensive than one that does not render, because nobody goes looking for it.</p>
+
+        <div class="ir-sec">
+          <h3>1 · What I found</h3>
+          <p class="sub">Every file in the folder, whatever its name or format. Expand a row to see the column profile.</p>
+          <div style="overflow-x:auto">
+            <table class="ir-files" id="inv"><thead>
+              <tr><th>File</th><th>Format</th><th class="n">Rows</th><th class="n">Cols</th><th>What I think it is</th></tr>
+            </thead><tbody></tbody></table>
+          </div>
+          <p class="ir-note">Read with <span class="mono">haven</span> for the transport file and <span class="mono">utils::read.csv</span> for the rest. open.gismo v0.2.0 reads only CSV today; <span class="mono">haven</span> and <span class="mono">arrow</span> are already installed in the stack and never called.</p>
+        </div>
+
+        <div class="ir-sec">
+          <h3>2 · What needs an answer</h3>
+          <p class="sub">Ranked by the number of displays affected, not by how confident I am.</p>
+
+          <article class="ir-find sev1" id="f1">
+            <header>
+              <span class="mark">✖</span>
+              <h4>Your hepatic explorer will draw an empty chart, and nothing else will tell you</h4>
+              <span class="price">2 displays</span>
+            </header>
+            <p class="why">The eDISH chart does not ask for a column — it asks for four literal strings inside one. Every column check on your lab files passes. I compared the values instead.</p>
+            <div class="ev">the chart names, in workflows/4_modules/hep_explorer.yaml:
+  ALT → "Alanine Aminotransferase"   TB  → "Bilirubin"
+  AST → "Aspartate Aminotransferase" ALP → "Alkaline Phosphatase"
+
+your three lab files hold 15 distinct analyte names:
+  lab_central.csv TEST      ALB <span class="hi">ALKP</span> <span class="hi">ALT</span> <span class="hi">AST</span> CREAT GLUC K
+  lab_specialty.csv ANALYTE <span class="hi">TBILI</span> GGT
+  lab_haem.csv LBTEST       Hematocrit Hemoglobin Lymphocytes …
+
+matched: <span class="bad">0 of 4</span>  <span class="dim">— the chart renders, with no series on it</span>
+units checked: TBILI is umol/L against a umol/L limit; the cut-points
+are multiples of the upper limit, so the mismatch is <span class="ok">safe</span>. Recorded.</div>
+            <footer>
+              <span class="ask">Confirm ALT=ALT, AST=AST, TB=TBILI, ALP=ALKP? <span class="done">Confirmed — 4 analytes bound.</span><span class="skipped">Left unbound. The chart will render empty and the site will say so.</span></span>
+              <button class="go" data-f="f1" data-act="apply">Confirm all four</button>
+              <button data-f="f1" data-act="decline">Not these</button>
+            </footer>
+          </article>
+
+          <article class="ir-find sev1" id="f2">
+            <header>
+              <span class="mark">✖</span>
+              <h4>One lab file&rsquo;s participant IDs do not join to anything</h4>
+              <span class="price">4 displays</span>
+            </header>
+            <p class="why">The mapping joins labs to participants with an inner join. As delivered this one returns nothing. The column is present, typed, and complete — there is no check anywhere today that would catch it.</p>
+            <div class="ev">1,005 identifiers in dm.xpt USUBJID        <span class="dim">S1000 · S1001 · S1002</span>
+1,005 identifiers in lab_haem.csv SUBJID <span class="hi">0301-</span>S1000 · <span class="hi">0301-</span>S1001 · <span class="hi">0301-</span>S1002
+
+overlap as delivered .......... <span class="bad">0.00</span>  <span class="dim">(0 of 1,005)</span>
+overlap after removing "0301-"  <span class="ok">1.00</span>  <span class="dim">(1,005 of 1,005)</span>
+
+lab_central.csv SUBJECT and lab_specialty.csv PT_ID both join
+cleanly at 1.00. This file is the only one with the prefix.</div>
+            <footer>
+              <span class="ask">Strip the leading <span class="mono">0301-</span> from <span class="mono">lab_haem.csv.SUBJID</span>? <span class="done">Applied — 21,450 haematology rows recovered.</span><span class="skipped">Left as delivered. This file will contribute nothing.</span></span>
+              <button class="go" data-f="f2" data-act="apply">Strip the prefix</button>
+              <button data-f="f2" data-act="decline">Leave it</button>
+            </footer>
+          </article>
+
+          <article class="ir-find sev2" id="f3">
+            <header>
+              <span class="mark">◐</span>
+              <h4>Three files look like one lab domain</h4>
+              <span class="price">all 6</span>
+            </header>
+            <p class="why">They share a shape — a participant ID, an analyte name, a numeric result, a visit — and between them they cover the whole panel with no analyte appearing twice. <span class="mono">data-config.yaml</span> maps one domain to one file today, so this is currently inexpressible.</p>
+            <div class="ev">proposed Raw_LB = lab_central ∪ lab_haem ∪ lab_specialty
+                = 28,600 + 21,450 + 7,150 = <span class="ok">57,200 rows</span>, 16 analytes, no overlap
+
+reference range present:  lab_central <span class="ok">yes</span>   lab_specialty <span class="ok">yes</span>
+                          lab_haem <span class="bad">no columns at all</span>
+
+<span class="hi">→ six haematology analytes will carry a null normal range.</span>
+  Consequence: they get no CTCAE grade in finding 4, and the
+  shift plot's reference band is blank for those measures.
+  Saying this now rather than after the run.</div>
+            <footer>
+              <span class="ask">Stack the three into <span class="mono">Raw_LB</span>? <span class="done">Stacked — 57,200 rows, six analytes flagged as range-less.</span><span class="skipped">Not stacked. Only lab_central will be read as Raw_LB.</span></span>
+              <button class="go" data-f="f3" data-act="apply">Stack them</button>
+              <button data-f="f3" data-act="decline">Keep separate</button>
+            </footer>
+          </article>
+
+          <article class="ir-find sev2" id="f4">
+            <header>
+              <span class="mark">◐</span>
+              <h4>Five columns nothing carries, that I can build from what you sent</h4>
+              <span class="price">10 displays</span>
+            </header>
+            <p class="why">There is no column to point at for these, so no mapping surface can ask about them. Two of the five are assumptions rather than facts, and both are marked as such below and on every display that uses them.</p>
+            <div class="ev"><span class="ok">✔</span> Raw_AE.aest_dy   AESTDTC − RFSTDTC          2,583 / 2,583 <span class="dim">clean</span>
+<span class="ok">✔</span> Raw_AE.aeen_dy   AEENDTC − RFSTDTC          2,583 / 2,583 <span class="dim">clean</span>
+<span class="hi">◐</span> Raw_SUBJ.timeonstudy  last dated record − RFSTDTC   765 / 765
+   <span class="dim">RFENDTC is empty for all 1,005 rows — you sent no exit date.
+   "Last dated record" stands in for it. Median 28 d, max 119 d.</span>
+<span class="hi">◐</span> Raw_LB.toxgrg_nsv  CTCAE v5 from result ÷ upper limit
+   <span class="dim">3,575 ALT rows band as G0 2838 · G1 465 · G2 79 · G3 173 · G4 20.
+   Haematology has no range (finding 3) so gets no grade.</span>
+<span class="bad">✖</span> Raw_AE.aetoxgr   substituted from AESEV      2,583 / 2,583
+   <span class="dim">severity is not toxicity grade. Three levels standing in for five.
+   Lossy. Every display built on it will carry the mark.</span></div>
+            <footer>
+              <span class="ask">Derive all five, marks and all? <span class="done">Derived — 10 displays unlocked, two marked.</span><span class="skipped">Not derived. Those ten displays stay dark.</span></span>
+              <button class="go" data-f="f4" data-act="apply">Derive, with the marks</button>
+              <button data-f="f4" data-act="decline">Skip these</button>
+            </footer>
+          </article>
+        </div>
+
+        <div class="ir-sec">
+          <h3>3 · What answering has written</h3>
+          <p class="sub">Nothing is written until you answer. This is the whole diff, and it is yours to edit or revert.</p>
+          <div class="ir-diff" id="diff"><span class="dim">Nothing written yet. Answer a finding above.</span></div>
+          <p class="ir-note">Column renames are one <span class="mono">source_col:</span> line each — an existing, exercised gsm.mapping feature. Prefix strips, analyte bindings and derivations have no declarative home in the spec today and would be written as <span class="mono">steps:</span> entries, which is the weakest point in this direction (see W2).</p>
+        </div>
+
+        <div class="ir-sec">
+          <h3>4 · What I cannot build, and why</h3>
+          <p class="sub">Twenty displays. No answer available — these need an extract you did not send. Acknowledging records the decision so the next read does not raise it again, and the study site prints &ldquo;not supplied&rdquo; where the tile would have been.</p>
+          <div class="ir-cannot">
+            <div><b>EDC audit trail</b><i>8 displays</i> Query rate and age, data entry lag, data change rate — at site and country level.</div>
+            <div><b>Protocol deviations</b><i>4 displays</i> Important and total PD rates.</div>
+            <div><b>Disposition</b><i>5 displays</i> Study and study-drug completion, plus one quality tolerance limit.</div>
+            <div><b>ECG</b><i>2 displays</i> The QT explorer and the QTc metric.</div>
+            <div><b>Eligibility criteria</b><i>1 display</i> The eligibility-violation tolerance limit.</div>
+          </div>
+        </div>
+
+        <div class="ir-reset"><button id="reset">Reset the mock</button></div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<p class="mock-caption">Live. The three counters, the finding states and the diff all move together — answering finding 4 is the only one that adds displays; the other three convert displays from &ldquo;renders wrongly&rdquo; to &ldquo;renders correctly&rdquo;, which is the distinction this direction is built around.</p>
+
+<h2>What the mock is claiming, and what it is not</h2>
+<ul class="bullets">
+  <li>The inventory table is rendered from <span class="mono">data/brightstar.js</span>, which was written by the profiler running over the real fixture. The row counts, column counts, distinct-value counts and example values are all measured.</li>
+  <li>The four findings are the four detectors from <a href="index.html">the direction</a>, each producing its real output on this delivery.</li>
+  <li>The ledger arithmetic is real and sums to 39: 3 complete, 6 that render wrongly, 10 blocked on a derivable column, 20 with no data at all. Answering everything moves 16 of them into the first column, for 19 rendering and 20 dark. Resolved from the workflow specs, not chosen for the mock.</li>
+  <li>The diff is illustrative in one respect and honest about it: the <span class="mono">source_col:</span> lines are exactly what would be written, and the rest is shown as <span class="mono">steps:</span> entries because the spec has no other place to put them. That is the direction&rsquo;s admitted weakness, shown rather than hidden.</li>
+  <li>Not claimed: that the analyte confirmations are safe. <span class="mono">TBILI</span> to <span class="mono">Bilirubin</span> is a clinical assertion about total versus direct bilirubin, and the mock deliberately makes a human click it rather than pre-applying it.</li>
+</ul>
+
+<div class="foot">
+  <p>Mockup for direction C of the open.gismo data-loading design session. <a href="index.html">The direction, the hard case and the weaknesses</a>.</p>
+  <hr>
+  <p class="small">Drafted by Claude Code using Opus 5 and reviewed by @jwildfire</p>
+</div>
+
+</div>
+
+<script src="data/brightstar.js"></script>
+<script>
+(function () {
+  'use strict';
+  var B = window.BS || { files: [] };
+
+  var GUESS = {
+    'dm.xpt': 'Your participant spine. 1,005 rows, one per participant — SDTM-ish names.',
+    'ae.csv': 'Adverse events, coded. 616 participants have at least one. No toxicity grade column.',
+    'lab_central.csv': 'Central chemistry. Short analyte codes, reference ranges present.',
+    'lab_haem.csv': 'Haematology. Site-prefixed IDs (finding 2), and no reference range at all.',
+    'lab_specialty.csv': 'Bilirubin and GGT from a specialty vendor. SI units, own vocabulary.',
+    'site_list.csv': 'A site list. Joins to dm.xpt SITEID at 1.00.'
+  };
+
+  // ---- inventory ------------------------------------------------------
+  var tb = document.querySelector('#inv tbody');
+  if (tb) {
+    B.files.forEach(function (f) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="mono">' + f.file + '</td><td>' + f.fmt +
+        '</td><td class="n">' + f.rows.toLocaleString() + '</td><td class="n">' + f.cols +
+        '</td><td>' + (GUESS[f.file] || '') + '</td>';
+      tb.appendChild(tr);
+
+      var tr2 = document.createElement('tr');
+      tr2.className = 'cols';
+      var td = document.createElement('td');
+      td.colSpan = 5;
+      var cells = f.columns.map(function (c) {
+        return '<div><b>' + c.name + '</b> · ' + c.n_dist.toLocaleString() + ' distinct' +
+          (c.n_miss ? ' · ' + c.n_miss.toLocaleString() + ' empty' : '') +
+          '<br>' + esc(c.ex) + '</div>';
+      }).join('');
+      td.innerHTML = '<details><summary>' + f.cols + ' columns, profiled</summary>' +
+        '<div class="ir-colgrid">' + cells + '</div></details>';
+      tr2.appendChild(td);
+      tb.appendChild(tr2);
+    });
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>]/g, function (m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m];
+    });
+  }
+
+  // ---- live ledger ----------------------------------------------------
+  // Measured baseline, summing to 39: 3 complete, 6 that render wrongly,
+  // 10 blocked on a derivable column, 20 with no data at all. The six flawed
+  // are a SUBSET of the nine reachable-on-names — counting them in both
+  // columns would double-count, which an earlier draft of this mock did.
+  // f4 is the only finding that adds displays (10 unlocked by derivation).
+  // f1/f2/f3 convert "renders wrongly" into "renders correctly".
+  // The six displays that render wrongly, and what each needs before it is
+  // correct. Resolved from the workflow specs: hep_explorer and saf0001 are
+  // liver-only and need the analyte names bound (f1) plus the bilirubin file
+  // stacked in (f3); the four generic measure-picker charts need haematology
+  // both joined (f2) and stacked in (f3). Nothing is rescued by one answer
+  // alone — which is the point.
+  var FLAWED = [
+    { id: 'hep_explorer',             needs: ['f1', 'f3'] },
+    { id: 'saf0001 Hy\u2019s Law',      needs: ['f1', 'f3'] },
+    { id: 'safety_histogram',         needs: ['f2', 'f3'] },
+    { id: 'safety_results_over_time', needs: ['f2', 'f3'] },
+    { id: 'safety_shift_plot',        needs: ['f2', 'f3'] },
+    { id: 'safety_delta_delta',       needs: ['f2', 'f3'] }
+  ];
+  var state = { f1: null, f2: null, f3: null, f4: null };
+
+  var DIFF = {
+    f1: ['<span class="file"># workflows/4_modules/hep_explorer.yaml</span>',
+         '  lSettings:',
+         '    measure_values:',
+         '<span class="add">+     ALT: ALT</span>',
+         '<span class="add">+     AST: AST</span>',
+         '<span class="add">+     TB: TBILI</span>',
+         '<span class="add">+     ALP: ALKP</span>'],
+    f2: ['<span class="file"># workflows/1_mappings/LB.yaml</span>',
+         '  steps:',
+         '<span class="add">+   - output: Temp_LB_Keyed          # no declarative home for this (W2)</span>',
+         '<span class="add">+     name: gsm.core::RunQuery</span>',
+         '<span class="add">+     params:</span>',
+         '<span class="add">+       df: Raw_LB</span>',
+         '<span class="add">+       strQuery: "SELECT * REPLACE (regexp_replace(subjid, \'^0301-\', \'\') AS subjid) FROM df"</span>'],
+    f3: ['<span class="file"># config/data-config.yaml</span>',
+         '<span class="add">- Raw_LB: input/lab_central.csv</span>',
+         '<span class="add">+ Raw_LB:                          # list form does not exist today</span>',
+         '<span class="add">+   - input/lab_central.csv</span>',
+         '<span class="add">+   - input/lab_haem.csv</span>',
+         '<span class="add">+   - input/lab_specialty.csv</span>'],
+    f4: ['<span class="file"># workflows/1_mappings/SUBJ.yaml, AE.yaml, LB.yaml</span>',
+         '  spec:',
+         '    Raw_SUBJ:',
+         '<span class="add">+     subjid:  { type: character, source_col: USUBJID }</span>',
+         '<span class="add">+     invid:   { type: character, source_col: SITEID }</span>',
+         '<span class="add">+     arm:     { type: character, source_col: ARMCD }</span>',
+         '<span class="dim">  … 34 more source_col lines, one per matched column</span>',
+         '<span class="add">+ # derived, marked: timeonstudy (assumption), toxgrg_nsv (partial),</span>',
+         '<span class="add">+ #                  aetoxgr (LOSSY — carried onto every display)</span>']
+  };
+
+  function render() {
+    var rescued = FLAWED.filter(function (d) {
+      return d.needs.every(function (k) { return state[k] === 'apply'; });
+    }).length;
+    var derived = state.f4 === 'apply' ? 10 : 0;
+    var ready = 3 + rescued + derived;
+    var flawed = 6 - rescued;
+    var blocked = 10 - derived;
+    set('n-ready', ready, 'd-ready', ready - 3);
+    set('n-flawed', flawed, 'd-flawed', flawed - 6);
+    set('n-blocked', blocked, 'd-blocked', blocked - 10);
+
+    Object.keys(state).forEach(function (k) {
+      var el = document.getElementById(k);
+      if (!el) return;
+      el.classList.toggle('settled', state[k] === 'apply');
+      el.classList.toggle('declined', state[k] === 'decline');
+    });
+
+    var lines = [];
+    ['f1', 'f2', 'f3', 'f4'].forEach(function (k) {
+      if (state[k] === 'apply') { if (lines.length) lines.push(''); lines = lines.concat(DIFF[k]); }
+    });
+    var d = document.getElementById('diff');
+    d.innerHTML = lines.length ? lines.join('\n')
+      : '<span class="dim">Nothing written yet. Answer a finding above.</span>';
+  }
+
+  function set(nid, val, did, delta) {
+    var n = document.getElementById(nid);
+    if (n) n.textContent = val;
+    var dl = document.getElementById(did);
+    if (!dl) return;
+    if (delta === 0) { dl.className = 'delta'; dl.textContent = ''; }
+    else { dl.className = 'delta show'; dl.textContent = (delta > 0 ? '+' : '') + delta; }
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-f]');
+    if (b) { state[b.dataset.f] = b.dataset.act; render(); return; }
+    if (e.target.id === 'reset') { state = { f1: null, f2: null, f3: null, f4: null }; render(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
