@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The four measurements</title>
+<meta name="description" content="Method and verbatim output for the four runs behind the guided-setup design: the name detector on a CRO delivery, a value profiler that beats it, the same profiler confidently wrong on demo-301, and a half-mapped study doubling a site's risk score.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <p class="eyebrow">open.gismo &middot; guided setup &middot; evidence</p>
+    <h1>The four measurements</h1>
+    <p class="standfirst">
+      Method, code and verbatim output for everything the design page asserts. All four were
+      executed on 2026-08-27; none is reasoned about.
+    </p>
+    <p class="byline">
+      <span>open.gismo dev @ 6d23c9b (v0.2.0)</span>
+      <span>gsm.mapping 1.1.3 &middot; gsm.kri 1.5.0 &middot; gsm.core 1.2.0</span>
+    </p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="pagenav" aria-label="Pages in this report">
+    <a href="index.html">The design</a>
+    <a href="walkthrough.html">The walkthrough &mdash; clickable</a>
+    <a href="evidence.html" aria-current="page">The four measurements</a>
+  </nav>
+
+  <!-- ======================================================= -->
+  <section id="fixture">
+    <h2><span class="num">00</span>The fixture, and what is invented about it</h2>
+
+    <p>
+      All four measurements use one constructed delivery. <strong>The values are real</strong>
+      &mdash; every row is demo-301 study data, unchanged. <strong>The packaging is
+      invented</strong>: column names, file split and identifier construction were chosen to
+      match how a CRO actually ships a study, and that choice is mine.
+    </p>
+
+    <div class="tw"><table>
+      <thead><tr><th>File</th><th>Shape</th><th>Built from</th><th>What was changed</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">adsl.csv</td><td>1,005 &times; 16</td>
+          <td class="mono">demo-301/input/Raw_SUBJ.csv</td>
+          <td>Renamed into ADaM: <code>USUBJID</code>, <code>SUBJID</code>, <code>SITEID</code>,
+              <code>ARM</code>, <code>ACTARM</code>, <code>SAFFL</code>, <code>RANDFL</code>,
+              <code>TRTSDT</code>, <code>TRTDURD</code>, <code>TR01DURD</code>, <code>AGE</code>,
+              <code>AGEU</code>. <code>USUBJID</code> built as
+              <code>studyid-subjid</code>, which is the standard construction.</td>
+        </tr>
+        <tr>
+          <td class="mono">lab_central.csv</td><td>57,200 &times; 11</td>
+          <td class="mono">demo-301/input/Raw_LB.csv</td>
+          <td>Renamed to a central-lab extract: <code>SUBJECT</code> (bare id, not USUBJID),
+              <code>LBORRES</code>/<code>LBORNRLO</code>/<code>LBORNRHI</code> &mdash; the
+              <em>original</em> result and range, not the standardised one &mdash; and analytes
+              respelled by vendor: <code>ALT</code>, <code>SGOT</code>, <code>TBILI</code>,
+              <code>Alk Phos</code>. Three columns dropped entirely:
+              <code>toxgrg_nsv</code>, <code>lbblfl</code>, <code>lb_dy</code>.</td>
+        </tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout">
+      <span class="lbl">Two choices worth challenging</span>
+      <p>
+        The original-versus-standardised result (<code>LBORRES</code> not <code>LBSTRESN</code>)
+        is what makes M1 score badly, and it is a real pattern &mdash; central labs ship what
+        they measured &mdash; but a delivery that shipped standardised results would score
+        better. And the three dropped columns were dropped by me; a CRO that included a
+        toxicity grade would not hit W2 at all. Both choices make the case harder. Neither is
+        arbitrary, but both are mine.
+      </p>
+    </div>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="m1">
+    <h2><span class="num">M1</span>The published name detector</h2>
+    <p class="deck">
+      <code>safetyGraphics::detectStandard()</code> is the working implementation of the
+      capability the gap analysis credits to safetyGraphics, tidyCDISC and three commercial
+      platforms in row D1. It compares column names against
+      <code>safetyCharts::meta_*</code>, which publishes an ADaM and an SDTM spelling for every
+      role. Run against the fixture, unmodified:
+    </p>
+
+<pre class="term"><code><span class="c">=== CRO central lab vs meta_labs ===</span>
+standard: <span class="y">sdtm</span>  pct: <span class="r">33 %</span>
+        text_key  current valid
+          id_col     &lt;NA&gt; <span class="r">FALSE</span>
+       value_col     &lt;NA&gt; <span class="r">FALSE</span>
+     measure_col   LBTEST  <span class="g">TRUE</span>
+  normal_col_low     &lt;NA&gt; <span class="r">FALSE</span>
+ normal_col_high     &lt;NA&gt; <span class="r">FALSE</span>
+    studyday_col     &lt;NA&gt; <span class="r">FALSE</span>
+       visit_col    VISIT  <span class="g">TRUE</span>
+      visitn_col VISITNUM  <span class="g">TRUE</span>
+        unit_col     &lt;NA&gt; <span class="r">FALSE</span>
+
+<span class="c">=== CRO ADSL vs meta_dm ===</span>
+standard: <span class="y">adam</span>  pct: <span class="y">71 %</span>
+                 text_key current valid
+                   id_col USUBJID  <span class="g">TRUE</span>
+            treatment_col     ARM  <span class="g">TRUE</span>
+ treatment_values--group1    &lt;NA&gt; <span class="r">FALSE</span>
+ treatment_values--group2    &lt;NA&gt; <span class="r">FALSE</span>
+                  sex_col     SEX  <span class="g">TRUE</span>
+                 race_col    RACE  <span class="g">TRUE</span>
+                  age_col     AGE  <span class="g">TRUE</span>
+
+<span class="c">=== hep measure VALUES present in LBTEST? ===</span>
+  Alanine Aminotransferase               <span class="r">FALSE</span>
+  Aspartate Aminotransferase             <span class="r">FALSE</span>
+  Bilirubin                              <span class="r">FALSE</span>
+  Alkaline Phosphatase                   <span class="r">FALSE</span>
+  Alanine Aminotransferase (U/L)         <span class="r">FALSE</span></code></pre>
+
+    <h3>What this establishes</h3>
+    <ul>
+      <li>Name matching does well on the highly-standardised file (ADSL, 71%) and badly on the one the charts actually need (labs, 33%). The four it misses are the result and both reference limits &mdash; the columns without which nothing draws.</li>
+      <li>It reports <em>"SDTM detected"</em> at 33%. There is no threshold below which it declines to name a standard, so a guided setup built on top of it would offer a confident pre-fill on a third of the answers.</li>
+      <li>The single genuinely interesting asset it exposes: <code>meta_hepExplorer</code> publishes <em>value</em> spellings, not just column names. That is the seed table for the hepatic analyte question &mdash; and 0 of 4 match here, which is the whole reason the question has to be asked.</li>
+      <li><code>hasColumn()</code> is exact membership; there is no fuzzy matching, no case-insensitivity and no profiling anywhere in the implementation.</li>
+    </ul>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="m2">
+    <h2><span class="num">M2</span>A name-blind value profiler</h2>
+    <p class="deck">
+      Written for this session and deliberately never reads a column name. It types each column,
+      counts distinct values, searches for a
+      <code>(value, low, high)</code> triple where <code>low &lt; high</code> always holds and
+      the value usually sits between them, matches units against a token list, and picks the
+      identifier as the highest-cardinality repeating character column.
+    </p>
+
+<pre class="term"><code><span class="c">=== profiler on lab_central.csv (name-blind) ===</span>
+  unit_col           -&gt; <span class="g">LBORRESU</span>
+  value_col          -&gt; <span class="g">LBORRES</span>
+  normal_col_low     -&gt; <span class="g">LBORNRLO</span>
+  normal_col_high    -&gt; <span class="g">LBORNRHI</span>
+  .range_hit         -&gt; 0.849
+  measure_col        -&gt; <span class="g">LBTEST</span>
+  .measure_purity    -&gt; 1
+  visit_col          -&gt; <span class="g">VISIT</span>
+  date_col           -&gt; <span class="g">LBDTC</span>
+  id_col             -&gt; <span class="g">SUBJECT</span></code></pre>
+
+    <p>
+      Nine of nine, including every one of the four the name detector missed. This is the result
+      that makes a guided setup viable at all: the evidence is in the values.
+    </p>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="m3">
+    <h2><span class="num">M3</span>The same profiler, confidently wrong</h2>
+    <p class="deck">
+      Then it was pointed at four more files, including <code>demo-301/input/Raw_LB.csv</code>
+      &mdash; the study open.gismo ships and the one that works today.
+    </p>
+
+<pre class="term"><code><span class="c">=== demo-301 Raw_LB (gsm names) ( 14 cols )</span>
+   unit_col           -&gt; <span class="g">lbstresu</span>
+   value_col          -&gt; <span class="r">visnum</span>
+   normal_col_low     -&gt; <span class="r">toxgrg_nsv</span>
+   normal_col_high    -&gt; <span class="r">lb_dy</span>
+   .range_hit         -&gt; <span class="y">1</span>
+   measure_col        -&gt; <span class="r">visnam</span>
+   .measure_purity    -&gt; 0
+   visit_col          -&gt; <span class="g">visnam</span>
+   date_col           -&gt; <span class="g">lb_dt</span>
+   id_col             -&gt; <span class="g">subjid</span>
+
+<span class="c">=== CRO adsl.csv ( 16 cols )</span>
+   date_col           -&gt; <span class="g">TRTSDT</span>
+   id_col             -&gt; <span class="r">SITEID</span>
+
+<span class="c">=== demo-301 Raw_EG (ECG) ( 10 cols )</span>
+   value_col          -&gt; <span class="r">eg_dy</span>
+   normal_col_low     -&gt; <span class="r">visnum</span>
+   normal_col_high    -&gt; <span class="r">egstresn</span>
+   .range_hit         -&gt; <span class="y">0.927</span>
+
+<span class="c">=== CRO lab, ranges REMOVED ( 9 cols )</span>
+   unit_col           -&gt; <span class="g">LBORRESU</span>
+   visit_col          -&gt; <span class="g">VISIT</span>
+   date_col           -&gt; <span class="g">LBDTC</span>
+   id_col             -&gt; <span class="g">SUBJECT</span></code></pre>
+
+    <div class="callout bad">
+      <span class="lbl">The confidence score points the wrong way</span>
+      <p>
+        On the file it got right, the profiler scored <strong>0.849</strong>. On the file it got
+        wrong, it scored a perfect <strong>1.000</strong> &mdash; because visit number genuinely
+        does sit between toxicity grade and study day on every single row. There is no
+        threshold on this score that admits the right answer and rejects the wrong one. Any
+        design that shows this number to a user, or uses it to auto-fill, is worse than useless.
+      </p>
+    </div>
+
+    <h3>The fix, and its limit</h3>
+    <p>
+      Re-ranking candidate triples on a <em>structural</em> test &mdash; does some categorical
+      column give exactly one reference range per level, which is what "each analyte has its own
+      normal range" means &mdash; rather than on arithmetic fit:
+    </p>
+
+<pre class="term"><code><span class="c">=== CRO lab_central.csv</span>
+   1. value=<span class="g">LBORRES</span>    lo=<span class="g">LBORNRLO</span>    hi=<span class="g">LBORNRHI</span>    measure=<span class="g">LBTEST</span>     purity=1.00 inrange=0.85 <span class="g">&lt;= CORRECT</span>
+
+<span class="c">=== demo-301 Raw_LB</span>
+   1. value=<span class="g">lbstresn</span>   lo=<span class="g">lbstnrlo</span>    hi=<span class="g">lbstnrhi</span>    measure=<span class="g">lbtstnam</span>   purity=1.00 inrange=0.85 <span class="g">&lt;= CORRECT</span>
+   2. value=visnum     lo=toxgrg_nsv  hi=lb_dy       measure=NA         purity=0.00 inrange=1.00
+   3. value=lbstnrlo   lo=toxgrg_nsv  hi=lbstnrhi    measure=NA         purity=0.00 inrange=0.99
+
+<span class="c">=== demo-301 Raw_EG</span>
+   1. value=eg_dy      lo=visnum      hi=egstresn    measure=NA         purity=<span class="y">0.00</span> inrange=0.93</code></pre>
+
+    <ul>
+      <li>The correct triple is now first on <strong>both</strong> lab files, and the perfect-scoring impostor is demoted to second with a purity of zero.</li>
+      <li>On the ECG file, which genuinely has no reference-range columns, the best candidate still scores zero purity. That is the signal to <em>ask</em> rather than propose &mdash; a discriminator the arithmetic score does not provide.</li>
+      <li><strong>The limit:</strong> this fixes the failure I found. It is not evidence that the ranker is sound in general, and the failure mode it guards is silent-wrong rather than loud-broken.</li>
+    </ul>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="m3b">
+    <h2><span class="num">M3b</span>The join, and what a wrong key costs</h2>
+    <p class="deck">
+      Not a separate measurement so much as the reason the join is question two. Every character
+      column in <code>adsl.csv</code> against every character column in
+      <code>lab_central.csv</code>, ranked by shared distinct values:
+    </p>
+
+<pre class="term"><code><span class="c">== what detectStandard would pick (USUBJID) ==</span>
+   n_a    n_b shared    pct
+  1005    765      <span class="r">0</span>      0
+
+<span class="c">== the column that actually joins (SUBJID) ==</span>
+   n_a    n_b shared    pct
+  1005    765    <span class="g">765</span>    100
+
+<span class="c">== every character-column pair, ranked by overlap ==</span>
+    adsl     lab shared pct
+  <span class="g">SUBJID SUBJECT    765 100</span>
+  <span class="y">TRTSDT   LBDTC     88 100</span>
+ STUDYID   STUDY      1 100
+
+<span class="c">== affix repair: strip a constant prefix from USUBJID ==</span>
+constant prefix candidates: 1 -&gt; AA-AA-000-0000
+   n_a    n_b shared    pct
+  1005    765    <span class="g">765</span>    100
+
+<span class="c">== consequence of the bad join ==</span>
+inner_join on USUBJID: <span class="r">0 rows</span>
+inner_join on SUBJID : <span class="g">57200 rows</span></code></pre>
+
+    <ul>
+      <li>The name detector's confident pick joins 57,200 lab rows to <strong>zero</strong>. <code>demo-301/workflows/1_mappings/LB.yaml</code> and <code>AE.yaml</code> both end in <code>dplyr::inner_join</code>, so this is not hypothetical &mdash; it is what the shipped workflow does.</li>
+      <li>The sweep finds the right key immediately, and the constant-prefix repair reaches the same 765 from <code>USUBJID</code>, so the product can offer a fix rather than only a complaint.</li>
+      <li><strong>The decoy matters:</strong> <code>TRTSDT</code>&thinsp;&harr;&thinsp;<code>LBDTC</code> also scores 100% overlap, because two date columns from the same study share values. Ranking on percentage alone would surface it. Ranking on shared count does not. This is the kind of trap the design cannot claim to have exhausted.</li>
+    </ul>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="m3c">
+    <h2><span class="num">M3c</span>The emitted spec runs</h2>
+    <p class="deck">
+      The wizard's output is a mapping spec with <code>source_col:</code> lines. That spec was
+      written by hand exactly as the interview would emit it, and pushed through
+      <code>gsm.mapping::ApplySpec()</code> and the study's own inner join:
+    </p>
+
+<pre class="term"><code>Mapped SUBJ: <span class="g">1005 rows x 12 cols</span> -&gt; studyid,invid,country,subjid,enrollyn,arm,
+             agerep,sex,race,timeonstudy,timeontreatment,firstdosedate
+
+Mapped LB  : <span class="g">57200 rows x 11 cols</span> -&gt; studyid,subjid,visnam,visnum,lb_dt,battrnam,
+             lbtstnam,lbstresn,lbstresu,lbstnrlo,lbstnrhi
+
+columns <span class="r">SILENTLY DROPPED</span> from SUBJ spec: subject_nsv, firstparticipantdate, mincreated_dts
+columns <span class="r">SILENTLY DROPPED</span> from LB   spec: lb_dy, lbblfl, toxgrg_nsv
+
+Mapped_SUBJ after enrollyn=='Y': <span class="g">765</span>
+Mapped_LB after inner_join     : <span class="g">57200 rows, 765 participants</span>
+types: lbstresn numeric | lb_dt Date | toxgrg_nsv <span class="r">ABSENT</span></code></pre>
+
+    <ul>
+      <li>The seam works. A delivery named nothing like gsm maps cleanly, with correct types, and the join lands on all 765 enrolled participants. Nothing new needs to be built to <em>execute</em> a guided setup's output.</li>
+      <li>Six spec entries were dropped with <strong>no message at any level</strong> &mdash; <code>ApplySpec()</code> filters them with <code>purrr::keep(~ .x$source %in% colnames(dfSource))</code>. A person watching this run has no way to learn that three of the columns they were asked about went missing.</li>
+      <li>The dropped <code>toxgrg_nsv</code> is the input to <code>kri0005</code> / <code>cou0005</code>, the Grade 3+ Lab Abnormality Rate. That is the link from a silent column drop to a metric that stops existing &mdash; and to M4.</li>
+    </ul>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="m4">
+    <h2><span class="num">M4</span>A half-mapped study doubles the risk score</h2>
+    <p class="deck">
+      <code>srs0001</code>, the Site Risk Score, is the only workflow in the set with
+      <strong>no spec at all</strong>. It stacks whatever <code>kri*</code> analyses ran and
+      weights them. Its denominator therefore depends on how much of the study got mapped.
+      Reading <code>gsm.kri/R/CalculateRiskScore.R</code>:
+      <code>GlobalDenominator &lt;- sum(dfMaxWeights$max_WeightMax)</code>, where
+      <code>dfMaxWeights</code> is derived from <code>dfResults</code> &mdash; the analyses that
+      ran, not the analyses that exist.
+    </p>
+    <p>
+      Run twice on identical site data. Site S1 carries one red flag; site S2 carries none. The
+      only difference between the runs is how many KRIs were mapped:
+    </p>
+
+<pre class="term"><code><span class="c">== 12 KRIs mapped ==</span>
+ GroupID Numerator Denominator   Metric
+      S1        32         384 <span class="g">8.333333</span>
+      S2         0         384 0.000000
+
+<span class="c">== 6 KRIs mapped ==</span>
+ GroupID Numerator Denominator   Metric
+      S1        32         192 <span class="r">16.66667</span>
+      S2         0         192 0.000000</code></pre>
+
+    <div class="callout bad">
+      <span class="lbl">Same site, same data, same single flag</span>
+      <p>
+        <strong>8.3 becomes 16.7.</strong> Exactly double, because the numerator held and the
+        denominator halved. Nothing warns. The score carries no indication of how many metrics
+        it was computed over, it is on the same 0&ndash;100 scale in both runs, and it is not
+        comparable to any other study's.
+      </p>
+      <p>
+        This is the strongest argument in the session for treating the data-loading surface as a
+        safety concern rather than a convenience: the door through which a study gets partially
+        mapped is the door through which a site gets a plausible, wrong, doubled risk score.
+      </p>
+    </div>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="deps">
+    <h2><span class="num">05</span>The dependency graph behind the staircase</h2>
+    <p class="deck">
+      Every metric and module in <code>demo-301/workflows/</code>, resolved through its
+      <code>Mapped_*</code> dependencies to the raw domains it ultimately needs. This is what the
+      Ledger reads to price an absence, and it is already in the project's own files.
+    </p>
+
+    <div class="tw"><table>
+      <thead><tr><th>Raw domain</th><th class="num">Metrics</th><th class="num">Modules</th><th>Named consumers</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">Raw_SUBJ</td><td class="num">26</td><td class="num">10</td><td>26 of the 30 metrics and 10 of the 12 modules. The four that do not touch it are <code>cou0012</code>/<code>kri0012</code> (enrolment), <code>qtl0001</code> and <code>srs0001</code>. It is the spine.</td></tr>
+        <tr><td class="mono">Raw_LB</td><td class="num">3</td><td class="num">6</td><td><code>kri0005</code>, <code>cou0005</code>, <code>saf0001</code>; histogram, shift plot, results-over-time, delta-delta, outlier explorer, hepatic explorer</td></tr>
+        <tr><td class="mono">Raw_AE</td><td class="num">5</td><td class="num">2</td><td><code>kri0001</code>, <code>kri0002</code>, <code>cou0001</code>, <code>cou0002</code>, <code>saf0003</code>; AE explorer, AE timelines</td></tr>
+        <tr><td class="mono">Raw_EG</td><td class="num">1</td><td class="num">1</td><td><code>saf0002</code>; QT explorer</td></tr>
+        <tr><td class="mono">Raw_PD</td><td class="num">4</td><td class="num">0</td><td><code>kri0003</code>, <code>kri0004</code>, <code>cou0003</code>, <code>cou0004</code></td></tr>
+        <tr><td class="mono">Raw_STUDCOMP</td><td class="num">3</td><td class="num">1</td><td><code>kri0006</code>, <code>cou0006</code>, <code>qtl0002</code>; QTL report</td></tr>
+        <tr><td class="mono">Raw_QUERY</td><td class="num">4</td><td class="num">0</td><td><code>kri0008</code>, <code>kri0009</code>, <code>cou0008</code>, <code>cou0009</code></td></tr>
+        <tr><td class="mono">Raw_DATACHG</td><td class="num">4</td><td class="num">0</td><td><code>kri0008</code>, <code>kri0011</code>, <code>cou0008</code>, <code>cou0011</code></td></tr>
+        <tr><td class="mono">Raw_DATAENT</td><td class="num">2</td><td class="num">0</td><td><code>kri0010</code>, <code>cou0010</code></td></tr>
+        <tr><td class="mono">Raw_SDRGCOMP</td><td class="num">2</td><td class="num">0</td><td><code>kri0007</code>, <code>cou0007</code></td></tr>
+        <tr><td class="mono">Raw_ENROLL</td><td class="num">2</td><td class="num">0</td><td><code>kri0012</code>, <code>cou0012</code></td></tr>
+        <tr><td class="mono">Raw_IE</td><td class="num">1</td><td class="num">1</td><td><code>qtl0001</code>; QTL report</td></tr>
+        <tr><td class="mono">Raw_SITE</td><td class="num">0</td><td class="num">0</td><td>Site labels only &mdash; nothing computes from it, which is why the wizard should never ask for it early.</td></tr>
+        <tr><td class="mono">Raw_STUDY</td><td class="num">0</td><td class="num">0</td><td>Study header. Same.</td></tr>
+        <tr><td class="mono">&mdash;</td><td class="num">1</td><td class="num">2</td><td><code>srs0001</code> and the two KRI reports have <strong>no spec</strong>: they consume whatever ran. This is the M4 mechanism.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="repro">
+    <h2><span class="num">06</span>Reproducing this</h2>
+    <p>
+      The probe scripts are checked in beside this page:
+      <a href="data/profile.R"><code>data/profile.R</code></a> (the name-blind profiler) and
+      <a href="data/profile2.R"><code>data/profile2.R</code></a> (the structural ranker). The
+      fixture is generated from <code>demo-301/input/</code> by the recipe in the
+      <a href="README.md">README</a>; it is deliberately not committed, because it is 57,200 rows
+      of a study that already lives in this workspace.
+    </p>
+    <p>
+      Sample rows from the fixture &mdash; the ones the
+      <a href="walkthrough.html">walkthrough</a> renders &mdash; are committed as
+      <a href="data/delivery.js"><code>data/delivery.js</code></a>, so the values on that page
+      are the measured ones rather than illustrations.
+    </p>
+  </section>
+
+  <footer class="rf">
+    <p>
+      Read against <code>open.gismo</code> @ <code>dev</code> 6d23c9b (v0.2.0),
+      <code>demo-301</code> @ main, and working copies of <code>safetyGraphics</code> and
+      <code>safetyCharts</code>, with <code>gsm.mapping 1.1.3</code>,
+      <code>gsm.kri 1.5.0</code> and <code>gsm.core 1.2.0</code> installed. No repository was
+      modified; no issue, branch or PR was created.
+    </p>
+    <hr>
+    <p>Drafted by Claude Code using Opus 5 for review by @jwildfire.</p>
+  </footer>
+
+</div>
+</body>
+</html>

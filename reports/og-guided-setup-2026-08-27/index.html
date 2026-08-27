@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guided setup for open.gismo</title>
+<meta name="description" content="A six-question setup interview for loading your own study into open.gismo, argued from four runs: what the name detector misses, what value profiling recovers, where it is confidently wrong, and how a half-mapped study doubles a site's risk score.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <p class="eyebrow">open.gismo &middot; design session &middot; direction: guided setup</p>
+    <h1>Six questions, asked over your own data</h1>
+    <p class="standfirst">
+      A person with a CRO delivery and no idea what an analysis domain is should reach a real
+      chart from their own study in six answers. This is the design for that path &mdash; and
+      the four measurements that forced it into an uncomfortable shape.
+    </p>
+    <p class="byline">
+      <span>2026-08-27</span>
+      <span>Direction 1 of 4 &middot; guided setup</span>
+      <span>Extends row D1 of the <a href="../platform-gap-analysis-2026-07-25/">platform gap analysis</a></span>
+    </p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="pagenav" aria-label="Pages in this report">
+    <a href="index.html" aria-current="page">The design</a>
+    <a href="walkthrough.html">The walkthrough &mdash; clickable</a>
+    <a href="evidence.html">The four measurements</a>
+  </nav>
+
+  <!-- ======================================================= -->
+  <section id="claim">
+    <h2><span class="num">01</span>The claim</h2>
+
+    <div class="claim">
+      <p>
+        The data-loading problem is not a mapping problem. It is a
+        <strong>vocabulary problem</strong>: everything a person knows about their study is
+        expressed in values &mdash; site codes, analyte names, units, visit labels &mdash; and
+        everything the pipeline needs is expressed in schema. Guided setup is the direction
+        that refuses to translate <em>upward</em> into schema and instead brings every question
+        <em>down</em> into values. It asks six things, all of them answerable by looking at your
+        own rows, and infers the rest.
+      </p>
+    </div>
+
+    <p>
+      That is the easy half to say. The hard half is that I built the inference engine, ran it,
+      and it produced a confidently wrong answer on the study that ships with the product
+      &mdash; with a <em>better</em> confidence score than the right answer on the study it got
+      right. So this design cannot be "detect and pre-fill", which is what the state of the art
+      does. It has to be something narrower and more disciplined.
+    </p>
+
+    <div class="commits">
+      <div class="commit">
+        <div class="k">C1</div><div class="t">Questions name roles, never columns</div>
+        <div class="d">"Which column holds the result of the lab test?" &mdash; never "map <code>lbstresn</code>". The gsm vocabulary is never shown to the person answering. It appears once, in the file the wizard writes at the end.</div>
+      </div>
+      <div class="commit">
+        <div class="k">C2</div><div class="t">Inference orders candidates; it never fills a blank</div>
+        <div class="d">Every question is pre-selected but not pre-answered, and the page shows the runner-up that lost. No confidence percentage is ever displayed, because I measured it going the wrong way.</div>
+      </div>
+      <div class="commit">
+        <div class="k">C3</div><div class="t">Structure beats arithmetic, and both beat names</div>
+        <div class="d">The test that ranks candidates is "does every analyte carry its own reference range", not "does the value fall inside the range" and not "is this column called <code>LBSTNRHI</code>". Measured: that swap fixes the one case names and arithmetic both get wrong.</div>
+      </div>
+      <div class="commit">
+        <div class="k">C4</div><div class="t">A staircase, not a form</div>
+        <div class="d">The wizard never shows 126 columns. Two files and 29 columns reach six of the twelve report modules. It stops at the first real chart and offers the next rung with a named prize.</div>
+      </div>
+      <div class="commit">
+        <div class="k">C5</div><div class="t">The join is a question, asked before anything runs</div>
+        <div class="d">The published detector's pick joins 57,200 lab rows to zero. The overlap sweep finds the right key in one pass. Nobody should discover this from an empty chart.</div>
+      </div>
+      <div class="commit">
+        <div class="k">C6</div><div class="t">Skipping is priced, in the product's own units</div>
+        <div class="d">A half-mapped study does not produce half a risk score. It produces a doubled one. Declining a domain therefore costs a sentence of acknowledgement written into the project, not a click.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="evidence">
+    <h2><span class="num">02</span>The four measurements</h2>
+    <p class="deck">
+      Each of these was executed against real files, not reasoned about. Method, code and full
+      output are on the <a href="evidence.html">evidence page</a>; the summary is here because
+      the design is downstream of all four.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>What was measured</th><th>Result</th><th>What it forced</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>M1 &middot; The published name detector.</strong> <code>safetyGraphics::detectStandard()</code>
+                against a CRO-shaped central-lab extract and an ADSL, using <code>safetyCharts::meta_labs</code> / <code>meta_dm</code>.</td>
+            <td><span class="tag no">3 of 9</span> lab roles found (33%), and it announced
+                <em>"SDTM"</em> anyway. <span class="tag hm">5 of 7</span> on ADSL (71%).
+                <span class="tag no">0 of 4</span> hepatic analyte values matched.</td>
+            <td>Detection cannot carry a guided path on the file that matters most. And a
+                partial detection that names a standard is worse than none, because it invites
+                a confirm-and-continue.</td>
+          </tr>
+          <tr>
+            <td><strong>M2 &middot; A name-blind value profiler</strong> written for this session
+                and pointed at the same lab extract.</td>
+            <td><span class="tag ok">9 of 9</span> roles correct, including all four the name
+                detector missed &mdash; result, both reference limits, units.</td>
+            <td>The evidence a guided setup needs is in the values, not the headers. This is the
+                direction's engine.</td>
+          </tr>
+          <tr>
+            <td><strong>M3 &middot; The same profiler on demo-301's own <code>Raw_LB.csv</code></strong>,
+                the study open.gismo ships.</td>
+            <td><span class="tag no">Confidently wrong.</span> It chose <code>visnum</code> as
+                the lab result, <code>toxgrg_nsv</code> as the lower limit and <code>lb_dy</code>
+                as the upper &mdash; scoring <strong>1.000</strong>, above the 0.849 it scored on
+                the answer it got right.</td>
+            <td>C2 and C3. No auto-fill, no percentage on screen, and a different ranking test.
+                Re-ranking on structure puts the correct triple first on both files and demotes
+                this one to second with a score of zero.</td>
+          </tr>
+          <tr>
+            <td><strong>M4 &middot; The price of a partial map.</strong> <code>gsm.kri::CalculateRiskScore()</code>
+                run twice on identical site data, once with twelve KRIs mapped and once with six.</td>
+            <td>Same site, same single red flag: Site Risk Score <strong>8.3</strong> at twelve,
+                <strong>16.7</strong> at six. <span class="tag no">Exactly double.</span> No
+                warning is emitted at any level.</td>
+            <td>C6. Skipping a domain is not a smaller answer, it is a different one, and the
+                surface that lets you skip has to say so.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout bad">
+      <span class="lbl">The finding that shaped everything else</span>
+      <p>
+        M3 is the reason this design is not the obvious one. The obvious guided setup detects,
+        pre-fills, and asks you to confirm &mdash; and a person who has never seen gsm has no
+        basis on which to refuse a pre-fill. On demo-301 they would have confirmed
+        <code>visnum</code> as the lab result and drawn a histogram of visit numbers. It would
+        have looked completely normal.
+      </p>
+    </div>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="staircase">
+    <h2><span class="num">03</span>The staircase</h2>
+    <p class="deck">
+      Computed by walking every workflow in <code>demo-301/workflows/</code> and resolving each
+      metric and module through its <code>Mapped_*</code> dependencies back to raw domains. The
+      shape of that graph is the shape of the interview.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rung</th><th class="mono">Files</th><th class="num">Cols</th><th>What turns on</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>0 &middot; Nothing runs</strong></td>
+            <td class="mono">participants only</td><td class="num">15</td>
+            <td>Not one metric and not one chart. <code>Raw_SUBJ</code> alone feeds
+                <code>Mapped_SUBJ</code>, <code>Mapped_COUNTRY</code> and <code>Mapped_STUDY</code>
+                and stops. This is why "upload your demographics" is a bad first screen.</td>
+          </tr>
+          <tr>
+            <td><strong>1 &middot; First light</strong></td>
+            <td class="mono">participants + labs</td><td class="num">29</td>
+            <td><span class="tag ok">6 of 12 report modules</span> &mdash; histogram, shift plot,
+                results over time, delta-delta, outlier explorer, hepatic explorer &mdash; plus
+                <code>kri0005</code>, <code>cou0005</code>, <code>saf0001</code>.
+                <strong>Half the visible product from two files.</strong></td>
+          </tr>
+          <tr>
+            <td><strong>2 &middot; Events</strong></td>
+            <td class="mono">+ adverse events</td><td class="num">+16</td>
+            <td>AE explorer, AE timelines, and five metrics
+                (<code>kri0001</code>, <code>kri0002</code>, <code>cou0001</code>,
+                <code>cou0002</code>, <code>saf0003</code>).</td>
+          </tr>
+          <tr>
+            <td><strong>3 &middot; Site oversight</strong></td>
+            <td class="mono">+ deviations, disposition</td><td class="num">+12</td>
+            <td>Seven more metrics &mdash; <code>kri0003</code>, <code>kri0004</code>,
+                <code>kri0006</code> and their country twins, plus <code>qtl0002</code>. The
+                site risk score starts to mean something, because its denominator stops being
+                a rump.</td>
+          </tr>
+          <tr>
+            <td><strong>4 &middot; Data quality</strong></td>
+            <td class="mono">+ queries, entry lag, changes</td><td class="num">+13</td>
+            <td>Eight operational metrics (<code>kri0008</code>&ndash;<code>kri0011</code> and
+                their country twins). These are the domains a sponsor rarely has outside a
+                CTMS, and the ones a guided setup should be least insistent about.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Rung 1 is the design's whole bet. The interview's success condition is not a complete
+      mapping &mdash; it is <strong>one chart, drawn from the user's own rows, inside six
+      answers</strong>. Everything after that is an offer, not a requirement, and every offer
+      names its prize.
+    </p>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="hard">
+    <h2><span class="num">04</span>The hard case, walked all the way</h2>
+    <p class="deck">
+      A CRO ships two files: an ADaM-shaped <code>adsl.csv</code> (1,005 rows, 16 columns) and a
+      central-lab extract <code>lab_central.csv</code> (57,200 rows, 11 columns). No define.xml.
+      Nothing is named the way gsm names it, the two files disagree about what a subject
+      identifier is, three columns the pipeline wants do not exist, and the analytes are spelled
+      by three different vendors. Every number below is measured.
+      <a href="walkthrough.html">The clickable version is here.</a>
+    </p>
+
+    <ol class="steps">
+
+      <li>
+        <h4>Drop the folder. The product reads, it does not ask.</h4>
+        <p>
+          Two files, 1,005 and 57,200 rows. The product profiles every column &mdash; type,
+          cardinality, value shape, date-parseability &mdash; and says what it thinks each file
+          <em>is</em>: "one row per person" and "many rows per person, with a measurement." It
+          asks the user to confirm the kind of file, not the schema. That is question&nbsp;1 and
+          it is answerable by anybody.
+        </p>
+      </li>
+
+      <li>
+        <h4>The join, before anything else.</h4>
+        <p>
+          The product sweeps every character column in file A against every character column in
+          file B and ranks by shared distinct values. The result, run:
+        </p>
+        <div class="tw"><table style="min-width:26rem">
+          <thead><tr><th class="mono">adsl</th><th class="mono">lab</th><th class="num">shared</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="mono">SUBJID</td><td class="mono">SUBJECT</td><td class="num">765</td><td><span class="tag ok">proposed</span></td></tr>
+            <tr><td class="mono">TRTSDT</td><td class="mono">LBDTC</td><td class="num">88</td><td><span class="tag">decoy &mdash; two date columns</span></td></tr>
+            <tr><td class="mono">USUBJID</td><td class="mono">SUBJECT</td><td class="num">0</td><td><span class="tag no">what the name detector picks</span></td></tr>
+          </tbody>
+        </table></div>
+        <p>
+          Question&nbsp;2 is: <em>"These two files agree on 765 people using SUBJID and SUBJECT.
+          Is that the right pairing?"</em> &mdash; with the zero-overlap runner-up shown
+          underneath, so the person can see the alternative was tested and lost. If the user
+          picks <code>USUBJID</code> anyway, the product refuses and offers the repair it found:
+          a single constant prefix, <code>AA-AA-000-0000</code>, whose removal takes the overlap
+          from 0 to 765.
+        </p>
+        <div class="callout">
+          <span class="lbl">Why this is question two and not question ten</span>
+          <p>
+            <code>LB.yaml</code> and <code>AE.yaml</code> both end in an inner join against the
+            participant table. Getting this wrong does not produce an error. It produces
+            <strong>zero rows</strong> out of 57,200, and six charts quietly stop existing.
+            Today's <code>og_validate()</code> reads one file at a time and cannot see it.
+          </p>
+        </div>
+      </li>
+
+      <li>
+        <h4>Four questions over real values.</h4>
+        <p>
+          Now the lab file. The product has already profiled it, so each question arrives with a
+          proposal, three sample values, and the reason:
+        </p>
+        <ul>
+          <li><strong>Which column is the result?</strong> &rarr; <code>LBORRES</code>. Reason shown: <em>every one of the 16 test names carries its own pair of limits, and this is the number that sits between them.</em></li>
+          <li><strong>Which columns are the normal range?</strong> &rarr; <code>LBORNRLO</code> / <code>LBORNRHI</code>, asked as one question because they are one fact.</li>
+          <li><strong>Which column names the test?</strong> &rarr; <code>LBTEST</code>, with its 16 distinct values listed.</li>
+          <li><strong>Which column is the visit?</strong> &rarr; <code>VISIT</code>, with <code>Baseline</code>, <code>Week 1</code>, &hellip; shown.</li>
+        </ul>
+        <p>
+          Six answers total, counting the file kinds and the join. Units, dates, visit number,
+          study id, site, sex, race, age, arm and treatment duration are all inferred and
+          <em>listed</em> in a collapsed "also matched" block, never asked about.
+        </p>
+      </li>
+
+      <li>
+        <h4>First light &mdash; the wizard's success condition.</h4>
+        <p>
+          The product writes the two mapping specs, runs them, and draws a histogram of the
+          user's own ALT values. This step was executed for real: the emitted spec fed through
+          <code>gsm.mapping::ApplySpec()</code> and the study's inner join yields
+          <strong>57,200 rows over 765 participants</strong>, with <code>lbstresn</code> numeric
+          and <code>lb_dt</code> a Date.
+        </p>
+        <p>
+          <strong>The interview should end here.</strong> Not because the mapping is complete
+          &mdash; it is not &mdash; but because this is the moment the person acquires the only
+          thing that lets them judge everything after it: a picture of their own study.
+        </p>
+      </li>
+
+      <li>
+        <h4>The Ledger, and the moment of highest friction.</h4>
+        <p>
+          What is <em>not</em> working is now shown, priced in the product's own units rather
+          than in column names:
+        </p>
+        <div class="ledger">
+          <div class="lrow"><span class="gl">&#9679;</span><span>Six safety charts are drawing, over 765 people</span><span class="pr">working</span></div>
+          <div class="lrow"><span class="gl">&#9651;</span><span>Nothing here looks like a <strong>toxicity grade</strong></span><span class="pr">Grade 3+ Lab KRI off</span></div>
+          <div class="lrow"><span class="gl">&#9651;</span><span>Nothing here marks which visit is <strong>baseline</strong></span><span class="pr">shift plot uses visit 1</span></div>
+          <div class="lrow"><span class="gl">&#9651;</span><span>The hepatic explorer cannot find its four analytes</span><span class="pr">1 chart off</span></div>
+          <div class="lrow"><span class="gl">&#9679;</span><span>Site Risk Score is computed over <strong>1 of 12</strong> KRIs</span><span class="pr">not comparable</span></div>
+        </div>
+        <p>
+          The fourth and fifth rows are where this direction is under the most strain, and they
+          are different problems. The hepatic one is answerable &mdash; keep reading. The risk
+          score one is not answerable by any question, because the only fix is more data.
+        </p>
+        <div class="callout bad">
+          <span class="lbl">The absent column is where a guided setup is structurally weak</span>
+          <p>
+            A wizard is excellent at <em>"which of these?"</em> and has nothing to offer for
+            <em>"you need a thing you do not have."</em> There is no candidate to click. The
+            best this direction can do is name the absence in the user's language, name the
+            consequence in the product's, and refuse to let it pass silently &mdash; which is
+            strictly better than today, where the column is dropped by a <code>purrr::keep</code>
+            filter with no message at any log level, and strictly worse than a direction that
+            could offer to <em>derive</em> the grade from the result and the limits.
+          </p>
+        </div>
+      </li>
+
+      <li>
+        <h4>The one question that is about values, not columns.</h4>
+        <p>
+          The hepatic explorer needs four analytes by name. Its module YAML carries them as
+          literals: <code>ALT: Alanine Aminotransferase</code> and three more. The user's file
+          spells them <code>ALT</code>, <code>SGOT</code>, <code>TBILI</code>,
+          <code>Alk Phos</code>. Matched: <strong>zero of four</strong>.
+        </p>
+        <p>
+          Guided setup handles this well as an interaction &mdash; a person who has never seen
+          gsm can absolutely answer <em>"which of your 16 test names is the liver enzyme ALT?"</em>
+          from a dropdown of their own values, and <code>safetyCharts::meta_hepExplorer</code>
+          already publishes both the ADaM and SDTM spellings to seed the guesses. It handles it
+          badly as an <em>artefact</em>: there is nowhere declarative to write the answer. The
+          spec accepts exactly two keys, <code>type</code> and <code>source_col</code>, and
+          neither expresses a value. The wizard has to patch a module YAML.
+        </p>
+      </li>
+
+      <li>
+        <h4>Emit, and get out of the way.</h4>
+        <p>
+          Three files are written into the project folder: <code>config/data-config.yaml</code>
+          pointing at the two CSVs where they already sit, <code>workflows/1_mappings/SUBJ.yaml</code>
+          and <code>LB.yaml</code> carrying <code>source_col:</code> lines, and a new
+          <code>config/setup-log.md</code> recording each question, the answer, the evidence the
+          product offered, and the acknowledged absences in the user's own words.
+        </p>
+        <p>
+          The interview is over and does not run again. Which is the beginning of this
+          direction's real problem &mdash; see &sect;07.
+        </p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="autoask">
+    <h2><span class="num">05</span>What it does silently, and what it asks</h2>
+    <p class="deck">
+      The line is drawn by one rule: <strong>the product decides anything a wrong answer would
+      make obvious, and asks about anything a wrong answer would hide.</strong> A mis-detected
+      unit column is visible the moment a chart draws. A mis-detected join key is invisible
+      forever.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>Decision</th><th>Who</th><th>Why that side of the line</th></tr></thead>
+        <tbody>
+          <tr><td>File encoding, delimiter, quoting, header row</td><td><span class="tag ok">product</span></td><td>Wrong is immediately visible &mdash; the preview is garbage.</td></tr>
+          <tr><td>Column types, date formats, numeric coercion</td><td><span class="tag ok">product</span></td><td>Wrong is visible as an unparseable count, which the preview shows.</td></tr>
+          <tr><td>Which file is participants, which is measurements</td><td><span class="tag ask">ask</span></td><td>Cheap to ask, and everything downstream branches on it. Question&nbsp;1.</td></tr>
+          <tr><td>The join key between files</td><td><span class="tag ask">ask</span></td><td>Wrong yields zero rows, silently. Question&nbsp;2, before anything runs.</td></tr>
+          <tr><td>Result / lower limit / upper limit</td><td><span class="tag ask">ask</span></td><td>M3. The profiler produced a perfect-scoring wrong answer on this exact triple. Questions&nbsp;3&ndash;4.</td></tr>
+          <tr><td>Analyte column and visit column</td><td><span class="tag ask">ask</span></td><td>Questions&nbsp;5&ndash;6. Cheap, and they anchor the two charts people look at first.</td></tr>
+          <tr><td>Units, visit number, study id, site, sex, race, age, arm, durations</td><td><span class="tag ok">product</span></td><td>Inferred and <em>listed</em>, never asked. Each is individually correctable, none is individually load-bearing.</td></tr>
+          <tr><td>Which of my test names is ALT / AST / bilirubin / ALP</td><td><span class="tag ask">ask</span></td><td>Zero matched automatically. But only asked once the hepatic chart is the thing being turned on &mdash; never up front.</td></tr>
+          <tr><td>Whether an absent domain is acceptable</td><td><span class="tag ask">ask</span></td><td>M4. Costs a written acknowledgement, not a click.</td></tr>
+          <tr><td>Whether an absent <em>column</em> is acceptable</td><td><span class="tag hm">named, not asked</span></td><td>Listed in the Ledger with its consequence. Blocking on each of six absences would defeat the whole direction.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="cost">
+    <h2><span class="num">06</span>What it costs to build</h2>
+
+    <h3>Leans on, unchanged</h3>
+    <ul>
+      <li><strong><code>gsm.mapping::ApplySpec()</code></strong> &mdash; <code>source_col</code> is the entire column-rename seam and it already works. The wizard's output is a spec file; nothing new executes it. Verified end to end in this session.</li>
+      <li><strong>The workflow snapshot.</strong> <code>og_init()</code> already copies 44 workflow YAMLs into the project, so the mapping specs the wizard edits are the user's own files. No new storage, no new format.</li>
+      <li><strong><code>config/data-config.yaml</code></strong> &mdash; already routes domain to file path. The wizard writes it instead of the user.</li>
+      <li><strong><code>safetyCharts::meta_*</code></strong> &mdash; nine tables that already publish a plain-English role vocabulary <em>and</em> ADaM/SDTM spellings per role, including analyte values for the hepatic explorer. This is the single most valuable unclaimed asset in the portfolio for this problem, and it is sitting in the ancestor package.</li>
+    </ul>
+
+    <h3>Has to be built</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Piece</th><th>Size</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td><strong>The profiler.</strong> Per-column type, cardinality, value-shape and date summary.</td><td><span class="tag">small</span></td><td>Prototyped and run this session; ~60 lines of R.</td></tr>
+          <tr><td><strong>The structural ranker.</strong> Candidate triples ranked by whether each analyte carries its own range.</td><td><span class="tag">small</span></td><td>Prototyped and run; this is the piece that fixes M3.</td></tr>
+          <tr><td><strong>The overlap sweep.</strong> Every character column against every other, plus constant-affix repair.</td><td><span class="tag">small</span></td><td>Prototyped and run. Should ship regardless of which direction wins &mdash; see the recommendation below.</td></tr>
+          <tr><td><strong>The role table for gsm.</strong> A sidecar mapping each gsm column to a role, a plain-English question and candidate spellings.</td><td><span class="tag hm">medium</span></td><td>Handwritten, ~90 rows for the four rung-1 and rung-2 domains. Lives in open.gismo first; upstreaming to gsm.mapping is a separate conversation with a repo this program cannot write to.</td></tr>
+          <tr><td><strong>The interview UI.</strong> Six screens, each a question over a live preview.</td><td><span class="tag hm">medium</span></td><td>The site is already a SPA; this is a new route, not a new app.</td></tr>
+          <tr><td><strong>The Ledger.</strong> Absences resolved to named consequences.</td><td><span class="tag hm">medium</span></td><td>Needs the workflow dependency graph computed at run time. The graph is already in the project's own YAMLs; nothing reads it yet.</td></tr>
+          <tr><td><strong>A fix to <code>og_validate()</code>.</strong></td><td><span class="tag">small</span></td><td>It derives required columns from the spec's target names and never reads <code>source_col</code>, so a correctly-mapped project can never reach green. Worth doing before any screen is designed.</td></tr>
+          <tr><td><strong>A value-mapping seam.</strong></td><td><span class="tag no">large / not ours</span></td><td>The hepatic analyte question has nowhere to write its answer. Patching a module YAML is the only option inside this program's boundary.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>What could go wrong</h3>
+    <ul>
+      <li><strong>The profiler is O(n&sup3;) in numeric columns.</strong> Eleven columns is 990 combinations and instant; an 80-column ADLB is over half a million. Pruning is needed, and every cheap pruning heuristic is name-based &mdash; which reintroduces exactly the weakness M1 measured.</li>
+      <li><strong>Structural purity needs an analyte column to exist.</strong> On a wide file &mdash; one column per test, one row per visit &mdash; there is no categorical to group by and the ranker has nothing to say. That shape is common in exported vitals.</li>
+      <li><strong>The wizard writes files the user then edits by hand.</strong> Two authors, one file, no reconciliation. The second run has to read what it wrote and detect divergence, or it will overwrite a person's corrections.</li>
+      <li><strong>Six questions is a claim about rung 1 only.</strong> A study that wants the operational KRIs needs four more files, and the interview grows toward the form it was designed to avoid.</li>
+    </ul>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="weak">
+    <h2><span class="num">07</span>Where this direction is weakest</h2>
+    <p class="deck">
+      Five, ordered by how much they should count against it. The first is the one I would lose
+      the argument on.
+    </p>
+
+    <div class="card">
+      <h3>W1 &mdash; It optimises the first hour and is dead weight on the fortieth refresh</h3>
+      <p>
+        Study data arrives repeatedly. A wizard is a one-time interview, so by design it runs
+        once and then leaves behind an artefact in a vocabulary the person never learned. Visit
+        two, they open <code>LB.yaml</code> to fix a column and are reading
+        <code>lbstnrhi</code> and <code>toxgrg_nsv</code> &mdash; names the interview worked hard
+        to never show them. The direction's core commitment, C1, is precisely what makes its
+        output illegible to the person who produced it.
+      </p>
+      <p>
+        The honest mitigations are both partial: the <code>setup-log.md</code> keeps the plain
+        English next to the decisions, and the wizard can re-enter on a diff ("this file gained
+        a column since you set it up"). Neither closes the gap. A direction built around the
+        <em>file</em> as the primary surface rather than the interview does not have this problem
+        at all.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>W2 &mdash; It cannot ask about what is not there</h3>
+      <p>
+        Three of the fourteen columns the two rung-1 domains want &mdash; the toxicity grade, the
+        baseline flag, the study day &mdash; simply do not exist in the delivery. A question
+        needs candidates and there are none. This is the highest-friction moment in the whole
+        flow and the direction's answer is only to <em>name</em> it well, which is a reporting
+        improvement rather than a solution. Two of the three are derivable from what is present,
+        and a derivation surface is a different design.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>W3 &mdash; The value-level question has no home</h3>
+      <p>
+        The interaction is the easy part; the persistence is impossible inside the spec. Every
+        value-level fact &mdash; which string means ALT, which visit is baseline, whether the
+        grade is <code>"3"</code> or <code>3</code>, what the units are in &mdash; has to be
+        written somewhere that is not the mapping spec, because the mapping spec accepts two
+        keys and neither of them is about values. Whatever the wizard writes is a private
+        convention until <code>gsm.mapping</code> grows a seam, and that is a repo outside this
+        program's write boundary.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>W4 &mdash; It taxes the expert to serve the novice, and hedging destroys it</h3>
+      <p>
+        Someone who knows gsm wants to paste a YAML and be done. Every question is friction for
+        them. The obvious fix &mdash; an expert mode &mdash; means building two surfaces and
+        maintaining agreement between them, and the moment expert mode exists it becomes the
+        one the docs show, because it is the one that fits in a code block. This direction only
+        pays off if the novice path is the <em>only</em> path for a while, which is a real cost
+        to accept deliberately rather than a detail.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>W5 &mdash; Inference quality is the whole product, and I measured it as unstable</h3>
+      <p>
+        9 of 9 on one file, confidently wrong on the next, with the confidence score pointing
+        the wrong way. The structural ranker fixes the case I found; I have no basis for
+        claiming it fixes the ones I did not. A direction whose value proposition is "the
+        product does the inferring" is exposed in a way that a direction built on explicit
+        declaration is not, and the failure mode is silent-wrong rather than loud-broken &mdash;
+        the house failure mode this program already knows it has.
+      </p>
+    </div>
+  </section>
+
+  <!-- ======================================================= -->
+  <section id="asks">
+    <h2><span class="num">08</span>What I would ask @jwildfire</h2>
+    <ul>
+      <li><strong>Ship the join check regardless of which direction wins.</strong> The overlap sweep is small, it is prototyped, and it catches a failure that today produces a plausible empty study. It belongs in <code>og_validate()</code> and in the run, and it is independent of every question about surfaces.</li>
+      <li><strong>Is "first light" an acceptable success condition?</strong> This design deliberately stops at one chart from two files and leaves the study incompletely mapped, on the argument that a picture of your own data is what makes the rest of the decisions possible. The alternative reading is that it ships people a half-configured study and calls it done.</li>
+      <li><strong>How much should a partial map be allowed to compute?</strong> M4 says a six-KRI study reports doubled risk scores with no warning. The options are to suppress the score below a threshold, to label it, or to leave it and let the Ledger carry the warning. I would suppress it.</li>
+      <li><strong>The role table &mdash; sidecar or upstream?</strong> Building it inside open.gismo is fast and needs no write to Gilead-BioStats. It is also a second vocabulary in the ecosystem, which is the thing this workspace's conventions exist to prevent.</li>
+    </ul>
+  </section>
+
+  <footer class="rf">
+    <p>
+      <strong>Direction 1 of 4</strong> in the open.gismo data-loading design session. Sibling
+      artefacts covering the competitor landscape and the file-first direction were produced in
+      parallel and are indexed alongside this one; this page deliberately does not repeat their
+      survey work.
+    </p>
+    <p>
+      Everything measured here was run against <code>open.gismo</code> @ <code>dev</code>
+      (v0.2.0), <code>demo-301</code>, and installed
+      <code>gsm.mapping 1.1.3</code> / <code>gsm.kri 1.5.0</code> /
+      <code>safetyGraphics</code> + <code>safetyCharts</code> working copies. Method and full
+      output: <a href="evidence.html">the four measurements</a>. Provenance, invented material
+      and limitations: <a href="README.md">README</a>.
+    </p>
+    <hr>
+    <p>Drafted by Claude Code using Opus 5 for review by @jwildfire.</p>
+  </footer>
+
+</div>
+</body>
+</html>
