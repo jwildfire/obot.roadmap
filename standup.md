@@ -2,13 +2,13 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 10:39 pm on Wednesday the 26th of August. The reading behind it was taken at 10:38 pm, two minutes ago.
+Read at 10:45 pm on Wednesday the 26th of August. The reading behind it was taken at 10:44 pm, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
 ## What is running
 
-One agent session is working.
+No agent session is working right now.
 
 No session is parked on a permission prompt, so nothing is held up waiting for you to approve it.
 
@@ -36,15 +36,13 @@ Scheduled sessions: what is ready, what is not, and what would make it ready —
 
 ## Release candidates waiting for you
 
-Four release candidates are open and waiting on you.
+Three release candidates are open and waiting on you.
 
 gsm.safety's eDISH views have been counting some participants' own baseline as an on-treatment peak; v1.2.0 corrects that and adds two widgets. That one is in gsm.safety.
 
 The safety overview's death count was wrong, and this release replaces every figure on that page with a metric that publishes its own numerator, denominator and provenance. That one is in gsm.safety.
 
 The spend cap you set — no more than half a week's usage in one night — currently covers three of the four ways an agent gets spawned. That one is in obot.agent.
-
-Runs the full gsm pipeline against a plain project folder — no GitHub, Actions or Pages required. That one is in open.gismo.
 
 ## What this standup does not cover
 
