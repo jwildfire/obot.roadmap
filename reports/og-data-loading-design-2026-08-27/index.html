@@ -1,0 +1,295 @@
+<meta charset="utf-8">
+<title>The Mapping Surface</title>
+<meta name="description" content="What gsm.mapping already solves for loading your own study data and what is genuinely missing, established by running the packages: the readiness check never reads the source_col key that fixes the problem it reports, so it can never go green.">
+<link rel="stylesheet" href="assets/report.css">
+
+<nav class="pagenav"><div class="inner">
+  <a href="index.html" aria-current="page">The boundary</a>
+  <a href="mockup.html">The mockup</a>
+  <a href="../open-gismo-data-loading-2026-08-27/">Companion: the full design session</a>
+</div></nav>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="kicker">open.gismo &middot; design session &middot; 2026-08-27</p>
+  <h1>The mapping surface</h1>
+  <p class="dek">Where "load your own data" is already solved by gsm.mapping, where it is genuinely
+  missing, and the two things that turned out to be true only because the packages were run rather
+  than read.</p>
+  <div class="factbar">
+    <span>Extends <strong>D1</strong> of the platform gap analysis</span>
+    <span><strong>2</strong> findings verified by execution</span>
+    <span><strong>0</strong> issues filed</span>
+    <span><strong>0</strong> lines of open.gismo touched</span>
+  </div>
+</header>
+
+<div class="callout">
+  <span class="label">Two sessions ran this brief in parallel</span>
+  <p>@jwildfire asked for one design session on loading your own data and two agents took it up the
+  same evening. The companion artifact,
+  <a href="../open-gismo-data-loading-2026-08-27/">Loading your own data into open.gismo</a>, carries
+  the competitor landscape, four screens and seven decisions, and it found a failure mode this page
+  did not: identifiers that are present and correctly typed but do not actually join, producing an
+  empty mapped domain in silence.</p>
+  <p>This page is the narrower half and does not repeat that work. It carries what was established
+  by execution, including one correction to the companion's account of how a user fixes a column
+  name today. The two were written independently and neither has been merged into the other; that is
+  a call for @jwildfire or the Navigator, not for either session.</p>
+</div>
+
+<section id="solved">
+  <h2>What is already solved, and must not be rebuilt</h2>
+  <p class="sub">Read out of the installed packages on 2026-08-27, and exercised rather than assumed.</p>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3 style="margin-top:0">The transformation engine</h3>
+      <ul>
+        <li><code>gsm.mapping::ApplySpec()</code> renames and types a source frame by compiling the
+          spec into a DuckDB <code>SELECT</code>, with a typed <code>CREATE TABLE</code> behind it.</li>
+        <li>A column spec accepts exactly two keys: <code>type</code> and <code>source_col</code>.
+          That is the entire contract, and it is enough.</li>
+        <li>Date and timestamp columns are coerced with a count of unparsable values reported back.</li>
+        <li><code>Ingest()</code> walks the domains; <code>CombineSpecs()</code> unions specs across
+          workflows and warns on type conflicts.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">The vocabulary and the requirement list</h3>
+      <ul>
+        <li>23 domain mappings ship in <code>gsm.mapping/inst/workflow/1_mappings/</code>.</li>
+        <li>Every metric workflow declares the columns it needs, so the product can compute exactly
+          what it must ask a user for. Nobody has to author a requirements list by hand.</li>
+        <li><code>og_init()</code> snapshots 44 workflow files into the project, so the mapping specs
+          are the user's own editable files rather than package internals.</li>
+        <li><code>config/data-config.yaml</code> already routes a domain to a file path.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout good">
+    <span class="label">The engine handles a renamed export correctly</span>
+    <p>A subject file delivered with <code>USUBJID</code>, <code>SITEID</code> and
+    <code>STUDYID</code> instead of <code>subjid</code>, <code>invid</code> and <code>studyid</code>
+    maps cleanly once the spec says so: 14 of 14 columns produced, 1,000 rows,
+    <code>subjid</code> and <code>invid</code> populated. Any design that adds a second mapping layer
+    beside this is solving a problem that does not exist.</p>
+  </div>
+</section>
+
+<section id="finding1">
+  <h2>Finding one &mdash; the readiness check cannot see the fix</h2>
+  <p class="sub">This is the correction. It changes what "fixing it means opening the workflow files
+  and adding <code>source_col:</code> lines" is worth.</p>
+
+  <p><code>og_validate()</code> collects the columns each mapping spec declares and checks the user's
+  CSV for them. It reads the target names and the <code>type</code> key. It never reads
+  <code>source_col</code> &mdash; the one key whose entire purpose is to say "my column is called
+  something else".</p>
+
+  <p>The consequence is not cosmetic. A user who does exactly the right thing sees no change at all:</p>
+
+  <div class="term">
+<span class="c-dim"># 94 correct source_col lines written into the project's own mapping specs</span>
+<span class="c-hi">SPEC says subjid comes from:</span> USUBJID
+<span class="c-hi">CSV actually contains USUBJID?</span>  TRUE
+<span class="c-hi">og_validate() says:</span> <span class="c-bad">error -> missing columns: studyid, invid, subjid, enrollyn,
+  country, subject_nsv, timeonstudy, firstparticipantdate, firstdosedate,
+  timeontreatment, agerep, sex, race, mincreated_dts</span>
+
+<span class="c-dim"># the same project, same files, through the engine instead</span>
+<span class="c-ok">ENGINE RESULT: studyid, invid, country, subjid, subject_nsv, enrollyn, timeonstudy,
+  firstparticipantdate, firstdosedate, timeontreatment, agerep, sex, race, mincreated_dts</span>
+<span class="c-ok">subjid populated? TRUE  | S384, S4476, S71069</span>
+<span class="c-ok">invid  populated? TRUE  | 17187, 18548, 34713</span>
+<span class="c-ok">rows: 1000</span>
+  </div>
+
+  <div class="callout crit">
+    <span class="label">The readiness check and the engine disagree about the same project</span>
+    <p>Validation prints "Fix these before <code>og_run()</code>" for a project that is ready to run.
+    Its status is <code>error</code>, which is the strongest thing it can say, on data the pipeline
+    maps perfectly. For a delivery whose columns are named anything other than the gsm internal
+    names, this screen can never reach green, no matter what the user does.</p>
+  </div>
+
+  <h3>How it was established</h3>
+  <ul>
+    <li>By reading the source: <code>.og_input_specs()</code> in
+      <code>open.gismo/R/og_validate.R</code> keeps <code>names(cols)</code> &mdash; the target names
+      &mdash; and compares them with <code>setdiff(required, info$cols)</code>. There is no reference
+      to <code>source_col</code> anywhere in the file.</li>
+    <li>By writing the fix: 94 <code>source_col</code> lines across 12 of the 13 mapping files, then
+      re-running. The report came back byte-identical.</li>
+    <li>By running the other side: the same spec and the same CSV through
+      <code>gsm.mapping::Ingest()</code> returned all 14 columns correctly populated.</li>
+  </ul>
+
+  <p>The fix is small and it is not a mapping surface: teach <code>.og_input_specs()</code> to read
+  <code>source_col</code> and check for that name instead. It is worth doing on its own, before any
+  screen is designed, because every mockup on the companion page assumes a readiness check that
+  tells the truth.</p>
+</section>
+
+<section id="finding2">
+  <h2>Finding two &mdash; the job is a quarter the size it looks</h2>
+  <p class="sub">Of the 90 column declarations across the 12 input domains, 23 are named by a metric.
+  The other 67 feed reporting, labels and site metadata.</p>
+
+  <p>Each metric workflow names the columns it reads. Tracing those back through the mapping
+  workflows to the raw domains gives the exact list a user must supply to get the full KRI set, and
+  it is much shorter than the spec suggests. It also prices every individual dropdown on a mapping
+  screen:</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Raw column</th><th class="num">Metrics that need it</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">Raw_SUBJ$subjid</td><td class="num">23</td><td>the subject key &mdash; every metric</td></tr>
+        <tr><td class="mono">Raw_SUBJ$invid</td><td class="num">12</td><td>the site key &mdash; every site-level KRI</td></tr>
+        <tr><td class="mono">Raw_SUBJ$country</td><td class="num">11</td><td>every country-level metric</td></tr>
+        <tr><td class="mono">Raw_SUBJ$timeonstudy</td><td class="num">9</td><td>the exposure denominator</td></tr>
+        <tr><td class="mono">Raw_AE$subjid</td><td class="num">4</td><td>joins adverse events to subjects</td></tr>
+        <tr><td class="mono">Raw_PD$deemedimportant</td><td class="num">4</td><td>splits important from non-important deviations</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="label">Why this matters to the screen</span>
+    <p>A mapping surface that opens on 90 rows reads as a data-management project. The same surface
+    filtered to the 23 that carry every metric reads as an afternoon, with the rest available behind
+    a toggle for the reporting layer. It also lets the screen answer the only question the user
+    actually has, which is not "which columns are missing" but "what do I get if I stop here".</p>
+  </div>
+
+  <h3>Two details worth carrying into the design</h3>
+  <ul>
+    <li>The Site Risk Score has no spec of its own: it weights every <code>kri*</code> analysis that
+      ran. A partial mapping therefore changes its denominator rather than failing, which is the
+      already-known silent-divisor problem arriving through the data-loading door.</li>
+    <li><code>Raw_ENROLL</code> names the subject key <code>subjectid</code> while every other domain
+      uses <code>subjid</code>. Any auto-matcher has to tolerate the ecosystem's own inconsistencies,
+      not just the user's.</li>
+  </ul>
+</section>
+
+<section id="missing">
+  <h2>The boundary, stated plainly</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Step in "load my own data"</th><th>Status</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Rename a source column to a standard one</td>
+          <td><span class="st st-good"><span class="gl">&#10004;</span>solved</span></td>
+          <td class="mono">source_col</td></tr>
+        <tr><td>Coerce and check types</td>
+          <td><span class="st st-good"><span class="gl">&#10004;</span>solved</span></td>
+          <td class="mono">type, RunQuery schema</td></tr>
+        <tr><td>Know which columns are needed</td>
+          <td><span class="st st-good"><span class="gl">&#10004;</span>solved</span></td>
+          <td>metric workflow specs</td></tr>
+        <tr><td>Route a domain to a file</td>
+          <td><span class="st st-good"><span class="gl">&#10004;</span>solved</span></td>
+          <td class="mono">data-config.yaml</td></tr>
+        <tr><td>Report readiness before a run</td>
+          <td><span class="st st-warn"><span class="gl">&#9888;</span>partial</span></td>
+          <td><code>og_validate()</code>, blind to <code>source_col</code></td></tr>
+        <tr><td>Show the user what their file actually contains</td>
+          <td><span class="st st-crit"><span class="gl">&#10006;</span>missing</span></td>
+          <td>&mdash;</td></tr>
+        <tr><td>Propose a match for an unrecognised column</td>
+          <td><span class="st st-crit"><span class="gl">&#10006;</span>missing</span></td>
+          <td>no standards table exists</td></tr>
+        <tr><td>Rank a gap by what it costs</td>
+          <td><span class="st st-crit"><span class="gl">&#10006;</span>missing</span></td>
+          <td>derivable, never derived</td></tr>
+        <tr><td>Let a person settle a mapping without a text editor</td>
+          <td><span class="st st-crit"><span class="gl">&#10006;</span>missing</span></td>
+          <td>&mdash;</td></tr>
+        <tr><td>Write the decision back consistently</td>
+          <td><span class="st st-crit"><span class="gl">&#10006;</span>missing</span></td>
+          <td>one domain spans several files</td></tr>
+        <tr><td>Read anything but CSV</td>
+          <td><span class="st st-crit"><span class="gl">&#10006;</span>missing</span></td>
+          <td>every loader calls <code>read.csv</code></td></tr>
+        <tr><td>Add a domain or variable</td>
+          <td><span class="st st-crit"><span class="gl">&#10006;</span>missing</span></td>
+          <td>file an issue upstream and wait</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The missing rows are one surface, not eleven features, and the whole of its output is
+  <code>source_col</code> values plus file paths. That is what makes it buildable without touching
+  the engine, and what keeps it from becoming a second mapping layer.</p>
+</section>
+
+<section id="standards">
+  <h2>The one asset that does not exist yet</h2>
+  <p class="sub">Everything above is reachable except proposing a match, and that needs a table
+  nobody in the gsm ecosystem has.</p>
+
+  <ul>
+    <li>safetyGraphics has its twin: <code>safetyCharts::meta_*</code> carries a
+      <code>standard_adam</code> and a <code>standard_sdtm</code> column per target field, so
+      <code>detectStandard()</code> can score a data frame against every known standard, label the
+      best one, and pre-fill the mapping screen with it.</li>
+    <li>gsm.mapping has <code>type</code> and <code>source_col</code> and nothing that says the ADaM
+      name for <code>subjid</code> is <code>USUBJID</code>.</li>
+    <li>Adding it is additive: a sidecar table in open.gismo first, since it needs no upstream change
+      to a repository this program cannot write to, and upstreamed into the specs later if it earns
+      its place.</li>
+  </ul>
+
+  <p>The <a href="mockup.html">mockup</a> runs a seeded version of exactly this table over a
+  hand-authored CRO delivery, so the suggestion quality is visible rather than promised. It scores
+  the delivery as Partial ADaM, 19 of 42 standard names present, and gets 27 of 81 columns right
+  without help.</p>
+</section>
+
+<section id="decisions">
+  <h2>What needs deciding</h2>
+  <p class="sub">Numbered from D-MAP so they do not collide with the companion artifact's D1&ndash;D7.</p>
+
+  <div class="grid grid-2">
+    <div class="card"><h3 style="margin-top:0">D-MAP1 &mdash; fix the readiness check first?</h3>
+      <p>Teaching <code>og_validate()</code> to read <code>source_col</code> is small, has no
+      interface, and every screen depends on it. Recommendation: yes, and independently of any
+      design decision below.</p></div>
+    <div class="card"><h3 style="margin-top:0">D-MAP2 &mdash; where does the standards table live?</h3>
+      <p>A sidecar in open.gismo ships now; a new key in the gsm.mapping specs is the better long-run
+      home but needs an upstream conversation. Recommendation: sidecar, designed so it can move.</p></div>
+    <div class="card"><h3 style="margin-top:0">D-MAP3 &mdash; required-only by default?</h3>
+      <p>Open the screen on the 23 metric-critical columns with the other 67 behind a toggle, or show
+      all 90. Recommendation: required-only, because it changes the perceived size of the job.</p></div>
+    <div class="card"><h3 style="margin-top:0">D-MAP4 &mdash; who writes the YAML?</h3>
+      <p>The surface writes the mapping files itself, or it prints the lines and the user pastes
+      them. Recommendation: the surface writes them, because one domain spans several files and hand
+      edits will drift.</p></div>
+    <div class="card"><h3 style="margin-top:0">D-MAP5 &mdash; non-CSV input?</h3>
+      <p>SAS transport is how study data actually arrives, and both open-source competitors read it.
+      Convert once at import, or read natively. Recommendation: convert at import, so the project
+      folder stays diffable.</p></div>
+    <div class="card"><h3 style="margin-top:0">D-MAP6 &mdash; merge the two artifacts?</h3>
+      <p>Two sessions produced two pages for one ask. They are complementary rather than
+      contradictory, apart from the correction on this page. Recommendation: fold this page's two
+      findings into the companion and retire this one.</p></div>
+  </div>
+</section>
+
+<footer>
+  <p><a href="mockup.html">The mockup</a> &middot;
+  <a href="../open-gismo-data-loading-2026-08-27/">the companion design session</a> &middot;
+  <a href="../platform-gap-analysis-2026-07-25/matrix.html">gap analysis row D1</a>.</p>
+  <div class="disclaim">Findings established on 2026-08-27 against gsm.mapping 1.1.4, gsm.core, workr
+  and open.gismo v0.2.0 as installed, plus a project created by <code>og_init(example = TRUE)</code>.
+  The competitor reading is documented behaviour from public sources, not verified by use. Nothing
+  was filed, and no package source was modified. Drafted by Claude Code using Opus 5 for review by
+  @jwildfire.</div>
+</footer>
+
+</div>

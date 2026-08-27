@@ -1,0 +1,608 @@
+<meta charset="utf-8">
+<title>Bring Your Own Study</title>
+<meta name="description" content="A clickable four-step mockup of loading a real CRO data extract into open.gismo: the delivery is profiled, columns are matched against the standard domains, the unmatched ones are settled by hand while the metrics they control light up, and the result is written back as source_col lines the existing engine already understands.">
+<link rel="stylesheet" href="assets/report.css">
+
+<nav class="pagenav"><div class="inner">
+  <a href="index.html">The boundary</a>
+  <a href="mockup.html" aria-current="page">The mockup</a>
+  <a href="../open-gismo-data-loading-2026-08-27/">Companion: the full design session</a>
+</div></nav>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="kicker">open.gismo &middot; design session &middot; 2026-08-27</p>
+  <h1>Bring your own study</h1>
+  <p class="dek">Four steps, clickable. A mid-size CRO delivers eleven CSVs with their own column
+  names, two domains they never export, and one file nothing reads. This is what it would look like
+  to get from that to a running pipeline.</p>
+  <div class="factbar">
+    <span><strong>12</strong> input domains</span>
+    <span><strong>90</strong> column declarations</span>
+    <span><strong>25</strong> metrics downstream</span>
+    <span>every suggestion below is <strong>computed</strong>, not staged</span>
+  </div>
+</header>
+
+<div class="callout warn">
+  <span class="label">This is a mockup</span>
+  <p>Nothing here ships and nothing here is wired to open.gismo. The screens are HTML. What is real
+  is the data underneath them: the domains, columns, types and metric dependencies were read out of
+  the 44 workflow YAMLs that <code>og_init()</code> actually snapshots into a project, and the
+  suggested matches are produced by a matcher that runs when this page loads. If a suggestion looks
+  wrong, that is the matcher being wrong in public rather than a screenshot being flattering.</p>
+</div>
+
+<section id="flow">
+
+<div class="mock">
+  <div class="mock-bar">
+    <div class="mock-dots"><i></i><i></i><i></i></div>
+    <span class="mock-title">open.gismo &mdash; New study</span>
+    <span class="mock-tag">Mockup</span>
+  </div>
+  <div class="mock-body">
+
+    <div class="steps" role="tablist">
+      <button role="tab" data-step="1" aria-selected="true"><span class="n">1</span>Point at your data</button>
+      <button role="tab" data-step="2" aria-selected="false"><span class="n">2</span>Confirm the mapping</button>
+      <button role="tab" data-step="3" aria-selected="false"><span class="n">3</span>What you lose</button>
+      <button role="tab" data-step="4" aria-selected="false"><span class="n">4</span>Write it</button>
+    </div>
+
+    <!-- ---------- STEP 1 ---------- -->
+    <div class="panel" data-panel="1">
+      <div class="drop" id="dropzone">
+        <div class="big">&#128193;</div>
+        <div><strong>Drop a folder of study data</strong></div>
+        <div class="hint">CSV, SAS transport (.xpt), sas7bdat, or parquet &middot; or point at a database view</div>
+      </div>
+      <div id="step1out" hidden>
+        <div class="tally" id="detectbar"></div>
+        <div class="filelist" id="filelist"></div>
+        <div class="btnrow">
+          <button class="btn primary" data-go="2">Continue to the mapping &rarr;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- STEP 2 ---------- -->
+    <div class="panel" data-panel="2" hidden>
+      <div class="tally" id="maptally"></div>
+      <p class="mock-cap" id="mapcap"></p>
+      <div class="btnrow" style="margin:0 0 12px">
+        <button class="btn primary" id="scopetoggle" data-mode="req">Showing: required columns only</button>
+      </div>
+      <div class="domlist" id="domlist"></div>
+      <div class="btnrow">
+        <button class="btn" data-go="1">&larr; Back</button>
+        <button class="btn primary" data-go="3">Continue &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ---------- STEP 3 ---------- -->
+    <div class="panel" data-panel="3" hidden>
+      <p class="mock-cap">Two domains were never delivered. That is normal &mdash; not every CRO
+      exports an audit trail or a query log. The question is not whether the run can proceed but
+      whether you know what it costs, so the choice is made here and recorded rather than discovered
+      later as an empty chart.</p>
+      <div id="losslist"></div>
+      <div class="btnrow">
+        <button class="btn" data-go="2">&larr; Back</button>
+        <button class="btn primary" data-go="4">Accept and write the mapping &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ---------- STEP 4 ---------- -->
+    <div class="panel" data-panel="4" hidden>
+      <p class="mock-cap">The whole output of this screen is <code>source_col</code> lines in the
+      project's own mapping workflows, plus file paths in <code>data-config.yaml</code>. No new
+      transformation layer, no second spec format, nothing for gsm.mapping to learn. The engine
+      already reads exactly this.</p>
+      <div id="emit"></div>
+      <div class="btnrow">
+        <button class="btn" data-go="3">&larr; Back</button>
+        <button class="btn primary" id="rerun">Run og_validate() again</button>
+      </div>
+      <div id="revalidate"></div>
+    </div>
+
+  </div>
+</div>
+<p class="mock-cap">The delivery in this mockup is hand-authored to be realistically uneven, and it
+was written before the alias table it is matched against, so the matcher gets no help from having
+seen it. It scores 45% against ADaM, which is roughly what a real CRO extract looks like.</p>
+
+</section>
+
+<section id="notes">
+  <h2>What each step is for</h2>
+
+  <h3>Step 1 &mdash; profile before you judge</h3>
+  <ul>
+    <li>Today's <code>og_validate()</code> never prints what the user actually has. It reports what
+      is missing against the target names and stops. The user is left to open the CSV themselves to
+      find out what the columns are called.</li>
+    <li>Naming the standard is the safetyGraphics move, and it is what turns a wall of red into a
+      job with a known size: "Partial ADaM, 19 of 42 standard names present" tells the reader the
+      delivery is broadly conventional and the work is bounded.</li>
+    <li>The formats line is the honest one. open.gismo reads CSV and only CSV, in every one of its
+      loaders. Real deliveries arrive as SAS transports.</li>
+  </ul>
+
+  <h3>Step 2 &mdash; the screen that does not exist</h3>
+  <ul>
+    <li>Domains are ordered by what they control, not alphabetically. <code>Raw_SUBJ</code> is first
+      because it feeds 22 of the 25 metrics; <code>Raw_STUDY</code> is last because it feeds none.</li>
+    <li>Each row is one <code>source_col</code> decision. Green rows are already settled, amber rows
+      are a proposal to confirm, red rows are the real work.</li>
+    <li>Resolving one row can change everything on the page. <code>Raw_SUBJ.invid</code> has no
+      candidate in this delivery, because the CRO calls it <code>CENTRE_CODE</code> and no alias
+      list knows that. It is one dropdown, and 12 metrics hang on it.</li>
+    <li>Conflicts are surfaced rather than resolved silently. Three columns in
+      <code>Raw_STUDY</code> all match <code>PROTOCOL</code>; a machine should not pick.</li>
+  </ul>
+
+  <h3>Step 3 &mdash; absence as a decision</h3>
+  <ul>
+    <li>Today an absent domain either aborts the run hard (<code>Ingest()</code>) or is logged and
+      skipped (<code>fs_LoadData()</code>), depending on which path reaches it first. Neither is a
+      choice the user made.</li>
+    <li>Naming the cost in metrics converts "your data is incomplete" into "this run gives you this
+      many of the 25 metrics, and here are the ones you are giving up".</li>
+  </ul>
+
+  <h3>Step 4 &mdash; emit and re-check</h3>
+  <ul>
+    <li>The artifact is a diff against files the user already owns, shown before it is written.</li>
+    <li>One target column can be declared in more than one mapping file &mdash;
+      <code>Raw_SUBJ</code> is declared in both <code>SUBJ.yaml</code> and <code>STUDY.yaml</code>
+      &mdash; so an edit has to land in every file that declares it. That is a consistency trap a
+      person editing YAML by hand will eventually fall into, and the reason the surface should write
+      the files rather than tell the user which ones to open.</li>
+    <li>Ending on a green re-validation is the point. The current product can tell you that you are
+      broken but has no path that ends in you being fixed.</li>
+  </ul>
+</section>
+
+<footer>
+  <p><a href="index.html">What is already solved, what is missing, and the two verified findings</a>
+  &middot; <a href="../open-gismo-data-loading-2026-08-27/">the companion design session</a>, which
+  carries the competitor landscape and its own four screens.</p>
+  <div class="disclaim">Mockup, not software. Screens are HTML with a matcher behind them; the
+  domain, column, type and metric-dependency data is real and was read out of a project created by
+  <code>og_init()</code> on 2026-08-27. Drafted by Claude Code using Opus 5 for review by
+  @jwildfire.</div>
+</footer>
+
+</div>
+
+<script src="data/ground-truth.js"></script>
+<script src="assets/mock.js"></script>
+<script>
+(function () {
+  'use strict';
+  var D = window.OGDATA, M = window.OGMOCK;
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var el = function (t, c, h) { var e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[m]; }); };
+
+  /* ---- state ---- */
+  var props = {};           // domain -> proposal
+  var choice = {};          // domain -> { targetCol: sourceCol|null }
+  var accepted = {};        // domain -> true when user accepts running without it
+  D.domains.forEach(function (d) {
+    var p = M.proposeDomain(d, D.userExport[d.domain]);
+    props[d.domain] = p;
+    choice[d.domain] = {};
+    p.rows.forEach(function (r) { choice[d.domain][r.col] = r.source; });
+  });
+  var std = M.detectStandard(D.domains, D.userExport);
+
+  var byName = {};
+  D.domains.forEach(function (d) { byName[d.domain] = d; });
+
+  /* Only the 23 declarations some metric actually names are required; the other
+     67 feed reporting and labels. `onlyRequired` is the screen's default. */
+  var onlyRequired = true;
+  var isCrit = {};
+  D.domains.forEach(function (d) {
+    (d.columns || []).forEach(function (c) { if (c.critical) isCrit[d.domain + '$' + c.col] = 1; });
+  });
+
+  /* The set of Raw_DOM$col that currently have a source column behind them. */
+  function mappedSet() {
+    var m = {};
+    D.domains.forEach(function (d) {
+      if (!D.userExport[d.domain]) return;
+      Object.keys(choice[d.domain]).forEach(function (col) {
+        if (choice[d.domain][col]) m[d.domain + '$' + col] = 1;
+      });
+    });
+    return m;
+  }
+  function reach() { return M.metricReach(D.metrics, mappedSet()); }
+
+  function rowsFor(dn) {
+    return props[dn].rows.filter(function (r) {
+      return !onlyRequired || isCrit[dn + '$' + r.col];
+    });
+  }
+  function domainCounts(dn) {
+    var c = choice[dn], auto = 0, guess = 0, none = 0;
+    rowsFor(dn).forEach(function (r) {
+      var v = c[r.col];
+      if (!v) { none++; }
+      else if (v !== r.source) { auto++; }       // user-chosen counts as settled
+      else if (r.conf === 'auto') { auto++; }
+      else { guess++; }
+    });
+    return { auto: auto, guess: guess, none: none, total: rowsFor(dn).length };
+  }
+
+  /* ---- step 1 ---- */
+  function renderStep1() {
+    var files = [];
+    D.domains.forEach(function (d) {
+      var cols = D.userExport[d.domain];
+      files.push({ name: d.domain + '.csv', dom: d.domain, cols: cols ? cols.length : 0, ok: !!cols, n_metrics: d.n_metrics });
+    });
+    Object.keys(D.userExport).forEach(function (k) {
+      if (!byName[k]) files.push({ name: k + '.csv', dom: k, cols: D.userExport[k].length, ok: true, orphan: true });
+    });
+
+    var bar = $('#detectbar');
+    bar.innerHTML = '';
+    var deliv = files.filter(function (f) { return f.ok && !f.orphan; }).length;
+    bar.appendChild(el('span', '', '<span class="big">' + deliv + '</span> of ' + D.domains.length + ' domains delivered'));
+    bar.appendChild(el('span', '', 'Detected: <span class="pill ' + (std.pct > .7 ? 'good' : 'warn') + '">' + esc(std.label) + '</span> <span style="color:var(--faint)">' + std.hit + ' of ' + std.tot + ' standard names present</span>'));
+
+    var list = $('#filelist');
+    list.innerHTML = '';
+    files.forEach(function (f) {
+      var row = el('div', 'filerow');
+      var mark, meta;
+      if (f.orphan) {
+        mark = '<span class="st st-warn"><span class="gl">&#9888;</span>unused</span>';
+        meta = f.cols + ' columns &middot; no mapping reads this';
+      } else if (!f.ok) {
+        mark = '<span class="st st-crit"><span class="gl">&#10006;</span>absent</span>';
+        meta = 'costs metrics &mdash; see step 3';
+      } else {
+        mark = '<span class="st st-good"><span class="gl">&#10004;</span>found</span>';
+        meta = f.cols + ' columns';
+      }
+      row.appendChild(el('span', '', mark));
+      row.appendChild(el('span', 'fn', esc(f.name)));
+      row.appendChild(el('span', 'meta', meta));
+      list.appendChild(row);
+    });
+    $('#step1out').hidden = false;
+  }
+
+  $('#dropzone').addEventListener('click', renderStep1);
+
+  /* ---- step 2 ---- */
+  function renderStep2() {
+    var host = $('#domlist');
+    host.innerHTML = '';
+    var order = D.domains.slice().sort(function (a, b) {
+      var ad = !!D.userExport[a.domain], bd = !!D.userExport[b.domain];
+      if (ad !== bd) return ad ? -1 : 1;
+      return b.n_metrics - a.n_metrics;
+    });
+
+    order.forEach(function (d) {
+      var dn = d.domain, p = props[dn], delivered = p.delivered;
+      var wrap = el('div', 'dom');
+      var head = el('button', 'head');
+      var cnt = domainCounts(dn);
+      var stat = !delivered
+        ? '<span class="st st-crit"><span class="gl">&#10006;</span>not delivered</span>'
+        : (cnt.none ? '<span class="st st-crit"><span class="gl">&#10006;</span>' + cnt.none + ' unmapped</span>'
+          : (cnt.guess ? '<span class="st st-warn"><span class="gl">&#9888;</span>' + cnt.guess + ' to confirm</span>'
+            : '<span class="st st-good"><span class="gl">&#10004;</span>mapped</span>'));
+
+      head.innerHTML =
+        '<span>' + stat + '</span>' +
+        '<span><span class="dname">' + esc(dn) + '</span> ' +
+        '<span class="dmeta">&middot; ' + cnt.total + ' columns' + (delivered ? '' : '') + '</span></span>' +
+        '<span class="impact' + (d.n_metrics >= 10 ? ' hot' : '') + '">' + d.n_metrics + ' metric' + (d.n_metrics === 1 ? '' : 's') + '</span>';
+      wrap.appendChild(head);
+
+      var body = el('div', 'body');
+      body.hidden = !(delivered && (cnt.none || cnt.guess));
+      if (!delivered) {
+        body.appendChild(el('p', 'mock-cap', 'No file was supplied for this domain. Settle it in step 3.'));
+      } else {
+        rowsFor(dn).forEach(function (r) { body.appendChild(mapRow(dn, r)); });
+        if (!rowsFor(dn).length) {
+          body.appendChild(el('p', 'mock-cap', 'Nothing in this domain is required by a metric.'));
+        }
+        if (p.unusedCols.length) {
+          body.appendChild(el('p', 'mock-cap',
+            '<span class="pill">unused</span> ' + p.unusedCols.length + ' column' + (p.unusedCols.length === 1 ? '' : 's') +
+            ' in the file that nothing reads: <span style="font-family:var(--f-mono);font-size:.76rem">' +
+            esc(p.unusedCols.join(', ')) + '</span>'));
+        }
+      }
+      wrap.appendChild(body);
+      head.addEventListener('click', function () { body.hidden = !body.hidden; });
+      host.appendChild(wrap);
+    });
+    updateTally();
+  }
+
+  function mapRow(dn, r) {
+    var row = el('div', 'maprow');
+    var key = dn + '$' + r.col;
+    var lev = M.columnLeverage(D.metrics, key).length;
+    var sub = [];
+    if (r.type) sub.push(esc(r.type));
+    if (lev) sub.push('<span style="color:var(--g-app);font-weight:600">' + lev + ' metric' + (lev === 1 ? '' : 's') + '</span>');
+    if (r.declared_in && r.declared_in.length > 1) sub.push('declared in ' + r.declared_in.length + ' files');
+    var lbl = esc(r.col) + (sub.length ? '<small>' + sub.join(' &middot; ') + '</small>' : '');
+    row.appendChild(el('span', 'tgt', lbl));
+    row.appendChild(el('span', 'arrow', '&larr;'));
+
+    var sel = el('select');
+    var cols = D.userExport[dn] || [];
+    var opts = ['<option value="">&mdash; not mapped &mdash;</option>'];
+    cols.forEach(function (c) {
+      opts.push('<option value="' + esc(c) + '"' + (choice[dn][r.col] === c ? ' selected' : '') + '>' + esc(c) + '</option>');
+    });
+    sel.innerHTML = opts.join('');
+    var why = el('span', 'why');
+
+    function paint() {
+      var v = choice[dn][r.col];
+      sel.className = !v ? 'none' : (v !== r.source ? 'auto' : (r.conf === 'auto' ? 'auto' : (r.conf === 'guess' ? 'guess' : 'none')));
+      var txt;
+      if (!v) txt = '<span class="st st-crit"><span class="gl">&#10006;</span>you pick</span>';
+      else if (v !== r.source) txt = '<span class="st st-good"><span class="gl">&#10004;</span>yours</span>';
+      else if (r.conf === 'auto') txt = '<span class="st st-good"><span class="gl">&#10004;</span>' + esc(r.why) + '</span>';
+      else txt = '<span class="st st-warn"><span class="gl">&#9888;</span>' + esc(r.why) + '</span>';
+      if (r.conflict) txt += ' <span class="pill crit">also wanted by ' + esc(r.conflict.join(', ')) + '</span>';
+      why.innerHTML = txt;
+    }
+    sel.addEventListener('change', function () {
+      choice[dn][r.col] = sel.value || null;
+      paint(); updateTally(); refreshHeads();
+    });
+    paint();
+    row.appendChild(sel);
+    row.appendChild(why);
+    return row;
+  }
+
+  function refreshHeads() {
+    /* cheap: re-render step 2 headers by re-running render is too destructive
+       (it would collapse open panels), so update the status spans in place. */
+    var heads = document.querySelectorAll('#domlist .dom');
+    heads.forEach(function (wrap) {
+      var nm = $('.dname', wrap);
+      if (!nm) return;
+      var dn = nm.textContent.trim();
+      if (!props[dn]) return;
+      var cnt = domainCounts(dn), delivered = props[dn].delivered;
+      var stat = !delivered
+        ? '<span class="st st-crit"><span class="gl">&#10006;</span>not delivered</span>'
+        : (cnt.none ? '<span class="st st-crit"><span class="gl">&#10006;</span>' + cnt.none + ' unmapped</span>'
+          : (cnt.guess ? '<span class="st st-warn"><span class="gl">&#9888;</span>' + cnt.guess + ' to confirm</span>'
+            : '<span class="st st-good"><span class="gl">&#10004;</span>mapped</span>'));
+      $('.head > span:first-child', wrap).innerHTML = stat;
+    });
+  }
+
+  function updateTally() {
+    var a = 0, g = 0, n = 0;
+    D.domains.forEach(function (d) {
+      if (!props[d.domain].delivered) return;
+      var c = domainCounts(d.domain);
+      a += c.auto; g += c.guess; n += c.none;
+    });
+    var rc = reach();
+    var bar = $('#maptally');
+    bar.innerHTML =
+      '<span><span class="big">' + a + '</span> settled</span>' +
+      '<span><span class="big">' + g + '</span> to confirm</span>' +
+      '<span><span class="big">' + n + '</span> need you</span>' +
+      '<span style="margin-left:auto"><span class="big">' + rc.live.length + '</span> of ' + D.n_metrics + ' metrics reachable</span>';
+    $('#mapcap').innerHTML =
+      'Ordered by what each domain controls, and filtered to the ' + D.n_critical +
+      ' columns some metric actually names &mdash; the other ' + (D.n_declarations - D.n_critical) +
+      ' feed reporting and labels. The row worth finding first is <code>Raw_SUBJ.invid</code>: ' +
+      'this CRO calls the site <code>CENTRE_CODE</code>, no alias list knows that, and 12 metrics ' +
+      'are behind it. Set it and watch the count above move.';
+  }
+
+  /* ---- step 3 ---- */
+  function renderStep3() {
+    var host = $('#losslist');
+    host.innerHTML = '';
+    var base = mappedSet();
+    var rc = M.metricReach(D.metrics, base);
+
+    D.domains.filter(function (d) { return !D.userExport[d.domain]; }).forEach(function (d) {
+      /* Price the domain: what would light up if every column it declares arrived. */
+      var withIt = {}; Object.keys(base).forEach(function (k) { withIt[k] = 1; });
+      (d.columns || []).forEach(function (c) { withIt[d.domain + '$' + c.col] = 1; });
+      var could = M.metricReach(D.metrics, withIt).live.length;
+
+      var lost = rc.dead.filter(function (m) {
+        return (rc.missingFor[m] || []).some(function (k) { return k.indexOf(d.domain + '$') === 0; });
+      });
+      var chips = lost.map(function (m) {
+        var mt = D.metrics[m];
+        var lvl = mt.level && mt.level !== 'Site' ? ' <span style="opacity:.7">(' + esc(mt.level) + ')</span>' : '';
+        return '<span class="chip off">' + esc(mt.abbr) + ' &middot; ' + esc(mt.metric) + lvl + '</span>';
+      }).join('');
+
+      var card = el('div', 'card');
+      card.style.marginBottom = '10px';
+      card.innerHTML =
+        '<h3 style="margin-top:0"><span class="st st-crit"><span class="gl">&#10006;</span></span> ' + esc(d.domain) + ' was not delivered</h3>' +
+        '<p class="mock-cap" style="margin-bottom:8px">Supplying it would take this run from ' + rc.live.length +
+        ' to ' + could + ' reachable metrics. It is the only source for these:</p>' +
+        '<div class="chips">' + (chips || '<span class="chip">nothing depends on it uniquely</span>') + '</div>' +
+        '<div class="btnrow">' +
+        '<button class="btn" data-accept="' + esc(d.domain) + '">Run without it</button>' +
+        '<button class="btn">I can supply this file</button></div>';
+      host.appendChild(card);
+    });
+
+    /* Anything still dark for a reason other than an undelivered file. */
+    var stillDark = rc.dead.filter(function (m) {
+      return (rc.missingFor[m] || []).some(function (k) {
+        return !!D.userExport[k.split('$')[0]];
+      });
+    });
+    if (stillDark.length) {
+      var c2 = el('div', 'card');
+      c2.style.marginBottom = '10px';
+      c2.innerHTML = '<h3 style="margin-top:0"><span class="st st-warn"><span class="gl">&#9888;</span></span> ' +
+        stillDark.length + ' more are dark because a column is still unmapped</h3>' +
+        '<p class="mock-cap" style="margin-bottom:8px">The file is there. Going back one step and setting these ' +
+        'would turn them on:</p><div class="chips">' +
+        stillDark.slice(0, 8).map(function (m) {
+          var gaps = (rc.missingFor[m] || []).filter(function (k) { return !!D.userExport[k.split('$')[0]]; });
+          return '<span class="chip off">' + esc(D.metrics[m].abbr) + ' &middot; needs ' + esc(gaps.join(', ')) + '</span>';
+        }).join('') + '</div>';
+      host.appendChild(c2);
+    }
+
+    var sum = el('div', 'callout');
+    sum.innerHTML = '<span class="label">What this run will produce</span>' +
+      '<p style="margin:0"><span class="st st-good"><span class="gl">&#10004;</span>' + rc.live.length +
+      ' of ' + D.n_metrics + ' metrics</span> will compute. ' + rc.dead.length +
+      ' will not, and the study site should say so on the page rather than drawing an empty chart. ' +
+      'The Site Risk Score is the one to watch: it weights every KRI that ran, so a partial mapping ' +
+      'quietly changes its denominator rather than failing.</p>';
+    host.appendChild(sum);
+
+    host.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-accept]');
+      if (!b) return;
+      accepted[b.getAttribute('data-accept')] = true;
+      b.textContent = 'Accepted — running without it';
+      b.classList.add('primary');
+    });
+  }
+
+  $('#scopetoggle').addEventListener('click', function () {
+    onlyRequired = !onlyRequired;
+    this.textContent = onlyRequired
+      ? 'Showing: required columns only'
+      : 'Showing: all ' + D.n_declarations + ' declared columns';
+    this.classList.toggle('primary', onlyRequired);
+    renderStep2();
+  });
+
+  /* ---- step 4 ---- */
+  function renderStep4() {
+    var host = $('#emit');
+    host.innerHTML = '';
+    var files = {};
+    D.domains.forEach(function (d) {
+      if (!props[d.domain].delivered) return;
+      props[d.domain].rows.forEach(function (r) {
+        var v = choice[d.domain][r.col];
+        if (!v || v === r.col) return;
+        (r.declared_in || []).forEach(function (f) {
+          (files[f + '.yaml'] = files[f + '.yaml'] || []).push({ dom: d.domain, col: r.col, src: v });
+        });
+      });
+    });
+
+    var names = Object.keys(files).sort();
+    var total = 0; names.forEach(function (f) { total += files[f].length; });
+
+    var head = el('div', 'tally');
+    head.innerHTML = '<span><span class="big">' + total + '</span> <code>source_col</code> lines</span>' +
+      '<span><span class="big">' + names.length + '</span> mapping files</span>' +
+      '<span style="margin-left:auto;color:var(--faint)">nothing else changes</span>';
+    host.appendChild(head);
+
+    names.slice(0, 3).forEach(function (f) {
+      var t = el('div', 'term');
+      var lines = ['<span class="c-dim">workflows/1_mappings/</span><b>' + esc(f) + '</b>'];
+      var byDom = {};
+      files[f].forEach(function (x) { (byDom[x.dom] = byDom[x.dom] || []).push(x); });
+      Object.keys(byDom).forEach(function (dm) {
+        lines.push('  <span class="c-hi">' + esc(dm) + ':</span>');
+        byDom[dm].slice(0, 6).forEach(function (x) {
+          lines.push('    <span class="c-dim">' + esc(x.col) + ':</span>');
+          lines.push('      <span class="c-dim">type: ...</span>');
+          lines.push('<span class="c-ok">+     source_col: ' + esc(x.src) + '</span>');
+        });
+        if (byDom[dm].length > 6) lines.push('    <span class="c-dim">... ' + (byDom[dm].length - 6) + ' more</span>');
+      });
+      t.innerHTML = lines.join('\n');
+      host.appendChild(t);
+    });
+    if (names.length > 3) {
+      host.appendChild(el('p', 'mock-cap', 'and ' + (names.length - 3) + ' more mapping files.'));
+    }
+
+    var cfg = el('div', 'term');
+    cfg.innerHTML = '<span class="c-dim">config/</span><b>data-config.yaml</b>\n' +
+      D.domains.filter(function (d) { return !!D.userExport[d.domain]; }).slice(0, 4).map(function (d) {
+        return '<span class="c-ok">+ ' + esc(d.domain) + ': input/' + esc(d.domain) + '.csv</span>';
+      }).join('\n') + '\n<span class="c-dim">  ...</span>';
+    host.appendChild(cfg);
+  }
+
+  $('#rerun').addEventListener('click', function () {
+    var host = $('#revalidate');
+    var rc = reach();
+    var lines = ['<b>open.gismo validation — PRO-4821 Phase 2</b>', ''];
+    var bad = 0;
+    D.domains.forEach(function (d) {
+      var dn = d.domain, c = domainCounts(dn);
+      if (!props[dn].delivered) {
+        lines.push('  <span class="c-warn">⚠</span>  ' + pad(dn, 13) +
+          ' <span class="c-dim">not supplied — accepted, ' + d.n_metrics + ' metric(s) skipped</span>');
+      } else if (!c.none) {
+        lines.push('  <span class="c-ok">✔</span>  ' + pad(dn, 13) +
+          ' <span class="c-dim">' + c.total + ' required column(s) mapped</span>');
+      } else {
+        bad++;
+        lines.push('  <span class="c-bad">✖</span>  ' + pad(dn, 13) +
+          ' <span class="c-bad">' + c.none + ' required column(s) still unmapped</span>');
+      }
+    });
+    lines.push('');
+    lines.push(bad
+      ? '  <span class="c-bad">✖ ' + bad + ' domain(s) still need attention</span> — <span class="c-hi">' +
+        rc.live.length + ' of ' + D.n_metrics + ' metrics</span> reachable so far'
+      : '  <span class="c-ok">✔ ready</span> — <span class="c-hi">' + rc.live.length + ' of ' +
+        D.n_metrics + ' metrics</span> will compute');
+    if (!bad) lines.push('\n  Run <b>og_run("PRO-4821")</b>');
+    host.innerHTML = '<div class="term">' + lines.join('\n') + '</div>';
+  });
+  function pad(s, n) { s = String(s); while (s.length < n) s += ' '; return s; }
+
+  /* ---- step nav ---- */
+  function show(n) {
+    document.querySelectorAll('.panel').forEach(function (p) { p.hidden = p.getAttribute('data-panel') !== String(n); });
+    document.querySelectorAll('.steps button').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-step') === String(n)); });
+    if (n === 2) renderStep2();
+    if (n === 3) renderStep3();
+    if (n === 4) renderStep4();
+  }
+  document.querySelectorAll('.steps button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var n = +b.getAttribute('data-step');
+      if (n > 1 && $('#step1out').hidden) renderStep1();
+      show(n);
+    });
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-go]');
+    if (!b) return;
+    show(+b.getAttribute('data-go'));
+    document.querySelector('.mock').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+})();
+</script>
