@@ -12,6 +12,27 @@ import { ROOT } from '../repos.mjs';
 import { readRegistry, bySlug } from '../decision-ids.mjs';
 import { parseIndexTable, readArtifactState, isAwaiting as awaitingState } from '../decision-state.mjs';
 
+// The status cell is markdown, and four surfaces render it as plain text: the
+// decisions landing page's open list and its cards, the roadmap catalog's meta
+// line, and the roadmap queue. Flattening links was never enough — emphasis
+// reached all four as literal asterisks, so the first word on the page he
+// triages from read `**Awaiting**` for every open decision.
+//
+// Underscores are deliberately the strict case. These cells are full of
+// identifiers (package_snapshot, input_data_version), so a blunt strip of
+// [*_`] corrupts them into packagesnapshot. Emphasis is paired and
+// word-boundaried; a bare underscore inside a word is not emphasis.
+export function plainStatus(status) {
+  return (status ?? '')
+    // Links first, so emphasis inside a label is still reachable afterwards.
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s.,;:)!?]|$)/g, '$1$2');
+}
+
+
 const LINK = /\[([^\]]+)\]\(([^)]+)\)/; // first markdown link in a cell
 
 const bare = (status = '') => status.replace(/[*_`]/g, '').trim();
@@ -137,8 +158,7 @@ export async function collectDecisions() {
       goal: goal ? { label: goal[1], url: goal[2] } : null,
       discussion: discussion ? { label: discussion[1], url: discussion[2] } : null,
       status,
-      // The status cell may carry markdown links; flatten them for meta columns.
-      statusPlain: status.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'),
+      statusPlain: plainStatus(status),
       state,
       awaiting,
       // Which flavour of retirement, and where the reader is sent, still comes from

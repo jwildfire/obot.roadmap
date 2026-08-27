@@ -84,9 +84,10 @@ export function buildItems({ NOW, reqRes, prRes, relRes, ideaRes, decRes }) {
   // Decisions awaiting him, straight from the committed decision index.
   for (const d of decRes.value?.awaiting ?? []) {
     const artifact = d.path ?? 'reports/decisions/';
-    // statusPlain flattens links but keeps markdown emphasis; strip it or the
-    // card reads "**Folded into D0017**" with literal asterisks.
-    const status = clip((d.statusPlain || '').replace(/[*_`]/g, '').trim(), 110);
+    // statusPlain is plain now — links flattened and emphasis removed at the
+    // source in collect/decisions.mjs, which is where the other three readers
+    // of this field were getting the markup raw.
+    const status = clip((d.statusPlain || '').trim(), 110);
     items.push({
       type: 'decide',
       since: /^\d{4}-\d{2}-\d{2}/.test(d.date || '') ? d.date : null,
