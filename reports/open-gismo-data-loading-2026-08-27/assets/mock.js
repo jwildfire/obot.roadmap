@@ -89,7 +89,7 @@
       opts: [
         { v: 'none',   label: '— not supplied — decline the Grade 3+ KRI',
           state: 'declined',
-          reason: 'No toxicity grade in the export. kri0005 and cou0005 are recorded as declined in the study config; all six LB charts still render.' },
+          reason: 'No toxicity grade in the export. kri0005 / cou0005, the Grade 3+ Lab Abnormality Rate, are recorded as declined in the study config. The Hy\u2019s Law candidate metric and all six LB charts still render.' },
         { v: 'derive', label: 'derive from result and reference range',
           state: 'attn',
           reason: 'Normal-range severity is not CTCAE grade — CTCAE thresholds are per-analyte and not derivable from a reference range alone. Offering this at all is an open question.' }
@@ -164,13 +164,13 @@
 
     var verdict, tone;
     if (s.state === 'gap') {
-      verdict = 'Raw_LB will map to zero rows. Six safety charts and two KRIs render empty, and nothing reports an error.';
+      verdict = 'Raw_LB will map to zero rows. Six of the nine safety charts, the Hy\u2019s Law candidate metric and the Grade 3+ Lab Abnormality Rate all render empty, and nothing reports an error.';
       tone = 'gap';
     } else if (b.state === 'attn' || g.state === 'attn') {
       verdict = 'Raw_LB will map. One column still needs a decision before the run means what you think it means.';
       tone = 'attn';
     } else {
-      verdict = 'Raw_LB is ready. 58,412 rows over 765 participants, feeding six safety charts and one of the two LB metrics.';
+      verdict = 'Raw_LB is ready. 58,412 rows over 765 participants, feeding six of the nine safety charts' + (g.v === 'none' ? ' and the Hy\u2019s Law candidate metric.' : ', the Hy\u2019s Law candidate metric and the Grade 3+ Lab Abnormality Rate.');
       tone = 'ok';
     }
 

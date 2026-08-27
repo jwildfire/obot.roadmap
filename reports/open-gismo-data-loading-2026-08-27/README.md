@@ -27,7 +27,11 @@ Everything about our own side was read from the repositories on 2026-08-27, not 
 - **Downstream dependencies** — from the 30 metric workflows in
   `demo-301/workflows/2_metrics/` and the 12 module workflows in `4_modules/`, by the
   `Mapped_*` domains each names in its `spec` block or its `meta.Data` key.
-  `Mapped_SUBJ` is read by 25 of them; `Mapped_LB` feeds 6 of the 9 safety charts.
+  `Mapped_SUBJ` is read by 25 of them; `Mapped_LB` feeds 6 of the 9 safety charts
+  plus `kri0005`/`cou0005` (Grade 3+ Lab Abnormality Rate) and `saf0001` (Hy's Law
+  Candidate). Declining the five domains an EDC export typically lacks —
+  `DATACHG`, `DATAENT`, `SDRGCOMP`, `STUDCOMP`, `IE` — costs 12 of the 30 metric
+  workflows and the QTL report, computed as the union of their dependents.
 - **The inner joins** — `demo-301/workflows/1_mappings/AE.yaml` and `LB.yaml` both end in
   `dplyr::inner_join` on `subjid` against a lookup derived from `Mapped_SUBJ`. The AE
   workflow documents this as the data-cleaning step, on purpose.
