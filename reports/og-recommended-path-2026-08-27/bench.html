@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The bench behind the read</title>
+<meta name="description" content="The working surface the intake report sends you to when four questions are not enough: every column the pipeline declares beside every column the study delivered, four dispositions per row including declining with a printed price, and a key check that catches the identifier which looks right and joins to nothing.">
+<link rel="stylesheet" href="assets/report.css">
+<link rel="stylesheet" href="assets/product.css">
+<style>
+  .bx-toolbar { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .9rem; }
+  .bx-filter { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .bx-filter button {
+    font: inherit; font-size: .76rem; font-weight: 600; cursor: pointer;
+    padding: .25rem .55rem; border-radius: 7px;
+    border: 1px solid var(--og-rule); background: var(--og-card); color: var(--og-muted);
+  }
+  .bx-filter button[aria-pressed="true"] { background: var(--og-side); border-color: var(--og-side); color: #f5ede4; }
+  .bx-act {
+    font: inherit; font-size: .76rem; font-weight: 650; cursor: pointer;
+    padding: .25rem .6rem; border-radius: 7px;
+    border: 1px solid var(--og-accent); background: var(--og-accent); color: #fff;
+  }
+  .bx-act.sec { background: var(--og-card); color: var(--og-accent); }
+
+  .bx-counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(50%, 7.5rem), 1fr)); gap: .4rem; margin-top: .85rem; }
+  .bx-count { background: var(--og-card); border: 1px solid var(--og-rule); border-radius: 9px; padding: .45rem .55rem; }
+  .bx-count .n { font-family: var(--og-serif); font-size: 1.35rem; line-height: 1; }
+  .bx-count .k { font-size: .7rem; color: var(--og-muted); margin-top: .2rem; display: block; line-height: 1.3; }
+
+  .bx-domain {
+    margin-top: 1rem; font-family: var(--og-mono); font-size: .72rem; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--og-muted);
+    display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline;
+  }
+  .bx-domain b { color: var(--og-ink); font-size: .8rem; letter-spacing: 0; text-transform: none; font-family: var(--og-mono); }
+  .bx-domain span + span::before { content: '·'; margin-right: .45rem; color: var(--og-faint); }
+
+  .bx-rows { border: 1px solid var(--og-rule); border-radius: 10px; overflow: hidden; margin-top: .4rem; background: var(--og-card); }
+  .bx-row {
+    display: grid; grid-template-columns: minmax(7rem, 1.1fr) 3.2rem 5.4rem minmax(6rem, 1.2fr);
+    gap: .4rem; align-items: baseline; width: 100%;
+    padding: .4rem .55rem; border-bottom: 1px solid var(--og-rule);
+    background: none; border-left: 0; border-right: 0; border-top: 0;
+    font: inherit; text-align: left; cursor: pointer; color: var(--og-ink);
+  }
+  .bx-row:last-of-type { border-bottom: 0; }
+  .bx-row:hover { background: var(--og-panel); }
+  .bx-row[aria-expanded="true"] { background: var(--og-panel); }
+  .bx-row .tcol { font-family: var(--og-mono); font-size: .78rem; font-weight: 600; overflow-wrap: anywhere; }
+  .bx-row .ttype { font-family: var(--og-mono); font-size: .66rem; color: var(--og-faint); display: block; font-weight: 400; }
+  .bx-row .tcons { font-family: var(--og-mono); font-size: .68rem; color: var(--og-muted); text-align: right; }
+  .bx-row .tsrc { font-family: var(--og-mono); font-size: .74rem; color: var(--og-muted); overflow-wrap: anywhere; }
+  .bx-row .tsrc.prop { color: var(--og-faint); font-style: italic; }
+  @media (max-width: 34rem) {
+    .bx-row { grid-template-columns: 1fr 3rem; grid-template-areas: "c n" "d d" "s s"; row-gap: .2rem; }
+    .bx-row .tcol { grid-area: c; } .bx-row .tcons { grid-area: n; }
+    .bx-row .tdisp { grid-area: d; } .bx-row .tsrc { grid-area: s; }
+  }
+
+  .bx-detail { padding: .7rem .7rem .85rem; background: var(--og-panel); border-bottom: 1px solid var(--og-rule); }
+  .bx-detail h4 { margin: 0 0 .1rem; font-size: .82rem; font-weight: 650; }
+  .bx-detail .sub { font-size: .76rem; color: var(--og-muted); line-height: 1.45; }
+  .bx-detail .cost { font-size: .76rem; margin-top: .5rem; }
+
+  .bx-legend {
+    display: grid; grid-template-columns: minmax(7rem, 1.1fr) 3.2rem 5.4rem minmax(6rem, 1.2fr);
+    gap: .4rem; padding: 0 .55rem; margin-top: 1rem;
+    font-family: var(--og-mono); font-size: .62rem; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--og-faint); line-height: 1.25;
+  }
+  .bx-legend span:nth-child(2) { text-align: right; }
+  @media (max-width: 34rem) { .bx-legend { display: none; } }
+
+  .bx-keys { margin-top: .9rem; }
+  .bx-note {
+    margin-top: .7rem; font-size: .78rem; color: var(--og-muted); line-height: 1.5;
+    border-left: 2px solid var(--og-rule); padding-left: .6rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap wide">
+
+  <header class="masthead">
+    <div class="kicker">open.gismo · loading your own data · mockup 2 of 2</div>
+    <h1>The bench behind the read</h1>
+    <p class="standfirst">
+      The intake report is the front door and answers four or five questions well. This is the room
+      it sends you to when that is not enough — the fortieth transfer, the column nobody asked
+      about, the judgement only you can make. It is working: bind a column, derive one, declare a
+      constant, decline one, and watch the price move while you do.
+    </p>
+    <nav aria-label="Pages">
+      <ul class="pagenav">
+        <li><a href="index.html">The recommendation</a></li>
+        <li><a href="flow.html">1 · Loading HEP-204, step by step</a></li>
+        <li><a href="bench.html" aria-current="page">2 · The bench behind the read</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="callout">
+    <span class="lbl">What to try, in order</span>
+    <p>
+      Press <strong>Accept identical matches</strong>. Then open <code>Raw_SUBJ → subjid</code>: two
+      candidates, both plausible, and the one the alias list ranks first is the one that empties
+      every join in the study. Bind it to <code>USUBJID</code> and press <strong>Measure the
+      keys</strong>. Take the fix. Then open <code>Raw_AE → aetoxgr</code> and
+      <strong>decline</strong> it, which is the only thing on any of these pages that lets you tell
+      the product something it never thought to ask.
+    </p>
+  </div>
+
+  <div class="og">
+    <div class="og-chrome"><i></i><i></i><i></i><span class="path">~/hep-204 — Data › Mapping</span></div>
+    <div class="og-frame">
+      <div class="og-side">
+        <div class="og-brand">open<span>.</span>gismo</div>
+        <div class="og-study">HEP-204</div>
+        <ul class="og-nav">
+          <li><span>Overview</span></li>
+          <li><span>Intake report</span></li>
+          <li><span class="on">Data › Mapping</span></li>
+          <li><span>Displays</span></li>
+          <li><span>Snapshots</span></li>
+          <li><span>Provenance</span></li>
+        </ul>
+      </div>
+      <div class="og-main">
+        <div class="og-crumb">Data › Mapping · reached from finding 3 of the intake report</div>
+        <div class="og-h1">The bench</div>
+        <p class="og-sub">
+          45 targets across the three domains you delivered, of 126 across all 14. Every row carries
+          one of four dispositions, and every one of them writes into
+          <span class="mono">workflows/1_mappings/*.yaml</span> — files you own, diff and commit.
+        </p>
+
+        <div class="bx-counts" data-counts>
+          <div class="bx-count"><span class="n" data-k="bound">0</span><span class="k">Bound to a source column</span></div>
+          <div class="bx-count"><span class="n" data-k="derived">0</span><span class="k">Derived from a step</span></div>
+          <div class="bx-count"><span class="n" data-k="const">0</span><span class="k">Constant for the study</span></div>
+          <div class="bx-count"><span class="n" data-k="declined">0</span><span class="k">Declined, with a reason</span></div>
+          <div class="bx-count"><span class="n" data-k="open">45</span><span class="k">Open — no disposition yet</span></div>
+        </div>
+
+        <div class="og-verdict notrun">
+          <span class="v">Not run</span>
+          <span>
+            <span data-metricline>30 of the 45 targets on this screen are named by a display.
+            <strong>0</strong> of those 30 are settled.</span>
+            Readiness will not change until the mapping has executed against the real files.
+          </span>
+        </div>
+
+        <div class="bx-toolbar">
+          <button class="bx-act" type="button" data-act="identical">Accept identical matches</button>
+          <button class="bx-act sec" type="button" data-act="keys">Measure the keys</button>
+          <button class="bx-act sec" type="button" data-act="reset">Reset</button>
+        </div>
+        <div class="bx-toolbar">
+          <div class="bx-filter" role="group" aria-label="Filter rows">
+            <button type="button" data-filter="all" aria-pressed="true">All 45</button>
+            <button type="button" data-filter="metric" aria-pressed="false">Named by a display</button>
+            <button type="button" data-filter="open" aria-pressed="false">Still open</button>
+            <button type="button" data-filter="settled" aria-pressed="false">Settled</button>
+          </div>
+        </div>
+
+        <div data-keys class="bx-keys" hidden></div>
+
+        <div data-grid></div>
+
+        <h3>Project files</h3>
+        <p class="og-sub">There is no hidden state in this design. Everything above is a diff against files that already exist.</p>
+        <div class="og-diff">
+          <div class="fname">workflows/1_mappings/ · config/setup-log.md</div>
+          <pre data-files><span class="empty">Nothing written yet. Nothing on this screen is pre-filled — every line below is a click.</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-num">01</div>
+    <h2>Two things this screen refuses to do</h2>
+
+    <div class="grid two">
+      <div class="card">
+        <h3 style="margin-top:0">It never pre-fills a guess</h3>
+        <p style="font-size:.9rem">
+          Identical names bind <em>on request</em> and are marked <code>identical</code>. Everything
+          else stays a proposal, printed in the row, until a person clicks it — and the click is
+          recorded in the YAML as <code># accepted proposal</code>. A data manager who finds one
+          wrong pre-filled row stops trusting the other 125, and re-checking 126 rows by hand is
+          worse than filling them.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">It never shows a confidence number</h3>
+        <p style="font-size:.9rem">
+          Candidates are ordered and the reason for the order is printed. No score. The guided-setup
+          session measured a value profiler scoring <strong>1.000 on a wrong answer</strong> and
+          0.849 on a right one, on the study open.gismo ships. There is no threshold that admits one
+          and rejects the other, so the number would only transfer the machine's certainty to the
+          reader.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-num">02</div>
+    <h2>What is real on this screen</h2>
+    <ul class="bul">
+      <li>
+        <strong>The left-hand side.</strong> 45 target columns with their declared types, read out of
+        <code>demo-301/workflows/1_mappings/{SUBJ,AE,LB}.yaml</code> this morning.
+      </li>
+      <li>
+        <strong>The consumer counts.</strong> Resolved from the 42 metric and module workflows.
+        <code>Mapped_SUBJ$subjid</code> carries <strong>25</strong>, <code>$invid</code> and
+        <code>$country</code> 12 each, <code>Mapped_LB$lbtstnam</code> and
+        <code>$lbstresn</code> 7 each, <code>$toxgrg_nsv</code> 3.
+      </li>
+      <li>
+        <strong>The two spec keys.</strong> <code>gsm.mapping::ApplySpec</code> reads
+        <code>source_col</code> and <code>type</code> and nothing else, and drops any spec entry
+        whose source column is absent from the file — silently, at every verbosity level. That is
+        the entire seam this screen writes into.
+      </li>
+      <li>
+        <strong>The key measurement.</strong> Reproduced on demo-301's own data this session: the
+        long identifier and the short one share <strong>0 of 765</strong> values, and the inner join
+        the study runs returns 0 rows from 57,200.
+      </li>
+      <li>
+        <strong>The delivered column names are constructed</strong> — a CRO transport, an EDC event
+        listing and a central-lab extract, written from the CDISC and EDC-vendor conventions. The
+        match rate you see is therefore an upper bound on a real one, which is survivable only
+        because nothing here is ever applied without a click.
+      </li>
+    </ul>
+  </section>
+
+  <hr class="hr">
+  <footer class="report">
+    <p>
+      The argument for this surface, and the honest case against it, are on
+      <a href="index.html">the recommendation</a> — grafts G4 to G7, and weakness W1. The path that
+      reaches it is <a href="flow.html">the flow</a>.
+    </p>
+    <p>Drafted by Claude Code using Opus 5 for review by @jwildfire.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Target side: read from demo-301/workflows/1_mappings/*.yaml (2026-08-27).
+  // cons = downstream consumers, resolved from the 42 metric + module workflows.
+  // cands = ordered candidates from the delivered files. Never scored.
+  var D = [
+    { d: 'Raw_SUBJ', file: 'dm.xpt', n: 'dm.xpt · 1,005 rows · 16 delivered columns', rows: [
+      { c: 'studyid', t: 'character', cons: 1, cands: [['STUDYID', 'identical name, ignoring case', '"AA-AA-000-0000"']] },
+      { c: 'invid', t: 'character', cons: 12, cands: [['SITEID', 'alias siteid → invid', '"0301" · "0472"'], ['ARMCD', 'name contains', '"A" · "B"']] },
+      { c: 'country', t: 'character', cons: 12, cands: [['COUNTRY', 'identical name, ignoring case', '"United States" · "Japan"']] },
+      { c: 'subjid', t: 'character', cons: 25, trap: true, cands: [
+          ['USUBJID', 'alias usubjid → subjid · 1,005 distinct', '"AA-AA-000-0000-S384"'],
+          ['SUBJID', 'identical name, ignoring case · 1,005 distinct', '"S384" · "S4476"']] },
+      { c: 'subject_nsv', t: 'character', cons: 0, cands: [] },
+      { c: 'enrollyn', t: 'character', cons: 1, cands: [['ENRLFL', 'alias enrlfl → enrollyn · 765 of 1,005 are "Y"', '"Y" · "N"']] },
+      { c: 'arm', t: 'character', cons: 6, cands: [['ARM', 'identical name, ignoring case', '"Placebo" · "Drug 40mg"']] },
+      { c: 'timeonstudy', t: 'integer', cons: 8, derivable: 'last dated record − RFSTDTC, because RFENDTC is empty for all 1,005 rows', cands: [] },
+      { c: 'firstparticipantdate', t: 'Date', cons: 0, cands: [] },
+      { c: 'firstdosedate', t: 'Date', cons: 0, cands: [['RFSTDTC', 'alias rfstdtc → firstdosedate', '2024-03-11']] },
+      { c: 'timeontreatment', t: 'integer', cons: 0, cands: [] },
+      { c: 'agerep', t: 'integer', cons: 1, cands: [['AGE', 'alias age → agerep · median 64', '64 · 71']] },
+      { c: 'sex', t: 'character', cons: 2, cands: [['SEX', 'identical name, ignoring case', '"F" · "M"']] },
+      { c: 'race', t: 'character', cons: 1, cands: [['RACE', 'identical name, ignoring case', '"WHITE" · "ASIAN"']] },
+      { c: 'mincreated_dts', t: 'timestamp', cons: 0, cands: [] }
+    ]},
+    { d: 'Raw_AE', file: 'ae_listing.csv', n: 'ae_listing.csv · 2,583 rows · 15 delivered columns', rows: [
+      { c: 'studyid', t: 'character', cons: 0, cands: [['STUDY', 'name contains', '"AA-AA-000-0000"']] },
+      { c: 'subjid', t: 'character', cons: 7, cands: [['SUBJID', 'identical name, ignoring case', '"S384"']] },
+      { c: 'aeseq', t: 'integer', cons: 1, cands: [['AESEQ', 'identical name, ignoring case', '1 · 2 · 3']] },
+      { c: 'aeterm', t: 'character', cons: 2, cands: [['AETERM', 'identical name, ignoring case', '"HEADACHE"']] },
+      { c: 'mdrpt_nsv', t: 'character', cons: 1, cands: [['AEDECOD', 'alias aedecod → mdrpt_nsv', '"Headache"']] },
+      { c: 'mdrsoc_nsv', t: 'character', cons: 1, cands: [['AEBODSYS', 'alias aebodsys → mdrsoc_nsv', '"Nervous system disorders"']] },
+      { c: 'aesev', t: 'character', cons: 2, cands: [['AESEV', 'identical name, ignoring case · 3 levels', '"MILD" · "SEVERE"']] },
+      { c: 'aetoxgr', t: 'integer', cons: 1, gap: true, cands: [], derivable: 'AESEV, three levels standing in for five — lossy, and marked wherever it renders' },
+      { c: 'aeser', t: 'character', cons: 5, cands: [['AESER', 'identical name, ignoring case', '"Y" · "N"']] },
+      { c: 'aerel', t: 'character', cons: 1, cands: [['AEREL', 'identical name, ignoring case', '"RELATED"']] },
+      { c: 'aeongo', t: 'character', cons: 0, cands: [['AEONGO', 'identical name, ignoring case', '"Y" · "N"']] },
+      { c: 'aest_dy', t: 'integer', cons: 2, derivable: 'AESTDTC − RFSTDTC · 2,583 of 2,583 clean', cands: [] },
+      { c: 'aeen_dy', t: 'integer', cons: 1, derivable: 'AEENDTC − RFSTDTC · 2,583 of 2,583 clean', cands: [] },
+      { c: 'aest_dt', t: 'Date', cons: 0, cands: [['AESTDTC', 'alias aestdtc → aest_dt', '2024-05-02']] },
+      { c: 'aeen_dt', t: 'Date', cons: 0, cands: [['AEENDTC', 'alias aeendtc → aeen_dt', '2024-05-09']] },
+      { c: 'mincreated_dts', t: 'timestamp', cons: 0, cands: [] }
+    ]},
+    { d: 'Raw_LB', file: 'the three lab files, stacked', n: '3 files stacked · 57,200 rows · 11 delivered columns', rows: [
+      { c: 'studyid', t: 'character', cons: 0, cands: [['STUDYID', 'identical name, ignoring case', '"AA-AA-000-0000"']] },
+      { c: 'subjid', t: 'character', cons: 9, cands: [['SUBJECT', 'alias subject → subjid · 765 distinct', '"S384"'], ['PT_ID', 'alias pt_id → subjid, in lab_specialty', '"S384"']] },
+      { c: 'visnam', t: 'character', cons: 3, cands: [['VISIT', 'alias visit → visnam · 14 distinct', '"Week 4"']] },
+      { c: 'visnum', t: 'integer', cons: 4, cands: [['VISITNUM', 'alias visitnum → visnum · 14 distinct', '4 · 8']] },
+      { c: 'lb_dy', t: 'integer', cons: 1, derivable: 'COLLDT − RFSTDTC · 57,200 of 57,200 clean', cands: [] },
+      { c: 'lb_dt', t: 'Date', cons: 0, cands: [['COLLDT', 'alias colldt → lb_dt', '2024-04-08']] },
+      { c: 'lbblfl', t: 'character', cons: 0, cands: [['BASEFL', 'alias baseflag → lbblfl', '"Y"']] },
+      { c: 'battrnam', t: 'character', cons: 0, cands: [] },
+      { c: 'lbtstnam', t: 'character', cons: 7, vocab: true, cands: [['TEST', 'alias test → lbtstnam · 16 distinct', '"ALT" · "TBILI"']] },
+      { c: 'lbstresn', t: 'numeric', cons: 7, cands: [
+          ['RESULT_SI', 'alias result → lbstresn · numeric, 57,200 non-null', '24.0 · 118.5'],
+          ['VISITNUM', 'numeric, complete — ordered second because it gives no reference range per analyte', '4 · 8']] },
+      { c: 'lbstresu', t: 'character', cons: 0, cands: [['UNIT_SI', 'alias unit → lbstresu · 6 distinct', '"U/L" · "µmol/L"']] },
+      { c: 'lbstnrlo', t: 'numeric', cons: 3, cands: [['LOW_SI', 'alias anrlo/low → lbstnrlo · exactly one value per analyte', '7 · 5']] },
+      { c: 'lbstnrhi', t: 'numeric', cons: 4, cands: [['HIGH_SI', 'alias anrhi/high → lbstnrhi · exactly one value per analyte', '41 · 21']] },
+      { c: 'toxgrg_nsv', t: 'character', cons: 3, gap: true, cands: [], derivable: 'CTCAE v5 from result ÷ upper limit · 10 of 16 analytes, the six haematology ones have no limit' }
+    ]}
+  ];
+
+  var IDENTICAL = {};    // rows whose top candidate is an exact case-insensitive name match
+  D.forEach(function (dom) {
+    dom.rows.forEach(function (r) {
+      r.key = dom.d + '.' + r.c;
+      if (r.cands.length && r.cands[0][0].toLowerCase() === r.c.toLowerCase()) { IDENTICAL[r.key] = r.cands[0][0]; }
+    });
+  });
+
+  var S = {};              // key -> { disp, src, reason }
+  var filter = 'all';
+  var keysShown = false;
+
+  function all() { var a = []; D.forEach(function (d) { d.rows.forEach(function (r) { a.push([d, r]); }); }); return a; }
+  function get(k) { return S[k] || null; }
+  function settled(k) { return !!S[k]; }
+
+  function counts() {
+    var c = { bound: 0, derived: 0, const: 0, declined: 0, open: 0 };
+    all().forEach(function (p) {
+      var s = get(p[1].key);
+      if (!s) { c.open++; } else { c[s.disp]++; }
+    });
+    return c;
+  }
+
+  var PILL = {
+    bound: ['ok', '● Bound'], derived: ['part', '◆ Derived'],
+    const: ['warn', '▲ Constant'], declined: ['bad', '✖ Declined']
+  };
+
+  function rowHTML(dom, r) {
+    var s = get(r.key), k = r.key;
+    var pill = s ? '<span class="og-pill ' + PILL[s.disp][0] + '">' + PILL[s.disp][1] + '</span>'
+                 : '<span class="og-pill off">○ Open</span>';
+    var src;
+    if (s && s.disp === 'bound') { src = '<span class="tsrc">← ' + s.src + '</span>'; }
+    else if (s && s.disp === 'derived') { src = '<span class="tsrc">← generated step</span>'; }
+    else if (s && s.disp === 'const') { src = '<span class="tsrc">← "' + s.src + '"</span>'; }
+    else if (s && s.disp === 'declined') { src = '<span class="tsrc">— not available</span>'; }
+    else if (r.cands.length) { src = '<span class="tsrc prop">proposal: ' + r.cands[0][0] + '</span>'; }
+    else if (r.derivable) { src = '<span class="tsrc prop">no column — derivable</span>'; }
+    else { src = '<span class="tsrc prop">nothing delivered</span>'; }
+
+    return '<button class="bx-row" type="button" data-row="' + k + '" aria-expanded="false">'
+      + '<span class="tcol">' + r.c + '<span class="ttype">' + r.t + '</span></span>'
+      + '<span class="tcons">' + (r.cons ? r.cons + '&nbsp;▸' : '—') + '</span>'
+      + '<span class="tdisp">' + pill + '</span>'
+      + src + '</button>';
+  }
+
+  function detailHTML(dom, r) {
+    var s = get(r.key), H = [];
+    H.push('<div class="bx-detail">');
+    H.push('<h4>' + dom.d + '.' + r.c + '</h4>');
+    H.push('<div class="sub">' + (r.cons
+      ? '<strong>' + r.cons + '</strong> display' + (r.cons === 1 ? '' : 's') + ' downstream of this column.'
+      : 'No display names this column. Leaving it open costs nothing today.')
+      + ' Delivered in <span class="mono">' + dom.file + '</span>.</div>');
+
+    if (r.cands.length) {
+      H.push('<div class="sub" style="margin-top:.5rem">Candidates, ordered. Not scored — the reason for the order is printed instead.</div>');
+      H.push('<ul class="og-cands">');
+      r.cands.forEach(function (c, i) {
+        H.push('<li><span class="ord">' + (i + 1) + '</span><span class="col">' + c[0] + '</span>'
+          + '<span class="why">' + c[1] + '</span><span class="vals">' + c[2] + '</span></li>');
+      });
+      H.push('</ul>');
+    } else {
+      H.push('<div class="sub" style="margin-top:.5rem">No delivered column is a candidate for this target.</div>');
+    }
+
+    if (r.trap) {
+      H.push('<div class="bx-note"><strong>These two are indistinguishable by name.</strong> Both are'
+        + ' present, both are character, both are 1,005 distinct values, and every type check in'
+        + ' open.gismo passes on either. The only way to tell them apart is to measure the overlap'
+        + ' against the columns they will be joined to.</div>');
+    }
+    if (r.derivable) {
+      H.push('<div class="bx-note"><strong>Derivable:</strong> ' + r.derivable + '</div>');
+    }
+    if (r.vocab) {
+      H.push('<div class="bx-note"><strong>Binding the column is not enough here.</strong> Three'
+        + ' displays match four literal strings inside it — <span class="mono">hep_explorer</span>,'
+        + ' <span class="mono">saf0001</span> (Hy&rsquo;s Law) and'
+        + ' <span class="mono">safety_delta_delta</span> — and this delivery spells all four'
+        + ' differently. The value table is a second click.</div>');
+    }
+
+    H.push('<div class="og-disp">');
+    if (r.cands.length) {
+      r.cands.forEach(function (c) {
+        H.push('<button class="og-btn" type="button" data-do="bound|' + r.key + '|' + c[0] + '"'
+          + ' aria-pressed="' + (s && s.disp === 'bound' && s.src === c[0]) + '">Bind ' + c[0] + '</button>');
+      });
+    }
+    if (r.derivable) {
+      H.push('<button class="og-btn" type="button" data-do="derived|' + r.key + '|"'
+        + ' aria-pressed="' + (!!s && s.disp === 'derived') + '">Derive</button>');
+    }
+    H.push('<button class="og-btn" type="button" data-do="const|' + r.key + '|not collected"'
+      + ' aria-pressed="' + (!!s && s.disp === 'const') + '">Constant</button>');
+    H.push('<button class="og-btn ghost" type="button" data-do="declined|' + r.key + '|"'
+      + ' aria-pressed="' + (!!s && s.disp === 'declined') + '">Decline</button>');
+    H.push('</div>');
+
+    if (s && s.disp === 'declined') {
+      H.push('<div class="og-outcome bad"><strong>Declined.</strong> '
+        + (r.cons
+            ? r.cons + ' display' + (r.cons === 1 ? '' : 's') + ' will not be built. The site prints your reason where '
+              + (r.cons === 1 ? 'it' : 'they') + ' would have been, and the next read does not raise this again.'
+            : 'Nothing downstream changes. Recorded so the next read does not raise it again.')
+        + '</div>');
+      H.push('<input class="og-reason" type="text" data-reason="' + r.key + '" value="'
+        + (s.reason || '') + '" placeholder="Why — in your own words. This goes into the YAML and onto the site.">');
+    } else if (s && s.disp === 'derived') {
+      H.push('<div class="og-outcome warn"><strong>Derived.</strong> A generated'
+        + ' <span class="mono">gsm.core::RunQuery</span> step is written into the mapping. It records'
+        + ' who wrote it; it cannot judge it. This is the weakest seam in the whole design and it is'
+        + ' named as such on the recommendation page.</div>');
+    } else if (s && s.disp === 'bound') {
+      H.push('<div class="og-outcome ' + (r.trap ? 'warn' : 'ok') + '">'
+        + '<strong>Bound to <span class="mono">' + s.src + '</span>.</strong> '
+        + 'One <span class="mono">source_col:</span> line — an existing, exercised '
+        + '<span class="mono">gsm.mapping</span> feature, and the only thing this screen writes that is not a step.'
+        + (r.trap
+            ? ' That the mechanism is sound says nothing about whether this is the <em>right</em> column.'
+              + ' Press <strong>Measure the keys</strong>.'
+            : '')
+        + '</div>');
+    }
+    H.push('</div>');
+    return H.join('');
+  }
+
+  function visible(r) {
+    if (filter === 'metric') { return r.cons > 0; }
+    if (filter === 'open') { return !settled(r.key); }
+    if (filter === 'settled') { return settled(r.key); }
+    return true;
+  }
+
+  var openKey = null;
+
+  function renderGrid() {
+    var H = ['<div class="bx-legend"><span>target column</span>'
+      + '<span>used&nbsp;by</span><span>state</span>'
+      + '<span>source</span></div>'];
+    D.forEach(function (dom) {
+      var rows = dom.rows.filter(visible);
+      if (!rows.length) { return; }
+      var done = dom.rows.filter(function (r) { return settled(r.key); }).length;
+      H.push('<div class="bx-domain"><b>' + dom.d + '</b><span>' + dom.n + '</span>'
+        + '<span>' + done + ' of ' + dom.rows.length + ' targets settled</span></div>');
+      H.push('<div class="bx-rows">');
+      rows.forEach(function (r) {
+        H.push(rowHTML(dom, r));
+        if (openKey === r.key) { H.push(detailHTML(dom, r)); }
+      });
+      H.push('</div>');
+    });
+    H.push('<div class="bx-note">Eleven more domains — <span class="mono">Raw_SITE</span>,'
+      + ' <span class="mono">Raw_PD</span>, <span class="mono">Raw_QUERY</span>,'
+      + ' <span class="mono">Raw_EG</span> and seven others — are not on this screen. Four of them'
+      + ' were delivered in some form and seven were not delivered at all, which is a decision to'
+      + ' record rather than a mapping to make.</div>');
+    document.querySelector('[data-grid]').innerHTML = H.join('');
+    var b = openKey && document.querySelector('[data-row="' + openKey + '"]');
+    if (b) { b.setAttribute('aria-expanded', 'true'); }
+  }
+
+  function renderFiles() {
+    var L = [], any = false;
+    D.forEach(function (dom) {
+      var touched = dom.rows.filter(function (r) { return settled(r.key); });
+      if (!touched.length) { return; }
+      any = true;
+      L.push('<span class="cmt">  --- workflows/1_mappings/' + dom.d.replace('Raw_', '') + '.yaml</span>');
+      L.push('<span class="cmt">  # the study\'s own comments are untouched — the writer edits text, not a tree</span>');
+      L.push('<span class="ctx">  spec:</span>');
+      L.push('<span class="ctx">    ' + dom.d + ':</span>');
+      touched.forEach(function (r) {
+        var s = get(r.key);
+        L.push('<span class="ctx">      ' + r.c + ':</span>');
+        L.push('<span class="ctx">        type: ' + r.t + '</span>');
+        if (s.disp === 'bound') {
+          L.push('<span class="plus">+       source_col: ' + s.src
+            + (IDENTICAL[r.key] === s.src ? '   # identical' : '   # accepted proposal') + '</span>');
+        } else if (s.disp === 'derived') {
+          L.push('<span class="plus">+       # derived in steps: below — no source column exists</span>');
+        } else if (s.disp === 'const') {
+          L.push('<span class="plus">+       # constant for this study, set 2026-08-27</span>');
+        } else {
+          L.push('<span class="plus">+       # DECLINED 2026-08-27'
+            + (r.cons ? ' — costs ' + r.cons + ' display' + (r.cons === 1 ? '' : 's') : '') + '</span>');
+          if (s.reason) { L.push('<span class="plus">+       # ' + s.reason.replace(/</g, '&lt;') + '</span>'); }
+        }
+      });
+      L.push('');
+    });
+    var el = document.querySelector('[data-files]');
+    el.innerHTML = any ? L.join('\n')
+      : '<span class="empty">Nothing written yet. Nothing on this screen is pre-filled — every line below is a click.</span>';
+  }
+
+  function renderKeys() {
+    var el = document.querySelector('[data-keys]');
+    if (!keysShown) { el.hidden = true; return; }
+    el.hidden = false;
+    var sub = get('Raw_SUBJ.subjid'), lb = get('Raw_LB.subjid'), ae = get('Raw_AE.subjid');
+    if (!sub || sub.disp !== 'bound') {
+      el.innerHTML = '<div class="og-outcome warn"><strong>Cannot measure.</strong> '
+        + '<span class="mono">Raw_SUBJ.subjid</span> has no binding yet, and it is the target of'
+        + ' every join in the study. Bind it first.</div>';
+      return;
+    }
+    var broken = sub.src === 'USUBJID';
+    var lbsrc = lb && lb.disp === 'bound' ? lb.src : 'SUBJECT (proposal)';
+    var aesrc = ae && ae.disp === 'bound' ? ae.src : 'SUBJID (proposal)';
+    if (broken) {
+      el.innerHTML = '<div class="og-outcome bad">'
+        + '<strong>0 of 765.</strong> <span class="mono">Raw_SUBJ.subjid ← USUBJID</span> gives'
+        + ' <span class="mono">"AA-AA-000-0000-S384"</span>, while <span class="mono">' + lbsrc + '</span>'
+        + ' and <span class="mono">' + aesrc + '</span> give <span class="mono">"S384"</span>.'
+        + ' Both inner joins return <strong>0 rows</strong> from 57,200 lab records and 2,583 events.'
+        + ' <strong>16 of 42 displays would report zero at every site</strong>, and'
+        + ' <span class="mono">srs0001</span> would re-weight the risk score over the three that ran.'
+        + ' Nothing would error.'
+        + '<div style="margin-top:.5rem"><button class="og-btn" type="button" data-do="bound|Raw_SUBJ.subjid|SUBJID">'
+        + 'Take the fix — bind to SUBJID instead</button></div></div>';
+    } else {
+      el.innerHTML = '<div class="og-outcome ok"><strong>765 of 765.</strong> '
+        + '<span class="mono">Raw_SUBJ.subjid ← ' + sub.src + '</span> against <span class="mono">'
+        + lbsrc + '</span> and <span class="mono">' + aesrc + '</span> — full overlap. 57,200 lab rows'
+        + ' and 2,583 events survive the inner joins.'
+        + ' <span class="mono">lab_haem.csv</span> still prefixes <span class="mono">0301-</span>, so an'
+        + ' affix rule is written for that one file in <span class="mono">config/vocab/subjid.rules.csv</span>.</div>';
+    }
+  }
+
+  function renderCounts() {
+    var c = counts();
+    document.querySelectorAll('[data-counts] [data-k]').forEach(function (el) {
+      el.textContent = c[el.getAttribute('data-k')];
+    });
+    var named = all().filter(function (p) { return p[1].cons > 0; });
+    var namedSettled = named.filter(function (p) { return settled(p[1].key); }).length;
+    var el = document.querySelector('[data-metricline]');
+    if (el) {
+      el.innerHTML = named.length + ' of the 45 targets on this screen are named by a display. <strong>'
+        + namedSettled + '</strong> of those ' + named.length + ' are settled.';
+    }
+  }
+
+  function render() { renderCounts(); renderGrid(); renderKeys(); renderFiles(); }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-row],[data-do],[data-act],[data-filter]');
+    if (!b) { return; }
+
+    if (b.hasAttribute('data-filter')) {
+      filter = b.getAttribute('data-filter');
+      document.querySelectorAll('[data-filter]').forEach(function (x) {
+        x.setAttribute('aria-pressed', String(x.getAttribute('data-filter') === filter));
+      });
+      render(); return;
+    }
+    if (b.hasAttribute('data-act')) {
+      var a = b.getAttribute('data-act');
+      if (a === 'identical') {
+        Object.keys(IDENTICAL).forEach(function (k) { S[k] = { disp: 'bound', src: IDENTICAL[k] }; });
+      } else if (a === 'keys') {
+        keysShown = true;
+      } else {
+        S = {}; keysShown = false; openKey = null;
+      }
+      render(); return;
+    }
+    if (b.hasAttribute('data-row')) {
+      var k = b.getAttribute('data-row');
+      openKey = (openKey === k) ? null : k;
+      render(); return;
+    }
+    var p = b.getAttribute('data-do').split('|');
+    var cur = get(p[1]);
+    if (cur && cur.disp === p[0] && (cur.src || '') === p[2]) { delete S[p[1]]; }
+    else { S[p[1]] = { disp: p[0], src: p[2], reason: cur && cur.reason }; }
+    if (p[1] === 'Raw_SUBJ.subjid') { openKey = openKey || null; }
+    render();
+  });
+
+  document.addEventListener('input', function (e) {
+    var k = e.target.getAttribute && e.target.getAttribute('data-reason');
+    if (!k || !S[k]) { return; }
+    S[k].reason = e.target.value;
+    renderFiles();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

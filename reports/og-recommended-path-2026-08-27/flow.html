@@ -1,0 +1,1093 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loading HEP-204, step by step</title>
+<meta name="description" content="A clickable walk from a six-file CRO folder to a running open.gismo study: the read, the identifiers that join to nothing and stop the run, three lab vendors stacked into one domain, the chart that asks for four words the laboratory does not use, and a grade nobody collected being declined with a printed price.">
+<link rel="stylesheet" href="assets/report.css">
+<link rel="stylesheet" href="assets/product.css">
+</head>
+<body>
+<div class="wrap wide">
+
+  <header class="masthead">
+    <div class="kicker">open.gismo · loading your own data · mockup 1 of 2</div>
+    <h1>Loading HEP-204, step by step</h1>
+    <p class="standfirst">
+      Eight steps from a CRO folder to a running study. Steps 3 to 6 are live — answer a finding and
+      the ledger moves, the diff grows and the diagnostic changes its mind. Step 3 is the one that
+      matters: it is the moment the data is wrong, and nothing in open.gismo today would tell you.
+    </p>
+    <nav aria-label="Pages">
+      <ul class="pagenav">
+        <li><a href="index.html">The recommendation</a></li>
+        <li><a href="flow.html" aria-current="page">1 · Loading HEP-204, step by step</a></li>
+        <li><a href="bench.html">2 · The bench behind the read</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="callout">
+    <span class="lbl">What is real here and what is not</span>
+    <p>
+      <strong>The contract is real.</strong> The 42 consumers, which raw domain each one needs, which
+      four literal strings the hepatic displays demand, and which single line of
+      <code>gsm.mapping</code> does the mapping were all read out of the installed packages and
+      <code>demo-301</code>'s own workflow files this morning.
+    </p>
+    <p>
+      <strong>The delivery is constructed</strong> — demo-301's own data re-cut the way a CRO and an
+      EDC vendor would send it, so the row counts are real counts of a study that exists. open.gismo
+      has no such screen today; this is a design, not a recording.
+    </p>
+  </div>
+
+  <div class="steps" role="tablist" aria-label="Steps">
+    <button type="button" data-go="1" aria-current="true"><span class="sn">1</span>The folder arrives</button>
+    <button type="button" data-go="2"><span class="sn">2</span>The read</button>
+    <button type="button" data-go="3"><span class="sn">3</span>Nothing joins</button>
+    <button type="button" data-go="4"><span class="sn">4</span>Three labs, one domain</button>
+    <button type="button" data-go="5"><span class="sn">5</span>Four words</button>
+    <button type="button" data-go="6"><span class="sn">6</span>Declining</button>
+    <button type="button" data-go="7"><span class="sn">7</span>The diff</button>
+    <button type="button" data-go="8"><span class="sn">8</span>Run, and next month</button>
+  </div>
+
+  <!-- ════════════════════════════ STEP 1 ════════════════════════════ -->
+  <div class="step on" id="s1">
+    <div class="who">the user · two commands</div>
+    <h3>The folder arrives exactly as somebody else made it</h3>
+    <p class="why">
+      HEP-204 is a Phase 2 study with a hepatic safety question. The CRO sends a SAS transport and an
+      event listing; the EDC vendor sends a site list; the labs come from three vendors in two
+      vocabularies. Nothing carries a gsm column name. Nobody is going to rename these files, and any
+      design that assumes they will has lost before it starts.
+    </p>
+
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i><span>zsh — ~/deliveries/hep204-2026-08-24</span></div>
+<pre>$ <b>ls -1lh</b>
+dm.xpt                  <span class="dim">SAS transport   1,005 × 16   subject level, ADaM-flavoured</span>
+ae_listing.csv          <span class="dim">EDC export      2,583 × 15   no toxicity grade column</span>
+lab_central.csv         <span class="dim">central lab    28,600 × 11   8 analytes</span>
+lab_specialty.csv       <span class="dim">specialty lab   7,150 × 10   TBILI, GGT — bilirubin in µmol/L</span>
+lab_haem.csv            <span class="dim">haematology    21,450 ×  9   no reference range at all</span>
+sites_20260824.csv      <span class="dim">EDC export        150 ×  9   site list</span>
+
+<span class="dim">60,938 rows · 70 columns · no define.xml · no ECG · no deviations</span>
+
+$ <b>og init ~/hep-204</b>
+<span class="ok">✔</span> project created at ~/hep-204
+    config/       3 files
+    workflows/    44 workflow YAMLs snapshotted from the installed gsm packages
+    input/        empty
+  <span class="dim">Next: put your data in input/, then og_read("~/hep-204")</span>
+
+$ <b>cp ~/deliveries/hep204-2026-08-24/* ~/hep-204/input/</b>
+$ <b>git -C ~/hep-204 init -q &amp;&amp; git -C ~/hep-204 add -A &amp;&amp; git -C ~/hep-204 commit -qm "delivery 2026-08-24"</b></pre>
+    </div>
+
+    <div class="after">
+      <span class="lbl">What happens if you do this today</span>
+      <p>
+        <code>og_validate()</code> answers with twelve lines of <em>file not found</em> and names not
+        one of the six files that are sitting in the folder. It is looking for
+        <code>input/Raw_AE.csv</code>, <code>input/Raw_LB.csv</code> and ten more of the same. It
+        could have opened <code>dm.xpt</code> — <code>haven</code> is installed in this stack and
+        never called.
+      </p>
+    </div>
+
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i><span>R — open.gismo v0.2.0, today</span></div>
+<pre>&gt; <b>og_validate("~/hep-204")</b>
+<span class="bad">✖ Raw_AE</span>        file not found: input/Raw_AE.csv
+<span class="bad">✖ Raw_DATACHG</span>   file not found: input/Raw_DATACHG.csv
+<span class="bad">✖ Raw_DATAENT</span>   file not found: input/Raw_DATAENT.csv
+<span class="dim">… nine more …</span>
+<span class="bad">✖ Raw_SUBJ</span>      file not found: input/Raw_SUBJ.csv
+
+<span class="dim">The folder contains 60,938 rows of this study. None of them are mentioned.</span></pre>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ STEP 2 ════════════════════════════ -->
+  <div class="step" id="s2">
+    <div class="who">the product · reads, and changes nothing</div>
+    <h3>The read</h3>
+    <p class="why">
+      <code>og_read()</code> opens the folder as delivered and writes one document. It never fails.
+      Every finding in it is priced in <strong>displays</strong> — the charts and metrics somebody
+      asked for — and never in column names, because the person reading this did not choose the
+      column names and should not have to learn them.
+    </p>
+
+    <div class="og">
+      <div class="og-chrome"><i></i><i></i><i></i><span class="path">~/hep-204/intake/report.html</span></div>
+      <div class="og-frame">
+        <div class="og-side">
+          <div class="og-brand">open<span>.</span>gismo</div>
+          <div class="og-study">HEP-204</div>
+          <ul class="og-nav">
+            <li><span>Overview</span></li>
+            <li><span>Displays</span></li>
+            <li><span class="on">Intake report</span></li>
+            <li><span>Snapshots</span></li>
+            <li><span>Workflows</span></li>
+            <li><span>Provenance</span></li>
+          </ul>
+        </div>
+        <div class="og-main">
+          <div class="og-crumb">Intake report · read 2026-08-27 09:14 · og_read()</div>
+          <div class="og-h1">I read six files and understood most of them.</div>
+          <p class="og-sub">
+            <span class="mono">~/hep-204/input</span> · 60,938 rows · 70 columns · 4.1 MB ·
+            nothing in this folder was modified
+          </p>
+
+          <div class="og-ledger" data-ledger>
+            <div class="og-led ok">
+              <div class="n"><span data-c="ok">0</span><em>✔</em></div>
+              <div class="t">Will render, complete</div>
+              <div class="d">Everything they need is present and unambiguous.</div>
+            </div>
+            <div class="og-led warn">
+              <div class="n"><span data-c="wrong">16</span><em>⚠</em></div>
+              <div class="t">Will render, wrong</div>
+              <div class="d">Output that looks fine and is not. Nobody goes looking for these.</div>
+            </div>
+            <div class="og-led part">
+              <div class="n"><span data-c="away">0</span><em>◐</em></div>
+              <div class="t">One answer away</div>
+              <div class="d">Waiting on a column nothing carries and everything is here to build.</div>
+            </div>
+            <div class="og-led bad">
+              <div class="n"><span data-c="dark">23</span><em>✖</em></div>
+              <div class="t">Cannot render</div>
+              <div class="d">Six extracts were not supplied. No answer here changes that.</div>
+            </div>
+          </div>
+
+          <div class="og-verdict notrun" data-verdict>
+            <span class="v">Not run</span>
+            <span>Readiness is a statement about what came out, not about how many boxes are
+            filled. This mapping has never executed against these files.</span>
+          </div>
+
+          <div class="og-verdict" style="border-left:4px solid #a3a3a3">
+            <span class="v" style="background:#f5efe7;color:#6b5d52;border:1px solid #ece2d7">Unpriceable</span>
+            <span>
+              <strong>3 displays declare no <code>spec:</code> at all</strong> —
+              <span class="mono">srs0001</span>, <span class="mono">report_kri_site</span>,
+              <span class="mono">report_kri_country</span>. They run over whatever produced results,
+              so the site risk score's denominator moves with your answers rather than failing.
+              Nothing on this page can price them, and this line is the only honest thing to do
+              about it.
+            </span>
+          </div>
+
+          <h3>1 · What I found</h3>
+          <div class="og-tw">
+            <table>
+              <thead>
+                <tr><th>File</th><th>Read with</th><th class="num">Rows</th><th class="num">Cols</th><th>What I think it is</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="mono">dm.xpt</td><td class="mono">haven</td><td class="num">1,005</td><td class="num">16</td><td>Subject level. <span class="og-pill ok">✔ confident</span> <span class="mono">USUBJID</span>, <span class="mono">SITEID</span>, <span class="mono">ARM</span>, one row per participant.</td></tr>
+                <tr><td class="mono">ae_listing.csv</td><td class="mono">read.csv</td><td class="num">2,583</td><td class="num">15</td><td>Adverse events. <span class="og-pill ok">✔ confident</span> Verbatim term, MedDRA, seriousness, start and end dates.</td></tr>
+                <tr><td class="mono">lab_central.csv</td><td class="mono">read.csv</td><td class="num">28,600</td><td class="num">11</td><td>Laboratory results, 8 analytes. <span class="og-pill part">◐ one of three</span></td></tr>
+                <tr><td class="mono">lab_specialty.csv</td><td class="mono">read.csv</td><td class="num">7,150</td><td class="num">10</td><td>Laboratory results, 2 analytes. <span class="og-pill part">◐ one of three</span></td></tr>
+                <tr><td class="mono">lab_haem.csv</td><td class="mono">read.csv</td><td class="num">21,450</td><td class="num">9</td><td>Laboratory results, 6 analytes. <span class="og-pill warn">⚠ no reference range</span></td></tr>
+                <tr><td class="mono">sites_20260824.csv</td><td class="mono">read.csv</td><td class="num">150</td><td class="num">9</td><td>Sites. <span class="og-pill ok">✔ confident</span> One row per <span class="mono">invid</span>, with country.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="og-sub">
+            Six of six read, including the transport. Expanding a row gives the column profile:
+            distinct values, type, completeness and two real values from the file.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="after">
+      <span class="lbl">Why the second number is the one that matters</span>
+      <p>
+        Sixteen displays will render output that looks entirely normal and is entirely wrong. Zero
+        will render correctly. That ordering — wrong ahead of missing — is the whole argument for
+        this direction: a display that does not render gets noticed, and a display that renders
+        wrongly gets read.
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ STEP 3 ════════════════════════════ -->
+  <div class="step" id="s3">
+    <div class="who">the product · and it refuses</div>
+    <h3>The identifiers do not join, and today nothing would tell you</h3>
+    <p class="why">
+      This is the moment the product earns trust or loses it. Every column is present. Every type
+      checks. <code>og_validate()</code> is all green. <code>og_run()</code> completes without an
+      error — and sixteen displays report zero at every site while the site risk score quietly
+      reweights over the ones that survived. Measured on demo-301's own data this morning.
+    </p>
+
+    <div class="og">
+      <div class="og-chrome"><i></i><i></i><i></i><span class="path">~/hep-204/intake/report.html — finding 1 of 5</span></div>
+      <div class="og-frame">
+        <div class="og-side">
+          <div class="og-brand">open<span>.</span>gismo</div>
+          <div class="og-study">HEP-204</div>
+          <ul class="og-nav">
+            <li><span>Overview</span></li><li><span>Displays</span></li>
+            <li><span class="on">Intake report</span></li><li><span>Snapshots</span></li>
+          </ul>
+        </div>
+        <div class="og-main">
+          <div class="og-crumb">2 · What needs an answer — ranked by what it costs, not by how sure I am</div>
+
+          <div class="og-finding blocking">
+            <div class="og-fhead">
+              <span class="glyph bad" aria-hidden="true">✖</span>
+              <span class="ftitle">
+                Your participant identifiers are written three ways, and the joins return nothing
+                <span class="og-pill bad" style="margin-left:.35rem">■ blocking</span>
+              </span>
+              <span class="fcost">16 displays</span>
+            </div>
+            <div class="og-fbody">
+              <p class="og-sub" style="margin-top:0">
+                The mapping joins labs and events to participants with an inner join. As delivered,
+                two of the three joins return zero rows. Both columns are present, both are
+                character, both are complete. There is no check anywhere in open.gismo today that
+                would catch this.
+              </p>
+
+              <div class="og-evidence">1,005 identifiers in <b>dm.xpt</b> <b>USUBJID</b>
+    <span class="y">AA-AA-000-0000-S384</span> · <span class="y">AA-AA-000-0000-S4476</span> · <span class="y">AA-AA-000-0000-S1000</span>
+
+  765 enrolled participants join against:
+
+  <b>ae_listing.csv</b>       <b>SUBJID</b>    <span class="y">S384</span>              overlap <span class="r">0.00  (0 of 765)</span>
+  <b>lab_central.csv</b>      <b>SUBJECT</b>   <span class="y">S384</span>              overlap <span class="r">0.00  (0 of 765)</span>
+  <b>lab_specialty.csv</b>    <b>PT_ID</b>     <span class="y">S384</span>              overlap <span class="r">0.00  (0 of 765)</span>
+  <b>lab_haem.csv</b>         <b>SUBJID</b>    <span class="y">0301-S384</span>         overlap <span class="r">0.00  (0 of 765)</span>
+
+  every <b>dm.xpt</b> value is <span class="g">"AA-AA-000-0000-" + a value the other five carry</span>
+  <b>lab_haem.csv</b> additionally prefixes <span class="g">"0301-"</span>, and is the only file that does
+
+  after stripping both affixes ......................... <span class="g">765 of 765  (1.00)</span>
+  rows recovered ......... labs <span class="g">57,200</span>   events <span class="g">2,583</span>
+
+  <span class="d">joined by, in your own project:</span>
+    workflows/1_mappings/LB.yaml:<b>76</b>   dplyr::inner_join  by: subjid
+    workflows/1_mappings/AE.yaml:<b>71</b>   dplyr::inner_join  by: subjid</div>
+
+              <p style="margin-top:.8rem"><strong>What it costs if you run anyway.</strong></p>
+              <div class="og-evidence"><span class="r">Mapped_LB</span> and <span class="r">Mapped_AE</span> become empty.
+
+  <b>9</b> displays go to zero on the labs
+     <span class="d">cou0005 kri0005 saf0001 hep_explorer safety_delta_delta
+     safety_histogram safety_outlier_explorer safety_results_over_time
+     safety_shift_plot</span>
+  <b>7</b> displays go to zero on the events
+     <span class="d">cou0001 cou0002 kri0001 kri0002 saf0003 ae_explorer ae_timelines</span>
+
+  and <b>srs0001</b>, which declares no spec, re-normalises the site risk
+  score over the <b>3</b> analyses that still ran.
+
+  <span class="r">Nothing errors. The study will look exemplary.</span></div>
+
+              <div class="og-ask">
+                <div class="q">How do you want these reconciled?</div>
+                <p class="og-sub" style="margin-top:.3rem">
+                  A repair is offered as a rule you can read, argue with and re-use next month — not
+                  as 765 identifiers somebody silently rewrote.
+                </p>
+                <div class="og-disp">
+                  <button class="og-btn" type="button" data-set="join:bind">Bind <span class="mono">subjid</span> to the short id everywhere</button>
+                  <button class="og-btn" type="button" data-set="join:rule">Write the affix rule</button>
+                  <button class="og-btn ghost" type="button" data-set="join:no">Leave as delivered</button>
+                </div>
+                <div class="og-outcome" data-out="join">Unanswered. <strong>og_run() will refuse to start.</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="after">
+      <span class="lbl">Measured, not asserted</span>
+      <p>
+        This session reproduced the failure on <code>demo-301</code>'s real
+        <code>input/Raw_SUBJ.csv</code> and <code>input/Raw_LB.csv</code>: build
+        <code>USUBJID</code> as <code>studyid-subjid</code> and the overlap with the lab file's bare
+        identifier is <strong>0 of 765</strong>; the inner join the study actually runs returns
+        <strong>0 rows</strong> from 57,200. Strip the constant prefix and it is 765 of 765, all
+        57,200 rows. Two other sessions found the same thing from two other angles the same night.
+      </p>
+      <p>
+        The grafted rule from the convention direction is the one that matters here: this finding is
+        <strong>blocking</strong>, not advisory. A key with zero overlap is not a preference.
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ STEP 4 ════════════════════════════ -->
+  <div class="step" id="s4">
+    <div class="who">the product · says the consequence before the run, not after</div>
+    <h3>Three laboratories, one domain</h3>
+    <p class="why">
+      <code>config/data-config.yaml</code> maps one domain to one file. A liver panel split across
+      three vendors is currently inexpressible, which is a real limitation of open.gismo v0.2.0 and
+      not a hypothetical one.
+    </p>
+
+    <div class="og">
+      <div class="og-chrome"><i></i><i></i><i></i><span class="path">~/hep-204/intake/report.html — finding 2 of 5</span></div>
+      <div class="og-frame">
+        <div class="og-side">
+          <div class="og-brand">open<span>.</span>gismo</div>
+          <div class="og-study">HEP-204</div>
+          <ul class="og-nav"><li><span>Overview</span></li><li><span class="on">Intake report</span></li></ul>
+        </div>
+        <div class="og-main">
+          <div class="og-finding">
+            <div class="og-fhead">
+              <span class="glyph part" aria-hidden="true">◐</span>
+              <span class="ftitle">Three files look like one laboratory domain</span>
+              <span class="fcost">9 displays</span>
+            </div>
+            <div class="og-fbody">
+              <p class="og-sub" style="margin-top:0">
+                They share a shape — a participant identifier, an analyte name, a numeric result, a
+                visit — and between them they cover the whole panel with no analyte appearing twice.
+              </p>
+
+              <div class="og-evidence">proposed <b>Raw_LB</b> = lab_central ∪ lab_specialty ∪ lab_haem
+
+    lab_central.csv    <span class="g">28,600</span>   8 analytes   ALT  AST  ALKP  ALB  CREAT  GLUC  K  NA
+    lab_specialty.csv  <span class="g"> 7,150</span>   2 analytes   TBILI  GGT
+    lab_haem.csv       <span class="g">21,450</span>   6 analytes   HGB  HCT  PLT  WBC  NEUT  LYMPH
+                       <b>57,200</b>  <b>16 analytes</b>  <span class="g">no analyte appears twice</span>
+
+  reference range present   lab_central   <span class="g">yes</span>
+                            lab_specialty <span class="g">yes</span>
+                            lab_haem      <span class="r">no columns at all</span>
+
+  <span class="y">→ six haematology analytes will carry a null normal range.</span>
+  <span class="y">  They get no derived toxicity grade in finding 3, and the</span>
+  <span class="y">  reference band on the histogram is blank for those measures.</span>
+  <span class="d">  Saying this now rather than after the run.</span>
+
+  units      TBILI is <b>µmol/L</b> against a <b>µmol/L</b> limit; the eDISH
+             cut-points are multiples of the upper limit, so the
+             mismatch with the other files is <span class="g">safe</span>. Recorded.</div>
+
+              <div class="og-ask">
+                <div class="q">Stack the three into <span class="mono">Raw_LB</span>?</div>
+                <div class="og-disp">
+                  <button class="og-btn" type="button" data-set="stack:yes">Stack them</button>
+                  <button class="og-btn ghost" type="button" data-set="stack:no">Keep separate</button>
+                </div>
+                <div class="og-outcome" data-out="stack">Unanswered. Only <span class="mono">lab_central.csv</span> would be read as <span class="mono">Raw_LB</span> — 8 of 16 analytes, and no bilirubin at all.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="after">
+      <span class="lbl">The graft on this screen</span>
+      <p>
+        Disclosing the missing reference range <em>before</em> the run, rather than letting six
+        analytes quietly arrive with null limits, is the intake direction's own rule. What was
+        grafted on is the price: nine displays, named, so the answer is not a preference but a
+        trade.
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ STEP 5 ════════════════════════════ -->
+  <div class="step" id="s5">
+    <div class="who">the product · orders candidates, never fills a blank</div>
+    <h3>The chart asks for four words your laboratory does not use</h3>
+    <p class="why">
+      Three displays do not ask for a column — they ask for four literal strings <em>inside</em> a
+      column. Every column check on the lab files passes. The values were compared instead, and none
+      of the four matched.
+    </p>
+
+    <div class="og">
+      <div class="og-chrome"><i></i><i></i><i></i><span class="path">~/hep-204/intake/report.html — finding 3 of 5</span></div>
+      <div class="og-frame">
+        <div class="og-side">
+          <div class="og-brand">open<span>.</span>gismo</div>
+          <div class="og-study">HEP-204</div>
+          <ul class="og-nav"><li><span>Overview</span></li><li><span class="on">Intake report</span></li></ul>
+        </div>
+        <div class="og-main">
+          <div class="og-finding">
+            <div class="og-fhead">
+              <span class="glyph warn" aria-hidden="true">⚠</span>
+              <span class="ftitle">Your hepatic displays will draw empty charts, and nothing else will say so</span>
+              <span class="fcost">3 displays</span>
+            </div>
+            <div class="og-fbody">
+              <div class="og-evidence">the three displays that pin literal analyte names:
+
+  <b>hep_explorer</b>        workflows/4_modules/hep_explorer.yaml    <span class="d">measure_values:</span>
+  <b>saf0001</b>             gsm.safety::Input_HysLaw <span class="d">R/Input_HysLaw.R:67 — same four defaults</span>
+  <b>safety_delta_delta</b>  workflows/4_modules/safety_delta_delta.yaml:14
+
+    ALT → <span class="y">"Alanine Aminotransferase"</span>     TB  → <span class="y">"Bilirubin"</span>
+    AST → <span class="y">"Aspartate Aminotransferase"</span>   ALP → <span class="y">"Alkaline Phosphatase"</span>
+
+  your three lab files hold <b>16</b> distinct analyte names:
+
+    lab_central.csv    <b>TEST</b>      <span class="g">ALT</span>  <span class="g">AST</span>  <span class="g">ALKP</span>  ALB  CREAT  GLUC  K  NA
+    lab_specialty.csv  <b>ANALYTE</b>   <span class="g">TBILI</span>  GGT
+    lab_haem.csv       <b>LBTEST</b>    HGB  HCT  PLT  WBC  NEUT  LYMPH
+
+  matched: <span class="r">0 of 4</span>  — the charts render, with no series on them</div>
+
+              <div class="og-ask">
+                <div class="q">Four bindings. Ordered by how well the values fit, never scored.</div>
+                <ul class="og-cands">
+                  <li><span class="ord">1</span><span class="col">ALT</span><span class="why">3,575 results, median 24 U/L, range 7–41 on every row of its own file</span><span class="vals">→ ALT</span></li>
+                  <li><span class="ord">2</span><span class="col">AST</span><span class="why">3,575 results, its own reference range, same units</span><span class="vals">→ AST</span></li>
+                  <li><span class="ord">3</span><span class="col">TBILI</span><span class="why">in lab_specialty.csv, µmol/L against a µmol/L limit</span><span class="vals">→ TB</span></li>
+                  <li><span class="ord">4</span><span class="col">ALKP</span><span class="why">3,575 results, its own reference range</span><span class="vals">→ ALP</span></li>
+                </ul>
+                <div class="og-disp">
+                  <button class="og-btn" type="button" data-set="analytes:yes">Confirm all four</button>
+                  <button class="og-btn ghost" type="button" data-set="analytes:no">Not these — open the bench</button>
+                </div>
+                <div class="og-outcome" data-out="analytes">Unanswered. The three displays render with no series on them, and the study site says so where they would have been.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="after">
+      <span class="lbl">Two grafts, visible on one screen</span>
+      <p>
+        The candidates are <strong>ordered and never scored</strong>. The guided-setup session built
+        a value profiler that scored 9 of 9 on a CRO lab extract where the published name detector
+        managed 3 of 9 — and then scored <strong>1.000 on a wrong answer</strong> and 0.849 on a
+        right one against demo-301's own file. There is no threshold that separates those, so the
+        number is never shown and the binding is never applied.
+      </p>
+      <p>
+        <code>TBILI → Bilirubin</code> is also a clinical assertion about total versus direct
+        bilirubin. A person clicks it. Nothing here pre-applies it, at any confidence.
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ STEP 6 ════════════════════════════ -->
+  <div class="step" id="s6">
+    <div class="who">the user · says something the product never thought to ask</div>
+    <h3>Declining, with a price</h3>
+    <p class="why">
+      Two displays want a toxicity grade the protocol never collected. This is the graft from the
+      mapping bench, and the data-manager lens is the reason it is here: today her spreadsheet says
+      <em>N/A</em> in a cell and that judgement dies there. In December, when somebody asks why there
+      is no Grade 3+ KRI, "the tool didn't ask me" is not an answer she can give.
+    </p>
+
+    <div class="og">
+      <div class="og-chrome"><i></i><i></i><i></i><span class="path">~/hep-204/intake/report.html — findings 4 and 5 of 5</span></div>
+      <div class="og-frame">
+        <div class="og-side">
+          <div class="og-brand">open<span>.</span>gismo</div>
+          <div class="og-study">HEP-204</div>
+          <ul class="og-nav"><li><span>Overview</span></li><li><span class="on">Intake report</span></li></ul>
+        </div>
+        <div class="og-main">
+
+          <div class="og-finding">
+            <div class="og-fhead">
+              <span class="glyph part" aria-hidden="true">◐</span>
+              <span class="ftitle">No laboratory toxicity grade — but I can build one from what you sent</span>
+              <span class="fcost">3 displays</span>
+            </div>
+            <div class="og-fbody">
+              <div class="og-evidence"><b>Raw_LB.toxgrg_nsv</b>   <span class="d">CTCAE v5 band from result ÷ upper limit</span>
+
+  covered   <span class="g">10 of 16 analytes</span>  — the ten that arrive with a reference range
+  not covered <span class="r">6 analytes</span>      — lab_haem.csv carries no limits (finding 2)
+
+  worked on ALT, 3,575 results:
+    <span class="g">G0 2,838</span>   <span class="g">G1 465</span>   <span class="y">G2 79</span>   <span class="r">G3 173</span>   <span class="r">G4 20</span>      <span class="d">sums to 3,575</span>
+
+  <span class="d">consumers: cou0005  kri0005  safety_outlier_explorer</span></div>
+              <div class="og-ask">
+                <div class="q">Derive it?</div>
+                <div class="og-disp">
+                  <button class="og-btn" type="button" data-set="labgrade:derive">Derive, with the marks</button>
+                  <button class="og-btn ghost" type="button" data-set="labgrade:decline">Decline — record why</button>
+                </div>
+                <div class="og-outcome" data-out="labgrade">Unanswered. Three displays stay dark.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="og-finding">
+            <div class="og-fhead">
+              <span class="glyph warn" aria-hidden="true">⚠</span>
+              <span class="ftitle">No adverse-event toxicity grade, and the only substitute is lossy</span>
+              <span class="fcost">1 display</span>
+            </div>
+            <div class="og-fbody">
+              <div class="og-evidence"><b>Raw_AE.aetoxgr</b>   <span class="d">wanted by saf0003 · Serious / Related AE (Subject)</span>
+
+  your file carries <b>aesev</b>   MILD  MODERATE  SEVERE     <span class="d">2,583 of 2,583, complete</span>
+  the display wants <b>aetoxgr</b>  1 2 3 4 5
+
+  <span class="r">severity is not toxicity grade.</span> Three levels standing in for five.
+  <span class="y">If you substitute, every display built on it carries the mark, on the</span>
+  <span class="y">display itself, where somebody reads it — not only in this report.</span></div>
+              <div class="og-ask">
+                <div class="q">Four ways to answer this. The fourth is the one no wizard offers.</div>
+                <div class="og-disp">
+                  <button class="og-btn" type="button" data-set="aegrade:bind">Bind — I have another column</button>
+                  <button class="og-btn" type="button" data-set="aegrade:derive">Derive from <span class="mono">aesev</span>, marked lossy</button>
+                  <button class="og-btn" type="button" data-set="aegrade:const">Constant for the study</button>
+                  <button class="og-btn ghost" type="button" data-set="aegrade:decline">Decline</button>
+                </div>
+                <div data-declinebox hidden>
+                  <label class="og-sub" for="reasonbox" style="display:block;margin-top:.6rem">Your reason, in your own words. It goes into the YAML and onto the site.</label>
+                  <input class="og-reason" id="reasonbox" type="text" value="CTCAE grading was not collected on this protocol — severity only. Confirmed with the medical monitor 2026-08-26.">
+                </div>
+                <div class="og-outcome" data-out="aegrade">Unanswered. One display stays dark, and next month this question comes back.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="after">
+      <span class="lbl">Why <em>Declined</em> is a state and not a blank</span>
+      <p>
+        A blank is indistinguishable from work nobody has got to yet, so next month the product asks
+        again and the month after that as well. A decline carries a reason, a date and a price; the
+        study site prints <em>not collected on this protocol</em> where the tile would have been; and
+        the next read does not raise it. That is the only difference between a tool that records a
+        judgement and one that nags.
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ STEP 7 ════════════════════════════ -->
+  <div class="step" id="s7">
+    <div class="who">the user · reads a diff</div>
+    <h3>Everything you answered is a diff in your own repository</h3>
+    <p class="why">
+      There is no product database. Every answer above is text in the study's own files, in the
+      study's own git, reviewed in the tool the reviewer already uses to review things. Go back and
+      change an answer and this grows or shrinks with it.
+    </p>
+
+    <div class="og-diff">
+      <div class="fname">git diff — workflows/1_mappings/LB.yaml</div>
+      <pre data-diff-lb><span class="empty">Nothing written yet. Answer a finding on steps 3 to 6.</span></pre>
+    </div>
+
+    <div class="og-diff">
+      <div class="fname">git diff — config/data-config.yaml · config/setup-log.md</div>
+      <pre data-diff-cfg><span class="empty">Nothing written yet.</span></pre>
+    </div>
+
+    <div class="after">
+      <span class="lbl">Two grafts and one bug fix, all on this screen</span>
+      <p>
+        <strong>The comments survive.</strong> demo-301's own <code>LB.yaml</code> opens with a
+        thirteen-line note explaining that <code>toxgrg_nsv</code> must be cast to character or the
+        Grade 3+ KRI's <code>WHERE toxgrg_nsv IN ('3','4')</code> matches nothing. open.gismo's
+        current YAML writer round-trips that file from 80 lines to 70 and from
+        <strong>13 comment lines to 0</strong> — measured this morning. The writer specified here
+        edits the file as text and re-parses to check it wrote what it meant.
+      </p>
+      <p>
+        <strong>The plain English is kept beside the machine-readable spec.</strong>
+        <code>config/setup-log.md</code> is where the user's own sentence lives, so the person
+        reading this diff in December can see why, not just what.
+      </p>
+      <p>
+        <strong>Only two keys are ever written into the spec.</strong>
+        <code>gsm.mapping::ApplySpec</code> reads <code>source_col</code> and <code>type</code> and
+        nothing else. Everything that is not a rename — the affix rule, the analyte vocabulary, the
+        derived grade — arrives as generated <code>RunQuery</code> steps, which is this design's
+        admitted weakness rather than a feature. It is shown, not hidden.
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ STEP 8 ════════════════════════════ -->
+  <div class="step" id="s8">
+    <div class="who">the product · the whole interface</div>
+    <h3>It refuses, then it runs — and next month it costs minutes</h3>
+    <p class="why">
+      <code>og doctor</code> is the diagnostic behind the document: the same findings, ordered the
+      same way, in the terminal, for the person who never opens a browser. Every finding names the
+      file, the line and the literal text that fixes it.
+    </p>
+
+    <div class="term" data-doctorrefuse>
+      <div class="bar"><i></i><i></i><i></i><span>zsh — og doctor ~/hep-204</span></div>
+<pre>$ <b>og doctor ~/hep-204</b>
+open.gismo doctor — HEP-204
+~/hep-204   14 domains · 126 columns · 42 displays
+
+  <span class="bad">✖ 1 blocking</span>   the run will not start
+  <span class="warn">⚠ 4 costed</span>     the run will start; here is what each one costs
+  <span class="ok">✔ 4 domains ready</span>
+──────────────────────────────────────────────────────────────
+<span class="bad">✖ BLOCKING · identifiers do not join</span>
+
+  Raw_LB.subjid and Raw_SUBJ.subjid share <span class="bad">0 of 765</span> sampled values.
+  Raw_AE.subjid and Raw_SUBJ.subjid share <span class="bad">0 of 765</span> sampled values.
+
+  Fix — one line, because dm.xpt carries both forms:
+    workflows/1_mappings/SUBJ.yaml:23
+      subjid:
+        type: character
+  <span class="add">+     source_col: SUBJID</span>
+
+  Or, if the vendors genuinely disagree, the rule:
+    config/vocab/subjid.rules.csv
+      pattern,replacement,domains
+      <span class="acc">^AA-AA-000-0000-,,Raw_SUBJ</span>
+      <span class="acc">^0301-,,Raw_LB</span>
+
+  Cost if you run anyway: 16 of 42 displays report zero at every
+  site, and srs0001 re-weights over the 3 that ran. <span class="bad">Nothing errors.</span>
+──────────────────────────────────────────────────────────────
+<span class="bad">og_run() refused.</span> Fix the blocking finding, or --force it and own the result.</pre>
+    </div>
+
+    <div class="term" data-doctorpass hidden>
+      <div class="bar"><i></i><i></i><i></i><span>zsh — og doctor ~/hep-204, after the fix</span></div>
+<pre>$ <b>og doctor ~/hep-204</b>
+open.gismo doctor — HEP-204
+~/hep-204   14 domains · 126 columns · 42 displays
+
+  <span class="ok">✔ 0 blocking</span>    the run will start
+  <span class="warn">⚠ costed</span>       priced below, biggest first
+  <span class="ok">✔ 4 domains ready</span>  Raw_SUBJ  Raw_AE  Raw_LB  Raw_SITE
+──────────────────────────────────────────────────────────────
+<span class="ok">✔ RESOLVED · identifiers</span>   765 of 765 · 57,200 lab rows · 2,583 events
+   <span class="dim">workflows/1_mappings/SUBJ.yaml:23   source_col: SUBJID</span>
+──────────────────────────────────────────────────────────────
+<span class="warn">⚠ COSTED · six extracts were not delivered</span>          <b>23 displays</b>
+   EDC audit trail <b>8</b>   protocol deviations <b>4</b>   disposition <b>5</b>
+   ECG <b>2</b>   enrolment <b>2</b>   eligibility <b>2</b>
+   <span class="dim">acknowledged 2026-08-27 — not raised again</span>
+
+<span class="warn">⚠ COSTED · srs0001 declares no spec</span>                <b>unpriceable</b>
+   Site Risk Score normalises over the analyses that ran. Your answers
+   move its denominator rather than failing it. I cannot check this,
+   and this line is the only honest thing I can do about it.
+──────────────────────────────────────────────────────────────
+<span class="ok">✔ og_run() will start.</span></pre>
+    </div>
+
+    <div class="stepbar" style="justify-content:flex-start">
+      <button type="button" data-set="join:bind">Apply the one-line fix and re-run the doctor</button>
+      <button type="button" data-set="reset:all">Reset the whole mockup</button>
+    </div>
+
+    <div class="og">
+      <div class="og-chrome"><i></i><i></i><i></i><span class="path">~/hep-204/output/site/index.html — after og_run()</span></div>
+      <div class="og-frame">
+        <div class="og-side">
+          <div class="og-brand">open<span>.</span>gismo</div>
+          <div class="og-study">HEP-204</div>
+          <ul class="og-nav">
+            <li><span class="on">Overview</span></li><li><span>Displays</span></li>
+            <li><span>Snapshots</span></li><li><span>Intake report</span></li><li><span>Provenance</span></li>
+          </ul>
+        </div>
+        <div class="og-main">
+          <div class="og-crumb">Overview · snapshot 2026-08-27 09:41</div>
+          <div class="og-h1">HEP-204</div>
+          <div class="og-verdict ran" data-verdict2>
+            <span class="v">Not run</span>
+            <span data-ranline>The mapping has not executed against these files yet.</span>
+          </div>
+          <div class="og-ledger" data-ledger>
+            <div class="og-led ok"><div class="n"><span data-c="ok">0</span><em>✔</em></div><div class="t">Rendered</div><div class="d">Live on this site.</div></div>
+            <div class="og-led warn"><div class="n"><span data-c="wrong">16</span><em>⚠</em></div><div class="t">Rendered wrongly</div><div class="d">Output that looks fine and is not.</div></div>
+            <div class="og-led part"><div class="n"><span data-c="away">0</span><em>◐</em></div><div class="t">One answer away</div><div class="d">Still waiting on you.</div></div>
+            <div class="og-led bad"><div class="n"><span data-c="dark">23</span><em>✖</em></div><div class="t">Not supplied</div><div class="d">Printed where the tile would have been, with the reason.</div></div>
+          </div>
+          <h3>What the site prints where a display is missing</h3>
+          <div class="og-tw">
+            <table>
+              <thead><tr><th>Display</th><th>State</th><th>What the tile says</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">kri0003 · kri0004</td><td><span class="og-pill off">✖ not supplied</span></td><td>Protocol deviations were not part of this delivery.</td></tr>
+                <tr><td class="mono">qt_explorer · saf0002</td><td><span class="og-pill off">✖ not supplied</span></td><td>No ECG dataset was delivered.</td></tr>
+                <tr><td class="mono">saf0003</td><td><span class="og-pill bad">✖ declined</span></td><td data-declineline>—</td></tr>
+                <tr><td class="mono">srs0001</td><td><span class="og-pill warn">⚠ unpriceable</span></td><td>Site Risk Score is normalised over the analyses that ran, and this study ran a subset. The denominator moved.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h4>And the transfer after this one</h4>
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i><span>zsh — one month later, same study, same vendors</span></div>
+<pre>$ <b>cp ~/deliveries/hep204-2026-09-24/* ~/hep-204/input/</b>
+$ <b>og_read("~/hep-204")</b>
+replaying <b>11</b> answers from workflows/ and config/ — <span class="dim">every assumption re-measured, not trusted</span>
+
+  <span class="ok">✔</span>  affix rules still apply <span class="dim">765 → 812 participants, overlap 1.00</span>
+  <span class="ok">✔</span>  4 analyte bindings still resolve
+  <span class="ok">✔</span>  toxicity grade derivable for 10 of 16 analytes
+  <span class="ok">✔</span>  saf0003 declined 2026-08-27 — not asked again
+
+  <span class="warn">⚠  1 new finding</span>
+     lab_specialty.csv now carries a <span class="warn">17th analyte: "DBILI"</span>
+     No display asks for it. Nothing breaks. Recorded, and that is all.
+
+<span class="ok">✔</span> ready — og_run() will start</pre>
+    </div>
+
+    <div class="after">
+      <span class="lbl">The graft with the least evidence behind it</span>
+      <p>
+        Replay is the one idea on these pages that no direction designed and no session measured. It
+        exists because the data-manager lens said month two costing what month one cost was the worst
+        call in the session, and because the answers are already files, so replay is not a new store.
+        It is the first thing to challenge.
+      </p>
+    </div>
+  </div>
+
+  <div class="stepbar">
+    <button type="button" data-nav="-1" disabled>← Previous</button>
+    <span class="pos" data-pos>Step 1 of 8</span>
+    <button type="button" data-nav="1">Next →</button>
+  </div>
+
+  <hr class="hr">
+  <footer class="report">
+    <p>
+      Mockup for the recommended path. The argument, the ten grafts, what was rejected and the five
+      weaknesses are on <a href="index.html">the recommendation</a>; the surface behind the report is
+      <a href="bench.html">the bench</a>.
+    </p>
+    <p>Drafted by Claude Code using Opus 5 for review by @jwildfire.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---- the display graph, read out of demo-301/workflows this morning -----
+  var LB9 = ['cou0005','kri0005','saf0001','hep_explorer','safety_delta_delta',
+             'safety_histogram','safety_outlier_explorer','safety_results_over_time','safety_shift_plot'];
+  var AE7 = ['cou0001','cou0002','kri0001','kri0002','saf0003','ae_explorer','ae_timelines'];
+  var ALL16 = LB9.concat(AE7);
+  var ANALYTE3 = ['saf0001','hep_explorer','safety_delta_delta'];
+  var LABGRADE3 = ['cou0005','kri0005','safety_outlier_explorer'];
+  var DARK_BASE = 23;                       // blocked on an undelivered extract
+  var has = function (a, d) { return a.indexOf(d) !== -1; };
+
+  var S = { join: null, stack: null, analytes: null, labgrade: null, aegrade: null };
+
+  function tally() {
+    var t = { ok: 0, wrong: 0, away: 0, dark: DARK_BASE };
+    ALL16.forEach(function (d) {
+      if (!S.join || S.join === 'no') { t.wrong++; return; }
+      if (has(LB9, d) && S.stack !== 'yes') { t.wrong++; return; }
+      if (has(ANALYTE3, d) && S.analytes !== 'yes') { t.wrong++; return; }
+      if (has(LABGRADE3, d)) {
+        if (S.labgrade === 'derive') { t.ok++; }
+        else if (S.labgrade === 'decline') { t.dark++; }
+        else { t.away++; }
+        return;
+      }
+      if (d === 'saf0003') {
+        if (S.aegrade === 'bind' || S.aegrade === 'derive' || S.aegrade === 'const') { t.ok++; }
+        else if (S.aegrade === 'decline') { t.dark++; }
+        else { t.away++; }
+        return;
+      }
+      t.ok++;
+    });
+    return t;
+  }
+
+  // ---- outcome copy ------------------------------------------------------
+  var OUT = {
+    join: {
+      null:  ['', 'Unanswered. <strong>og_run() will refuse to start.</strong>'],
+      no:    ['bad', 'Left as delivered. <strong>og_run() still refuses</strong> — this finding is blocking, not advisory. Sixteen displays would report zero at every site with no error anywhere.'],
+      bind:  ['ok', 'Bound. <span class="mono">Raw_SUBJ.subjid</span> now reads <span class="mono">SUBJID</span> from <span class="mono">dm.xpt</span>, which carries both forms — but <span class="mono">lab_haem.csv</span> still prefixes <span class="mono">0301-</span>, so an affix rule is written for that one file as well. <strong>765 of 765, all 57,200 lab rows and 2,583 events recovered.</strong>'],
+      rule:  ['ok', 'Rule written to <span class="mono">config/vocab/subjid.rules.csv</span> — two patterns, three domains, readable and re-usable next month. <strong>765 of 765, all 57,200 lab rows and 2,583 events recovered.</strong>']
+    },
+    stack: {
+      null: ['', 'Unanswered. Only <span class="mono">lab_central.csv</span> would be read as <span class="mono">Raw_LB</span> — 8 of 16 analytes, and no bilirubin at all.'],
+      no:   ['warn', 'Not stacked. <span class="mono">Raw_LB</span> is <span class="mono">lab_central.csv</span> alone: 28,600 rows, 8 analytes, <strong>no bilirubin</strong>. The eDISH quadrants and Hy&rsquo;s Law both need it, so both render a plot with no y-axis measure. Recorded as your decision, not as an omission.'],
+      yes:  ['ok', 'Stacked. <strong>57,200 rows, 16 analytes, no overlap.</strong> Six haematology analytes are flagged as range-less on every display that uses a reference band.']
+    },
+    analytes: {
+      null: ['', 'Unanswered. The three displays render with no series on them, and the study site says so where they would have been.'],
+      no:   ['warn', 'Left unbound — the bench is where you pick from all 16 analyte names rather than the four proposed. Until something is bound, the three hepatic displays render empty and the site prints that rather than a plausible blank chart.'],
+      yes:  ['ok', 'Four analytes bound. <strong>hep_explorer</strong>, <strong>saf0001</strong> (Hy&rsquo;s Law) and <strong>safety_delta_delta</strong> now resolve all four literals. <span class="mono">TBILI → Bilirubin</span> is recorded as your clinical assertion, with your name and the date.']
+    },
+    labgrade: {
+      null:    ['', 'Unanswered. Three displays stay dark.'],
+      derive:  ['ok', 'Derived. <strong>Three displays unlocked</strong>, and every one of them carries the mark: the grade is computed here, from result ÷ upper limit, for 10 of 16 analytes. The six haematology analytes are excluded and named on the display.'],
+      decline: ['bad', 'Declined. <span class="mono">cou0005</span>, <span class="mono">kri0005</span> and <span class="mono">safety_outlier_explorer</span> will not be built, the site prints your reason where they would have been, and the next read does not ask again.']
+    },
+    aegrade: {
+      null:    ['', 'Unanswered. One display stays dark, and next month this question comes back.'],
+      bind:    ['ok', 'Bound. Point it at the column you have; the mapping writes one <span class="mono">source_col:</span> line and nothing else. <strong>saf0003 renders.</strong>'],
+      derive:  ['warn', 'Derived and <strong>marked lossy</strong>. Three severity levels standing in for five grades. <span class="mono">saf0003</span> renders, and the mark travels onto the display itself — not just into this report.'],
+      const:   ['warn', 'Constant for the study. Defensible only if the protocol really did grade every event the same way; the site prints the constant and the date you set it.'],
+      decline: ['bad', 'Declined, with your reason. <span class="mono">saf0003</span> is not built. In December the answer to &ldquo;why is there no Grade 3+ KRI&rdquo; is a line in the study&rsquo;s git history with your name on it.']
+    }
+  };
+
+  // ---- the diff ----------------------------------------------------------
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function line(kind, text){ return '<span class="' + kind + '">' + esc(text) + '</span>'; }
+
+  function diffLB() {
+    var L = [];
+    L.push(line('cmt', '  # Laboratory results, mapped once for both lenses on this study.'));
+    L.push(line('cmt', '  # `toxgrg_nsv` is cast back to text because the grades are written as'));
+    L.push(line('cmt', '  # "0".."4" and read.csv() would leave WHERE toxgrg_nsv IN (\'3\',\'4\')'));
+    L.push(line('cmt', '  # matching nothing.        ← 13 comment lines, all still here'));
+    L.push(line('ctx', '  spec:'));
+    L.push(line('ctx', '    Raw_LB:'));
+    L.push(line('ctx', '      subjid:'));
+    L.push(line('ctx', '        type: character'));
+    if (S.join === 'bind') {
+      L.push(line('plus', '+       source_col: SUBJECT      # answered 2026-08-27 · finding 1'));
+    } else if (S.join === 'rule') {
+      L.push(line('plus', '+       source_col: SUBJECT      # answered 2026-08-27 · finding 1'));
+      L.push(line('plus', '+       # affix rule in config/vocab/subjid.rules.csv'));
+    }
+    L.push(line('ctx', '      lbtstnam:'));
+    L.push(line('ctx', '        type: character'));
+    if (S.analytes === 'yes') {
+      L.push(line('plus', '+       source_col: TEST         # answered 2026-08-27 · finding 3'));
+    }
+    L.push(line('ctx', '      lbstresn:'));
+    L.push(line('ctx', '        type: numeric'));
+    if (S.stack === 'yes' || S.analytes === 'yes') {
+      L.push(line('plus', '+       source_col: RESULT_SI'));
+    }
+    L.push(line('ctx', '      toxgrg_nsv:'));
+    L.push(line('ctx', '        type: character'));
+    if (S.labgrade === 'derive') {
+      L.push(line('plus', '+       # derived — see steps below. No source column exists.'));
+    } else if (S.labgrade === 'decline') {
+      L.push(line('plus', '+       # DECLINED 2026-08-27 — no CTCAE grading on this protocol.'));
+      L.push(line('plus', '+       # Costs cou0005, kri0005, safety_outlier_explorer.'));
+    }
+    L.push('');
+    L.push(line('ctx', '  steps:'));
+    if (S.stack === 'yes') {
+      L.push(line('plus', '+   - output: Raw_LB               # answered 2026-08-27 · finding 2'));
+      L.push(line('plus', '+     name: dplyr::bind_rows       # 3 vendor files → 57,200 rows'));
+      L.push(line('plus', '+     params: { x: lab_central, y: lab_specialty, z: lab_haem }'));
+    }
+    if (S.analytes === 'yes') {
+      L.push(line('plus', '+   - output: Temp_LB_Vocab        # answered 2026-08-27 · finding 3'));
+      L.push(line('plus', '+     name: gsm.core::RunQuery'));
+      L.push(line('plus', '+     params:'));
+      L.push(line('plus', '+       strQuery: "SELECT *, CASE lbtstnam'));
+      L.push(line('plus', '+         WHEN \'ALT\'   THEN \'Alanine Aminotransferase\''));
+      L.push(line('plus', '+         WHEN \'AST\'   THEN \'Aspartate Aminotransferase\''));
+      L.push(line('plus', '+         WHEN \'TBILI\' THEN \'Bilirubin\''));
+      L.push(line('plus', '+         WHEN \'ALKP\'  THEN \'Alkaline Phosphatase\''));
+      L.push(line('plus', '+         ELSE lbtstnam END AS lbtstnam FROM df"'));
+    }
+    if (S.labgrade === 'derive') {
+      L.push(line('plus', '+   - output: Temp_LB_Graded       # answered 2026-08-27 · finding 4'));
+      L.push(line('plus', '+     name: gsm.core::RunQuery     # CTCAE v5, result ÷ lbstnrhi'));
+      L.push(line('plus', '+     params: { strQuery: "SELECT *, CASE ... END AS toxgrg_nsv ..." }'));
+    }
+    L.push(line('ctx', '    - output: Mapped_LB'));
+    L.push(line('ctx', '      name: dplyr::inner_join'));
+    L.push(line('ctx', '      params: { x: Temp_LB_Typed, y: Temp_LB_Participant, by: subjid }'));
+    return L.join('\n');
+  }
+
+  function diffCFG() {
+    var L = [], any = false;
+    L.push(line('cmt', '  --- config/data-config.yaml'));
+    if (S.stack === 'yes') {
+      any = true;
+      L.push(line('minus', '-   Raw_LB: input/lab_central.csv'));
+      L.push(line('plus',  '+   Raw_LB:                        # answered 2026-08-27 · finding 2'));
+      L.push(line('plus',  '+     - input/lab_central.csv'));
+      L.push(line('plus',  '+     - input/lab_specialty.csv'));
+      L.push(line('plus',  '+     - input/lab_haem.csv'));
+    }
+    if (S.join === 'rule') {
+      any = true;
+      L.push('');
+      L.push(line('cmt', '  --- config/vocab/subjid.rules.csv   (new file)'));
+      L.push(line('plus', '+ pattern,replacement,domains'));
+      L.push(line('plus', '+ ^AA-AA-000-0000-,,Raw_SUBJ'));
+      L.push(line('plus', '+ ^0301-,,Raw_LB'));
+    }
+    var log = [];
+    if (S.join) { log.push('+ ## The identifiers (finding 1)'); log.push(
+      S.join === 'no'
+        ? '+ Left as delivered. I know the joins are empty. Blocking, so nothing ran.'
+        : '+ dm.xpt sends the long form; everybody else sends the short one, except'); }
+    if (S.join === 'bind' || S.join === 'rule') {
+      log.push('+ the haematology vendor, which prefixes the site number. Same participants,');
+      log.push('+ written three ways. 765 of 765 after the affixes come off.');
+    }
+    if (S.analytes === 'yes') {
+      log.push('+');
+      log.push('+ ## The analyte names (finding 3)');
+      log.push('+ TBILI is total bilirubin, not direct. Confirmed against the lab manual,');
+      log.push('+ section 4.2, before binding it to the chart\'s "Bilirubin".');
+    }
+    if (S.aegrade === 'decline') {
+      log.push('+');
+      log.push('+ ## No AE toxicity grade (finding 5) — DECLINED');
+      log.push('+ CTCAE grading was not collected on this protocol — severity only.');
+      log.push('+ Confirmed with the medical monitor 2026-08-26. saf0003 will not be built.');
+    } else if (S.aegrade === 'derive') {
+      log.push('+');
+      log.push('+ ## No AE toxicity grade (finding 5) — SUBSTITUTED, LOSSY');
+      log.push('+ Using aesev. Three levels for five. Marked on the display itself.');
+    }
+    if (S.labgrade === 'decline') {
+      log.push('+');
+      log.push('+ ## No lab toxicity grade (finding 4) — DECLINED');
+      log.push('+ Not deriving CTCAE bands from results on this study.');
+    }
+    if (log.length) {
+      any = true;
+      L.push('');
+      L.push(line('cmt', '  --- config/setup-log.md            (your words, beside the spec)'));
+      log.forEach(function (s) { L.push(line('plus', s)); });
+    }
+    return any ? L.join('\n') : '<span class="empty">Nothing written yet.</span>';
+  }
+
+  // ---- render ------------------------------------------------------------
+  function render() {
+    var t = tally();
+    document.querySelectorAll('[data-ledger] [data-c]').forEach(function (el) {
+      el.textContent = t[el.getAttribute('data-c')];
+    });
+
+    Object.keys(OUT).forEach(function (k) {
+      var spec = OUT[k][S[k] === null ? 'null' : S[k]];
+      document.querySelectorAll('[data-out="' + k + '"]').forEach(function (el) {
+        el.className = 'og-outcome' + (spec[0] ? ' ' + spec[0] : '');
+        el.innerHTML = spec[1];
+      });
+    });
+
+    document.querySelectorAll('[data-set]').forEach(function (b) {
+      var p = b.getAttribute('data-set').split(':');
+      if (p[0] === 'reset') { return; }
+      b.setAttribute('aria-pressed', String(S[p[0]] === p[1]));
+    });
+
+    var box = document.querySelector('[data-declinebox]');
+    if (box) { box.hidden = S.aegrade !== 'decline'; }
+
+    var lb = document.querySelector('[data-diff-lb]');
+    if (lb) {
+      lb.innerHTML = (S.join || S.stack === 'yes' || S.analytes === 'yes' || S.labgrade)
+        ? diffLB()
+        : '<span class="empty">Nothing written yet. Answer a finding on steps 3 to 6.</span>';
+    }
+    var cfg = document.querySelector('[data-diff-cfg]');
+    if (cfg) { cfg.innerHTML = diffCFG(); }
+
+    // the site's readiness line and the declined tile
+    var ran = S.join === 'bind' || S.join === 'rule';
+    document.querySelectorAll('[data-verdict2]').forEach(function (el) {
+      el.className = 'og-verdict ' + (ran ? 'ran' : 'notrun');
+      el.querySelector('.v').textContent = ran ? 'Ran' : 'Not run';
+    });
+    var rl = document.querySelector('[data-ranline]');
+    if (rl) {
+      rl.innerHTML = ran
+        ? 'Executed 2026-08-27 09:41 against these files. ' + t.ok + ' of 42 displays rendered, '
+          + t.wrong + ' rendered wrongly, ' + t.away + ' still waiting on an answer.'
+        : 'The mapping has not executed against these files yet — <strong>og_run() refused</strong>, because a blocking finding is open.';
+    }
+    var dl = document.querySelector('[data-declineline]');
+    if (dl) {
+      var r = document.getElementById('reasonbox');
+      dl.textContent = S.aegrade === 'decline'
+        ? (r && r.value ? r.value : 'Declined 2026-08-27.')
+        : (S.aegrade ? 'Answered — this display is built.' : 'Not yet answered.');
+    }
+
+    // the doctor refuses while the blocking finding is open
+    var pass = document.querySelector('[data-doctorpass]');
+    if (pass) { pass.hidden = !ran; }
+    var refuse = document.querySelector('[data-doctorrefuse]');
+    if (refuse) { refuse.hidden = ran; }
+  }
+
+  // ---- steps -------------------------------------------------------------
+  var cur = 1, N = 8;
+  function go(n) {
+    cur = Math.min(N, Math.max(1, n));
+    for (var i = 1; i <= N; i++) {
+      document.getElementById('s' + i).classList.toggle('on', i === cur);
+    }
+    document.querySelectorAll('[data-go]').forEach(function (b) {
+      b.setAttribute('aria-current', String(Number(b.getAttribute('data-go')) === cur));
+    });
+    var pos = document.querySelector('[data-pos]');
+    if (pos) { pos.textContent = 'Step ' + cur + ' of ' + N; }
+    document.querySelectorAll('[data-nav]').forEach(function (b) {
+      var d = Number(b.getAttribute('data-nav'));
+      b.disabled = (d < 0 && cur === 1) || (d > 0 && cur === N);
+    });
+    if (location.hash !== '#s' + cur) { history.replaceState(null, '', '#s' + cur); }
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-set],[data-go],[data-nav]');
+    if (!b) { return; }
+    if (b.hasAttribute('data-go')) { go(Number(b.getAttribute('data-go'))); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (b.hasAttribute('data-nav')) { go(cur + Number(b.getAttribute('data-nav'))); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    var p = b.getAttribute('data-set').split(':');
+    if (p[0] === 'reset') { S = { join: null, stack: null, analytes: null, labgrade: null, aegrade: null }; }
+    else { S[p[0]] = (S[p[0]] === p[1]) ? null : p[1]; }
+    render();
+  });
+
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'reasonbox') { render(); }
+  });
+
+  var m = /^#s([1-8])$/.exec(location.hash || '');
+  go(m ? Number(m[1]) : 1);
+  render();
+})();
+</script>
+</body>
+</html>

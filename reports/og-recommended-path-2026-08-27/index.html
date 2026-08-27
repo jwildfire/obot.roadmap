@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The read, and the bench behind it</title>
+<meta name="description" content="Which of four data-loading designs open.gismo should build, and why: read the folder first, price every gap in charts rather than columns, keep a worksheet behind the report for the fortieth transfer, and refuse to run while the identifiers do not join.">
+<link rel="stylesheet" href="assets/report.css">
+<style>
+  /* the flow diagram — theme-aware through the report tokens */
+  .flowfig { margin: 1.6rem auto 0; max-width: 25rem; }
+  .flowfig svg { width: 100%; height: auto; display: block; }
+  .flowfig .bx { fill: var(--surface); stroke: var(--border); }
+  .flowfig .bx-acc { fill: var(--accent-tint); stroke: var(--accent); }
+  .flowfig .bx-side { fill: var(--surface-2); stroke: var(--border); stroke-dasharray: 4 3; }
+  .flowfig .ln { stroke: var(--faint); fill: none; }
+  .flowfig .ar { fill: var(--faint); }
+  .flowfig .t { fill: var(--ink); font-family: var(--f-display); font-size: 12px; font-weight: 600; }
+  .flowfig .tm { fill: var(--ink); font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; }
+  .flowfig .s { fill: var(--muted); font-family: var(--f-display); font-size: 10px; }
+  .flowfig .lbl { fill: var(--faint); font-family: var(--f-mono); font-size: 9px; letter-spacing: .06em; }
+  figcaption { font-size: .82rem; color: var(--muted); margin-top: .8rem; line-height: 1.5; max-width: 44rem; }
+
+  .graft { margin-top: .85rem; }
+  .graft .gh { display: flex; flex-wrap: wrap; gap: .45rem; align-items: baseline; }
+  .graft .gid { font-family: var(--f-mono); font-size: .78rem; font-weight: 700; color: var(--accent-deep); }
+  .graft .gt { font-weight: 650; font-size: .97rem; flex: 1 1 12rem; line-height: 1.35; }
+  .graft p { margin-top: .5rem; max-width: none; font-size: .9rem; }
+  .graft .demand { margin-top: .5rem; font-size: .82rem; color: var(--muted); border-left: 2px solid var(--border); padding-left: .65rem; }
+  .rej { margin-top: .8rem; }
+  .rej dt { font-weight: 650; font-size: .93rem; }
+  .rej dd { margin: .3rem 0 0; font-size: .88rem; color: var(--muted); line-height: 1.55; }
+  .rej dd + dt { margin-top: .95rem; }
+  .card > h3:first-child { margin-top: .15rem; }
+  .card .bul { max-width: none; }
+  .card .bul li { font-size: .91rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">open.gismo · loading your own data · the recommendation</div>
+    <h1>The read, and the bench behind it</h1>
+    <p class="standfirst">
+      The recommendation, before anything else. A user should put the folder on disk exactly as the
+      CRO sent it &mdash; wrong column names, three lab vendors, a SAS transport, no define.xml &mdash;
+      and run one command: <code>og_read()</code> opens every file it can, changes nothing, and
+      answers with one document that prices each gap in the <em>charts it turns off</em> rather than
+      in the columns it is missing, leaving four or five questions whose answers are single lines of
+      text in the study's own mapping YAML. To make that true we would build three things and no
+      more: the reader and its report; a diagnostic, <code>og doctor</code>, that re-checks every
+      answer on each later transfer, names the file and line that fixes each finding, and refuses to
+      run the pipeline while an identifier does not join; and &mdash; as v2, not v1 &mdash; a
+      worksheet behind the report for the transfer where four questions are not enough. Nothing here
+      maps data: <code>gsm.mapping</code> stays the engine, and every answer is written as the two
+      spec keys it already reads.
+    </p>
+    <p class="byline">Design session · 2026-08-27 · nothing here is built</p>
+    <nav aria-label="Pages">
+      <ul class="pagenav">
+        <li><a href="index.html" aria-current="page">The recommendation</a></li>
+        <li><a href="flow.html">1 · Loading HEP-204, step by step</a></li>
+        <li><a href="bench.html">2 · The bench behind the read</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <section id="verdict">
+    <div class="sec-num">01</div>
+    <h2>The two front-runners are not rivals</h2>
+
+    <p class="lede">
+      Ranked across the three lenses, <strong>inspect-first</strong> — the intake report — is the
+      only direction that is never below second. Convention is one point behind it. The interesting
+      part is that they do not disagree about anything.
+    </p>
+
+    <div class="tablewrap">
+      <table>
+        <caption>Each direction's rank under each of the three judging lenses</caption>
+        <thead>
+          <tr>
+            <th scope="col">Direction</th>
+            <th scope="col">Statistician<br><span class="tag">never used gsm</span></th>
+            <th scope="col">Clinical data manager<br><span class="tag">messy EDC delivery</span></th>
+            <th scope="col">Engineer<br><span class="tag">owns the codebase</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Inspect-first</strong> — <code>og_read()</code>, the intake report</td>
+            <td class="num"><span class="rank r1">1st</span></td>
+            <td class="num"><span class="rank">2nd</span></td>
+            <td class="num"><span class="rank">2nd</span></td>
+          </tr>
+          <tr>
+            <td><strong>Convention</strong> — <code>og scan</code> / <code>og doctor</code></td>
+            <td class="num"><span class="rank">2nd</span></td>
+            <td class="num"><span class="rank">3rd</span></td>
+            <td class="num"><span class="rank r1">1st</span></td>
+          </tr>
+          <tr>
+            <td><strong>Mapping bench</strong> — the dense worksheet</td>
+            <td class="num"><span class="rank r4">4th</span></td>
+            <td class="num"><span class="rank r1">1st</span></td>
+            <td class="num"><span class="rank r4">lower</span></td>
+          </tr>
+          <tr>
+            <td><strong>Guided setup</strong> — the wizard</td>
+            <td class="num"><span class="rank">3rd</span></td>
+            <td class="num"><span class="rank r4">4th</span></td>
+            <td class="num"><span class="rank r4">lower</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">
+      The engineer's judgement named a first and a second and did not separate the remaining two, so
+      those two cells say <em>lower</em> rather than inventing an order. On four-three-two-one
+      points with the unseparated pair split, inspect-first scores 10 and convention 9 — close
+      enough that the ranking is not the argument. What follows is.
+    </p>
+
+    <div class="callout">
+      <span class="lbl">Why one path and not two products</span>
+      <p>
+        The intake report is a <strong>document</strong>. <code>og doctor</code> is a
+        <strong>diagnostic</strong>. A document with no diagnostic behind it is true for exactly as
+        long as the folder does not change, which is about a month. A diagnostic with no document in
+        front of it prices its findings in <code>cou0001</code> and <code>kri0002</code> — a
+        vocabulary the statistician lens explicitly does not read and should never have to learn.
+        Ship one path: <code>og_read()</code> writes the document, the diagnostic is what keeps it
+        true, and the worksheet is where the document sends you when four questions is not enough.
+      </p>
+    </div>
+
+    <h3>What each lens actually asked for</h3>
+    <ul class="bul">
+      <li>
+        <strong>The statistician wanted the unit to be a chart, not a column.</strong> Not
+        <code>toxgrg_nsv</code>; the Grade 3+ lab rate. That is the whole translation layer between
+        gsm's vocabulary and theirs, and it means never having to learn gsm at all.
+      </li>
+      <li>
+        <strong>The data manager wanted somewhere to say what she already knows.</strong> Nobody
+        collected CTCAE grades on this protocol. She does not need a tool to discover that; she
+        needs a tool that will let her record it and print what it costs, so that in December the
+        answer is not "the tool didn't ask me."
+      </li>
+      <li>
+        <strong>The engineer wanted pure functions over a folder.</strong> A classed object with a
+        print method, which is the shape <code>og_validate()</code> already is — no new framework,
+        no interaction-test harness that does not exist, one new dependency.
+      </li>
+    </ul>
+    <p>
+      Those three are satisfiable together. The first sets the unit of the report, the second sets
+      the vocabulary of an answer, and the third sets what v1 is allowed to be.
+    </p>
+  </section>
+
+  <section id="path">
+    <div class="sec-num">02</div>
+    <h2>The path</h2>
+
+    <figure class="flowfig">
+      <svg viewBox="0 0 360 514" role="img" aria-labelledby="flowtitle flowdesc">
+        <title id="flowtitle">How a folder becomes a running study</title>
+        <desc id="flowdesc">
+          The delivery folder is read by og_read, which writes an intake report. The report answers
+          four or five questions; the bench is the optional deeper surface behind it. Answers from
+          either are written into the study's own mapping YAML, config and setup log, which live in
+          the study's git. og doctor reads those files and classifies findings as blocking, costed
+          or ready. og_run refuses while anything is blocking. When it runs, the study site is built
+          and readiness changes from Not run to Ran.
+        </desc>
+        <defs>
+          <marker id="a" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+            <path class="ar" d="M0 0 L8 4 L0 8 z"/>
+          </marker>
+        </defs>
+
+        <rect class="bx" x="8" y="6" width="344" height="40" rx="9"/>
+        <text class="tm" x="20" y="25">input/</text>
+        <text class="s" x="20" y="39">the folder exactly as the CRO sent it</text>
+        <path class="ln" d="M100 46 V60" marker-end="url(#a)"/>
+
+        <rect class="bx bx-acc" x="8" y="62" width="344" height="44" rx="9"/>
+        <text class="tm" x="20" y="81">og_read()</text>
+        <text class="s" x="20" y="96">reads everything · changes nothing · never fails</text>
+        <path class="ln" d="M100 106 V120" marker-end="url(#a)"/>
+
+        <rect class="bx" x="8" y="122" width="344" height="66" rx="9"/>
+        <text class="t" x="20" y="141">The intake report</text>
+        <text class="s" x="20" y="156">42 displays, priced. Findings ordered by what</text>
+        <text class="s" x="20" y="168">they cost, never by how sure the machine is.</text>
+        <text class="lbl" x="20" y="181">INTAKE/REPORT.HTML</text>
+        <path class="ln" d="M100 188 V202" marker-end="url(#a)"/>
+
+        <rect class="bx bx-side" x="8" y="204" width="344" height="46" rx="9"/>
+        <text class="t" x="20" y="223">The bench</text>
+        <text class="lbl" x="94" y="223">OPTIONAL · V2 · DECISION R1</text>
+        <text class="s" x="20" y="240">every column, for when four questions is not enough</text>
+        <path class="ln" d="M100 250 V264" marker-end="url(#a)"/>
+
+        <rect class="bx" x="8" y="266" width="344" height="74" rx="9"/>
+        <text class="t" x="20" y="285">The study's own files</text>
+        <text class="lbl" x="20" y="299">WORKFLOWS/1_MAPPINGS/*.YAML</text>
+        <text class="lbl" x="20" y="311">CONFIG/DATA-CONFIG.YAML · CONFIG/SETUP-LOG.MD</text>
+        <text class="s" x="20" y="326">text, in the study's own git — not a product database</text>
+        <path class="ln" d="M100 340 V354" marker-end="url(#a)"/>
+
+        <rect class="bx bx-acc" x="8" y="356" width="344" height="52" rx="9"/>
+        <text class="tm" x="20" y="375">og doctor</text>
+        <text class="s" x="20" y="390">every finding: the file, the line, the literal text</text>
+        <text class="s" x="20" y="401">that fixes it, and the displays it costs</text>
+        <path class="ln" d="M100 408 V420" marker-end="url(#a)"/>
+
+        <rect class="bx" x="8" y="422" width="344" height="34" rx="9"/>
+        <text class="tm" x="20" y="443">og_run()</text>
+        <text class="s" x="88" y="443">refuses while anything is blocking</text>
+        <path class="ln" d="M100 456 V470" marker-end="url(#a)"/>
+
+        <rect class="bx" x="8" y="472" width="344" height="36" rx="9"/>
+        <text class="t" x="20" y="489">The study site</text>
+        <text class="s" x="20" y="502">readiness turns Ran — measured, not counted</text>
+      </svg>
+      <figcaption>
+        Two commands and one document. The dashed box is the only part that is not in v1 — the
+        report is designed to link into it, and whether it ships together is decision&nbsp;R1.
+        Nothing in the chain holds state that is not a file in the study's own repository.
+      </figcaption>
+    </figure>
+
+    <h3>The six things that make it this shape</h3>
+    <ol class="bul">
+      <li>
+        <strong>Read before you complain.</strong> <code>og_read()</code> opens the folder as
+        delivered — no renaming, no conversion, no <code>input/Raw_*.csv</code> ritual first. Today
+        <code>og_validate()</code> answers a six-file delivery with twelve lines of
+        <em>file not found</em> and names not one file the user actually sent.
+      </li>
+      <li>
+        <strong>Price everything in displays.</strong> Forty-two consumers in a demo-301-shaped
+        study. Every finding says how many of them it costs, and the ordering is by cost — never by
+        how sure the machine is.
+      </li>
+      <li>
+        <strong>"You did not send this" is a legitimate final state.</strong> Seven undelivered
+        domains are not a nag that reappears every run. Acknowledge once; the site prints
+        <em>not supplied</em> where the tile would have been.
+      </li>
+      <li>
+        <strong>Nothing is auto-applied, ever.</strong> Inference orders candidates. It never fills
+        a blank, and it never shows a confidence number.
+      </li>
+      <li>
+        <strong>Answers are text in the study's git.</strong> No app database. The diff is the
+        record, and the person who reads it in December is the audience.
+      </li>
+      <li>
+        <strong>Readiness is empirical.</strong> The report says <em>Not run</em> until the mapping
+        has executed against the real files. Never a count of filled boxes.
+      </li>
+    </ol>
+  </section>
+
+  <section id="engine">
+    <div class="sec-num">03</div>
+    <h2>What gsm.mapping already solves &mdash; and what it does not</h2>
+    <p class="lede">
+      Nothing on this page is a second mapping layer. <code>gsm.mapping::ApplySpec()</code> is the
+      engine, it stays the engine, and every answer any surface here collects is written as one of
+      the two spec keys it already reads. What is missing sits beside the engine, not underneath it.
+    </p>
+
+    <div class="grid two">
+      <div class="card">
+        <h3>Solved, and not to be rebuilt</h3>
+        <ul class="bul">
+          <li>
+            <strong>Renaming.</strong> A spec entry's <code>source_col</code> becomes the
+            <code>SELECT &hellip; AS &hellip;</code>. <em>My column is called something else</em> is
+            already a supported sentence.
+          </li>
+          <li>
+            <strong>Typing.</strong> <code>type</code> reaches <code>RunQuery(bUseSchema = TRUE)</code>,
+            so casts happen in DuckDB rather than in study code.
+          </li>
+          <li>
+            <strong>Domain assembly.</strong> The mapping workflows turn <code>Raw_*</code> into
+            <code>Mapped_*</code> and carry the joins; <code>Ingest()</code> mapped a hand-built CRO
+            delivery perfectly in the companion session &mdash; 14 of 14 columns, 1,000 rows.
+          </li>
+          <li>
+            <strong>Everything <code>source_col</code> cannot say.</strong> Prefix strips, value
+            recoding and derived grades are ordinary <code>RunQuery</code> steps in the same YAML.
+            The bench direction established this by building them, which is why nothing designed
+            here needs a change from Gilead-BioStats.
+          </li>
+          <li>
+            <strong>The column vocabulary.</strong> <code>subjid</code>, <code>invid</code> (not
+            <code>siteid</code>), <code>studyid</code>, grouping through <code>strGroupCol</code>.
+            Fixed, and not ours to move.
+          </li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Never its job, and therefore nobody's</h3>
+        <ul class="bul">
+          <li>
+            <strong>It does not discover.</strong> It applies a spec you already wrote to a file you
+            already named. The step where a person finds out what they were sent has no home.
+          </li>
+          <li>
+            <strong>It does not say when it did nothing.</strong> An undelivered column leaves the
+            <code>SELECT</code> silently &mdash; measured below, and the reason a readiness screen
+            can be green over a study that produces no rows.
+          </li>
+          <li>
+            <strong>It does not read values.</strong> Column names are the easy half. Four literal
+            analyte strings decide whether the hepatic explorer draws anything, and no spec key has
+            an opinion about them.
+          </li>
+          <li>
+            <strong>It does not price.</strong> Nothing in the package knows that a dropped
+            <code>toxgrg_nsv</code> is the Grade 3+ lab-abnormality KRI, or that one identifier
+            convention costs 16 of 42 displays.
+          </li>
+          <li>
+            <strong>It does not record why.</strong> <em>Nobody collected CTCAE grades on this
+            protocol</em> is the single most valuable sentence in a transfer, and there is nowhere
+            to put it.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 id="m6">M-f &middot; The engine's own missing-column error cannot fire</h3>
+    <p>
+      Re-run against the installed <code>gsm.mapping 1.1.3</code> while writing this page. Give
+      <code>ApplySpec()</code> a two-column frame and a three-entry spec whose third column was never
+      delivered. <code>purrr::keep()</code> removes that entry before the query is built, so the
+      guard that follows &mdash;
+      <code>if (!all(sourceCols %in% names(dfSource))) LogMessage(level = "error", &hellip;)</code>
+      &mdash; tests a vector from which the offending entries have already been deleted. It is
+      unreachable code.
+    </p>
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i><span>R &mdash; ApplySpec(df[2 cols], spec[3 entries])</span></div>
+<pre>spec entries          subjid, invid, <span class="acc">timeonstudy</span>
+delivered columns     SUBJECT, SITE
+
+columns returned      subjid, invid
+timeonstudy present   <span class="bad">FALSE</span>
+
+messages / warnings / conditions raised about it   <span class="bad">none</span></pre>
+    </div>
+    <p class="note">
+      Every condition was captured with <code>withCallingHandlers</code>: the only messages emitted
+      are DuckDB connect, query complete and disconnect. This is not an argument against the
+      package &mdash; dropping unmatched entries is what makes partial specs work at all. It is the
+      argument for a surface that reports what the engine chose to ignore.
+    </p>
+  </section>
+
+  <section id="landscape">
+    <div class="sec-num">04</div>
+    <h2>What the landscape established, and what it could not</h2>
+    <p class="lede">
+      Thirteen platforms, read on 2026-08-27 from public documentation in the
+      <a href="../open-gismo-data-loading-2026-08-27/landscape.html">companion session</a> and cited
+      rather than re-run here. The gap analysis set the rule this inherits:
+      <em>seen on</em> means documented, never verified. No demos, no trials, no vendor contact, no
+      accounts.
+    </p>
+
+    <h3>Three things it settles</h3>
+    <ul class="bul">
+      <li>
+        <strong>A mapping grid is not the open-source norm &mdash; it is our own ancestor's idea.</strong>
+        Of the five open-source tools surveyed, exactly one gives an end user a column-mapping
+        surface, and it is safetyGraphics. The other four are conformance-or-nothing, or they are R
+        code you write yourself. Building this is not catching up with the open field; it is
+        finishing something the ISG started and the migration left behind.
+      </li>
+      <li>
+        <strong>Wherever the mapping is good, it is captive.</strong> elluminate's Mapper, Medidata's
+        low-code transforms, Veeva's ingestion engine and Empirica's data configurations all live
+        inside the platform behind a role &mdash; Empirica names the permission. safetyGraphics is
+        the one surveyed exception that hands the mapping back as code. Nobody surveyed makes it a
+        reviewable file in the study's own repository, which is exactly what this portfolio already
+        does with workflows, thresholds and package pins.
+      </li>
+      <li>
+        <strong>The value level is where the serious products differentiate.</strong> JMP's Recoder
+        keeps the original column and writes a formula recording the transformation; Medidata ships
+        a unit-conversion library rather than asking each study to write the arithmetic; Veeva
+        checks types, ranges and formats on arrival. A design that reconciles names and stops has
+        done the half that was never hard &mdash; which is why the report here is priced in displays
+        and why decision R6 exists at all.
+      </li>
+    </ul>
+
+    <h3>What it corrected in our own matrix</h3>
+    <p>
+      The July gap analysis scored row <strong>D1</strong> &mdash; a data-mapping surface &mdash; as
+      present on five of the thirteen: safetyGraphics, JReview, Spotfire clinical, tidyCDISC and
+      elluminate. Reading each platform's documentation capsule by capsule does not reproduce that
+      list.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <caption>Row D1 re-read, platform by platform</caption>
+        <thead><tr><th scope="col">July D1 said</th><th scope="col">The August reading</th></tr></thead>
+        <tbody>
+          <tr><td>safetyGraphics</td><td><span class="mark ok"><span class="g">&#10003;</span> confirmed</span> &mdash; a Mapping tab, per-field dropdowns auto-filled from a detected standard, exported back out as settings</td></tr>
+          <tr><td>elluminate</td><td><span class="mark ok"><span class="g">&#10003;</span> confirmed</span> &mdash; the Mapper, a drag-and-drop transformation builder, described by the vendor and read as a claim</td></tr>
+          <tr><td>JReview</td><td><span class="mark warn"><span class="g">&#9679;</span> qualified</span> &mdash; the mapping lives in the integrated data dictionary and is configured by an administrator, not by the end user</td></tr>
+          <tr><td>tidyCDISC</td><td><span class="mark bad"><span class="g">&#10007;</span> contradicted</span> &mdash; no mapping surface of any kind. Conformance is the contract: a missing required variable rejects the upload outright</td></tr>
+          <tr><td>Spotfire clinical</td><td><span class="mark neutral"><span class="g">&#8212;</span> not established</span> &mdash; nothing published at this grain. A statement about the documentation, not about the product</td></tr>
+          <tr><td class="mono">&mdash; not listed &mdash;</td><td><span class="mark ok"><span class="g">&#10003;</span> three more have one</span> &mdash; Medidata Clinical Data Studio, Veeva CDB and Oracle Empirica Signal, all behind a configuring role</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">
+      The count survives &mdash; five platforms with a documented column-mapping surface, out of
+      thirteen &mdash; but three of the five names change. That matters here because the two the
+      July row got right are also the two whose <em>shape</em> this design borrows from, and the one
+      it contradicts, tidyCDISC, is the closest thing in the survey to <code>og_validate()</code>
+      today: conformance or nothing.
+    </p>
+
+    <h3>What it could not establish, stated as such</h3>
+    <ul class="bul">
+      <li>
+        <strong>Spotfire clinical and CluePoints.</strong> Neither publishes at this level of
+        detail. Their rows are short for that reason and for no other.
+      </li>
+      <li>
+        <strong>What elluminate and Medidata do when the mapping does not fit.</strong> Both describe
+        the surface; neither describes the failure. Failure behaviour is the thing this whole design
+        is about, and on the two closest commercial analogues it is unknown.
+      </li>
+      <li>
+        <strong>How clinDataReview compares two data batches.</strong> The gap analysis scored it as
+        shipping batch comparison. Whether that is a second data folder, a version key or something
+        else could not be read out of the reporting vignette.
+      </li>
+      <li>
+        <strong>Whether JMP Clinical reads define.xml at study import.</strong> Not mentioned in the
+        import documentation read; domains are recognised by their standard two-letter codes.
+      </li>
+      <li>
+        <strong>Every vendor performance claim.</strong> <em>Ingests from any source in any
+        format</em>, <em>configurable in as little as three days</em>, <em>SDTM produced with Mapper
+        has been used in FDA submissions</em> &mdash; published claims, marked as claims, run by
+        nobody here.
+      </li>
+    </ul>
+    <p class="note">
+      The honest summary of the whole survey: it establishes what vendors and maintainers
+      <em>chose to publish</em> about their front doors, which flatters. It is strong enough to say
+      what shape of surface exists in this market and where every one of them stops. It is not
+      evidence that any of them works.
+    </p>
+  </section>
+
+  <section id="grafts">
+    <div class="sec-num">05</div>
+    <h2>Ten grafts, each one named</h2>
+    <p class="lede">
+      What the three runners-up contributed, and which lens demanded it. Nine come from a sibling
+      direction; one is an addition none of the four made.
+    </p>
+
+    <h3>From convention over configuration</h3>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G1</span><span class="gt">Every finding names the file, the line, and the literal text that fixes it</span><span class="from">convention</span></div>
+      <p>
+        The intake report ends a finding with a question. <code>og doctor</code> ends one with a
+        patch: <code>workflows/1_mappings/SUBJ.yaml:23</code>, the three lines to replace, and the
+        metrics it costs if you do not. Grafted whole. A finding that says what is wrong and not
+        where to type is a report; a finding that says where to type is work, and work is what the
+        user came for.
+      </p>
+      <p class="demand">Demanded by the statistician lens, which called <code>og doctor</code> the best-designed single piece in the session.</p>
+    </div>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G2</span><span class="gt">The mapping is a study document, edited as text and re-parsed before saving</span><span class="from">convention</span></div>
+      <p>
+        Answers write <code>source_col:</code> lines into the study's own
+        <code>workflows/1_mappings/*.yaml</code>, in the study's own git history, reviewed as a
+        diff. The writer edits the file as text and re-parses, refusing to save unless the parsed
+        structure matches what it intended — because open.gismo already ships the naive version and
+        it destroys the study's own explanations. See measurement&nbsp;<a href="#m3">M-c</a>.
+      </p>
+      <p class="demand">Demanded by the engineer lens, which found the defect at <code>R/og_app_helpers.R</code> before any of this was designed.</p>
+    </div>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G3</span><span class="gt">The key-overlap check is blocking, not advisory</span><span class="from">convention</span></div>
+      <p>
+        The intake direction detects broken joins and reports them. Convention refuses to run.
+        Take the refusal. A wrong key does not crash — it flatters: every column is present, every
+        type checks, the run completes, and sixteen of forty-two displays quietly report zero while
+        the site risk score reweights over the ones that survived. Roughly sixty lines, and it is
+        the cheapest item on any build list here.
+      </p>
+      <p class="demand">Measured independently in this session on demo-301's own data — <a href="#m4">M-d</a> and <a href="#m5">M-e</a>.</p>
+    </div>
+
+    <h3>From the mapping bench</h3>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G4</span><span class="gt">Four dispositions are the vocabulary of every answer</span><span class="from">mapping bench</span></div>
+      <p>
+        <strong>Bound</strong> to a source column · <strong>Derived</strong> from a generated step ·
+        <strong>Constant</strong> for the whole study · <strong>Declined</strong>, with a reason and
+        a printed price. The intake report's findings offered two buttons each; the bench's four
+        dispositions generalise them, and the fourth is the one no other direction has.
+      </p>
+      <p class="demand">Demanded by the data-manager lens: today her spreadsheet says <em>N/A</em> in a cell and that judgement dies there.</p>
+    </div>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G5</span><span class="gt">Declining is a recorded judgement with a price, not a blank</span><span class="from">mapping bench</span></div>
+      <p>
+        Decline <code>Raw_LB.toxgrg_nsv</code> and the product prints the two displays that stop,
+        takes the reason in the user's own words, and writes both into the YAML. This is the only
+        place in the whole session where a person can tell the product something it never thought
+        to ask.
+      </p>
+    </div>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G6</span><span class="gt">Readiness says <em>Not run</em> until the mapping has executed</span><span class="from">mapping bench</span></div>
+      <p>
+        Never a count of filled boxes. Today's <code>og_validate()</code> makes the opposite bargain
+        and gets it wrong in both directions at once — see <a href="#m2">M-b</a>.
+      </p>
+    </div>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G7</span><span class="gt">The worksheet is the room behind the report, reachable from any finding</span><span class="from">mapping bench</span></div>
+      <p>
+        Every column the pipeline declares beside every column the study delivered, on one screen.
+        The report is the front door and is where a first-time user should stay; the bench is where
+        the fortieth transfer gets worked, and where somebody who knows their data can answer a
+        question the four findings never raised.
+      </p>
+      <p class="demand">Demanded by the data-manager lens, whose one killer objection to the intake report was that it hands you back to nothing once the four findings are answered.</p>
+    </div>
+
+    <h3>From guided setup</h3>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G8</span><span class="gt">Inference orders candidates, never fills a blank, and shows no confidence number</span><span class="from">guided setup</span></div>
+      <p>
+        That session built a name-blind value profiler, scored it <strong>9 of 9</strong> on a CRO
+        lab extract where the published name detector scored 3 of 9 — and then ran it on demo-301's
+        own <code>Raw_LB.csv</code>, where it picked <code>visnum</code> as the lab result and
+        <code>toxgrg_nsv</code> as the lower limit, scoring <strong>1.000</strong>: higher than the
+        0.849 it scored on the answer it got right. There is no threshold that admits one and
+        rejects the other. So the number is never shown and the guess is never applied.
+      </p>
+    </div>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G9</span><span class="gt">Candidates are re-ranked on structure, not on name or distribution</span><span class="from">guided setup</span></div>
+      <p>
+        Does some categorical column give exactly one reference range per level? That test puts the
+        correct result-and-limits triple first on both lab files and demotes the impostor to purity
+        0.00. It is the difference between an ordering worth reading and one worth ignoring.
+      </p>
+    </div>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G10</span><span class="gt">A repair is offered as a rule, and the plain-English reason is kept beside it</span><span class="from">guided setup</span></div>
+      <p>
+        Not "we fixed 765 identifiers" but "strip this constant prefix from this column in these
+        domains" — a rule a person can read, argue with, and reuse next month. Beside it,
+        <code>config/setup-log.md</code>: the user's own sentence about why, sitting next to the
+        machine-readable spec, for whoever opens the diff in December.
+      </p>
+    </div>
+
+    <h3>One addition none of the four made</h3>
+
+    <div class="card graft">
+      <div class="gh"><span class="gid">G11</span><span class="gt">The answers replay on the next transfer, and the report shows only the delta</span><span class="from">new here</span></div>
+      <p>
+        The bench deferred reuse explicitly and the data-manager lens called that the worst call in
+        the session — month two of the same study on the same EDC costing what month one cost. The
+        answers are already files in the study's git, so replay is not a new store: the second read
+        applies what is there, re-measures every assumption it rests on, and reports only what
+        changed. A new analyte appearing in the lab feed is a finding. Nothing else is.
+      </p>
+      <p class="demand">Not designed by any of the four directions. It is the graft with the least evidence behind it and the first thing to challenge.</p>
+    </div>
+  </section>
+
+  <section id="rejected">
+    <div class="sec-num">06</div>
+    <h2>What was rejected</h2>
+
+    <dl class="rej">
+      <dt>The wizard as the primary surface</dt>
+      <dd>
+        Its measurements were the strongest work in the session and every one of them is kept
+        (G8, G9, G10). Its <em>shape</em> is rejected: linear, one decision at a time, optimised for
+        somebody who does this once. Both the statistician and the data manager load a study monthly
+        — forty times before database lock. The wizard wins hour one and then dies.
+      </dd>
+
+      <dt>Auto-applying anything, at any confidence</dt>
+      <dd>
+        Upheld from the intake direction and reinforced by the guided-setup measurement above. A
+        data manager who finds one wrong pre-filled row stops trusting the other 125, and
+        re-checking 126 rows by hand is worse than filling them.
+      </dd>
+
+      <dt>Showing a confidence score</dt>
+      <dd>
+        A number that reads 1.000 on the wrong answer and 0.849 on the right one is worse than no
+        number, because it transfers the machine's certainty to the reader.
+      </dd>
+
+      <dt>An application database</dt>
+      <dd>
+        Every disposition is a line in a file the study owns. There is no state anywhere that
+        survives <code>git checkout</code>.
+      </dd>
+
+      <dt>Proposing a <code>recode:</code> key to gsm.mapping</dt>
+      <dd>
+        Outside this program's write scope, and the bench established it is unnecessary:
+        <code>source_col</code> plus generated <code>RunQuery</code> steps already express value
+        recoding. Nothing here needs anything from Gilead-BioStats.
+      </dd>
+
+      <dt>A second mapping layer beside gsm.mapping</dt>
+      <dd>
+        <code>ApplySpec()</code> is the engine and stays the engine. Everything designed here writes
+        its two keys and nothing else — see <a href="#m1">M-a</a>.
+      </dd>
+
+      <dt><code>og_validate()</code> in its current form</dt>
+      <dd>
+        Replaced rather than extended. It compares target names against file columns and never reads
+        <code>source_col</code>, so it fails projects the engine maps perfectly and passes projects
+        that produce zero rows. Both errors are in the report today.
+      </dd>
+    </dl>
+  </section>
+
+  <section id="measured">
+    <div class="sec-num">07</div>
+    <h2>What this session measured itself</h2>
+    <p class="lede">
+      This artifact synthesises four sessions that each measured a great deal; it re-ran six things
+      rather than trusting the summaries, because three of the grafts above depend on them.
+      Five are below; the sixth is <a href="#m6">M-f</a>, in <em>What gsm.mapping already
+      solves</em> above. R 4.3,
+      <code>gsm.mapping 1.1.3</code>, <code>open.gismo</code> @ <code>dev</code> v0.2.0,
+      <code>demo-301</code> @ main. Everything else on this page is cited to the session that
+      measured it.
+    </p>
+
+    <h3 id="m1">M-a · The whole mapping seam is two lines</h3>
+    <p>
+      <code>gsm.mapping::ApplySpec</code>, deparsed from the installed 1.1.3:
+    </p>
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i><span>R — deparse(gsm.mapping::ApplySpec)</span></div>
+<pre>mapping$source &lt;- spec$<b>source_col</b> %||% name
+mapping$type   &lt;- spec$<b>type</b> %||% NULL
+...
+%&gt;% purrr::<b>keep</b>(~ .x$source %in% colnames(dfSource))</pre>
+    </div>
+    <p class="note">
+      Two keys, and a spec entry whose source column is absent is dropped from the generated
+      <code>SELECT</code> with no message at any verbosity level. All four directions write into
+      exactly this, which is why none of them needs a change upstream — and why a silent partial map
+      is the failure mode the whole design has to defend against.
+    </p>
+
+    <h3 id="m2">M-b · The validator checks the wrong side of the mapping</h3>
+    <p>
+      <code>open.gismo/R/og_validate.R:201</code> is
+      <code>missing_cols &lt;- setdiff(required, info$cols)</code> — the target names the pipeline
+      wants, set against the column names in the file. It never reads <code>source_col</code>. A
+      correct spec that <code>ApplySpec()</code> maps perfectly still produces the full
+      missing-column error report; a spec whose join yields nothing passes clean.
+    </p>
+
+    <h3 id="m3">M-c · The YAML writer eats the study's own explanation</h3>
+    <p>
+      <code>R/og_app_helpers.R</code> ends a settings write with
+      <code>yaml::write_yaml(y, target)</code>. Round-tripping demo-301's own
+      <code>workflows/1_mappings/LB.yaml</code> through <code>read_yaml</code>, setting one
+      <code>source_col</code>, and writing it back:
+    </p>
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i><span>R — read_yaml → set source_col → write_yaml</span></div>
+<pre>before lines: 80  comment lines: <b>13</b>
+after  lines: 70  comment lines: <span class="bad"><b>0</b></span>
+
+CAST(toxgrg_nsv present   before: TRUE   after: TRUE</pre>
+    </div>
+    <p class="note">
+      The thirteen destroyed lines are the study's note explaining that <code>toxgrg_nsv</code> must
+      be cast to character or the Grade 3+ KRI's
+      <code>WHERE toxgrg_nsv IN ('3','4')</code> matches nothing. The <code>CAST</code> step
+      survives, because it is a value in the document; the reason it exists does not, because it is
+      a comment. This is a defect open.gismo already owns, and it is the reason G2 specifies a text
+      editor rather than a serialiser.
+    </p>
+
+    <h3 id="m4">M-d · The join that returns nothing, on demo-301's own data</h3>
+    <p>
+      Package the subject file the way a CRO does — <code>USUBJID</code> built as
+      <code>studyid-subjid</code> — while the lab file keeps the bare identifier:
+    </p>
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i><span>R — key overlap on demo-301 input/</span></div>
+<pre>Raw_SUBJ rows: 1005   enrolled (enrollyn=='Y'): <b>765</b>
+Raw_LB   rows: 57200
+
+subject file delivered as  <span class="acc">AA-AA-000-0000-S384</span>
+lab file delivered as      <span class="acc">S1000</span>
+
+overlap                                    <span class="bad">0 of 765</span>
+overlap after stripping "AA-AA-000-0000-"  <span class="ok">765 of 765</span>
+
+inner_join rows with the ADaM key  <span class="bad">0</span>
+inner_join rows with the bare key  <span class="ok">57,200</span>  participants: 765</pre>
+    </div>
+    <p class="note">
+      Both columns are present, both are character, both pass every type check open.gismo runs
+      today. This independently reproduces the guided-setup session's M3b and the convention
+      session's blocking finding, from a third direction.
+    </p>
+
+    <h3 id="m5">M-e · What that silence costs, resolved from the workflows</h3>
+    <p>
+      All 42 consumers in <code>demo-301/workflows/</code> — 30 metric and 12 module workflows —
+      resolved back through their <code>Mapped_*</code> dependencies to the raw domains that feed
+      them:
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Raw domain</th><th scope="col" class="num">Consumers</th><th scope="col">Which</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">Raw_SUBJ</td><td class="num">36 of 42</td>
+            <td>Nearly everything. It is the join target, so it is also the single point of failure.</td>
+          </tr>
+          <tr>
+            <td class="mono">Raw_LB</td><td class="num">9</td>
+            <td class="mono">cou0005 · kri0005 · saf0001 · hep_explorer · safety_delta_delta · safety_histogram · safety_outlier_explorer · safety_results_over_time · safety_shift_plot</td>
+          </tr>
+          <tr>
+            <td class="mono">Raw_AE</td><td class="num">7</td>
+            <td class="mono">cou0001 · cou0002 · kri0001 · kri0002 · saf0003 · ae_explorer · ae_timelines</td>
+          </tr>
+          <tr>
+            <td class="mono">— none —</td><td class="num">1</td>
+            <td><code>srs0001</code> is the only consumer that declares no <code>spec:</code> at all. It does not fail with the others; it stacks whatever <code>kri*</code> produced results and re-normalises over them.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">
+      One wrong identifier convention across a delivery takes out <strong>16 of 42 displays</strong>
+      — and moves the site risk score's denominator rather than failing it. Nothing errors. The
+      study looks exemplary.
+    </p>
+  </section>
+
+  <section id="weak">
+    <div class="sec-num">08</div>
+    <h2>Where this is weakest</h2>
+
+    <ol class="bul">
+      <li>
+        <strong>W1 — It is two surfaces, which is more than any single direction proposed.</strong>
+        The report plus the bench is a bigger v1 than anything the four sessions costed. The
+        mitigation is a staircase, and it needs to be a real one: <code>og_read()</code> plus the
+        diagnostic is v1 and is useful with no bench at all; the bench is v2. The honest risk is
+        that v1 ships with the report linking to a room that does not exist, which is exactly the
+        objection the data-manager lens raised in the first place.
+      </li>
+      <li>
+        <strong>W2 — The whole product rests on one cost resolver.</strong> Every number on the
+        ledger, and therefore the ordering of every finding, comes out of a graph built once, by one
+        session, against one study's workflow files. If it mis-attributes a column, the report is
+        confidently wrong about priority in a way no user can detect. It needs a test suite of its
+        own before it is allowed to sort anything.
+      </li>
+      <li>
+        <strong>W3 — <code>srs0001</code> is a hole none of this closes.</strong> It declares no
+        spec, so no resolver can price it and no diagnostic can block on it. Declining a domain
+        moves its denominator instead of failing. The best available response is a printed warning,
+        which is what all four directions settled for, and it is not enough.
+      </li>
+      <li>
+        <strong>W4 — Answering still writes machine-generated SQL into a clinical document.</strong>
+        A <code>source_col:</code> line is one line and an exercised feature. Prefix strips, value
+        recoding and derived grades have no declarative home in the spec, so they arrive as
+        generated <code>RunQuery</code> steps — code the data manager cannot fully audit and the
+        statistician did not write. G10's setup log records the human sentence beside it; it does
+        not make the SQL reviewable.
+      </li>
+      <li>
+        <strong>W5 — Nothing in this session has met a real sponsor delivery.</strong> Every
+        fixture, including the ones behind the measurements above, is demo-301's own data re-cut. A
+        real measurement of an invented study is the strongest claim available here, and it is not
+        the same as a claim about a real one. Running this against one genuine CRO transfer is the
+        first thing that should happen if the direction is picked.
+      </li>
+    </ol>
+  </section>
+
+
+  <section id="sources">
+    <div class="sec-num">09</div>
+    <h2>What this is built on</h2>
+    <ul class="bul">
+      <li><a href="../platform-gap-analysis-2026-07-25/">Platform gap analysis</a> — row <strong>D1</strong>, the data-mapping surface: scored present on five of thirteen platforms, absent here and never filed. Re-read platform by platform in <a href="#landscape">&sect;04</a>, which keeps the count and changes three of the names.</li>
+      <li><a href="../open-gismo-data-loading-2026-08-27/landscape.html">Thirteen front doors</a> — the landscape work for this brief, six door types, and the finding that <em>value</em> fixing is where almost every platform falls over. Not re-run here.</li>
+      <li><a href="../og-intake-report-2026-08-27/">The intake report</a> — the winning direction.</li>
+      <li><a href="../og-convention-loading-2026-08-27/">Convention over configuration</a> — G1, G2, G3.</li>
+      <li><a href="../og-mapping-bench-2026-08-27/">The mapping bench</a> — G4, G5, G6, G7.</li>
+      <li><a href="../og-guided-setup-2026-08-27/">Guided setup</a> — G8, G9, G10.</li>
+    </ul>
+    <p class="note">
+      Competitor research is read-only and from public sources only — product documentation, package
+      reference indexes, user guides and conference papers. No demos, no trials, no vendor contact.
+      <em>Seen on</em> means documented, never verified.
+    </p>
+  </section>
+
+  <section id="decisions">
+    <div class="sec-num">10</div>
+    <h2>What needs deciding</h2>
+    <p class="lede">
+      Six questions this page cannot answer for itself. Each carries the answer the page argues for,
+      so a nod is enough and only a disagreement needs writing.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">The recommendation on this page</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">R1</td><td>Two surfaces in v1, or report-plus-diagnostic first and the bench in v2?</td><td>Staircase. v1 is the read and the diagnostic; the bench is v2 and the report is designed to link into it.</td></tr>
+          <tr><td class="mono">R2</td><td>Does a blocking finding refuse <code>og_run()</code>, or only warn?</td><td>Refuse. A key with zero overlap is not a preference.</td></tr>
+          <tr><td class="mono">R3</td><td>Does answering write into the study's own mapping YAML, or into a file open.gismo owns?</td><td>The study's own, edited as text — with the writer fixed first (M-c).</td></tr>
+          <tr><td class="mono">R4</td><td>Do answers replay across transfers, and is the scope per study or per sponsor?</td><td>Replay, per study. Per-sponsor reuse is the obvious next ask and the obvious leakage risk.</td></tr>
+          <tr><td class="mono">R5</td><td>Which formats does the door accept on day one?</td><td>Add <code>haven</code>. It is already installed in this stack and never called, which is why a six-file delivery gets twelve <em>file not found</em> lines today.</td></tr>
+          <tr><td class="mono">R6</td><td>Do lossy substitutions get carried onto the study site?</td><td>Yes, on the display itself. A chart built on severity standing in for toxicity grade should say so where somebody reads it.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="hr">
+  <footer class="report">
+    <p>
+      Design only. Nothing was built, filed, branched or merged. No change to
+      <code>open.gismo</code>, <code>demo-301</code>, <code>gsm.mapping</code>,
+      <code>gsm.core</code> or any other repository's source; the measurement scripts wrote only to
+      <code>/tmp</code>.
+    </p>
+    <p>
+      Drafted by Claude Code using Opus 5 for review by @jwildfire.
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>
