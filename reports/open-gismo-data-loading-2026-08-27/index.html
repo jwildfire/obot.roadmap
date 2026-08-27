@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loading your own data into open.gismo</title>
+<meta name="description" content="Getting a real study in means satisfying 126 columns by hand-editing YAML, and nothing checks that the subject identifiers join — a design for the surface that fixes both, with clickable mockups and how thirteen other platforms let a user in.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">open.gismo · data loading · 2026-08-27</div>
+  <h1>How does anyone get their own study in?</h1>
+  <p class="standfirst">open.gismo v0.2.0 runs the whole pipeline against a plain project folder. The forkable demo proves it. What neither answers is the step before all of it: a person has an EDC export, and between that export and a running study sits work this product currently makes invisible.</p>
+  <p class="byline">Requested by @jwildfire, 2026-08-26: <i>&ldquo;Maybe a ultradesign session for open.gismo? re-visit the research comparing other sites and do some mockups on how users will load their own data?&rdquo;</i> &middot; This is a design session — nothing was built, filed or changed in any repository.</p>
+  <nav class="parts">
+    <a href="index.html" aria-current="page">Overview</a>
+    <a href="landscape.html">1 · Thirteen front doors</a>
+    <a href="mockups.html">2 · Fit — the four screens</a>
+    <a href="#decisions">3 · Decisions</a>
+  </nav>
+</header>
+
+<section class="tldr">
+  <h2>The short version</h2>
+  <p>The engine for this already exists and is not the problem. <span class="mono">gsm.mapping</span> maps raw data into the standard domains, and its spec already accepts a <span class="mono">source_col:</span> key that renames a source column onto a target one — an existing, exercised feature that no user of open.gismo would ever discover. What is missing is a surface, and three specific things nobody has named.</p>
+  <p>Reading it closely also changes the shape of the problem. The gsm raw layer is not CDISC: findings and events use lower-case SDTM-adjacent names, while subject, site and enrolment use operational-EDC names such as <span class="mono">invid</span>, <span class="mono">agerep</span> and <span class="mono">subject_nsv</span>. A sponsor with immaculate SDTM still has to map. The mapping surface is not a concession to messy data; it is the front door for everybody.</p>
+</section>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">14</div><div class="l">raw domains a study must satisfy</div></div>
+  <div class="kpi"><div class="n">126</div><div class="l">required columns across them</div></div>
+  <div class="kpi"><div class="n">2</div><div class="l">keys the mapping spec offers per column — <span class="mono">type</span> and <span class="mono">source_col</span></div></div>
+  <div class="kpi"><div class="n">0</div><div class="l">checks that the identifiers actually join</div></div>
+</div>
+<p class="note">Counted on 2026-08-27 from <span class="mono">demo-301/workflows/1_mappings/</span> — the fourteen <span class="mono">Raw_*</span> domains those specs read and the distinct columns they require. The two spec keys are what <span class="mono">gsm.mapping::ApplySpec()</span> reads; the third number is the finding below.</p>
+
+<section>
+  <h2>Three problems, in the order they will bite</h2>
+  <p class="lede">Each was established by reading the code and the shipped demo study, not inferred from the shape of the product.</p>
+
+  <div class="callout hot">
+    <span class="label">✗ One — a study can map perfectly and produce nothing</span>
+    <p>The mapping workflows join every findings and events domain to the subject spine with an inner join: <span class="mono">LB.yaml</span> and <span class="mono">AE.yaml</span> both end in <span class="mono">dplyr::inner_join</span> on <span class="mono">subjid</span>. That join is deliberate and documented as the data-cleaning step. But nothing anywhere checks that the two sides share any identifiers.</p>
+    <p>A lab vendor that writes <span class="mono">"0301-S036"</span> where the demographics extract writes <span class="mono">"S036"</span> passes today&rsquo;s validation completely — the column is present, the type is right, no values are missing — and then produces an empty mapped domain. In <span class="mono">demo-301</span> that would silently remove six of the nine safety charts and two KRIs. <span class="mono">og_validate()</span> reads one file at a time and never compares keys across files, so there is no moment at which anyone is told.</p>
+  </div>
+
+  <div class="callout warm">
+    <span class="label">◐ Two — the spec renames columns and cannot touch what is inside them</span>
+    <p>A spec column accepts exactly two keys, <span class="mono">type</span> and <span class="mono">source_col</span>, and <span class="mono">ApplySpec()</span> turns them into a <span class="mono">SELECT ... AS ...</span>. That covers renaming and nothing else. Every genuinely hard case in a real export is a value problem rather than a name problem: an identifier with a site prefix, a baseline flag spelled <span class="mono">BASELINE</span> instead of <span class="mono">Y</span>, a lab result in different units, a toxicity grade written as <span class="mono">Grade 3</span> rather than <span class="mono">3</span>.</p>
+    <p>Those can be expressed today only by hand-writing a <span class="mono">steps:</span> entry — arbitrary R function calls in YAML — which is a far higher bar than the mapping it accompanies. This is the one place where a surface alone is not enough and the spec needs a decision.</p>
+  </div>
+
+  <div class="callout warm">
+    <span class="label">◐ Three — going without a domain is a warning nobody reads</span>
+    <p>When an input file is absent, <span class="mono">og_run()</span> raises an R warning and continues (<span class="mono">R/og_run.R:397</span>). The pipeline runs, the site builds, and the metrics that needed that domain are quietly not there. Most studies will legitimately lack several of the fourteen: <span class="mono">Raw_DATACHG</span>, <span class="mono">Raw_DATAENT</span> and <span class="mono">Raw_QUERY</span> come from an EDC audit trail that many sponsors will never extract.</p>
+    <p>Going without should be a choice a user makes with the cost in front of them, recorded in the study config, and printed on the site wherever the missing metric would have appeared — not a warning in a console that a scheduled run throws away.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What already exists, and what has to be built</h2>
+  <p class="lede">Three of the four seams are already in the engine. Nothing here proposes a second mapping layer beside <span class="mono">gsm.mapping</span> — the question is what surface a person touches.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>The seam</th><th>Where it lives today</th><th>Status</th><th>What is missing</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Which file</b><span class="sub">domain → path</span></td>
+          <td><span class="mono">config/data-config.yaml</span></td>
+          <td><span class="st st-have"><span class="g">✓</span>Exists</span></td>
+          <td>A surface that writes it, and formats other than CSV at the door</td>
+        </tr>
+        <tr>
+          <td><b>Which column</b><span class="sub">target ← source</span></td>
+          <td><span class="mono">source_col:</span> in each mapping spec</td>
+          <td><span class="st st-have"><span class="g">✓</span>Exists, exercised</span><span class="sub">gsm.mapping&rsquo;s own workflows use it for Rave names</span></td>
+          <td>Everything user-facing. No detection, no proposal, no confirmation, no writer</td>
+        </tr>
+        <tr>
+          <td><b>Which type</b><span class="sub">coercion</span></td>
+          <td><span class="mono">type:</span> in each mapping spec</td>
+          <td><span class="st st-have"><span class="g">✓</span>Exists</span><span class="sub">og_validate checks numeric coercion on a 5,000-row sample</span></td>
+          <td>Reported to the user before a run rather than after</td>
+        </tr>
+        <tr>
+          <td><b>Which value</b><span class="sub">recode, reformat, derive</span></td>
+          <td>Nowhere declarative — only a hand-written <span class="mono">steps:</span> entry</td>
+          <td><span class="st st-none"><span class="g">○</span>No seam</span></td>
+          <td>A spec key, and an upstream conversation with <span class="mono">gsm.mapping</span></td>
+        </tr>
+        <tr>
+          <td><b>Do the keys join</b><span class="sub">cross-file</span></td>
+          <td>Nowhere. Every check reads one file in isolation</td>
+          <td><span class="st st-none"><span class="g">○</span>No check</span></td>
+          <td>An overlap measurement, and a run that refuses rather than warns</td>
+        </tr>
+        <tr>
+          <td><b>Going without</b><span class="sub">declining a domain</span></td>
+          <td>An R warning, then the run continues</td>
+          <td><span class="st st-none"><span class="g">○</span>Not a concept</span></td>
+          <td>A recorded decision the site can print</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>The design</h2>
+  <p class="lede">Four screens, clickable, built against real column names and real downstream dependencies from <span class="mono">demo-301</span>. One of them is live: change a mapping and the readiness line, the preview and the config diff all move.</p>
+  <div class="cards">
+    <div class="card">
+      <span class="tagline">Screen 1</span>
+      <h3>Point at your data</h3>
+      <p>Drop a folder of CSV, SAS transport, SAS datasets or Excel. Everything is converted once, at import, into plain CSV under <span class="mono">input/</span>, so the project folder stays the diffable, forkable thing the product rests on. Each file is placed against a domain with a stated reason.</p>
+    </div>
+    <div class="card">
+      <span class="tagline">Screen 2</span>
+      <h3>Fit report</h3>
+      <p>The successor to <span class="mono">og_validate()</span>, with the two columns it does not have: whether the identifiers join, and what each absent domain costs in named metrics and named charts. Six ready, three needing a decision, five going without.</p>
+    </div>
+    <div class="card">
+      <span class="tagline">Screen 3</span>
+      <h3>Map a domain</h3>
+      <p>A grid, not a wizard. Required column, its type and its downstream consumer on the left; your column on the right with a proposed match and the reason for it. Three rows carry the argument: an identifier that maps cleanly and fails the join, a flag that needs its values recoded, and a column nobody supplied.</p>
+    </div>
+    <div class="card">
+      <span class="tagline">Screen 4</span>
+      <h3>What it writes</h3>
+      <p>A diff against the study&rsquo;s own configuration, to be committed and reviewed. Renames use the existing <span class="mono">source_col:</span> key and are real today. Value transforms are drawn in a different colour because they are a proposal, and that is the decision below.</p>
+    </div>
+  </div>
+  <p style="margin-top:1.4rem"><a href="mockups.html"><b>Open the four screens →</b></a></p>
+</section>
+
+<section>
+  <h2>What the competitor research says, on this question specifically</h2>
+  <p class="lede">Thirteen platforms, re-read against a narrower question than the gap analysis asked: not &ldquo;is there a mapping surface&rdquo; but &ldquo;what does a person actually do&rdquo;. <a href="landscape.html">The full survey is Part 1</a>.</p>
+  <ul class="bullets">
+    <li><b>A mapping grid is not the open-source norm — it is our own ancestor&rsquo;s idea.</b> Of five open-source tools surveyed, exactly one gives an end user a column-mapping surface: safetyGraphics, with a Mapping tab, automatic fill from a detected standard, and a match reported in words (<span class="mono">Partial SDTM (4/9 cols/fields matched)</span>). The other four are conformance-or-nothing, or they are R code you write yourself.</li>
+    <li><b>Everywhere the mapping is good, it is captive.</b> elluminate&rsquo;s drag-and-drop Mapper, Medidata&rsquo;s low-code transforms, Veeva&rsquo;s ingestion engine and Empirica&rsquo;s data configurations are all real, and all live inside the platform behind a role — administrator, data manager, vendor analyst. safetyGraphics is the one exception that hands the mapping back as exportable code. Nobody surveyed makes the mapping a reviewed file in the study&rsquo;s own repository, which is precisely the move this portfolio already makes with workflows, thresholds and package pins.</li>
+    <li><b>The serious platforms all solve values, not just names.</b> JMP ships a Recoder that merges, splits and renames values, keeps the original column and writes a formula recording the transformation. Medidata ships a unit-conversion library. Veeva checks types, ranges and formats on arrival. A design that maps names and stops has done the half that was never hard.</li>
+  </ul>
+
+  <div class="callout cool">
+    <span class="label">A correction to the anchor report</span>
+    <p>The gap analysis scored row D1 as seen on five platforms: safetyGraphics, JReview, Spotfire clinical, tidyCDISC and elluminate. On this closer reading the count survives and the membership does not. tidyCDISC has no mapping surface of any kind — a missing required variable rejects the upload outright — and should not have been credited. Spotfire clinical could not be established either way from public documentation. JReview&rsquo;s mapping is real but lives in an administrator-configured data dictionary rather than anywhere a reviewer touches. And three platforms the row did not credit do have one: Medidata, Veeva and Empirica. Five of thirteen cells in that row were wrong in one direction or the other, which is roughly what a survey scored at sixty-three-row grain should be expected to get wrong, and is why this one asks a narrower question.</p>
+  </div>
+</section>
+
+<section id="decisions">
+  <h2>Decisions</h2>
+  <p class="lede">Seven, each with a recommendation rather than a menu. D4 is the only one that reaches outside this portfolio, and it is the one everything else waits on.</p>
+
+  <div class="decision" id="d1">
+    <span class="id">D1</span>
+    <h3>Where the surface lives</h3>
+    <p class="q">A separate setup wizard, or part of the study site that already exists?</p>
+    <div class="rec"><span class="lead">Recommendation</span>A <span class="mono">Setup › Data</span> area inside <span class="mono">og_app()</span>, beside the existing Config views, plus a scriptable twin so the whole thing can run headless. The app is already the thing people open, it already reads the project folder, and a second binary would be a second thing to keep alive.</div>
+    <p class="alt">Considered: a standalone initialiser in the shape of <span class="mono">safetyGraphicsInit()</span>, which is our ancestor&rsquo;s answer and works, but splits the product in two.</p>
+  </div>
+
+  <div class="decision" id="d2">
+    <span class="id">D2</span>
+    <h3>Does the surface write back to the repository?</h3>
+    <p class="q">A diff the user commits, or state the app keeps for itself?</p>
+    <div class="rec"><span class="lead">Recommendation</span>Always a diff, against <span class="mono">config/</span> and <span class="mono">workflows/</span>, in the study&rsquo;s own repository. This is the differentiating decision on the whole page: it is the one thing no surveyed platform does, it costs nothing extra to build, and it means a mapping can be reviewed, blamed, reverted and reproduced a year later like every other decision in the study.</div>
+    <p class="alt">Considered: a sidecar mapping file the app owns. Simpler, and it quietly turns the study repository into something that is no longer the whole record.</p>
+  </div>
+
+  <div class="decision" id="d3">
+    <span class="id">D3</span>
+    <h3>What comes in the front door</h3>
+    <p class="q">CSV only, as today, or the formats people actually have?</p>
+    <div class="rec"><span class="lead">Recommendation</span>Accept CSV, <span class="mono">.sas7bdat</span>, <span class="mono">.xpt</span> and Excel; convert once at import into plain CSV under <span class="mono">input/</span>; never touch the originals. This keeps the promise that a project is a folder of readable text files while accepting what an export actually is. safetyGraphics takes anything <span class="mono">rio</span> reads; tidyCDISC takes <span class="mono">.sas7bdat</span> only; DaVinci prefers <span class="mono">.rds</span> for speed.</div>
+    <p class="alt">Considered: leave conversion to the user. It is one more undocumented step at the exact moment someone decides whether this product is worth the afternoon.</p>
+  </div>
+
+  <div class="decision" id="d4">
+    <span class="id">D4</span>
+    <h3>The transform seam — the one that needs somebody else</h3>
+    <p class="q">Value recoding, identifier reformatting and derivation have nowhere declarative to live. Where should they go?</p>
+    <div class="rec"><span class="lead">Recommendation</span>Propose two new spec column keys to <span class="mono">gsm.mapping</span> — <span class="mono">recode:</span> for a value map, and <span class="mono">transform:</span> drawing from a closed, named set (strip a prefix, pad, trim, upper-case, scale) rather than arbitrary expressions. A closed set is auditable and a free-text expression is not, which matters more here than expressiveness. Until that lands, the surface writes a <span class="mono">steps:</span> entry and labels it as the workaround it is.</div>
+    <p class="alt">Considered: <span class="mono">steps:</span> forever. It works, and it means the generated mapping is a program rather than a declaration, which is the wrong artifact to ask a reviewer to approve. <span class="mono">gsm.mapping</span> is a Gilead-BioStats repository, so this is a draft handed over rather than an issue filed.</p>
+  </div>
+
+  <div class="decision" id="d5">
+    <span class="id">D5</span>
+    <h3>Going without a domain</h3>
+    <p class="q">Should declining be a recorded decision or stay a warning?</p>
+    <div class="rec"><span class="lead">Recommendation</span>A <span class="mono">declined:</span> block in <span class="mono">study-config.yaml</span> naming the domains and columns the study is going without, printed on the site wherever the affected metric would have appeared. Absence that was <em>not</em> declared should stop the run rather than warn it. A quietly missing KRI is indistinguishable from a KRI with nothing to report, and the second is a finding.</div>
+    <p class="alt">Considered: keep the warning. It is the current behaviour and it is how a study ships a hole nobody can explain six months later.</p>
+  </div>
+
+  <div class="decision" id="d6">
+    <span class="id">D6</span>
+    <h3>How much should it guess, and does <span class="mono">define.xml</span> count?</h3>
+    <p class="q">Auto-detection is either a great convenience or a great way to be confidently wrong.</p>
+    <div class="rec"><span class="lead">Recommendation</span>Propose, never apply. Match on name after case-folding, then on type, then on value shape, and show the reason for every proposal in the row it belongs to — safetyGraphics&rsquo; <span class="mono">detectStandard()</span> is the model, right down to reporting the match as a fraction in words. Read <span class="mono">define.xml</span> later, for labels and code lists, and never as the authority for what a column is.</div>
+    <p class="alt">Considered: no detection at all. Fourteen domains and 126 columns is a long afternoon of dropdowns if nothing is pre-filled.</p>
+  </div>
+
+  <div class="decision" id="d7">
+    <span class="id">D7</span>
+    <h3>Two files, one domain</h3>
+    <p class="q">Central labs and local labs. One <span class="mono">Raw_LB</span>.</p>
+    <div class="rec"><span class="lead">Recommendation</span>Follow clinDataReview: accept a list of files for a domain, row-bind them, and add a column recording which file each row came from. It is a small change to <span class="mono">data-config.yaml</span> and the loader, and the provenance column is what makes it defensible.</div>
+    <p class="alt">Considered: one file per domain, and the user concatenates. Which they will do in Excel, unversioned, and nobody will ever know which vendor a row came from.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What I would build first</h2>
+  <p class="lede">In the order that removes the most risk per day of work. The first two are not the mockups at all.</p>
+  <ol class="bullets" style="counter-reset:none">
+    <li><b>The spine check.</b> Add a key-overlap column to <span class="mono">og_validate()</span>: for every domain that joins to another, measure how many of its identifiers actually match. No new interface, no new concepts, and it closes the silent failure entirely. This is the smallest useful thing on the page.</li>
+    <li><b>Make the run refuse.</b> A zero-overlap join or an undeclared missing domain should stop <span class="mono">og_run()</span>, not warn it. Depends on D5 for what &ldquo;declared&rdquo; means.</li>
+    <li><b>The fit report as a view.</b> Screen 2, rendering what the previous two steps now know. Read-only, and already worth opening.</li>
+    <li><b>The mapping grid, renames only.</b> Screen 3 and Screen 4 restricted to what <span class="mono">source_col:</span> can express today. No upstream dependency, and it covers the majority of columns in a typical export.</li>
+    <li><b>The transform seam.</b> Screen 3&rsquo;s highlighted rows, once D4 is settled and whatever it needs has landed.</li>
+  </ol>
+  <p class="note">Steps one and two together are the difference between a study that fails loudly and one that publishes a site full of empty charts. They are worth doing whether or not any of the rest is ever built.</p>
+</section>
+
+<section>
+  <h2>Method, and what it cannot tell you</h2>
+  <ul class="bullets">
+    <li><b>Our side is verified.</b> Domain and column counts were extracted from <span class="mono">demo-301/workflows/1_mappings/</span>; downstream dependencies from the thirty metric workflows and twelve module workflows in the same repository; the inner joins from <span class="mono">AE.yaml</span> and <span class="mono">LB.yaml</span>; the spec keys from <span class="mono">gsm.mapping::ApplySpec()</span>; the warn-and-continue behaviour from <span class="mono">open.gismo/R/og_run.R</span>.</li>
+    <li><b>Nothing was run.</b> The claim that a zero-overlap join yields an empty mapped domain follows from the inner join in the workflow, not from executing the pipeline against broken data. The consequence for what the site then renders is stated as a consequence, not as an observation.</li>
+    <li><b>Competitor research is documentation only.</b> Public product documentation, package reference indexes, user guides and PhUSE papers. No demos, no trials, no vendor contact, no accounts. Seen on means documented, and vendor documentation flatters. Rows that could not be established say so rather than being filled in.</li>
+    <li><b>The mockup&rsquo;s export is invented.</b> Every target column, type, domain and downstream consumer in the mockups is read from <span class="mono">demo-301</span>. The incoming lab-vendor file, its column names and its sample values are constructed to make the argument, and are labelled as such on the page.</li>
+    <li><b>Nothing was filed, changed or merged.</b> No issue, no branch, no commit in <span class="mono">open.gismo</span>, and no writes to any repository outside <span class="mono">jwildfire</span>.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Drafted by Claude Code using Opus 5 for review by @jwildfire. A design session: the mockups are HTML you can click, not shipped code.</p>
+  <p><a href="../">All reports</a> &middot; <a href="../platform-gap-analysis-2026-07-25/">Platform gap analysis — the anchor this extends</a> &middot; <a href="../og-v0.2-demo/">open.gismo v0.2 demo</a> &middot; <a href="../open-gismo-v1-plan-2026-07-12/">open.gismo v1 plan</a></p>
+</footer>
+
+</div>
+</body>
+</html>

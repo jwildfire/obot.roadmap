@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1 · Thirteen front doors</title>
+<meta name="description" content="For each of the thirteen safety and clinical-review platforms surveyed last month, what a user actually does to get their own study in — upload, point at a folder, write code, write config, map in a grid, or hand it to somebody else.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+<div class="wrap wide">
+
+<header class="masthead">
+  <div class="kicker">open.gismo · data loading · Part 1</div>
+  <h1>Thirteen front doors</h1>
+  <p class="standfirst">The gap analysis scored row D1 — a data-mapping surface — as present on five platforms and missing here. This asks the narrower question it left open: for each of the thirteen, what does a person actually <em>do</em>?</p>
+  <p class="byline">Public sources only — product documentation, package reference indexes, user guides and conference papers. No demos, no trials, no vendor contact. Seen on means documented, not verified, and the two are marked apart in every row.</p>
+  <nav class="parts">
+    <a href="index.html">Overview</a>
+    <a href="landscape.html" aria-current="page">1 · Thirteen front doors</a>
+    <a href="mockups.html">2 · Fit — the four screens</a>
+    <a href="index.html#decisions">3 · Decisions</a>
+  </nav>
+</header>
+
+<section>
+  <h2>Six kinds of front door</h2>
+  <p class="lede">Every platform surveyed uses two or three of these. Naming them is what makes the comparison mean anything, because &ldquo;has a data-mapping surface&rdquo; turns out to cover four quite different products.</p>
+  <div class="kinds">
+    <div class="kind-card"><div class="letter">A</div><h4>Drop files</h4><p>A file picker inside the product. You choose files, it reads them, it tells you whether they passed.</p></div>
+    <div class="kind-card"><div class="letter">B</div><h4>Point at a folder</h4><p>You name a directory. The product scans it and recognises datasets by their filenames or standard domain codes.</p></div>
+    <div class="kind-card"><div class="letter">C</div><h4>Write code</h4><p>You assemble the data object yourself in R and hand it over. The mapping is whatever your script does.</p></div>
+    <div class="kind-card"><div class="letter">D</div><h4>Write config</h4><p>You edit declarative files — YAML, a settings block — that name datasets and columns. No interface at all.</p></div>
+    <div class="kind-card"><div class="letter">E</div><h4>Map in a grid</h4><p>An in-product surface where your columns are set against the ones the tool wants, and you pick.</p></div>
+    <div class="kind-card"><div class="letter">F</div><h4>Hand it to somebody</h4><p>A vendor services team, an administrator role, or a data manager does the mapping. End users select from what they made.</p></div>
+  </div>
+  <p class="note">open.gismo today is <b>D and only D</b>, at the hardest possible grain: fourteen domains and 126 required columns, edited by hand across fourteen workflow files.</p>
+</section>
+
+<section>
+  <h2>At a glance</h2>
+  <p class="lede">Two questions per platform: can a user map a <em>column</em> without leaving the product, and can they fix a <em>value</em> — a category spelled differently, a unit, an identifier format. The second column is where almost everything falls over.</p>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Platform</th><th>Doors</th><th>Column mapping</th><th>Value fixing</th><th>When it does not fit</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>safetyGraphics / ISG</b><span class="sub">open source</span></td>
+          <td>A · C · E</td>
+          <td><span class="st st-have"><span class="g">✓</span>Mapping tab</span><span class="sub">Per-field dropdowns, auto-filled from a detected standard</span></td>
+          <td><span class="st st-none"><span class="g">○</span>None documented</span></td>
+          <td>Charts that lack a field are disabled; you fill the mapping tab and export the settings</td>
+        </tr>
+        <tr>
+          <td><b>teal / NEST</b><span class="sub">open source</span></td>
+          <td>C</td>
+          <td><span class="st st-none"><span class="g">○</span>In your R code</span></td>
+          <td><span class="st st-none"><span class="g">○</span>In your R code</span></td>
+          <td>Your script fails, or a module errors</td>
+        </tr>
+        <tr>
+          <td><b>DaVinci <span class="mono">dv.*</span></b><span class="sub">open source</span></td>
+          <td>C</td>
+          <td><span class="st st-none"><span class="g">○</span>In your R code</span></td>
+          <td><span class="st st-none"><span class="g">○</span>In your R code</span></td>
+          <td>Documented as a preprocessing step you own before <span class="mono">run_app()</span></td>
+        </tr>
+        <tr>
+          <td><b>tidyCDISC</b><span class="sub">open source</span></td>
+          <td>A</td>
+          <td><span class="st st-none"><span class="g">○</span>None — conformance or nothing</span></td>
+          <td><span class="st st-none"><span class="g">○</span>None</span></td>
+          <td>Missing a required variable rejects the upload outright; missing a recommended one warns and proceeds</td>
+        </tr>
+        <tr>
+          <td><b>clinDataReview</b><span class="sub">open source</span></td>
+          <td>D</td>
+          <td><span class="st st-part"><span class="g">◐</span>Named in YAML</span><span class="sub">Datasets and variables per chapter config</span></td>
+          <td><span class="st st-none"><span class="g">○</span>None documented</span></td>
+          <td>A JSON-Schema check validates the config; data problems surface when the report knits</td>
+        </tr>
+        <tr>
+          <td><b>JMP Clinical</b><span class="sub">commercial</span></td>
+          <td>B · E</td>
+          <td><span class="st st-none"><span class="g">○</span>None documented</span><span class="sub">Domains recognised by CDISC code</span></td>
+          <td><span class="st st-have"><span class="g">✓</span>Clinical Recoder</span><span class="sub">Merge, split and rename values; original column kept</span></td>
+          <td>A study without DM (SDTM) or ADSL/ADDM (ADaM) cannot be added</td>
+        </tr>
+        <tr>
+          <td><b>JReview</b><span class="sub">commercial</span></td>
+          <td>F</td>
+          <td><span class="st st-part"><span class="g">◐</span>In the data dictionary</span><span class="sub">Administrator-configured, not end-user</span></td>
+          <td><span class="st st-na"><span class="g">—</span>Not established</span></td>
+          <td>Its standard reports assume consistent SDTM upstream</td>
+        </tr>
+        <tr>
+          <td><b>Spotfire clinical</b><span class="sub">commercial</span></td>
+          <td>F</td>
+          <td><span class="st st-na"><span class="g">—</span>Not established</span></td>
+          <td><span class="st st-na"><span class="g">—</span>Not established</span></td>
+          <td>Not established from public documentation</td>
+        </tr>
+        <tr>
+          <td><b>elluminate</b><span class="sub">commercial</span></td>
+          <td>E · F</td>
+          <td><span class="st st-have"><span class="g">✓</span>Mapper</span><span class="sub">Visual drag-and-drop transformation builder</span></td>
+          <td><span class="st st-have"><span class="g">✓</span>Same surface</span></td>
+          <td>Vendor material describes the Mapper as the answer; failure behaviour not established</td>
+        </tr>
+        <tr>
+          <td><b>CluePoints</b><span class="sub">commercial</span></td>
+          <td>F</td>
+          <td><span class="st st-na"><span class="g">—</span>Vendor analysts</span></td>
+          <td><span class="st st-na"><span class="g">—</span>Vendor analysts</span></td>
+          <td>Handled inside a data-transfer agreement and a services engagement</td>
+        </tr>
+        <tr>
+          <td><b>Medidata Clinical Data Studio</b><span class="sub">commercial</span></td>
+          <td>E · F</td>
+          <td><span class="st st-have"><span class="g">✓</span>Low-code transforms</span><span class="sub">Self-service ingestion of non-Medidata sources</span></td>
+          <td><span class="st st-have"><span class="g">✓</span>Unit conversion library</span></td>
+          <td>Inbound data is validated during ingestion</td>
+        </tr>
+        <tr>
+          <td><b>Veeva CDB</b><span class="sub">commercial</span></td>
+          <td>E · F</td>
+          <td><span class="st st-have"><span class="g">✓</span>Ingestion engine</span><span class="sub">Configured by data managers; CQL for transforms</span></td>
+          <td><span class="st st-part"><span class="g">◐</span>Via CQL</span></td>
+          <td>Inbound data is checked against defined types, ranges and formats on arrival</td>
+        </tr>
+        <tr>
+          <td><b>Oracle Empirica Signal</b><span class="sub">commercial</span></td>
+          <td>E · F</td>
+          <td><span class="st st-have"><span class="g">✓</span>Data configuration</span><span class="sub">A named, reusable, importable object</span></td>
+          <td><span class="st st-part"><span class="g">◐</span>Transforms in the configuration</span></td>
+          <td>Only a user with the Manage Configurations permission can build one</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">&ldquo;Not established&rdquo; is a statement about the documentation available, not about the product. Depth follows publication: Spotfire clinical and CluePoints publish little at this level of detail, and their rows are short for that reason alone.</p>
+</section>
+
+<section>
+  <h2>Capsule by capsule</h2>
+  <p class="lede">What a user does, in the words of the documentation.</p>
+
+  <div class="cards" style="grid-template-columns:1fr">
+    <article class="capsule">
+      <h3>safetyGraphics / ISG <span class="kind">open source · A · C · E</span></h3>
+      <p class="doing">Our own ancestor, and the only surveyed tool that gives an end user a real column-mapping surface <em>and</em> hands the result back out as code.</p>
+      <dl>
+        <div><dt>Getting in</dt><dd><span class="mono">safetyGraphicsInit()</span> opens a setup screen: choose charts first, and the app derives which datasets it now needs. Load buttons import files through <span class="mono">datamods</span>, in any format <span class="mono">rio</span> reads — text, Excel, SAS, SPSS. The Run App button activates once every required domain has a file. The alternative is to pass a named list straight in: <span class="mono">safetyGraphicsApp(domainData = sdtm)</span>.</dd></div>
+        <div><dt>Mapping</dt><dd>A Mapping tab tells charts which column and which field to use for each chart component. It is filled in automatically for recognised standards and by hand otherwise, with a checkbox at the top to preview the loaded data.</dd></div>
+        <div><dt>Detection</dt><dd><span class="mono">detectStandard()</span> compares the columns present against the required columns of each known standard and returns the best match, whether it is full or partial, the proportion matched, and which columns mapped — reported to the user as text of the form <span class="mono">Partial SDTM (4/9 cols/fields matched)</span>. ADaM and SDTM ship; further standards are added by editing the package&rsquo;s <span class="mono">meta</span> table.</dd></div>
+        <div><dt>Writing back</dt><dd>Fill the mapping once, then export code that restarts the app with those settings pre-populated. The exported YAML carries the mapping.</dd></div>
+        <div><dt>Values</dt><dd>Nothing documented. The mapping identifies columns; it does not recode what is inside them.</dd></div>
+      </dl>
+    </article>
+
+    <article class="capsule">
+      <h3>tidyCDISC (Biogen) <span class="kind">open source · A</span></h3>
+      <p class="doing">The sharpest contrast in the survey: a front door with no mapping behind it at all.</p>
+      <dl>
+        <div><dt>Getting in</dt><dd>A Browse button on the landing Data tab, one file or several at once. <span class="mono">.sas7bdat</span> only. ADSL is mandatory and the analysis tabs stay disabled until one is uploaded; other domains are optional.</dd></div>
+        <div><dt>Mapping</dt><dd>None. Conformance to ADaM-ish rules is the contract, per dataset — an ADMH must carry <span class="mono">MHCAT</span>; an ADAE is recommended to carry <span class="mono">AESTDT</span>, <span class="mono">AEDECOD</span>, <span class="mono">AESEV</span>, <span class="mono">AESER</span>.</dd></div>
+        <div><dt>When it does not fit</dt><dd>A missing required variable — or one present but entirely missing values — raises an error and the file does not upload. A missing recommended variable warns and the file is still usable.</dd></div>
+      </dl>
+    </article>
+
+    <article class="capsule">
+      <h3>teal / NEST (Roche) and DaVinci <span class="mono">dv.*</span> (Boehringer) <span class="kind">open source · C</span></h3>
+      <p class="doing">Two of the three biggest open-source module libraries, and neither has a front door for a non-programmer. The data object is something you build.</p>
+      <dl>
+        <div><dt>teal</dt><dd>Every dataset passes through a <span class="mono">teal_data</span> object handed to <span class="mono">teal::init(data = )</span>. Relationships between datasets are declared with <span class="mono">join_keys()</span> — the STUDYID / USUBJID linkage between ADSL and the BDS datasets is written by hand. Remote sources are reached by supplying a <span class="mono">teal_data_module</span> that describes how to pull them.</dd></div>
+        <div><dt>DaVinci</dt><dd><span class="mono">dv.loader::load_data()</span> reads <span class="mono">.rds</span> and <span class="mono">.sas7bdat</span> from a subdirectory of the path in the <span class="mono">RXD_DATA</span> environment variable, preferring <span class="mono">.rds</span>; <span class="mono">load_files()</span> takes explicit paths. The result goes to <span class="mono">dv.manager::run_app(data = list(...), module_list = , filter_data = "adsl")</span>, and each module declares the <span class="mono">dataset_names</span> it may see. Documentation tells you to preprocess types and labels before handing the list over.</dd></div>
+        <div><dt>Worth noticing</dt><dd>Both put the join keys in the user&rsquo;s hands and neither checks them. This is the same exposure open.gismo has, arrived at from the opposite direction.</dd></div>
+      </dl>
+    </article>
+
+    <article class="capsule">
+      <h3>clinDataReview (Open Analytics) <span class="kind">open source · D</span></h3>
+      <p class="doing">The closest structural analogue to open.gismo today: declarative config files, no interface, and a schema check over the config rather than over the data.</p>
+      <dl>
+        <div><dt>Getting in</dt><dd>A general <span class="mono">config.yml</span> names <span class="mono">pathDataFolder</span> — a directory of SAS7BDAT or XPT files — plus optional study name and a data-batch version. Per-chapter files <span class="mono">config-&lt;chapter&gt;.yml</span> each name a <span class="mono">dataFileName</span> and the template that renders it; parameters reach the template as <span class="mono">params$</span>.</dd></div>
+        <div><dt>Several files, one dataset</dt><dd><span class="mono">dataFileName</span> accepts an array. Files are row-bound and a <span class="mono">DATASET</span> column records which file each row came from — a documented answer to the two-lab-vendors problem.</dd></div>
+        <div><dt>Validation</dt><dd>A JSON-Schema requirement file checks that the configuration complies with its specification. That is validation of the config, not of the study data.</dd></div>
+        <div><dt>Batch comparison</dt><dd>The gap analysis scored clinDataReview as shipping comparison across two data batches. The mechanism — whether that is a second data folder, a version key, or something else — could <b>not</b> be established from the reporting vignette read here, and is recorded as unestablished rather than guessed.</dd></div>
+      </dl>
+    </article>
+
+    <article class="capsule">
+      <h3>JMP Clinical <span class="kind">commercial · B · E</span></h3>
+      <p class="doing">The cleanest example of door B, and the only surveyed platform with a dedicated surface for fixing <em>values</em> rather than column names.</p>
+      <dl>
+        <div><dt>Getting in</dt><dd>Studies &rarr; Add Study from Folders. You give a study name and the path to a folder of SDTM/SEND datasets, a folder of ADaM datasets, or both, as SAS datasets or SAS transport files. JMP scans the folders and identifies domains from their standard two-letter codes, with three- and four-letter codes for split domains.</dd></div>
+        <div><dt>Requirements</dt><dd>DM for SDTM, or ADDM/ADSL for ADaM, must be present or the study cannot be added. ADaM findings datasets must carry <span class="mono">PARAMCD</span> and either <span class="mono">AVAL</span> or <span class="mono">AVALC</span>.</dd></div>
+        <div><dt>Column mapping</dt><dd>None documented. Recognition is by domain code, and <span class="mono">define.xml</span> is not mentioned in the study-import documentation read here.</dd></div>
+        <div><dt>The Recoder</dt><dd>A separate tool over any registered study&rsquo;s domains: change how a value is encoded, map several values onto one, or split one value into several. It preserves the original column under a suffixed name and writes a formula recording the transformation — a provenance move worth stealing outright.</dd></div>
+      </dl>
+    </article>
+
+    <article class="capsule">
+      <h3>JReview, CluePoints, Veeva CDB, Empirica Signal <span class="kind">commercial · mostly F</span></h3>
+      <p class="doing">Four products where the honest answer to &ldquo;what does a user do to get their data in&rdquo; is: somebody else does it.</p>
+      <dl>
+        <div><dt>JReview</dt><dd>An integrated data dictionary (IRDD) connects directly to Oracle- and SQL-Server-backed clinical data management systems and to EDC systems including Rave and InForm. The vendor describes study setup as minutes of dictionary-driven configuration with no custom programming and no reformatting of data. Its standard reports are built on SDTM structure, and a PHUSE paper on supporting JReview notes that organisations write SDTM Interpretation Guides precisely because consistent mapping upstream is what makes the shared reports work.</dd></div>
+        <div><dt>CluePoints</dt><dd>Electronic links pull automatically from Rave, InForm and TrialMaster; anything else arrives as files over SFTP under a data transfer agreement whose frequency is negotiated to match the monitoring plan. CluePoints&rsquo; own analysts configure the system and process the data.</dd></div>
+        <div><dt>Veeva CDB</dt><dd>An ingestion engine data managers configure rather than build integrations against. Incoming third-party data is mapped onto a common study backbone — a single consolidated structure per trial — and checked on arrival against defined data types, ranges and formats. Transformations use Clinical Query Language. A partner programme exists for data providers delivering into it.</dd></div>
+        <div><dt>Empirica Signal</dt><dd>A <em>data configuration</em> is a named object listing the variables — source table columns — available for mining and querying, including which are available for subsetting and stratification and how source data is transformed. A user holding the Manage Configurations permission creates one and publishes it; everyone else selects from the list. Pre-built configurations ship for Argus Mart and are loaded by import.</dd></div>
+        <div><dt>The pattern</dt><dd>The mapping is a privileged artifact created once by a role — administrator, data manager, vendor analyst — and consumed by everyone else. Empirica makes this explicit down to the permission name.</dd></div>
+      </dl>
+    </article>
+
+    <article class="capsule">
+      <h3>elluminate and Medidata Clinical Data Studio <span class="kind">commercial · E · F</span></h3>
+      <p class="doing">The two clearest examples of a real mapping grid marketed as a product feature rather than a service. Both descriptions come from vendor material and should be read as claims.</p>
+      <dl>
+        <div><dt>elluminate</dt><dd>The platform ingests from any source in any format; the Mapper module is a visual drag-and-drop interface for complex transformations, aimed at less technical staff, turning disparate streams into CDISC SDTM and analysis datasets. eClinical states that SDTM produced with Mapper has been used in FDA submissions.</dd></div>
+        <div><dt>Medidata</dt><dd>Clinical Data Studio ingests and validates non-Medidata sources — other EDCs, labs, eCOA — self-service, with low-code transformation and a drag-and-drop listings builder. Standardisation includes automatic unit conversion from a library of conversion factors. Medidata states IT and clinical programming teams can configure it in as little as three days.</dd></div>
+        <div><dt>Worth noticing</dt><dd>Unit conversion is the value-level problem, solved by shipping a reference library rather than by asking each study to write the arithmetic. That is a design answer, not just a feature.</dd></div>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>Three things the survey settles</h2>
+  <ul class="bullets">
+    <li><b>A mapping grid is not an open-source norm — it is our ancestor&rsquo;s idea.</b> Of the five open-source tools, exactly one gives an end user a column-mapping surface, and it is safetyGraphics. The other four are conformance-or-nothing, or they are R code. Building this is not catching up with the open field; it is finishing something the ISG started and the migration left behind.</li>
+    <li><b>Everywhere the mapping is good, it is also captive.</b> elluminate&rsquo;s Mapper, Medidata&rsquo;s low-code transforms, Veeva&rsquo;s ingestion engine and Empirica&rsquo;s data configurations all live inside the platform, behind a role. safetyGraphics is the single surveyed exception that hands the mapping back to the user as code. Nobody surveyed makes the mapping a reviewable file in the study&rsquo;s own repository, which is exactly the move this portfolio already makes with workflows, thresholds and package pins.</li>
+    <li><b>The value-level problem is real, and it is where products differentiate.</b> Column names are the easy half and most tools solve them. What separates the serious platforms is what happens to the contents: JMP ships a Recoder that keeps the original column and records the formula, Medidata ships a unit-conversion library, Veeva checks ranges and formats on arrival. Any design that maps names and stops has done the part that was never the hard part.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Sources</h2>
+  <p class="lede">Everything above was read on 2026-08-27 from these public pages. Product documentation flatters; vendor claims are marked as claims in the capsules.</p>
+  <ul class="bullets">
+    <li><b>safetyGraphics</b> — <a href="https://safetygraphics.github.io/safetyGraphics/articles/Intro.html">Intro to the Shiny app</a>, <a href="https://github.com/SafetyGraphics/safetyGraphics/wiki/Intro">wiki Intro</a>, <a href="https://github.com/SafetyGraphics/safetyGraphics/wiki/Cookbook">wiki Cookbook</a>, <a href="https://safetygraphics.github.io/safetyGraphics/reference/detectStandard.html"><span class="mono">detectStandard()</span> reference</a></li>
+    <li><b>tidyCDISC</b> — <a href="https://biogen-inc.github.io/tidyCDISC/articles/x00_Data_Upload.html">Data Upload article</a></li>
+    <li><b>teal</b> — <a href="https://cran.r-project.org/web/packages/teal/vignettes/including-data-in-teal-applications.html">Including Data in teal Applications</a>, <a href="https://cran.r-project.org/web/packages/teal.data/vignettes/teal-data.html">Introduction to teal.data</a></li>
+    <li><b>DaVinci</b> — <a href="https://boehringer-ingelheim.github.io/dv.loader/"><span class="mono">dv.loader</span> reference</a>, <a href="https://www.lexjansen.com/phuse/2024/dv/PAP_DV06.pdf">PhUSE 2024 DV06, &ldquo;DaVinci: A Modular Framework&rdquo;</a></li>
+    <li><b>clinDataReview</b> — <a href="https://cloud.r-project.org/web/packages/clinDataReview/vignettes/clinDataReview-reporting.html">Creation of a clinical data review report</a>, <a href="https://cran.r-project.org/web/packages/clinDataReview/refman/clinDataReview.html">package reference</a></li>
+    <li><b>JMP Clinical</b> — <a href="https://www.jmp.com/support/downloads/JMPC81_documentation/Content/JMPCUserGuide/PR_L_ST_0001.htm">Add Study</a>, <a href="https://www.jmp.com/support/downloads/JMPC180_documentation/Content/JMPCUserGuide/JMPClinicalRecoder.htm">JMP Clinical Recoder</a></li>
+    <li><b>JReview</b> — <a href="https://www.i-review.com/jreview.html">product page</a>, <a href="https://www.lexjansen.com/phuse-us/2018/dv/DV09.pdf">PhUSE US 2018 DV09, &ldquo;Supporting a Data Review and Visualization Application&rdquo;</a></li>
+    <li><b>Spotfire clinical / Revvity Signals</b> — <a href="https://revvitysignals.com/products/clinical-development/signals-clinical">Signals Clinical</a></li>
+    <li><b>elluminate</b> — <a href="https://www.eclinicalsol.com/platform/">platform overview</a>, <a href="https://www.lexjansen.com/phuse-us/2022/sd/PRE_SD10.pdf">PhUSE US 2022 SD10, &ldquo;Data Standardization at Scale&rdquo;</a></li>
+    <li><b>CluePoints</b> — <a href="https://cluepoints.com/10-considerations-for-small-biotechs-looking-to-implement-rbqm/">Ten considerations for small biotechs</a>, <a href="https://cluepoints.com/what-we-do/risk-based-quality-management-rbqm/services/">services</a></li>
+    <li><b>Medidata</b> — <a href="https://www.medidata.com/en/clinical-data-studio/">Clinical Data Studio</a>, <a href="https://www.medidata.com/en/clinical-trial-services/medidata-training/data-connect-ingest-third-party-data-using-imports/">Data Connect: ingest third-party data using imports</a></li>
+    <li><b>Veeva CDB</b> — <a href="https://www.veeva.com/products/veeva-cdb/">product page</a>, <a href="https://www.veeva.com/blog/solving-clinical-datas-volume-and-variety-challenge-by-easing-collaboration-with-data-providers/">Data aggregation and the CDB ingestion engine</a></li>
+    <li><b>Oracle Empirica Signal</b> — <a href="https://docs.oracle.com/health-sciences/empirica-signal-90/ESIUG/About_Data_Configurations.htm">About data configurations</a>, <a href="https://docs.oracle.com/en/industries/health-sciences/empirica-signal/9.1/userguide/select-data-configuration.html">Select a data configuration</a></li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Drafted by Claude Code using Opus 5 for review by @jwildfire. Read-only research: nothing was filed, requested or sent to any vendor, and no account was created anywhere.</p>
+  <p><a href="index.html">Back to the overview</a> &middot; <a href="mockups.html">On to the four screens</a> &middot; <a href="../platform-gap-analysis-2026-07-25/">The gap analysis this extends</a></p>
+</footer>
+
+</div>
+</body>
+</html>

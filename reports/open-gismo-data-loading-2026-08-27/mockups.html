@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2 · Fit — the four screens</title>
+<meta name="description" content="Four clickable screens for getting a real study's messy export into open.gismo: point at the files, read the fit report, map one domain column by column, and review the config diff it writes back.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+<div class="wrap wide">
+
+<header class="masthead">
+  <div class="kicker">open.gismo · data loading · Part 2</div>
+  <h1>Fit</h1>
+  <p class="standfirst">Four screens, clickable. A user drops an export folder, reads what fits and what does not, maps one domain column by column, and reviews the configuration change it writes back into their own study repository.</p>
+  <p class="byline">The mocks render in open.gismo&rsquo;s own espresso theme rather than this report&rsquo;s, because a mock of a product should look like the product. Every column name, domain name and downstream dependency in them is read from <span class="mono">demo-301</span>; the incoming export is invented, and labelled where it is.</p>
+  <nav class="parts">
+    <a href="index.html">Overview</a>
+    <a href="landscape.html">1 · Thirteen front doors</a>
+    <a href="mockups.html" aria-current="page">2 · Fit — the four screens</a>
+    <a href="index.html#decisions">3 · Decisions</a>
+  </nav>
+</header>
+
+<section>
+  <h2>The scenario the screens are built against</h2>
+  <p class="lede">A sponsor has a Phase 2 study running in an EDC, with central labs from a vendor. They fork the study-repo template, and they have a folder.</p>
+  <div class="cards">
+    <div class="card">
+      <span class="tagline">What they have</span>
+      <h3>Eleven files, three formats, one folder</h3>
+      <p>An EDC extract as CSV, a central-lab SAS transport, a site list somebody keeps in Excel, and a <code>define.xml</code>. Column names are SDTM-ish upper case. The lab file&rsquo;s subject identifier is site-prefixed; the demographics file&rsquo;s is not.</p>
+    </div>
+    <div class="card">
+      <span class="tagline">What open.gismo wants</span>
+      <h3>Fourteen domains, 126 columns</h3>
+      <p>Counted from <span class="mono">demo-301/workflows/1_mappings/</span>. Findings and events are lower-case SDTM-adjacent (<code>lbstresn</code>, <code>aeterm</code>); subject, site and enrolment are operational-EDC shaped (<code>invid</code>, <code>agerep</code>, <code>enrollyn</code>, <code>subject_nsv</code>). Neither SDTM nor ADaM arrives fitting.</p>
+    </div>
+    <div class="card">
+      <span class="tagline">What happens today</span>
+      <h3>They edit YAML, by hand, against a spec they cannot see</h3>
+      <p><span class="mono">og_validate()</span> prints which file and column is missing. Fixing it means opening fourteen workflow files and adding <code>source_col:</code> lines — a key that exists, works, and is documented nowhere a user of open.gismo would look.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The four screens</h2>
+  <p class="lede">Click the numbered steps. The third screen is live: change a mapping and the preview, the readiness line and the diff on screen four all move with it.</p>
+
+  <div class="mock" id="mock">
+    <div class="mock-chrome">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span class="path">open.gismo — PROTO-24-002 — Setup › Data</span>
+    </div>
+    <div class="mock-body">
+      <nav class="mock-side" aria-hidden="true">
+        <span class="wordmark">open.<b>gismo</b></span>
+        <div class="grp">Study</div>
+        <span class="item">Overview</span>
+        <span class="item">Safety</span>
+        <span class="item">RBQM</span>
+        <div class="grp">Setup</div>
+        <span class="item on">Data</span>
+        <span class="item">Study card</span>
+        <span class="item">Snapshots</span>
+        <div class="grp">Config</div>
+        <span class="item">Workflows</span>
+        <span class="item">Packages</span>
+      </nav>
+
+      <div class="mock-main">
+        <div class="mock-steps" role="tablist" aria-label="Setup steps">
+          <button role="tab" id="tab-1" aria-controls="s1" aria-selected="true"><span class="num">1</span> Point at your data</button>
+          <button role="tab" id="tab-2" aria-controls="s2" aria-selected="false"><span class="num">2</span> Fit report</button>
+          <button role="tab" id="tab-3" aria-controls="s3" aria-selected="false"><span class="num">3</span> Map a domain</button>
+          <button role="tab" id="tab-4" aria-controls="s4" aria-selected="false"><span class="num">4</span> What it writes</button>
+        </div>
+
+        <!-- ================= SCREEN 1 ================= -->
+        <div class="mock-screen" id="s1" role="tabpanel" aria-labelledby="tab-1">
+          <h2 class="mock-h">Point at your data</h2>
+          <p class="mock-sub">open.gismo copies what you give it into <span class="m-mono">input/</span> as plain CSV and leaves the originals alone. The project folder stays a folder of text files you can read, diff and review.</p>
+
+          <div class="m-drop" style="margin-top:.9rem">
+            <div class="big">Drop a folder here</div>
+            <div class="small">CSV &middot; SAS7BDAT &middot; XPT &middot; XLSX &nbsp;·&nbsp; or <span class="m-mono">og_init("PROTO-24-002", from = "~/exports/2026-08-20")</span></div>
+            <span class="btn">Choose a folder&hellip;</span>
+          </div>
+
+          <p class="m-label" style="margin-top:1.1rem">11 files read &middot; 9 placed &middot; 1 ambiguous &middot; 1 ignored</p>
+          <div class="m-scroll" style="margin-top:.4rem">
+            <table class="m-table">
+              <thead><tr><th>File</th><th>Reads as</th><th>Why open.gismo thinks so</th></tr></thead>
+              <tbody>
+                <tr><td class="m-mono">dm_2026-08-20.csv</td><td class="m-mono">Raw_SUBJ</td><td>13 of 15 spec columns present after case-folding &middot; one row per <span class="m-mono">SUBJID</span></td></tr>
+                <tr><td class="m-mono">ae.csv</td><td class="m-mono">Raw_AE</td><td>16 of 16 present after case-folding</td></tr>
+                <tr><td class="m-mono">lb_central.xpt</td><td class="m-mono">Raw_LB</td><td>SAS transport, converted on import &middot; 13 of 14 present</td></tr>
+                <tr class="hot"><td class="m-mono">lb_local.csv</td><td class="m-mono">Raw_LB <span class="m-flag m-mid">◐ second candidate</span></td><td>Also fits <span class="m-mono">Raw_LB</span>. Stack the two files or choose one — open decision <a class="ref" href="index.html#d7">D7</a></td></tr>
+                <tr><td class="m-mono">eg.csv</td><td class="m-mono">Raw_EG</td><td>9 of 10 present &middot; <span class="m-mono">egblfl</span> absent</td></tr>
+                <tr><td class="m-mono">pd.csv</td><td class="m-mono">Raw_PD</td><td>6 of 6 present</td></tr>
+                <tr><td class="m-mono">enroll.csv</td><td class="m-mono">Raw_ENROLL</td><td>7 of 7 present</td></tr>
+                <tr><td class="m-mono">queries_20260820.csv</td><td class="m-mono">Raw_QUERY</td><td>4 of 5 present &middot; <span class="m-mono">subject_nsv</span> absent</td></tr>
+                <tr><td class="m-mono">sites.xlsx</td><td class="m-mono">Raw_SITE</td><td>Sheet 1, converted on import &middot; 9 of 9 present</td></tr>
+                <tr><td class="m-mono">study.csv</td><td class="m-mono">Raw_STUDY</td><td>6 of 15 present — the rest is protocol metadata, not an extract <span class="m-flag m-off">→ study card</span></td></tr>
+                <tr><td class="m-mono">define.xml</td><td class="m-mono">—</td><td>Ignored. open.gismo reads no <span class="m-mono">define.xml</span> today — open decision <a class="ref" href="index.html#d6">D6</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="m-actions">
+            <span class="m-btn primary">Continue to the fit report</span>
+            <span class="m-btn quiet">Add another folder</span>
+          </div>
+          <p class="m-foot">Nothing has been written yet. The next screen is the last one before anything lands in the repository.</p>
+        </div>
+
+        <!-- ================= SCREEN 2 ================= -->
+        <div class="mock-screen" id="s2" role="tabpanel" aria-labelledby="tab-2" hidden>
+          <h2 class="mock-h">Fit report</h2>
+          <p class="mock-sub">Fourteen domains the mapping workflows read. What this screen adds to today&rsquo;s <span class="m-mono">og_validate()</span> is the last two columns: whether the identifiers actually join, and what a domain costs if you go without it.</p>
+
+          <div class="m-grid m-3col" style="margin-top:.9rem">
+            <div class="m-card"><span class="m-label">Ready</span><div style="font-size:1.6rem;line-height:1.1">6</div><div style="font-size:.8rem;color:var(--m-muted)">columns and keys both fit</div></div>
+            <div class="m-card"><span class="m-label">Needs a decision</span><div style="font-size:1.6rem;line-height:1.1">3</div><div style="font-size:.8rem;color:var(--m-muted)">mappable, but not yet mapped</div></div>
+            <div class="m-card"><span class="m-label">Going without</span><div style="font-size:1.6rem;line-height:1.1">5</div><div style="font-size:.8rem;color:var(--m-muted)">costs 14 of 30 metrics</div></div>
+          </div>
+
+          <div class="m-scroll" style="margin-top:.9rem">
+            <table class="m-table">
+              <thead><tr><th>Domain</th><th>Source</th><th>Rows</th><th>Columns</th><th>Keys join?</th><th>State</th></tr></thead>
+              <tbody>
+                <tr><td class="m-mono">Raw_SUBJ</td><td class="m-mono">dm_2026-08-20.csv</td><td>1,012</td><td>13 of 15 &middot; 2 renamed</td><td>spine</td><td><span class="m-flag m-ok">✓ Ready</span></td></tr>
+                <tr><td class="m-mono">Raw_AE</td><td class="m-mono">ae.csv</td><td>2,904</td><td>16 of 16 &middot; 16 renamed</td><td>612 of 612 <span class="m-flag m-ok">✓</span></td><td><span class="m-flag m-ok">✓ Ready</span></td></tr>
+                <tr class="hot"><td class="m-mono">Raw_LB</td><td class="m-mono">lb_central.xpt</td><td>58,412</td><td>13 of 14 &middot; 13 renamed</td><td><b>0 of 812</b> <span class="m-flag m-no">✗</span></td><td><span class="m-flag m-no">✗ Needs attention</span></td></tr>
+                <tr><td class="m-mono">Raw_EG</td><td class="m-mono">eg.csv</td><td>9,140</td><td>9 of 10 &middot; <span class="m-mono">egblfl</span> absent</td><td>764 of 812 <span class="m-flag m-mid">◐</span></td><td><span class="m-flag m-mid">◐ Needs a decision</span></td></tr>
+                <tr><td class="m-mono">Raw_ENROLL</td><td class="m-mono">enroll.csv</td><td>1,012</td><td>7 of 7</td><td>1,012 of 1,012 <span class="m-flag m-ok">✓</span></td><td><span class="m-flag m-ok">✓ Ready</span></td></tr>
+                <tr><td class="m-mono">Raw_PD</td><td class="m-mono">pd.csv</td><td>488</td><td>6 of 6 &middot; 5 renamed</td><td>301 of 301 <span class="m-flag m-ok">✓</span></td><td><span class="m-flag m-ok">✓ Ready</span></td></tr>
+                <tr><td class="m-mono">Raw_SITE</td><td class="m-mono">sites.xlsx</td><td>46</td><td>9 of 9 &middot; 6 renamed</td><td>46 of 46 <span class="m-flag m-ok">✓</span></td><td><span class="m-flag m-ok">✓ Ready</span></td></tr>
+                <tr><td class="m-mono">Raw_QUERY</td><td class="m-mono">queries_20260820.csv</td><td>3,377</td><td>4 of 5 &middot; <span class="m-mono">subject_nsv</span> absent</td><td>—</td><td><span class="m-flag m-mid">◐ Needs a decision</span></td></tr>
+                <tr><td class="m-mono">Raw_STUDY</td><td class="m-mono">study.csv <span class="m-flag m-off">+ form</span></td><td>1</td><td>6 of 15 &middot; 9 to type</td><td>—</td><td><span class="m-flag m-mid">◐ Needs a decision</span></td></tr>
+                <tr><td class="m-mono">Raw_DATACHG</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="m-flag m-off">— Going without</span></td></tr>
+                <tr><td class="m-mono">Raw_DATAENT</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="m-flag m-off">— Going without</span></td></tr>
+                <tr><td class="m-mono">Raw_SDRGCOMP</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="m-flag m-off">— Going without</span></td></tr>
+                <tr><td class="m-mono">Raw_STUDCOMP</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="m-flag m-off">— Going without</span></td></tr>
+                <tr><td class="m-mono">Raw_IE</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="m-flag m-off">— Going without</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="m-grid m-2col" style="margin-top:.9rem">
+            <div class="m-card" style="border-color:var(--m-bad-rule);background:var(--m-bad-bg)">
+              <span class="m-label" style="color:var(--m-bad)">✗ Raw_LB — every column fits and nothing will render</span>
+              <p style="font-size:.86rem;margin:.4rem 0 0">
+                <span class="m-mono">SUBJECT</span> maps cleanly onto <span class="m-mono">subjid</span>: right type, no missing values, 812 distinct. But the lab vendor prefixes the site —
+                <span class="m-mono">"0301-S036"</span> — and the demographics extract does not — <span class="m-mono">"S036"</span>.
+                <span class="m-mono">LB.yaml</span> inner-joins <span class="m-mono">Raw_LB</span> to <span class="m-mono">Mapped_SUBJ</span> on <span class="m-mono">subjid</span>, so the mapped domain would come out empty and
+                <b>six of the nine safety charts plus two KRIs would render with no data and no error.</b>
+              </p>
+              <p style="font-size:.86rem;margin:.5rem 0 0">Fix it on the next screen, or run anyway and accept the hole.</p>
+            </div>
+            <div class="m-card">
+              <span class="m-label">— Going without: what the five absent domains cost</span>
+              <div class="m-scroll" style="margin-top:.4rem;border:none">
+                <table class="m-table" style="min-width:0">
+                  <tbody>
+                    <tr><td class="m-mono">Raw_DATACHG</td><td>kri0008, kri0011, cou0008, cou0011 &middot; no charts</td></tr>
+                    <tr><td class="m-mono">Raw_DATAENT</td><td>kri0010, cou0010 &middot; no charts</td></tr>
+                    <tr><td class="m-mono">Raw_SDRGCOMP</td><td>kri0007, cou0007 &middot; no charts</td></tr>
+                    <tr><td class="m-mono">Raw_STUDCOMP</td><td>kri0006, cou0006, qtl0002, the QTL report</td></tr>
+                    <tr><td class="m-mono">Raw_IE</td><td>qtl0001, the QTL report</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p style="font-size:.82rem;color:var(--m-muted);margin-top:.5rem">Declining is recorded in the study config, not swallowed as a warning, so the site can say a KRI is absent because you declined the domain — rather than leaving a gap the reader has to explain.</p>
+            </div>
+          </div>
+
+          <div class="m-actions">
+            <span class="m-btn primary">Map Raw_LB</span>
+            <span class="m-btn">Decline the five</span>
+            <span class="m-btn quiet">Run anyway</span>
+          </div>
+        </div>
+
+        <!-- ================= SCREEN 3 ================= -->
+        <div class="mock-screen" id="s3" role="tabpanel" aria-labelledby="tab-3" hidden>
+          <h2 class="mock-h">Map <span class="m-mono" style="font-size:1.1rem">Raw_LB</span></h2>
+          <p class="mock-sub">The left column is what the mapping spec requires and who downstream needs it. The right column is your file. open.gismo proposes a match and says why; you confirm or change it. Nothing is applied silently.</p>
+
+          <div id="lb-status" class="m-card" style="margin-top:.9rem"></div>
+
+          <div class="m-map" id="lb-map"></div>
+
+          <div class="m-preview">
+            <span class="m-label">Preview — first 5 rows of <span class="m-mono">Mapped_LB</span> as currently mapped</span>
+            <div class="m-scroll" style="margin-top:.4rem"><table class="m-table" id="lb-preview"></table></div>
+          </div>
+
+          <div class="m-actions">
+            <span class="m-btn primary">Save mapping</span>
+            <span class="m-btn quiet">Reset to proposals</span>
+          </div>
+          <p class="m-foot">Sample values are illustrative. The target column names, their types and their downstream consumers are read from <span class="m-mono">demo-301/workflows/</span>.</p>
+        </div>
+
+        <!-- ================= SCREEN 4 ================= -->
+        <div class="mock-screen" id="s4" role="tabpanel" aria-labelledby="tab-4" hidden>
+          <h2 class="mock-h">What it writes</h2>
+          <p class="mock-sub">Not session state, not a hidden database row — a diff against the study&rsquo;s own configuration, in the study&rsquo;s own repository. One commit, one review, one thing to point at when somebody asks how a number was produced.</p>
+
+          <div class="m-diff" id="lb-diff"></div>
+
+          <div class="m-grid m-2col" style="margin-top:.9rem">
+            <div class="m-card">
+              <span class="m-label">Real today</span>
+              <p style="font-size:.86rem;margin-top:.4rem"><span class="m-mono">source_col:</span> is an existing, exercised key in the gsm mapping spec — <span class="m-mono">gsm.mapping</span>&rsquo;s own shipped workflows use it to read Rave column names such as <span class="m-mono">subjectname</span> and <span class="m-mono">protocol_number</span>. The rename half of this screen needs no engine change at all.</p>
+            </div>
+            <div class="m-card" style="border-color:var(--m-warn-rule);background:var(--m-warn-bg)">
+              <span class="m-label" style="color:var(--m-warn)">◐ Proposed, and the reason this is a decision</span>
+              <p style="font-size:.86rem;margin-top:.4rem">The spec has exactly two column keys: <span class="m-mono">type</span> and <span class="m-mono">source_col</span>. There is no key that transforms a value — so stripping a site prefix off an identifier, or recoding a baseline flag, has nowhere declarative to live. Fix either of the highlighted rows on screen three and the amber lines appear: those are a proposal, not a feature.</p>
+            </div>
+          </div>
+
+          <div class="m-actions">
+            <span class="m-btn primary">Commit to a branch</span>
+            <span class="m-btn">Copy the diff</span>
+            <span class="m-btn quiet">Keep editing</span>
+          </div>
+          <p class="m-foot">The commit is the mapping. Re-running the study a year later reproduces it because the mapping is in the repository next to the data, not in whoever&rsquo;s browser did it.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <p class="mock-caption">Screen three is live — change any of the three highlighted rows and screens three and four both update. The other screens are fixed.</p>
+</section>
+
+<section>
+  <h2>What the four screens are arguing</h2>
+  <div class="cards">
+    <div class="card">
+      <span class="tagline">Screen 1</span>
+      <h3>Accept what people have, then normalise once</h3>
+      <p>Transport files, Excel and CSV all come in the front door and are written out as CSV into <span class="mono">input/</span>. The conversion happens once, at import, so the project folder keeps being the plain, diffable, forkable thing the whole product rests on.</p>
+    </div>
+    <div class="card">
+      <span class="tagline">Screen 2</span>
+      <h3>Report fit, not file existence</h3>
+      <p>Today&rsquo;s validation asks whether the columns are there. This asks whether the study will produce anything: do the identifiers join, and what do you lose by going without a domain. Both are answerable before a pipeline runs and neither is asked today.</p>
+    </div>
+    <div class="card">
+      <span class="tagline">Screen 3</span>
+      <h3>Show the requirement beside the data</h3>
+      <p>A user cannot map to a spec they cannot see. Putting the required column, its type and its downstream consumer next to their own column with a proposed match and a stated reason is the whole surface. It is a grid, not a wizard.</p>
+    </div>
+    <div class="card">
+      <span class="tagline">Screen 4</span>
+      <h3>Write it back, always</h3>
+      <p>Every commercial platform with a real mapping surface keeps the result inside itself. safetyGraphics — our own ancestor — is the one surveyed tool that hands the mapping back as code. This goes one step further and makes it a reviewed file in the study repository.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <p>Drafted by Claude Code using Opus 5 for review by @jwildfire. Mockups are HTML you can click, not shipped code — nothing in <span class="mono">open.gismo</span> was changed.</p>
+  <p><a href="index.html">Back to the overview</a> &middot; <a href="landscape.html">The thirteen front doors</a> &middot; <a href="index.html#decisions">The decisions</a></p>
+</footer>
+
+</div>
+<script src="assets/mock.js"></script>
+</body>
+</html>
