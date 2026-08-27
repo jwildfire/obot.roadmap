@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The hard case, step by step</title>
+<meta name="description" content="A CRO delivery of ADaM and EDC extracts walked all the way into a running open.gismo study, in eleven terminal frames — including the green-looking mapping that silently empties eight metrics, and what the diagnostic says instead.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">open.gismo · convention over configuration · page 1 of 2</div>
+  <h1>The hard case, walked all the way through</h1>
+  <p class="standfirst">HEP-201, a Phase 2 study with a hepatic safety question. The delivery is four CDISC files from the CRO and three operational extracts from the EDC vendor, the labs come from three central laboratories, and nothing in it carries a single gsm column name. Eleven frames, from the folder arriving to the charts rendering — including the wrong turn, because the wrong turn is the point.</p>
+  <p class="byline">This direction has no graphical interface, so its mockup is its terminal output. Every number below is the measured result of running the matcher against this delivery; the method is on <a href="evidence.html">page 2</a>.</p>
+  <nav class="parts">
+    <a href="index.html">The design</a>
+    <a href="walkthrough.html" aria-current="page">1 · The hard case, step by step</a>
+    <a href="evidence.html">2 · What was measured</a>
+  </nav>
+</header>
+
+<section>
+  <h2>The delivery</h2>
+  <div class="term">
+    <div class="bar"><span class="dots">● ● ●</span> <span>~/deliveries/2026-08-26</span></div>
+<pre><span class="d">$</span> <b>ls -1</b>
+adsl.sas7bdat            <span class="d">34 cols · 1,000 rows   ADaM subject-level</span>
+adae.sas7bdat            <span class="d">22 cols · 3,412 rows   ADaM adverse events</span>
+adlb.sas7bdat            <span class="d">23 cols · 61,004 rows  ADaM labs, BDS</span>
+dv.xpt                   <span class="d">10 cols · 611 rows     SDTM deviations</span>
+queries_20260826.csv     <span class="d">10 cols · 8,740 rows   EDC vendor</span>
+audit_trail.csv          <span class="d">10 cols · 402,118 rows EDC vendor</span>
+site_list.csv            <span class="d">10 cols · 42 rows      EDC vendor</span>
+
+<span class="d">No define.xml. No CTMS extract. No ECG dataset. Labs are pooled from</span>
+<span class="d">three central laboratories with different result vocabularies and units.</span></pre>
+  </div>
+  <p class="note">The seven headers were authored from the CDISC ADaM IG and SDTMIG variable lists and from EDC-vendor export conventions, before the alias table existed, so the matcher gets no help from having been written against them. 105 source columns in total.</p>
+</section>
+
+<section>
+  <h2>Eleven frames</h2>
+  <div class="stepper" id="stepper" role="tablist" aria-label="Walkthrough steps"></div>
+
+  <div id="frames">
+
+    <!-- 1 -->
+    <article class="frame on" data-title="1 · init">
+      <span class="who">the user · one command</span>
+      <h3>Scaffold the project, drop the files in</h3>
+      <div class="term">
+        <div class="bar"><span class="dots">● ● ●</span> <span>zsh</span></div>
+<pre><span class="d">$</span> <b>og init ~/hep-201</b>
+<span class="g">✔</span> project created at ~/hep-201
+    config/       3 files
+    workflows/   44 workflow YAMLs snapshotted from the installed gsm packages
+    input/        empty
+  Next: put your data in input/, then <b>og scan ~/hep-201</b>
+
+<span class="d">$</span> <b>cp ~/deliveries/2026-08-26/* ~/hep-201/input/</b>
+<span class="d">$</span> <b>git -C ~/hep-201 init -q &amp;&amp; git -C ~/hep-201 add -A &amp;&amp; git -C ~/hep-201 commit -qm "delivery 2026-08-26"</b></pre>
+      </div>
+      <p>Nothing has been renamed, converted or moved. The files sit under the names the CRO gave them, which is the only state a user can be relied on to produce. The commit is the baseline every later diff is read against — and it is the user's own repository, not the product's.</p>
+    </article>
+
+    <!-- 2 -->
+    <article class="frame" data-title="2 · scan">
+      <span class="who">the product · writes the mapping</span>
+      <h3><span class="mono">og scan</span> — the generator</h3>
+      <div class="term">
+        <div class="bar"><span class="dots">● ● ●</span> <span>zsh</span></div>
+<pre><span class="d">$</span> <b>og scan ~/hep-201</b>
+reading 7 files in input/ <span class="d">(headers and 5,000-row samples; 0 files read in full)</span>
+
+<span class="m">routing</span>   <span class="d">by header fingerprint, not filename</span>
+  adsl.sas7bdat        <span class="g">→</span> Raw_SUBJ, Raw_ENROLL, Raw_STUDCOMP   <span class="d">3 domains, one file</span>
+  adae.sas7bdat        <span class="g">→</span> Raw_AE
+  adlb.sas7bdat        <span class="g">→</span> Raw_LB
+  dv.xpt               <span class="g">→</span> Raw_PD
+  queries_…csv         <span class="g">→</span> Raw_QUERY
+  audit_trail.csv      <span class="g">→</span> Raw_DATACHG, Raw_DATAENT
+  site_list.csv        <span class="g">→</span> Raw_SITE
+  <span class="a">unrouted</span>              Raw_EG, Raw_IE, Raw_SDRGCOMP, Raw_STUDY  <span class="d">nothing delivered</span>
+
+<span class="m">columns</span>   <span class="d">126 required across 14 domains</span>
+  <span class="g">73 settled</span>   27 by name · 11 from safetyCharts standards · 19 from the
+               CDISC index · 16 from EDC-vendor conventions
+  <span class="a">53 open</span>      <span class="d">of which</span> <b>12</b> <span class="d">are named by a metric workflow</span>
+
+<span class="m">vocabularies</span>
+  Mapped_LB.lbtstnam   <span class="a">61 distinct values, 4 literals demanded</span>  <span class="d">→ config/vocab/lbtstnam.csv</span>
+  Mapped_LB.lbstresu   <span class="a">9 distinct values</span>                     <span class="d">→ config/vocab/lbstresu.csv</span>
+
+<span class="m">wrote</span>
+  workflows/1_mappings/  <span class="d">9 files · 73 source_col: lines · 2 join steps</span>
+  config/data-config.yaml
+  config/vocab/          <span class="d">2 files</span>
+
+Next: <b>git -C ~/hep-201 diff</b>   then   <b>og doctor ~/hep-201</b></pre>
+      </div>
+      <p>Two things worth noticing. One file can feed three domains — <span class="mono">adsl</span> supplies subject, enrolment and completion — because routing is by content, not by name. And the report ends by sending the user to <span class="mono">git diff</span>, not to a summary: what the generator wrote is the deliverable, and the user reads it in the tool they already use to read changes.</p>
+    </article>
+
+    <!-- 3 -->
+    <article class="frame" data-title="3 · diff">
+      <span class="who">the user · reads a diff</span>
+      <h3>What the generator wrote</h3>
+      <div class="term file">
+        <div class="bar"><span>git diff — workflows/1_mappings/LB.yaml</span></div>
+<pre> spec:
+   Raw_LB:
+     studyid:
+       type: character
+<span class="add">+      source_col: STUDYID          # og-scan exact-ci</span>
+     subjid:
+       type: character
+<span class="add">+      source_col: USUBJID          # og-scan safetyCharts::meta_labs/adam · alt: SUBJID</span>
+     lbtstnam:
+       type: character
+<span class="add">+      source_col: PARAM            # og-scan safetyCharts::meta_labs/adam · alt: PARAMCD</span>
+     lbstresn:
+       type: numeric
+<span class="add">+      source_col: AVAL             # og-scan safetyCharts::meta_labs/adam</span>
+     lbstnrlo:
+       type: numeric
+<span class="add">+      # source_col: ???            # og-scan UNSETTLED · candidates: ANRLO, BASE, CRIT1</span>
+     toxgrg_nsv:
+       type: character
+<span class="add">+      # source_col: ???            # og-scan UNSETTLED · candidates: ATOXGR, ATOXGRN, LBNRIND</span></pre>
+      </div>
+      <p>Every generated line carries how it was matched and what it beat. Unsettled columns are written as commented-out lines with their candidates, so the file names its own open items and <span class="mono">grep -rn 'og-scan UNSETTLED' workflows/</span> is the work list. Nothing else in the file moved: the generator edits YAML as text and re-parses before saving, so a study's own comments and ordering survive.</p>
+      <div class="callout warn">
+        <span class="lede">⚠ Already visible, and already wrong</span>
+        <p>Look at <span class="mono">subjid</span>. The generator chose <span class="mono">USUBJID</span> here and — as the next frame shows — chose <span class="mono">SUBJID</span> in <span class="mono">SUBJ.yaml</span>, because on <span class="mono">adsl</span> the exact case-insensitive name match beats the alias. Two files, two identifiers, both annotated confidently. A human reading this diff would have to hold both files in their head to catch it. This is weakness W2 on the design page, in the flesh.</p>
+      </div>
+    </article>
+
+    <!-- 4 -->
+    <article class="frame" data-title="4 · doctor · blocking">
+      <span class="who">the product · the whole interface</span>
+      <h3><span class="mono">og doctor</span> — first run, and it refuses</h3>
+      <div class="term">
+        <div class="bar"><span class="dots">● ● ●</span> <span>zsh</span></div>
+<pre><span class="d">$</span> <b>og doctor ~/hep-201</b>
+open.gismo doctor — HEP-201
+~/hep-201                                    14 domains · 126 columns
+
+  <span class="r">✖ 1 blocking</span>   the run will not start
+  <span class="a">⚠ 4 costed</span>     the run will start; here is what each one costs you
+  <span class="g">✔ 9 domains ready</span>
+
+<span class="d">────────────────────────────────────────────────────────────────</span>
+<span class="r">✖ BLOCKING · identifiers do not join</span>
+
+  Raw_LB.subjid and Raw_SUBJ.subjid share <b>0 of 500</b> sampled values.
+  Raw_AE.subjid and Raw_SUBJ.subjid share <b>0 of 500</b> sampled values.
+  Both pairs are joined by an inner join:
+    workflows/1_mappings/LB.yaml:76   dplyr::inner_join by: subjid
+    workflows/1_mappings/AE.yaml:71   dplyr::inner_join by: subjid
+
+    Raw_SUBJ.subjid  ← SUBJID    <span class="a">"036"</span>              1,000 distinct
+    Raw_LB.subjid    ← USUBJID   <span class="a">"0301-S036-036"</span>    1,000 distinct
+
+  Every Raw_SUBJ value is a suffix of a Raw_LB value, so these are the
+  same participants written two ways.
+
+  <b>Cost if you run anyway</b>
+    Mapped_LB and Mapped_AE become empty. 8 of 29 metric workflows then
+    report zero at every site — cou0001 cou0002 cou0005 kri0001 kri0002
+    kri0005 saf0001 saf0003 — and srs0001, which declares no spec,
+    reweights its site risk score over the 21 that did run.
+    <span class="r">Nothing errors. The study will look exemplary.</span>
+
+  <b>Fix</b> — adsl.sas7bdat carries USUBJID as well as SUBJID, and using it
+  gives 500 of 500. One line:
+
+    <span class="u">workflows/1_mappings/SUBJ.yaml:23</span>
+      subjid:
+        type: character
+    <span class="add">+   source_col: USUBJID</span>
+
+  <span class="d">If the two files genuinely disagree — a lab vendor prefixing the site —</span>
+  <span class="d">write the affix rule instead:  config/vocab/subjid.rules.csv</span>
+  <span class="d">  pattern,replacement,domains</span>
+  <span class="d">  ^[0-9]+-[A-Z0-9]+-,,Raw_LB;Raw_AE</span>
+
+<span class="d">────────────────────────────────────────────────────────────────</span>
+  4 costed findings follow. <b>og doctor --costed</b> to see them now,
+  or fix the blocker first.
+
+<span class="r">og_run() is refused while a blocking finding is open.</span>
+<span class="d">Override with og_run(force = TRUE); forced runs are stamped as forced.</span></pre>
+      </div>
+      <p>This frame is the whole argument for the direction. The finding is not &ldquo;a column is missing&rdquo; — every column is present and correctly typed, and today's <span class="mono">og_validate()</span> would have nothing to say about it. The finding is that two files disagree about who a participant is, stated with both shapes side by side, priced in named metrics, and closed by one line at a named file and line number.</p>
+    </article>
+
+    <!-- 5 -->
+    <article class="frame" data-title="5 · fix + verify">
+      <span class="who">the user · one line · the product verifies</span>
+      <h3>The fix is verified, not asserted</h3>
+      <div class="term file">
+        <div class="bar"><span>git diff — workflows/1_mappings/SUBJ.yaml</span></div>
+<pre>     subjid:
+       type: character
+<span class="del">-      source_col: SUBJID           # og-scan exact-ci · alt: USUBJID</span>
+<span class="add">+      source_col: USUBJID</span></pre>
+      </div>
+      <div class="term">
+        <div class="bar"><span class="dots">● ● ●</span> <span>zsh</span></div>
+<pre><span class="d">$</span> <b>og doctor ~/hep-201 --only keys</b>
+  <span class="g">✔ key overlap</span>
+      Raw_LB.subjid   ↔ Raw_SUBJ.subjid    500/500   <span class="d">was 0/500</span>
+      Raw_AE.subjid   ↔ Raw_SUBJ.subjid    500/500   <span class="d">was 0/500</span>
+      Raw_PD.subjid   ↔ Raw_SUBJ.subjid    500/500
+      Raw_QUERY.subject_nsv ↔ Raw_SUBJ.subject_nsv   <span class="a">unresolved — see costed</span>
+
+  <span class="g">✔</span> no blocking findings</pre>
+      </div>
+      <p>The overlap is measured before and after, so the user sees the fix land rather than being told it should have. The generator's comment is gone from the line because the human touched it — that is how <span class="mono">og scan</span> knows never to overwrite it on a re-run, and it needs no lockfile to remember.</p>
+    </article>
+
+    <!-- 6 -->
+    <article class="frame" data-title="6 · vocabulary">
+      <span class="who">the product · costed finding 1</span>
+      <h3>Three central labs, one axis</h3>
+      <div class="term">
+        <div class="bar"><span class="dots">● ● ●</span> <span>zsh</span></div>
+<pre><span class="d">$</span> <b>og doctor ~/hep-201 --costed</b>
+
+<span class="a">⚠ COSTED · a vocabulary is not settled</span>
+
+  workflows/4_modules/hep_explorer.yaml pins four literal values in
+  Mapped_LB.lbtstnam:  ALT  AST  TB  ALP
+  Your study writes <b>61 distinct values</b> in that column. <b>0</b> match as delivered.
+
+  og scan filled 9 of 61 rows from safetyCharts::meta_hepExplorer, which
+  carries per-standard defaults for exactly these four measures.
+
+    <span class="u">config/vocab/lbtstnam.csv</span>
+    from,to,n,note
+    "Alanine Aminotransferase (U/L)",ALT,11842,og-scan meta_hepExplorer/adam
+    "Alanine Aminotransferase",ALT,4310,og-scan meta_hepExplorer/sdtm
+    <span class="a">"SGPT",,3902,</span>                              <span class="d">← unsettled</span>
+    <span class="a">"ALT (SGPT)",,1204,</span>                         <span class="d">← unsettled</span>
+    "Aspartate Aminotransferase (U/L)",AST,11840,og-scan meta_hepExplorer/adam
+    <span class="a">"SGOT",,3902,</span>                              <span class="d">← unsettled</span>
+    "Bilirubin (umol/L)",TB,7891,og-scan meta_hepExplorer/adam
+    <span class="a">"Total Bilirubin",,2140,</span>                    <span class="d">← unsettled</span>
+    …
+
+  52 rows have a blank <b>to</b> and pass through unchanged. List them:
+    <span class="d">awk -F, '$2==""' config/vocab/lbtstnam.csv</span>
+
+  <b>Cost if you leave it</b>
+    hep-explorer plots 4 of 4 measures but on 42% of the records it
+    should have. The Hy's Law quadrant needs ALT and TB on the same
+    participant and will drop every participant whose panel came from
+    the two laboratories that write SGPT and Total Bilirubin.
+    kri0005 / cou0005 are unaffected — they count the grade, not the name.</pre>
+      </div>
+      <p>This is the seam that does not exist anywhere in gsm today. The value-level mapping currently lives as literal strings inside <span class="mono">hep_explorer.yaml</span>'s <span class="mono">lSettings.measure_values</span>, which means a study either happens to write &ldquo;Alanine Aminotransferase&rdquo; or the chart is empty and says nothing about why. Four rows of a CSV close it, and the file is generated with the study's own values already counted so the user is ranking their own data rather than recalling it.</p>
+      <p class="note">The 9 pre-filled rows are real: <span class="mono">safetyCharts::meta_hepExplorer</span> has five <span class="mono">type == "field"</span> rows carrying ADaM and SDTM defaults per measure. That is a value-level metadata layer safetyGraphics already has and gsm.mapping does not — see <a href="evidence.html#asset">page 2</a>.</p>
+    </article>
+
+    <!-- 7 -->
+    <article class="frame" data-title="7 · units">
+      <span class="who">the product · costed finding 2</span>
+      <h3>One measure, two units — the thing no naming surface can repair</h3>
+      <div class="term">
+        <div class="bar"><span class="dots">● ● ●</span> <span>zsh</span></div>
+<pre><span class="a">⚠ COSTED · one measure arrives in two units</span>
+
+  After the vocabulary above, ALT arrives as:
+      U/L        13,884 records    median 24     range 4 – 812
+      µkat/L      2,268 records    median 0.41   range 0.07 – 13.5
+
+  The two differ by a factor of about 60. Plotted on one axis the µkat/L
+  records become 2,268 apparent normals, and every reference-range
+  comparison against lbstnrhi is meaningless for them.
+
+  <span class="r">This is not a naming problem and no source_col: line repairs it.</span>
+
+  <b>Fix</b> — one row, in the units vocabulary:
+
+    <span class="u">config/vocab/lbstresu.csv</span>
+    from,to,factor
+    U/L,U/L,1
+    <span class="add">µkat/L,U/L,60</span>
+    …
+
+  factor multiplies the numeric columns paired with this unit column by
+  convention: lbstresn, lbstnrlo, lbstnrhi. It is applied once, when the
+  file is read, before any mapping SQL sees the frame — so every metric
+  and every chart downstream sees one scale.
+
+  <span class="d">og doctor re-checks after the edit: a measure whose values still span</span>
+  <span class="d">more than one unit is reported again, so a wrong factor does not pass.</span></pre>
+      </div>
+      <div class="callout">
+        <span class="lede">Where this direction stops, on purpose</span>
+        <p>A multiplier is arithmetic, and arithmetic in a config file is a slope this design refuses to slide down. One constant per unit is the whole extension; anything needing a formula, a lookup by age and sex, or a per-visit adjustment is out of scope and <span class="mono">og doctor</span> says so rather than inventing a syntax. The user writes an R script, points <span class="mono">data-config.yaml</span> at its output, and that script is in their repository like everything else.</p>
+      </div>
+    </article>
+
+    <!-- 8 -->
+    <article class="frame" data-title="8 · decline">
+      <span class="who">the product · costed findings 3 and 4</span>
+      <h3>The column that cannot exist, and the domain nobody sent</h3>
+      <div class="term">
+        <div class="bar"><span class="dots">● ● ●</span> <span>zsh</span></div>
+<pre><span class="a">⚠ COSTED · required, and possibly not obtainable</span>
+
+  <b>Raw_LB.toxgrg_nsv</b>   CTCAE toxicity grade
+    No source variable in SDTM. None in ADaM unless somebody derived one.
+    Your adlb.sas7bdat has <b>ATOXGR</b> — 23% populated, values "" "0" "1"
+    "2" "3" "4". og scan did <span class="r">not</span> use it: a toxicity grade on a lab
+    record is a derivation, and whether it is <i>this</i> grade is your call,
+    not a matcher's.
+
+    <b>Cost</b>  cou0005 and kri0005 (Grade 3+ Lab Abnormality Rate) do not
+          run. srs0001's site risk score then averages 11 kri inputs
+          instead of 12 — its denominator changes, its scale does not.
+
+    <b>Fix</b> — one of:
+      <span class="u">workflows/1_mappings/LB.yaml:47</span>    source_col: ATOXGR
+      <span class="u">config/data-config.yaml</span>          decline: Raw_LB.toxgrg_nsv: "&lt;reason&gt;"
+
+  <b>Raw_STUDY</b>   15 columns, 0 delivered
+    No CTMS extract in input/. This domain is study metadata, not
+    participant data: <b>no metric workflow reads it</b>.
+
+    <b>Cost</b>  the study masthead falls back to config/study-config.yaml.
+          No metric, no KRI, no chart is affected.
+
+    <b>Fix</b>  decline it, or type the four fields the masthead uses into
+         config/study-config.yaml.
+
+  <span class="d">Same for Raw_EG (0 delivered — no ECG dataset; costs qt-explorer and</span>
+  <span class="d">cou0012/kri0012) and Raw_SDRGCOMP (costs kri0006/cou0006).</span></pre>
+      </div>
+      <div class="term file">
+        <div class="bar"><span>config/data-config.yaml — what the user writes</span></div>
+<pre>decline:
+  <span class="p">Raw_LB.toxgrg_nsv</span>: <span class="a">"our ADaM derives ATOXGR from a local grading table,
+                       not CTCAE v5 — not comparable across studies"</span>
+  <span class="p">Raw_STUDY</span>: <span class="a">"no CTMS extract; masthead fields typed by hand"</span>
+  <span class="p">Raw_EG</span>: <span class="a">"no central ECG collection on this protocol"</span></pre>
+      </div>
+      <p>This is the moment the direction earns its keep. A declined column is not an absent one: the reason travels into the snapshot's provenance record, which open.gismo already renders as the provenance chip, so the study site can say <i>&ldquo;Grade 3+ Lab Abnormality Rate: declined — our ADaM derives ATOXGR from a local grading table&rdquo;</i> rather than quietly not showing a KRI. A checkbox in a wizard cannot carry that sentence. A line in the study's own config, in git, with an author and a date, can.</p>
+    </article>
+
+    <!-- 9 -->
+    <article class="frame" data-title="9 · green">
+      <span class="who">the product · the run is allowed</span>
+      <h3>Green, and what green means</h3>
+      <div class="term">
+        <div class="bar"><span class="dots">● ● ●</span> <span>zsh</span></div>
+<pre><span class="d">$</span> <b>og doctor ~/hep-201</b>
+open.gismo doctor — HEP-201
+~/hep-201                                    14 domains · 126 columns
+
+  <span class="g">✔ no blocking findings</span>
+  <span class="g">✔ 10 domains ready</span>   <span class="d">Raw_AE Raw_LB Raw_PD Raw_SUBJ Raw_ENROLL</span>
+                        <span class="d">Raw_STUDCOMP Raw_SITE Raw_QUERY Raw_DATACHG Raw_DATAENT</span>
+  <span class="d">◦ 4 declined</span>        Raw_STUDY  Raw_EG  Raw_SDRGCOMP  Raw_LB.toxgrg_nsv
+  <span class="g">✔ key overlap</span>      6 joined pairs, all ≥ 99.4%
+  <span class="g">✔ vocabularies</span>     lbtstnam 61/61 · lbstresu 9/9
+
+  <b>This run will produce</b>  24 of 30 metric workflows
+                          srs0001 over <b>10</b> kri inputs <span class="d">(of 12; 2 declined)</span>
+                          7 of 9 safety charts
+                          qt-explorer: not built (Raw_EG declined)
+
+<span class="d">$</span> <b>og run ~/hep-201</b>
+… 4 phases, 38 workflows …
+<span class="g">✔</span> snapshot 2026-08-26 written to output/ · <b>og view ~/hep-201</b></pre>
+      </div>
+      <div class="callout good">
+        <span class="lede">✔ Green never means &ldquo;complete&rdquo;</span>
+        <p>It means: nothing is silently broken, and everything absent is absent on the record with a reason. The site risk score prints its denominator, two KRIs print as declined with the user's sentence, and the qt-explorer tab is not there rather than being there and empty. Compare that with today's alternative, in the next frame.</p>
+      </div>
+    </article>
+
+    <!-- 10 -->
+    <article class="frame" data-title="10 · the wrong turn">
+      <span class="who">today · what a competent user actually does</span>
+      <h3>The wrong turn, which is available right now</h3>
+      <p>Today there is no scan and no doctor, and <span class="mono">og_validate()</span> cannot see <span class="mono">source_col</span> at all — so it stays red no matter how correct the mapping is. The rational response is to stop using it and write a preparation script, which is exactly what a competent statistician would do:</p>
+      <div class="term file">
+        <div class="bar"><span>~/hep-201/prep.R — the thing a good user writes today</span></div>
+<pre>subj &lt;- haven::read_sas("adsl.sas7bdat") |&gt;
+  dplyr::rename(<span class="r">subjid = SUBJID</span>, invid = SITEID, agerep = AGE) |&gt;
+  readr::write_csv("input/Raw_SUBJ.csv")
+
+lb   &lt;- haven::read_sas("adlb.sas7bdat") |&gt;
+  dplyr::rename(<span class="r">subjid = USUBJID</span>, lbtstnam = PARAM, lbstresn = AVAL) |&gt;
+  readr::write_csv("input/Raw_LB.csv")</pre>
+      </div>
+      <div class="term">
+        <div class="bar"><span class="dots">● ● ●</span> <span>zsh — open.gismo v0.2.0, unchanged</span></div>
+<pre><span class="d">$</span> <b>Rscript -e 'og_validate("~/hep-201")'</b>
+open.gismo validation — HEP-201
+
+  <span class="g">✔</span>  Raw_AE      input/Raw_AE.csv     3,412 x 16
+  <span class="g">✔</span>  Raw_LB      input/Raw_LB.csv    61,004 x 14
+  <span class="g">✔</span>  Raw_SUBJ    input/Raw_SUBJ.csv   1,000 x 15
+  …
+  <span class="g">✔ 10 ready</span>
+
+All input domains are ready. Run og_run("~/hep-201").
+
+<span class="d">$</span> <b>Rscript -e 'og_run("~/hep-201")'</b>
+<span class="g">✔</span> snapshot written. <span class="d">No error. No warning. Two minutes.</span></pre>
+      </div>
+      <div class="callout bad">
+        <span class="lede">✖ And the study site is a lie</span>
+        <p>Both columns are named <span class="mono">subjid</span> and both are populated, so validation is genuinely, correctly green. The inner joins in <span class="mono">LB.yaml</span> and <span class="mono">AE.yaml</span> return zero rows. Enrolment, query, data-entry and deviation KRIs render normally. Adverse-event rate and lab-abnormality rate read <b>0.00 at all 42 sites</b>. The site risk score averages the metrics that survived and ranks every site as low risk. A medical monitor opens this and sees a clean study.</p>
+        <p>Two <span class="mono">rename()</span> calls, six words apart, written by somebody doing everything right. That is the failure this direction is built around, and it is the reason the diagnostic has to be the interface rather than a report the user is free to skip.</p>
+      </div>
+    </article>
+
+    <!-- 11 -->
+    <article class="frame" data-title="11 · the tally">
+      <span class="who">the tally</span>
+      <h3>What the user had to do, and what they never saw</h3>
+      <div class="tblwrap">
+      <table>
+        <thead><tr><th>The user's whole contribution</th><th class="mono">where</th><th class="num">lines</th></tr></thead>
+        <tbody>
+          <tr><td>Change one identifier</td><td class="mono">workflows/1_mappings/SUBJ.yaml</td><td class="num">1</td></tr>
+          <tr><td>Settle four lab-measure names</td><td class="mono">config/vocab/lbtstnam.csv</td><td class="num">4</td></tr>
+          <tr><td>One unit factor</td><td class="mono">config/vocab/lbstresu.csv</td><td class="num">1</td></tr>
+          <tr><td>Three declines, each with a reason</td><td class="mono">config/data-config.yaml</td><td class="num">3</td></tr>
+          <tr><td>Eight remaining unsettled columns, none read by a metric</td><td class="mono">various</td><td class="num">8</td></tr>
+          <tr><td><b>Total</b></td><td></td><td class="num"><b>17</b></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>Seventeen lines of text against a 126-column contract, in files the study's own git history already tracks, produced through five commands and one <span class="mono">git diff</span>. The 73 the generator settled and the 47 metric-to-column dependencies it priced were never surfaced as questions, because they were never decisions.</p>
+      <div class="callout">
+        <span class="lede">And the honest counterweight</span>
+        <p>Seventeen is the number when the ranking works. The same run leaves 53 columns unsettled in total; the claim that only 12 matter rests entirely on the metric dependency graph being right, and the claim that a user finds the one identifier line rests on them reading a diff carefully at the exact moment they are least motivated to. Both are on the design page as W2 and W4, and neither is solved here.</p>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="navrow">
+    <button class="ghost" id="prev">← Back</button>
+    <button id="next">Next →</button>
+    <span class="count" id="count"></span>
+  </div>
+</section>
+
+<footer class="end">
+  <p>Frames are a mockup of terminal output, not a recording — no such command exists yet. Every number in them is measured: the 126-column contract and the metric dependency graph are read from <span class="mono">demo-301/workflows/</span>, the match counts from running the matcher against the delivery above, and the failure pricing from tracing the eight affected workflows' own specs. Method on <a href="evidence.html">page 2</a>.</p>
+  <p>Drafted by Claude Code using Opus 5 for review by @jwildfire.</p>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var frames = Array.prototype.slice.call(document.querySelectorAll('#frames .frame'));
+  var stepper = document.getElementById('stepper');
+  var prev = document.getElementById('prev');
+  var next = document.getElementById('next');
+  var count = document.getElementById('count');
+  var i = 0;
+
+  frames.forEach(function (f, n) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = f.dataset.title;
+    b.addEventListener('click', function () { go(n); });
+    stepper.appendChild(b);
+  });
+  var tabs = Array.prototype.slice.call(stepper.querySelectorAll('button'));
+
+  function go(n) {
+    i = Math.max(0, Math.min(frames.length - 1, n));
+    frames.forEach(function (f, k) { f.classList.toggle('on', k === i); });
+    tabs.forEach(function (t, k) { t.setAttribute('aria-current', k === i ? 'true' : 'false'); });
+    prev.disabled = i === 0;
+    next.disabled = i === frames.length - 1;
+    count.textContent = (i + 1) + ' of ' + frames.length;
+    if (location.hash !== '#f' + (i + 1)) history.replaceState(null, '', '#f' + (i + 1));
+  }
+
+  prev.addEventListener('click', function () { go(i - 1); });
+  next.addEventListener('click', function () { go(i + 1); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+    if (e.key === 'ArrowRight') go(i + 1);
+    if (e.key === 'ArrowLeft') go(i - 1);
+  });
+
+  var m = /^#f(\d+)$/.exec(location.hash);
+  go(m ? parseInt(m[1], 10) - 1 : 0);
+})();
+</script>
+</body>
+</html>

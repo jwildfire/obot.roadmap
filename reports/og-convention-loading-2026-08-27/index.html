@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convention over configuration — loading a study into open.gismo</title>
+<meta name="description" content="A design with no interface: two commands write the mapping, the error message is the whole surface, and the mapping lives in git as a reviewable diff. Measured on a CRO delivery where the matcher's most confident guess silently empties eight metrics.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">open.gismo · data loading · direction: convention over configuration · 2026-08-27</div>
+  <h1>Put the files where they go. The product tells you the rest.</h1>
+  <p class="standfirst">One of four competing directions for how a person gets their own study into open.gismo. This one builds no interface at all. The mapping is a study document — text, in the study's own git history, reviewed as a diff — and the entire user surface is a generator that writes that document for you and a diagnostic that names the one line you have to change.</p>
+  <p class="byline">Requested by @jwildfire, 2026-08-26: <i>&ldquo;Maybe a ultradesign session for open.gismo? re-visit the research comparing other sites and do some mockups on how users will load their own data?&rdquo;</i> · Design session. Nothing was built, filed, or changed in any code repository; the numbers below come from reading and running the installed packages.</p>
+  <nav class="parts">
+    <a href="index.html" aria-current="page">The design</a>
+    <a href="walkthrough.html">1 · The hard case, step by step</a>
+    <a href="evidence.html">2 · What was measured</a>
+    <a href="#weak">3 · Where this is weakest</a>
+    <a href="#decisions">4 · Decisions</a>
+  </nav>
+</header>
+
+<section class="tldr">
+  <h2>The commitment</h2>
+  <p>A mapping screen produces a mapping. A mapping screen does not produce a <i>record</i> of a mapping — something a second statistician can review, a reviewer can diff against last month's, and CI can replay two years later during an inspection. In this domain the record is the deliverable, so the artifact should be the primary thing and any screen a secondary view of it.</p>
+  <p>So: no screen. Four text files the user may touch, two commands, and one rule — <b class="mono">og_run()</b> refuses to start while the diagnostic is red. Everything the product can work out, it writes into those files itself. Everything it cannot, it asks for as one named line at one named path, with the cost of not writing it printed beside the ask.</p>
+</section>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">126</div><div class="l">columns a full study must satisfy, across 14 raw domains</div></div>
+  <div class="kpi"><div class="n">34</div><div class="l">of those that any metric workflow actually names</div></div>
+  <div class="kpi"><div class="n">73</div><div class="l">settled with no human input on a measured CRO delivery</div></div>
+  <div class="kpi"><div class="n">8</div><div class="l">metrics that silently report zero when the guesser is confidently wrong</div></div>
+</div>
+<p class="note">Measured on 2026-08-27 against <span class="mono">demo-301/workflows/1_mappings/</span> (the fourteen <span class="mono">Raw_*</span> domains a study with both the RBQM and Safety lenses reads), <span class="mono">demo-301/workflows/2_metrics/</span> (30 workflows), and a hand-authored ADaM/SDTM CRO delivery. Method and scripts on <a href="evidence.html">page 2</a>. <span class="mono">og_init()</span>'s smaller default set is 12 domains and 90 columns.</p>
+
+<section>
+  <h2>What is actually broken today</h2>
+  <p>open.gismo v0.2.0's entire load-your-own-data surface is one line of README — <span class="mono">og_init("~/my-study", example = TRUE)</span>, &ldquo;or drop your own <span class="mono">Raw_*.csv</span> files in <span class="mono">~/my-study/input/</span>&rdquo; — plus <span class="mono">og_validate()</span>, which reports and then stops. Three specific things, each read from source and confirmed by running it:</p>
+  <ol class="num">
+    <li><b>The readiness check and the engine disagree about the same project.</b> <span class="mono">gsm.mapping::ApplySpec()</span> reads exactly two keys per column, <span class="mono">type</span> and <span class="mono">source_col</span>, and <span class="mono">source_col</span> already emits <span class="mono">"THEIR_NAME" AS "gsm_name"</span> in the generated SQL. The string <span class="mono">source_col</span> does not appear anywhere in open.gismo's <span class="mono">R/</span> or <span class="mono">inst/</span>. So <span class="mono">og_validate()</span> compares target names only: for any delivery not already carrying gsm's internal names, that check can never go green even when the pipeline would run perfectly. This was established by a parallel session the same night and is a prerequisite for everything below.</li>
+    <li><b>Nothing gates the run.</b> <span class="mono">og_run()</span> never calls <span class="mono">og_validate()</span>. The Shiny lane (<span class="mono">og_app()</span>) does; the headless lane does not. A missing domain is a <span class="mono">warning()</span> and the pipeline continues.</li>
+    <li><b>Nothing checks that the identifiers join.</b> Both <span class="mono">LB.yaml</span> and <span class="mono">AE.yaml</span> end in a <span class="mono">dplyr::inner_join</span> on <span class="mono">subjid</span> against <span class="mono">Mapped_SUBJ</span>. <span class="mono">og_validate()</span> reads one file at a time and never compares two.</li>
+  </ol>
+  <div class="callout warn">
+    <span class="lede">The framing correction that matters</span>
+    <p>The gsm raw layer is not CDISC. Findings carry lower-case SDTM-adjacent names; subject, site and enrolment carry operational-EDC names (<span class="mono">invid</span>, <span class="mono">agerep</span>, <span class="mono">subject_nsv</span>, <span class="mono">mincreated_dts</span>). A sponsor with immaculate ADaM still has to map. This surface is the front door for everybody, not a concession to messy data — which is why hiding it inside an optional app would be the wrong instinct.</p>
+  </div>
+</section>
+
+<section>
+  <h2>The design: four files, two commands</h2>
+  <p>Everything a user touches is a file that git already tracks. Nothing is stored anywhere else, and there is no state that is not on disk.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="lbl">exists today</div>
+      <h3><span class="mono">input/</span></h3>
+      <p>Put the delivery here under whatever names it arrived with. The naming convention <span class="mono">Raw_{DOMAIN}.csv</span> stays as the zero-config path, but it stops being the only one.</p>
+    </div>
+    <div class="card">
+      <div class="lbl">exists today · gains one block</div>
+      <h3><span class="mono">config/data-config.yaml</span></h3>
+      <p>Domain → file. Gains a <span class="mono">decline:</span> block, where a user records — with a reason, in prose — that a domain or a column will never arrive.</p>
+    </div>
+    <div class="card">
+      <div class="lbl">exists today · gains generated lines</div>
+      <h3><span class="mono">workflows/1_mappings/*.yaml</span></h3>
+      <p>Already the study's own editable copies of gsm.mapping's specs, already snapshotted into the project by <span class="mono">og_init()</span>. They gain <span class="mono">source_col:</span> lines, written by the generator and marked as guesses.</p>
+    </div>
+    <div class="card">
+      <div class="lbl">new</div>
+      <h3><span class="mono">config/vocab/*.csv</span></h3>
+      <p>The one thing that does not exist anywhere in the ecosystem: a value-level seam. A two- or three-column CSV per column name, applied before the mapping SQL runs. This is what makes a liver panel from three labs plottable.</p>
+    </div>
+  </div>
+
+  <h3>The two commands</h3>
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>Command</th><th>What it is</th><th>What it never does</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="mono">og scan</td>
+        <td>A <b>generator</b>. Reads every file in <span class="mono">input/</span> — headers, types, cardinality, the distinct values of any column a module pins to literals — and <i>writes</i> candidate <span class="mono">source_col:</span> lines, candidate vocabulary tables, and the participant join step into the project's own files. Idempotent.</td>
+        <td>Never overwrites a line a human has touched, never reformats a file, never reads a full data file when the header and a sample will do.</td>
+      </tr>
+      <tr>
+        <td class="mono">og doctor</td>
+        <td>The <b>whole interface</b>. Replaces <span class="mono">og_validate()</span>. Every finding names the file, the line, the literal text to write, and what it costs in metrics and charts to not write it. Ordered by cost, not by domain.</td>
+        <td>Never emits a finding it cannot price and cannot give an edit for. Never returns a report — it returns work.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>The loop, in full</h3>
+  <div class="term">
+    <div class="bar"><span class="dots">● ● ●</span> <span>the entire product</span></div>
+<pre><span class="d">$</span> <b>og init ~/hep-201</b> <span class="d">&amp;&amp;</span> <b>cp ~/deliveries/2026-08-26/* ~/hep-201/input/</b>
+<span class="d">$</span> <b>og scan ~/hep-201</b>            <span class="d"># it writes the mapping</span>
+<span class="d">$</span> <b>git -C ~/hep-201 diff</b>         <span class="d"># you read what it guessed</span>
+<span class="d">$</span> <b>$EDITOR ~/hep-201/workflows/1_mappings/SUBJ.yaml</b>
+<span class="d">$</span> <b>og doctor ~/hep-201</b> <span class="d">&amp;&amp;</span> <b>og run ~/hep-201</b></pre>
+  </div>
+  <p>Five lines, three of which are things an R user types every day anyway. The design work is entirely in what <span class="mono">og scan</span> writes and what <span class="mono">og doctor</span> says — which is why <a href="walkthrough.html">page 1</a> is a terminal, not a screen. For a direction with no graphical interface, mocking up the output <i>is</i> mocking up the product.</p>
+</section>
+
+<section>
+  <h2>What the product does automatically, and what it asks</h2>
+  <p>The measure of this direction is the ratio between these two lists. Convention over configuration does not mean the user configures nothing; it means the number of decisions a user must express equals the number of places their data genuinely disagrees with a name the product already guessed, and not one more.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="lbl">automatic · seven things</div>
+      <ul class="bul">
+        <li><b>Domain routing.</b> File → <span class="mono">Raw_*</span> domain by header fingerprint, not by filename. <span class="mono">adlb.sas7bdat</span> is recognised as <span class="mono">Raw_LB</span> because it has a value, a unit and a reference range per row.</li>
+        <li><b>Column renaming</b> wherever an exact match or the alias table resolves it — 73 of 126 on the measured delivery.</li>
+        <li><b>Type coercion</b>, which the spec's <span class="mono">type:</span> key already does.</li>
+        <li><b>Vocabulary candidates.</b> For every column a module YAML pins to literal strings, the generator writes a table of the study's actual distinct values against the literals the module demands.</li>
+        <li><b>The participant join.</b> When a domain lacks <span class="mono">invid</span> but <span class="mono">Raw_SUBJ</span> has it, the generator writes the same inner join demo-301 hand-wrote, into the domain's own YAML, as visible steps.</li>
+        <li><b>Key-overlap measurement</b> between every pair the mapping steps join, on a sample, before the run.</li>
+        <li><b>Pricing.</b> Every unresolved thing is reported with the metrics and charts it costs, resolved through the metric workflows' own specs.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="lbl">asked · four things, each one line of text</div>
+      <ul class="bul">
+        <li><b>A column the guesser could not settle</b> → one <span class="mono">source_col:</span> line, or a <span class="mono">decline:</span> entry with a reason in prose.</li>
+        <li><b>A value vocabulary</b> → fill the <span class="mono">to</span> column of a generated CSV. Blank means pass through unchanged, so the file is complete and inert until edited, and <span class="mono">awk -F, '$2==""'</span> lists your open items.</li>
+        <li><b>A unit reconciliation</b> → a <span class="mono">factor</span> column in the same CSV. <span class="mono">µkat/L,U/L,60</span>. The factor is applied to the paired numeric columns the convention already knows about.</li>
+        <li><b>An identifier affix</b> → one line in a <span class="mono">.rules.csv</span>: <span class="mono">^0301-,</span>. The diagnostic prints the key overlap before and after, so the fix is verified rather than asserted.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The moment of highest friction — and it is not the renaming</h2>
+  <p>Renaming is where a guesser is strongest and where every competing direction will also do well. The friction that decides whether this product is trusted is somewhere else, and it was measured rather than imagined.</p>
+
+  <div class="callout bad">
+    <span class="lede">✖ Measured, not hypothesised</span>
+    <p>Against a conformant ADaM delivery, the matcher's <b>single most confident hit is wrong</b>. <span class="mono">Raw_SUBJ.subjid</span> matches <span class="mono">SUBJID</span> on an exact case-insensitive name comparison — the highest-confidence tier there is. But ADaM's <span class="mono">SUBJID</span> is the site-level subject number, while <span class="mono">adae</span> and <span class="mono">adlb</span> carry only <span class="mono">USUBJID</span>, so those two domains resolve their <span class="mono">subjid</span> to a different identifier entirely.</p>
+    <p>Both columns are present and correctly typed. Today's <span class="mono">og_validate()</span> returns all-green. <span class="mono">og_run()</span> completes without an error. The two inner joins produce zero rows, <b>8 of the 29 specified metric workflows report zero at every site</b> — <span class="mono">cou0001</span>, <span class="mono">cou0002</span>, <span class="mono">cou0005</span>, <span class="mono">kri0001</span>, <span class="mono">kri0002</span>, <span class="mono">kri0005</span>, <span class="mono">saf0001</span>, <span class="mono">saf0003</span> — and <span class="mono">srs0001</span>, which has no spec at all, quietly reweights its site risk score across the 21 that did run.</p>
+    <p>The study site renders. Enrolment KRIs look healthy. Adverse-event and lab rates read zero everywhere. <b>A bad mapping does not crash; it flatters.</b></p>
+  </div>
+
+  <p>This direction's answer is the cheapest thing on the build list and the most valuable: <b>the key-overlap check runs before the mapping phase</b>, on a sample of identifiers per domain, and <span class="mono">og doctor</span> refuses on it with the two identifier shapes printed side by side and the affix it detected. About sixty lines of code. <a href="walkthrough.html">Page 1</a> walks it.</p>
+
+  <h3>The second-highest friction: the column that cannot exist</h3>
+  <p><span class="mono">Raw_LB.toxgrg_nsv</span> is a CTCAE toxicity grade. It has no source variable in SDTM and none in ADaM unless somebody derived one, and today the only thing a user is told is <i>&ldquo;missing column: toxgrg_nsv&rdquo;</i>. They cannot tell whether that is fatal, cosmetic, or fixable.</p>
+  <p>Convention over configuration's answer is that <b>absence is a decision the user records, and the product prices it</b>. The diagnostic prints what goes dark, and offers the line:</p>
+  <div class="term file">
+    <div class="bar"><span>config/data-config.yaml</span></div>
+<pre><span class="d">decline:</span>
+  <span class="p">Raw_LB.toxgrg_nsv</span>: <span class="a">"not collected — our ADaM has ATOXGR only on AE, not LB"</span>
+  <span class="p">Raw_STUDY</span>: <span class="a">"no CTMS extract; study metadata typed into study-config.yaml"</span></pre>
+  </div>
+  <p>The run then proceeds with <span class="mono">kri0005</span> and <span class="mono">cou0005</span> <i>declined</i> rather than absent, and the decline — with the sentence the user wrote — is stamped into the snapshot's provenance record, which open.gismo already renders as the provenance chip. A screen-based direction gets a checkbox here. This one gets a sentence in version control that a reviewer can read two years later. That is the differentiator, and it is not available to a UI for free.</p>
+  <div class="callout">
+    <span class="lede">And it closes a known bug by construction</span>
+    <p><span class="mono">srs0001</span> carries no spec, so it weights whichever <span class="mono">kri*</span> workflows happened to run — meaning a partial mapping changes the site risk score's denominator instead of failing. Making a decline explicit lets the run record the denominator it actually used, which is the only honest way to publish that score from an incomplete study.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What it costs</h2>
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>Piece</th><th>Where</th><th class="num">Rough size</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Fix <span class="mono">og_validate()</span> to resolve <span class="mono">source_col</span></td><td class="mono">open.gismo</td><td class="num">~20 lines</td><td>Prerequisite. Without it the readiness check contradicts the engine.</td></tr>
+      <tr><td><span class="mono">og_scan()</span> — reader, profiler, matcher</td><td class="mono">open.gismo</td><td class="num">~250 lines</td><td>Headers and a sample only; never reads a whole file.</td></tr>
+      <tr><td><span class="mono">og_scan()</span> — the YAML line writer</td><td class="mono">open.gismo</td><td class="num">~150 lines</td><td>The hard part. See the risk below.</td></tr>
+      <tr><td><span class="mono">og_doctor()</span></td><td class="mono">open.gismo</td><td class="num">~300 lines</td><td>Rewrite of <span class="mono">og_validate()</span>: adds source resolution, key overlap, vocabulary coverage, decline pricing, cost ordering.</td></tr>
+      <tr><td>Vocabulary + unit application</td><td class="mono">open.gismo</td><td class="num">~60 lines</td><td>Applied in <span class="mono">.og_load_input()</span> after <span class="mono">read.csv</span>, before anything else sees the frame.</td></tr>
+      <tr><td>Decline handling and provenance stamp</td><td class="mono">open.gismo</td><td class="num">~80 lines</td><td>Plus <span class="mono">og_run()</span> refusing while doctor is red.</td></tr>
+      <tr><td><span class="mono">inst/aliases.csv</span></td><td class="mono">open.gismo</td><td class="num">~170 rows</td><td>52 of them lift straight out of <span class="mono">safetyCharts</span>. The rest are hand-written. This is a data asset with a maintenance cost, not a one-off.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>What it leans on, unchanged</h3>
+  <ul class="bul">
+    <li><span class="mono">gsm.mapping::ApplySpec()</span> — <span class="mono">source_col</span> and <span class="mono">type</span> are the entire column contract and they are sufficient. Exercised upstream already.</li>
+    <li><span class="mono">gsm.mapping::CombineSpecs()</span> / <span class="mono">Ingest()</span> — the product can <i>compute</i> the column list to ask for; it never hard-codes one.</li>
+    <li><span class="mono">og_init()</span> already snapshots 44 workflow YAMLs into the project, so the mapping specs are the user's own files under their own version control. That is the pre-existing fact this whole direction stands on.</li>
+  </ul>
+  <div class="callout good">
+    <span class="lede">✔ The structural advantage</span>
+    <p><b>This ships with no change to any Gilead-BioStats repository.</b> Every seam it needs already exists or lives inside open.gismo. Of the four kinds of mapping, the only one that would normally require an upstream <span class="mono">recode:</span> proposal — value-level — is handled here as a pre-read transform in open.gismo's own loader, so it costs a conversation with nobody. Upstreaming it later remains open and becomes easier once a real study has exercised the file format.</p>
+  </div>
+
+  <h3>What could go wrong</h3>
+  <ul class="bul">
+    <li><b>The YAML line writer corrupts a user's mapping file.</b> No R library round-trips YAML while preserving comments, and a generator that silently reformats a study document is worse than no generator. So <span class="mono">og scan</span> must edit YAML as <i>text</i>, inserting lines at the right indentation under the right key, then re-parse the result and refuse to save unless the parsed structure equals the expected one. That verification is a hard requirement, not a nicety.</li>
+    <li><b>The alias table rots and nobody owns it.</b> Proven in the measurement: <span class="mono">safetyCharts</span>'s ADaM default for the lab reference range is <span class="mono">A1LO</span>/<span class="mono">A1HI</span>, and the delivery used <span class="mono">ANRLO</span>/<span class="mono">ANRHI</span> — both legitimate ADaM spellings — so the seeded alias missed a column it should have caught. Aliases must be many-to-one and each standard needs a regression test.</li>
+    <li><b>Per-study data creeps into <span class="mono">config/</span>.</b> A vocabulary is a table of a study's own values. For a subject-identifier affix a table would be one row per participant, so the rules file exists — but that is a second file kind and every file kind is a thing to learn.</li>
+    <li><b>The generator's confidence is typographically invisible.</b> A wrong <span class="mono">source_col:</span> line looks exactly like a right one. See below; this is the real weakness, not a risk.</li>
+  </ul>
+</section>
+
+<section id="weak">
+  <h2>Where this direction is weakest</h2>
+  <p>Five, ordered by how likely each is to be the reason this direction should lose.</p>
+
+  <div class="decision">
+    <div class="id">W1 — the strategic one</div>
+    <h3>It concedes the person who usually owns the mapping</h3>
+    <p>Across the commercial platforms surveyed, the mapping is not done by the person reading the charts. It is done by a vendor services team, a CRO data manager, or a study programmer. This direction makes open.gismo meaningfully better for a statistician who lives in a terminal and worse than useless for a data manager who does not open one. If the target user for &ldquo;bring your own study&rdquo; is that data manager, this direction is simply the wrong answer, and no amount of good terminal output rescues it. That is a question about who the product is for, and it should be settled before the code is written.</p>
+  </div>
+
+  <div class="decision">
+    <div class="id">W2 — the design one</div>
+    <h3>A right guess and a wrong guess look identical</h3>
+    <p>A screen can render a low-confidence match in amber and force a glance. A line of YAML cannot. The mitigation here — every generated line carries a trailing comment naming how it was matched and what the runner-up was — is genuinely weaker, because comments are the first thing a reader's eye skips. The measured case makes this concrete and uncomfortable: the wrong guess arrived through the <i>highest</i>-confidence tier, so an honest confidence annotation would have marked it green.</p>
+  </div>
+
+  <div class="decision">
+    <div class="id">W3</div>
+    <h3>There is no look-at-my-data moment</h3>
+    <p>No distinct-value browser, no cross-tab, no &ldquo;show me twenty rows of PARAM.&rdquo; A statistician will do that in R in another pane, so nothing is blocked — but the product learns nothing from it, and the first contact a user has with a brand-new delivery is a wall of problems rather than a look at their study.</p>
+  </div>
+
+  <div class="decision">
+    <div class="id">W4</div>
+    <h3>The edit volume is only tolerable if the ranking is right</h3>
+    <p>The measured run leaves 53 columns unsettled across 11 files. Only 12 of those are named by any metric — that ratio is the entire argument that this is a small job, and it depends completely on the diagnostic ordering findings by what they cost. Get the cost model wrong and the user edits 53 lines in 11 files and never comes back.</p>
+  </div>
+
+  <div class="decision">
+    <div class="id">W5</div>
+    <h3>The proof loop is slow</h3>
+    <p><span class="mono">og doctor</span> reads headers and a sample, so it is effectively instant. But the thing a user actually wants to see is the chart, and that costs a full <span class="mono">og run</span> — minutes on demo-301-sized inputs. There is no live preview and this direction does not offer one.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Where it is strongest, in one paragraph</h2>
+  <p>The clinical world's own answer to &ldquo;what is in this dataset&rdquo; is <span class="mono">define.xml</span> — a machine-readable document under version control, not a screen. Of the platforms surveyed on <a href="evidence.html#landscape">page 2</a>, not one produces a mapping that a second person can review as a diff, that CI can replay, or that arrives in an inspection folder as evidence. open.gismo already snapshots the study's workflows into the study's own folder; this direction is the one that finishes that thought. It is also the only direction that ships without asking another organisation for anything.</p>
+</section>
+
+<section id="decisions">
+  <h2>Decisions this direction needs from @jwildfire</h2>
+
+  <div class="decision">
+    <div class="id">C1</div>
+    <h3>Who is the person bringing their own study?</h3>
+    <p>A statistician or study programmer who works in R and git, or a data manager who works in a browser. Everything else follows from this, and it is the one question this direction cannot answer for itself — see W1.</p>
+    <div class="rec"><b>Recommendation</b> Commit to the statistician for v1 and say so in the documentation, because that is who forks demo-301 today. Revisit only when a second kind of user has actually asked.</div>
+  </div>
+
+  <div class="decision">
+    <div class="id">C2</div>
+    <h3>Does the generator write into the study's files, or into a file of its own?</h3>
+    <p>Writing <span class="mono">source_col:</span> lines into <span class="mono">workflows/1_mappings/*.yaml</span> puts the mapping where the engine reads it and where a reviewer expects it, but means a tool edits files a human also edits. A separate <span class="mono">config/mapping.yaml</span> that is merged at load time keeps them apart, at the cost of a second place to look and a merge rule.</p>
+    <div class="rec"><b>Recommendation</b> Write into the study's own files. One place, no merge semantics, and the diff is the review. Accept the line-writer verification cost.</div>
+  </div>
+
+  <div class="decision">
+    <div class="id">C3</div>
+    <h3>Should <span class="mono">og_run()</span> refuse while the diagnostic is red?</h3>
+    <p>Today it runs regardless and warns. Refusing is what makes the diagnostic the interface rather than an optional report — but it will block somebody mid-experiment.</p>
+    <div class="rec"><b>Recommendation</b> Refuse, with <span class="mono">og_run(force = TRUE)</span> available and every forced run stamped as forced in its own provenance record. Never silently.</div>
+  </div>
+
+  <div class="decision">
+    <div class="id">C4</div>
+    <h3>What formats does the door accept?</h3>
+    <p>Every reader in open.gismo today is <span class="mono">read.csv</span> — no <span class="mono">.xpt</span>, no <span class="mono">.sas7bdat</span>, no parquet, no database. A CRO delivery is transport files. Adding <span class="mono">haven</span> is a dependency and a documentation surface; refusing it means the user's first step is a conversion script the product does not help with.</p>
+    <div class="rec"><b>Recommendation</b> Accept <span class="mono">.xpt</span> and <span class="mono">.sas7bdat</span> via <span class="mono">haven</span>, because a transport file is what actually arrives. Leave parquet and databases out of v1 and say so.</div>
+  </div>
+
+  <div class="decision">
+    <div class="id">C5</div>
+    <h3>Where does the value-level seam live — open.gismo, or upstream in gsm.mapping?</h3>
+    <p>A <span class="mono">recode:</span> key in the spec would be the right home architecturally and would serve every gsm consumer. It also means a proposal to a repository this programme cannot write to, and a wait.</p>
+    <div class="rec"><b>Recommendation</b> Build it in open.gismo's loader now as <span class="mono">config/vocab/</span>. Draft the upstream <span class="mono">recode:</span> proposal after one real study has used the file format, and hand it to @jwildfire to post rather than filing it.</div>
+  </div>
+
+  <div class="decision">
+    <div class="id">C6</div>
+    <h3>Does the alias table get its own home and owner?</h3>
+    <p>52 rows lift straight out of <span class="mono">safetyCharts</span> (MIT, and @jwildfire is its author). The remainder is hand-written CDISC and EDC-vendor knowledge that will drift, and the measurement already found a miss caused by a single-valued default.</p>
+    <div class="rec"><b>Recommendation</b> Ship it as a versioned data file inside open.gismo with a regression test per standard, and treat the safetyCharts import as a seed rather than a dependency.</div>
+  </div>
+</section>
+
+<footer class="end">
+  <p><b>Boundaries.</b> Nothing was filed, edited, merged or moved. No code changed in <span class="mono">open.gismo</span> or any other repository. Competitor material on page 2 is from public documentation only — product docs, package reference indexes and user guides — and &ldquo;documented&rdquo; never means verified. The measurement scripts wrote only to <span class="mono">/tmp</span>.</p>
+  <p><b>Sibling artifacts from the same night.</b> A parallel session published <a href="../open-gismo-data-loading-2026-08-27/">Loading your own data into open.gismo</a>, which takes the screen-based direction and carries the full thirteen-platform landscape; a third is at <span class="mono">reports/og-data-loading-design-2026-08-27/</span>. This page deliberately does not repeat their landscape work and it disagrees with the screen direction on purpose. It is one of four; it should be read against them.</p>
+  <p>Drafted by Claude Code using Opus 5 for review by @jwildfire.</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What was measured</title>
+<meta name="description" content="The numbers behind the convention-over-configuration design: the 126-column contract, a matcher run against a CRO delivery, which metrics each gap costs, the alias table that already exists in safetyCharts, and which platforms treat a mapping as a file.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">open.gismo · convention over configuration · page 2 of 2</div>
+  <h1>What was measured, and how</h1>
+  <p class="standfirst">Every claim on the other two pages traces to something here: a contract read out of the workflow YAMLs, a matcher run against a hand-authored delivery, a dependency graph traced through the metric workflows' own specs, and a survey slice read from public documentation. The failures were executed rather than reasoned about.</p>
+  <nav class="parts">
+    <a href="index.html">The design</a>
+    <a href="walkthrough.html">1 · The hard case, step by step</a>
+    <a href="evidence.html" aria-current="page">2 · What was measured</a>
+  </nav>
+</header>
+
+<section>
+  <h2>1 · The contract</h2>
+  <p>Read on 2026-08-27 from <span class="mono">demo-301/workflows/1_mappings/*.yaml</span> — the study configuration that carries both the RBQM lens and the Safety charts, which is the realistic target for &ldquo;bring your own study.&rdquo; Every <span class="mono">Raw_*</span> domain in every <span class="mono">spec:</span> block, sentinel keys (names beginning <span class="mono">_</span>) dropped, merged across mappings.</p>
+  <div class="kpis">
+    <div class="kpi"><div class="n">14</div><div class="l">raw domains</div></div>
+    <div class="kpi"><div class="n">126</div><div class="l">distinct required columns</div></div>
+    <div class="kpi"><div class="n">30</div><div class="l">metric workflows, of which <b>1</b> declares no spec</div></div>
+    <div class="kpi"><div class="n">47</div><div class="l">distinct columns any metric names</div></div>
+  </div>
+  <p class="note"><span class="mono">og_init()</span>'s default snapshot is smaller — 13 mapping workflows, 12 raw domains, 90 columns — because it omits ECG, inclusion/exclusion and the safety-chart mappings. Both numbers are correct; they describe different studies.</p>
+  <p>Two properties of the contract that shape any design:</p>
+  <ul class="bul">
+    <li><b>It is not CDISC.</b> <span class="mono">Raw_SITE</span> alone asks for lower-case <span class="mono">studyid</span>, <span class="mono">invid</span>, <span class="mono">site_status</span> beside CamelCase <span class="mono">InvestigatorFirstName</span>, <span class="mono">City</span>, <span class="mono">State</span>, <span class="mono">Country</span>. Elsewhere it asks for <span class="mono">subject_nsv</span>, <span class="mono">mdrsoc_nsv</span>, <span class="mono">toxgrg_nsv</span>, <span class="mono">mincreated_dts</span>, <span class="mono">agerep</span> — operational EDC vocabulary, not a standard.</li>
+    <li><b>Nothing marks a column optional.</b> All 126 read as required, so the readiness check treats a decorative field and a metric's divisor identically. Every honest design has to introduce that distinction; this one does it by pricing rather than by a flag, because the cost of a column is a property of the workflows that run, not of the column.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>2 · The delivery, and the matcher run</h2>
+  <p>Seven files, 105 source columns, authored from the CDISC ADaM IG and SDTMIG variable lists plus EDC-vendor export conventions — written before the alias table, so the matcher gets no help from having been fitted to it. Both were written by the same author, which is the honest limitation of this measurement and is stated again at the bottom.</p>
+
+  <h3>Tier 0 — no aliases at all</h3>
+  <p>Exact case-insensitive name matching across the whole delivery settles <b>44 of 126</b>. That is higher than the &ldquo;a conformant CDISC package matches zero&rdquo; framing suggests, and the reason matters: most of the 44 are <span class="mono">studyid</span>, <span class="mono">subjid</span>, <span class="mono">country</span>, <span class="mono">sex</span>, <span class="mono">race</span>, <span class="mono">arm</span> repeated across domains, plus the EDC vendor's <span class="mono">City</span>/<span class="mono">State</span>/<span class="mono">Country</span>, which are not CDISC at all.</p>
+  <div class="callout bad">
+    <span class="lede">✖ The most confident tier produced the worst error</span>
+    <p><span class="mono">Raw_SUBJ.subjid ← SUBJID</span> is one of those 44. In ADaM, <span class="mono">SUBJID</span> is the site-level subject number and <span class="mono">USUBJID</span> is the study-unique one; <span class="mono">adae</span> and <span class="mono">adlb</span> carry only <span class="mono">USUBJID</span>, so those domains resolve <span class="mono">subjid</span> to a different identifier. Case-insensitive exact matching is the highest-confidence rule available and here it is the one that breaks the study. Any design that ranks matches by confidence will rank this one first.</p>
+  </div>
+
+  <h3>Tiers 1 and 2 — the alias table</h3>
+  <div class="kpis">
+    <div class="kpi"><div class="n">73</div><div class="l">of 126 settled with no human input (58%)</div></div>
+    <div class="kpi"><div class="n">22</div><div class="l">of the 34 metric-relevant columns settled</div></div>
+    <div class="kpi"><div class="n">12</div><div class="l">metric-relevant columns left open</div></div>
+    <div class="kpi"><div class="n">11</div><div class="l">settled by aliases lifted from safetyCharts</div></div>
+  </div>
+
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>Domain</th><th class="num">settled</th><th class="num">of</th><th>Left open</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">Raw_ENROLL</td><td class="num">7</td><td class="num">7</td><td><span class="tag ok">✔ complete</span></td></tr>
+      <tr><td class="mono">Raw_QUERY</td><td class="num">5</td><td class="num">5</td><td><span class="tag ok">✔ complete</span></td></tr>
+      <tr><td class="mono">Raw_SITE</td><td class="num">9</td><td class="num">9</td><td><span class="tag ok">✔ complete</span></td></tr>
+      <tr><td class="mono">Raw_AE</td><td class="num">14</td><td class="num">16</td><td class="mono">aeongo, mincreated_dts</td></tr>
+      <tr><td class="mono">Raw_LB</td><td class="num">11</td><td class="num">14</td><td class="mono">lbstnrlo, lbstnrhi, toxgrg_nsv</td></tr>
+      <tr><td class="mono">Raw_SUBJ</td><td class="num">11</td><td class="num">15</td><td class="mono">subject_nsv, timeonstudy, firstparticipantdate, mincreated_dts</td></tr>
+      <tr><td class="mono">Raw_PD</td><td class="num">5</td><td class="num">6</td><td class="mono">deemedimportant</td></tr>
+      <tr><td class="mono">Raw_STUDCOMP</td><td class="num">5</td><td class="num">6</td><td class="mono">mincreated_dts</td></tr>
+      <tr><td class="mono">Raw_DATACHG</td><td class="num">3</td><td class="num">4</td><td class="mono">n_changes</td></tr>
+      <tr><td class="mono">Raw_DATAENT</td><td class="num">3</td><td class="num">4</td><td class="mono">data_entry_lag</td></tr>
+      <tr><td class="mono">Raw_EG</td><td class="num">0</td><td class="num">10</td><td><span class="tag no">✖ nothing delivered</span></td></tr>
+      <tr><td class="mono">Raw_IE</td><td class="num">0</td><td class="num">10</td><td><span class="tag no">✖ nothing delivered</span></td></tr>
+      <tr><td class="mono">Raw_SDRGCOMP</td><td class="num">0</td><td class="num">5</td><td><span class="tag no">✖ nothing delivered</span></td></tr>
+      <tr><td class="mono">Raw_STUDY</td><td class="num">0</td><td class="num">15</td><td><span class="tag no">✖ no CTMS extract</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Three domains complete themselves entirely, and the two biggest holes are domains nobody sent rather than columns nobody matched. That shape is what makes &ldquo;decline it, and here is what it costs&rdquo; the right primitive: a third of the outstanding work is not mapping at all, it is a study telling the product what it does not have.</p>
+
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>How the 73 were settled</th><th class="num">columns</th><th>Reliability</th></tr></thead>
+    <tbody>
+      <tr><td>Exact, case-insensitive name match</td><td class="num">27</td><td><span class="tag part">⚠ includes the error above</span></td></tr>
+      <tr><td>EDC-vendor export conventions (hand)</td><td class="num">16</td><td><span class="tag ok">✔ strong within a vendor</span></td></tr>
+      <tr><td>CDISC IG variable index (hand)</td><td class="num">13</td><td><span class="tag ok">✔ strong</span></td></tr>
+      <tr><td><span class="mono">safetyCharts::meta_aes</span></td><td class="num">6</td><td><span class="tag ok">✔ per-standard defaults</span></td></tr>
+      <tr><td><span class="mono">safetyCharts::meta_labs</span></td><td class="num">4</td><td><span class="tag ok">✔ per-standard defaults</span></td></tr>
+      <tr><td>Semantically near, not equal (hand, flagged weak)</td><td class="num">6</td><td><span class="tag part">⚠ must be reviewed</span></td></tr>
+      <tr><td><span class="mono">safetyCharts::meta_dm</span></td><td class="num">1</td><td><span class="tag ok">✔ per-standard defaults</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The six flagged weak are the interesting ones and they are why a matcher must be able to say &ldquo;near&rdquo;: <span class="mono">Raw_SUBJ.enrollyn ← ITTFL</span>, <span class="mono">Raw_ENROLL.enroll_dt ← RANDDT</span>, <span class="mono">Raw_STUDCOMP.compyn ← COMPLFL</span>, <span class="mono">Raw_STUDCOMP.compreas ← DCSREAS</span>, <span class="mono">Raw_LB.battrnam ← PARCAT1</span>. Each is defensible and each is a study-specific judgement — an intent-to-treat flag is not an enrolment flag, and randomisation is not enrolment. These are exactly the lines a reviewer needs to see in a diff, and exactly the ones a wizard would let a user click past.</p>
+</section>
+
+<section>
+  <h2>3 · Pricing — what each gap actually costs</h2>
+  <p>Traced through the metric workflows' own <span class="mono">spec:</span> blocks in <span class="mono">demo-301/workflows/2_metrics/</span>: 30 workflows, 136 spec entries, 47 distinct <span class="mono">Mapped_*</span> columns. The dependency is heavily concentrated.</p>
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th class="mono">column</th><th class="num">metric workflows that name it</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">Mapped_SUBJ.subjid</td><td class="num">24</td></tr>
+      <tr><td class="mono">Mapped_SUBJ.invid</td><td class="num">12</td></tr>
+      <tr><td class="mono">Mapped_SUBJ.country</td><td class="num">11</td></tr>
+      <tr><td class="mono">Mapped_SUBJ.timeonstudy</td><td class="num">8</td></tr>
+      <tr><td class="mono">Mapped_AE.subjid</td><td class="num">5</td></tr>
+      <tr><td class="mono">Mapped_PD.subjid</td><td class="num">4</td></tr>
+      <tr><td class="mono">Mapped_PD.deemedimportant</td><td class="num">4</td></tr>
+      <tr><td class="mono">Mapped_QUERY.querystatus</td><td class="num">4</td></tr>
+      <tr><td class="mono">Mapped_LB.subjid</td><td class="num">3</td></tr>
+      <tr><td class="mono">Mapped_AE.aeser</td><td class="num">3</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Only <b>34 of the 126</b> required columns are named by any metric at all. The other 92 feed reporting, labels and the study masthead. That ratio is the load-bearing fact under this whole direction: the mapping job a user must actually get right is a quarter of the size the contract implies, and a diagnostic that orders findings by cost turns a 53-line chore into a 12-line one. Get the ordering wrong and the direction fails on volume — that is W4 on the design page.</p>
+
+  <h3>The two executed failures</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="lbl">failure 1 · silent</div>
+      <h3>Empty join</h3>
+      <p><span class="mono">Mapped_LB</span> and <span class="mono">Mapped_AE</span> arrive with zero rows. Metrics that go to zero at every site: <span class="mono">cou0001 cou0002 cou0005 kri0001 kri0002 kri0005 saf0001 saf0003</span> — 8 of 29. Metrics that still report normally: 21. No error, no warning, no missing column.</p>
+      <p><span class="mono">srs0001</span> declares <b>no spec at all</b>, so it weights whichever <span class="mono">kri*</span> workflows ran. A partial mapping therefore changes the site risk score's denominator instead of failing — the silent-divisor defect, arriving through the data-loading door.</p>
+    </div>
+    <div class="card">
+      <div class="lbl">failure 2 · loud but unpriced</div>
+      <h3>Unobtainable column</h3>
+      <p><span class="mono">Raw_LB.toxgrg_nsv</span> has no source in SDTM or ADaM. It costs exactly <span class="mono">cou0005</span> and <span class="mono">kri0005</span>, and one input to <span class="mono">srs0001</span>. Today the user is told &ldquo;missing column: toxgrg_nsv&rdquo; and is given no way to tell whether that is fatal or cosmetic, and nowhere to say so if it is permanent.</p>
+    </div>
+  </div>
+</section>
+
+<section id="asset">
+  <h2>4 · The asset that already exists — and its first bug</h2>
+  <p><span class="mono">safetyCharts</span> ships nine metadata tables, 82 rows, each row carrying <span class="mono">standard_adam</span> and <span class="mono">standard_sdtm</span> defaults. It is MIT-licensed and @jwildfire is its author and maintainer. It contains two kinds of row, and the second kind is the more interesting one:</p>
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th class="mono">type</th><th class="num">rows</th><th>What it maps</th><th>gsm.mapping equivalent</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">column</td><td class="num">68</td><td>A chart role to a standard's variable name — <span class="mono">value_col</span> → <span class="mono">AVAL</span> / <span class="mono">LBSTRESN</span></td><td><span class="mono">source_col</span> exists; the defaults do not</td></tr>
+      <tr><td class="mono">field</td><td class="num">14</td><td>A chart's literal value to a standard's value — <span class="mono">measure_values--ALT</span> → <span class="mono">"Alanine Aminotransferase (U/L)"</span> in ADaM, <span class="mono">"Alanine Aminotransferase"</span> in SDTM</td><td><span class="tag no">✖ no seam at all</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The 14 <span class="mono">field</span> rows are a value-level metadata layer that safetyGraphics has had for years and that gsm has nowhere — which is why <span class="mono">hep_explorer.yaml</span> ends up carrying four bare literal strings in <span class="mono">lSettings.measure_values</span> that a study must happen to match. The ADaM defaults in those rows even carry the units inside the string, <span class="mono">"Alanine Aminotransferase (U/L)"</span>, which is exactly the unit problem showing through the vocabulary.</p>
+  <p>Bridging chart roles to gsm columns takes a hand-written table of 29 pairs. Doing that yields <b>52 alias rows covering 26 gsm columns</b> for free.</p>
+  <div class="callout warn">
+    <span class="lede">⚠ And the seed's first defect, found by running it</span>
+    <p><span class="mono">meta_labs</span> gives the ADaM reference range as <span class="mono">A1LO</span> / <span class="mono">A1HI</span>. The delivery used <span class="mono">ANRLO</span> / <span class="mono">ANRHI</span>. Both are legitimate ADaM spellings for an analysis reference range, so the alias missed a column it should have caught, and <span class="mono">Raw_LB.lbstnrlo</span> / <span class="mono">lbstnrhi</span> landed in the unsettled pile — with <span class="mono">lbstnrhi</span> being one of the 34 columns a metric names.</p>
+    <p>The lesson is a design requirement, not a complaint: aliases must be many-to-one, with several accepted spellings per standard, and the table needs a regression test per standard rather than a one-time import. That is decision C6.</p>
+  </div>
+</section>
+
+<section id="landscape">
+  <h2>5 · The landscape, read through one question</h2>
+  <p>The thirteen-platform survey is not repeated here — the <a href="../platform-gap-analysis-2026-07-25/">gap analysis</a> holds it and the <a href="../open-gismo-data-loading-2026-08-27/landscape.html">sibling artifact</a> re-visited it for the screen-based direction. This slice asks one question of the same sources: <b>when a platform's mapping is finished, is there a file, and does the study own it?</b></p>
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>Platform</th><th>How a user's data gets in</th><th>Mapping is a file?</th><th>In the study's own VCS?</th></tr></thead>
+    <tbody>
+      <tr><td>teal / teal.modules.clinical</td><td>You hand it ADaM. There is no mapping surface — the mapping <i>is</i> your ADaM programming.</td><td><span class="tag ok">✔ your ADaM code</span></td><td><span class="tag ok">✔ yes</span></td></tr>
+      <tr><td>clinDataReview</td><td>YAML configuration per report, run from the console.</td><td><span class="tag ok">✔ YAML</span></td><td><span class="tag ok">✔ yes</span></td></tr>
+      <tr><td>DaVinci <span class="mono">dv.*</span></td><td>Modules take pre-shaped R data frames; shaping is your code.</td><td><span class="tag ok">✔ your code</span></td><td><span class="tag ok">✔ yes</span></td></tr>
+      <tr><td>safetyGraphics</td><td>Both: <span class="mono">detectStandard()</span> pre-fills an interactive mapping tab, and <span class="mono">safetyGraphicsApp()</span> also accepts a <span class="mono">mapping</span> argument programmatically.</td><td><span class="tag part">⚠ if you use the R path</span></td><td><span class="tag part">⚠ if you save it</span></td></tr>
+      <tr><td>tidyCDISC</td><td>Upload; a missing required variable is rejected. No mapping surface.</td><td><span class="tag no">✖ none</span></td><td><span class="tag no">✖ n/a</span></td></tr>
+      <tr><td>JMP Clinical</td><td>Points at SDTM / ADaM libraries with a domain-detection step on load.</td><td><span class="tag part">⚠ project state</span></td><td><span class="tag no">✖ no</span></td></tr>
+      <tr><td>Medidata Clinical Data Studio</td><td>Platform-side ingestion and standardisation, configured in the product.</td><td><span class="tag no">✖ platform state</span></td><td><span class="tag no">✖ no</span></td></tr>
+      <tr><td>Veeva CDB</td><td>Platform-side ingestion; conversion to a canonical model is the product's job.</td><td><span class="tag no">✖ platform state</span></td><td><span class="tag no">✖ no</span></td></tr>
+      <tr><td>elluminate</td><td>A data-mapping surface inside the platform, typically run with vendor services.</td><td><span class="tag no">✖ platform state</span></td><td><span class="tag no">✖ no</span></td></tr>
+      <tr><td>CluePoints</td><td>Ingestion and mapping delivered as part of the engagement.</td><td><span class="tag no">✖ vendor-side</span></td><td><span class="tag no">✖ no</span></td></tr>
+      <tr><td>Oracle Empirica Signal</td><td>Configured data ingestion into the platform's own model.</td><td><span class="tag no">✖ platform state</span></td><td><span class="tag no">✖ no</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Documented, not verified: each row reflects what the platform's public documentation, package reference index or user guide describes. Nothing was tested, no demo requested, no vendor contacted, and vendor documentation flatters. Where a row is a judgement about the shape of the product rather than a documented feature, it is written as such.</p>
+
+  <h3>Three readings of that table</h3>
+  <ul class="bul">
+    <li><b>The open-source R half already does what this direction proposes</b> — and does it by having no mapping surface at all. teal expects ADaM and stops there. That is convention over configuration in its purest form, and it works because ADaM is an industry standard with an entire profession behind it. gsm's raw layer has no such profession, so a design that copies teal's posture without supplying the generator and the diagnostic just reproduces tidyCDISC: reject the file, explain nothing.</li>
+    <li><b>The commercial half maps the data for you, using people.</b> At the top of the market nobody maps their own study; a services team does. That is the honest reason a wizard is not obviously the right answer for this product — the person who would use one is not the person who has the problem — and it is also the reason this direction concedes an audience (W1).</li>
+    <li><b>Nobody produces a reviewable artifact.</b> Not one surveyed platform leaves the study with a mapping a second person can review as a diff, that CI can replay, or that arrives in an inspection folder as evidence. Meanwhile the industry's own answer to &ldquo;what is in this dataset&rdquo; is <span class="mono">define.xml</span> — a machine-readable document, not a screen. open.gismo already snapshots the study's workflows into the study's own folder. This direction is the one that finishes that thought.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>6 · Method, and what would change these numbers</h2>
+  <ul class="bul">
+    <li><b>The contract</b> was extracted with a script that reproduces <span class="mono">.og_input_specs()</span>'s rules — <span class="mono">Raw_*</span> only, sentinel keys dropped, merged across mappings — pointed at <span class="mono">demo-301/workflows/1_mappings/</span> rather than an <span class="mono">og_init()</span> scaffold, so it describes a study that runs both lenses.</li>
+    <li><b>The dependency graph</b> was read from the metric workflows' own <span class="mono">spec:</span> blocks and mapped back from <span class="mono">Mapped_*</span> to <span class="mono">Raw_*</span> by domain name. Where a mapping renames a column between raw and mapped, that trace would be wrong; in demo-301's mappings the selects are identity for every column in the graph, so it is not.</li>
+    <li><b>The environment</b> was <span class="mono">workr 1.0.0 / gsm.core 1.2.0 / gsm.mapping 1.1.3 / gsm.kri 1.5.0 / gsm.reporting 1.1.5</span>, against <span class="mono">open.gismo</span> at <span class="mono">dev</span> v0.2.0.</li>
+    <li><b>Confirmations run directly:</b> the string <span class="mono">source_col</span> appears nowhere in <span class="mono">open.gismo/R/</span> or <span class="mono">inst/</span>; <span class="mono">og_run.R</span> never calls <span class="mono">og_validate()</span>, while <span class="mono">og_app.R</span> does; no reader anywhere in the package touches <span class="mono">haven</span>, <span class="mono">.xpt</span>, <span class="mono">sas7bdat</span>, <span class="mono">arrow</span>, <span class="mono">readxl</span> or <span class="mono">DBI</span> — eleven read sites, all <span class="mono">read.csv</span>.</li>
+  </ul>
+
+  <div class="callout">
+    <span class="lede">What would move the 73</span>
+    <p><b>Both halves were written by the same author.</b> The delivery came from the CDISC variable lists and the alias table came from safetyCharts plus the same lists, so a shared assumption inflates the score in a way a real CRO delivery would not. The number to trust is the shape, not the value: name matching alone gets roughly a third, a standards-aware alias table roughly another quarter, and the residue is dominated by domains nobody sent rather than by columns nobody matched. A second delivery from a different EDC vendor would move the vendor-convention 16 more than anything else. Running this against a real, non-synthetic delivery is the first thing that should happen if this direction is picked.</p>
+  </div>
+</section>
+
+<footer class="end">
+  <p><b>Boundaries.</b> Read-only throughout. Nothing was filed, edited, merged or moved; no code changed in any repository; the measurement scripts wrote only to <span class="mono">/tmp</span>. Competitor material is from public documentation only — product documentation, package reference indexes and user guides — and &ldquo;documented&rdquo; never means verified.</p>
+  <p>Drafted by Claude Code using Opus 5 for review by @jwildfire.</p>
+</footer>
+
+</div>
+</body>
+</html>
