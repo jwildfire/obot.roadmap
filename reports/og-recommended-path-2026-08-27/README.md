@@ -155,6 +155,14 @@ substitutions get carried onto the study site.
 - Verified with an iframe probe at a real 390px viewport: `scrollWidth` 390 on all three pages,
   zero elements overflowing without their own scroll container — including every one of the flow's
   eight steps with all answers applied, and the bench with the grid expanded and a row open.
+  That probe ran before the recommendation was hoisted into the standfirst and the two sections on
+  `gsm.mapping` and the landscape were added. Those additions were **not** re-probed in a browser;
+  they were checked structurally instead, and the check is stated so it can be discounted: they
+  reuse only patterns the probe already cleared on this page (`.grid.two`, which collapses below
+  17rem; `.tablewrap`, `overflow-x: auto`; `.term pre`, the same), and their longest unbreakable
+  prose token is 24 characters against 33 already on the page, their longest terminal line 55
+  against 60. Re-probing the published page is a five-minute job for the next session at a
+  keyboard.
 - The interactive paths were exercised in-browser, including the failure states: the ledger runs
   0/16/0/23 → 9/3/4/23 → 16/0/0/23 as answers land, the diagnostic refuses and then passes, and
   binding the trap column on the bench produces the zero-overlap refusal and a repair offer.
