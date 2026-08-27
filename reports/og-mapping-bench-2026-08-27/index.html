@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Mapping Bench</title>
+<meta name="description" content="A design direction for loading your own study into open.gismo: one dense screen showing all 126 required columns beside your delivered ones, four dispositions per row, and the price of every decision printed while you make it.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">open.gismo &middot; data-loading design &middot; page 1 of 3</p>
+    <h1>The Mapping Bench</h1>
+    <p class="standfirst">One direction of four for getting a real study into open.gismo, and it is the unfashionable one: put every column the pipeline needs beside every column the study delivered, on one dense screen, and let a person who knows their own data connect them. No wizard. No guessing. Every decision priced while it is being made.</p>
+    <p class="byline">Design session, 2026-08-27 &middot; extends row <strong>D1</strong> of the <a href="../platform-gap-analysis-2026-07-25/">platform gap analysis</a></p>
+    <nav class="pages">
+      <a href="index.html" aria-current="page">The direction</a>
+      <a href="bench.html">The bench, working</a>
+      <a href="hard-case.html">The hard case, executed</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <h2>The commitment</h2>
+
+  <p>The user this design serves is a <strong>clinical data manager</strong>. They have had the study's data in their hands for eighteen months. They know that the local labs write <code>ALT (SGPT)</code>, that site 4275 puts its number in front of the subject ID, and that nobody ever collected CTCAE grades on this protocol. They do not need a tool to discover any of that. They need a tool that will let them <em>say</em> it, quickly, once, in a form the machine will act on and a colleague can review.</p>
+
+  <p>So the bench optimises for the expert, and it accepts the consequences: it is dense, it is one screen rather than four steps, and it will not pre-fill a single guess. Its promise is not <em>this will be easy</em>. Its promise is a different one: nothing happens that you did not decide, and you see what each decision costs before you make it.</p>
+
+  <div class="callout">
+    <p>Everything downstream of the mapping in this portfolio is already committed to that bargain. Workflows are declarative YAML in the study's own folder. Provenance traces a number back to its snapshot and its package pins. Requirements link to published evidence. The mapping surface is the last place where the answer is <em>trust us</em> — and it happens to be the place where the wrong answer is least visible.</p>
+  </div>
+
+  <h2>Why the loading step needs a surface at all</h2>
+
+  <p>open.gismo v0.2.0 runs a plain project folder with no GitHub, no Actions and no server, and reads the results back as a study site. The unit is already right. The question is how a person's own data gets into one, and the honest answer today is one line of README — put files called <code>Raw_AE.csv</code> in <code>input/</code> — plus <code>og_validate()</code>, which reports what is wrong and gives you nowhere to fix it.</p>
+
+  <p>The gap is not "rename some columns". gsm's raw vocabulary is neither SDTM nor ADaM: the findings domains are lower-case SDTM-adjacent (<code>lbstresn</code>, <code>lbstnrhi</code>, <code>aeser</code>), while subject, site and enrolment are operational-EDC shaped (<code>invid</code>, <code>agerep</code>, <code>subject_nsv</code>, <code>mincreated_dts</code>), and two columns the pipeline requires — <code>toxgrg_nsv</code> and <code>mdrsoc_nsv</code> on an uncoded study — have no source in either standard. A sponsor with immaculate CDISC still has to map.</p>
+
+  <div class="callout">
+    <p>The mapping surface is the front door for everybody, not a concession to messy data.</p>
+  </div>
+
+  <p>Against the surveyed field this is table stakes rather than differentiation. Row D1 of the gap analysis counted a mapping surface on at least four of thirteen platforms; the <a href="../open-gismo-data-loading-2026-08-27/landscape.html">companion session's closer reading</a> corrects the membership — tidyCDISC has none and rejects the upload outright, Medidata, Veeva and Empirica all have one and were not credited — but the count stands. What is <em>not</em> on any of them is a mapping surface whose output is a file in the user's own repository. That part is ours to take.</p>
+
+  <h2>The design, in one screen</h2>
+
+  <p>Fourteen domains, 126 columns, in a collapsible grid. Each row is one target column: its name, its declared type, whether it is a key, what it is bound to, two real values from the user's file, and what names it downstream. A drawer on the right answers <em>what does this cost</em>, <em>do the keys line up</em>, <em>are the values recognised</em>, and <em>what is being written to my files</em>.</p>
+
+  <p><a href="bench.html"><strong>The bench is clickable</strong></a> — go work it, then come back for the argument.</p>
+
+  <h3>Four dispositions, not two</h3>
+
+  <p>A binary mapped/unmapped grid is where these screens go wrong. It gives an expert nowhere to put what they know. Every row here is exactly one of four states, and each writes something different into the project:</p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Disposition</th><th>Means</th><th>What it writes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="dispo"><span class="dot bound"></span>Bound</span></td>
+          <td>This target comes from that column of that file.</td>
+          <td><code>source_col:</code> on the spec entry — the key gsm.mapping already has and open.gismo never exposed.</td>
+        </tr>
+        <tr>
+          <td><span class="dispo"><span class="dot derived"></span>Derived</span></td>
+          <td>It is computable from columns that are delivered.</td>
+          <td>A generated <code>gsm.core::RunQuery</code> step in the same mapping workflow — the same mechanism demo-301's <code>LB.yaml</code> already uses by hand.</td>
+        </tr>
+        <tr>
+          <td><span class="dispo"><span class="dot const"></span>Constant</span></td>
+          <td>The study has one answer and the delivery does not carry it.</td>
+          <td>A literal in the generated step, recorded as a decision rather than as data.</td>
+        </tr>
+        <tr>
+          <td><span class="dispo"><span class="dot declined"></span>Declined</span></td>
+          <td>It does not exist for this study, and I know what that costs.</td>
+          <td>A commented entry carrying the person's reason, so the judgement travels with the study.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Declining is the disposition that makes the direction work. It is what lets an expert say <em>I know, and I am choosing</em>, and it is what turns 126 intimidating rows into a finite piece of work. The bench prints the price — the eight workflows that stop when <code>timeonstudy</code> goes, the fifteen that stop when the seven undelivered domains are declined together — and then records the reason.</p>
+
+  <h3>Where the four dispositions land</h3>
+
+  <svg viewBox="0 0 760 250" width="100%" height="auto" role="img" aria-labelledby="d-t d-d" style="max-width:48rem;margin:1.4rem 0;display:block">
+    <title id="d-t">How each disposition reaches the engine</title>
+    <desc id="d-d">Bound writes a source_col key into the spec block. Derived and Constant write a generated query step. Declined writes a commented entry with a reason. All four land in the project's own mapping YAML, which gsm.mapping's ApplySpec and the study's own steps then execute. No change is required to any package.</desc>
+    <defs>
+      <marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+        <path d="M0,0 L7,3.5 L0,7 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <g fill="currentColor" font-family="var(--f-display)" font-size="12" color="currentColor">
+      <rect x="2" y="12" width="150" height="212" rx="9" fill="none" stroke="currentColor" stroke-opacity=".28"/>
+      <text x="14" y="32" font-size="11" font-weight="700" letter-spacing=".07em">THE BENCH</text>
+      <g font-size="11.5">
+        <rect x="14" y="44" width="126" height="30" rx="6" fill="var(--good-tint)" stroke="var(--good-ink)" stroke-opacity=".5"/>
+        <text x="24" y="63" fill="var(--good-ink)" font-weight="650">Bound</text>
+        <rect x="14" y="82" width="126" height="30" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-opacity=".5"/>
+        <text x="24" y="101" fill="var(--accent-deep)" font-weight="650">Derived</text>
+        <rect x="14" y="120" width="126" height="30" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-opacity=".5"/>
+        <text x="24" y="139" fill="var(--accent-deep)" font-weight="650">Constant</text>
+        <rect x="14" y="158" width="126" height="30" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="24" y="177" font-weight="650">Declined</text>
+      </g>
+      <g stroke="currentColor" stroke-opacity=".45" fill="none" marker-end="url(#ar)">
+        <path d="M144,59 H236"/>
+        <path d="M144,97 C190,97 190,120 236,120"/>
+        <path d="M144,135 C190,135 190,127 236,127"/>
+        <path d="M144,173 H236"/>
+      </g>
+      <g>
+        <rect x="240" y="12" width="238" height="212" rx="9" fill="none" stroke="currentColor" stroke-opacity=".28"/>
+        <text x="252" y="32" font-size="11" font-weight="700" letter-spacing=".07em">workflows/1_mappings/LB.yaml</text>
+        <text x="252" y="34" font-size="11" opacity="0"> </text>
+        <rect x="252" y="44" width="214" height="34" rx="6" fill="var(--surface-2)"/>
+        <text x="262" y="58" font-family="var(--f-mono)" font-size="10.5">spec: … source_col: LBSTRESN</text>
+        <text x="262" y="72" font-size="10.5" opacity=".7">the key that already exists</text>
+        <rect x="252" y="104" width="214" height="34" rx="6" fill="var(--surface-2)"/>
+        <text x="262" y="118" font-family="var(--f-mono)" font-size="10.5">steps: gsm.core::RunQuery</text>
+        <text x="262" y="132" font-size="10.5" opacity=".7">generated SQL, in your file</text>
+        <rect x="252" y="158" width="214" height="34" rx="6" fill="var(--surface-2)"/>
+        <text x="262" y="172" font-family="var(--f-mono)" font-size="10.5"># toxgrg_nsv: DECLINED — …</text>
+        <text x="262" y="186" font-size="10.5" opacity=".7">the reason, kept</text>
+      </g>
+      <path d="M470,118 H556" stroke="currentColor" stroke-opacity=".45" fill="none" marker-end="url(#ar)"/>
+      <g>
+        <rect x="560" y="60" width="196" height="120" rx="9" fill="none" stroke="currentColor" stroke-opacity=".28"/>
+        <text x="572" y="82" font-size="11" font-weight="700" letter-spacing=".07em">UNCHANGED</text>
+        <text x="572" y="104" font-family="var(--f-mono)" font-size="11">gsm.mapping::ApplySpec</text>
+        <text x="572" y="122" font-family="var(--f-mono)" font-size="11">gsm.core::RunQuery</text>
+        <text x="572" y="140" font-family="var(--f-mono)" font-size="11">workr</text>
+        <text x="572" y="164" font-size="10.5" opacity=".75">no upstream change needed</text>
+      </g>
+    </g>
+  </svg>
+
+  <p>That last box is the direction's central engineering claim. gsm.mapping's spec accepts exactly two keys, <code>type</code> and <code>source_col</code> (<code>ApplySpec.R:42</code>), and the mapping workflow accepts arbitrary <code>steps:</code> running DuckDB SQL. Between them they can express everything above. The bench needs nothing from Gilead-BioStats. A design that proposes a new <code>recode:</code> key upstream is proposing a dependency on another organisation's release cycle for a feature that can ship this month against a seam that already exists — and the generated steps are the evidence a later upstream proposal should be built on.</p>
+
+  <h2>What it does automatically, and what it asks</h2>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Automatic, always</h3>
+      <ul>
+        <li>Profiles every delivered file: header, row count, distinct values, blank count and two real samples per column.</li>
+        <li>Ranks candidate columns and <em>prints the reason</em> — identical name, alias list, name contains.</li>
+        <li>Computes the downstream cost of every column and every domain from the project's own workflows.</li>
+        <li>Measures key overlap after a run, rather than assuming it from names.</li>
+        <li>Inventories the distinct values of any column a module filters on literal strings.</li>
+        <li>Writes and rewrites the project's mapping YAML.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Always asks</h3>
+      <ul>
+        <li>Which delivered file is which domain. This one it will not even propose without printing how confident it is.</li>
+        <li>Every non-identical binding.</li>
+        <li>Every derivation's expression.</li>
+        <li>Every constant's value.</li>
+        <li>Every decline's reason.</li>
+        <li>Whether to run.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <h3>Why the file-to-domain assignment is asked and not taken</h3>
+    <p>A coverage-based file proposer was built and run against the delivery on the bench page. It gets seven of fourteen right, correctly abstains on one, and is confidently, plausibly wrong on six: it proposes the liver-laboratory file for <code>Raw_DATACHG</code> at 75% name coverage, for <code>Raw_DATAENT</code> at 75%, for <code>Raw_STUDCOMP</code> at 50% and for <code>Raw_SDRGCOMP</code> at 40%, and demographics for <code>Raw_IE</code> at 50%. It scores that well because nine of the fourteen domains want a <code>studyid</code>, a subject identifier and a date, so <em>every</em> file matches <em>every</em> domain.</p>
+    <p>Those are exactly the wrong-in-the-worst-direction mistakes: a wrong file that mostly maps produces a domain full of plausible nonsense that passes every type check the product runs. The bench prints the coverage number, shows the proposal, and makes a person accept it — and the number it prints is the argument for making them.</p>
+  </div>
+
+  <h2>The moment of highest friction</h2>
+
+  <p>It is not matching columns. On the constructed delivery, with the seven files a person would actually assign, <strong>27</strong> of 126 targets match by identical name and another <strong>39</strong> have a plausible candidate. Those 66 rows take a competent person about ten minutes.</p>
+
+  <p>The friction is the other <strong>60</strong>: the rows with nothing to put in them. Six sit in domains that <em>were</em> delivered — <code>toxgrg_nsv</code>, because this EDC never captured CTCAE grades; <code>deemedimportant</code>, because the deviation extract has no importance flag; <code>mincreated_dts</code>, because the CRO dropped audit timestamps. The other <strong>54</strong> are worse: they belong to the seven of fourteen domains that have no candidate file at all, because an EDC export simply does not contain data-change rates, data-entry lags or study-completion records.</p>
+
+  <p>This is where a person closes the tab. A grid of empty boxes with a red <em>required</em> beside each one reads as <em>you cannot use this product</em>, and the honest response — <em>most of it will work fine</em> — is invisible.</p>
+
+  <div class="callout good">
+    <p><strong>The bench's answer is Decline, priced.</strong> An empty row is not a failure state; it is one of four legitimate answers, and the expensive ones are labelled. Decline <code>Raw_SUBJ.timeonstudy</code> and eight workflows go. Decline the whole <code>Raw_DATACHG</code> domain and four go. Decline all seven undelivered domains in one action and the bench says what is left standing, computed from the project's own workflows: <strong>26</strong> of the 41 data-driven workflows still run — all eight safety charts including the Hepatic Safety Explorer, the Hy's Law candidate metric, the AE listing, the adverse-event, deviation, Grade 3+ lab, query-age and enrolment metrics at both site and country level, and both reporting workflows. Fifteen stop: study completion, study-drug completion, data change, data entry, both quality tolerance limits, the ECG chart and the QTL report.</p>
+    <p>That is a completely different message from <em>67 columns missing</em>, and it is the same fact.</p>
+  </div>
+
+  <p>There is one consequence the screen can warn about and cannot prevent, and it is worth naming because it is the portfolio's known silent-failure mode arriving through this door. Five workflows name no raw column at all — <code>srs0001</code> (the Site Risk Score), the <code>Bounds</code> and <code>Metrics</code> reporting steps, and the two KRI report modules. <code>srs0001</code> stacks every <code>kri*</code> that produced results and re-normalises against their weights, so declining a domain does not make it fail; it <em>moves its denominator</em>. The bench says so in the cost panel. Fixing it belongs upstream.</p>
+
+  <h2>What it costs to build</h2>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Piece</th><th>Leans on</th><th class="num">Size</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>1. Teach <code>og_validate()</code> to read <code>source_col</code></strong></td>
+          <td><code>og_validate.R:201</code></td>
+          <td class="num">1 day</td>
+          <td>Prerequisite for everything. Today the readiness check and the engine disagree about the same project — <a href="hard-case.html">executed proof</a>.</td>
+        </tr>
+        <tr>
+          <td><strong>2. Key-overlap check inside <code>og_run()</code></strong></td>
+          <td>DuckDB; the joins the mapping YAML already declares</td>
+          <td class="num">3 days</td>
+          <td><span class="tag good">✔ Ship this first, alone</span> Highest value per day on the list, and it helps every user immediately, with or without a bench.</td>
+        </tr>
+        <tr>
+          <td><strong>3. File profiler</strong></td>
+          <td><code>og_validate.R</code>'s existing sampling</td>
+          <td class="num">2 days</td>
+          <td>Header, rows, distinct count, blank count, two samples. Must stay cheap on a 171k-row query extract.</td>
+        </tr>
+        <tr>
+          <td><strong>4. The grid, four dispositions, the drawer</strong></td>
+          <td>the existing SPA</td>
+          <td class="num">~2 weeks</td>
+          <td>The bulk. The <a href="bench.html">mockup</a> is a working sketch of the whole thing.</td>
+        </tr>
+        <tr>
+          <td><strong>5. The spec writer</strong></td>
+          <td><code>yaml</code>, and a managed-region marker</td>
+          <td class="num">~1 week</td>
+          <td>The real engineering. R's <code>yaml</code> does not round-trip comments, so the bench owns a marked region and never touches anything outside it.</td>
+        </tr>
+        <tr>
+          <td><strong>6. Value inventory and the <code>CASE WHEN</code> generator</strong></td>
+          <td>module <code>lSettings.measure_values</code></td>
+          <td class="num">~1 week</td>
+          <td>Reads the targets out of the module YAML rather than hard-coding them.</td>
+        </tr>
+        <tr>
+          <td><strong>7. The alias table</strong></td>
+          <td>—</td>
+          <td class="num">3 days</td>
+          <td><span class="tag flat">Optional</span> The one asset that does not exist. safetyGraphics has <code>safetyCharts::meta_*</code> with <code>standard_adam</code> / <code>standard_sdtm</code> per field, which is what lets <code>detectStandard()</code> pre-fill. gsm.mapping has no equivalent.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Total for a usable first version: items 1, 2, 3 and 4, or roughly three weeks. Nothing on the list requires a change to gsm.mapping, gsm.core or any Gilead-BioStats repository.</p>
+
+  <h3>What could go wrong</h3>
+
+  <ul>
+    <li><strong>The bench clobbers a hand edit.</strong> Generated SQL sits in a file the user is invited to edit. The managed-region marker bounds the damage but does not eliminate it, and one lost hand-written join destroys the trust the whole direction runs on.</li>
+    <li><strong>The overlap check is a join per key pair per run.</strong> Bounded and cheap on demo-301; unmeasured on a 500,000-row study with fourteen domains. It needs a row cap and a sampling story before it ships.</li>
+    <li><strong>A spec using the <code>_all</code> wildcard has no enumerable target list</strong>, so the grid has nothing to draw. No mapping workflow uses it today; <code>Bounds.yaml</code> does, and nothing stops a mapping from adopting it.</li>
+    <li><strong>Adding a domain is still not the bench's problem.</strong> A study needing a domain gsm.mapping does not ship must file an issue upstream and wait. The bench cannot help with that and should not pretend to.</li>
+    <li><strong>CSV is the only format the package reads anywhere</strong> — no <code>haven</code>, no <code>arrow</code>, no <code>DBI</code>. A bench over a folder of transports needs a reader before it needs a grid.</li>
+  </ul>
+
+  <h2>Where this direction is weakest</h2>
+
+  <p>Six objections, in the order I would attack it.</p>
+
+  <ol>
+    <li><strong>It is the first thing in open.gismo that genuinely needs an app.</strong> The product's whole pitch is a plain project folder that runs anywhere — no GitHub, no Actions, no server. A folder-and-YAML direction stays true to that; this one does not. If the answer to <em>how do I load my data</em> is <em>launch the app and work a grid</em>, the product has quietly become a different product. This is the sharpest strategic objection and it does not have a comfortable answer.</li>
+    <li><strong>It gives a novice nothing.</strong> The bench does not degrade; it just presents 126 rows. A medical monitor who wants to look at one study's charts this afternoon is worse off here than with a guided four-step wizard that gets 70% right and asks about the rest. If the real first user is not a data manager, this direction is simply the wrong one.</li>
+    <li><strong>No reuse.</strong> A per-study worksheet produces a per-study artefact. Importing a previous project's mapping is bolted on, and the second study of the same EDC costs nearly as much as the first until an alias corpus exists — which is exactly the spine of an adapter-library direction.</li>
+    <li><strong>Structural mismatch is unrepresentable.</strong> Long-versus-wide labs, one file feeding two domains, two files that must be unioned into one, a domain that needs a pivot: a column grid cannot express any of them. My answer is <em>hand-edit the SQL in the same file</em>, which degrades the surface to a text editor at precisely the hardest moment. Roughly one delivery in three will hit this.</li>
+    <li><strong>It generates code the user is accountable for.</strong> A derived CTCAE grade is a clinical decision expressed as SQL. The bench records who wrote it; it cannot judge it. And a data manager who does not read SQL is blocked inside a surface sold on control — the Derive tab is where this direction's promise runs out.</li>
+    <li><strong>The suggester starts empty.</strong> Day one on a study with no prior is 126 manual bindings. The <a href="bench.html#suggester">alias table on the mockup and its delivery were written by the same person</a>, so the hit rate shown there is an upper bound, not a measurement.</li>
+  </ol>
+
+  <div class="callout">
+    <p><strong>The strongest defence.</strong> Four of the six are arguments for a different <em>first</em> user, not against the bench existing. Whoever wins this round, the study that arrives as three pooled laboratory files with site-prefixed identifiers and no reference ranges still needs a place for a human being to say so. Every direction eventually grows a bench; the question is whether it is the front door or the escape hatch.</p>
+  </div>
+
+  <h2>Decisions</h2>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>#</th><th>Question</th><th>Recommendation</th></tr></thead>
+      <tbody>
+        <tr><td><strong>D-B1</strong></td><td>Does the bench live inside the running app, or as a standalone page over a project folder that needs no server?</td><td>Standalone page first. It keeps the no-server promise intact and it is how the mockup already works.</td></tr>
+        <tr><td><strong>D-B2</strong></td><td>Does the bench write into the project's existing mapping YAML, or own a separate file?</td><td>Into the existing file, inside a marked managed region. The whole differentiator is that the output is a reviewable diff in the user's repository.</td></tr>
+        <tr><td><strong>D-B3</strong></td><td>Is the key-overlap check a bench feature, or a check inside <code>og_run()</code> for everybody?</td><td>Inside <code>og_run()</code>, and <strong>shipped first, alone</strong>. It is three days and it is the single highest-value item on the whole list.</td></tr>
+        <tr><td><strong>D-B4</strong></td><td>Must a decline carry a reason before it is accepted?</td><td>Yes. A reasonless decline is a blank with extra steps, and the reason is the artefact that survives the session.</td></tr>
+        <tr><td><strong>D-B5</strong></td><td>Value mapping: generate SQL steps, or propose a <code>recode:</code> key to gsm.mapping?</td><td>Generate. Ship this month against a seam that exists; propose upstream later, evidenced by what studies actually generated.</td></tr>
+        <tr><td><strong>D-B6</strong></td><td>What formats does the door accept?</td><td>CSV plus <code>.xpt</code> via <code>haven</code>. One dependency, and transports are half of real deliveries.</td></tr>
+        <tr><td><strong>D-B7</strong></td><td>Does the bench learn — remembering accepted bindings across projects on the same machine?</td><td>Not in v1. It is the obvious second feature and the obvious first way to leak one sponsor's column names into another's project.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Boundaries respected</h2>
+
+  <ul>
+    <li><strong>Nothing was built.</strong> No change to open.gismo, demo-301, gsm.mapping or any other repository's source. No issue, no branch, no pull request.</li>
+    <li><strong>No writes outside <code>jwildfire</code>.</strong> gsm.mapping and gsm.core are Gilead-BioStats repositories; they were read, and the D-B5 recommendation is deliberately one that needs nothing from them.</li>
+    <li><strong>Read-only competitor context.</strong> The landscape work is the companion session's; this page cites it rather than repeating it, and the one correction it carries is theirs.</li>
+    <li><strong>The delivery is constructed and labelled as such</strong> on every page it appears. Everything on the contract side — domains, columns, types, consumer counts, the four silences, the <code>og_validate()</code> behaviour — was read from source or executed.</li>
+  </ul>
+
+  <h2>Known limitations</h2>
+
+  <ul>
+    <li><strong>One study.</strong> The 14 domains and 126 columns are demo-301's. A study drawing on gsm.mapping's wider set — VISIT, Death, Randomization, OverallResponse, PK, Consents, AntiCancer — has more, and the grid gets longer, which sharpens objection 2.</li>
+    <li><strong>The build estimates are one person's judgement</strong> and have no spike behind them. Item 5, the spec writer, is the one most likely to be wrong, and it is wrong in the expensive direction.</li>
+    <li><strong>The bench's cost model resolves a workflow's columns back to the raw layer through the participant join.</strong> Columns arriving on <code>Mapped_AE</code> and <code>Mapped_LB</code> from <code>Mapped_SUBJ</code> are attributed to <code>Raw_SUBJ</code>. That is right for demo-301's mappings and would need re-deriving for a study that joins differently.</li>
+    <li><strong>The eDISH reach figures come from the constructed delivery</strong>, executed. They are a real measurement of an invented study, which is the strongest claim available without a real sponsor's data.</li>
+  </ul>
+
+  <p class="footnote">
+    Drafted by Claude Code using Opus 5 for review by @jwildfire &middot; one of four competing directions on the same brief. Companions: <a href="../open-gismo-data-loading-2026-08-27/">the landscape and four-screen session</a> and <a href="../og-data-loading-design-2026-08-27/">the evidence session</a>, both 2026-08-27.
+  </p>
+
+</main>
+</body>
+</html>

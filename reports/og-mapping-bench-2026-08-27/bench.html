@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The bench — working mockup</title>
+<meta name="description" content="A clickable mapping bench: open.gismo's real 126-column contract beside a three-laboratory CRO delivery, with binding, deriving, constants, declining, key-overlap measurement and controlled-value mapping all live.">
+<link rel="stylesheet" href="assets/report.css">
+<link rel="stylesheet" href="assets/bench.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap wide">
+    <p class="eyebrow">open.gismo &middot; data-loading design &middot; page 2 of 3</p>
+    <h1>The bench, working</h1>
+    <p class="standfirst">Every column open.gismo needs, beside every column the study actually delivered, on one screen. Bind one, derive one, declare a constant, decline one — and watch what it costs while you do it.</p>
+    <nav class="pages">
+      <a href="index.html">The direction</a>
+      <a href="bench.html" aria-current="page">The bench, working</a>
+      <a href="hard-case.html">The hard case, executed</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap wide">
+
+  <div class="mocknote">
+    <strong>This is a mockup, not shipped code.</strong> Everything on the <em>left</em> of the grid is real: 14 <code>Raw_*</code> domains and <span id="f-total">126</span> columns with their declared types, extracted from demo-301's own <code>workflows/1_mappings/*.yaml</code>, and the downstream consumer counts read from its 46 metric, reporting and module workflows. The delivery on the right is constructed — demo-301's data re-cut as a CRO drop, with one file (<code>LAB_LIVER_ALL.csv</code>) built to be genuinely hard and then <a href="hard-case.html">run through the real pipeline</a>. open.gismo has no such screen today.
+  </div>
+
+  <div class="og">
+    <aside class="og-rail">
+      <div>
+        <div class="og-brand">open.gismo</div>
+        <div class="og-brand-sub">STUDY 301</div>
+      </div>
+      <ul class="og-nav">
+        <li>Overview</li>
+        <li class="on">Data</li>
+        <li>Snapshots</li>
+        <li>RBQM</li>
+        <li>Safety</li>
+        <li>Provenance</li>
+      </ul>
+      <div class="og-rail-note">A project folder, not a database. The bench edits <code>workflows/1_mappings/</code> and <code>config/data-config.yaml</code> — files you own, diff and commit.</div>
+    </aside>
+
+    <div class="og-main">
+      <header class="og-head">
+        <div class="og-crumbs">Data &rsaquo; Mapping</div>
+        <div class="og-title">The mapping bench</div>
+        <div class="og-sub">6 files delivered, <span id="f-cols">61</span> columns in them, against 126 the pipeline declares.</div>
+        <div class="ledger" id="bench-ledger"></div>
+        <div class="verdict" id="bench-verdict"></div>
+      </header>
+
+      <div class="og-body">
+        <section class="og-sources" id="bench-sources"></section>
+        <section class="og-grid" id="bench-grid"></section>
+        <aside class="og-drawer">
+          <div class="dr-tabs" id="bench-drtabs"></div>
+          <div class="dr-body" id="bench-drbody"></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <h2>What to try</h2>
+
+  <ol>
+    <li><strong>Start with the file selectors, not the columns.</strong> Nothing on the right is meaningful until a domain has a file, because nine of the fourteen domains want a <code>studyid</code>, a subject identifier and a date — so <em>every</em> file matches <em>every</em> domain. Press <em>Assign proposed files</em> and read what happens: the proposer gets <strong>seven right</strong>, correctly abstains on <code>Raw_STUDY</code>, and is confidently wrong on <strong>six</strong> — it puts the liver-laboratory file on <code>Raw_DATACHG</code> at 75% name coverage and on <code>Raw_STUDCOMP</code> at 50%. Set those six back to <em>no file</em>, the way a person would.</li>
+    <li><strong>Now press <em>Accept identical matches</em>.</strong> With the seven real files in place it binds <span id="f-identical">27</span> — the columns whose delivered name is already the name gsm uses, ignoring case. gsm's findings vocabulary is lower-case SDTM, so an SDTM delivery does well here; its subject and site vocabulary is operational EDC, so the same delivery does badly there. <span id="f-proposed">39</span> more rows have a candidate the matcher will argue for, and it is printed in the row without being applied. Open one and you see <em>why</em> — identical name, alias list, name contains — beside two real values from your file.</li>
+    <li><strong>Open <code>Raw_LB</code> &rarr; <code>subjid</code> and bind it to <code>USUBJID</code>.</strong> Then bind <code>Raw_SUBJ.subjid</code> to <code>DM.USUBJID</code> and press <em>Dry run</em>. The <em>Keys</em> panel measures the overlap rather than assuming it, and finds 217 participants whose lab results join to nobody. Both columns exist. Both are character. Both pass every type check open.gismo runs today.</li>
+    <li><strong>Take the fix, then open <em>Values</em>.</strong> Binding <code>Raw_LB.lbtstnam</code> is not enough: the Hepatic Safety Explorer matches four literal strings and this delivery spells them twelve ways. Map them and watch the reach move. It stops at 548 of 765, and the panel says why — one laboratory delivered no reference range, so the plot has nothing to divide by.</li>
+    <li><strong>Decline something expensive.</strong> Open <code>Raw_SUBJ.timeonstudy</code> and choose <em>Decline</em>. The bench prints the eight workflows that stop, then writes your reason into the YAML. Declining is a recorded judgement, not a blank.</li>
+    <li><strong>Open <em>Project files</em>.</strong> Everything you just did is a diff against a file that already exists in the project. There is no hidden state anywhere in this design.</li>
+  </ol>
+
+  <h2>Two things this screen refuses to do</h2>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>It never pre-fills a guess</h3>
+      <p>Identical names bind on request and are marked <em>identical</em>. Everything else stays a proposal until a person clicks it, and the click is recorded in the YAML as <code># accepted proposal</code>. A data manager who finds one wrong pre-filled row stops trusting the other 125, and re-checking 126 rows by hand is worse than filling them.</p>
+    </div>
+    <div class="card">
+      <h3>It never calls a mapping ready because the boxes are full</h3>
+      <p>The verdict line says <em>Not run</em> until the mapping has executed against the real files. Readiness is an empirical claim about what came out, not a count of what was typed in. Today's <code>og_validate()</code> makes the opposite bargain and gets it wrong in both directions — <a href="hard-case.html">it fails a project the engine maps perfectly</a>.</p>
+    </div>
+  </div>
+
+  <h2 id="suggester">How the suggester works, and why it barely matters</h2>
+
+  <p>Three tests, in order: a case-insensitive identity test; a hand-written alias list of about fifty entries (<code>usubjid</code> &rarr; <code>subjid</code>, <code>siteid</code> &rarr; <code>invid</code>, <code>anrhi</code> &rarr; <code>lbstnrhi</code>); and a containment test for names over three characters. It runs in the page at load, over the same 126 rows you see. Its output is printed on every row it has an opinion about.</p>
+
+  <div class="callout warn">
+    <p><strong>The honest caveat.</strong> The alias list and the constructed delivery were written by the same person on the same evening, so the hit rate you see here is an upper bound on a real one rather than a measurement of one. That is survivable precisely because this direction does not depend on it: a suggestion that is wrong costs one glance, because nothing was applied. A direction that pre-fills has to earn the number honestly before it can ship.</p>
+  </div>
+
+  <p>safetyGraphics can do better than this because <code>safetyCharts</code> ships <code>meta_*</code> tables with a <code>standard_adam</code> and <code>standard_sdtm</code> column per field, which is what lets its <code>detectStandard()</code> pre-fill a mapping screen. gsm.mapping has no equivalent, so any suggester built here starts from nothing and improves only as studies accumulate. That is a real asset to build, and it is on the cost list — but it is an accelerator for this direction, not a precondition.</p>
+
+  <p class="footnote">
+    Contract, types and consumer counts generated 2026-08-27 from <code>demo-301/workflows/</code>; the delivery is constructed and labelled as such. Nothing is fetched at view time. Continue to <a href="hard-case.html">the hard case, executed</a> or back to <a href="index.html">the direction</a>.
+  </p>
+
+</main>
+
+<script src="data/bench-data.js"></script>
+<script src="assets/bench.js"></script>
+</body>
+</html>

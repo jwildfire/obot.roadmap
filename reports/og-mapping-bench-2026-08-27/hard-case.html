@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The three-laboratory liver panel</title>
+<meta name="description" content="A liver panel pooled from three laboratories, run through the real gsm pipeline: 765 participants delivered, 417 reach the eDISH plot, and not one line of output says so. Every number executed, not reasoned.">
+<link rel="stylesheet" href="assets/report.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">open.gismo &middot; data-loading design &middot; page 3 of 3</p>
+    <h1>The three-laboratory liver panel</h1>
+    <p class="standfirst">The hardest starting point in the brief, run end to end against the installed packages rather than reasoned about. 765 participants delivered; 417 reach the flagship chart; nothing anywhere says so.</p>
+    <nav class="pages">
+      <a href="index.html">The direction</a>
+      <a href="bench.html">The bench, working</a>
+      <a href="hard-case.html" aria-current="page">The hard case, executed</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="callout">
+    <p><strong>Everything below was executed</strong> on 2026-08-27 against <code>gsm.mapping 1.1.3</code>, <code>gsm.core 1.2.0</code> and <code>workr 1.0.0</code> as installed on this machine, with demo-301's own <code>LB.yaml</code> spec and <code>Raw_SUBJ.csv</code>. The delivery file is constructed — demo-301's liver analytes re-cut as a three-vendor pooled extract — and it is the only invented thing on this page. Console output is verbatim.</p>
+  </div>
+
+  <h2>The starting point</h2>
+
+  <p>A phase 2 study. Liver chemistry arrives as one file from the CRO, <code>LAB_LIVER_ALL.csv</code>, because three laboratories contributed to it and the CRO pooled them:</p>
+
+  <ul>
+    <li><strong>The central laboratory</strong> — 7,532 rows, 417 participants. Full analyte names, U/L and mg/dL, reference ranges on every row.</li>
+    <li><strong>Site-run local laboratories</strong> — 4,224 rows, 217 participants. Analytes written <code>ALT (SGPT)</code>, <code>AST (SGOT)</code>, <code>Alk Phos</code>, <code>Total Bilirubin</code>. Participant identifiers carry the site number in front of them. <strong>No reference ranges at all</strong>, because the local labs report against their own and the CRO did not collect them.</li>
+    <li><strong>A specialty laboratory</strong> — 2,544 rows, 131 participants. Analytes as codes: <code>ALT</code>, <code>AST</code>, <code>ALP</code>, <code>BILI</code>. Bilirubin in µmol/L rather than mg/dL, with its own matching range.</li>
+  </ul>
+
+  <p>The column names are SDTM-flavoured: <code>USUBJID</code>, <code>SITEID</code>, <code>LBTEST</code>, <code>LBSTRESN</code>, <code>LBSTRESU</code>, <code>LBSTNRLO</code>, <code>LBSTNRHI</code>, <code>LBDY</code>, <code>LBBLFL</code>, <code>LBCAT</code>, <code>VISIT</code>, <code>VISITNUM</code>. That is a perfectly ordinary delivery. Nobody did anything wrong.</p>
+
+  <div class="grid3">
+    <div class="stat"><span class="n">14,300</span><span class="lbl">rows delivered</span></div>
+    <div class="stat"><span class="n">765</span><span class="lbl">participants delivered</span></div>
+    <div class="stat"><span class="n">12</span><span class="lbl">spellings for 4 analytes</span></div>
+  </div>
+
+  <h2>Stage 0 — the run does not fail, it aborts</h2>
+
+  <p>Before any of the interesting failures, the first attempt dies. The local laboratories delivered empty reference-range cells, and <code>read.csv()</code> hands DuckDB the empty string:</p>
+
+  <pre class="terminal"><span class="dim">Creating a new temporary DuckDB connection.</span>
+<span class="err">Error in `duckdb_result()`:
+! rapi_execute: Failed to run query
+Error: Conversion Error: Could not convert string '' to DOUBLE
+  when casting from source column LBSTNRLO</span>
+<span class="dim">Backtrace:
+     ▆
+  1. ├─gsm.mapping::ApplySpec(src, spec3, "Raw_LB")
+  2. │ └─gsm.core::RunQuery(...)
+  3. │   ├─DBI::dbWriteTable(con, temp_table_name, df, append = append_tab)
+  ... 26 more frames ...
+ 29.         └─rlang::abort(msg, call = call)
+Execution halted</span></pre>
+
+  <p>Twenty-nine frames. No row number, no file name, no domain, no count of how many cells were blank. The one genuinely useful fact — the source column is <code>LBSTNRLO</code> — is on the third line of a stack trace a data manager has no reason to read.</p>
+
+  <div class="callout warn">
+    <p><strong>What the bench does here.</strong> Nothing clever: it reads the file itself, so it knows 4,224 of 14,300 cells in that column are empty before anything runs, prints that on the row, and offers the three dispositions that resolve it — bind, derive a default, or decline the column and see what it costs. The failure is a property of the data that was visible the moment the file was opened.</p>
+  </div>
+
+  <h2>Stage 1 — today's readiness check, on a delivery it can never pass</h2>
+
+  <p>With the blanks read as missing rather than empty strings, the run proceeds. <code>og_validate()</code> reports:</p>
+
+  <pre class="terminal">required columns: 14   present: <span class="err">0</span>
+MISSING: studyid, subjid, visnam, visnum, lb_dy, lb_dt, lbblfl,
+         battrnam, lbtstnam, lbstresn, lbstresu, lbstnrlo,
+         lbstnrhi, toxgrg_nsv</pre>
+
+  <p>Fair enough — the names are different. So write the mapping the way gsm intends, with <code>source_col:</code> on all fourteen, and check again:</p>
+
+  <pre class="terminal">og_validate() STILL reports missing: studyid, subjid, visnam, visnum,
+  lb_dy, lb_dt, lbblfl, battrnam, lbtstnam, lbstresn, lbstresu,
+  lbstnrlo, lbstnrhi, toxgrg_nsv
+<span class="dim">   ...because it compares TARGET names to file columns and never reads source_col.</span></pre>
+
+  <p>The same fourteen. <code>open.gismo/R/og_validate.R:201</code> is <code>setdiff(required, info$cols)</code> — the target names against the file's columns. The string <code>source_col</code> does not appear in the file. Hand the identical spec to the engine and it maps the file without complaint:</p>
+
+  <pre class="terminal"><span class="ok">✔ SQL Query complete: 14300 rows returned.</span>
+ApplySpec() rows: 14300  cols: 13 -> studyid, subjid, visnam, visnum,
+  lb_dy, lb_dt, lbblfl, battrnam, lbtstnam, lbstresn, lbstresu,
+  lbstnrlo, lbstnrhi</pre>
+
+  <div class="callout bad">
+    <p>The readiness screen and the engine disagree about the same project. For any delivery not already named with gsm's internal names, that screen can never reach green — and the person reading it has no way to tell a real problem from this one. This is a small fix, worth making before any screen is designed, and it is the reason this direction refuses to call a mapping ready on a count of filled boxes. <span class="small faint">Independently found by the companion session the same evening; recorded here because it is the load-bearing fact under this design's readiness rule.</span></p>
+  </div>
+
+  <h2>Stage 2 — a one-character typo, and silence</h2>
+
+  <p>Bind the upper limit of normal to <code>LBULN</code> instead of <code>LBSTNRHI</code>. A plausible slip; the column does not exist.</p>
+
+  <pre class="terminal"><span class="ok">✔ SQL Query complete: 14300 rows returned.</span>
+bound lbstnrhi -> 'LBULN' (not in the file). ApplySpec message/warning: <span class="err">none</span>
+resulting columns: 12   lbstnrhi present? <span class="err">FALSE</span></pre>
+
+  <p><code>gsm.mapping/R/ApplySpec.R:47</code> is <code>purrr::keep(~ .x$source %in% colnames(dfSource))</code> — a column whose source is absent is dropped from the query, quietly, at no verbosity level. The run succeeds. The column is gone. Every eDISH point silently loses its denominator.</p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>What is missing</th><th>What the pipeline does</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>A <strong>column</strong> named in the spec</td><td>Dropped from the query. No message.</td><td><code>ApplySpec.R:47</code></td></tr>
+        <tr><td>A <strong>domain</strong>'s input file</td><td><code>warning()</code> and continue.</td><td><code>og_run.R:397</code></td></tr>
+        <tr><td>A <strong>join partner</strong> for a row</td><td>Row dropped. <code>inner_join</code> is silent by construction.</td><td><code>LB.yaml</code>, <code>AE.yaml</code></td></tr>
+        <tr><td>A <strong>value</strong> the chart is looking for</td><td>Row simply does not match the filter.</td><td><code>hep_explorer.yaml</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Four kinds of absence, four different silences, none of them an error. This is the failure class this direction exists to convert into a visible decision.</p>
+
+  <h2>Stage 3 — the identifiers that pass every check and join to nobody</h2>
+
+  <p>Map the columns correctly this time, and run the participant join the study's own <code>LB.yaml</code> performs:</p>
+
+  <pre class="terminal">Mapped_LB rows before join: 14300   after inner_join: <span class="err">10076</span>
+participants lost: <span class="err">217</span> of 765
+example lost ids: SITE4275-S1000, SITE7543-S10245, SITE8768-S10259
+warning raised by inner_join: <span class="err">none</span></pre>
+
+  <p>Both <code>subjid</code> columns exist. Both are <code>character</code>. Both pass every check <code>og_validate()</code> runs, including the type coercion on a 5,000-row sample. They share not one value, because the local laboratory writes <code>SITE4275-S1000</code> where demographics writes <code>S1000</code>.</p>
+
+  <p>The join is deliberate — demo-301's <code>AE.yaml</code> documents it as the data-cleaning step, and it is right to be: an event against a participant who never enrolled has no denominator to be a rate over. It is the right operation with no instrumentation.</p>
+
+  <h2>Stage 4 — twelve spellings, four literal strings</h2>
+
+  <p><code>workflows/4_modules/hep_explorer.yaml</code> carries this, and it is not a suggestion:</p>
+
+  <pre>lSettings:
+  measure_col: lbtstnam
+  measure_values:
+    ALT: Alanine Aminotransferase
+    AST: Aspartate Aminotransferase
+    TB:  Bilirubin
+    ALP: Alkaline Phosphatase</pre>
+
+  <p>Four literal strings that must appear in the participant's <code>lbtstnam</code> column. Run the filter over what survived the join:</p>
+
+  <pre class="terminal">rows the eDISH renderer will see: <span class="err">7532</span> of 10076 joined / 14300 delivered
+participants the eDISH renderer will see: <span class="err">417</span> of 765 delivered
+unmatched measure names still in the data: ALP, ALT, AST, BILI</pre>
+
+  <h2>What actually reached the chart</h2>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Stage</th><th class="num">Rows</th><th class="num">Participants</th><th>Told to anyone?</th></tr></thead>
+      <tbody>
+        <tr><td>Delivered by the CRO</td><td class="num">14,300</td><td class="num">765</td><td>—</td></tr>
+        <tr><td>After the participant <code>inner_join</code></td><td class="num">10,076</td><td class="num">548</td><td><span class="tag bad">✖ No</span></td></tr>
+        <tr><td>After <code>measure_values</code> filtering</td><td class="num">7,532</td><td class="num">417</td><td><span class="tag bad">✖ No</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout bad">
+    <p>Fifty-five per cent of the study reaches the flagship hepatic-safety chart, and the two defects mask each other so cleanly that what arrives looks immaculate. Zero missing reference ranges — because the rows that lacked them are exactly the rows the join already removed. One consistent unit for bilirubin — because the µmol/L laboratory is exactly the one the measure filter already removed. No NAs, no warnings, plausible ratios, a well-formed plot.</p>
+  </div>
+
+  <p>The Hy's Law candidate count on this study comes out at <strong>16</strong> candidates among <strong>417</strong> evaluable participants. It is a real number computed correctly over the wrong denominator, and there is no artefact anywhere in the run — not in the console, not in the output, not in the provenance chip — that would let a reviewer discover the other 348.</p>
+
+  <h2>The same study, on the bench</h2>
+
+  <p>Every step below is <a href="bench.html">live in the mockup</a>; the figures are the executed ones.</p>
+
+  <ol>
+    <li><strong>Assign the file to the domain.</strong> The bench proposes <code>LAB_LIVER_ALL.csv</code> for <code>Raw_LB</code> at 93% name coverage — and also proposes it for <code>Raw_DATACHG</code> at 75%, which is nonsense. It says the number and does not act on it. <em>The person assigns the file.</em></li>
+    <li><strong>Accept the identical names.</strong> Thirteen of fourteen <code>Raw_LB</code> columns land on the first pass, because gsm's findings vocabulary is lower-case SDTM. <code>toxgrg_nsv</code> does not, because CTCAE grade has no source in either standard.</li>
+    <li><strong>The blank cells are on the row before anything runs.</strong> 4,224 empty <code>LBSTNRHI</code> values, printed beside the binding, not thrown from frame 29 of a stack trace.</li>
+    <li><strong>Dry run measures the key overlap.</strong> <span class="tag bad">✖ 10,076 of 14,300 rows match</span> — 217 participants join to nobody, with the mismatched values printed side by side. One click derives <code>regexp_replace(subjid, '^SITE[0-9]+-', '')</code>, which is written into the project's own <code>LB.yaml</code> as a <code>gsm.core::RunQuery</code> step, exactly like the <code>CAST()</code> that file already carries. Re-run: <span class="tag good">✔ 14,300 of 14,300</span>.</li>
+    <li><strong>Twelve spellings, mapped once.</strong> The Values pane lists all twelve with their row counts, their laboratory and their units beside the four the chart wants. Mapping compiles to a <code>CASE WHEN</code> in the same query step.</li>
+    <li><strong>And then it stops at 548 and says why.</strong> <span class="tag warn">⚠ 217 participants (LOCAL lab) — no reference range delivered</span>. The eDISH plot divides by the upper limit of normal; there is nothing to divide by. The bench cannot invent one. What it can do is refuse to let that be invisible — and offer the two honest responses: supply the laboratory's ranges as per-analyte constants, or decline and record that the plot covers 548 of 765.</li>
+  </ol>
+
+  <div class="callout good">
+    <p><strong>The whole claim of this direction, in one line.</strong> Today the chart draws 417 of 765 participants and nothing says so. On the bench it draws 548, and the screen says the other 217 are missing a reference range. Not a perfect answer. A <em>legible</em> one.</p>
+  </div>
+
+  <h2>How to reproduce this</h2>
+
+  <p>The two scripts are short and were run from a clean R session:</p>
+
+  <ul>
+    <li><code>build.R</code> — reads <code>demo-301/input/Raw_LB.csv</code>, keeps the four liver analytes, assigns each participant to one of three laboratories (55/30/15 with <code>set.seed(301)</code>), applies the vendor naming, converts the specialty laboratory's bilirubin to µmol/L with a matching range, blanks the local laboratory's ranges, prefixes the local laboratory's identifiers with the site, and writes the delivery with SDTM-flavoured headers.</li>
+    <li><code>fail.R</code> — runs the six stages above against the installed packages, using demo-301's own <code>LB.yaml</code> spec and <code>Raw_SUBJ.csv</code>.</li>
+  </ul>
+
+  <p>The per-laboratory splits are exact and were checked independently: 7,532 + 4,224 + 2,544 = 14,300 rows, and 417 + 217 + 131 = 765 participants. 14,300 &minus; 4,224 = 10,076 rows after the join; 10,076 &minus; 2,544 = 7,532 after the measure filter. The arithmetic closes at both stages, which is how the two masking defects were separated from each other.</p>
+
+  <p class="footnote">
+    Executed 2026-08-27 against <code>gsm.mapping 1.1.3</code> / <code>gsm.core 1.2.0</code> / <code>workr 1.0.0</code>. The delivery file is constructed from demo-301 data and labelled as such throughout; every console block is verbatim. Back to <a href="index.html">the direction</a> or <a href="bench.html">the bench</a>.
+  </p>
+
+</main>
+</body>
+</html>
