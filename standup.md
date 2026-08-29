@@ -2,7 +2,9 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-This is out of date. The last reading was taken at 4:25 pm, which is 42 minutes ago, and the sweep behind it runs every five minutes — so it has stopped. Treat everything below as the last thing that was true rather than as what is true now, and check anything you are about to act on.
+Read at 8:00 pm on Friday the 28th of August. The reading behind it was taken at 8:00 pm, one minute ago.
+
+The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
 ## What is running
 
@@ -20,19 +22,19 @@ Eight decisions are waiting on you: seven open, and one that you have partly dec
 
 The review layer — recording that someone looked, and what changed since. Six questions in total. Answer it on discussion 312. No episode has been made for it yet.
 
-The widget that has to carry two tables. Four questions in total. It has been waiting five days. No thread has been opened for it yet, so the answer goes on the artifact page. No episode has been made for it yet.
+The widget that has to carry two tables. Four questions in total. It has been waiting six days. No thread has been opened for it yet, so the answer goes on the artifact page. No episode has been made for it yet.
 
-Where the data-coverage numbers come from. Five questions in total. It has been waiting six days. Answer it on discussion 307. No episode has been made for it yet.
+Where the data-coverage numbers come from. Five questions in total. It has been waiting seven days. Answer it on discussion 307. No episode has been made for it yet.
 
-Clinical work, not scaffold — the refocused ten and the v1.0 question. Five questions in total. It has been waiting seven days. Answer it on discussion 304. There is a seven minute episode if you would rather listen than read.
+Clinical work, not scaffold — the refocused ten and the v1.0 question. Five questions in total. It has been waiting eight days. Answer it on discussion 304. There is a seven minute episode if you would rather listen than read.
 
-Branch protections: what gets locked down before the clock starts. One question in total. It has been waiting eight days. Answer it on discussion 283. There is a four minute episode if you would rather listen than read.
+Branch protections: what gets locked down before the clock starts. One question in total. It has been waiting nine days. Answer it on discussion 283. There is a four minute episode if you would rather listen than read.
 
-The laptop move: what has to be settled before the weekend. 11 questions in total. It has been waiting eight days. Answer it on discussion 290. There is an eight minute episode if you would rather listen than read.
+The laptop move: what has to be settled before the weekend. 11 questions in total. It has been waiting nine days. Answer it on discussion 290. There is an eight minute episode if you would rather listen than read.
 
-Putting safetyCharts and safetyGraphics back on CRAN. Three questions in total. It has been waiting eight days. Answer it on discussion 293. There is a six minute episode if you would rather listen than read.
+Putting safetyCharts and safetyGraphics back on CRAN. Three questions in total. It has been waiting nine days. Answer it on discussion 293. There is a six minute episode if you would rather listen than read.
 
-Scheduled sessions: what is ready, what is not, and what would make it ready — partly decided, so some of its questions are still yours and the page says which. Five questions in total. It has been waiting 12 days. Answer it on discussion 222. An episode shipped for it, but the page has changed since, so it is out of date and I have not offered it.
+Scheduled sessions: what is ready, what is not, and what would make it ready — partly decided, so some of its questions are still yours and the page says which. Five questions in total. It has been waiting 13 days. Answer it on discussion 222. An episode shipped for it, but the page has changed since, so it is out of date and I have not offered it.
 
 One caveat on that list: the copy of the roadmap this was read from is four commits behind GitHub, so a decision published since the last fetch would be invisible here rather than absent.
 
