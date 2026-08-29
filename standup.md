@@ -2,7 +2,7 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 9:22 am on Saturday the 29th of August. The reading behind it was taken at 9:22 am, one minute ago.
+Read at 2:23 pm on Saturday the 29th of August. The reading behind it was taken at 2:23 pm, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
@@ -10,7 +10,7 @@ The sweep runs every five minutes and this file is rewritten each time, so nothi
 
 No agent session is working right now.
 
-No session is parked on a permission prompt, so nothing is held up waiting for you to approve it.
+At least one session is parked on a permission prompt and cannot move until you clear it. That is the one thing here that stops work dead.
 
 ## What is blocked
 
