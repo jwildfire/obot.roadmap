@@ -2,7 +2,7 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 12:17 am on Sunday the 30th of August. The reading behind it was taken at 12:16 am, two minutes ago.
+Read at 9:15 am on Sunday the 30th of August. The reading behind it was taken at 9:15 am, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
@@ -14,7 +14,7 @@ At least one session is parked on a permission prompt and cannot move until you 
 
 ## What is blocked
 
-Nothing on the ranked list is marked blocked.
+The ranked list was not read this pass, so I cannot tell you what is blocked.
 
 ## What needs a decision from you
 
@@ -36,7 +36,7 @@ Putting safetyCharts and safetyGraphics back on CRAN. Three questions in total. 
 
 Scheduled sessions: what is ready, what is not, and what would make it ready — partly decided, so some of its questions are still yours and the page says which. Five questions in total. It has been waiting 14 days. Answer it on discussion 222. An episode shipped for it, but the page has changed since, so it is out of date and I have not offered it.
 
-One caveat on that list: the copy of the roadmap this was read from is five commits behind GitHub, so a decision published since the last fetch would be invisible here rather than absent.
+One caveat on that list: the copy of the roadmap this was read from is six commits behind GitHub, so a decision published since the last fetch would be invisible here rather than absent.
 
 ## Release candidates waiting for you
 
