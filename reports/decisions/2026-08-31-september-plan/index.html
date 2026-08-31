@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — September: the last build month</title>
+<meta name="description" content="One development month left before talk preparation. This is a plan built around what the keynote needs rather than what is next in the queue, including what to deliberately not build. Four calls.">
+<meta name="decision-id" content="D0031">
+<meta name="premise" scope="live" content="the keynote goal is still open and still says September, which is the thing this page needs resolved | gh issue view 72 -R jwildfire/obot.roadmap --json state --jq .state | OPEN">
+<meta name="premise" scope="live" content="open.gismo is still the thinnest of the efforts, which is the whole argument for where September goes | gh pr list -R jwildfire/open.gismo --state merged --limit 50 --json mergedAt | one merge in the fortnight">
+<meta name="premise" scope="live" content="there is still no backup destination on the machine this programme runs on | tmutil destinationinfo | No destinations configured">
+<meta name="premise" scope="history" content="of the four repositories that matter, exactly one main branch was protected when this page was written, and it was not the one holding the merge policy">
+<style>
+
+
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+blockquote{margin:18px 0 0;padding:12px 18px;border-left:3px solid var(--rule2);color:var(--ink2);max-width:70ch;font-size:15.5px}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout ul{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.callout.blue{border-left-color:var(--blue)}
+.callout.blue .k{color:var(--blue)}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul{margin:10px 0 0;font-size:15.5px}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+.pre{margin:16px 0 0;padding:14px 16px;border:1px solid var(--rule);border-radius:5px;background:#f7f4ec;
+  font:13px/1.6 var(--mono);color:var(--ink2);overflow-x:auto;white-space:pre}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .card,.q,.callout{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+  table{min-width:440px}
+}
+
+/* This page only: the shell blocks, which have to survive a 390px screen. */
+/* The house sheet gives `code` no wrapping rule. This page names file paths, and
+   pipeline/inst/extdata/phuse-cdiscpilot01/ is 41 monospace characters — enough to
+   push the body sideways on a 390px screen, where he reads these. */
+code{overflow-wrap:anywhere;word-break:break-word}
+
+.shell{border:1px solid var(--rule2);border-radius:6px;background:var(--panel);margin:14px 0;overflow:hidden}
+.shell .sh-head{padding:8px 12px;border-bottom:1px solid var(--rule);background:rgba(0,0,0,.02)}
+.shell .sh-head b{font-family:var(--display)}
+.shell .sh-head span{display:block;color:var(--mute);font:12px/1.5 var(--mono)}
+.shell .sh-body{overflow-x:auto}
+.shell table{border-collapse:collapse;width:100%;min-width:520px;font:13px/1.5 var(--mono)}
+.shell th,.shell td{border-bottom:1px solid var(--rule);padding:6px 10px;text-align:left;white-space:nowrap}
+.shell th{color:var(--ink2);font-weight:600;background:rgba(0,0,0,.015)}
+.shell td.lab{white-space:normal}
+.shell td.blank{color:var(--rule2)}
+.shell .derived{color:var(--bronze);font-style:italic;white-space:normal}
+@media (max-width:430px){ .shell table{min-width:440px} }
+
+.wk{border-left:3px solid var(--rule2);padding:2px 0 2px 16px;margin:16px 0}
+.wk h4{font-family:var(--display);font-size:17px;margin:0 0 4px}
+.wk .who{color:var(--bronze);font:12px/1.6 var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.no{border-left:3px solid var(--flag)}
+code{overflow-wrap:anywhere;word-break:break-word}
+</style>
+</head><body>
+
+<header class="mast"><div class="wrap">
+  <p class="eyebrow">Decision · D0031 · 2026-08-31 · goal <a href="https://github.com/jwildfire/obot.roadmap/issues/72">#72</a></p>
+  <h1>September: the last build month</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0031">
+<p>D0031 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0031.1"><a class="did" href="#D0031.1">D0031.1</a><span class="dcode">S1</span><span class="dq">Is the talk in September or October? The goal issue and the July notes disagree.</span></li>
+  <li id="D0031.2"><a class="did" href="#D0031.2">D0031.2</a><span class="dcode">S2</span><span class="dq">Does September go to open.gismo, or to consolidating the three efforts already going well?</span></li>
+  <li id="D0031.3"><a class="did" href="#D0031.3">D0031.3</a><span class="dcode">S3</span><span class="dq">Are the SAP and the review layer genuinely deferred, in writing?</span></li>
+  <li id="D0031.4"><a class="did" href="#D0031.4">D0031.4</a><span class="dcode">S4</span><span class="dq">Where is the hard stop, and is week four protected for rehearsal?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede"><b>The recommendation in one paragraph:</b> spend one morning writing down what version one contains, three weeks making the data-loading path in open.gismo demonstrable, and a protected final week rehearsing rather than building. Deliberately do not build the statistical analysis plan or the review layer — both are good work that serves no part of the talk. And configure a backup, which is ten minutes and the cheapest risk reduction available this month.</p>
+</div></header>
+
+<main class="wrap">
+
+<section id="gate">
+<h2>One thing blocks the shape of this</h2>
+<div class="callout"><p>The keynote goal issue says the talk is <b>September 2026</b>. The planning notes from July say the talk is <b>October</b>, with preparation starting in September. Those cannot both be true, and the difference is an entire month of work. Everything below assumes <b>October</b>. If it is September, development is already over and this page is the wrong shape — say so and it gets rewritten rather than patched.</p></div>
+</section>
+
+<section id="argument">
+<h2>Why September goes to open.gismo</h2>
+<p>Three efforts are in good health. The report builder released a version with a real efficacy section on 27 August, taking it from six displays to twenty-six. The chart library has thirteen chart types and a legacy backlog that finally moved. The R package has a rebuilt census and thirteen widget bindings.</p>
+<p>The talk is about none of those. The summer deliverable, stated in July, was open.gismo — <em>a full end-to-end environment for safety and RBQM and anything else</em>. That is the claim the keynote makes, and open.gismo is the thinnest thing in the programme: one merged pull request in the last fortnight, a v0.2 that shipped an architecture the maintainer had said he disagreed with, and a design discussion meant to settle that which has been open since 12 July.</p>
+<p>So the month is not "continue the queue". It is: make the headline claim true enough to demonstrate, and stop doing anything else.</p>
+<div class="callout note"><p>The demo that matters already has its design. The August data-loading session measured the problem and recommended a path: put the folder on disk as the vendor sent it, run one command, and get back a single document that prices every gap in terms of the charts it turns off. That is the moment where a stranger's data becomes charts — and it is the most interesting five minutes available in a talk about this kind of tool.</p></div>
+</section>
+<section id="weeks">
+<h2>The month, and who does what</h2>
+<p>Most of it is not you. The parts that are, are cheap and they unblock the rest.</p>
+
+<div class="wk"><h4>Week 1 — mostly yours, and the cheapest week of the month</h4>
+<p class="who">@jwildfire</p>
+<ul>
+<li>Write down what <b>version one</b> contains. A morning. Everything else in this area is downstream of it, and until it exists the honest answer to "is it ready" is "ready for what".</li>
+<li>Answer the five decision pages that survived triage, and pick a branch-protection tier — one choice between three options, with the tooling already merged and waiting.</li>
+<li>Sign off the two harness pull requests that touch guardrail files. They are 13 and 11 days old.</li>
+<li>Bind the demo study repository to a goal. It is a one-line edit inside the approval carve-out, and it is the reason a broken weekly pipeline went unnoticed for three weeks — a repository in no goal cannot be picked up by any session.</li>
+<li>Plug in a backup drive.</li>
+</ul></div>
+
+<div class="wk"><h4>Weeks 2–3 — the build, almost entirely agents</h4>
+<p class="who">agents</p>
+<p>The data-loading path in open.gismo, to the design the August session already produced and measured. Read a folder as the vendor sent it; report what is usable and what is not; price every gap in the charts it turns off. This is implementation rather than discovery, which is why three weeks is credible.</p>
+<p>Alongside it, the demo study needs to be reliably green from a cold start rather than green last Tuesday — it is the thing a version one would be judged on, and it failed three consecutive weekly rebuilds in silence before that was fixed.</p></div>
+
+<div class="wk"><h4>Week 4 — not a build week</h4>
+<p class="who">@jwildfire + agents</p>
+<p>Rehearsal. Running the demo on the real machine, from a cold start, repeatedly.</p>
+<p>The reason to protect this week is specific rather than general. Every serious defect this programme found in August was something that <em>looked fine</em>: four checks that never started and so raised no red mark, a page claiming requirement coverage it did not have, a merge that combined two sections into one number and raised no conflict. Those are exactly the failures that survive a quick look and die in front of an audience.</p>
+<p><b>If the month slips, slip week three, not week four.</b></p></div>
+</section>
+
+<section id="omissions">
+<h2>What not to build, and why that is the harder half</h2>
+
+<div class="wk no"><h4>Not the statistical analysis plan</h4>
+<p>Designed on 27 August as <a href="../2026-08-27-sap-shells/">D0030</a>, and it is good work — most of the plan already exists dispersed across twenty-six displays, and a display turns out to render as an empty shell from its own spec, which makes it cheaper than it looks. It is also v0.4, it serves no part of the talk, and it would eat a fortnight.</p></div>
+
+<div class="wk no"><h4>Not the review layer</h4>
+<p>Designed as <a href="../2026-08-27-review-layer/">D0029</a>. It is the largest capability gap in the portfolio measured against competing platforms, and that is an argument for doing it, not for doing it now.</p></div>
+
+<div class="wk no"><h4>Not the laptop migration</h4>
+<p>Already decided; recorded here so it stays decided.</p></div>
+</section>
+
+<section id="questions">
+<h2>Four, each with a recommendation</h2>
+
+<div class="q" id="q-s1">
+<div class="qid">S1 · the date</div>
+<h3>Is the talk in September or October?</h3>
+<p>The goal issue and the July planning notes disagree. This is not a preference — it is a fact one of us has wrong, and it decides whether September is a build month or already past.</p>
+<div class="rec"><b>Recommendation: confirm it, do not infer it.</b> If October, this plan stands. If September, development stops now and the whole month is preparation.</div>
+</div>
+
+<div class="q" id="q-s2">
+<div class="qid">S2 · where the month goes</div>
+<h3>Does September go to open.gismo, or to finishing what is already strong?</h3>
+<ul>
+<li><b>open.gismo.</b> Makes the headline claim demonstrable. Costs the momentum of three efforts that are currently going well.</li>
+<li><b>Consolidate.</b> Ship another report-builder version and more chart types. Safer, and leaves the talk claiming an end-to-end environment while demonstrating its parts.</li>
+</ul>
+<div class="rec"><b>Recommendation: open.gismo.</b> A talk that demonstrates the parts of a claim rather than the claim is a talk with a hole in the middle, and the audience finds it during questions rather than during the demo.</div>
+</div>
+
+<div class="q" id="q-s3">
+<div class="qid">S3 · the omissions</div>
+<h3>Are the SAP and the review layer genuinely deferred?</h3>
+<div class="rec"><b>Recommendation: yes, in writing.</b> Both have finished design pages, so deferring costs nothing but a date — the thinking is done and will still be there in November. What is expensive is leaving them ambiguous, because an unattended session picking either one up is two weeks gone.</div>
+</div>
+
+<div class="q" id="q-s4">
+<div class="qid">S4 · the stop</div>
+<h3>Where is the hard stop, and is it real?</h3>
+<div class="rec"><b>Recommendation: end of week three, with week four protected for rehearsal.</b> You said "the end of the month, or slightly sooner". Slightly sooner is the right instinct and this makes it explicit rather than aspirational.</div>
+</div>
+</section>
+
+<section id="triage">
+<h2>What was waiting on you, after triage</h2>
+<p>Checked on 31 August rather than relayed from the queue.</p>
+<div class="tbl"><table>
+<tr><th>Item</th><th>Verdict</th></tr>
+<tr><td>D0028 — the widget contract</td><td><b>Answered by the work.</b> The two widgets shipped on 27 August using named table arguments — exactly the shape the page recommended. Nothing left to decide.</td></tr>
+<tr><td>D0024 — the laptop move</td><td><b>Mostly overtaken.</b> Nine of eleven questions hang off a migration that was called off. Two findings underneath are still live and were re-verified today.</td></tr>
+<tr><td>D0026 — clinical priorities</td><td><b>Half answered by you.</b> The ranking was acted on the night it was written. The version-one question stands, and it is week one above.</td></tr>
+<tr><td>D0025 — CRAN</td><td><b>Advanced.</b> Both pull requests are open upstream since 27 August. Currently waiting on the other maintainers, not on you; the CRAN submission is still yours.</td></tr>
+<tr><td>D0022, D0027, D0029, D0030</td><td><b>Genuinely open.</b> Branch protections is the most urgent and the most understated — only one of four main branches is protected, and it is not the one holding the merge policy.</td></tr>
+<tr><td>gsm.safety #68 and #69</td><td><b>One release train, not two decisions.</b> #69 contains #68 entirely. Both still carry a CI defect fixed on <code>dev</code> and never carried across.</td></tr>
+<tr><td>obot.agent #198 and #273</td><td><b>Genuinely yours.</b> Both touch guardrail files, so the carve-out requires your sign-off. 13 and 11 days old.</td></tr>
+</table></div>
+<p class="foot">Eight decision pages and four release candidates reduce to roughly seven real items, most of them a single choice each.</p>
+</section>
+
+</main>
+
+<footer class="mast"><div class="wrap">
+<p class="foot">Goal <a href="https://github.com/jwildfire/obot.roadmap/issues/72">#72</a> · companion episode "September: the last build month" on <em>obot: the program</em>.</p>
+<p class="foot">Drafted by Claude Code using Opus 5 and reviewed by @jwildfire.</p>
+</div></footer>
+
+</body></html>
