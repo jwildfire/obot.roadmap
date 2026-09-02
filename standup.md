@@ -2,7 +2,7 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 1:59 pm on Wednesday the 2nd of September. The reading behind it was taken at 1:58 pm, one minute ago.
+Read at 2:04 pm on Wednesday the 2nd of September. The reading behind it was taken at 2:04 pm, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
@@ -18,9 +18,13 @@ Nothing on the ranked list is marked blocked.
 
 ## What needs a decision from you
 
-Eight decisions are waiting on you: seven open, and one that you have partly decided.
+Ten decisions are waiting on you: nine open, and one that you have partly decided.
+
+September: the last build month. Four questions in total. Answer it on discussion 315. No episode has been made for it yet.
 
 The review layer — recording that someone looked, and what changed since. Six questions in total. It has been waiting six days. Answer it on discussion 312. No episode has been made for it yet.
+
+The SAP, and what a display looks like with no numbers in it. Five questions in total. It has been waiting six days. Answer it on discussion 314. No episode has been made for it yet.
 
 The widget that has to carry two tables. Four questions in total. It has been waiting ten days. No thread has been opened for it yet, so the answer goes on the artifact page. No episode has been made for it yet.
 
@@ -35,8 +39,6 @@ The laptop move: what has to be settled before the weekend. 11 questions in tota
 Putting safetyCharts and safetyGraphics back on CRAN. Three questions in total. It has been waiting 13 days. Answer it on discussion 293. There is a six minute episode if you would rather listen than read.
 
 Scheduled sessions: what is ready, what is not, and what would make it ready — partly decided, so some of its questions are still yours and the page says which. Five questions in total. It has been waiting 17 days. Answer it on discussion 222. An episode shipped for it, but the page has changed since, so it is out of date and I have not offered it.
-
-One caveat on that list: the copy of the roadmap this was read from is 13 commits behind GitHub, so a decision published since the last fetch would be invisible here rather than absent.
 
 ## Release candidates waiting for you
 
