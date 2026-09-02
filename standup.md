@@ -2,7 +2,7 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 11:58 am on Wednesday the 2nd of September. The reading behind it was taken at 11:57 am, one minute ago.
+Read at 1:41 pm on Wednesday the 2nd of September. The reading behind it was taken at 1:40 pm, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
@@ -40,13 +40,15 @@ One caveat on that list: the copy of the roadmap this was read from is 12 commit
 
 ## Release candidates waiting for you
 
-Three release candidates are open and waiting on you.
+Four release candidates are open and waiting on you.
 
 gsm.safety's eDISH views have been counting some participants' own baseline as an on-treatment peak; v1.2.0 corrects that and adds two widgets. That one is in gsm.safety.
 
 The safety overview's death count was wrong, and this release replaces every figure on that page with a metric that publishes its own numerator, denominator and provenance. That one is in gsm.safety.
 
 The spend cap you set — no more than half a week's usage in one night — currently covers three of the four ways an agent gets spawned. That one is in obot.agent.
+
+The assembled report now describes one study: every display reads the CDISC pilot's own package, a study model declared once holds every display to the same arms and populations. That one is in open.csr.
 
 ## What this standup does not cover
 
