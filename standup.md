@@ -2,7 +2,7 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 1:41 pm on Wednesday the 2nd of September. The reading behind it was taken at 1:40 pm, one minute ago.
+Read at 1:59 pm on Wednesday the 2nd of September. The reading behind it was taken at 1:58 pm, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
@@ -36,7 +36,7 @@ Putting safetyCharts and safetyGraphics back on CRAN. Three questions in total. 
 
 Scheduled sessions: what is ready, what is not, and what would make it ready — partly decided, so some of its questions are still yours and the page says which. Five questions in total. It has been waiting 17 days. Answer it on discussion 222. An episode shipped for it, but the page has changed since, so it is out of date and I have not offered it.
 
-One caveat on that list: the copy of the roadmap this was read from is 12 commits behind GitHub, so a decision published since the last fetch would be invisible here rather than absent.
+One caveat on that list: the copy of the roadmap this was read from is 13 commits behind GitHub, so a decision published since the last fetch would be invisible here rather than absent.
 
 ## Release candidates waiting for you
 
