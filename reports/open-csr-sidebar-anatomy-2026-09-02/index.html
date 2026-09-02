@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open.csr: how every item in the sidebar is made, and what changes next (2026-09-02)</title>
+<meta name="description" content="For each item in the open.csr sidebar — Documents, Displays, Text, Values, Templates — what goes in, what the pipeline does, what comes out, where you can see it, and the refactor that adds Data and Metadata as sidebar sections linked from every artifact.">
+<style>
+:root {
+  --ground:#f4f6f7; --surface:#ffffff; --surface-2:#eef2f3;
+  --ink:#16232d; --muted:#536470; --faint:#7f929e;
+  --border:#dde4e7; --hairline:#e8edef;
+  --accent:#0e7c86; --accent-deep:#0a5b63; --accent-tint:#e2f1f2;
+  --warn:#b4520f; --warn-tint:#fbecdf;
+  --new:#5b3fa0; --new-tint:#ece6f7;
+  --f-display:"SF Pro Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(20,40,55,.05), 0 8px 24px -12px rgba(20,40,55,.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831;
+    --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+    --border:#243440; --hairline:#1e2c36;
+    --accent:#4fb3bc; --accent-deep:#7fd0d7; --accent-tint:#123238;
+    --warn:#e08a4a; --warn-tint:#3a2412;
+    --new:#b39ce6; --new-tint:#2a2140;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831;
+  --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+  --border:#243440; --hairline:#1e2c36;
+  --accent:#4fb3bc; --accent-deep:#7fd0d7; --accent-tint:#123238;
+  --warn:#e08a4a; --warn-tint:#3a2412;
+  --new:#b39ce6; --new-tint:#2a2140;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{background:var(--ground);color:var(--ink);font:16px/1.6 var(--f-display);padding:0 1rem}
+.wrap{max-width:62rem;margin:0 auto}
+a{color:var(--accent);text-decoration-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+a:hover{text-decoration-color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font:.88em var(--f-mono);background:var(--surface-2);padding:.1em .35em;border-radius:4px;color:var(--ink)}
+pre{font:.85em/1.5 var(--f-mono);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;overflow-x:auto}
+
+header{padding:3.5rem 0 2.2rem;border-bottom:1px solid var(--border)}
+.eyebrow{font:600 .74rem/1 var(--f-mono);color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+h1{font:700 clamp(1.8rem,4.5vw,2.6rem)/1.15 var(--f-display);margin:.6rem 0 .9rem;letter-spacing:-.01em;text-wrap:balance}
+.lede{max-width:46rem;color:var(--muted);font-size:1.05rem}
+.lede strong{color:var(--ink);font-weight:600}
+.ways{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;margin-top:1.2rem;font-size:.9rem}
+.ways a{font-family:var(--f-mono);font-size:.82rem}
+
+section{padding:2.4rem 0;border-bottom:1px solid var(--hairline)}
+h2{font:700 1.5rem/1.25 var(--f-display);margin:0 0 .8rem;text-wrap:balance}
+h3{font:650 1.05rem/1.3 var(--f-display);margin:1.4rem 0 .5rem}
+section>p{max-width:46rem;color:var(--muted)}
+section>p+p{margin-top:.7rem}
+ul.plain,ol.plain{max-width:46rem;color:var(--muted);padding-left:1.25rem}
+ul.plain li+li,ol.plain li+li{margin-top:.4rem}
+li strong,p strong{color:var(--ink);font-weight:600}
+
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--surface);border-radius:10px;padding:1rem 1.2rem;max-width:46rem;margin:1.2rem 0;box-shadow:var(--shadow)}
+.callout p{color:var(--ink)}
+.callout p+p{margin-top:.6rem}
+
+/* The picture: a grid of boxes, three lanes */
+.picture{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin:1.4rem 0 .6rem}
+@media (max-width:760px){.picture{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.picture{grid-template-columns:1fr}}
+.box{border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:.8rem .9rem;box-shadow:var(--shadow);min-width:0}
+.box .k{font:600 .7rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.box .t{font-weight:650;margin:.3rem 0 .25rem;overflow-wrap:anywhere}
+.box .d{font-size:.86rem;color:var(--muted)}
+.box.new{border-color:var(--new);background:var(--new-tint)}
+.box.new .k{color:var(--new)}
+.box.out{border-style:dashed}
+.legend{font-size:.82rem;color:var(--faint);margin-top:.4rem}
+
+/* Item cards */
+.item{border:1px solid var(--border);background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:1.3rem 1.4rem;margin:1.4rem 0}
+@media (max-width:520px){.item{padding:1rem 1rem}}
+.item-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem 1rem;margin-bottom:.6rem}
+.item-head h3{margin:0;font-size:1.25rem}
+.chip{display:inline-block;font:600 .7rem/1.5 var(--f-mono);letter-spacing:.04em;padding:.1rem .55rem;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);white-space:normal;overflow-wrap:anywhere;max-width:100%}
+.chip.new{border-color:var(--new);background:var(--new-tint);color:var(--new)}
+.chip.warn{border-color:var(--warn);background:var(--warn-tint);color:var(--warn)}
+.io{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:.8rem 0}
+@media (max-width:640px){.io{grid-template-columns:1fr}}
+.io>div{border:1px solid var(--hairline);border-radius:10px;padding:.7rem .9rem;background:var(--surface-2);min-width:0}
+.io .k{font:600 .7rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:.4rem}
+.io ul{padding-left:1.1rem;color:var(--muted);font-size:.92rem}
+.io li+li{margin-top:.3rem}
+.io li code{overflow-wrap:anywhere}
+.item h4{font:650 .78rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:1.1rem 0 .45rem}
+.item ol,.item ul.plain{color:var(--muted);padding-left:1.25rem;max-width:none;font-size:.95rem}
+.item ol li+li,.item ul.plain li+li{margin-top:.35rem}
+.script{border-left:3px solid var(--accent);padding-left:.9rem}
+.script li b{color:var(--ink);font-weight:600}
+.refactor{border-left:3px solid var(--warn);padding-left:.9rem}
+.refactor li::marker{color:var(--warn)}
+
+/* Matrix */
+.matrix{border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow-x:auto;box-shadow:var(--shadow);margin:1rem 0}
+.matrix table{border-collapse:collapse;width:100%;min-width:52rem;font-size:.88rem}
+.matrix th,.matrix td{padding:.55rem .75rem;text-align:left;border-bottom:1px solid var(--hairline);vertical-align:top}
+.matrix th{font:600 .7rem/1.3 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--faint);background:var(--surface-2)}
+.matrix tr:last-child td{border-bottom:0}
+.matrix td.now{color:var(--muted)}
+.matrix td.next{color:var(--ink)}
+.matrix .no{color:var(--warn);font-weight:600}
+.matrix .yes{color:var(--accent-deep);font-weight:600}
+
+/* Increment list */
+.incr{display:grid;grid-template-columns:1fr;gap:.7rem;margin:1rem 0}
+.incr>div{border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:.8rem 1rem;box-shadow:var(--shadow)}
+.incr .n{font:700 .74rem/1 var(--f-mono);color:var(--warn);letter-spacing:.06em}
+.incr .t{font-weight:650;margin:.25rem 0 .3rem}
+.incr .d{font-size:.92rem;color:var(--muted)}
+
+footer{padding:2rem 0 3.5rem;font-size:.9rem;color:var(--faint)}
+footer p+p{margin-top:.6rem}
+</style>
+</head><body><div class="wrap">
+
+<header>
+  <div class="eyebrow">open.csr · after the user meeting · 2026-09-02</div>
+  <h1>How every item in the sidebar is made, and what changes next</h1>
+  <p class="lede">The demo's sidebar lists <strong>Documents, Displays, Text</strong> and <strong>Values</strong>; the top bar adds <strong>Templates</strong>. This page answers, for each one, the questions the meeting raised: what goes in, what the pipeline does with it, what comes out, where you can see it, and what it links to today. It then documents the refactor the questions point at: two new sidebar sections, <strong>Data</strong> and <strong>Metadata</strong>, linked explicitly from every artifact that used them, and the boundary decision that makes the ARD an input rather than something this system computes. State described is the v0.4.0 candidate.</p>
+  <div class="ways">
+    <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html">the candidate's demo</a>
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/open-csr-data-framework-2026-08-26/">the design framework (2026-08-26)</a>
+    <a href="https://github.com/jwildfire/open.csr/blob/release/v0.4.0/docs/design/contracts.md">the contracts</a>
+    <a href="https://github.com/jwildfire/open.csr/pull/75">v0.4.0-RC1</a>
+  </div>
+</header>
+
+<section id="short">
+  <h2>The short version</h2>
+  <p>Everything in the sidebar is one of three kinds of thing. It is <strong>declared</strong> (a spec or a model that a person or an agent writes, and the pipeline reads), <strong>computed</strong> (the pipeline makes it from declared things and data, and nobody edits it), or <strong>written</strong> (prose, which a person approves). The sidebar today shows the computed and the written things, and one kind of declared thing. Its two missing sections are the two kinds of input that have no page of their own: the <strong>Data</strong> that was measured, and the <strong>Metadata</strong> that was declared about the study and its documents.</p>
+  <div class="callout">
+    <p><strong>Documents</strong> are computed from templates, text, displays and values. <strong>Displays</strong> are computed from a display specification and prepared data, through an ARD. <strong>Text</strong> is written, and binds numbers by address instead of typing them. <strong>Values</strong> are computed from named ARD addresses. <strong>Templates</strong> are declared. <strong>Data</strong> and <strong>Metadata</strong> are the inputs all of those read, and they are visible today only as labels.</p>
+    <p>The one rule that makes the sidebar honest: a computed thing is never edited; you change what it was computed from and rebuild. That rule is why every item below can state its inputs exactly.</p>
+  </div>
+</section>
+
+<section id="picture">
+  <h2>The picture</h2>
+  <p>Solid boxes are what exists today; dashed boxes are outputs; the two purple boxes are the sections the refactor adds. Every arrow in this diagram is a link the refactor makes explicit in the app.</p>
+  <div class="picture" aria-label="How the sidebar items connect">
+    <div class="box new"><div class="k">data · proposed section</div><div class="t">Study data</div><div class="d">13 vendored transport files (10 ADaM, SDTM cm and dm, one relabelled copy), provenance to the upstream commit, two source lanes, documented derivations</div></div>
+    <div class="box new"><div class="k">metadata · proposed section</div><div class="t">Study model · document models · specifications</div><div class="d"><code>study.yaml</code>, the four template objects, each display's <code>analysis.yaml</code> and <code>display.yaml</code>, value declarations, text frontmatter, environment records</div></div>
+    <div class="box"><div class="k">pipeline · R</div><div class="t">regenerate(slug)</div><div class="d">prepared data + specification → ARD → rendered table and RTF, one iteration folder per rebuild</div></div>
+    <div class="box out"><div class="k">displays · 30</div><div class="t">ard.json, table.html, table.rtf, manifest.json</div><div class="d">one row per statistic, each with an address</div></div>
+    <div class="box"><div class="k">pipeline · R</div><div class="t">regenerate_values()</div><div class="d">named addresses and declared arithmetic → a store</div></div>
+    <div class="box out"><div class="k">values · 15</div><div class="t">values.json</div><div class="d">value, formatted value, the ARD row and hash it came from</div></div>
+    <div class="box"><div class="k">text · 33 blocks</div><div class="t">library/text/TXT-*.md</div><div class="d">written prose; numbers arrive as bindings to ARD rows or to values</div></div>
+    <div class="box out"><div class="k">documents · 4 assembled</div><div class="t">assemble.mjs → csr, synopsis, abbreviated, display package</div><div class="d">seven gates: structure, bindings, digits, cross-references, values, treatment consistency, coverage</div></div>
+  </div>
+  <p class="legend">Read left to right, top to bottom: data and metadata feed the pipeline; the pipeline makes displays; displays feed values and text; templates assemble all three into documents. The documents' own provenance appendix (section 16.1.9) is where the whole chain is currently written down, once, at the end.</p>
+</section>
+
+<section id="documents">
+  <h2>Sidebar item by item</h2>
+  <p>Each card states the item's inputs and outputs as file paths, the steps that make it, where it shows, what it links to now, a short walkthrough script against the live candidate, and the refactor. Counts are the v0.4.0 candidate's.</p>
+
+  <div class="item">
+    <div class="item-head"><h3>Documents</h3><span class="chip">sidebar · 5 listed · 4 assembled · 1 planned</span><span class="chip">computed</span></div>
+    <p>A document is the assembled report: one template object filled with this study's text, displays and values, then gated. The four that exist are the full ICH E3 clinical study report, the E3 synopsis, the abbreviated report and the post-text display package; the statistical analysis plan is listed as planned and has no assembler input yet.</p>
+    <div class="io">
+      <div><div class="k">Inputs</div><ul>
+        <li>A template object: <code>library/templates/&lt;id&gt;/sections.yaml</code> (what this kind of document is) and <code>assembly.yaml</code> (what this study puts in each section)</li>
+        <li>Text blocks named in the assembly slots, from <code>library/text/</code>; generated-tier blocks only when approved</li>
+        <li>Each placed display's current iteration: its ARD and its pre-rendered variant (<code>outputs/&lt;slug&gt;/current.json</code>)</li>
+        <li>The values store <code>outputs/values/values.json</code>, and the study model <code>library/study.yaml</code> for the treatment-consistency gate</li>
+      </ul></div>
+      <div><div class="k">Outputs</div><ul>
+        <li><code>docs/assembled/&lt;basename&gt;.json</code>: the document as data, with every gate's result</li>
+        <li><code>docs/assembled/&lt;basename&gt;.html</code>: the rendered document, including the provenance appendix at 16.1.9</li>
+        <li>The Reader pane, which renders the same document from library source, resolving bindings against the committed ARDs, so the app and CI agree</li>
+      </ul></div>
+    </div>
+    <h4>How it is made</h4>
+    <ol>
+      <li>The R pipeline has already run: every display's <code>current.json</code> names its latest iteration.</li>
+      <li><code>node scripts/assemble.mjs --all</code> discovers every directory under <code>library/templates/</code> with a <code>sections.yaml</code>.</li>
+      <li>For each template it walks <code>assembly.yaml</code>: a slot's text blocks are rendered with their bindings resolved, in-text displays are drawn from the display's ARD, post-text displays are numbered from their order (the slug is the identity; the 14.x number is derived here).</li>
+      <li>Seven gates run over the document being built: structure, binding resolution, numeric fidelity (no digit without a binding), cross-references, values (each re-derived from the ARDs), treatment consistency (every display's population against the study model and each other), display coverage.</li>
+      <li>The JSON and HTML are written; the site build then wraps them for the Reader.</li>
+    </ol>
+    <h4>Where it shows</h4>
+    <ul class="plain"><li>Demo → Documents pane: <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=documents&doc=csr">the clinical study report</a>, and the other three from the sidebar. Each section shows its text blocks with an Edit control and its in-text tables; section 14 lists the post-text displays; 16.1.9 is the provenance appendix.</li></ul>
+    <h4>What it links to today</h4>
+    <ul class="plain">
+      <li>Every placed display links to its Displays entry; every text block shows its id chip and opens the editor in place.</li>
+      <li>Cross-references (<code>{{xref:display:…}}</code>, <code>{{xref:section:…}}</code>) resolve to numbered links inside the document.</li>
+      <li>16.1.9 lists each display's ARD file, hash and environment, but as text: nothing in it links to a dataset, to the study model, or to the template that placed the display.</li>
+    </ul>
+    <h4>Walkthrough script</h4>
+    <ol class="script">
+      <li><b>Show</b> the CSR at <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=documents&doc=csr&focus=study-patients">section 10</a>. <b>Say:</b> nothing on this page was typed. The headings come from the document model, the prose from text blocks, the table from a display, and every number in the prose from an address into that display's results.</li>
+      <li><b>Show</b> the outlined numbers in 10.1. <b>Say:</b> the outline marks a binding. Hover one: it names the display, the analysis and the statistic it came from.</li>
+      <li><b>Show</b> <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=documents&doc=csr&focus=efficacy-evaluation">section 11.1</a>. <b>Say:</b> this block was rewritten last week and approved on 2 September; the approval is in the block's own header, and the report would not include it as generated prose until it was.</li>
+      <li><b>Show</b> the synopsis from the sidebar. <b>Say:</b> same displays, same text blocks, a different document model, so the demographics table is 14.1.2 in one and 13.2 in the other, and nobody renumbered anything.</li>
+      <li><b>Show</b> 16.1.9. <b>Say:</b> this is the chain of custody, written by the assembler: which ARD, which hash, which R version. The refactor turns each of those lines into a link.</li>
+    </ol>
+    <h4>Refactor needed</h4>
+    <ul class="refactor">
+      <li>An inputs panel per document, above the text: the template object (Metadata), the study model (Metadata), the placed displays, the text blocks and their approval state, the values cited, and the datasets reached through the displays (Data). Every entry a link.</li>
+      <li>16.1.9 becomes a generated view of the Metadata and Data pages rather than a flat list: each ARD line links its display iteration, its dataset entries and its environment record.</li>
+      <li>The Documents sidebar group shows the gate state per document (green, or the failing gate's name), since a document that failed a gate is not a document.</li>
+      <li>Known defect carried to v0.4.1: selecting a section in the sidebar updates the hash but does not scroll to it (open.csr #38).</li>
+    </ul>
+  </div>
+
+  <div class="item" id="displays">
+    <div class="item-head"><h3>Displays</h3><span class="chip">sidebar · 30 · 27 tables, 1 listing, 2 figures</span><span class="chip">computed</span></div>
+    <p>A display is a table, listing or figure the pipeline produced from a specification and prepared data. Its identity is the slug; its regulatory id, type, E3 position and datasets are declared; its numbers are computed into an ARD and rendered from it.</p>
+    <div class="io">
+      <div><div class="k">Inputs</div><ul>
+        <li><code>library/tfl/&lt;slug&gt;/analysis.yaml</code>: what to compute (dataset, analysis set, grouping column, the analyses and their methods, the denominator)</li>
+        <li><code>library/tfl/&lt;slug&gt;/display.yaml</code>: how to show it (columns, rows, formats, footnotes, variants, figure block)</li>
+        <li><code>custom.R</code> where a built-in method does not fit: 19 displays carry one, one borrows another's through <code>custom_from</code></li>
+        <li>Prepared datasets from <code>prepare_data()</code>: the vendored transport files read through the source registry, with the documented derivations applied; <code>adsl</code> as the denominator</li>
+        <li><code>library/study.yaml</code>: the arms in print order and the flag each analysis set means</li>
+      </ul></div>
+      <div><div class="k">Outputs</div><ul>
+        <li><code>outputs/&lt;slug&gt;/vNNN/ard.json</code>: one row per statistic, plus a provenance envelope (spec and display hashes, dataset hashes and row counts, R and package versions, the population record)</li>
+        <li><code>table.html</code> and <code>table.rtf</code> per variant (<code>table-in-text.*</code> for the in-text redraw), from the same rendered cells</li>
+        <li><code>manifest.json</code>: who regenerated it, why (the change request), every hash, and each variant's file; <code>current.json</code> points at the latest iteration</li>
+        <li>Snapshots of both specs beside the ARD, so an iteration is reproducible from its own folder</li>
+      </ul></div>
+    </div>
+    <h4>How it is made</h4>
+    <ol>
+      <li><code>Rscript -e 'pkgload::load_all("pipeline"); regenerate("t-demographics")'</code>.</li>
+      <li><code>prepare_data()</code> resolves each dataset the spec names to a source lane (the pilot's own package by default), reads the vendored file, applies the derivations the contract documents (population flags, age groups, the race recode, derived medications, baseline measures), and records a hash and row count per dataset.</li>
+      <li><code>build_ard()</code> runs each analysis in <code>analysis.yaml</code>, built-in or custom, and stacks the results into the ARD; <code>ard_population()</code> counts the subjects per arm the ARD summarises.</li>
+      <li><code>render_display()</code> draws each variant from the ARD and <code>display.yaml</code>; the RTF writer emits the same cells as RTF.</li>
+      <li>The iteration folder is written with its manifest; <code>current.json</code> advances. Nothing under <code>outputs/</code> is ever edited by hand, and a guard test re-hashes every committed RTF to prove it.</li>
+    </ol>
+    <h4>Where it shows</h4>
+    <ul class="plain">
+      <li>Demo → Displays pane, for example <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&display=t-demographics">demographics</a>: a header (slug, regulatory id, type, E3 position, status, current iteration, datasets, evidence, requirements, used in) and four tabs: Rendered display, ARD, Specs, Iteration timeline.</li>
+      <li>The gallery page for the same display outside the app, and its evidence page under Quality.</li>
+    </ul>
+    <h4>What it links to today</h4>
+    <ul class="plain">
+      <li>Used in → the documents that place it, with the number each gives it.</li>
+      <li>Evidence → the display's evidence page; requirements → the matrix rows.</li>
+      <li>Datasets is a label (<code>adsl</code>), not a link. The ARD tab shows the dataset hashes and the environment as text. The Specs tab shows the two YAML files but not the study model they depend on. Nothing links a display to the data it read or to the metadata it was built against.</li>
+    </ul>
+    <h4>Walkthrough script</h4>
+    <ol class="script">
+      <li><b>Show</b> <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&display=t-demographics">demographics</a>, the header. <b>Say:</b> the slug is the name; the number 14.1.2 is assigned by whichever document places it. It reads one dataset, and it is at iteration v007.</li>
+      <li><b>Show</b> the Specs tab. <b>Say:</b> two files. The first says what to compute: intent-to-treat set, grouped by planned treatment, these analyses. The second says how to print it: column order, row labels, one decimal for a mean. Change either, rebuild, and you get v008.</li>
+      <li><b>Show</b> the ARD tab. <b>Say:</b> 548 rows, one per statistic. Row: analysis age, group Placebo, stat mean, 75.2. That row has an address, <code>t-demographics:age:mean;group=Placebo</code>, and any sentence in the report that needs 75.2 cites the address.</li>
+      <li><b>Show</b> the provenance at the top of the ARD tab. <b>Say:</b> the hash of the input dataset, the R and package versions, and the number of subjects per arm this table summarised. The build fails if that last number disagrees with any other table's.</li>
+      <li><b>Show</b> the Iteration timeline. <b>Say:</b> every rebuild kept, each with its change request. v001 to v007 is the history of this table since July.</li>
+      <li><b>Show</b> the RTF link on the Rendered display tab. <b>Say:</b> the submission-format file, from the same cells, hash-recorded so a hand-edited copy cannot pass as the pipeline's.</li>
+    </ol>
+    <h4>Refactor needed</h4>
+    <ul class="refactor">
+      <li>The datasets label becomes links into the Data section, one per dataset, carrying the hash and row count the ARD recorded, so the reader lands on the exact input.</li>
+      <li>The header gains a Metadata line: the study model (arms, analysis set as this display resolved it), the template positions that place it, and the environment record of the current iteration.</li>
+      <li>The ARD tab states the ARD's origin: computed here from the specification (today's case) or received from a producer (the boundary decided below), with the producer named and the envelope's hashes either way.</li>
+      <li>The Specs tab links each spec to its Metadata page, where the same specification is shown with its version history and the displays that share custom code.</li>
+    </ul>
+  </div>
+
+  <div class="item" id="text">
+    <div class="item-head"><h3>Text</h3><span class="chip">sidebar · 33 blocks · 19 boilerplate, 9 parameterized, 5 generated</span><span class="chip">written</span><span class="chip warn">10 approved · 23 draft</span></div>
+    <p>A text block is prose for one ICH E3 section, written by a person or drafted by a model, with numbers that arrive as bindings. Its tier says how it was made; its approval says whether the report may carry it; its frontmatter lists the displays it binds.</p>
+    <div class="io">
+      <div><div class="k">Inputs</div><ul>
+        <li><code>library/text/&lt;ID&gt;.md</code>: YAML frontmatter (id, E3 section, tier, version, displays, approval, provenance model and prompt, requirements, allowed digits) and the prose</li>
+        <li>ARD rows, by address: <code>{{ard:&lt;display&gt;:&lt;analysis&gt;:&lt;stat&gt;;group=…}}</code>, resolved against each display's current iteration (6 displays are bound by prose today)</li>
+        <li>Values, by name: <code>{{value:&lt;id&gt;}}</code> (3 blocks use one)</li>
+        <li>The assembler, for cross-reference tokens that resolve to numbers it owns</li>
+      </ul></div>
+      <div><div class="k">Outputs</div><ul>
+        <li>No file is generated from a block; it is rendered wherever it is placed. Rendering resolves the bindings, tracks each substitution's span, and runs the two text gates: every binding resolves to exactly one row, and no digit in the rendered prose lacks a binding</li>
+        <li>In the assembled document, the block's rendered prose and its gate result</li>
+        <li>Editing in the app produces a unified diff of the source file and a patch; nothing is written from the browser</li>
+      </ul></div>
+    </div>
+    <h4>How it is made</h4>
+    <ol>
+      <li>A person writes the file, or an agent drafts it with the model and prompt recorded in the frontmatter (generated tier).</li>
+      <li>Numbers are not typed. The author looks up the address in the display's ARD tab or the value's name in the Values page and cites it.</li>
+      <li>The assembler and the site render the block with bindings resolved; the fidelity gate fails the build on any stray digit.</li>
+      <li>A reviewer sets <code>approval</code> in the frontmatter. Until then a generated block is held out of the report and shows as draft prose.</li>
+    </ol>
+    <h4>Where it shows</h4>
+    <ul class="plain">
+      <li>Demo → Text pane: one card per block with its id, tier, approval, bindings and an editor; the same editor opens in a drawer under the block in the Reader.</li>
+      <li>In every document that places the block.</li>
+    </ul>
+    <h4>What it links to today</h4>
+    <ul class="plain">
+      <li>Binding chips link to the display and focus the bound row.</li>
+      <li>The block's id anchors it from the Reader; the E3 section is a label from the frontmatter.</li>
+      <li>The displays list in the frontmatter is maintained by hand and can drift from the bindings actually used; the values a block cites are not listed anywhere; the section a block belongs to is not linked to the document model that defines it.</li>
+    </ul>
+    <h4>Walkthrough script</h4>
+    <ol class="script">
+      <li><b>Show</b> the Text pane, block <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=text&block=TXT-E3-1101">TXT-E3-1101</a>. <b>Say:</b> the header says how this prose was made and whether it is approved. The chips are the numbers it uses, each an address.</li>
+      <li><b>Show</b> Edit, then type a digit into the prose. <b>Say:</b> the gate fails before you finish the sentence: a number with no address. Delete it and the gate passes. This is the same code CI runs.</li>
+      <li><b>Show</b> Copy patch. <b>Say:</b> an edit becomes a source change for review; the browser never writes to the repository.</li>
+      <li><b>Show</b> a generated-tier block marked draft. <b>Say:</b> the model and the prompt are on record; the report leaves it out until someone approves it in the file.</li>
+    </ol>
+    <h4>Refactor needed</h4>
+    <ul class="refactor">
+      <li>Each block lists its inputs, derived at build rather than declared by hand: the displays and the iteration each binding resolved against, the values cited, and the document model section it belongs to (Metadata). The hand-maintained <code>displays:</code> list is retired or checked against the derived one.</li>
+      <li>The approval record links to the Metadata page that shows every block's approval trail, so a reviewer sees the whole report's state in one place.</li>
+      <li>Binding chips carry the ARD hash they resolved against, so a block rendered against a newer iteration says so.</li>
+    </ul>
+  </div>
+
+  <div class="item" id="values">
+    <div class="item-head"><h3>Values</h3><span class="chip">sidebar · 15 · 13 from an address, 2 by arithmetic</span><span class="chip">computed</span></div>
+    <p>A value is a number the report reuses by name: randomised N, median age. It is either one ARD address named once, or a declared arithmetic over other values. The pipeline resolves it and the assembler re-derives it on every build.</p>
+    <div class="io">
+      <div><div class="k">Inputs</div><ul>
+        <li><code>library/values/values.yaml</code>: id, label, either <code>source:</code> (an ARD address, display included) or <code>derived:</code> (sum, difference, ratio, percent over other ids), a presentation format, notes</li>
+        <li>The ARD row each source address resolves to, in the display's current iteration</li>
+      </ul></div>
+      <div><div class="k">Outputs</div><ul>
+        <li><code>outputs/values/values.json</code>: per value the unscaled number, the formatted string, and the source (display, analysis, iteration, ARD file, ARD hash); the store's own provenance (source file hash, commit, environment)</li>
+        <li>In every document, the values gate's result: a value fails when its address resolves to zero or several rows, or the ARD no longer agrees with the store</li>
+      </ul></div>
+    </div>
+    <h4>How it is made</h4>
+    <ol>
+      <li>Someone adds a value to the YAML with a label and an address.</li>
+      <li><code>Rscript -e 'pkgload::load_all("pipeline"); regenerate_values()'</code> resolves every address against the committed ARDs, evaluates the derived ones, and writes the store.</li>
+      <li>Prose cites <code>{{value:randomised-n}}</code>; the assembler substitutes the formatted string and records the substitution like any binding.</li>
+      <li>At assembly the gate re-derives every value from the same ARDs the report is built from, in JavaScript, and agrees with the R builder by construction: the derivation vocabulary is closed so both can evaluate it.</li>
+    </ol>
+    <h4>Where it shows</h4>
+    <ul class="plain"><li>Demo → <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=values">Values pane</a>: one row per value with its label, number, an ARD badge, the provenance path with its hash, and what cites it.</li></ul>
+    <h4>What it links to today</h4>
+    <ul class="plain">
+      <li>The provenance path links to the display and its iteration; requirements link to the matrix.</li>
+      <li>Cited by lists text blocks. The datasets behind the ARD, and the study model that defines the arm named in the address, are two steps away and not linked.</li>
+    </ul>
+    <h4>Walkthrough script</h4>
+    <ol class="script">
+      <li><b>Show</b> <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=values">the Values pane</a>, randomised-n. <b>Say:</b> 254 has a name. The name points at one row of the disposition table's results, iteration v003, hash recorded.</li>
+      <li><b>Show</b> a derived value. <b>Say:</b> the arithmetic is declared, not typed: the sum of two named values. R computes it for the store; the build recomputes it in JavaScript and they must agree.</li>
+      <li><b>Show</b> Cited by. <b>Say:</b> the sentences that use the name. Change the display, rebuild, and every one of them changes together, or the build fails and says which value moved.</li>
+    </ol>
+    <h4>Refactor needed</h4>
+    <ul class="refactor">
+      <li>Each value links through its ARD to the Data entries the ARD was computed from, and to the study model's definition of the arm its address names (Metadata).</li>
+      <li>Values become citable from displays as well as text: a display footnote that states a denominator cites the value rather than a digit.</li>
+    </ul>
+  </div>
+
+  <div class="item" id="templates">
+    <div class="item-head"><h3>Templates</h3><span class="chip">top bar, not the sidebar · 4 template objects</span><span class="chip">declared</span></div>
+    <p>A template object says what a kind of document is (<code>sections.yaml</code>, numbered sections and what each may contain) and what this study puts into it (<code>assembly.yaml</code>, which blocks and displays go in which slot). The full ICH E3 model has 119 sections; the synopsis, the abbreviated report and the display package are restrictions of it.</p>
+    <div class="io">
+      <div><div class="k">Inputs</div><ul><li>Written by hand: <code>library/templates/&lt;id&gt;/sections.yaml</code> and <code>assembly.yaml</code>; the study block in the assembly must agree with <code>library/study.yaml</code> (a gate checks)</li></ul></div>
+      <div><div class="k">Outputs</div><ul><li>None of its own. It is read by the assembler to make Documents, and rendered in the Templates pane with the display numbers the assembler would derive, so a reordering is visible before a build</li></ul></div>
+    </div>
+    <h4>Where it shows and what it links to today</h4>
+    <ul class="plain"><li>Demo → <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=templates">Templates pane</a>: every section of the model, marked populated or not, with the placed displays and their derived numbers linking to the Displays pane. Documents do not link back to the template that made them.</li></ul>
+    <h4>Refactor needed</h4>
+    <ul class="refactor"><li>Templates move into the Metadata section as its Document models entry, and every document links to the template object it was assembled from; the top-bar link stays as a shortcut.</li></ul>
+  </div>
+
+  <div class="item" id="data">
+    <div class="item-head"><h3>Data</h3><span class="chip new">proposed sidebar section</span><span class="chip">input</span></div>
+    <p>What was measured. Today it is the best-recorded and least-visible thing in the system: every dataset's upstream path, commit and hash are in the repository, every ARD names the datasets it read with their hashes and row counts, and none of it has a page.</p>
+    <div class="io">
+      <div><div class="k">What exists today</div><ul>
+        <li><code>pipeline/inst/extdata/phuse-cdiscpilot01/</code>: 13 gzipped transport files vendored from <code>phuse-org/phuse-scripts</code> (MIT): 10 ADaM datasets, the SDTM <code>cm</code> and <code>dm</code> domains, and the relabelled medications copy kept for the derivation check</li>
+        <li><code>PROVENANCE.json</code>: upstream repository, pinned commit and date, licence, and per file the upstream path, blob SHA-1, SHA-256 and byte counts; <code>qc/vendor-phuse-data.R --check</code> re-verifies</li>
+        <li>The source registry <code>data_sources()</code>: two lanes, the pilot's own package by default and the pharmaverse re-derivation as the measured alternate; their divergences recorded in <code>quality/data/source-agreement.json</code></li>
+        <li>The preparation layer's derivations, documented in the contract: population flags, age groups, the race recode, baseline measures, derived medications from SDTM CM, the screened population from DM</li>
+        <li>In every ARD and manifest: dataset, hash, row count, source package and version</li>
+        <li>The extdata README, in the repository only</li>
+      </ul></div>
+      <div><div class="k">Where it is visible today</div><ul>
+        <li>Nowhere in the app. A display's header says <code>adsl</code> as a label; the ARD tab shows a hash; the evidence page lists dataset names under traceability; 16.1.9 repeats the hashes as text</li>
+      </ul></div>
+    </div>
+    <h4>The section, as proposed</h4>
+    <ol>
+      <li><strong>One page per dataset:</strong> name and domain, lane, upstream path and pinned commit, file hashes, the prepared frame's rows and columns and its hash, the derivations applied to it (each linking to the contract paragraph and the code), and the displays that read it with the iteration and hash each recorded. The reverse index is the point: from a dataset to every number it produced.</li>
+      <li><strong>One page for the lanes:</strong> which dataset comes from where by default, the alternate lane, and the measured divergences between them.</li>
+      <li><strong>One page for the study's data package as a whole:</strong> the provenance record rendered, the licence, the verification command and its last result.</li>
+      <li><strong>Under the boundary decided below, one page per ARD received:</strong> producer, envelope hashes, the datasets the producer names, and the displays rendered from it.</li>
+    </ol>
+    <h4>Linked from</h4>
+    <ul class="plain"><li>Every display header (datasets), every ARD tab (the hashes), every value (through its ARD), every document's inputs panel and 16.1.9, and the Metadata study page (the source the study model declares).</li></ul>
+  </div>
+
+  <div class="item" id="metadata">
+    <div class="item-head"><h3>Metadata</h3><span class="chip new">proposed sidebar section</span><span class="chip">declared</span></div>
+    <p>What was declared, as opposed to measured or written. It is scattered across five kinds of file today and shown in three different places, or not at all.</p>
+    <div class="io">
+      <div><div class="k">What exists today</div><ul>
+        <li><strong>The study model</strong> <code>library/study.yaml</code>: id, title, phase, cut-off, arms in print order, the columns that carry an arm label, the analysis sets with the flag defining each and the subjects each holds per arm, the data source. Read by the pipeline's treatment vocabulary and analysis-set registry and by the assembler's gate. Not shown anywhere.</li>
+        <li><strong>The document models</strong>: the four template objects. Shown in the Templates pane.</li>
+        <li><strong>Display specifications</strong>: <code>analysis.yaml</code> and <code>display.yaml</code> per display, snapshotted per iteration with their hashes, plus the regulatory id, type and E3 position the registry carries. Shown in each display's Specs tab and header.</li>
+        <li><strong>Value declarations</strong> <code>values.yaml</code>, and <strong>text frontmatter</strong> (tier, version, approval, model and prompt, requirements). Shown per item.</li>
+        <li><strong>Environment records</strong>: R, operating system and package versions in every manifest and ARD envelope; the commit when the tree was clean. Shown as text in the ARD tab and 16.1.9.</li>
+        <li><strong>The registry</strong> <code>site/config.json</code> and the requirement matrices under <code>quality/requirements/</code>. Shown on the Quality pages.</li>
+        <li>The pilot's own analysis results metadata (its define.xml) is the reference the efficacy specifications were written from; it lives outside the repository and is cited in footnotes.</li>
+      </ul></div>
+      <div><div class="k">Where it is visible today</div><ul>
+        <li>The Templates pane (document models), each display's Specs tab (its two files), the Quality pages (requirements). The study model, the environment records and the approval trail have no page.</li>
+      </ul></div>
+    </div>
+    <h4>The section, as proposed</h4>
+    <ol>
+      <li><strong>Study:</strong> the study model rendered: arms, group variables, analysis sets with their counts and the flag behind each, cut-off, source (linking to Data). Every display and value that names an arm or a set links here.</li>
+      <li><strong>Document models:</strong> the Templates pane, moved. Each document links to the model it was assembled from.</li>
+      <li><strong>Specifications:</strong> per display, the two specs with their version history and hashes and the custom code shared between displays; per value, its declaration; per text block, its frontmatter. Each artifact links to its own entry.</li>
+      <li><strong>Approvals:</strong> the approval state of every text block in one list, with who and when, so the report's readiness is one page.</li>
+      <li><strong>Environments:</strong> every distinct environment record across iterations, with the iterations built in each; 16.1.9 links here.</li>
+      <li><strong>Requirements:</strong> the matrices, already built, linked from here as well as from Quality.</li>
+    </ol>
+    <h4>Linked from</h4>
+    <ul class="plain"><li>Every display (study model, specs, environment), every document (document model, study model, approvals), every text block (its section, its approval), every value (its declaration, the arm it names), and Data (the source the study declares).</li></ul>
+  </div>
+</section>
+
+<section id="matrix">
+  <h2>The links, as one table</h2>
+  <p>Rows are where a reader starts; columns are where a link should take them. Each cell says whether the link exists in the candidate and what the refactor makes it.</p>
+  <div class="matrix">
+    <table>
+      <thead><tr><th>From</th><th>to Data</th><th>to Metadata</th><th>to Displays</th><th>to Text</th><th>to Values</th><th>to Documents</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Document</strong></td><td class="now"><span class="no">no</span> · hashes as text in 16.1.9 → dataset pages via the placed displays</td><td class="now"><span class="no">no</span> → the template object, the study model, the approvals list</td><td class="yes">yes</td><td class="yes">yes</td><td class="now">cited values shown in prose → the values panel per document</td><td class="now">synopsis and report do not link each other → same display, other document</td></tr>
+        <tr><td><strong>Display</strong></td><td class="now"><span class="no">label only</span> → one link per dataset with the recorded hash</td><td class="now"><span class="no">specs shown, not linked</span> → study model, spec history, environment, template positions</td><td class="now">shared custom code not shown → displays sharing code</td><td class="now"><span class="no">no</span> → blocks bound to this display</td><td class="now"><span class="no">no</span> → values sourced from this ARD</td><td class="yes">yes (Used in)</td></tr>
+        <tr><td><strong>Text block</strong></td><td class="now"><span class="no">no</span> → through its displays</td><td class="now"><span class="no">no</span> → its section in the document model; its approval in the trail</td><td class="yes">yes (binding chips)</td><td class="now">no need</td><td class="now"><span class="no">no</span> → values cited</td><td class="now">anchored from the Reader → documents placing it</td></tr>
+        <tr><td><strong>Value</strong></td><td class="now"><span class="no">no</span> → through its ARD</td><td class="now"><span class="no">no</span> → its declaration; the arm named</td><td class="yes">yes (provenance path)</td><td class="yes">yes (Cited by)</td><td class="now">derived inputs named → linked</td><td class="now"><span class="no">no</span> → documents where it is cited</td></tr>
+        <tr><td><strong>Dataset</strong> (new)</td><td class="next">lanes, provenance</td><td class="next">study model source</td><td class="next">every display that read it, with hash</td><td class="next">through displays</td><td class="next">through displays</td><td class="next">through displays</td></tr>
+        <tr><td><strong>Metadata</strong> (new)</td><td class="next">study source → Data</td><td class="next">cross-links between model, specs, approvals</td><td class="next">displays using an arm, a set, a spec, an environment</td><td class="next">blocks per section; approvals</td><td class="next">declarations</td><td class="next">documents per model</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="refactor">
+  <h2>The refactor, as increments</h2>
+  <p>Ordered so each one is useful on its own and the earlier ones do not need re-doing when the later ones land. The first three are what the meeting asked for; the fourth is the boundary question raised on 2 September; the fifth is what the fourth makes possible.</p>
+  <div class="incr">
+    <div><div class="n">R1 · Data section</div><div class="t">A page per dataset, a page for the lanes, a page for the package; the reverse index from dataset to displays</div><div class="d">Built by <code>site.mjs</code> from what already exists: <code>PROVENANCE.json</code>, the source registry, the prepared-data manifests in every ARD. The demo's tab list grows from five to seven (<code>TAB_IDS</code> in <code>core.js</code>), the sidebar gets a Data group, and the registry in <code>site/config.json</code> gains a <code>data</code> entry per dataset with its status. No pipeline change.</div></div>
+    <div><div class="n">R2 · Metadata section</div><div class="t">Study, Document models, Specifications, Approvals, Environments, Requirements</div><div class="d">Templates moves in as Document models. The study page renders <code>study.yaml</code>; the specifications page renders each display's two YAML files with iteration history from the manifests; approvals and environments are collected from frontmatter and manifests. No pipeline change.</div></div>
+    <div><div class="n">R3 · Explicit links</div><div class="t">Every cell in the table above that says "no" becomes a link, both ways</div><div class="d">Display headers link datasets and the study model; document inputs panels; text blocks list derived inputs (the hand-kept <code>displays:</code> list retired); values link through their ARD; 16.1.9 becomes links. Mostly renderer work in <code>site.mjs</code> and the demo client; one contract change, the derived inputs record per text block, written by the assembler into the document JSON.</div></div>
+    <div><div class="n">R4 · The ARD is an input (design decision D13)</div><div class="t">The system boundary moves to the ARD: open.csr renders, gates and assembles; it does not compute statistics</div><div class="d">Everything downstream of the ARD already reads only the ARD. The change: <code>regenerate()</code> accepts an ARD file and skips the build; the analysis layer (<code>analysis.yaml</code>, <code>custom.R</code>, <code>prepare_data()</code>, the source registry, the vendored data) moves to a reference-producer package or the study repository; the treatment-consistency gate derives the population from the ARD rows when the envelope lacks it. The Data section gains its ARDs-received page. D9 is revised from "the pipeline regenerates" to "the pipeline renders". The current 30 committed ARDs keep the demo working as inputs from day one.</div></div>
+    <div><div class="n">R5 · Producer-independent Data</div><div class="t">The Data section describes whatever produced the ARDs, not only this repository's pipeline</div><div class="d">Once R4 lands, a dataset page and an ARD page are populated from the producer's envelope: a SAS producer, a pharmaverse producer and this repository's reference producer all appear the same way. The three-route qualification becomes ARD against rendered against the reference report; recomputation from ADaM belongs to the producer.</div></div>
+  </div>
+  <h3>What does not change</h3>
+  <ul class="plain">
+    <li>The invariant: agents write source, the pipeline regenerates, humans approve. R4 narrows what the pipeline regenerates; it does not let anyone edit an output.</li>
+    <li>Display identity is the slug; numbers are assigned at assembly.</li>
+    <li>Prose never states a number; the fidelity gate stays exactly as it is.</li>
+    <li>Nothing here touches the v0.4.0 candidate. R1 to R3 are a v0.5.0 scope; R4 is decided as D13 alongside them and built as its own release, with R5 following.</li>
+  </ul>
+  <div class="callout">
+    <p><strong>Recommendation.</strong> File one requirement for R1 to R3 as v0.5.0, "the sidebar says where every number came from", and one decision artifact for R4 with the three code changes named above, so the Data section is designed for producers from the start rather than retrofitted.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Facts are from the v0.4.0 candidate (open.csr PR #75, release/v0.4.0 at 2026-09-02): the contracts document, the assembler and site builder, the demo client, the library and outputs trees, and the deployed candidate. Counts: 30 displays, 33 text blocks, 15 values, 4 template objects, 4 assembled documents, 13 vendored data files.</p>
+  <p><em>This page was drafted by Claude Code using Fable 5.1 at @jwildfire's direction, after the 2026-09-02 user meeting, for his review.</em></p>
+</footer>
+
+</div></body></html>
