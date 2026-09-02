@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open.csr v0.4.0 — release overview</title>
+<meta name="description" content="What v0.4.0 changes, change by change: the report describes one study, and five more of the reference report's displays agree with it cell for cell. Captures from the candidate's own deployed tree, with a way into each one.">
+<style>
+/* Tokens lifted from open.csr's own dark demo, as the v0.2.0 overview did, so the
+   captures sit flush with the page. No external resources — the product forbids
+   them and its overview keeps the rule. */
+:root{
+  --paper:#0b0e14; --panel:#10141d; --sunk:#0d1118;
+  --ink:#e8edf5; --muted:#93a0b0; --faint:#5d6a7a;
+  --rule:#1e2531; --rule-firm:#2c3546;
+  --blue:#7fb1ea; --blue-deep:#1a5bb0; --blue-wash:#12203a;
+  --fail:#e06a5e; --pass:#58b98a; --amber:#d9a441;
+  --serif:ui-serif,"Iowan Old Style",Palatino,"Palatino Linotype",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{background:var(--paper);color:var(--ink);font:16px/1.65 var(--sans);padding:0 1.25rem}
+.wrap{max-width:60rem;margin:0 auto}
+a{color:var(--blue);text-decoration-color:color-mix(in srgb,var(--blue) 40%,transparent)}
+a:hover{text-decoration-color:var(--blue)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+header{padding:4.5rem 0 3rem;border-bottom:1px solid var(--rule)}
+.release-id{font:600 .8rem/1 var(--mono);color:var(--blue);letter-spacing:.08em;text-transform:uppercase}
+h1{font:700 clamp(2.1rem,5vw,3.1rem)/1.15 var(--serif);margin:.6rem 0 1rem;letter-spacing:-.01em;text-wrap:balance}
+.lede{max-width:44rem;color:var(--muted);font-size:1.06rem}
+.lede strong{color:var(--ink);font-weight:600}
+.ways{display:flex;flex-wrap:wrap;gap:.6rem 1.6rem;margin-top:1.6rem;font-size:.92rem}
+.ways a{font-family:var(--mono);font-size:.85rem}
+
+/* The two numbers this release exists to reconcile, side by side. */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.8rem;max-width:44rem}
+@media (max-width:520px){.split{grid-template-columns:1fr}}
+.split div{border:1px solid var(--rule-firm);border-radius:12px;background:var(--panel);padding:1rem 1.1rem}
+.split .k{font:500 .74rem/1 var(--mono);color:var(--faint);letter-spacing:.05em;text-transform:uppercase}
+.split .v{font:700 1.7rem/1.1 var(--serif);margin-top:.45rem;font-variant-numeric:tabular-nums}
+.split .v small{display:block;font:500 .78rem/1.4 var(--mono);color:var(--muted);margin-top:.45rem}
+.split .was .v{color:var(--fail)}
+.split .now .v{color:var(--pass)}
+
+section{padding:3.2rem 0 3.4rem;border-bottom:1px solid var(--rule)}
+.eyebrow{font:500 .78rem/1 var(--mono);color:var(--faint);letter-spacing:.05em}
+.eyebrow b{color:var(--blue);font-weight:600}
+h2{font:600 1.65rem/1.25 var(--serif);margin:.55rem 0 .9rem;text-wrap:balance}
+section p{max-width:44rem;color:var(--muted)}
+section p+p{margin-top:.8rem}
+section p code,.lede code,li code{font:.88em var(--mono);color:var(--ink);background:var(--blue-wash);padding:.1em .35em;border-radius:4px}
+.into{display:inline-block;margin-top:1rem;font-size:.92rem}
+.into+.into{margin-left:1.4rem}
+
+figure{margin:1.7rem 0 0}
+figure img{display:block;width:100%;height:auto;border:1px solid var(--rule-firm);border-radius:10px;background:var(--sunk)}
+figcaption{font-size:.85rem;color:var(--faint);margin-top:.65rem;max-width:44rem}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start}
+@media (max-width:640px){.pair{grid-template-columns:1fr}}
+
+/* The tally: what agrees with the 2006 report, table by table. */
+.tally{margin-top:1.6rem;border:1px solid var(--rule-firm);border-radius:12px;background:var(--panel);overflow-x:auto}
+.tally table{border-collapse:collapse;width:100%;min-width:34rem;font-size:.9rem}
+.tally th,.tally td{padding:.55rem .9rem;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+.tally th{font:500 .74rem/1 var(--mono);color:var(--faint);letter-spacing:.05em;text-transform:uppercase}
+.tally td.n{font-variant-numeric:tabular-nums;text-align:right;color:var(--ink)}
+.tally td.new{color:var(--pass);font:600 .74rem/1.3 var(--mono)}
+.tally tr:last-child td{border-bottom:0}
+.tally tfoot td{color:var(--ink);font-weight:600;border-top:1px solid var(--rule-firm)}
+
+ul.plain{max-width:44rem;color:var(--muted);padding-left:1.2rem;margin-top:.8rem}
+ul.plain li+li{margin-top:.45rem}
+
+footer{padding:2.6rem 0 4rem;font-size:.9rem;color:var(--faint)}
+footer p+p{margin-top:.7rem}
+</style>
+</head><body><div class="wrap">
+
+<header>
+  <div class="release-id">open.csr · v0.4.0 · release candidate · 2026-09-02</div>
+  <h1>The report describes one study.</h1>
+  <p class="lede">v0.3.0 filled the report — twenty-six displays, an efficacy section, every one measured against the study's own 2006 report. It also described two versions of the study: six displays read a re-derived data packaging that puts twelve subjects on a different arm than the study's own package does, so section 10 and section 14 of the same document disagreed about how many people were treated. <strong>v0.4.0 reads the study's own package everywhere, declares the study once, and fails the build when two displays disagree about it</strong> — and carries five more of the reference report's displays into the library, cell for cell. Every capture below is from the candidate's own deployed tree; each section links into it.</p>
+  <div class="split" aria-label="Subjects per arm, as section 10 and section 14 stated them">
+    <div class="was"><div class="k">v0.3.0 · section 10 vs 14</div><div class="v">86 / 96 / 72<small>vs 86 / 84 / 84</small></div></div>
+    <div class="now"><div class="k">v0.4.0 · every display</div><div class="v">86 / 84 / 84<small>held by the build</small></div></div>
+  </div>
+  <div class="ways">
+    <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html">the candidate's demo</a>
+    <a href="https://jwildfire.github.io/open.csr/pr/75/reader/index.html">the CSR reader</a>
+    <a href="https://jwildfire.github.io/open.csr/pr/75/quality/index.html">quality evidence</a>
+    <a href="https://github.com/jwildfire/open.csr/blob/release/v0.4.0/NEWS.md">release notes</a>
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-09-02-open-csr-replication-plan/">the plan (D0032)</a>
+    <a href="https://github.com/jwildfire/obot.roadmap/issues/319">requirement #319</a>
+  </div>
+</header>
+
+<section id="one-study">
+  <div class="eyebrow"><b>study model + gate</b> · open.csr #59, #60 · PRs #68, #69</div>
+  <h2>One study, declared once, held by the build</h2>
+  <p><code>library/study.yaml</code> now says what the study is: the arms in print order, the columns that carry an arm label, the analysis sets with the flag defining each and the subjects each holds per arm, the cut-off, the source. The pipeline's treatment vocabulary and its analysis-set registry read that file instead of carrying the study in code, and a test re-measures every count in it against the data on every run.</p>
+  <p>Every analysis results dataset records the population it summarised — analysis set, grouping column, distinct subjects per arm — and the assembler's new treatment-consistency gate holds every placed display to the study model and to every other display in the document. A display whose counts differ is a build error naming the display, the arm and both numbers. The gate was proved before the data lane moved: run against the old results it went red on all six displays.</p>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=documents&doc=csr&focus=study-patients">Read section 10 and then section 14 — the same three numbers →</a>
+</section>
+
+<section id="demographics">
+  <div class="eyebrow"><b>tables 14-2.01, 14-4.01</b> · open.csr #61 · PR #70</div>
+  <h2>Demographics and exposure in the report's own shape</h2>
+  <p>The demographics display moves to the intent-to-treat population and carries the report's Total and p-value columns — one-way ANOVA for a continuous block, Pearson's chi-square for a categorical one — and its rows: age and its groups, sex, Race (Origin), MMSE, duration of disease and its groups, years of education, baseline weight, height and BMI with its groups. All 58 printed lines agree with the 2006 report three ways. Exposure needs no exposure dataset: the pilot's ADSL carries average daily dose and cumulative dose as columns, and the display is rebuilt from them for the safety population and the Week 24 completers.</p>
+  <p>Race (Origin) is a recode, not a conflict. The assessment that scoped this release read "218 Caucasian plus 12 Hispanic" against "230 White" as the two data copies disagreeing. Both say the same thing — 230 White by race, 12 Hispanic by ethnicity, every one of them White — and the report printed one classification with Hispanic as a category. The display's footnote says so.</p>
+  <figure>
+    <img src="media/t-demographics.jpg" alt="Table 14-2.01 as the candidate renders it: Placebo (N=86), Xanomeline Low Dose (N=84), Xanomeline High Dose (N=84), Total (N=254) and a p-value column; the Age block with n, mean, SD, median, min and max and the p-value 0.5934 on its first line, the age groups with 0.1439, Sex with 0.1409, and Race (Origin) beginning with Caucasian 218 (86%)." width="1492" height="812" loading="lazy">
+    <figcaption>Table 14-2.01 as the candidate renders it: four columns, the p-value on each block's first line, Race (Origin) with Hispanic as a category.</figcaption>
+  </figure>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&display=t-demographics">Open the demographics display →</a>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/quality/t-demographics.html">its evidence page →</a>
+</section>
+
+<section id="incidence">
+  <div class="eyebrow"><b>tables 14-5.01, 14-5.02</b> · open.csr #62 · PR #71</div>
+  <h2>Adverse events as the report prints them, Fisher's test included</h2>
+  <p>Two new displays reproduce the incidence table and the serious-event table: for every system organ class and preferred term, the subjects with a treatment-emergent event, the percentage of the arm, the number of events in brackets, and Fisher's exact test of placebo against each active arm — starred below 0.15, <code>&gt;0.99</code> when it rounds to one, blank where there is nothing to test. All 254 lines of the incidence table and the 4 of the serious-events table agree three ways with the report, wrapped and truncated labels included.</p>
+  <p>Four p-values do not: the 2006 program rounded them one thousandth higher than R's exact test (0.2085 printed as 0.209, and three like it). They are recorded as known differences, stated on the display, and held to — the comparison fails if one of them closes or another opens. The report's ordering is measured, not assumed: organ classes alphabetical, preferred terms by high-dose subjects then name, the one rule that reproduces all twenty-four organ-class blocks.</p>
+  <figure>
+    <img src="media/t-ae-incidence.jpg" alt="Table 14-5.01 as rendered: three arm columns with subjects, percentage and event count in brackets, then Placebo vs. Low Dose and Placebo vs. High Dose p-values; ANY BODY SYSTEM 65 (75.6%) [281], 77 (91.7%) [412], 76 (90.5%) [433] with 0.007* and 0.014*; the CARDIAC DISORDERS block beneath with SINUS BRADYCARDIA starred at 0.097 and 0.056." width="1492" height="812" loading="lazy">
+    <figcaption>Table 14-5.01: the first organ-class blocks, with the events count in brackets and the starred Fisher p-values in the two comparison columns.</figcaption>
+  </figure>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&display=t-ae-incidence">Open the incidence table →</a>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&display=t-sae-incidence">the serious-events table →</a>
+</section>
+
+<section id="site-intext">
+  <div class="eyebrow"><b>table 14-1.03, tables 11-1 / 12-1 / 12-4</b> · open.csr #63 · PR #71</div>
+  <h2>Subjects by site, and the in-text tables drawn from the results</h2>
+  <p>Table 14-1.03 — intent-to-treat, efficacy and Week 24 completer counts per site and arm, small sites pooled under 900 — joins the library and agrees with the report on all 216 cells. Three of the report's in-text tables are now drawn from the section 14 displays' own results rather than declared and left empty: Table 11-1 (demographics as mean and range and percentages), Table 12-1 (terms at 5% or more, flat, title case, an asterisk where the placebo comparison has p &lt; 0.15) and Table 12-4 (weight as n and mean per arm). Each is a variant of the display it summarises, so it cannot disagree with it.</p>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=documents&doc=csr&focus=safety-evaluation">Read section 12 with its in-text tables →</a>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&display=t-subjects-by-site">subjects by site →</a>
+</section>
+
+<section id="own-data">
+  <div class="eyebrow"><b>sdtm cm + dm, figure 10-1</b> · open.csr #65, #63 · PR #72</div>
+  <h2>Medications from the study's own data, and the disposition flow</h2>
+  <p>The only medication dataset PHUSE publishes for the pilot is a relabelled copy from a folder its own README calls out of place. The study's SDTM CM domain is in the same repository at the same commit; it is now vendored, the analysis dataset is derived from it with the derivation on record, and the derived dataset reproduces every one of the 414 statistics the medication table published from the copy. The study's SDTM DM domain is vendored alongside — all 306 screened subjects, the 52 screen failures the ADaM package does not carry — and with it the report's Figure 10-1 is drawn: 306 screened, 52 screen failures, 254 randomised, 118 completed Week 24, 110 completed the study.</p>
+  <div class="pair">
+    <figure>
+      <img src="media/f-disposition.jpg" alt="Figure 10-1 drawn as a flow: a box reading Subjects Screened = 306 with an arrow to Screen failures = 52 at its right, then down to Randomized, entered Treatment Phase = 254, Completed Week 24 = 118 and Completed Study through Week 26 = 110; the display's own five-row table beneath it." width="1492" height="812" loading="lazy">
+      <figcaption>Figure 10-1 as a self-contained flow beside the disposition table in section 10.1; the renderer's second kind of figure.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/t-conmeds.jpg" alt="The medication table from the derived dataset: subjects receiving at least one concomitant medication 77 (89.5%), 74 (88.1%), 78 (92.9%), then therapeutic class and coded medication rows — UNCODED, NERVOUS SYSTEM with ACETYLSALICYLIC ACID 21 (24.4%), 11 (13.1%), 6 (7.1%), and on down." width="1492" height="812" loading="lazy">
+      <figcaption>The medication table, now from the derived dataset — the same 414 statistics.</figcaption>
+    </figure>
+  </div>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&display=f-disposition">Open the disposition flow →</a>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&display=t-conmeds">the medication table →</a>
+</section>
+
+<section id="qualified">
+  <div class="eyebrow"><b>qualification</b> · qc/reference-report-agreement.R · runs in CI</div>
+  <h2>What agrees with the 2006 report, table by table</h2>
+  <p>A display is not done when it renders; it is done when three routes land on the same string for every published cell — a recomputation from the vendored transport files that never loads the package, the cell text read back out of the committed rendering, and the report itself, transcribed cell by cell and re-derived from the document at its pinned hash. Any two disagreeing is a build failure, and a self-test perturbs each route to prove the comparison can still fail.</p>
+  <div class="tally">
+    <table>
+      <thead><tr><th>Reference table</th><th>Display</th><th>Cells</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>14-1.01 Analysis populations</td><td><code>t-populations</code></td><td class="n">25</td><td></td></tr>
+        <tr><td>14-1.02 End of study</td><td><code>t-end-of-study</code></td><td class="n">65</td><td></td></tr>
+        <tr><td>14-1.03 Subjects by site</td><td><code>t-subjects-by-site</code></td><td class="n">216</td><td class="new">NEW</td></tr>
+        <tr><td>14-2.01 Demographics</td><td><code>t-demographics</code></td><td class="n">290</td><td class="new">RESHAPED</td></tr>
+        <tr><td>14-4.01 Exposure</td><td><code>t-exposure</code></td><td class="n">84</td><td class="new">RESHAPED</td></tr>
+        <tr><td>14-5.01 Adverse-event incidence</td><td><code>t-ae-incidence</code></td><td class="n">1,270</td><td class="new">NEW</td></tr>
+        <tr><td>14-5.02 Serious adverse events</td><td><code>t-sae-incidence</code></td><td class="n">20</td><td class="new">NEW</td></tr>
+      </tbody>
+      <tfoot><tr><td>Seven displays, three ways</td><td></td><td class="n">1,970</td><td></td></tr></tfoot>
+    </table>
+  </div>
+  <ul class="plain">
+    <li>Efficacy: 764 of 769 published figures agree; the five that differ are the repeated-measures display's last digits, all declared.</li>
+    <li>Vital signs, weight and medications: 1,179 report cells agree with the recomputation on the pilot's own ADVS and the derived ADCM.</li>
+    <li>Thirteen gates run in CI; every one is green on the candidate.</li>
+  </ul>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/quality/index.html">Open the quality evidence →</a>
+</section>
+
+<section id="spike-text">
+  <div class="eyebrow"><b>kenward-roger, section 11.1</b> · open.csr #66, #67 · PRs #74, #73</div>
+  <h2>Two things checked rather than assumed</h2>
+  <p>The repeated-measures display footnotes five cells that differ from the reference at the last digit, attributed to the Kenward-Roger corrections the pipeline does not implement. The spike refits the same model with <code>{mmrm}</code> using them: it reproduces SAS's REML criterion to every printed digit and moves exactly one of the five cells — the three p-values stay a thousandth below the report's and one standard error still prints 0.55 against 0.56. So Kenward-Roger is not the whole explanation; the pipeline keeps its model-based fit and the footnote now says what was tried and what it found.</p>
+  <p>Section 11.1 used to say "No efficacy analysis set is defined for this report" — true of the old data lane and false of the study. Its third paragraph is rewritten against the populations table, every count a binding, and carries an approval given in review on 2026-09-02. The text-library gate held the block red until that approval existed.</p>
+  <figure>
+    <img src="media/section-11-1.jpg" alt="The reader open at 11.1 Data Sets Analysed: three paragraphs with every number outlined as a binding — 254 patients, 86, 84 and 84 for the safety set; 234 patients, 79, 81 and 74 for the efficacy set; 254 for intent-to-treat — with the block id TXT-E3-1101 and an Edit control beneath, and 11.2 beginning below." width="1492" height="812" loading="lazy">
+    <figcaption>Section 11.1 in the reader: the efficacy analysis set stated from the study's own flag, every number bound to Table 14-1.01.</figcaption>
+  </figure>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=documents&doc=csr&focus=efficacy-evaluation">Read section 11.1 →</a>
+  <a class="into" href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&display=t-eff-adas-mmrm">the repeated-measures display and its footnote →</a>
+</section>
+
+<section id="not-in">
+  <div class="eyebrow"><b>by the plan</b> · v0.4.1</div>
+  <h2>What this candidate does not carry</h2>
+  <ul class="plain">
+    <li>The six laboratory families (open.csr #64) — the report's Table 14-6 shape — are the next release, as D0032 scoped them.</li>
+    <li>Table 12-3 (vital signs in text) draws on two displays' results and is owed with them.</li>
+    <li>The demo explorer's scroll-to-section bug (open.csr #38) is carried to v0.4.1 unless it should ride here.</li>
+    <li>The relabelled <code>adcm.xpt.gz</code> copy and its reversal code stay vendored for the derivation check; whether to remove them is a question for this review.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Requirements delivered: <a href="https://github.com/jwildfire/obot.roadmap/issues/319">obot.roadmap#319</a> (v0.4.0 "one study", less the laboratory families) · open.csr <a href="https://github.com/jwildfire/open.csr/issues/59">#59</a>, <a href="https://github.com/jwildfire/open.csr/issues/60">#60</a>, <a href="https://github.com/jwildfire/open.csr/issues/61">#61</a>, <a href="https://github.com/jwildfire/open.csr/issues/62">#62</a>, <a href="https://github.com/jwildfire/open.csr/issues/63">#63</a>, <a href="https://github.com/jwildfire/open.csr/issues/65">#65</a>, <a href="https://github.com/jwildfire/open.csr/issues/66">#66</a>, <a href="https://github.com/jwildfire/open.csr/issues/67">#67</a>. Decided under <a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-09-02-open-csr-replication-plan/">D0032</a>.</p>
+  <p>Captures taken from the candidate's per-PR tier on 2026-09-02, unretouched. Demo data is CDISC Pilot 01 from the study's own ADaM and SDTM packages (phuse-org/phuse-scripts, MIT); no proprietary study data anywhere in the loop. On the tag, the links above move to the frozen <code>v0.4.0/</code> tier.</p>
+  <p><em>This overview was drafted by Claude Code using Fable 5.1 at @jwildfire's direction, for his review of the v0.4.0 candidate.</em></p>
+</footer>
+
+</div>
+</body></html>
