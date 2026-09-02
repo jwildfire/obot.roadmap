@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision — One study, then the whole report</title>
+<meta name="description" content="A colleague's replication assessment of open.csr, checked against the data, with the corrections that matter. Then a four-release roadmap that closes its gaps, and the first release broken into nine issues that could start tomorrow. Four calls.">
+<meta name="decision-id" content="D0032">
+<meta name="premise" scope="live" content="the v0.4.0 milestone still carries the SAP issue, which is what R3 proposes to move | gh issue view 57 -R jwildfire/open.csr --json milestone --jq .milestone.title | v0.4.0">
+<meta name="premise" scope="live" content="no laboratory display exists yet, which is what makes six of the seven missing displays missing | gh api 'repos/jwildfire/open.csr/contents/library/tfl?ref=dev' --jq '[.[].name|select(startswith(&quot;t-lb&quot;) or startswith(&quot;t-lab&quot;))]|length' | 0">
+<meta name="premise" scope="live" content="the demographics display still reads the pharmaverse re-derivation, which is the lane that moves twelve subjects | gh api 'repos/jwildfire/open.csr/contents/library/tfl/t-demographics/display.yaml?ref=dev' --jq .content | base64 -d | grep -c pharmaverseadam | 1">
+<meta name="premise" scope="history" content="when this page was written a checkout of dev still called itself 0.2.0 — the v0.3.0 release stamp had not been folded back from main; the fold was made the same day, as the plan's step zero">
+<meta name="premise" scope="history" content="on 2 September the default lane's actual-treatment groups were 86, 96 and 72 subjects and the pilot's own package said 86, 84 and 84 — measured by preparing ADSL on both lanes, not read from the assessment">
+<meta name="premise" scope="history" content="the reference report's post-text set is thirty tables and one figure, with five tables and two figures in the body, read from the PDF at the SHA-256 the agreement record pins">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3,h4{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+code{background:#f2eee3;border:1px solid var(--rule);border-radius:3px;padding:1px 5px;font-size:13.5px;
+  overflow-wrap:anywhere;word-break:break-word}
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+h1{font-size:clamp(28px,4.6vw,42px);margin:14px 0 0}
+.lede{max-width:68ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+section{padding-top:24px}
+h2{font-size:clamp(21px,2.8vw,27px);margin-top:4px}
+h3{font-size:16.5px;margin:30px 0 0}
+h4{font-size:15px;margin:18px 0 0}
+p{max-width:72ch}
+ul,ol{max-width:76ch;padding-left:22px}
+li{margin:7px 0}
+li p{margin:4px 0 0}
+.callout{margin:22px 0 0;border:1px solid var(--rule2);border-left:4px solid var(--flag);
+  border-radius:6px;background:var(--panel);padding:16px 18px;max-width:100%}
+.callout .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--flag)}
+.callout p{margin:8px 0 0}
+.callout ul{margin:8px 0 0}
+.callout.good{border-left-color:var(--go)}
+.callout.good .k{color:var(--go)}
+.callout.note{border-left-color:var(--bronze)}
+.callout.note .k{color:var(--bronze)}
+.callout.blue{border-left-color:var(--blue)}
+.callout.blue .k{color:var(--blue)}
+.card{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:18px 20px}
+.card .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.card.block .tag{color:var(--flag)}
+.card.done .tag{color:var(--go)}
+.card h3{margin-top:8px}
+.card p{margin:8px 0 0;font-size:15.5px}
+.card ul,.card ol{margin:10px 0 0;font-size:15.5px}
+.card .meta{margin:12px 0 0;font:500 12.5px/1.6 var(--mono);color:var(--mute)}
+.card .meta b{color:var(--ink2);font-weight:600}
+.tbl{overflow-x:auto;margin:20px 0 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px;background:var(--panel)}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left}
+th,td{border:1px solid var(--rule);padding:9px 12px;vertical-align:top}
+td b{font-weight:650}
+td.n{font-family:var(--mono);white-space:nowrap}
+.ok{color:var(--go);font-weight:650}
+.bad{color:var(--flag);font-weight:650}
+.warn{color:var(--bronze);font-weight:650}
+.q{margin:26px 0 0;border:1px solid var(--rule2);border-radius:6px;background:var(--panel);padding:18px 22px}
+.q .qid{font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.q h3{margin-top:6px}
+.q .rec{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--go);background:#f4f8f4;font-size:15px}
+.q .rec b{color:var(--go)}
+.foot{margin:64px 0 0;padding:22px 0 46px;border-top:1px solid var(--rule);color:var(--mute);font-size:13.5px}
+.foot p{max-width:76ch}
+.rel{border-left:3px solid var(--rule2);padding:2px 0 2px 16px;margin:22px 0}
+.rel h3{margin:0}
+.rel .who{color:var(--bronze);font:12px/1.6 var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.rel .proves{margin:6px 0 0;color:var(--ink2);font-size:15.5px}
+.rel ul{margin:8px 0 0;font-size:15.5px}
+.issue{margin:22px 0 0;border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:16px 18px}
+.issue .tag{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.issue h3{margin-top:6px}
+.issue p{margin:8px 0 0;font-size:15.5px}
+.issue ul{margin:8px 0 0;font-size:15px}
+.issue h4{color:var(--ink2)}
+.issue .meta{margin:12px 0 0;font:500 12.5px/1.6 var(--mono);color:var(--mute)}
+.issue .meta b{color:var(--ink2);font-weight:600}
+.fix{margin:18px 0 0;padding:0}
+.fix li{margin:12px 0;list-style:none;border-left:3px solid var(--rule2);padding-left:14px}
+.fix li b.h{display:block;font-family:var(--display);font-size:15.5px;margin-bottom:2px}
+.fix li.right{border-left-color:var(--go)}
+.fix li.fix1{border-left-color:var(--bronze)}
+.fix li.wrong{border-left-color:var(--flag)}
+.fix li .eff{display:block;color:var(--mute);font:500 12.5px/1.6 var(--mono);margin-top:4px}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .card,.q,.callout,.issue{padding:15px 15px}
+  .facts{gap:6px 14px;font-size:12px}
+  .mast{padding:40px 0 18px}
+  table{min-width:440px}
+}
+</style>
+</head><body>
+
+<header class="mast"><div class="wrap">
+  <p class="eyebrow">Decision · D0032 · 2026-09-02 · goal <a href="https://github.com/jwildfire/obot.roadmap/issues/112">#112</a></p>
+  <h1>One study, then the whole report</h1>
+<!-- BEGIN decision-ids — generated by scripts/stamp_decision_ids.mjs from reports/decisions/registry.json; do not hand-edit -->
+<style>
+.decision-ids { margin: 1.1rem 0 1.4rem; padding: .8rem 1rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 9px; font-size: .92rem; line-height: 1.5; }
+.decision-ids > p { margin: 0 0 .55rem; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; opacity: .62; font-weight: 600; }
+.decision-ids ol { list-style: none; margin: 0; padding: 0; }
+.decision-ids li { margin: .32rem 0; display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.decision-ids a.did { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; text-decoration: none; white-space: nowrap; border-bottom: 1px dotted currentColor; }
+.decision-ids .dcode { font-size: .78em; opacity: .55; white-space: nowrap; }
+.decision-ids .dq { flex: 1 1 14rem; min-width: 0; }
+@media (max-width: 460px) { .decision-ids .dq { flex-basis: 100%; } }
+</style>
+<aside class="decision-ids" id="D0032">
+<p>D0032 · quote an ID below when you decide</p>
+<ol>
+  <li id="D0032.1"><a class="did" href="#D0032.1">D0032.1</a><span class="dcode">R1</span><span class="dq">Adopt the four-release roadmap — v0.4 one study, v0.5 the whole text, v0.6 the submission document, v1.0 the replication proven?</span></li>
+  <li id="D0032.2"><a class="did" href="#D0032.2">D0032.2</a><span class="dcode">R2</span><span class="dq">Flip the data default so the pilot's own package feeds every display, keeping pharmaverseadam only as the measured alternate (revises D12)?</span></li>
+  <li id="D0032.3"><a class="did" href="#D0032.3">D0032.3</a><span class="dcode">R3</span><span class="dq">Re-scope v0.4.0 to one study plus the seven missing displays, and move the SAP (#57) to v0.5.0?</span></li>
+  <li id="D0032.4"><a class="did" href="#D0032.4">D0032.4</a><span class="dcode">R4</span><span class="dq">Before the talk, do only the consistency gate and the stale-prose fix, or give open.csr the September build week?</span></li>
+</ol>
+</aside>
+<!-- END decision-ids -->
+  <p class="lede"><b>The recommendation in one paragraph:</b> the assessment is right about the one thing that matters — the assembled report describes two different studies — and wrong about nothing that changes the plan. Adopt its build order as four releases. The first, "one study", is shovel-ready: nine issues, about five working sessions, every one of them written out below. Do the first two before the talk whatever September holds, because the public demo currently contradicts itself and that is the kind of thing a questioner finds.</p>
+  <p class="facts"><span><b>Reviewed:</b> a replication-readiness assessment dated 1 September</span><span><b>Checked against:</b> open.csr <code>dev</code> at <code>b9ecbfa</code>, the pilot's own data on both lanes, the reference report at its pinned SHA-256</span><span><b>Response to send:</b> <a href="response.md">response.md</a></span></p>
+</div></header>
+
+<main class="wrap">
+
+<section id="gate">
+<h2>The report tells two versions of the study — confirmed from the data, not the document</h2>
+<div class="callout"><p class="k">Verified, not relayed</p>
+<p>Preparing the subject-level dataset on each of the two lanes open.csr can read gives two answers to "how many people were on each arm". The pilot's own package puts 86, 84 and 84 subjects on placebo, low dose and high dose, by planned and by actual treatment alike. The pharmaverse re-derivation agrees on planned treatment and then moves twelve subjects from high dose to low dose in the actual-treatment column, giving 86, 96 and 72. The assembled report reads both.</p>
+<div class="tbl"><table>
+<tr><th>Displays</th><th>Lane</th><th>Grouped by</th><th>Column counts</th></tr>
+<tr><td>Demographics, disposition, exposure, adverse-event overview, common adverse events, serious-event listing — the six the project started with</td><td>pharmaverse re-derivation</td><td>actual treatment</td><td class="n bad">86 / 96 / 72</td></tr>
+<tr><td>Vital signs, vital-sign change, weight, concomitant medications</td><td>pharmaverse re-derivation</td><td>planned treatment</td><td class="n ok">86 / 84 / 84</td></tr>
+<tr><td>Populations, end of study</td><td>pilot's own package</td><td>planned treatment</td><td class="n ok">86 / 84 / 84</td></tr>
+<tr><td>The thirteen efficacy displays and the figure</td><td>pilot's own package</td><td>actual treatment</td><td class="n ok">86 / 84 / 84 (efficacy set within it)</td></tr>
+</table></div>
+<p>The project measured the twelve-subject divergence on 27 August and committed it as a fact about the data. What it did not do was follow it into the document. The assessment's real contribution is naming where it bites: not in any one display, but in a report that says one thing in section 10 and another in section 14. Every other finding on the page is downstream of this one, and the plan below starts here. <a href="https://github.com/jwildfire/open.csr/blob/dev/quality/data/source-agreement.json">source-agreement.json</a> · <a href="https://github.com/jwildfire/open.csr/blob/dev/docs/design/design.md">design decision D12</a></p>
+</div>
+</section>
+
+<section id="response">
+<h2>What the assessment gets right, and where it needs a correction</h2>
+<p>Taken finding by finding. Green means adopt as written; amber means the finding stands but the reason or the fix is different from the one it gives; red means it is not so. There is one red, and it is a coding convention, not a defect.</p>
+<ul class="fix">
+<li class="fix1"><b class="h">It reviewed version 0.2.0. The current release is 0.3.0, from 27 August.</b> The counts in the assessment — twenty-six displays, thirteen efficacy tables, the figure — are the 0.3.0 contents, so its substance is current. The stamp is stale because the release's version bump was never folded back into <code>dev</code>, which a checkout of <code>dev</code> still reports as 0.2.0. That is the project's housekeeping fault and it is the first item below.<span class="eff">Effect on the plan: none, beyond folding the release forward.</span></li>
+<li class="right"><b class="h">Two versions of the study in one report.</b> Confirmed above from the data. The assessment's fix — one source, one assignment, a build that fails on disagreement — is the right one, and it is the whole of the first release.<span class="eff">Effect on the plan: it is the plan's first gate.</span></li>
+<li class="wrong"><b class="h">Race is not a data conflict.</b> The assessment reads "218 Caucasian plus 12 Hispanic" against "230 White" as the two data copies disagreeing. Both copies say the same thing: 230 White, 23 Black, 1 American Indian, and separately 12 Hispanic by ethnicity. The 2006 report printed a combined "Race (Origin)" column with Hispanic as a category, so 218 plus 12 is 230. It is a documented recode of two variables into one, footnoted on the display, in the way the project already handles the Complete Study row. No source-priority rule is needed.<span class="eff">Effect on the plan: a footnote in the demographics rebuild, not a decision.</span></li>
+<li class="fix1"><b class="h">Exposure needs no exposure dataset.</b> The pilot's package has no ADEX, and design decision D12 kept the pharmaverse lane partly because it was "the only source of ADEX". The reference's exposure table summarises average daily dose and cumulative dose, both of which the pilot's own subject-level dataset carries as columns. Exposure moves lanes with no derivation at all.<span class="eff">Effect on the plan: the last reason to keep the pharmaverse lane as a default goes away.</span></li>
+<li class="fix1"><b class="h">"Rebuild four" is really "move two, add two".</b> Demographics and exposure exist in nearly the reference's shape and need the lane flip plus small additions — the reference's demographics is on the intent-to-treat set with a p-value column and rows for MMSE, education and disease duration. The two adverse-event tables are a different shape entirely: system organ class and preferred term, subject counts with event counts in brackets, Fisher's exact p-values against placebo. Those are new displays. The existing FDA-standard adverse-event tables stay in the library as variants; the pilot profile simply does not place them.<span class="eff">Effect on the plan: two issues instead of one, and nothing is thrown away.</span></li>
+<li class="right"><b class="h">The seven missing displays are the seven it names.</b> Subjects by site, and six laboratory families: continuous summaries, beyond-range frequencies, clinically-significant-change frequencies, shifts by visit, shifts overall, and Hy's law shifts. All three laboratory datasets are already vendored. The by-visit shift table is thirty-three pages in the reference and is the largest single display in the whole set.<span class="eff">Effect on the plan: the laboratory block is the one item in the first release allowed to slip to a point release.</span></li>
+<li class="fix1"><b class="h">The narrative gap is a review gap, not a writing gap.</b> Ten of fifteen report blocks are approved; the other five have been agent-drafted since July and nobody has read them. The synopsis has eighteen more in the same state. Writing the missing sections is cheap; the constraint is one person's reading time, and the review layer the programme designed on 27 August is the dependency the assessment does not name.<span class="eff">Effect on the plan: the text release is scheduled after the review layer, not before.</span></li>
+<li class="fix1"><b class="h">The SAP is both an input and an output, and the library is the join.</b> The assessment wants the SAP ingested and every method bound to a section of it. The v0.4.0 plan on the books makes the SAP an output — shells rendered from the same display specifications the report renders from. These are the two ends of one model: the specification library is the machine-readable plan; for a study open.csr runs from the start, the SAP document is rendered from it; for a study that arrives with a SAP, that document is ingested and reconciled against it. Neither replaces the other. The pilot's own SAP is not vendored because its redistribution rights are unestablished, which the SAP decision already says. <a href="../2026-08-27-sap-shells/">D0030</a><span class="eff">Effect on the plan: the SAP moves to the text release, where the fact registry gives it something to bind to.</span></li>
+<li class="right"><b class="h">The five last-digit differences are what it says they are.</b> Kenward-Roger degrees of freedom and the adjusted standard errors are not implemented, by a recorded scope decision. The route to close them is the <code>mmrm</code> package, which implements both, not recovered SAS output. It is a bounded spike with a numerical pass mark.<span class="eff">Effect on the plan: half a session, with permission to fail.</span></li>
+<li class="right"><b class="h">The concomitant-medication lineage is exactly as described.</b> The dataset in use is a remapped copy from a differently named folder, with half its subjects relabelled into a synthetic second study and the relabelling reversed. The study's own SDTM medication domain is in the same public repository at the same pinned commit. Derive from it, with the derivation on record.<span class="eff">Effect on the plan: one issue, with a cell-for-cell agreement check against the current table before the switch.</span></li>
+<li class="right"><b class="h">Rights and privacy before any appendix is copied.</b> Agreed, and the project already refuses harder than the assessment asks: pages 154 to 409 of the reference carry a third party's copyright, and the agreement record declines to vendor the PDF at all for that reason. An appendix builder for this study registers and cites those pages; it embeds only what is the project's own or openly licensed.<span class="eff">Effect on the plan: the appendix manifest is rights-first by construction.</span></li>
+<li class="fix1"><b class="h">A study-specific report profile is one file, not a feature.</b> The assessment asks for a CDISC Pilot profile with the reference's section order and table numbers. The template library is already plural and numbering is assigned at build time by design decision D6, so the profile is a fifth template object declaring the reference's structure — no engine change. Its ordering of medications before safety conclusions is a declaration in that file.<span class="eff">Effect on the plan: a small item in the document release.</span></li>
+<li class="right"><b class="h">HTML is not a submission document.</b> Agreed. The route proposed below is paged rendering of the existing document model with page numbers, running headers, generated contents and lists, landscape sections and bookmarks — in the same build the site already runs — plus the display package assembled through <code>r2rtf</code> for the statistician's review. Word output is a second target, not the first.<span class="eff">Effect on the plan: the document release's core.</span></li>
+<li class="right"><b class="h">Pixel recreation is optional.</b> Stronger: it is not a target. The agreement checks compare cell strings, which is the right unit; the 2006 listing layout is not something to reproduce.<span class="eff">Effect on the plan: none.</span></li>
+<li class="right"><b class="h">The study-team intake table is right, and most of it is after version one.</b> The division of responsibility — software calculates, organises, traces, drafts and checks; people supply the truth about the study and approve the interpretation — is the project's own position. Three of its rows are near: a study model in the first release, a source-and-fact registry in the second, an appendix and rights manifest in the third. The rest is proved by running a second study, and nothing before that should claim it.<span class="eff">Effect on the plan: the intake path is version 1.1, stated as such.</span></li>
+</ul>
+</section>
+
+<section id="roadmap">
+<h2>Four releases</h2>
+<p>The assessment's five phases map onto four releases, each of which ends in something a person can open. The order is the assessment's order and the reason is the assessment's reason: nothing polished gets built on data that disagrees with itself.</p>
+
+<div class="rel"><p class="who">v0.4.0 · one study · about five sessions · assessment P0 and P1</p>
+<h3>Every display reads the pilot's own package, and the build fails if any two disagree</h3>
+<p class="proves">Proves: the report describes one study, and all thirty-one of the reference's post-text displays have a counterpart.</p>
+<ul>
+<li>A study model — the arms, their order and labels, the analysis sets, the cut-off, the reference profile — as one file the specifications read, replacing the treatment vocabulary hard-coded in the pipeline.</li>
+<li>The pilot's own package as the default source for every dataset; the pharmaverse re-derivation kept as the measured alternate and nothing else.</li>
+<li>A consistency gate in the assembler: every placed display's column counts agree with the study model for its analysis set, or the document does not build.</li>
+<li>The six original displays regenerated on the new lane as recorded iterations; demographics and exposure taken to the reference's shape; the two incidence tables, subjects by site and the six laboratory families added; the in-text tables and the disposition figure as variants of what exists.</li>
+<li>Medications derived from this study's own SDTM; the Kenward-Roger spike; the stale sentence in section 11.1 corrected under review.</li>
+<li>Gate for the release: the thirteen existing CI checks, the new consistency gate, and a reference-agreement record for every rebuilt or added display. Identity coverage 31 of 31 is the done line; cell agreement is measured and stated, not promised.</li>
+</ul></div>
+
+<div class="rel"><p class="who">v0.5.0 · the whole text · assessment P2 · needs the review layer first</p>
+<h3>Every section of the report has approved prose that cites a checked result or a cited source</h3>
+<p class="proves">Proves: the narrative is complete, and every non-numeric claim in it can be traced to a page of a source document.</p>
+<ul>
+<li>A source-and-fact registry: each input document with checksum, version, rights and the facts taken from it with page references; a stated precedence when documents disagree.</li>
+<li>The SAP as the library's other face — the shells decision as designed, plus the methods text bound to the plan's sections through the registry. <a href="../2026-08-27-sap-shells/">D0030</a></li>
+<li>Front matter, ethics and administration, study plan, the efficacy narrative section 11.4 that is declared and empty today, the safety narrative, conclusions and references — generated where a result carries them, drafted for approval where a person must.</li>
+<li>The eighteen synopsis blocks and five report blocks nobody has read, read. This is the release's real cost and it is his time, which is why the review layer comes first. <a href="../2026-08-27-review-layer/">D0029</a></li>
+<li>Gate: no unapproved block in any placed section; every claim resolves to a result or a registry fact; a completeness check against the profile's required sections.</li>
+</ul></div>
+
+<div class="rel"><p class="who">v0.6.0 · the submission document · assessment P3</p>
+<h3>A paginated, bookmarked PDF with a generated contents page and the appendices it is allowed to carry</h3>
+<p class="proves">Proves: the document model can produce the artefact a reviewer actually opens.</p>
+<ul>
+<li>The CDISC Pilot profile as a fifth template object: the reference's section order, its 14-x.yy numbering, medications before safety conclusions.</li>
+<li>Paged rendering in the existing build: page numbers and labels, running headers with study and section, contents and lists of tables and figures generated from the model, long tables split with repeated headers, landscape sections, PDF bookmarks. The display package assembled through <code>r2rtf</code> as the statistician's route.</li>
+<li>An appendix manifest: each source file registered with rights, sensitivity and order; merged without touching rotation or links; bookmarked; cited rather than embedded where rights do not allow embedding. For this study that means the protocol and case report forms are cited, not copied.</li>
+<li>Gate: the PDF renders in CI; every internal link and bookmark resolves; every manifest entry is present or explicitly waived; no embedded page lacks a rights record.</li>
+</ul></div>
+
+<div class="rel"><p class="who">v1.0.0 · the replication proven · assessment P4</p>
+<h3>The acceptance checklist as a CI run anyone can re-execute</h3>
+<p class="proves">Proves: the claim "open.csr reproduces the CDISC pilot report" is a build that passes, not a sentence.</p>
+<ul>
+<li>Thirty-one of thirty-one displays with agreement records; in-text claims checked against results and registry facts; required sections present and approved; appendices present or waived; one data source throughout; PDF render, navigation, privacy and rights checks all green.</li>
+<li>A validation dossier generated from the evidence stream — the design's own version-one promise.</li>
+<li>Version 1.1, named now so nobody mistakes 1.0 for it: the general intake path — a new-study loader, the terminology registry, the deviation log, governance — proved by running a second study, not by describing one.</li>
+</ul></div>
+
+<div class="tbl"><table>
+<tr><th>Assessment phase</th><th>Release</th><th>What changed in the mapping</th></tr>
+<tr><td>P0 — make it tell one study</td><td>v0.4.0</td><td>Unchanged. It is the first gate.</td></tr>
+<tr><td>P1 — finish and correct the results</td><td>v0.4.0, laboratory block may slip to v0.4.1</td><td>Combined with P0, because rebuilding the four displays on the new lane and adding the seven missing ones is the same working session's shape.</td></tr>
+<tr><td>P2 — write the full report from traceable facts</td><td>v0.5.0</td><td>Sequenced after the review layer; the SAP joins it.</td></tr>
+<tr><td>P3 — build the submission document</td><td>v0.6.0</td><td>Unchanged.</td></tr>
+<tr><td>P4 — prove the replication</td><td>v1.0.0</td><td>Unchanged; the general intake is explicitly after it.</td></tr>
+</table></div>
+</section>
+
+<section id="september">
+<h2>What fits before the talk</h2>
+<p>This depends on two answers still open on the September plan: whether the talk is in September or October, and whether the month goes to open.gismo. This page does not re-ask them. It says what open.csr should get under each outcome. <a href="../2026-08-31-september-plan/">D0031</a></p>
+<div class="callout note"><p class="k">Whatever September holds</p>
+<p>Do the first two issues below — the study model with its consistency gate, and the lane flip with the regenerated six — before the talk. Two sessions. Until they land, the public demo the talk will point at contains a section that says 96 people took the low dose and another that says 84. That is not a gap; it is an error a reader can find in a minute, and the fix is cheap.</p></div>
+<ul>
+<li>If open.gismo gets the month, as the September plan recommends: those two sessions and nothing else. Everything from the third issue on is the first post-talk release.</li>
+<li>If open.csr gets a week: the whole of v0.4.0 fits, laboratory block included, at five sessions of the kind that produced v0.3.0.</li>
+<li>Under no outcome does anything from the text or document releases start before the talk. Both need his reading time, which the rehearsal week is for.</li>
+</ul>
+</section>
+
+<section id="plan">
+<h2>The first release, as issues</h2>
+<p>Nine issues in dependency order. Each is written so it can be filed as-is once the milestone is confirmed — nothing starts on an issue without one. Each lands as one pull request to <code>dev</code> on the standard lane; the release candidate is the one thing he reviews. Sizes are working sessions of the kind the last release was built from.</p>
+
+<div class="issue"><p class="tag">Before anything · housekeeping, not an issue</p>
+<h3>Fold the 0.3.0 release back into dev</h3>
+<p>The release branch bumped the version, dropped the "Upcoming" suffix from the release log and regenerated the evidence; <code>main</code> has all of it and <code>dev</code> has none of it — forty-three files, all stamps. A pull request from <code>main</code> into <code>dev</code>, merged on the standard lane. The stacked-release lesson from the R package applies: merge forward the same day, or the next release candidate collides on the version bump.</p>
+<p class="meta"><b>Size</b> minutes · <b>Needs from him</b> nothing</p></div>
+
+<div class="issue"><p class="tag">Issue A · session 1</p>
+<h3>One study: a study model, and a build that fails when displays disagree about it</h3>
+<h4>Requirement</h4>
+<p>The study's arms, their order and labels, its analysis sets and its cut-off are declared once, in one file every specification reads; and the assembled document refuses to build when any two placed displays report different subject counts for the same arm and analysis set.</p>
+<h4>Design</h4>
+<ul>
+<li><code>library/study.yaml</code>: study id, title, arms with order and labels, analysis sets with the flag that defines each, cut-off, the reference profile id. The treatment vocabulary now hard-coded as <code>trt_levels()</code> reads it. This is the file the SAP decision's second question wanted and did not have. <a href="../2026-08-27-sap-shells/">D-SAP2</a></li>
+<li>A <code>treatmentConsistency</code> gate in <code>scripts/assemble.mjs</code> beside the existing structure, binding, numeric-fidelity and approval gates: for every placed display, the per-arm N its analysis results dataset reports must equal the N the study model derives for that analysis set on the default lane; and the set of Ns across the document must be one set per analysis set. Any disagreement is a build error naming both displays.</li>
+<li>The assembled document records which lane every display read, so the answer to "one source?" is on the page, not in a script.</li>
+</ul>
+<h4>Proof it can fail</h4>
+<ul>
+<li>A test pins one display to the pharmaverse lane and asserts the gate goes red naming it. Run before the gate is trusted; the check that cannot fail is not a check.</li>
+<li>Requirements <code>STD-MODEL-*</code> and <code>STD-GATE-*</code> in the matrix, verified by tests that read the study model directly.</li>
+</ul>
+<p class="meta"><b>Files</b> library/study.yaml · pipeline/R/data-prep.R · scripts/assemble.mjs · tests · quality/requirements · <b>Depends on</b> nothing · <b>Size</b> one session · <b>Needs from him</b> R2 answered</p></div>
+
+<div class="issue"><p class="tag">Issue B · session 1 to 2</p>
+<h3>The pilot's own package feeds every display</h3>
+<h4>Requirement</h4>
+<p>The default source registry serves every dataset from the pilot's own ADaM package; the pharmaverse re-derivation remains readable, measured and named as the alternate, and no committed display reads it.</p>
+<h4>Design</h4>
+<ul>
+<li>Design decision D12 revised in place, dated: the "every domain pharmaverse already served stays there" rule was a no-regressions rule for six displays, and the document is the thing that regresses under it. ADEX is dropped from the registry; no display needs it.</li>
+<li>The six original displays regenerate on the new lane as recorded iterations with the change request stated — this is the closed loop the project exists to demonstrate, used on itself.</li>
+<li>The four vital-sign and medication displays move lanes too. Their baseline and end-of-treatment derivations are the project's own and should be lane-independent, but the two packagings differ on the derived vital-sign records ADVS carries, so the 1,341-statistic three-route agreement is the test, and it is allowed to fail and be investigated.</li>
+<li><code>qc/source-agreement.R</code> re-measured and its record re-committed; the assembly's scope note rewritten, since it currently says the safety displays are built from the pharmaverse lane.</li>
+</ul>
+<h4>Proof it can fail</h4>
+<ul>
+<li>The consistency gate from Issue A, now green on the document; the reference-agreement records for populations, end of study, vital signs and medications still green.</li>
+<li>The demographics column counts read 86, 84, 84 in the committed output, asserted by test.</li>
+</ul>
+<p class="meta"><b>Files</b> pipeline/R/data-prep.R · qc/vendor-phuse-data.R · library/tfl/&lt;six&gt;/iterations.yaml · library/templates/ich-e3/assembly.yaml · docs/design/design.md · <b>Depends on</b> A · <b>Size</b> one session · <b>Needs from him</b> R2</p></div>
+
+<div class="issue"><p class="tag">Issue C · session 2</p>
+<h3>Demographics and exposure in the report's own shape</h3>
+<h4>Requirement</h4>
+<p>The demographics and exposure displays reproduce the reference's Tables 14-2.01 and 14-4.01 cell for cell, with every definition the project supplies stated on the display.</p>
+<h4>Design</h4>
+<ul>
+<li>Demographics: intent-to-treat set, a Total column, a p-value column (one-way ANOVA for continuous rows, Pearson's chi-square for categorical), the reference's rows — age and its three groups, sex, race-with-origin, MMSE, disease duration, education, and the baseline measures. Race-with-origin is a footnoted recode of race and ethnicity into the 2006 convention. The FDA-standard shape stays as a variant.</li>
+<li>Exposure: average daily dose and cumulative dose from the subject-level dataset's own columns, for completers at week 24 and the safety population side by side — two column groups from one specification, which the display model supports.</li>
+<li>Reference-agreement records for both, transcribed from the pinned PDF at pages 46 to 48 and 62, with the transcription self-check the populations record already has.</li>
+</ul>
+<h4>Proof it can fail</h4>
+<ul>
+<li>Three routes per display, self-tested by perturbation, as for the disposition tables. A recode that produces 217 instead of 218 Caucasian is a build failure.</li>
+</ul>
+<p class="meta"><b>Files</b> library/tfl/t-demographics · library/tfl/t-exposure · qc/reference-report-agreement.R (extended) · quality/data · <b>Depends on</b> B · <b>Size</b> half a session · <b>Needs from him</b> nothing</p></div>
+
+<div class="issue"><p class="tag">Issue D · session 3</p>
+<h3>Adverse-event and serious-event incidence as the report prints them</h3>
+<h4>Requirement</h4>
+<p>Two new displays reproduce Tables 14-5.01 and 14-5.02: system organ class and preferred term, subjects with events and a count of events in brackets, Fisher's exact p-values for placebo against each dose.</p>
+<h4>Design</h4>
+<ul>
+<li>A hierarchy display over system organ class and preferred term, which the shell measurement showed four existing displays already declare; a <code>fisher_pairwise</code> analysis method against a named reference arm; the pilot's own treatment-emergent flag.</li>
+<li>The reference's incidence table is sixteen pages; agreement uses the mechanical extraction route the efficacy record uses, not hand transcription.</li>
+<li>The existing overview and common-events tables keep their FDA identifiers and are not placed by the pilot profile.</li>
+</ul>
+<h4>Proof it can fail</h4>
+<ul>
+<li>All-body-system row: 65, 77, 76 subjects with 281, 412, 433 events, p-values 0.007 and 0.014 — the first cells the record checks.</li>
+</ul>
+<p class="meta"><b>Files</b> library/tfl/t-ae-incidence (new) · library/tfl/t-sae-incidence (new) · pipeline/R/methods · qc/efficacy-reference.R pattern reused · <b>Depends on</b> B · <b>Size</b> one session · <b>Needs from him</b> nothing</p></div>
+
+<div class="issue"><p class="tag">Issue E · session 3</p>
+<h3>Subjects by site, the in-text tables, and the disposition figure</h3>
+<h4>Requirement</h4>
+<p>Table 14-1.03 exists; the five in-text tables and the disposition figure the reference's body carries are variants of displays the library already has, placed in the sections that discuss them.</p>
+<h4>Design</h4>
+<ul>
+<li>Subjects by site: intent-to-treat, efficacy and completer counts by pooled and actual site, from the subject-level dataset's site and pooled-site columns. Small.</li>
+<li>In-text Tables 11-1, 12-1, 12-3 and 12-4 are in-text variants of demographics, incidence, vital-sign change and weight — one analysis results dataset, two renderings, by design decision D6. Table 12-2, the special-interest category, is a small filter variant of incidence.</li>
+<li>Figure 10-1, the disposition flow, is a new figure type from the subject-level dataset: randomised, treated, completed, discontinued by reason. Figure 9-1, the study schema, is a drawing and belongs to the template as an asset, in the document release.</li>
+</ul>
+<p class="meta"><b>Files</b> library/tfl/t-subjects-by-site (new) · library/tfl/f-disposition (new) · display.yaml variants · library/templates/ich-e3/assembly.yaml · <b>Depends on</b> C, D · <b>Size</b> half a session · <b>Needs from him</b> nothing</p></div>
+
+<div class="issue"><p class="tag">Issue F · sessions 4 to 5 · may slip to v0.4.1</p>
+<h3>The six laboratory families</h3>
+<h4>Requirement</h4>
+<p>Tables 14-6.01 to 14-6.06 exist and agree with the reference: continuous summaries by parameter and visit; beyond-range frequencies; clinically-significant-change frequencies; shifts by visit; shifts overall; Hy's law shifts.</p>
+<h4>Design</h4>
+<ul>
+<li>Chemistry and haematology from the two vendored laboratory datasets; Hy's law from the third. Two new analysis methods — a shift table over baseline-by-post categories, and an abnormality frequency with a chi-square column — and one new display shape, the parameter-by-visit block, which the shift-by-visit table needs at thirty-three reference pages.</li>
+<li>Order of work: continuous summaries and the two frequency tables first, because they share a parameter loop; the shift family second; Hy's law last, because it is one page.</li>
+<li>Agreement by mechanical extraction; the reference's layout breaks parameter names across lines, so the extractor needs the same care the incidence table needed.</li>
+</ul>
+<h4>Why it may slip</h4>
+<p>It is the largest item in the release by a wide margin and the only one that does not bear on "one study". If the release is cut at four sessions, this ships as v0.4.1 with the same gate.</p>
+<p class="meta"><b>Files</b> library/tfl/t-lb-* (six new) · pipeline/R/methods · qc · <b>Depends on</b> B · <b>Size</b> two sessions · <b>Needs from him</b> nothing</p></div>
+
+<div class="issue"><p class="tag">Issue G · session 5</p>
+<h3>Concomitant medications from this study's own SDTM</h3>
+<h4>Requirement</h4>
+<p>The medication analysis dataset is derived from the pilot's own SDTM medications domain, with the derivation on record, and the current remapped dataset is retired only after the derived one reproduces every cell of the medication table.</p>
+<h4>Design</h4>
+<ul>
+<li>Vendor <code>cm.xpt</code> from the same repository at the same pinned commit, with the blob-verified provenance every vendored file already carries; a <code>derive_adcm()</code> in the tested data-preparation layer producing the columns the display reads; a derivation note in the style of an analysis data reviewer's guide.</li>
+<li>Switch-over rule: the derived dataset and the remapped one must agree on every publishable statistic in the medication table's analysis results dataset before the registry points at the new one. Then the remapped file and its reversal code are removed — with his approval, since nothing is deleted without it.</li>
+</ul>
+<p class="meta"><b>Files</b> qc/vendor-phuse-data.R · pipeline/R/derive-adcm.R (new) · pipeline/inst/extdata · <b>Depends on</b> B · <b>Size</b> half a session · <b>Needs from him</b> approval to remove the remapped file</p></div>
+
+<div class="issue"><p class="tag">Issue H · half a session · bounded spike</p>
+<h3>The five last digits: Kenward-Roger</h3>
+<h4>Requirement</h4>
+<p>The repeated-measures display reproduces all 769 published figures, or the residual is measured and stated.</p>
+<h4>Design</h4>
+<ul>
+<li>Refit with the <code>mmrm</code> package using Kenward-Roger degrees of freedom and its adjusted covariance, keeping the identified fit — the same observations, the six covariance parameters to six significant figures, the REML criterion — as the first assertion.</li>
+<li>Pass mark: 769 of 769. On failure, the record states which cells still differ and the display's footnote stays. The package adds a compiled dependency; the CI install cost is part of what the spike measures.</li>
+</ul>
+<p class="meta"><b>Files</b> pipeline/R/mmrm.R · pipeline/DESCRIPTION · quality/data/efficacy-reference.json · <b>Depends on</b> nothing · <b>Size</b> half a session · <b>Needs from him</b> nothing</p></div>
+
+<div class="issue"><p class="tag">Issue I · his ten minutes</p>
+<h3>Section 11.1 stops saying there is no efficacy data</h3>
+<p>The approved block for section 11.1 still reads "no efficacy analysis set is defined for this report" and explains that the data source contains no efficacy dataset. It has been false since 27 August, and the release notes say so twice. It is a parameterised block under approval, so the change is his to approve, not the pipeline's to make: a one-paragraph rewrite, reviewed in the Text view, approved in the frontmatter. The assembly's scope note changes with it in Issue B.</p>
+<p class="meta"><b>Files</b> library/text/TXT-E3-1101.md · <b>Depends on</b> B, so the new sentence is true of the new lane · <b>Size</b> minutes · <b>Needs from him</b> the approval</p></div>
+
+<div class="callout blue"><p class="k">How it ships</p>
+<ul>
+<li>Milestone v0.4.0 carries all nine; the SAP issue moves to v0.5.0 if R3 is yes. A hub requirement for the release, in the usual three parts, with the nine as its sub-issues.</li>
+<li>Each issue is one pull request to <code>dev</code> on the standard lane. The release candidate <code>release/v0.4.0</code> is the single thing put in front of him, with the demo tier frozen at the tag as the last release was.</li>
+<li>The release note leads with the sentence the assessment could not write: the report describes one study, and all thirty-one displays have a counterpart.</li>
+</ul></div>
+</section>
+
+<section id="questions">
+<h2>The four calls</h2>
+
+<div class="q"><p class="qid">R1</p>
+<h3>Adopt the four-release roadmap?</h3>
+<p>v0.4.0 one study; v0.5.0 the whole text, after the review layer; v0.6.0 the submission document; v1.0.0 the replication proven, with the general intake named as 1.1.</p>
+<p class="rec"><b>Recommendation: yes.</b> It is the assessment's own order with one change — the SAP moves to the text release — and every release ends in something he can open.</p></div>
+
+<div class="q"><p class="qid">R2</p>
+<h3>Flip the data default so the pilot's own package feeds every display?</h3>
+<p>Revises design decision D12. The pharmaverse re-derivation stays readable and measured, as the alternate. No display reads it.</p>
+<p class="rec"><b>Recommendation: yes.</b> The rule that kept the six original displays where they were was protecting them from change; it turned out to be protecting the document from agreeing with itself. The last technical reason — exposure needing ADEX — does not hold.</p></div>
+
+<div class="q"><p class="qid">R3</p>
+<h3>Re-scope v0.4.0 to one study plus the seven missing displays, and move the SAP to v0.5.0?</h3>
+<p>The milestone today holds the SAP shells and a scroll bug. This puts the nine issues above in it and moves the SAP to the release where the fact registry gives it something to bind to.</p>
+<p class="rec"><b>Recommendation: yes.</b> The SAP page's five questions are still open, so nothing already in motion is displaced; and a plan-of-record built on a report that disagrees with itself would be the polished thing on conflicting data the assessment warns about.</p></div>
+
+<div class="q"><p class="qid">R4</p>
+<h3>Before the talk: the two sessions, or the September week?</h3>
+<p>Issues A and B alone, two sessions, so the public demo stops contradicting itself; or the whole first release at about five, which needs September's answer to go to open.csr.</p>
+<p class="rec"><b>Recommendation: the two sessions regardless, and the week only if S2 sends it here.</b> The September plan's argument for open.gismo still stands. The two sessions are not a bid for the month; they are the cost of not being wrong in public.</p></div>
+</section>
+
+<section id="measured">
+<h2>Measured for this page, not relayed</h2>
+<ul>
+<li>The two lanes were prepared through the project's own data-preparation function and tabulated by planned and actual treatment. The twelve-subject movement is in the actual-treatment column of the pharmaverse lane and nowhere else; race, sex, ethnicity, site and planned arm agree on every subject.</li>
+<li>The reference report was fetched at the SHA-256 the agreement record pins and its text extracted. The post-text set is Tables 14-1.01 to 14-7.04 — thirty — and Figure 14-1; the body carries Tables 11-1 and 12-1 to 12-4 and Figures 9-1 and 10-1. Titles and page numbers for the twelve displays the plan adds were read from their title pages, not from the assessment.</li>
+<li>The pilot's ADaM package on GitHub has no exposure dataset, and its subject-level dataset carries average daily dose and cumulative dose as columns. Its SDTM folder carries the medications domain. Both checked by listing the repository.</li>
+<li>Fifteen report text blocks: ten approved on 25 July, five agent-drafted and unread; the section 11.1 block still contains the stale sentence.</li>
+<li><code>main</code> is not an ancestor of <code>dev</code>: the release stamp in forty-three files has not been folded forward. <code>dev</code> has no commits <code>main</code> lacks, so the fold is a fast-forward.</li>
+<li>The repeated-measures fit uses <code>nlme</code>; the <code>mmrm</code> package is not installed on the machine that builds this. The install cost is part of the spike.</li>
+<li>The colleague's reference paths and the assessment's HTML are not reproduced here; the response file names its findings by content.</li>
+</ul>
+</section>
+
+</main>
+
+<footer class="mast"><div class="wrap">
+<p class="foot">Goal <a href="https://github.com/jwildfire/obot.roadmap/issues/112">#112</a> · milestone <a href="https://github.com/jwildfire/open.csr/milestone/4">open.csr v0.4.0</a> · follows <a href="../2026-08-27-sap-shells/">D0030</a> and <a href="../2026-08-31-september-plan/">D0031</a> · the response to send is <a href="response.md">response.md</a>.</p>
+<p class="foot">Drafted by Claude Code using Fable 5.1 and reviewed by @jwildfire.</p>
+</div></footer>
+
+</body></html>
