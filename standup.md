@@ -2,7 +2,7 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 11:05 am on Wednesday the 2nd of September. The reading behind it was taken at 11:05 am, one minute ago.
+Read at 11:17 am on Wednesday the 2nd of September. The reading behind it was taken at 11:16 am, one minute ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
@@ -14,7 +14,7 @@ No session is parked on a permission prompt, so nothing is held up waiting for y
 
 ## What is blocked
 
-Nothing on the ranked list is marked blocked.
+The ranked list was not read this pass, so I cannot tell you what is blocked.
 
 ## What needs a decision from you
 
