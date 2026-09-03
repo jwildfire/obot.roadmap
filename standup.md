@@ -2,13 +2,13 @@
 
 This file is generated from the Navigator sweep on his laptop. Nobody writes it by hand, and anything typed into it is overwritten on the next pass.
 
-Read at 8:01 pm on Wednesday the 2nd of September. The reading behind it was taken at 8:00 pm, two minutes ago.
+Read at 8:07 am on Thursday the 3rd of September. The reading behind it was taken at 8:06 am, two minutes ago.
 
 The sweep runs every five minutes and this file is rewritten each time, so nothing here is more than about ten minutes old. The same loop sets the round trip the other way: something you send back now shows up on the next pass, not straight away.
 
 ## What is running
 
-No agent session is working right now.
+One agent session is working.
 
 No session is parked on a permission prompt, so nothing is held up waiting for you to approve it.
 
