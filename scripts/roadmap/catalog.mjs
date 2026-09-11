@@ -368,6 +368,269 @@ const requirementsNote = `Status from each requirement's <code>status:</code> la
   claimedCount ? ` Separately, ${claimedCount} requirements still end with the older attribution line asserting that @jwildfire reviewed them, and nothing on record says he did — counted in the <a href="reports/requirement-provenance/">provenance report</a> rather than rewritten.` : ''
 }`;
 
+const requirementsSection = section(
+  'requirements',
+  'Requirements',
+  active.length,
+  await requirementTable(active, prsByRequirement),
+  { note: requirementsNote },
+);
+
+const foldedSection = `<details class="rm-fold">
+<summary>Backlog &amp; closed (${folded.length})</summary>
+${await requirementTable(folded, prsByRequirement)}
+</details>`;
+
+const viewChips = VIEWS.map((v) =>
+  `<button class="rm-view-btn${v.key === DEFAULT_VIEW ? ' current' : ''}" data-view="${v.key}"` +
+  ` aria-pressed="${v.key === DEFAULT_VIEW}" title="${esc(v.blurb)}">${esc(v.label)}</button>`).join('');
+
+// data-filter, not data-repo: the filter hides every [data-repo] node, and the
+// chips must not be able to hide themselves.
+const filterChips = ['<button class="rm-chip-btn current" data-filter="all" aria-pressed="true">all</button>']
+  .concat(REPOS.map((r) => `<button class="rm-chip-btn" data-filter="${r.nameWithOwner}" aria-pressed="false">${esc(r.name)}</button>`))
+  .join('');
+
+const auditLogHtml = `<dialog id="audit-log" class="audit-log" aria-labelledby="audit-log-title">
+  <form method="dialog"><button class="audit-close" aria-label="Close">&times;</button></form>
+  <h2 id="audit-log-title">Audit log</h2>
+  <p class="meta">What changed in each roadmap update — maintained in
+  <a href="https://github.com/${HUB}/blob/main/site/roadmap-changelog.json"><code>roadmap-changelog.json</code></a>.</p>
+${auditEntries.map((e) => `  <section class="audit-entry">
+    <h3>v${esc(e.version)} <span class="audit-date">${fmtET(e.date)}</span></h3>
+    <ul>
+${e.changes.map((c) => `      <li>${esc(c)}</li>`).join('\n')}
+    </ul>
+  </section>`).join('\n')}
+</dialog>`;
+
+const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalog · obot</title>
+<meta name="description" content="The complete roadmap record: objectives, the requirement hierarchy and its review lane, every active requirement, open PRs, upcoming and recent releases, and the ideas queue — filterable by view and repo.">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body class="wide">
+${siteHeader({ page: 'catalog' })}
+
+<p class="rm-lede">Everything the roadmap tracks, on one page — nothing filtered out by design.
+What needs @jwildfire is on the <a href="roadmap.html">queue</a>; what changed in the last week is on
+the <a href="wire.html">wire</a>. This is the record both of those read from.</p>
+
+<div class="rm-bar">
+  <span class="rm-views" id="rm-views" role="group" aria-label="View">${viewChips}</span>
+  <span class="rm-filters" id="rm-filters" role="group" aria-label="Filter by repo">${filterChips}</span>
+</div>
+<p class="rm-blurb" id="rm-blurb"></p>
+
+${todoSection(prRes, relRes, decRes)}
+${goalsSection(goalRes, requirements)}
+${hierarchySection(hierRes, { requirements, proposal })}
+${requirementsSection}
+
+${prSection(prRes)}
+${upcomingSection(relRes)}
+${recentSection(relRes)}
+
+${foldedSection}
+${auditLogHtml}
+
+<script>
+(function () {
+  // The audit log is this page's dialog; the header's version panel links to it from
+  // every other page and opens it here. Both lookups are guarded, and deliberately:
+  // the previous version of these two lines dereferenced #version-badge with no null
+  // check at the head of this IIFE, so the day the badge moved into the shared header
+  // every filter, chip and count on this page would have died with it — silently, on
+  // a page that still rendered perfectly.
+  var log = document.getElementById('audit-log');
+  var openLog = document.querySelector('[data-vs-log]');
+  if (log && openLog) {
+    openLog.addEventListener('click', function (e) { e.preventDefault(); log.showModal(); });
+  }
+  if (log) log.addEventListener('click', function (e) { if (e.target === log) log.close(); });
+
+  // Repo filter — rows carry a space-separated data-repo list; a section with no
+  // surviving rows hides itself so the page stays dense when filtered.
+  // Two independent filters — view (what kind of row) and repo — composed into
+  // one predicate. Rows carry data-hl (the views they belong to) and data-repo.
+  var repoButtons = Array.prototype.slice.call(document.querySelectorAll('.rm-chip-btn'));
+  var viewButtons = Array.prototype.slice.call(document.querySelectorAll('.rm-view-btn'));
+  var blurbs = ${JSON.stringify(Object.fromEntries(VIEWS.map((v) => [v.key, v.blurb])))};
+  var view = ${JSON.stringify(DEFAULT_VIEW)};
+  var repo = 'all';
+
+  // A count badge counts the rows of the first list or table after its heading,
+  // so the numbers keep telling the truth once a filter is on.
+  function scopesOf(badge) {
+    var head = badge.closest('h2, h3');
+    for (var el = head; el; el = el.nextElementSibling) {
+      // rm-scroll is the overflow container a wide table sits in — count through
+      // it, or a wrapped table silently loses its badge.
+      if (el.classList && (el.classList.contains('rm-rows') || el.classList.contains('rm-scroll') || el.tagName === 'TABLE')) return [el];
+    }
+    // No list right after the heading: a section that groups its rows into
+    // subsections instead. Todo is the one that does, and its heading badge sat
+    // frozen at the build-time number — after the live RC refresh replaced the
+    // rows under it, the header said 8 while the two subsections said 2 and 8.
+    // Count every row list in the section. A section whose heading counts
+    // something other than rows (Audit counts findings) has no .rm-rows and
+    // keeps its build-time number.
+    var sec = badge.closest('.rm-sec');
+    var lists = sec ? sec.querySelectorAll('.rm-rows') : [];
+    return lists.length ? Array.prototype.slice.call(lists) : null;
+  }
+  var badges = Array.prototype.slice.call(document.querySelectorAll('.rm-count')).map(function (b) {
+    return { el: b, scope: scopesOf(b) };
+  });
+
+  function apply(fromClick) {
+    document.querySelectorAll('[data-repo]').forEach(function (row) {
+      // split(' ') not a regex: this script is inside a template literal, where
+      // a lone backslash is eaten before it reaches the page.
+      var repoOk = repo === 'all' || (row.dataset.repo || '').split(' ').indexOf(repo) !== -1;
+      var viewOk = view === 'all' || (row.dataset.hl || '').split(' ').indexOf(view) !== -1;
+      row.hidden = !(repoOk && viewOk);
+    });
+    badges.forEach(function (b) {
+      if (!b.scope) return;
+      var n = 0;
+      b.scope.forEach(function (s) {
+        Array.prototype.forEach.call(s.querySelectorAll('[data-repo]'), function (r) { if (!r.hidden) n++; });
+      });
+      b.el.textContent = n;
+    });
+    // Hide a subsection, then a section, once nothing in it survives — a
+    // highlights view should be shorter, not the same page full of empty headings.
+    document.querySelectorAll('.rm-sub').forEach(function (sub) {
+      var rows = sub.querySelectorAll('[data-repo]');
+      sub.hidden = rows.length > 0 && !Array.prototype.some.call(rows, function (r) { return !r.hidden; });
+    });
+    document.querySelectorAll('.rm-sec').forEach(function (sec) {
+      var rows = sec.querySelectorAll('[data-repo]');
+      var visible = Array.prototype.some.call(rows, function (r) { return !r.hidden; });
+      sec.classList.toggle('rm-dim', rows.length > 0 && !visible);
+    });
+    repoButtons.forEach(function (b) {
+      var on = b.dataset.filter === repo;
+      b.classList.toggle('current', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    viewButtons.forEach(function (b) {
+      var on = b.dataset.view === view;
+      b.classList.toggle('current', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var blurb = document.getElementById('rm-blurb');
+    blurb.textContent = blurbs[view] || '';
+    // Only a view the reader CHOSE rewrites the URL. The unconditional rewrite
+    // that used to be here ran on load too, and replaced the whole fragment
+    // with location.pathname before the browser had acted on it — so every
+    // section deep-link into this page silently landed at the top instead of at
+    // its section. That was live: on 2026-08-16 the deployed roadmap.html threw
+    // away README's #sec-audit exactly this way, with nothing looking broken.
+    // The fromClick guard is the same shape the hierarchy toggle already uses.
+    if (fromClick && window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', view === ${JSON.stringify(DEFAULT_VIEW)} ? location.pathname : '#' + view);
+    }
+  }
+  repoButtons.forEach(function (b) {
+    b.addEventListener('click', function () { repo = b.dataset.filter; apply(true); });
+  });
+  viewButtons.forEach(function (b) {
+    b.addEventListener('click', function () { view = b.dataset.view; apply(true); });
+  });
+  // A #live / #attention / #pulse / #all fragment deep-links a view, so a
+  // particular reading of the page is a shareable URL.
+  var hash = (location.hash || '').replace('#', '');
+  if (blurbs.hasOwnProperty(hash)) view = hash;
+  apply();
+
+  // A section fragment has to be re-honoured after apply(), not before it: the
+  // browser scrolled while every row was still visible, and apply() then hid
+  // rows and changed the page's height, which leaves that scroll pointing at
+  // the wrong place. #hierarchy-proposed is not an element id — it is the
+  // hierarchy toggle's own deep-link — so it aims at the section that hosts it.
+  if (hash && !blurbs.hasOwnProperty(hash)) {
+    var anchor = document.getElementById(hash === 'hierarchy-proposed' ? 'sec-hierarchy' : hash);
+    if (anchor) anchor.scrollIntoView();
+  }
+
+  // Todo live refresh — the RC PR list re-checks GitHub on load, because PRs
+  // open and close without a push to this repo and the section's whole job is
+  // "always know what is waiting". One unauthenticated search per page view;
+  // a failure just leaves the build-time list standing. Draft-release rows
+  // (data-draft) are kept as built: drafts are invisible without a token.
+  var rcRows = document.getElementById('todo-rc-rows');
+  if (rcRows) {
+    var rcQuery = 'is:pr is:open archived:false user:jwildfire review-requested:jwildfire';
+    fetch('https://api.github.com/search/issues?per_page=30&q=' + encodeURIComponent(rcQuery))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.items)) return;
+        var escape = function (s) {
+          return String(s).replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+          });
+        };
+        var freshAge = function (iso) {
+          var mins = Math.floor((Date.now() - new Date(iso)) / 60000);
+          if (mins < 60) return mins <= 1 ? 'just now' : mins + 'm';
+          if (mins < 1440) return Math.floor(mins / 60) + 'h';
+          return Math.floor(mins / 1440) + 'd';
+        };
+        // lib/rc.mjs's rule, emitted from lib/rc.mjs rather than retyped here.
+        // The hand-written mirror that used to sit at this spot shipped broken
+        // for weeks: every backslash in its regexes was eaten by this very
+        // template literal, so the deployed pattern had lost its digit and
+        // word-boundary classes and matched no version at all, and the dedupe
+        // never fired once (hub#209). An interpolated value is never reprocessed
+        // for escapes, which is what makes the emitted form safe where the typed
+        // one was not — and rc.test.mjs evaluates what the emitter produces.
+        //
+        // This comment describes the broken pattern rather than reproducing it:
+        // deploy-site.yml greps the built pages for that exact shape, and a
+        // comment quoting it verbatim fails the check on a page that is correct.
+        ${browserReleaseKeySource()}
+        var prKeys = {};
+        var fresh = data.items.map(function (it) {
+          var repo = it.repository_url.replace('https://api.github.com/repos/', '');
+          var key = releaseKeyOf(repo, [it.milestone && it.milestone.title, it.title]);
+          if (key) prKeys[key] = true;
+          return '<div class="rm-row" data-repo="' + escape(repo) + '" data-hl="live attention pulse"' +
+            (key ? ' data-release="' + escape(key) + '"' : '') + '>' +
+            '<span class="rm-key"><a href="' + escape(it.html_url) + '">' + escape(repo.split('/')[1]) + '#' + it.number + '</a></span>' +
+            '<span class="rm-main"><span class="rm-pill rc">rc pr</span> ' + escape(it.title) + '</span>' +
+            '<span class="rm-meta">' + freshAge(it.updated_at) + '</span></div>';
+        });
+        // Re-run the build-time dedupe over the fresh list: a draft release whose
+        // RC PR is in this response is the same release, and listing it again
+        // would put the duplicate straight back after the fetch.
+        var drafts = Array.prototype.filter.call(rcRows.children, function (el) {
+          if (!el.hasAttribute || !el.hasAttribute('data-draft')) return false;
+          var key = el.getAttribute('data-release');
+          return !(key && prKeys[key]);
+        }).map(function (el) { return el.outerHTML; });
+        var all = fresh.concat(drafts);
+        rcRows.innerHTML = all.length ? all.join('') : '<p class="rm-empty">No release candidates are waiting.</p>';
+        apply(); // recount badges and re-apply active filters over the fresh rows
+      })
+      .catch(function () { /* offline or rate-limited — the build-time list stands */ });
+  }
+})();
+</script>
+
+<footer class="site">Generated ${fmtET(NOW)} · regenerates via <code>deploy-site.yml</code> ·
+built by <a href="https://github.com/${HUB}/blob/main/scripts/roadmap/catalog.mjs"><code>roadmap/catalog.mjs</code></a>
+for <a href="https://github.com/${HUB}/issues/57">requirement #57</a>, re-front-ended by
+<a href="https://github.com/${HUB}/issues/211">#211</a>.</footer>
+</body>
+</html>
+`;
+
 const degraded = [
   ['PRs', prRes], ['releases', relRes], ['goals', goalRes], ['hierarchy', hierRes],
   ['decisions', decRes],
