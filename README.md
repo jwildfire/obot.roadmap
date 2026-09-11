@@ -47,10 +47,10 @@ back is a comment on the issue it concerns.
 Issues are filed from the templates — [objective](.github/ISSUE_TEMPLATE/objective.yml),
 [requirement](.github/ISSUE_TEMPLATE/requirement.yml),
 [task](.github/ISSUE_TEMPLATE/task.yml) — under the
-[issue contract](docs/issue-contract.md), and tracked on the
-[obot Roadmap project](https://github.com/users/jwildfire/projects/1), whose `Status`
-field — Backlog, Ready, In session, Review, Released — is the one place a requirement's
-status lives. The hub's
+[issue contract](docs/issue-contract.md). A requirement's status is one `status:` label —
+backlog, ready, in session, review, released — and the site's
+[catalog](https://jwildfire.github.io/obot.roadmap/catalog.html) is the tracker that
+reads it; the project board is retired. The hub's
 `requirement-drafting`, `requirement-design` and `requirement-tasks` skills under
 [`.github/skills/`](.github/skills/) walk a requirement from idea to filed tasks.
 

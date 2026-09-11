@@ -110,14 +110,12 @@ export function buildItems({ NOW, reqRes, prRes, relRes, decRes }) {
     if (!stalled && !req.drift) continue;
     const why = [];
     if (stalled) {
-      why.push(`The board says ${esc(req.stage)}, but nothing has touched it in over ${T.stalledDays} days — in-flight work this quiet needs a nudge or a call to close.`);
+      why.push(`The status label says ${esc(req.stage)}, but nothing has touched it in over ${T.stalledDays} days — in-flight work this quiet needs a nudge or a call to close.`);
     }
     if (req.drift === 'open in Released') {
-      why.push('The issue is open but the board files it under Released, so the roadmap misreads this work until you restage it.');
+      why.push('The issue is open but its label says released, so the roadmap misreads this work until the label is fixed.');
     } else if (req.drift === 'unstaged') {
-      why.push(req.onBoard
-        ? 'It sits on the board with no stage at all, so it appears in no lane until you place it.'
-        : 'It is not on the board, so it appears in no lane until you add it.');
+      why.push('It carries no status label, so it appears in no lane until one is set.');
     }
     items.push({
       type: 'unstick',
@@ -127,30 +125,11 @@ export function buildItems({ NOW, reqRes, prRes, relRes, decRes }) {
       why: why.join(' '),
       act: stalled
         ? { label: 'Nudge or close the issue', href: req.url }
-        : { label: 'Fix its stage on the board', href: PROJECT_URL },
+        : { label: 'Fix its status label', href: req.url },
       cite: { label: `#${req.number}`, href: req.url },
     });
   }
 
-  // The board block, as one card rather than one per requirement (#254). Every
-  // requirement filed while nothing can write to the board is off it, so a card
-  // each would grow a queue entry a day for a single cause — and the thing that
-  // actually needs him is the cause. He is also the only one who can act on it:
-  // the board is his, and his own credential is the one the guard denies.
-  const boardBlocked = (reqRes.value ?? []).filter((r) => r.state === 'OPEN' && r.blocked);
-  if (boardBlocked.length) {
-    const oldest = boardBlocked.reduce((a, b) => (a.createdAt <= b.createdAt ? a : b));
-    const cite = boardBlocked[0].blocked;
-    items.push({
-      type: 'unstick',
-      since: oldest.createdAt,
-      prefix: 'stranded',
-      title: `${boardBlocked.length} requirement${boardBlocked.length > 1 ? 's are' : ' is'} off the board, and no agent can put ${boardBlocked.length > 1 ? 'them' : 'it'} there`,
-      why: `The obotclaw App is refused on a user-owned project and the guard denies your own token, so board writes are impossible for everyone but you. Until that is settled the stage lanes are missing this work, and the count grows with every requirement filed.`,
-      act: { label: 'Decide how board writes happen', href: cite.url },
-      cite: { label: `#${cite.issue}`, href: cite.url },
-    });
-  }
 
   // Release decisions: upcoming rows hitting the house attention triggers
   // (backlog past the threshold, diverged branches, never-released real work).

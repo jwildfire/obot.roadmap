@@ -25,7 +25,7 @@ are the [developer guidelines](developer-guidelines.md).
 
 @jwildfire's shape for the work (2026-09-10): prep, execution, review.
 
-| Phase | Where | Who | Status moves | What happens |
+| Phase | Where | Who | `status:` label moves | What happens |
 |---|---|---|---|---|
 | 1 · Prep | a session in the `obot.roadmap` cloud environment | agent and @jwildfire together — active collaboration | Backlog → Ready | the requirement is drafted, designed and decomposed with the hub's `requirement-drafting`, `requirement-design` and `requirement-tasks` skills; tasks are filed in their repositories with definitions of done and milestones; the objective's tree is signed off; the Ready gate is checked and the status set |
 | 2 · Execution | a session in the repository's cloud environment | the agent, semi-autonomously; @jwildfire steers on the issue or in the session | Ready → In session → Review | the `requirement-session` skill: set `/goal` from the requirement's definition of done, work the tasks through auto-merging PRs, comment nightly, open the release candidate |
@@ -75,8 +75,8 @@ is Ready ([issue contract → Status](issue-contract.md#status)).
   for that repository ([obot.agent `docs/cloud-environments.md`](https://github.com/jwildfire/obot.agent/blob/main/docs/cloud-environments.md)).
 - The session runs the [`requirement-session`](https://github.com/jwildfire/obot.agent/blob/main/skills/requirement-session/SKILL.md)
   skill: read the requirement and its tree, check it, set the goal from the requirement's
-  definition of done, work the tasks, comment, finish — moving the requirement's board
-  status to In session at start, Review when its RC opens, and Released at close
+  definition of done, work the tasks, comment, finish — moving the requirement's `status:`
+  label to in session at start, review when its RC opens, and released at close
   ([issue contract → Status](issue-contract.md#status)).
 - The `/goal` condition is generated from the tree with this template, under 4,000
   characters:
@@ -131,7 +131,7 @@ A scheduled cloud routine on this repository
 ([obot.agent `routines/standup.md`](https://github.com/jwildfire/obot.agent/blob/main/routines/standup.md))
 renders, every night, from GitHub alone:
 
-- every open objective with its requirements' board statuses and its complete / in
+- every open objective with its requirements' status labels and its complete / in
   progress / blocked counts across tasks, and the sentences from its requirements' latest
   nightly comments;
 - one question per issue carrying the `blocked` label, quoted from its latest comment;

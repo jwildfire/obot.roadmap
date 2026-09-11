@@ -43,7 +43,6 @@ const RECENT_RELEASES = 10;
 // with a module-level NOW before it became a module, and keeping the shape means
 // the diff against that script is about the move and nothing else.
 let NOW = new Date();
-const PROJECT_URL = 'https://github.com/users/jwildfire/projects/1';
 
 const shortRepo = (nameWithOwner) => nameWithOwner.split('/')[1];
 const stageClass = (stage) => stage.toLowerCase().replace(/ /g, '-');
@@ -197,16 +196,7 @@ const PILL = {
 async function requirementRow(req, prsByRequirement) {
   // 'unstaged' is already what the stage pill says — don't badge it twice.
   const drift = req.drift && req.drift !== 'unstaged'
-    ? ` <span class="status-pill drift" title="Board Status disagrees with the issue state">${esc(req.drift)}</span>`
-    : '';
-  // A requirement nothing could place gets a pill that says so, and a link to
-  // the reason (#254). Red would say "somebody let this slip"; the block is not
-  // that, and the pill is neutral because the row is not a fault.
-  const blocked = req.blocked
-    ? ` <a class="status-pill blocked" href="${esc(req.blocked.url)}" title="${esc(
-      `${req.blocked.onBoard ? 'On the board with no Status' : 'Not on the board'} — nothing can write to the board (#${req.blocked.issue})`
-      + (req.blocked.filedAfterBlock ? ', and this was filed after that was measured' : ', and it has been unplaceable since before this was filed'),
-    )}">board blocked</a>`
+    ? ` <span class="status-pill drift" title="The status label disagrees with the issue state">${esc(req.drift)}</span>`
     : '';
   // Whose decision it carries (#215). A pill appears only where a requirement
   // claims an approval under the current convention — that is the claim a reader
@@ -227,13 +217,10 @@ async function requirementRow(req, prsByRequirement) {
     ? `${req.tasks.done}/${req.tasks.total}${req.tasks.source === 'checklist' ? '<span class="rm-none" title="from an inline checklist, not sub-issues">*</span>' : ''}`
     : '<span class="rm-none">—</span>';
   const repos = req.repos.map((r) => `<span class="rm-chip">${esc(shortRepo(r))}</span>`).join('');
-  // The word stays `Unstaged` — it has no stage and nothing may pretend it does.
-  // Only the colour changes, from the red that reads as neglect to the grey that
-  // reads as "waiting on a mechanism", which is what this is.
-  const stagePill = req.blocked ? 'blocked' : stageClass(req.stage);
+  const stagePill = stageClass(req.stage);
   return `  <tr data-repo="${repoAttr(req.repos)}" data-hl="${requirementViews(req, prs, NOW)}">
     <td><a href="${req.url}">#${req.number}</a></td>
-    <td>${esc(req.title)}${drift}${blocked}${prov}${activity}</td>
+    <td>${esc(req.title)}${drift}${prov}${activity}</td>
     <td><span class="status-pill ${stagePill}">${esc(req.stage)}</span></td>
     <td>${repos}</td>
     <td>${tasks}</td>
@@ -370,299 +357,16 @@ for (const pr of prRes.value ?? []) {
 }
 
 const driftCount = active.filter((r) => r.drift).length;
-// The blocked class, counted and explained where the number is rather than in
-// conversation (#254). It rises every time a requirement is filed, and a number
-// that rises on its own has to carry the reason it rises, or it reads exactly
-// like the discipline decay it is not.
-const blockedReqs = active.filter((r) => r.blocked);
-const blockedSince = blockedReqs.filter((r) => r.blocked.filedAfterBlock).length;
-const blockedOff = blockedReqs.filter((r) => !r.blocked.onBoard).length;
-const blockedIssue = blockedReqs[0]?.blocked;
-const where = blockedOff === blockedReqs.length
-  ? 'are not on the obot Roadmap board at all'
-  : blockedOff === 0
-    ? 'sit on the obot Roadmap board with no Status'
-    : `have no stage on the obot Roadmap board, ${blockedOff} of them not on it at all`;
-const blockedNote = blockedReqs.length
-  ? ` <strong>${blockedReqs.length}</strong> open requirement${blockedReqs.length > 1 ? 's' : ''} ${where}, because nothing can write to it: the obotclaw App is refused on a user-owned project, and the guard denies the only credential that works (<a href="${esc(blockedIssue.url)}">#${blockedIssue.issue}</a>).${
-    blockedSince ? ` ${blockedSince} of them ${blockedSince > 1 ? 'were' : 'was'} filed after that was measured, so no agent could have placed ${blockedSince > 1 ? 'them' : 'it'};` : ''
-  }${
-    blockedReqs.length - blockedSince ? ` ${blockedSince ? 'the other' : ''} ${blockedReqs.length - blockedSince} predate${blockedReqs.length - blockedSince > 1 ? '' : 's'} it and cannot be placed now either.` : ''
-  } They are counted here as blocked rather than as drift, and this number will keep rising as work is filed — that is the block, not the discipline.`
-  : '';
 // Whose decision each requirement carries (#215), stated once under the table
 // people read. The legacy count is the whole population, not this table's share:
 // a number that changes depending on which fold you are looking at is worse than
 // no number, because it reads as a different fact each time.
 const claimedCount = [...active, ...folded].filter((r) => r.provenance?.state === 'claimed').length;
-const requirementsNote = `Board Status from the <a href="${PROJECT_URL}">obot Roadmap project</a>${
-  driftCount ? `, including <strong>${driftCount}</strong> open requirement${driftCount > 1 ? 's' : ''} the board has parked in <code>Released</code> or left unstaged — shown here rather than folded away` : ''
-}.${blockedNote} No approval pill means nobody has approved that requirement — the normal state for work an agent wrote, and recorded on the issue as <code>Approved by: EMPTY</code> rather than left blank (<a href="https://github.com/${HUB}/issues/215">#215</a>); a pill appears only where a requirement claims an approval, because a claim is the thing that can be believed wrongly.${
+const requirementsNote = `Status from each requirement's <code>status:</code> label — backlog, ready, in session, review, released — the one place it lives${
+  driftCount ? `, including <strong>${driftCount}</strong> open requirement${driftCount > 1 ? 's' : ''} whose label disagrees with the issue — labelled released while open, unlabelled, or doubly labelled — shown here rather than folded away` : ''
+}. No approval pill means nobody has approved that requirement — the normal state for work an agent wrote, and recorded on the issue as <code>Approved by: EMPTY</code> rather than left blank (<a href="https://github.com/${HUB}/issues/215">#215</a>); a pill appears only where a requirement claims an approval, because a claim is the thing that can be believed wrongly.${
   claimedCount ? ` Separately, ${claimedCount} requirements still end with the older attribution line asserting that @jwildfire reviewed them, and nothing on record says he did — counted in the <a href="reports/requirement-provenance/">provenance report</a> rather than rewritten.` : ''
 }`;
-
-const requirementsSection = section(
-  'requirements',
-  'Requirements',
-  active.length,
-  await requirementTable(active, prsByRequirement),
-  { note: requirementsNote },
-);
-
-const foldedSection = `<details class="rm-fold">
-<summary>Backlog &amp; closed (${folded.length})</summary>
-${await requirementTable(folded, prsByRequirement)}
-</details>`;
-
-const viewChips = VIEWS.map((v) =>
-  `<button class="rm-view-btn${v.key === DEFAULT_VIEW ? ' current' : ''}" data-view="${v.key}"` +
-  ` aria-pressed="${v.key === DEFAULT_VIEW}" title="${esc(v.blurb)}">${esc(v.label)}</button>`).join('');
-
-// data-filter, not data-repo: the filter hides every [data-repo] node, and the
-// chips must not be able to hide themselves.
-const filterChips = ['<button class="rm-chip-btn current" data-filter="all" aria-pressed="true">all</button>']
-  .concat(REPOS.map((r) => `<button class="rm-chip-btn" data-filter="${r.nameWithOwner}" aria-pressed="false">${esc(r.name)}</button>`))
-  .join('');
-
-const auditLogHtml = `<dialog id="audit-log" class="audit-log" aria-labelledby="audit-log-title">
-  <form method="dialog"><button class="audit-close" aria-label="Close">&times;</button></form>
-  <h2 id="audit-log-title">Audit log</h2>
-  <p class="meta">What changed in each roadmap update — maintained in
-  <a href="https://github.com/${HUB}/blob/main/site/roadmap-changelog.json"><code>roadmap-changelog.json</code></a>.</p>
-${auditEntries.map((e) => `  <section class="audit-entry">
-    <h3>v${esc(e.version)} <span class="audit-date">${fmtET(e.date)}</span></h3>
-    <ul>
-${e.changes.map((c) => `      <li>${esc(c)}</li>`).join('\n')}
-    </ul>
-  </section>`).join('\n')}
-</dialog>`;
-
-const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Catalog · obot</title>
-<meta name="description" content="The complete roadmap record: objectives, the requirement hierarchy and its review lane, every active requirement, open PRs, upcoming and recent releases, and the ideas queue — filterable by view and repo.">
-<link rel="stylesheet" href="assets/styles.css">
-</head>
-<body class="wide">
-${siteHeader({ page: 'catalog' })}
-
-<p class="rm-lede">Everything the roadmap tracks, on one page — nothing filtered out by design.
-What needs @jwildfire is on the <a href="roadmap.html">queue</a>; what changed in the last week is on
-the <a href="wire.html">wire</a>. This is the record both of those read from.</p>
-
-<div class="rm-bar">
-  <span class="rm-views" id="rm-views" role="group" aria-label="View">${viewChips}</span>
-  <span class="rm-filters" id="rm-filters" role="group" aria-label="Filter by repo">${filterChips}</span>
-</div>
-<p class="rm-blurb" id="rm-blurb"></p>
-
-${todoSection(prRes, relRes, decRes)}
-${goalsSection(goalRes, requirements)}
-${hierarchySection(hierRes, { requirements, proposal })}
-${requirementsSection}
-
-${prSection(prRes)}
-${upcomingSection(relRes)}
-${recentSection(relRes)}
-
-${foldedSection}
-${auditLogHtml}
-
-<script>
-(function () {
-  // The audit log is this page's dialog; the header's version panel links to it from
-  // every other page and opens it here. Both lookups are guarded, and deliberately:
-  // the previous version of these two lines dereferenced #version-badge with no null
-  // check at the head of this IIFE, so the day the badge moved into the shared header
-  // every filter, chip and count on this page would have died with it — silently, on
-  // a page that still rendered perfectly.
-  var log = document.getElementById('audit-log');
-  var openLog = document.querySelector('[data-vs-log]');
-  if (log && openLog) {
-    openLog.addEventListener('click', function (e) { e.preventDefault(); log.showModal(); });
-  }
-  if (log) log.addEventListener('click', function (e) { if (e.target === log) log.close(); });
-
-  // Repo filter — rows carry a space-separated data-repo list; a section with no
-  // surviving rows hides itself so the page stays dense when filtered.
-  // Two independent filters — view (what kind of row) and repo — composed into
-  // one predicate. Rows carry data-hl (the views they belong to) and data-repo.
-  var repoButtons = Array.prototype.slice.call(document.querySelectorAll('.rm-chip-btn'));
-  var viewButtons = Array.prototype.slice.call(document.querySelectorAll('.rm-view-btn'));
-  var blurbs = ${JSON.stringify(Object.fromEntries(VIEWS.map((v) => [v.key, v.blurb])))};
-  var view = ${JSON.stringify(DEFAULT_VIEW)};
-  var repo = 'all';
-
-  // A count badge counts the rows of the first list or table after its heading,
-  // so the numbers keep telling the truth once a filter is on.
-  function scopesOf(badge) {
-    var head = badge.closest('h2, h3');
-    for (var el = head; el; el = el.nextElementSibling) {
-      // rm-scroll is the overflow container a wide table sits in — count through
-      // it, or a wrapped table silently loses its badge.
-      if (el.classList && (el.classList.contains('rm-rows') || el.classList.contains('rm-scroll') || el.tagName === 'TABLE')) return [el];
-    }
-    // No list right after the heading: a section that groups its rows into
-    // subsections instead. Todo is the one that does, and its heading badge sat
-    // frozen at the build-time number — after the live RC refresh replaced the
-    // rows under it, the header said 8 while the two subsections said 2 and 8.
-    // Count every row list in the section. A section whose heading counts
-    // something other than rows (Audit counts findings) has no .rm-rows and
-    // keeps its build-time number.
-    var sec = badge.closest('.rm-sec');
-    var lists = sec ? sec.querySelectorAll('.rm-rows') : [];
-    return lists.length ? Array.prototype.slice.call(lists) : null;
-  }
-  var badges = Array.prototype.slice.call(document.querySelectorAll('.rm-count')).map(function (b) {
-    return { el: b, scope: scopesOf(b) };
-  });
-
-  function apply(fromClick) {
-    document.querySelectorAll('[data-repo]').forEach(function (row) {
-      // split(' ') not a regex: this script is inside a template literal, where
-      // a lone backslash is eaten before it reaches the page.
-      var repoOk = repo === 'all' || (row.dataset.repo || '').split(' ').indexOf(repo) !== -1;
-      var viewOk = view === 'all' || (row.dataset.hl || '').split(' ').indexOf(view) !== -1;
-      row.hidden = !(repoOk && viewOk);
-    });
-    badges.forEach(function (b) {
-      if (!b.scope) return;
-      var n = 0;
-      b.scope.forEach(function (s) {
-        Array.prototype.forEach.call(s.querySelectorAll('[data-repo]'), function (r) { if (!r.hidden) n++; });
-      });
-      b.el.textContent = n;
-    });
-    // Hide a subsection, then a section, once nothing in it survives — a
-    // highlights view should be shorter, not the same page full of empty headings.
-    document.querySelectorAll('.rm-sub').forEach(function (sub) {
-      var rows = sub.querySelectorAll('[data-repo]');
-      sub.hidden = rows.length > 0 && !Array.prototype.some.call(rows, function (r) { return !r.hidden; });
-    });
-    document.querySelectorAll('.rm-sec').forEach(function (sec) {
-      var rows = sec.querySelectorAll('[data-repo]');
-      var visible = Array.prototype.some.call(rows, function (r) { return !r.hidden; });
-      sec.classList.toggle('rm-dim', rows.length > 0 && !visible);
-    });
-    repoButtons.forEach(function (b) {
-      var on = b.dataset.filter === repo;
-      b.classList.toggle('current', on);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-    viewButtons.forEach(function (b) {
-      var on = b.dataset.view === view;
-      b.classList.toggle('current', on);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-    var blurb = document.getElementById('rm-blurb');
-    blurb.textContent = blurbs[view] || '';
-    // Only a view the reader CHOSE rewrites the URL. The unconditional rewrite
-    // that used to be here ran on load too, and replaced the whole fragment
-    // with location.pathname before the browser had acted on it — so every
-    // section deep-link into this page silently landed at the top instead of at
-    // its section. That was live: on 2026-08-16 the deployed roadmap.html threw
-    // away README's #sec-audit exactly this way, with nothing looking broken.
-    // The fromClick guard is the same shape the hierarchy toggle already uses.
-    if (fromClick && window.history && window.history.replaceState) {
-      window.history.replaceState(null, '', view === ${JSON.stringify(DEFAULT_VIEW)} ? location.pathname : '#' + view);
-    }
-  }
-  repoButtons.forEach(function (b) {
-    b.addEventListener('click', function () { repo = b.dataset.filter; apply(true); });
-  });
-  viewButtons.forEach(function (b) {
-    b.addEventListener('click', function () { view = b.dataset.view; apply(true); });
-  });
-  // A #live / #attention / #pulse / #all fragment deep-links a view, so a
-  // particular reading of the page is a shareable URL.
-  var hash = (location.hash || '').replace('#', '');
-  if (blurbs.hasOwnProperty(hash)) view = hash;
-  apply();
-
-  // A section fragment has to be re-honoured after apply(), not before it: the
-  // browser scrolled while every row was still visible, and apply() then hid
-  // rows and changed the page's height, which leaves that scroll pointing at
-  // the wrong place. #hierarchy-proposed is not an element id — it is the
-  // hierarchy toggle's own deep-link — so it aims at the section that hosts it.
-  if (hash && !blurbs.hasOwnProperty(hash)) {
-    var anchor = document.getElementById(hash === 'hierarchy-proposed' ? 'sec-hierarchy' : hash);
-    if (anchor) anchor.scrollIntoView();
-  }
-
-  // Todo live refresh — the RC PR list re-checks GitHub on load, because PRs
-  // open and close without a push to this repo and the section's whole job is
-  // "always know what is waiting". One unauthenticated search per page view;
-  // a failure just leaves the build-time list standing. Draft-release rows
-  // (data-draft) are kept as built: drafts are invisible without a token.
-  var rcRows = document.getElementById('todo-rc-rows');
-  if (rcRows) {
-    var rcQuery = 'is:pr is:open archived:false user:jwildfire review-requested:jwildfire';
-    fetch('https://api.github.com/search/issues?per_page=30&q=' + encodeURIComponent(rcQuery))
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (data) {
-        if (!data || !Array.isArray(data.items)) return;
-        var escape = function (s) {
-          return String(s).replace(/[&<>"]/g, function (c) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
-          });
-        };
-        var freshAge = function (iso) {
-          var mins = Math.floor((Date.now() - new Date(iso)) / 60000);
-          if (mins < 60) return mins <= 1 ? 'just now' : mins + 'm';
-          if (mins < 1440) return Math.floor(mins / 60) + 'h';
-          return Math.floor(mins / 1440) + 'd';
-        };
-        // lib/rc.mjs's rule, emitted from lib/rc.mjs rather than retyped here.
-        // The hand-written mirror that used to sit at this spot shipped broken
-        // for weeks: every backslash in its regexes was eaten by this very
-        // template literal, so the deployed pattern had lost its digit and
-        // word-boundary classes and matched no version at all, and the dedupe
-        // never fired once (hub#209). An interpolated value is never reprocessed
-        // for escapes, which is what makes the emitted form safe where the typed
-        // one was not — and rc.test.mjs evaluates what the emitter produces.
-        //
-        // This comment describes the broken pattern rather than reproducing it:
-        // deploy-site.yml greps the built pages for that exact shape, and a
-        // comment quoting it verbatim fails the check on a page that is correct.
-        ${browserReleaseKeySource()}
-        var prKeys = {};
-        var fresh = data.items.map(function (it) {
-          var repo = it.repository_url.replace('https://api.github.com/repos/', '');
-          var key = releaseKeyOf(repo, [it.milestone && it.milestone.title, it.title]);
-          if (key) prKeys[key] = true;
-          return '<div class="rm-row" data-repo="' + escape(repo) + '" data-hl="live attention pulse"' +
-            (key ? ' data-release="' + escape(key) + '"' : '') + '>' +
-            '<span class="rm-key"><a href="' + escape(it.html_url) + '">' + escape(repo.split('/')[1]) + '#' + it.number + '</a></span>' +
-            '<span class="rm-main"><span class="rm-pill rc">rc pr</span> ' + escape(it.title) + '</span>' +
-            '<span class="rm-meta">' + freshAge(it.updated_at) + '</span></div>';
-        });
-        // Re-run the build-time dedupe over the fresh list: a draft release whose
-        // RC PR is in this response is the same release, and listing it again
-        // would put the duplicate straight back after the fetch.
-        var drafts = Array.prototype.filter.call(rcRows.children, function (el) {
-          if (!el.hasAttribute || !el.hasAttribute('data-draft')) return false;
-          var key = el.getAttribute('data-release');
-          return !(key && prKeys[key]);
-        }).map(function (el) { return el.outerHTML; });
-        var all = fresh.concat(drafts);
-        rcRows.innerHTML = all.length ? all.join('') : '<p class="rm-empty">No release candidates are waiting.</p>';
-        apply(); // recount badges and re-apply active filters over the fresh rows
-      })
-      .catch(function () { /* offline or rate-limited — the build-time list stands */ });
-  }
-})();
-</script>
-
-<footer class="site">Generated ${fmtET(NOW)} · regenerates via <code>deploy-site.yml</code> ·
-built by <a href="https://github.com/${HUB}/blob/main/scripts/roadmap/catalog.mjs"><code>roadmap/catalog.mjs</code></a>
-for <a href="https://github.com/${HUB}/issues/57">requirement #57</a>, re-front-ended by
-<a href="https://github.com/${HUB}/issues/211">#211</a>.</footer>
-</body>
-</html>
-`;
 
 const degraded = [
   ['PRs', prRes], ['releases', relRes], ['goals', goalRes], ['hierarchy', hierRes],
@@ -674,7 +378,7 @@ console.log(
   `catalog: todo ${todoRcCount} RCs` +
   (todoRc.suppressed ? ` (${todoRc.suppressed} draft release${todoRc.suppressed > 1 ? 's' : ''} folded into their RC PR)` : '') +
   ` + ${decRes.value?.awaiting.length ?? 0} decisions, ` +
-  `${active.length} active (+${driftCount} drift${blockedReqs.length ? `, +${blockedReqs.length} board-blocked` : ''}), ${folded.length} folded, ` +
+  `${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
   `${prRes.value?.length ?? 0} PRs, ${relRes.value?.upcoming.length ?? 0} upcoming, ` +
   `${relRes.value?.recent.length ?? 0} releases` +
   (degraded.length ? ` — degraded: ${degraded.join(', ')}` : ''),

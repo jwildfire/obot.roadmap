@@ -163,11 +163,16 @@ This issue was drafted by Claude Code using <model>.
 
 ## Status
 
-A requirement's status lives in one place: the `Status` field of the
-[obot Roadmap project](https://github.com/users/jwildfire/projects/1), which every
-requirement issue is added to when it is filed. Five values, each set at a point the
-contract already passes through, so status is written as a side effect and never
-hand-maintained. They map onto the three phases of the [ways of working](ways-of-working.md#the-three-phases):
+A requirement's status lives in one place: a `status:` label on the requirement issue —
+`status: backlog`, `status: ready`, `status: in session`, `status: review`,
+`status: released`. Exactly one at a time: setting the next removes the previous
+(`gh issue edit <n> --add-label "status: ready" --remove-label "status: backlog"`). The
+requirement template applies `status: backlog` on filing. The obot Roadmap project board
+is retired: a label is readable by any token where the board's field needed @jwildfire's
+own, it is written through the same lane as every other issue edit, and it is visible in
+every issue list. Five values, each set at a point the contract already passes through, so
+status is written as a side effect and never hand-maintained. They map onto the three
+phases of the [ways of working](ways-of-working.md#the-three-phases):
 
 | Status | Phase | Set when | Set by |
 |---|---|---|---|
@@ -188,15 +193,14 @@ execution session before it sets its goal:
   carries a milestone in each; no task without a milestone, no Ready.
 - The objective's tree is signed off by @jwildfire in a comment on the objective.
 
-The site's requirements collector reads the field and renders it on the catalog and
-roadmap pages; the standup reads it too. An open requirement whose status reads Released,
-or a closed one whose status does not, is drift and is reported as such. Board writes go
-out under @jwildfire's own account — a GitHub App cannot reach a user-owned project — which
-is the actor the developer guidelines name anyway.
+The site's requirements collector reads the labels and renders them on the catalog and
+roadmap pages — the tracker on the hub site — and the standup reads them too. An open
+requirement labelled released, an open one with no status label, or one carrying two, is
+drift and is reported as such; a closed requirement reads Released whatever it carries.
 
-Objectives are not on the board (the board's `Parent issue` field groups requirements by
-objective); tasks are not on the board (their state is their issue, and the board's
-`Sub-issues progress` field shows completion per requirement). There are no workflow
+Objectives carry no status label: their state is the roll-up of their requirements. Tasks
+carry none either: their state is their issue, and the requirement's sub-issue progress
+shows completion. There are no workflow
 labels beyond `blocked`, and a node's other states are read from GitHub:
 
 | State | How it is read |

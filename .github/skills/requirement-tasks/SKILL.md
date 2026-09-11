@@ -65,15 +65,11 @@ in order, and set the board status only when all four hold:
    and the requirement carries the hub's delivery-target milestone. No milestone, no Ready.
 4. The objective's tree is signed off by @jwildfire in a comment on the objective.
 
-Then move the requirement to Ready on the obot Roadmap project (option `03bd076a` on field
-`PVTSSF_lAHOADgnX84BcTPzzhW9FpU`, project `PVT_kwHOADgnX84BcTPz`):
+Then move the requirement to ready — one status label at a time:
 
 ```bash
-ITEM=$(gh api graphql -f query='{ repository(owner:"jwildfire", name:"obot.roadmap") { issue(number: <n>) { projectItems(first: 5) { nodes { id project { number } } } } } }' --jq '.data.repository.issue.projectItems.nodes[] | select(.project.number == 1) | .id')
-gh project item-edit --project-id PVT_kwHOADgnX84BcTPz --id "$ITEM" --field-id PVTSSF_lAHOADgnX84BcTPzzhW9FpU --single-select-option-id 03bd076a
+gh issue edit <n> -R jwildfire/obot.roadmap --add-label "status: ready" --remove-label "status: backlog"
 ```
-
-Board writes go out under @jwildfire's account; the App cannot reach a user-owned project.
 
 ## Deferring a sub-task after the fact
 
