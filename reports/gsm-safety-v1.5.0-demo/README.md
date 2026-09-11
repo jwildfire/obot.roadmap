@@ -1,7 +1,6 @@
 # gsm.safety v1.5.0 — annotated demo
 
-Review surface for the gsm.safety v1.5.0 release candidate (`gsm.safety v1.5.0-RC1`,
-`dev` → `main`) under requirement [obot.roadmap#9](https://github.com/jwildfire/obot.roadmap/issues/9),
+Review surface for the gsm.safety v1.5.0 release candidate ([gs#88](https://github.com/jwildfire/gsm.safety/pull/88), `dev` → `main`) under requirement [obot.roadmap#9](https://github.com/jwildfire/obot.roadmap/issues/9),
 phase 0 of the FDA Standard Safety Tables and Figures work. Built 2026-09-11 by the
 requirement session on gsm.safety.
 
