@@ -13,7 +13,7 @@ Written 2026-09-10 in response to the handover document "Refactor to Goal-Based 
 ## Assumptions
 
 - "Mid-October" is taken as ready by Friday 2026-10-16; the exact talk date is a listed decision.
-- "Reproducible code" is read as an R script calling gsm.safety, mirroring safetyGraphics' chart export; listed as a decision.
+- Parity was decided the same day as "static twin only" — no code export from the app; the page reflects that.
 - "ultracode" is the Claude Code Workflow tool; "ultradesign" is the Claude Design canvas skill.
 - Weeks are Monday–Sunday with the Friday deployed-site state as the review point.
 - `/goal` inside a cloud session, and R installing in a cloud environment's setup script, are assumed workable and are verified in week 0 before anything depends on them.
