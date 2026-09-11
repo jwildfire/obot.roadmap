@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal Sessions: the Mid-October Plan</title>
+<meta name="description" content="Five goals — chart coverage, static parity, a portfolio view, data loading, a local desktop app — laid out as issue trees with definitions of done, two concurrent cloud sessions, and what the site must show each Friday before the R/Pharma talk.">
+<meta name="premise" scope="history" content="safety.viz v1.7.0 is the latest release and ships 13 chart modules | gh release view v1.7.0 -R jwildfire/safety.viz --json tagName --jq .tagName → prints v1.7.0">
+<meta name="premise" scope="live" content="gsm.safety still has no static Visualize_* function, which is why static coverage starts at zero | gh api repos/jwildfire/gsm.safety/contents/R --jq '[.[].name | select(startswith(&quot;Visualize_&quot;))] | length' → prints 0">
+<meta name="premise" scope="live" content="the two gsm.safety widget-parity release candidates are still open, which is what makes them Lane B's first prerequisite | gh pr list -R jwildfire/gsm.safety --state open --json number --jq 'map(.number) | sort | join(&quot;,&quot;)' → prints 68,69">
+<style>
+:root{
+  --paper:#fbfaf7; --panel:#ffffff; --sunk:#f3f1ec;
+  --ink:#1c1f26; --muted:#4f5866; --faint:#7b8494;
+  --rule:#e4e0d8; --rule-firm:#cfc9be;
+  --accent:#1a5bb0; --accent-wash:#e8f0fb;
+  --warn:#9a5b00; --warn-wash:#fff4e0;
+  --ok:#1d7a4f; --ok-wash:#e6f5ec;
+  --serif:ui-serif,"Iowan Old Style",Palatino,"Palatino Linotype",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f1218; --panel:#151a23; --sunk:#0c0f15;
+    --ink:#e8edf5; --muted:#a3adbb; --faint:#6f7a8a;
+    --rule:#232a36; --rule-firm:#343d4c;
+    --accent:#7fb1ea; --accent-wash:#14233a;
+    --warn:#e0a94a; --warn-wash:#2c2110;
+    --ok:#5cc08e; --ok-wash:#10261a;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f1218; --panel:#151a23; --sunk:#0c0f15;
+  --ink:#e8edf5; --muted:#a3adbb; --faint:#6f7a8a;
+  --rule:#232a36; --rule-firm:#343d4c;
+  --accent:#7fb1ea; --accent-wash:#14233a;
+  --warn:#e0a94a; --warn-wash:#2c2110;
+  --ok:#5cc08e; --ok-wash:#10261a;
+}
+*{box-sizing:border-box;margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.6 var(--sans);padding:0 1.25rem}
+.wrap{max-width:60rem;margin:0 auto}
+a{color:var(--accent)}
+header{padding:3.5rem 0 2.2rem;border-bottom:1px solid var(--rule)}
+.eyebrow{font:500 .76rem/1 var(--mono);color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+h1{font:700 clamp(1.9rem,4.6vw,2.8rem)/1.15 var(--serif);margin:.6rem 0 .9rem;letter-spacing:-.01em;text-wrap:balance}
+.lede{max-width:46rem;color:var(--muted);font-size:1.05rem}
+nav.toc{margin-top:1.4rem;display:flex;flex-wrap:wrap;gap:.4rem .9rem;font:.84rem var(--mono)}
+section{padding:2.4rem 0 2.6rem;border-bottom:1px solid var(--rule)}
+h2{font:600 1.5rem/1.25 var(--serif);margin:0 0 .9rem;text-wrap:balance}
+h3{font:600 1.08rem/1.3 var(--sans);margin:1.5rem 0 .5rem}
+h4{font:600 .95rem/1.3 var(--sans);margin:1rem 0 .35rem}
+p{max-width:46rem;color:var(--muted)}
+p+p{margin-top:.7rem}
+ul,ol{max-width:46rem;padding-left:1.25rem;color:var(--muted)}
+li{margin:.3rem 0}
+li::marker{color:var(--faint)}
+code{font:.86em var(--mono);color:var(--ink);background:var(--sunk);padding:.08em .35em;border-radius:4px}
+.callout{border-left:4px solid var(--accent);background:var(--accent-wash);padding:.9rem 1.1rem;border-radius:0 10px 10px 0;margin:1rem 0;max-width:46rem}
+.callout.warn{border-color:var(--warn);background:var(--warn-wash)}
+.callout.ok{border-color:var(--ok);background:var(--ok-wash)}
+.callout p,.callout li{color:var(--ink)}
+.callout .who{font:500 .76rem/1 var(--mono);color:var(--faint);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.5rem}
+blockquote{margin:.6rem 0;padding-left:.9rem;border-left:2px solid var(--rule-firm);color:var(--ink);font-style:italic;max-width:46rem}
+.goal{border:1px solid var(--rule-firm);border-radius:12px;background:var(--panel);padding:1.1rem 1.2rem;margin:1.1rem 0}
+.goal h3{margin:0 0 .3rem;font-family:var(--serif);font-size:1.25rem}
+.goal .meta{font:.8rem var(--mono);color:var(--faint);margin-bottom:.7rem}
+.goal .done{background:var(--ok-wash);border-radius:8px;padding:.6rem .8rem;margin:.6rem 0 .8rem;max-width:none}
+.goal .done p{color:var(--ink)}
+.req{border-top:1px dashed var(--rule);padding:.7rem 0 .2rem}
+.req .t{font-weight:600;color:var(--ink)}
+.req .r{font:.78rem var(--mono);color:var(--faint);margin-left:.4rem}
+.req ul{margin-top:.25rem}
+.tablewrap{overflow-x:auto;margin:1rem 0;border:1px solid var(--rule);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:44rem;font-size:.92rem}
+th,td{padding:.6rem .7rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}
+th{background:var(--sunk);font:600 .78rem var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--faint)}
+td.wk{white-space:nowrap;font-family:var(--mono);font-size:.82rem;color:var(--ink)}
+td.show{background:var(--ok-wash)}
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:46rem}
+@media (max-width:640px){.lanes{grid-template-columns:1fr}}
+.lane{border:1px solid var(--rule-firm);border-radius:10px;padding:.9rem 1rem;background:var(--panel)}
+.lane .k{font:600 .78rem var(--mono);color:var(--accent);letter-spacing:.04em;text-transform:uppercase}
+.lane p{margin-top:.35rem;font-size:.95rem}
+.cut{font:.8rem var(--mono);color:var(--warn)}
+footer{padding:2rem 0 3rem;color:var(--faint);font-size:.85rem}
+</style>
+</head>
+<body><div class="wrap">
+
+<header>
+<div class="eyebrow">obot.roadmap · plan · written 2026-09-10</div>
+<h1>Five goals, five weeks, two sessions</h1>
+<p class="lede">The autonomous prototype is shut down. From here, work runs as goal-based sessions: one clearly defined goal each, running in the cloud for as long as it takes, steered by Jeremy through the issues on this hub and from his phone. This page lays out the five goals as issue trees with definitions of done, sequences them into two concurrent lanes, and says what the deployed site must show each Friday until the R/Pharma talk in mid-October.</p>
+<nav class="toc">
+<a href="#decisions">Decisions</a><a href="#situation">Situation</a><a href="#model">How work runs now</a><a href="#goals">The five goals</a><a href="#calendar">The calendar</a><a href="#risks">Risks and the cut line</a><a href="#needed">Decisions needed</a><a href="#next">This week</a>
+</nav>
+</header>
+
+<section id="decisions">
+<h2>Decisions</h2>
+<div class="callout">
+<div class="who">Jeremy · 2026-09-10 · handover document and in-session answers</div>
+<ul>
+<li>The fully autonomous multi-agent prototype is shut down. Work moves to goal-based sessions: semi-autonomous, long-running Claude Code sessions that each pursue one clearly defined goal and take as long as they need. Not a rigid weekly sprint.</li>
+<li>The scaffolding is retired in one pull request, tagged as the next obot.agent release; the previous tag and git history are the archive.</li>
+<li>The desktop app is safety.viz-native: a self-contained local HTML and JavaScript app. The open.gismo app arc parks for the talk.</li>
+<li>Sessions move to Claude Code cloud sessions, verbatim: <em>"I also want to move everything to cloud sessions instead of running from remote control here."</em></li>
+<li>Sequencing goes to this page before any session starts.</li>
+<li>On tracking, verbatim: <em>"I want to move to much more rigid issue tracking in roadmap moving forward. Each goal issue should have well defined requirement issues with linked task issues before the session starts. Each of these issues should have clear definitions of done. Goal is complete when all requirements and their tasks are completed per the issue definitions. Each agent/subagent should be linked to an issue or issues and associated PRs. Agents should actively comment on their assigned goals, and standup should give a summary of which goals are complete/in progress/blocked. All questions in standup should be tied to blocked issues."</em></li>
+<li>Deadline: everything ready by mid-October, in time for the talk, and ready to go live.</li>
+</ul>
+</div>
+</section>
+
+<section id="situation">
+<h2>The situation in three sentences</h2>
+<p>The last iteration built a robust agent structure and then spent it on itself: orchestration health improved while no agent-produced release ever reached Jeremy for review. Meanwhile the product is real and mid-flight: thirteen interactive safety charts are released, nine have R widgets, two more widget releases sit in review, and the FDA static-chart work has an approved design and zero implementation. Five weeks remain to bring SafetyViz to parity with the old safetyGraphics app — its charts, its data loader and mapping, and a tool that runs on a desktop — plus the modern charts it never had.</p>
+</section>
+
+<section id="model">
+<h2>How work runs now</h2>
+
+<h3>The issue tree is the contract</h3>
+<ul>
+<li>A goal is a hub issue that can complete. It lists its requirement issues and states what done means for the whole goal. It is complete when every requirement is closed.</li>
+<li>A requirement is a hub issue in the existing five-section shape, plus a definition-of-done block: the observable end state, how it is proven, and the release it ships in. It is complete when every task is closed and the proof is posted.</li>
+<li>A task is an issue in exactly one implementation repo, linked as a sub-issue of its requirement, with its own definition of done and a link back to the parent. A pull request closes it with the closing keyword and the proof in the PR body.</li>
+<li>Nothing starts without the tree. The session-start check is: every node of the goal's tree exists, has a definition of done, and carries the talk milestone. If a node is missing, the session's first job is to file it and stop for Jeremy's sign-off before building.</li>
+</ul>
+
+<h3>The session</h3>
+<ul>
+<li>One goal per session. The session runs Claude Code's built-in <code>/goal</code> in auto mode, with the condition generated from the tree: every sub-issue of the goal is closed with its definition of done evidenced, or carries the blocked label with a comment naming what is needed from Jeremy. The condition names how the session proves it each turn, and a turn or time bound.</li>
+<li>The evaluator judges only what the session surfaces, so every turn ends by listing the tree's state. Background work defers evaluation and triggers check-ins at 30 minutes, then hourly.</li>
+<li>Fan-out uses standard tooling: subagents for bounded work, the Workflow tool (ultracode) for multi-agent stages, Claude Design (ultradesign) for visual design. Every subagent brief names its task issue; every PR cites its task. No bespoke dispatch, no worker ledgers.</li>
+<li>Merges use the existing lane and policy file unchanged. Release-candidate pull requests remain Jeremy's review, and they are the weekly deliverables.</li>
+</ul>
+
+<h3>Where sessions run</h3>
+<ul>
+<li>Every goal session is a cloud session on claude.ai/code, bound to its goal's repository — Lane A in safety.viz, Lane B in gsm.safety — in a per-repository cloud environment whose setup script installs the toolchain once and caches it. Nothing runs on the Mac, nothing is bridged through Remote Control, and the machine can sleep.</li>
+<li>Steering is native: Jeremy opens the session on the web or the phone and answers or redirects there. A session waiting on him idles until its VM is reclaimed, which is why blocked questions also live on the issue — the answer survives the session.</li>
+<li>The nightly standup is a scheduled cloud routine on the hub repository: it reads GitHub, renders the goals as complete / in progress / blocked with one question per blocked issue, and publishes to the voice-readable branch. Routines run autonomously, hourly at the finest, and count against the account's daily run allowance.</li>
+<li>Cross-repository writes — a task closed in gsm.safety, a comment on the hub goal — go through the GitHub access the cloud session already holds. The obotclaw[bot] identity does not travel: its private key sits in this Mac's Keychain, so in the cloud the actor is the connected GitHub account and the attribution line in the body says who drafted it.</li>
+<li>Week 0 verifies two things before anything depends on them: that the built-in goal command runs inside a cloud session, and that R plus the pharmaverse packages install in the gsm.safety environment's setup script within its cache.</li>
+</ul>
+
+<h3>Comments and the standup</h3>
+<ul>
+<li>At session start: one comment on the goal issue with the plan, the order of requirements, and which agent holds which task.</li>
+<li>At each task close: the definition-of-done evidence on the task, and the closing PR.</li>
+<li>Nightly: one progress comment on the goal issue in three fixed headings — complete, in progress, blocked. A blocked item is an issue carrying the blocked label whose latest comment asks Jeremy one specific question.</li>
+<li>The standup is rendered from GitHub, never from local state: every goal with its complete / in progress / blocked counts, then a questions section with one entry per blocked issue and nothing else. It publishes to the same voice-readable branch as today. Jeremy steers by answering on the issue, or by messaging the running session.</li>
+</ul>
+
+<h3>What goes and what stays</h3>
+<div class="lanes">
+<div class="lane"><div class="k">Retired</div><p>The navigator, admiral and prime sessions and their launchers; the autonomous dispatcher and goal registry; the session bookend skills and their scratchpad, journals and dashboards; spend tooling; the stop hooks that interrupt turns; sibling-spawn briefings; the Remote Control and launchd lanes; the Keychain-bound bot push helpers.</p></div>
+<div class="lane"><div class="k">Kept</div><p>The chart-building skills and test framework; the requirement lifecycle skills; the release-notes skill; the standup, rebuilt as a cloud routine that reads GitHub; the diary, which feeds the talk. The merge lane is a listed decision: keep the policy script, or replace it with GitHub rulesets and auto-merge.</p></div>
+</div>
+</section>
+
+<section id="goals">
+<h2>The five goals as issue trees</h2>
+<p>Each card is the proposed tree. Requirements marked as existing fold in issues already on the hub rather than duplicating them. Weeks refer to the calendar below; the repo is where the tasks live.</p>
+
+<div class="goal">
+<h3>Goal 1 · Chart coverage: every figure in the FDA safety guidance</h3>
+<div class="meta">hub goal: reuse "Keep adding charts" · lane B · repos: gsm.safety, safety.viz, obot.agent</div>
+<div class="done"><p>Done: all 22 figures of the FDA Standard Safety Tables and Figures guide (v2.0, April 2025) render as static charts in gsm.safety with visual-regression evidence and a gallery entry; all 13 safety.viz modules have an R widget; both packages are released.</p></div>
+<div class="req"><span class="t">Reference data and derivations</span><span class="r">existing: "static safety charts from FDA guidance", phase 0 · week 1</span>
+<ul><li>Appendix tables 56–60 (abnormality levels, extreme values) shipped as tested package data.</li><li>Derivation functions for treatment-emergent flags, abnormality grading, extreme-value exclusion, ULN multiples, DILI quadrants — tested against the guide's published criteria.</li><li>Requirement-matrix rows for every figure in scope; ADaM-to-mapped-domain alignment written down.</li></ul></div>
+<div class="req"><span class="t">Static phase 1: four engines, twelve figures</span><span class="r">existing, phase 1 · weeks 2–3</span>
+<ul><li>DILI quadrant scatter (F7, F8) first, as the vertical slice that proves the shared derivation layer.</li><li>Shift scatter (F15, F22); box plot over time (F10, F16–F20); dot plus risk-difference forest (F2, F3).</li><li>Each figure beside its safety.viz twin in a static gallery on the gsm.safety site; package check clean.</li></ul></div>
+<div class="req"><span class="t">Static phase 1b and the Kaplan–Meier family</span><span class="r">new · week 4</span>
+<ul><li>Retention and rate figures (F5, F21, F12) and the mean-change-over-time pair (F6, F9) as simple engines.</li><li>Kaplan–Meier figures (F1, F4, F11, F13, F14) by wrapping ggsurvfit, not by building a survival engine.</li><li>Done when the coverage table reads 22 of 22.</li></ul></div>
+<div class="req"><span class="t">Widget parity</span><span class="r">existing: two release candidates in review · week 1</span>
+<ul><li>The v1.2.0 and v1.3.0 release candidates already carry the missing widgets; Jeremy's review is the remaining step, then merge forward the same day so the stacked branches do not diverge.</li><li>The parity guard in CI stays green for every later safety.viz release.</li></ul></div>
+</div>
+
+<div class="goal">
+<h3>Goal 2 · Interactive and static parity with reproducible code</h3>
+<div class="meta">hub goal: new · lane B, after goal 1's phase 1 · repos: safety.viz, gsm.safety</div>
+<div class="done"><p>Done: every interactive chart has a static twin driven by the same derived data and the same settings names, and the app can export any chart as a static image plus an R script that regenerates it from the user's mapped data.</p></div>
+<div class="req"><span class="t">One settings contract per chart</span><span class="r">new · week 3</span>
+<ul><li>Each chart's settings are one JSON schema, used by the JavaScript module and accepted by the matching R function under the same names.</li><li>A round-trip test: settings exported from the interactive chart drive the static function without translation.</li></ul></div>
+<div class="req"><span class="t">A static twin for every interactive chart</span><span class="r">new · weeks 3–4</span>
+<ul><li>Twelve twins arrive with goal 1's four engines; the remainder (histogram, AE timelines, QT central tendency, kidney explorer, hepatic waterfall, participant profile as a listing) close the set of thirteen.</li></ul></div>
+<div class="req"><span class="t">Export reproducible code from the app</span><span class="r">new · week 4 · <span class="cut">cut line</span></span>
+<ul><li>From any chart in the app: the static image, the settings, and an R script calling gsm.safety that reproduces the figure. The exported script is run in CI against demo data and compared to the static twin.</li><li>This mirrors the old app's chart export and is the first thing to defer if the calendar slips.</li></ul></div>
+</div>
+
+<div class="goal">
+<h3>Goal 3 · Portfolio view</h3>
+<div class="meta">hub goal: retitle "Build the app" · lane A, first · repo: safety.viz</div>
+<div class="done"><p>Done: one page on the safety.viz site shows all thirteen charts organised by data domain on the canonical demo data, with chart navigation, shared filters, a shared participant drill-down, and a chart-status panel saying which charts the loaded data supports; released.</p></div>
+<div class="req"><span class="t">The standard domain set</span><span class="r">new · week 1</span>
+<ul><li>A portfolio manifest: the domains (subject-level, adverse events, labs and vitals as one long-format measurement domain, ECG), the charts each domain feeds, and the columns each chart needs, validated against the existing per-chart data schemas.</li><li>Demo data is the vendored pharmaverse ADaM extract; the scripted pipeline requirement already on the hub becomes its reproducibility task.</li></ul></div>
+<div class="req"><span class="t">The portfolio shell</span><span class="r">new · weeks 1–2</span>
+<ul><li>One page hosting every chart through the shared chrome, chart navigation by domain, the participant profile as the shared drill-down, and a chart-status panel that mirrors the old app's chart-availability check.</li><li>Evidence: a Playwright run over every chart on the page, published with the release.</li></ul></div>
+<div class="req"><span class="t">Study-level settings and filters</span><span class="r">new · week 2</span>
+<ul><li>Arm, site and population filters applied across charts; per-chart settings persisted in one study-configuration JSON that saves and loads round-trip.</li></ul></div>
+</div>
+
+<div class="goal">
+<h3>Goal 4 · Data loading and mapping</h3>
+<div class="meta">hub goal: new · lane A, second · repo: safety.viz</div>
+<div class="done"><p>Done: a user drops their own files into the portfolio page, the tool recognises the domains and standard, lets them correct the column mapping, and loads the consolidated portfolio with the chart-status panel reflecting what their data supports — with nothing leaving the browser.</p></div>
+<div class="req"><span class="t">Local file loading and standard detection</span><span class="r">new · week 3</span>
+<ul><li>CSV and JSON through the browser's file API; no upload, no server. Domain and standard detection from column names, in the shape of the old app's standard detection, with plain-language errors when a file cannot be placed.</li></ul></div>
+<div class="req"><span class="t">The mapping module</span><span class="r">new · week 3</span>
+<ul><li>Per-domain column mapping, auto-filled from the detected standard, editable by hand, validated field by field, saved into the study configuration.</li><li>Proof: a deliberately non-standard dataset is mapped and every chart renders.</li></ul></div>
+<div class="req"><span class="t">Fit and load</span><span class="r">new · week 3</span>
+<ul><li>Mapped data flows into the portfolio; chart status recomputes from the mapping; the participant drill-down follows the mapped identifiers.</li></ul></div>
+</div>
+
+<div class="goal">
+<h3>Goal 5 · A local-only desktop tool</h3>
+<div class="meta">hub goal: new · lane A, third · repo: safety.viz</div>
+<div class="done"><p>Done: a single downloadable file combines the loader and the portfolio, opens from the desktop with no network and no install, saves and reloads a study configuration, exports charts, and is released with a user guide and a rehearsed talk demo.</p></div>
+<div class="req"><span class="t">The single-file build</span><span class="r">new · week 4</span>
+<ul><li>A build target that inlines every script, style and optional demo dataset into one HTML file that opens from a file URL in current Chrome, Safari and Edge, under a stated size budget, with a fresh-machine test.</li></ul></div>
+<div class="req"><span class="t">Persistence and export</span><span class="r">new · week 4</span>
+<ul><li>Study configuration save and load; chart export as image, and as reproducible code where goal 2 has delivered it.</li></ul></div>
+<div class="req"><span class="t">Release, guide and demo</span><span class="r">new · week 5</span>
+<ul><li>A release with the download on the site, a user guide page, and the talk's demo script run end to end on a clean machine.</li></ul></div>
+</div>
+</section>
+
+<section id="calendar">
+<h2>The calendar</h2>
+<p>Two concurrent sessions, so there are two threads to steer and never more. Lane A carries the app spine — goals 3, 4 and 5 in sequence, since they compose into one product. Lane B carries the charts — goal 1, then goal 2. The last column is what must be visible on the deployed site by that Friday; it is what Jeremy reviews, and it is the honest measure of the week.</p>
+<div class="lanes">
+<div class="lane"><div class="k">Lane A · the app</div><p>Portfolio view → data loading and mapping → local desktop tool. One session per goal, started when the previous goal closes.</p></div>
+<div class="lane"><div class="k">Lane B · the charts</div><p>FDA figure coverage → interactive/static parity. Starts on the reference data while the widget release candidates are reviewed.</p></div>
+</div>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Week</th><th>Lane A · the app</th><th>Lane B · the charts</th><th>Must show by Friday</th></tr></thead>
+<tbody>
+<tr><td class="wk">0 · Sep 10–13</td><td>Issue trees for goals 3–5 filed and signed</td><td>Issue trees for goals 1–2 filed and signed; widget RCs reviewed</td><td class="show">The retire PR merged; cloud environments for safety.viz, gsm.safety and the hub verified; every goal's tree on the hub with definitions of done; the first two cloud sessions running under a goal</td></tr>
+<tr><td class="wk">1 · Sep 14–20</td><td>Domain manifest; portfolio shell renders all 13 charts on demo data</td><td>Reference data and derivation functions merged; widget releases published</td><td class="show">Portfolio page on the dev site; gsm.safety at widget parity; derivations in the package</td></tr>
+<tr><td class="wk">2 · Sep 21–27</td><td>Shared filters and study configuration; goal 3 closes and released; goal 4 session starts</td><td>DILI quadrant and shift engines: four static figures with evidence</td><td class="show">Portfolio released on the public site; first four static figures in the gsm.safety gallery beside their twins</td></tr>
+<tr><td class="wk">3 · Sep 28–Oct 4</td><td>File loading, standard detection, mapping module, fit and load; goal 4 closes</td><td>Box-over-time and dot-forest engines: twelve figures; settings contract</td><td class="show">Drop your own CSVs into the dev site and see the portfolio; static coverage 12 of 22</td></tr>
+<tr><td class="wk">4 · Oct 5–11</td><td>Single-file build; persistence and export; goal 5 session starts</td><td>Phase 1b and Kaplan–Meier wrap: 22 of 22; remaining static twins; code export</td><td class="show">A downloadable app that opens offline; coverage table reads 22 of 22</td></tr>
+<tr><td class="wk">5 · Oct 12–16</td><td>Release, user guide, demo rehearsal</td><td>Releases; slack for slips</td><td class="show">Everything on the public site; the demo script run on a clean machine</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section id="risks">
+<h2>Risks and the cut line</h2>
+<ul>
+<li>Lane B is the heavier lane: twenty-two static figures, thirteen twins and a code exporter in five weeks. The order protects the talk — the differentiated twelve first, Kaplan–Meier by wrapping, and code export as the declared cut line.</li>
+<li>Lane B cannot start gsm.safety work until the two stacked widget release candidates are reviewed; they must merge forward the same day or the branches diverge silently.</li>
+<li>The shared derivation layer moves calculations out of shipped JavaScript modules. It is gated behind the DILI vertical slice and the existing Playwright evidence so a working chart cannot regress unnoticed.</li>
+<li>Two goals in the tree already carry the Experimental marking on the time-to-event chart pending external clinical review; the plan does not depend on lifting it.</li>
+<li>The goal evaluator reads only the transcript. A session that stops reporting the tree's state will be judged on silence; the session skill makes the end-of-turn state listing mandatory.</li>
+<li>Lane B needs R in the cloud sandbox. If the setup script cannot install R and the pharmaverse packages within the environment's limits, Lane B falls back to a routine that runs the R checks in GitHub Actions while the session edits, or to a single local session for that lane only.</li>
+<li>The goal command is documented for headless, desktop and Remote Control use and referenced for cloud sessions; if it does not arm on the web, the fallback is the headless form inside the cloud session, which runs the loop to completion in one invocation.</li>
+</ul>
+</section>
+
+<section id="needed">
+<h2>Decisions needed</h2>
+<ol>
+<li>Goal issues on the hub. Recommendation: reuse "Keep adding charts" as goal 1 and retitle "Build the app" as goal 3, each rewritten into the completable shape with a definition of done; file goals 2, 4 and 5 new; close the autonomy goal as retired; leave the CSR and keynote goals paused.</li>
+<li>What "reproducible code" means. Recommendation: an R script calling gsm.safety, mirroring the old app's export, rather than JavaScript.</li>
+<li>Concurrency. Recommendation: two sessions, as laid out. A third lane is possible but doubles the steering load on the busiest weeks.</li>
+<li>The freeze date. This page assumes ready by Friday 16 October; the exact talk date pins the last week.</li>
+<li>Version plan for the talk. Recommendation: safety.viz v2.0.0 carrying the app, gsm.safety v2.0.0 carrying the static charts — one headline release each rather than a run of minors.</li>
+<li>The three open release candidates (gsm.safety v1.2.0 and v1.3.0, open.csr v0.4.0). The first two are Lane B's prerequisite this week.</li>
+<li>The bot identity in the cloud. Recommendation: let the connected GitHub account be the actor, keep the drafted-by line as the record of authorship, and retire the Keychain-bound token and push helpers with the rest.</li>
+<li>The merge lane in the cloud. Recommendation: replace the policy script with GitHub rulesets — required checks and auto-merge on integration branches, a required review from Jeremy on release branches — so a cloud session merges with a plain pull request and no script has to be cloned into the sandbox.</li>
+<li>Cloud environments. Recommendation: one per repository the lanes touch (safety.viz, gsm.safety, obot.roadmap), trusted network plus the package registries the R toolchain needs, and any API key as a proxy-held credential rather than an environment variable.</li>
+</ol>
+</section>
+
+<section id="next">
+<h2>This week</h2>
+<ul>
+<li>Stop the surviving navigator session; close the two obot.agent pull requests that only serve the retired machinery; push the eleven worktrees holding unpushed work and remove all sixty-eight.</li>
+<li>Connect GitHub for cloud sessions and create the three cloud environments; run a first throwaway cloud session in safety.viz to confirm the goal command arms and the toolchain installs.</li>
+<li>Open the retire pull request on obot.agent with the rewritten overlay contract, and a small goal-session skill: the tree check, the condition template, the comment cadence, and the standup routine's prompt.</li>
+<li>File the issue trees for goals 1–5 with definitions of done and the talk milestone, for Jeremy's sign-off.</li>
+<li>Start Lane A on goal 3 and Lane B on goal 1, in the cloud.</li>
+</ul>
+</section>
+
+<footer>
+<p>Sources: the handover document (Jeremy, via voice, 2026-09-10); the hub's goal issues and their sub-issue trees; the FDA static-display strategy and inventory (2026-07-21); the requirement design for static safety charts; safety.viz v1.7.0 and gsm.safety v1.1.0 as released; the Claude Code documentation for the goal command. Assumptions are listed in the folder's README.</p>
+<p style="margin-top:.6rem">This plan was drafted by Claude Code using Fable 5.1 and reviewed by @jwildfire.</p>
+</footer>
+
+</div></body></html>
