@@ -3,7 +3,7 @@
 Status: v1, 2026-09-10. How the obot program runs since the autonomous prototype was shut
 down: requirement sessions in the cloud, driven by @jwildfire through the issues on this
 hub. The decision and the five objectives it applies to are on the
-[plan page](https://jwildfire.github.io/obot.roadmap/reports/requirement-sessions-plan-2026-09-10/).
+[plan page](https://jwildfire.github.io/obot.roadmap/reports/goal-sessions-plan-2026-09-10/).
 The tracking rules are the [issue contract](issue-contract.md); the engineering rules
 are the [developer guidelines](developer-guidelines.md).
 

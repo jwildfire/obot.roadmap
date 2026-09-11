@@ -67,6 +67,19 @@ test('a closed requirement reads Released whether or not it carries the label', 
   assert.equal(byNumber(reqs, 2).active, false);
 });
 
+test('a requirement closed as not planned reads Retired, not Released, whatever label it kept', () => {
+  const reqs = buildRequirements([
+    labelled(7, ['status: backlog'], { state: 'CLOSED', stateReason: 'NOT_PLANNED' }),
+    labelled(8, ['status: backlog'], { state: 'CLOSED', stateReason: 'DUPLICATE' }),
+    labelled(9, ['status: backlog'], { state: 'CLOSED', stateReason: 'COMPLETED' }),
+  ]);
+  assert.equal(byNumber(reqs, 7).stage, 'Retired');
+  assert.equal(byNumber(reqs, 7).drift, null, 'a retired requirement keeping its backlog label is not drift');
+  assert.equal(byNumber(reqs, 7).active, false);
+  assert.equal(byNumber(reqs, 8).stage, 'Retired');
+  assert.equal(byNumber(reqs, 9).stage, 'Released', 'closed as completed is shipped work');
+});
+
 test('an open requirement labelled released is drift — the label contradicts the issue', () => {
   const r = byNumber(buildRequirements([labelled(400, ['status: released'])]), 400);
   assert.equal(r.drift, 'open in Released');
@@ -96,4 +109,6 @@ test('rows sort in-flight first, then by the label order, newest first within a 
     issue(5, { state: 'CLOSED' }),
   ]);
   assert.deepEqual(reqs.map((r) => r.number), [4, 3, 2, 1, 5]);
+  const retired = byNumber(buildRequirements([issue(6, { state: 'CLOSED', stateReason: 'NOT_PLANNED' }), issue(5, { state: 'CLOSED' })]), 6);
+  assert.equal(retired.stage, 'Retired');
 });

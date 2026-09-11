@@ -6,7 +6,10 @@ argument-hint: "Requirement issue number (or URL)"
 
 # Requirement Design
 
-Adapted from [gsm.roadmap's requirement-design skill](https://github.com/Gilead-BioStats/gsm.roadmap/blob/main/.github/skills/requirement-design/SKILL.md) for this hub.
+The second of the three prep-phase steps under the hub's
+[issue contract](../../../docs/issue-contract.md): drafting, design, tasks. Adapted from
+[gsm.roadmap's requirement-design skill](https://github.com/Gilead-BioStats/gsm.roadmap/blob/main/.github/skills/requirement-design/SKILL.md);
+where the two differ, the contract wins. This is prep-phase work, done with @jwildfire.
 
 ## When to Use
 
@@ -16,16 +19,24 @@ Adapted from [gsm.roadmap's requirement-design skill](https://github.com/Gilead-
 
 ## Procedure
 
-1. **Read the requirement issue** (`gh issue view` — live body, not a stale draft) and confirm:
-   - **Business Requirement** and **Overview** are populated (required at creation).
-   - **Data Requirement** is populated, or the requirement is clearly not data-dependent. If the gap matters, surface it before proceeding — Design depends on it.
-   - The issue carries `type:requirement` and a `project:P###` label.
+1. **Read the requirement issue** — the live body, never a stale draft:
 
-2. **Identify affected repos** — typically a subset of: `safety.viz`, `gsm.safety`, `safety-agent`, `safety-histogram` and the other renderer forks. Check existing open issues in those repos for overlap. Architecture references live outside the org (`Gilead-BioStats/rbm-viz`, `Gilead-BioStats/gsm.kri`).
+   ```bash
+   gh issue view <n> -R jwildfire/obot.roadmap --json title,body,labels,milestone,state
+   gh api repos/jwildfire/obot.roadmap/issues/<n>/parent --jq '"objective #\(.number) \(.title)"'
+   ```
+
+   Confirm:
+   - The six sections are present in template order: Objective, Business Requirement, Overview, Data Requirement, Design, Definition of done, Tasks (`gh issue view <n> --json body -q .body | grep '^### '`).
+   - **Business Requirement** and **Overview** are populated (required at filing) and **Objective** names the objective the issue is a sub-issue of.
+   - **Data Requirement** is populated, or the requirement is clearly not data-dependent. If the gap matters, surface it before proceeding — Design depends on it.
+   - Labels are `requirement`, one area label (`safety`, `infrastructure` or `ai`) and one `status:` label; the milestone is the hub's delivery target. Fix what is wrong before designing.
+
+2. **Identify affected repositories** — named in the Overview's **Repositories** line; typically `safety.viz` (charts, the portfolio, the loader), `gsm.safety` (widgets, static figures), `obot.roadmap` (hub work) or `obot.agent` (the session core). Check the open issues and pull requests in those repositories for in-flight overlap. Architecture references live outside the account (`Gilead-BioStats/rbm-viz`, `Gilead-BioStats/gsm.kri`); chart work traces to the requirement matrices in [safety.viz `requirements/`](https://github.com/jwildfire/safety.viz/tree/HEAD/requirements).
 
 3. **Decide where the design lives:**
-   - **Simple requirement** → fill the Design section directly in the issue body (`Summary`, `Affected repos`, `Design artifacts`).
-   - **Complex requirement** → create `requirements/design/{issue_number}_design.html` in this repo, add the long-form design there, and reference it from the issue's Design section.
+   - **Simple requirement** → fill the Design section directly in the issue body: summary, affected repositories, key components, dependencies, open questions.
+   - **Complex requirement** → write `requirements/design/{issue_number}_design.html` in this repository, self-contained, and reference it from the issue's Design section.
 
    A design document is an agent artifact and appears in the site's news feed, so its
    page head carries its own one-line description — written now, with the file:
@@ -39,21 +50,27 @@ Adapted from [gsm.roadmap's requirement-design skill](https://github.com/Gilead-
    Requirement #161" — that restates the title and leans on a number nobody has
    memorised. `node scripts/check_artifact_descriptions.mjs` fails the deploy without it;
    full contract in [`requirements/design/README.md`](../../../requirements/design/README.md).
+   The page holds at a 390-pixel viewport; he reads it on the deployed site, so commit and
+   push it to `main` before sharing its URL.
 
 4. **Draft the design** covering:
    - Summary of the approach
-   - Affected repos
+   - Affected repositories
    - Key technical components or changes
-   - Dependencies on other requirements, data sources, or upstream repos
-   - Open questions
+   - Dependencies on other requirements, data sources or upstream repositories
+   - Open questions, each with the default the session would take if unanswered
+   - What the design does to the **Definition of done**: if designing changed the end state, the proof or the release, revise that section in the same edit.
 
-5. **Present the draft for review** and iterate. Design changes to the issue body go through `gh issue edit --body-file` (draft-sync convention) — the wrapper writes as `obotclaw[bot]`, where a plain `gh` writes as @jwildfire ([obot.agent#197](https://github.com/jwildfire/obot.agent/issues/197)). Verify Design is signed off before decomposing the work — and "signed off" means the requirement's
-objective's tree is signed off by @jwildfire in a comment — not that the Design section looks
-finished. When the Design section is populated, say so in a comment on the objective, naming any
-scope you worked out yourself that he has not seen; his sign-off comment covers what it names.
+5. **Present the draft and iterate.** In the conversation when he is there; as a comment on the objective when the session is unattended, naming any scope you worked out yourself that he has not seen. Edit the issue body with `gh issue edit <n> --body-file <draft>`; the connected account is the actor and the drafted-by line at the foot of the body records authorship. Verify the six `###` headings survived the edit.
+
+   Presenting a design is not approval. "Signed off" means the requirement's objective's
+   tree is signed off by @jwildfire in a comment on the objective — not that the Design
+   section looks finished. Tasks are not filed on an unsigned tree except as proposals
+   ([`requirement-tasks`](../requirement-tasks/SKILL.md)).
 
 ## Reference
 
 - [Requirement issue template](../../ISSUE_TEMPLATE/requirement.yml)
-- [README — Requirement lifecycle](../../../README.md#requirement-lifecycle)
+- [Issue contract → Requirement issues](../../../docs/issue-contract.md#requirement-issues) · [Ways of working → The three phases](../../../docs/ways-of-working.md#the-three-phases)
 - [`requirements/design/`](../../../requirements/design/) — design documents, one per requirement
+- [`requirement-drafting`](../requirement-drafting/SKILL.md) — previous step · [`requirement-tasks`](../requirement-tasks/SKILL.md) — next step

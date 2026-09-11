@@ -19,7 +19,7 @@ and complying with them is mandatory for every session in every repository:
 | [Developer guidelines](docs/developer-guidelines.md) | Repositories and branches, Claude Code setup, worktrees, commits, pull requests, merging via rulesets, testing, the definition of done for a chart, releases, artifacts, write policy, the GxP stance |
 
 The plan that installed this model and the five objectives it runs:
-[Requirement Sessions: the Mid-October Plan](https://jwildfire.github.io/obot.roadmap/reports/requirement-sessions-plan-2026-09-10/).
+[Requirement Sessions: the Mid-October Plan](https://jwildfire.github.io/obot.roadmap/reports/goal-sessions-plan-2026-09-10/).
 The session core — the `requirement-session` skill, the standup routine and the cloud
 environments — lives in [jwildfire/obot.agent](https://github.com/jwildfire/obot.agent).
 

@@ -341,7 +341,7 @@ for (const pr of prRes.value ?? []) {
 }
 
 const driftCount = active.filter((r) => r.drift).length;
-const requirementsNote = `Status from each requirement's <code>status:</code> label — backlog, ready, in session, review, released — the one place it lives${
+const requirementsNote = `Status from each requirement's <code>status:</code> label — backlog, ready, in session, review, released — the one place it lives; a closed requirement reads from how it closed, Released when completed and Retired when closed as not planned${
   driftCount ? `, including <strong>${driftCount}</strong> open requirement${driftCount > 1 ? 's' : ''} whose label disagrees with the issue — labelled released while open, unlabelled, or doubly labelled — shown here rather than folded away` : ''
 }.`;
 
@@ -354,7 +354,7 @@ const requirementsSection = section(
 );
 
 const foldedSection = `<details class="rm-fold">
-<summary>Backlog &amp; closed (${folded.length})</summary>
+<summary>Backlog, released &amp; retired (${folded.length})</summary>
 ${await requirementTable(folded, prsByRequirement)}
 </details>`;
 

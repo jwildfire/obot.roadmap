@@ -90,7 +90,7 @@ edit its body or its links. Proposed changes to an objective go in a comment.
 
 Objectives carry the milestone of their delivery target. As of 2026-09-10 the delivery target
 is the R/Pharma talk, milestone `2026-10-talk`; the five objectives from the
-[plan](https://jwildfire.github.io/obot.roadmap/reports/requirement-sessions-plan-2026-09-10/)
+[plan](https://jwildfire.github.io/obot.roadmap/reports/goal-sessions-plan-2026-09-10/)
 are the open objectives. Standing objectives that predate this contract are converted (the charts
 and app objectives), closed as retired (autonomy), or paused with a comment (CSR, keynote).
 

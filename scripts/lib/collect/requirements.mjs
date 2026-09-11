@@ -23,7 +23,7 @@ export const STATUS_LABELS = {
   'status: released': 'Released',
 };
 export const ACTIVE_STAGES = ['Ready', 'In session', 'Review'];
-const STAGE_ORDER = ['In session', 'Review', 'Ready', 'Unstaged', 'Backlog', 'Released'];
+const STAGE_ORDER = ['In session', 'Review', 'Ready', 'Unstaged', 'Backlog', 'Released', 'Retired'];
 
 const QUERY = `
 query ($owner: String!, $name: String!, $cursor: String) {
@@ -32,7 +32,7 @@ query ($owner: String!, $name: String!, $cursor: String) {
            states: [OPEN, CLOSED], orderBy: {field: CREATED_AT, direction: ASC}) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number title url state body updatedAt createdAt
+        number title url state stateReason body updatedAt createdAt
         milestone { title }
         labels(first: 20) { nodes { name } }
         subIssuesSummary { total completed }
@@ -49,13 +49,17 @@ export function statusesOf(issue) {
     .filter(Boolean);
 }
 
-// The stage a row is shown under. A closed requirement with no label still reads
-// Released — closing is the fact, the label is the record — but an open one with
-// no label is Unstaged, and says so on its pill rather than borrowing a stage.
+// The stage a row is shown under. A closed requirement reads from how it closed,
+// whatever label it carries — closing is the fact, the label is the record: closed
+// as completed is Released; closed as not planned (or as a duplicate) is Retired,
+// so the forty-odd requirements of the autonomous prototype closed on 2026-09-11
+// do not read as shipped work. An open one with no label is Unstaged, and says so
+// on its pill rather than borrowing a stage.
 function stageOf(issue, statuses) {
+  if (issue.state === 'CLOSED') return issue.stateReason === 'NOT_PLANNED' || issue.stateReason === 'DUPLICATE' ? 'Retired' : 'Released';
   if (statuses.length === 1) return statuses[0];
   if (statuses.length > 1) return statuses.find((s) => s !== 'Released') ?? statuses[0];
-  return issue.state === 'CLOSED' ? 'Released' : 'Unstaged';
+  return 'Unstaged';
 }
 
 // "Open but released" is the drift the audit caught; an unlabelled open

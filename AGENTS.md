@@ -60,7 +60,7 @@ reconstruct it from memory or from an existing issue.
   from there ([who decided it](docs/issue-contract.md#who-decided-it)).
 - The `requirement-drafting`, `requirement-design` and `requirement-tasks` skills under
   [`.github/skills/`](.github/skills/) walk a requirement from idea to filed tasks;
-  `sub-issue-linking` from the upstream harness makes the tree links. Every node gets its definition of done and its milestone before its requirement's session may start.
+  the sub-issues API procedure in `requirement-tasks` makes the tree links. Every node gets its definition of done and its milestone before its requirement's session may start.
 - One requirement, one release; the `backlog` milestone for unscheduled work; lowercase
   milestone names.
 - A requirement's status is one `status:` label — backlog, ready, in session, review,
