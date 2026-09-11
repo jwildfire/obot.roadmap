@@ -54,6 +54,27 @@ write the citation into the task itself — the specific approval, not the paren
 
 8. **Summarize** the result: parent #, list of posted sub-issues (`repo#N — title`), and links to each. The rollup refreshes on the next push to `main` (the Deploy site workflow runs `scripts/build_roadmap_next.mjs`); no manual trigger exists.
 
+## The Ready gate
+
+Decomposition ends with the requirement Ready, or with a comment saying what stops it. Check,
+in order, and set the board status only when all four hold:
+
+1. The requirement's Design and Definition of done sections are populated.
+2. Every task is linked as a sub-issue and carries its own definition of done.
+3. Every task carries a milestone in its repository (`gh issue view <n> -R <repo> --json milestone`),
+   and the requirement carries the hub's delivery-target milestone. No milestone, no Ready.
+4. The objective's tree is signed off by @jwildfire in a comment on the objective.
+
+Then move the requirement to Ready on the obot Roadmap project (option `03bd076a` on field
+`PVTSSF_lAHOADgnX84BcTPzzhW9FpU`, project `PVT_kwHOADgnX84BcTPz`):
+
+```bash
+ITEM=$(gh api graphql -f query='{ repository(owner:"jwildfire", name:"obot.roadmap") { issue(number: <n>) { projectItems(first: 5) { nodes { id project { number } } } } } }' --jq '.data.repository.issue.projectItems.nodes[] | select(.project.number == 1) | .id')
+gh project item-edit --project-id PVT_kwHOADgnX84BcTPz --id "$ITEM" --field-id PVTSSF_lAHOADgnX84BcTPzzhW9FpU --single-select-option-id 03bd076a
+```
+
+Board writes go out under @jwildfire's account; the App cannot reach a user-owned project.
+
 ## Deferring a sub-task after the fact
 
 When a sub-issue will not make the requirement's release, it moves — the requirement does not wait for it:

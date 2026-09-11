@@ -48,7 +48,9 @@ Issues are filed from the templates — [objective](.github/ISSUE_TEMPLATE/objec
 [requirement](.github/ISSUE_TEMPLATE/requirement.yml),
 [task](.github/ISSUE_TEMPLATE/task.yml) — under the
 [issue contract](docs/issue-contract.md), and tracked on the
-[obot Roadmap project](https://github.com/users/jwildfire/projects/1). The hub's
+[obot Roadmap project](https://github.com/users/jwildfire/projects/1), whose `Status`
+field — Backlog, Ready, In session, Review, Released — is the one place a requirement's
+status lives. The hub's
 `requirement-drafting`, `requirement-design` and `requirement-tasks` skills under
 [`.github/skills/`](.github/skills/) walk a requirement from idea to filed tasks.
 

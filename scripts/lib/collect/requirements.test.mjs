@@ -40,7 +40,7 @@ const blocker = (state) => issue(BOARD_WRITE_BLOCK.issue, { state, title: 'Requi
 const byNumber = (reqs, n) => reqs.find((r) => r.number === n);
 
 test('an off-board requirement filed under the block is not drift', () => {
-  const reqs = buildRequirements([staged(1, 'Development'), blocker('OPEN'), issue(300)]);
+  const reqs = buildRequirements([staged(1, 'In session'), blocker('OPEN'), issue(300)]);
   const r = byNumber(reqs, 300);
   assert.equal(r.drift, null, 'nothing could have placed it, so it is not drift');
   assert.ok(r.blocked, 'it is reported as blocked instead');
@@ -51,21 +51,21 @@ test('an off-board requirement filed under the block is not drift', () => {
 });
 
 test('the same requirement counts as drift again once the block is lifted', () => {
-  const reqs = buildRequirements([staged(1, 'Development'), blocker('CLOSED'), issue(300)]);
+  const reqs = buildRequirements([staged(1, 'In session'), blocker('CLOSED'), issue(300)]);
   const r = byNumber(reqs, 300);
   assert.equal(r.drift, 'unstaged');
   assert.equal(r.blocked, null);
 });
 
 test('a requirement filed before the refusal was measured is blocked but marked as such', () => {
-  const reqs = buildRequirements([staged(1, 'Development'), blocker('OPEN'), issue(200, { createdAt: BEFORE })]);
+  const reqs = buildRequirements([staged(1, 'In session'), blocker('OPEN'), issue(200, { createdAt: BEFORE })]);
   const r = byNumber(reqs, 200);
   assert.equal(r.drift, null);
   assert.equal(r.blocked.filedAfterBlock, false, 'it may have been missed then — but nothing can place it now');
 });
 
 test('the drift count does not climb as requirements are filed under the block', () => {
-  const base = [staged(1, 'Development'), blocker('OPEN')];
+  const base = [staged(1, 'In session'), blocker('OPEN')];
   const one = buildRequirements([...base, issue(300)]).filter((r) => r.drift).length;
   const five = buildRequirements([...base, issue(300), issue(301), issue(302), issue(303), issue(304)])
     .filter((r) => r.drift).length;
@@ -81,7 +81,7 @@ test('drift the block does not explain is still drift', () => {
 });
 
 test('a closed requirement is neither drift nor blocked', () => {
-  const reqs = buildRequirements([staged(1, 'Development'), blocker('OPEN'), issue(300, { state: 'CLOSED' })]);
+  const reqs = buildRequirements([staged(1, 'In session'), blocker('OPEN'), issue(300, { state: 'CLOSED' })]);
   const r = byNumber(reqs, 300);
   assert.equal(r.drift, null);
   assert.equal(r.blocked, null);
@@ -107,7 +107,7 @@ test('an off-board requirement is told apart from one on the board with no Statu
   const onBoardNoStatus = issue(301, {
     projectItems: { nodes: [{ project: { number: 1 }, fieldValueByName: null }] },
   });
-  const reqs = buildRequirements([staged(1, 'Development'), blocker('OPEN'), issue(300), onBoardNoStatus]);
+  const reqs = buildRequirements([staged(1, 'In session'), blocker('OPEN'), issue(300), onBoardNoStatus]);
   assert.equal(byNumber(reqs, 300).onBoard, false, 'it has no item at all');
   assert.equal(byNumber(reqs, 301).onBoard, true, 'it has an item, and no Status on it');
 });

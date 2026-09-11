@@ -42,7 +42,7 @@ export function goalViews() {
 export function requirementViews(req, prs, now) {
   const v = new Set();
   const idle = daysSince(req.updatedAt, now);
-  const inFlight = req.stage === 'Development' || req.stage === 'Review';
+  const inFlight = req.stage === 'In session' || req.stage === 'Review';
   const openPrs = prs ?? [];
 
   // Live: the board says it is being built, or a PR proves it regardless of the

@@ -65,6 +65,10 @@ reconstruct it from memory or from an existing issue.
   `sub-issue-linking` from the upstream harness makes the tree links. Every node gets its definition of done and its milestone before its requirement's session may start.
 - One requirement, one release; the `backlog` milestone for unscheduled work; lowercase
   milestone names.
+- A requirement's status is the `Status` field on the obot Roadmap project — Backlog,
+  Ready, In session, Review, Released — added when the requirement is filed and moved by
+  the session at its start, its RC and its close ([issue contract → Status](docs/issue-contract.md#status)).
+  Board writes go out under @jwildfire's account; the App cannot reach the project.
 
 ## Diary
 

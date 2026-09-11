@@ -105,7 +105,7 @@ export function buildItems({ NOW, reqRes, prRes, relRes, decRes }) {
   // a requirement can be both, and listing it twice would double its weight.
   for (const req of reqRes.value ?? []) {
     if (req.state !== 'OPEN') continue;
-    const inFlight = req.stage === 'Development' || req.stage === 'Review';
+    const inFlight = req.stage === 'In session' || req.stage === 'Review';
     const stalled = inFlight && daysAgo(req.updatedAt, NOW) > T.stalledDays;
     if (!stalled && !req.drift) continue;
     const why = [];

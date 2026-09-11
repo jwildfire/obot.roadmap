@@ -74,7 +74,9 @@ after its PR merges; never remove another session's.
 ## Before code: the issue
 
 - Every change starts from a task issue with a definition of done and a milestone. No
-  milestone, no work. No task, file one under its requirement first.
+  milestone, no work. No task, file one under its requirement first. The requirement's
+  board status says where it stands (Backlog → Ready → In session → Review → Released);
+  the session moves it at start, at the RC, and at close.
 - Branch per task, named `<task-number>-<slug>`, off the integration branch.
 - Tests first where the change is testable: write or update the test, see it fail,
   implement the minimum, see it pass. Documentation, CI and template changes may skip
@@ -257,8 +259,9 @@ deployed site:
   scoped it; the RC body lists them all with `Closes` lines. An issue only partly
   delivered keeps the milestone, stays open, and gets a comment naming what remains.
 - The gate: CI green on the head commit and, for a chart, the definition of done above.
-- After the tag: the hub requirements it delivered close with their proof comments, and
-  the objective's nightly comment reports them under Complete. Publishing stays human.
+- After the tag: the hub requirements it delivered close with their proof comments and
+  move to Released on the board, and the requirement's nightly comment reports them
+  under Complete. Publishing stays human.
 - obot.agent releases by `main → stable` PR; demo-301 by `main → site`; obot.roadmap
   does not cut releases.
 

@@ -27,8 +27,8 @@ import { judge, glossFor, buildApprovalIndex } from '../provenance.mjs';
 import { collectDecisionLog } from './decision-log.mjs';
 
 export const PROJECT_NUMBER = 1;
-export const ACTIVE_STAGES = ['Requirement Gathering', 'Design', 'Development', 'Review'];
-const STAGE_ORDER = ['Development', 'Review', 'Design', 'Requirement Gathering', 'Unstaged', 'Backlog', 'Released'];
+export const ACTIVE_STAGES = ['Ready', 'In session', 'Review'];
+const STAGE_ORDER = ['In session', 'Review', 'Ready', 'Unstaged', 'Backlog', 'Released'];
 
 const QUERY = `
 query ($owner: String!, $name: String!, $cursor: String) {
@@ -95,7 +95,7 @@ function boardStatus(issue) {
 function stageOf(issue, status) {
   if (status) return status;
   if (issue.state === 'CLOSED') return 'Released';
-  return issue.milestone && issue.milestone.title !== 'backlog' ? 'Requirement Gathering' : 'Backlog';
+  return 'Backlog';
 }
 
 // "Open but staged Released" is the drift the audit caught; an unstaged issue

@@ -155,15 +155,49 @@ This issue was drafted by Claude Code using <model>.
 - Title: `{verb} {what}` — "Add the portfolio manifest schema", "Wrap ggsurvfit for the
   Kaplan–Meier figures".
 - Milestone: the repository's release milestone (`v1.8.0`, `v2.0.0`), created if
-  absent. A task with no milestone is not pickable.
+  absent. A task with no milestone is not pickable, and its requirement cannot be Ready.
 - Labels: whatever the repository uses; no program-wide task label is required.
 - Size: a task is one pull request. If it needs two, it is two tasks.
 - Closed by its pull request's `Closes #N` line on merge; the PR body carries the
   evidence the definition of done asked for.
 
-## States
+## Status
 
-There are no workflow labels beyond `blocked`. A node's state is read from GitHub:
+A requirement's status lives in one place: the `Status` field of the
+[obot Roadmap project](https://github.com/users/jwildfire/projects/1), which every
+requirement issue is added to when it is filed. Five values, each set at a point the
+contract already passes through, so status is written as a side effect and never
+hand-maintained. They map onto the three phases of the [ways of working](ways-of-working.md#the-three-phases):
+
+| Status | Phase | Set when | Set by |
+|---|---|---|---|
+| Backlog | prep | the requirement is filed; its tree or its definition of done is incomplete | whoever files it |
+| Ready | prep → execution | the Ready gate below holds | the prep session, with @jwildfire |
+| In session | execution | the session posts its start comment | the session |
+| Review | execution → review | a release-candidate PR carrying its `Closes` line is open | the session, when it opens the RC |
+| Released | review | closed with its release | @jwildfire at the tag, or the session at close |
+
+The Ready gate — all of these, checked by the prep session and re-checked by the
+execution session before it sets its goal:
+
+- The requirement's Design and Definition of done sections are populated.
+- Every task under it is filed in its implementation repository, linked as a sub-issue,
+  with its own definition of done.
+- Every task carries a milestone in its repository, and the requirement carries the
+  hub's delivery-target milestone. A requirement whose tasks span two repositories
+  carries a milestone in each; no task without a milestone, no Ready.
+- The objective's tree is signed off by @jwildfire in a comment on the objective.
+
+The site's requirements collector reads the field and renders it on the catalog and
+roadmap pages; the standup reads it too. An open requirement whose status reads Released,
+or a closed one whose status does not, is drift and is reported as such. Board writes go
+out under @jwildfire's own account — a GitHub App cannot reach a user-owned project — which
+is the actor the developer guidelines name anyway.
+
+Objectives are not on the board (the board's `Parent issue` field groups requirements by
+objective); tasks are not on the board (their state is their issue, and the board's
+`Sub-issues progress` field shows completion per requirement). There are no workflow
+labels beyond `blocked`, and a node's other states are read from GitHub:
 
 | State | How it is read |
 |---|---|
@@ -171,7 +205,8 @@ There are no workflow labels beyond `blocked`. A node's state is read from GitHu
 | blocked | the issue carries the `blocked` label and its latest comment is one question for @jwildfire |
 | closed | the issue is closed; for a task, by its PR; for a requirement and an objective, with a closing comment carrying the proof |
 
-Blocked is a state of an issue, not of a session. The session adds the label and the
+Blocked is an overlay on a status, not a status: a requirement In session with a blocked
+task stays In session and shows the label. Blocked is a state of an issue, not of a session. The session adds the label and the
 question, comments on the objective naming it, and moves to the next task. @jwildfire answers
 on the issue; whoever reads the answer removes the label. The standup lists every
 `blocked` issue and asks nothing else.
