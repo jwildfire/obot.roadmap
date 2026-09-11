@@ -3,7 +3,7 @@
 ## Overview
 
 This is the hub of Jeremy Wildfire's open-source safety-graphics modernization portfolio
-(the "obot" program): its goals, requirements and designs, the standards every session
+(the "obot" program): its objectives, requirements and designs, the standards every session
 works under, and the site that reports on it. An agent working here plans and tracks —
 files and edits issues under the contract, captures designs, decomposes requirements
 into tasks, writes reports and the diary — and follows the same standards it asks every
@@ -12,9 +12,9 @@ other repository to follow.
 IMPORTANT: the three documents under [`docs/`](docs/) are the standards and they are
 mandatory in every repository of the program. Read them before doing anything:
 
-- [Issue contract](docs/issue-contract.md) — goals, requirements and tasks, definitions
+- [Issue contract](docs/issue-contract.md) — objectives, requirements and tasks, definitions
   of done, labels and milestones, blocked, closing, who decided it.
-- [Ways of working](docs/ways-of-working.md) — goal sessions, roles, what @jwildfire
+- [Ways of working](docs/ways-of-working.md) — requirement sessions, roles, what @jwildfire
   reviews, steering, the standup, decisions, releases.
 - [Developer guidelines](docs/developer-guidelines.md) — branches, Claude Code setup,
   commits, pull requests, merging via rulesets, testing, releases, artifacts, the write
@@ -25,8 +25,7 @@ in its requirement lifecycle; where the two differ, the documents above win.
 
 ## Operating grants
 
-Standing grants from @jwildfire (2026-07-04, unchanged by the 2026-09-10 move to goal
-sessions):
+Standing grants from @jwildfire (2026-07-04, unchanged by the 2026-09-10 move to requirement sessions):
 
 - Standard updates need no prior approval — filing and editing issues under the
   contract, requirement lifecycle updates, design and dataspec documents, diary entries,
@@ -37,13 +36,13 @@ sessions):
 - Review flow: @jwildfire reviews artifacts, designs and requirements on the deployed
   site (https://jwildfire.github.io/obot.roadmap/), often on a phone. Publish first —
   commit and push so Pages deploys — then share the deployed URL, never a local preview.
-- Goal issue bodies and their sub-issue links are his. Propose changes to a goal in a
-  comment.
+- Objective issue bodies and their sub-issue links are his. Propose changes to an objective
+  in a comment.
 
 ## Creating issues
 
 Every issue is filed from its template so that the site's generators and the standup can
-read it: [goal](.github/ISSUE_TEMPLATE/goal.yml),
+read it: [objective](.github/ISSUE_TEMPLATE/objective.yml),
 [requirement](.github/ISSUE_TEMPLATE/requirement.yml),
 [task](.github/ISSUE_TEMPLATE/task.yml). Filing with `gh issue create` bypasses the web
 form, so reproduce the template's sections exactly — read the template first, never
@@ -63,8 +62,7 @@ reconstruct it from memory or from an existing issue.
   read as his approval.
 - The `requirement-drafting`, `requirement-design` and `requirement-tasks` skills under
   [`.github/skills/`](.github/skills/) walk a requirement from idea to filed tasks;
-  `sub-issue-linking` from the upstream harness makes the tree links. Every node gets its
-  definition of done and its milestone before a session may start on the goal.
+  `sub-issue-linking` from the upstream harness makes the tree links. Every node gets its definition of done and its milestone before its requirement's session may start.
 - One requirement, one release; the `backlog` milestone for unscheduled work; lowercase
   milestone names.
 
@@ -92,8 +90,7 @@ who wrote the content; say @jwildfire reviewed it only when he did.
 - Always check the current state of referenced files before making changes; conventions
   have moved more than once and historical practice may no longer apply.
 - Never create a requirement without Business Requirement and Overview; never file tasks
-  before Design is populated; never start a session on a goal whose tree lacks a
-  definition of done or a milestone anywhere.
+  before Design is populated; never start a session on a requirement whose objective's tree lacks a definition of done or a milestone anywhere.
 - Renderer requirements trace to the reviewed requirement matrices in
   [safety.viz `requirements/`](https://github.com/jwildfire/safety.viz/tree/HEAD/requirements);
   tests in implementation repos are keyed to those requirement IDs.
@@ -108,7 +105,7 @@ who wrote the content; say @jwildfire reviewed it only when he did.
 ## Related repositories
 
 - [`obot.agent`](https://github.com/jwildfire/obot.agent) — the session core: the
-  `goal-session` skill every working session runs, the standup routine, the cloud
+  `requirement-session` skill every working session runs, the standup routine, the cloud
   environments. It carries no standards of its own; it points here.
 - [`gsm.agent`](https://github.com/Gilead-BioStats/gsm.agent) — the upstream harness
   this ecosystem aligns with (drafts, attribution, worktrees, TDD); the documents above

@@ -64,7 +64,7 @@ When a sub-issue will not make the requirement's release, it moves — the requi
 4. **Correct any milestone that now names a release the work did not ship in** — a sub-issue milestoned for a shipped release it missed is a false record.
 5. **Close the original requirement** with the release it delivered, and set its board Status to Released.
 
-Two cases need no new requirement: a **defect found after release** (an ordinary issue against shipped work — re-home it to the goal), and scope that **already has a requirement of its own** and was merely nested (re-home it to the goal).
+Two cases need no new requirement: a **defect found after release** (an ordinary issue against shipped work — re-home it to the objective), and scope that **already has a requirement of its own** and was merely nested (re-home it to the objective).
 
 Implementation of each sub-issue is then a `/tdd` run in the target repo — there is no separate implementation skill.
 

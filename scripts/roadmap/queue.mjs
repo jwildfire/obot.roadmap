@@ -456,7 +456,7 @@ ${reviewLaneLine(hierRes, proposal)}
   </section>
   <section class="q-strip">
     <h2>Everything else</h2>
-    <p>Goals, the requirement hierarchy, every open PR, unreleased work and the ideas queue are on the
+    <p>Objectives, the requirement hierarchy, every open PR, unreleased work and the ideas queue are on the
     <a href="catalog.html">catalog</a> — the complete record, filterable by view and repo.</p>
   </section>
 </div>

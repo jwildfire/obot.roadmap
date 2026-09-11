@@ -157,9 +157,9 @@ ${decRows.length ? decRows.join('\n') : `  ${empty('No open decisions.')}`}
 
 // ---------------------------------------------------------------- goals
 function goalsSection(res, requirements) {
-  if (!res.ok) return section('goals', 'Goals', null, '', { notice: res.notice });
+  if (!res.ok) return section('goals', 'Objectives', null, '', { notice: res.notice });
   const goals = res.value.filter((g) => g.status !== 'paused');
-  if (!goals.length) return section('goals', 'Goals', 0, empty('No active goals.'));
+  if (!goals.length) return section('goals', 'Objectives', 0, empty('No active goals.'));
 
   const byNumber = new Map(requirements.map((r) => [r.number, r]));
   const rows = goals.map((g) => {
@@ -186,7 +186,7 @@ function goalsSection(res, requirements) {
   </div>`;
   }).join('\n');
 
-  return section('goals', 'Goals', goals.length, `<div class="rm-rows">\n${rows}\n</div>`, {
+  return section('goals', 'Objectives', goals.length, `<div class="rm-rows">\n${rows}\n</div>`, {
     note: `Standing direction from the hub's <a href="https://github.com/${HUB}/issues?q=is%3Aissue+is%3Aopen+label%3Agoal"><code>goal</code>-labeled issues</a> — the same goals autonomous sessions select from (#53/#71); per-goal detail on the <a href="goals/index.html">goal pages</a>.`,
   });
 }

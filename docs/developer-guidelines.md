@@ -3,7 +3,7 @@
 Status: v1, 2026-09-10. The engineering rules for every repository in the obot program,
 for Claude Code sessions and people alike. They carry forward what the retired
 obot.agent overlay said about testing, releases and the GxP stance, and add the rules the
-goal-session model needs: how a repository is set up for Claude Code, how pull requests
+requirement-session model needs: how a repository is set up for Claude Code, how pull requests
 merge, and what a chart must have before it is done. The tracking rules are the
 [issue contract](issue-contract.md); the operating model is
 [ways of working](ways-of-working.md).
@@ -35,10 +35,10 @@ This follows [Claude Code's best practices](https://code.claude.com/docs/en/best
   # Standards
   The obot program's standards are mandatory here: the issue contract, ways of working and
   developer guidelines in jwildfire/obot.roadmap `docs/` (on disk at ~/obot.roadmap/docs/
-  in a cloud environment). Work runs as a goal session (`/goal-session <hub issue>`).
+  in a cloud environment). Work runs one requirement per session (`/requirement-session <hub requirement>`).
   ```
 
-- Skills for procedures. The `goal-session` skill is installed by the cloud environment's
+- Skills for procedures. The `requirement-session` skill is installed by the cloud environment's
   setup script; a repository adds its own skills under `.claude/skills/` for things
   specific to it — how its evidence pages are generated, how its site builds.
 - Permissions: cloud sessions run in auto mode. Local sessions use the workspace's
@@ -209,7 +209,7 @@ deployed site:
 4. gsm.safety R widget, delivered or filed as a milestoned hub requirement, with the
    parity check green.
 5. Static twin in gsm.safety driven by the same derived data and the same settings names
-   (goal 2, 2026-09-10), or filed as a milestoned requirement where the plan schedules it
+   (objective 2, 2026-09-10), or filed as a milestoned requirement where the plan schedules it
    later.
 
 ## Releases
@@ -258,7 +258,7 @@ deployed site:
   delivered keeps the milestone, stays open, and gets a comment naming what remains.
 - The gate: CI green on the head commit and, for a chart, the definition of done above.
 - After the tag: the hub requirements it delivered close with their proof comments, and
-  the goal's nightly comment reports them under Complete. Publishing stays human.
+  the objective's nightly comment reports them under Complete. Publishing stays human.
 - obot.agent releases by `main → stable` PR; demo-301 by `main → site`; obot.roadmap
   does not cut releases.
 

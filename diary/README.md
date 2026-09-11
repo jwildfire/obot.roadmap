@@ -12,7 +12,7 @@ and site navigation stripped).
   day. No entry on empty days — never machine-generated filler.
 - **Cadence (design decision D2): per working session.** A session that did
   substantive work writes that session's entry before it ends; a goal session's
-  nightly comment on its goal issue is the source for most of it.
+  nightly comment on its requirement issue is the source for most of it.
 - **Section format leads with what needs @jwildfire**: `## 🚦 Release candidates
   needing review`, then `## 🧭 Decisions needed` — each a bulleted list of
   one-line items linking their PR or draft release and their hub demo or

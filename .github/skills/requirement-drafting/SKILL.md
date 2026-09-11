@@ -35,7 +35,7 @@ Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilea
    - **Overview** — short technical summary + impact (required)
    - **Data Requirement** — leave blank unless data availability is already known to matter
    - **Design** — leave blank or add high-level notes if available
-   - **Definition of done** — end state, proof, ships in; required before a session starts on the goal (see the [issue contract](../../../docs/issue-contract.md#definitions-of-done))
+   - **Definition of done** — end state, proof, ships in; required before a session starts on the objective (see the [issue contract](../../../docs/issue-contract.md#definitions-of-done))
    - **Tasks** — leave blank (populated by `requirement-tasks` after Design)
    - **Provenance** — two lines at the foot of the body, after a `---` rule, beside the attribution line
 
@@ -79,7 +79,7 @@ Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilea
 
    When scope is deferred off an **existing** requirement, follow the procedure in that order: note the deferral on the original (what and why), file the new requirement with its own milestone, **transfer** the deferred sub-issues rather than re-filing them, and the original closes with its release. A defect found after release is not deferred scope — it is an ordinary issue against shipped work, and needs no new requirement.
 
-5. **Present the draft for review** in the conversation, or as a comment on the goal issue when the session is unattended, and iterate. Presenting it is not approval,
+5. **Present the draft for review** in the conversation, or as a comment on the objective issue when the session is unattended, and iterate. Presenting it is not approval,
    and posting it after an unattended session is not approval either. The attribution line names the
    author only — do not append "and reviewed by @jwildfire" unless he reviewed it, and if he did,
    record it in `Approved by` where it resolves. 75 of this hub's requirements assert his review in
