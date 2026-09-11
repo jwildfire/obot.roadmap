@@ -77,6 +77,10 @@ requirement, and whenever a decision or a blocker lands — under the shapes in 
 everything. When it cannot carry the content — a page with figures, a design, a decision
 with options laid out — the agent writes an artifact under `reports/` or
 `requirements/design/`, links it from the issue it serves, and the artifact links back.
+Whatever the channel — a comment, the standup, an artifact, a reply to @jwildfire in a
+session — describe the issue first and cite its linkable number in parentheses after:
+"the portfolio manifest requirement (#325)", never "#325". He has no issue numbers
+memorised; a bare number is for machines (`Closes`, `Parent:`), not for people.
 The site's [news feed](https://jwildfire.github.io/obot.roadmap/news.html) shows issue
 transitions and artifact creation; nothing else needs writing to be seen.
 

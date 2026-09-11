@@ -73,9 +73,9 @@ site's roadmap generator (`scripts/build_roadmap.mjs`) counts the sub-issues.
 
 6. **Link each posted task to the requirement as a sub-issue** — see [Linking sub-issues](#linking-sub-issues) below — and verify each child appears under the parent.
 
-7. **Mirror the tasks into the requirement's Tasks section**, one line per task, `repo#N — title`, via `gh issue edit <n> --body-file <draft>` on the live body. Verify the six `###` headings survived.
+7. **Mirror the tasks into the requirement's Tasks section**, one line per task, `title (repo#N)`, via `gh issue edit <n> --body-file <draft>` on the live body. Verify the six `###` headings survived.
 
-8. **Summarize** the result: the requirement number, the tasks (`repo#N — title`) with links, and the Ready-gate status below. The site refreshes on the next push to `main` and on the daily deploy; there is no manual trigger beyond `workflow_dispatch` on the Deploy site workflow.
+8. **Summarize** the result: the requirement by name (then its number in parentheses), the tasks the same way with links, and the Ready-gate status below. The site refreshes on the next push to `main` and on the daily deploy; there is no manual trigger beyond `workflow_dispatch` on the Deploy site workflow.
 
 ## Linking sub-issues
 

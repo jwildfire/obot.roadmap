@@ -29,7 +29,9 @@ plain-English bar (@jwildfire, 2026-08-15):
   feed used until 2026-08-15, and they are now rejected by name.
 - **Name things, don't number them.** An issue number is not an explanation; a reader
   who has memorised nothing must be able to tell from the line alone whether this is
-  for them. Delete every reference from the sentence — if it stops making sense,
+  for them. Where the number is wanted for the link, it follows the description in
+  parentheses — "the portfolio manifest requirement (#325)" — and the same holds in
+  every comment, standup line and session reply, not only on a page. Delete every reference from the sentence — if it stops making sense,
   rewrite it.
 - **Write it from the contents**, not from the title. A parity report's line should
   convey that it compares the chart library against its R wrappers and names what is

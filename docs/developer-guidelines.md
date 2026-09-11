@@ -283,7 +283,9 @@ deployed site:
   `<meta name="premise">` lines the deploy can re-check.
 - A one-line `<meta name="description">` directly after `<title>`, 40–260 characters,
   saying what the page contains and why he would open it; the deploy fails without one.
-- Plain English: name things rather than numbering them; links are trailing citations;
+- Plain English: name things rather than numbering them — an issue is described first and
+  its linkable number follows in parentheses, on a page, in a comment or in a reply to him
+  alike, because nobody has the numbers memorised; links are trailing citations;
   the executive summary carries itself; emphasis is a heading, a list lead or a callout
   block — never a bolded clause mid-paragraph; bulleted lists over prose.
 - Every page holds at a 390-pixel viewport with no horizontal scroll — he reads on a

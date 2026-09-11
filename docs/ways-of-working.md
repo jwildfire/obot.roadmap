@@ -135,7 +135,8 @@ renders, every night, from GitHub alone:
 - every open objective with its requirements' status labels and its complete / in
   progress / blocked counts across tasks, and the sentences from its requirements' latest
   nightly comments;
-- one question per issue carrying the `blocked` label, quoted from its latest comment;
+- one question per issue carrying the `blocked` label, quoted from its latest comment,
+  each issue described in words before its number, since the file is read aloud;
 - the release-candidate pull requests waiting on him and how long they have waited.
 
 It publishes `standup.md` on the `session-state` branch, the address the voice check-in
@@ -192,7 +193,9 @@ other writing; weekly round-ups, podcast episodes and the like are additions for
 Anything written for him lives on this hub's site: reports under `reports/`, designs
 under `requirements/design/`, decisions under `reports/decisions/`. Each is a
 self-contained page with a one-line description in its head, written in plain English —
-name things, do not number them; links are trailing citations; emphasis is structural or
+name things, do not number them; an issue is described first and its linkable number
+follows in parentheses, in a comment, the standup or a reply in a session as much as on a
+page ([issue contract → Comments](issue-contract.md#comments)); links are trailing citations; emphasis is structural or
 a callout, never a bolded clause mid-paragraph. He reviews on the deployed site, often on
 a phone, so every page holds at a 390-pixel viewport. The contract is
 [`reports/README.md`](../reports/README.md).

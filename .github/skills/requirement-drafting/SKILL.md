@@ -37,6 +37,7 @@ Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilea
    - **Design** — blank or high-level notes now; populated by `requirement-design` before tasks are filed
    - **Definition of done** — end state, proof, ships in. Write it so it can fail; it becomes the session's `/goal` condition ([issue contract → Definitions of done](../../../docs/issue-contract.md#definitions-of-done))
    - **Tasks** — blank; populated by `requirement-tasks`
+   - Everywhere a person reads it, describe an issue before its number and put the number in parentheses: "the FDA reference-criteria data (gsm.safety#77)". Bare numbers are for `Closes` and `Parent:` lines.
    - Footer: a `---` rule and the drafted-by line, nothing else. It names the author only.
 
    **Renderer requirements carry the R widget from the start** (@jwildfire,
