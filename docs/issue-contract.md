@@ -102,14 +102,15 @@ of exactly one objective. Sections, in order:
 
 | Section | What it holds | Required before a session starts on it |
 |---|---|---|
+| Objective | the objective it belongs to, `#N`; the sub-issue link is the record | yes, at filing |
 | Business Requirement | the need in plain language — who benefits, what success looks like | yes |
-| Overview | the approach in a paragraph and the repos it touches | yes |
-| Data Requirement | the domains, columns and sources the work needs, with availability | yes when data is involved |
+| Overview | the approach in a paragraph, and the repositories the tasks will live in | yes, at filing |
+| Data Requirement | the domains, columns and sources the work needs, with availability | only when data is involved |
 | Design | the technical design, inline or as `requirements/design/{N}_design.html` | yes |
 | Definition of done | end state, proof, ships in | yes |
 | Tasks | one line per task issue, `repo#N — title`, mirrored from the sub-issue links | yes |
 
-Below the sections, after a `---` rule: the attribution line and the two provenance lines
+Below the sections, after a `---` rule: the drafted-by line, and nothing else
 ([Who decided it](#who-decided-it)).
 
 A requirement is sized for one session: the set of tasks one `/goal` run can close and
@@ -264,23 +265,24 @@ anything and are removed with the hub scaffold retirement.
 
 ## Who decided it
 
-Most requirements are written by an agent, and a filed requirement looks like settled
-intent — milestoned, linked to an objective — whether the scope in it came from @jwildfire or
-from the agent's own judgement. So the two facts are recorded separately, at the foot of
-every requirement body:
+Approval is recorded where it happens and cited from there — never asserted in prose on
+the thing being approved:
 
-```
-Authored by: Claude Code using Fable 5.1
-Approved by: EMPTY
-```
+- A tree is approved by @jwildfire's sign-off comment on the objective; the requirement's
+  `status: ready` label is the record that the gate held, and the session quotes the
+  comment's link in its start comment.
+- A release is approved by his approving review on the release-candidate PR, which the
+  release branch's ruleset requires.
+- A decision he makes is recorded where he made it — the issue comment, the review, the
+  Q&A thread — and an approval-gated action (a deletion, a merge to a release branch,
+  anything an invariant names) cites that record, with its date, not the requirement that
+  contains it.
 
-`Approved by` holds a citation that resolves — his sign-off comment on the objective
-(`jwildfire/obot.roadmap#N (comment)`), a decision id (`D0018.1`), or his native GitHub
-review (`owner/repo#123 review`) — or `EMPTY`, which is the normal and correct state for
-work he has not approved. Never prose. `node scripts/provenance.mjs resolve <n>` prints
-what was asked, what he said, the channel and the date, or says nobody has approved it.
-An approval-gated action — a deletion, a merge to a release branch, anything an invariant
-names — cites that, never the requirement that contains it.
+Every issue, PR and comment ends with a `---` rule and the drafted-by line naming who
+wrote it. It names the author and nothing else; "and reviewed by @jwildfire" is written
+only when he did. The earlier `Authored by / Approved by / Beyond the approval` block and
+the machinery that checked it were retired on 2026-09-10 with the template that carried
+them.
 
 ## What the standup reads
 

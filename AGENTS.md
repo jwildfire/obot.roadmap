@@ -54,13 +54,10 @@ reconstruct it from memory or from an existing issue.
   renamed, reordered, added to or dropped. Sections not yet populated carry a short
   italic placeholder saying when they will be. Verify before submitting:
   `gh issue view <n> --json body -q .body | grep '^### '`.
-- Below the sections, after a `---` rule: the drafted-by line and the provenance block
-  (`Authored by:` / `Approved by:` / `Beyond the approval:` when an approval is cited).
-  `EMPTY` is the normal value of `Approved by` for agent-written work; a citation must
-  resolve — `node scripts/provenance.mjs resolve <n>` — and never be prose. The full
-  rule is [who decided it](docs/issue-contract.md#who-decided-it); the reason it exists
-  is #215, when a worker prepared to delete files on the strength of a requirement it
-  read as his approval.
+- Below the sections, after a `---` rule: the drafted-by line, and nothing else. It names
+  the author only; say @jwildfire reviewed it only when he did. Approval lives where it
+  happened — his sign-off comment on the objective, his review on the RC — and is cited
+  from there ([who decided it](docs/issue-contract.md#who-decided-it)).
 - The `requirement-drafting`, `requirement-design` and `requirement-tasks` skills under
   [`.github/skills/`](.github/skills/) walk a requirement from idea to filed tasks;
   `sub-issue-linking` from the upstream harness makes the tree links. Every node gets its definition of done and its milestone before its requirement's session may start.

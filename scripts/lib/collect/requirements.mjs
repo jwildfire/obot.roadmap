@@ -13,8 +13,6 @@ import { HUB } from '../repos.mjs';
 
 const [OWNER, NAME] = HUB.split('/');
 
-import { judge, glossFor, buildApprovalIndex } from '../provenance.mjs';
-import { collectDecisionLog } from './decision-log.mjs';
 
 /** The five statuses, label → stage name, in the order the contract moves them. */
 export const STATUS_LABELS = {
@@ -88,43 +86,11 @@ function taskProgress(issue) {
 }
 
 /**
- * Whose decision a requirement carries, resolved rather than repeated (#215).
- *
- * The catalog shows a pill only when a requirement CLAIMS an approval, because a
- * claim is the thing that can mislead — 113 rows each carrying an "EMPTY" chip is
- * noise, and the table legend says what no pill means so the absence is explained
- * on the surface rather than left to be inferred.
- *
- * `claimed` is the legacy state and it is deliberately visible: the drafted-by line
- * asserts "reviewed by @jwildfire" on 75 requirements that carry no record of it.
- * Those rows say so instead of reading like the approved ones.
- */
-function provenanceOf(issue, approvals) {
-  const v = judge(issue.body ?? '', approvals, { requireBlock: false });
-  if (v.state === 'missing') {
-    return v.reviewClaim === 'asserted'
-      ? { state: 'claimed', detail: 'the drafted-by line says @jwildfire reviewed it — no record of it exists' }
-      : null;
-  }
-  if (v.state === 'empty') return { state: 'empty', detail: 'nobody has approved this' };
-  if (v.state === 'unresolved') {
-    return { state: 'unresolved', detail: v.problems[0] ?? 'the approval citation does not resolve' };
-  }
-  const cited = v.approved.map((c) => c.text).join(', ');
-  const first = v.resolved.find((r) => r.said);
-  const gloss = first ? glossFor(first) : '';
-  return {
-    state: v.state,
-    detail: `${cited}${gloss ? ` — ${gloss}` : ''}${v.beyond && v.beyond !== 'none' ? ` · beyond it: ${v.beyond}` : ''}`,
-  };
-}
-
-/**
  * The pure half: raw issues in, page records out. Separated from the fetch so
  * what the page is allowed to call drift can be pinned by a test with no network
  * (requirements.test.mjs).
  */
-export function buildRequirements(issues, { approvals = null } = {}) {
+export function buildRequirements(issues) {
   return issues.map((issue) => {
     const statuses = statusesOf(issue);
     const stage = stageOf(issue, statuses);
@@ -151,7 +117,6 @@ export function buildRequirements(issues, { approvals = null } = {}) {
       updatedAt: issue.updatedAt,
       createdAt: issue.createdAt,
       promotedFrom: promotedFrom ? Number(promotedFrom) : null,
-      provenance: provenanceOf(issue, approvals),
     };
   }).sort((a, b) => {
     const s = STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage);
@@ -171,10 +136,5 @@ export async function collectRequirements() {
     cursor = conn.pageInfo.endCursor;
   }
 
-  // Local files only; a decision log that cannot be read degrades every claim to
-  // `unresolved` rather than to `approved`, which is the safe direction to fail.
-  let approvals = null;
-  try { approvals = buildApprovalIndex(await collectDecisionLog()); } catch { /* reported as unresolved */ }
-
-  return buildRequirements(issues, { approvals });
+  return buildRequirements(issues);
 }

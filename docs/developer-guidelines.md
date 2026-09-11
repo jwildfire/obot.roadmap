@@ -298,7 +298,8 @@ deployed site:
   organization he does not own, even when asked; hand him the draft.
 - Never delete anything — files, issues, releases, branches with unmerged work, history
   — without his explicit approval, and cite the approval (date and channel) when acting
-  on it. `node scripts/provenance.mjs resolve …` says whether an approval exists.
+  on it — his sign-off comment on the objective, his review on the RC, his answer on the
+  blocked issue — never a requirement that reads like approval.
 - A worktree whose PR has merged may be removed without asking; one holding unmerged
   work may not.
 

@@ -75,7 +75,7 @@ architecture.
 | [`site/`](site/) | Hand-authored homepage + shared stylesheet |
 | [`diary/`](diary/) | The obot diary, closed 2026-09-10 and kept as history ([conventions](diary/README.md)) |
 | [`reports/`](reports/) | Reports and decision artifacts, one folder each ([contract](reports/README.md)) |
-| [`scripts/`](scripts/) | Site generators and their shared collectors in `scripts/lib/`; `provenance.mjs` for who-decided-it checks |
+| [`scripts/`](scripts/) | Site generators and their shared collectors in `scripts/lib/` |
 
 Two maintainer notes that survive from the earlier build:
 

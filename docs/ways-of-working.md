@@ -162,7 +162,7 @@ When an objective is stated but what he wants is not yet clear enough to write a
 done, ask on the objective issue: one batch of questions in one comment, each answerable in a
 sentence, with the default the agent would take if unanswered. He answers in a comment
 or edits the objective body. Three batches is the ceiling; after that the requirement is
-drafted with `Approved by: EMPTY` and the gaps stated, and his sign-off closes them.
+drafted with the gaps stated in its body, and his sign-off on the objective closes them.
 
 ## Releases and review
 

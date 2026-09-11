@@ -1,5 +1,5 @@
 name: Requirement
-description: A roadmap requirement under an objective, with its definition of done and its tasks in implementation repos.
+description: A requirement under an objective — one session's worth of work, with its definition of done and its tasks in implementation repos.
 title: "{title}"
 labels:
   - requirement
@@ -8,16 +8,16 @@ body:
   - type: markdown
     attributes:
       value: |
-       A requirement under the [issue contract](../../docs/issue-contract.md): a sub-issue of exactly one objective, with task issues in implementation repos linked as its sub-issues. Business Requirement and Overview are required at creation; Design, Definition of done and Tasks must be populated before its session starts. A requirement is sized for one session — the tasks one `/goal` run can close and prove — and one release.
+        A requirement under the [issue contract](../../docs/issue-contract.md): a sub-issue of exactly one objective, sized for one session — the tasks one `/goal` run can close and prove — and one release. Objective, Business Requirement and Overview are required at filing; Design, Definition of done and Tasks must be populated, and every task milestoned, before the requirement is `status: ready`. Give it the hub's delivery-target milestone on filing. End the body with the drafted-by line after a `---` rule; nothing else goes in the footer.
 
-       Below the sections, after a `---` rule, every requirement says who wrote it and who approved it. The web form cannot emit it — a form field would render as another `###` section — so paste these two lines at the foot of the body after submitting, or file with `node scripts/provenance.mjs stamp`:
-
-       ```
-       Authored by: <the agent or person who wrote this>
-       Approved by: EMPTY
-       ```
-
-       `EMPTY` means nobody has approved it, which is the normal and correct state for work an agent wrote. Replace it only with a citation that resolves — his sign-off comment on the objective, a decision id (`D0018.1`) or his native review (`owner/repo#123 review`) — and add a third line, `Beyond the approval:`, saying what the citation does not cover. Never prose. See [Who decided it](../../docs/issue-contract.md#who-decided-it).
+  - type: input
+    id: objective
+    attributes:
+      label: Objective
+      description: "The objective this requirement belongs to; the sub-issue link is made after filing."
+      placeholder: "#N"
+    validations:
+      required: true
 
   - type: textarea
     id: business_requirement
@@ -34,10 +34,11 @@ body:
     id: overview
     attributes:
       label: Overview
-      description: "Short technical summary + impact. Must be populated when the issue is created."
+      description: "The approach in a paragraph, and the repositories the tasks will live in."
       placeholder: |
-        Briefly describe the proposed approach and which packages /
-        repos / users it affects. Detailed design lives in the Design section.
+        Briefly describe the proposed approach.
+
+        **Repositories:** safety.viz, gsm.safety
     validations:
       required: true
 
@@ -46,16 +47,14 @@ body:
     attributes:
       label: Data Requirement
       description: |
-        What source data must exist for this requirement to be feasible?
-        List domains, tables, columns, or data sources required, and their availability.
+        Only when data is involved: the domains, columns and sources the work needs,
+        and their availability. Leave it empty otherwise.
       placeholder: |
         **Required domains / tables:**
 
         **Required columns:**
 
-        **Data source / system:**
-
-        **Availability status:** Confirmed / Unconfirmed / TBD
+        **Availability:** Confirmed / Unconfirmed / TBD
 
   - type: textarea
     id: design
@@ -69,8 +68,6 @@ body:
       placeholder: |
         **Summary:**
 
-        **Affected packages / repos:**
-
         **Design artifacts:** requirements/design/{issue_number}_design.html
 
   - type: textarea
@@ -81,7 +78,7 @@ body:
         The observable end state, how a reader who has memorised nothing can check it
         (a command and what it prints, a URL and what it shows, a test and its result),
         and the release it ships in. Write it so it can fail — "works as expected" is
-        not a definition of done.
+        not a definition of done. This is what the session's `/goal` condition is built from.
       placeholder: |
         End state:
         Proof:
@@ -96,6 +93,6 @@ body:
       description: |
         One line per task issue, mirrored from the sub-issue links. Each task lives in
         exactly one implementation repo with its own definition of done and milestone.
-        Must be populated before the requirement's session starts.
+        Must be populated before the requirement is ready.
       placeholder: |
         - repo#N — title

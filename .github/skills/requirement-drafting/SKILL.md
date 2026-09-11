@@ -1,12 +1,12 @@
 ---
 name: requirement-drafting
-description: "Draft a new Requirement issue for this hub. Use when creating a requirement, writing an issue from a description, or promoting an idea to a requirement. Guides scoping, research, and issue creation."
+description: "Draft a new Requirement issue for this hub under an objective. Use when creating a requirement, writing an issue from a description, or promoting an idea to a requirement. Guides scoping, research, and issue creation under the issue contract."
 argument-hint: "Describe the requirement or paste the idea/backlog text"
 ---
 
 # Requirement Drafting
 
-Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilead-BioStats/gsm.roadmap/blob/main/.github/skills/requirement-drafting/SKILL.md), updated for the current 4-section template and this hub's conventions.
+Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilead-BioStats/gsm.roadmap/blob/main/.github/skills/requirement-drafting/SKILL.md) for this hub's [issue contract](../../../docs/issue-contract.md). This is prep-phase work, done with @jwildfire.
 
 ## When to Use
 
@@ -16,79 +16,47 @@ Adapted from [gsm.roadmap's requirement-drafting skill](https://github.com/Gilea
 
 ## Procedure
 
-1. **Gather context from the user.** Ask about:
-   - What is being implemented and why? (the Business Requirement)
-   - Which project does it belong to (`P###`)? Create the `project:P###` label if new.
-   - Which repos are affected?
-   - Are there dependencies on other requirements, data sources, or upstream repos?
-   - What is the current state — does any related code, prototype, or pilot exist?
+1. **Gather context.** Ask about:
+   - Which objective it belongs to — no objective, no requirement. Objectives are the open issues labelled `objective` on this hub.
+   - What is being implemented and why (the Business Requirement)
+   - Which repositories the tasks will live in
+   - Dependencies on other requirements, data sources, or upstream repos
+   - The current state — related code, prototype, or pilot
 
 2. **Research before drafting.** Look at:
-   - Existing open `type:requirement` issues in this repo for overlap
-   - Open issues/PRs in the affected repos for in-flight work
-   - The [requirement template](../../ISSUE_TEMPLATE/requirement.yml) for required fields
-   - For renderer migrations: the requirement matrices in `safety-agent` (`docs/requirements/`) — those are the spec source
+   - Existing open `requirement` issues under the same objective for overlap
+   - Open issues and PRs in the affected repositories for in-flight work
+   - The [requirement template](../../ISSUE_TEMPLATE/requirement.yml) for the sections
+   - For chart work: the requirement matrices in [safety.viz `requirements/`](https://github.com/jwildfire/safety.viz/tree/HEAD/requirements) — the spec source
 
-3. **Draft the issue** following the template structure, in a scratch file you will pass to `gh issue create --body-file`; the record is the filed issue, not the draft. Sections, in order:
-   - **Project** — the `P###` code
+3. **Draft the issue** following the template, in a scratch file you will pass to `gh issue create --body-file`; the record is the filed issue, not the draft. Sections, in order:
+   - **Objective** — `#N` (required)
    - **Business Requirement** — the *why*, in plain language (required)
-   - **Overview** — short technical summary + impact (required)
-   - **Data Requirement** — leave blank unless data availability is already known to matter
-   - **Design** — leave blank or add high-level notes if available
-   - **Definition of done** — end state, proof, ships in; required before a session starts on the objective (see the [issue contract](../../../docs/issue-contract.md#definitions-of-done))
-   - **Tasks** — leave blank (populated by `requirement-tasks` after Design)
-   - **Provenance** — two lines at the foot of the body, after a `---` rule, beside the attribution line
-
-   Say who wrote it and who approved it, and do not conflate them (#215):
-
-   ```
-   Authored by: Claude Code using Fable 5.1
-   Approved by: EMPTY
-   ```
-
-   `Approved by: EMPTY` is the normal, correct value for a requirement you drafted. Write a citation
-   only when a recorded decision or a native GitHub review actually covers it — a decision id
-   (`D0018.1`, preferred because it names what was asked) or `owner/repo#123 review`. Never prose:
-   `node scripts/provenance.mjs check <n>` fails a claim that cannot be shown, and `EMPTY` always
-   passes, so nothing is gained by guessing.
-
-   The trap this exists for is specific and it is one you are in right now. You are usually drafting
-   from something @jwildfire said, and the requirement will contain more than he said — the scope you
-   worked out yourself. That extra scope is invisible once it is filed, and the next agent will read
-   the whole issue as his. When you cite an approval, the third line is required and it is where you
-   name the gap:
-
-   ```
-   Approved by: D0018.1 — @jwildfire, 2026-08-16, in chat
-   Beyond the approval: the spike-harness teardown in Overview — my own judgement, he has not seen it
-   ```
-
-   Do not file a decision artifact merely to have something to cite. If he has not decided, the
-   requirement is unapproved and says so.
+   - **Overview** — the approach in a paragraph, and the repositories the tasks will live in (required)
+   - **Data Requirement** — only when data is involved
+   - **Design** — blank or high-level notes now; populated by `requirement-design` before tasks are filed
+   - **Definition of done** — end state, proof, ships in. Write it so it can fail; it becomes the session's `/goal` condition ([issue contract → Definitions of done](../../../docs/issue-contract.md#definitions-of-done))
+   - **Tasks** — blank; populated by `requirement-tasks`
+   - Footer: a `---` rule and the drafted-by line, nothing else. It names the author only.
 
    **Renderer requirements carry the R widget from the start** (@jwildfire,
-   2026-08-15: "Every renderer gets an R widget"; see #164). A safety.viz
-   renderer requirement must name its `gsm.safety` widget as scoped work — as a
-   sub-issue, or as a separate filed requirement when the widget lands in a
-   different gsm.safety release (requirements tie to one release). "Widget
-   adoption follows in that package's own cadence" is not a valid scope line;
-   gsm.safety's `safety-viz-parity` CI fails on unwrapped renderers whose
-   deferral cites no filed requirement.
+   2026-08-15: "Every renderer gets an R widget"). A safety.viz renderer requirement
+   names its `gsm.safety` widget as scoped work — as a task, or as a separate
+   requirement when the widget lands in a different gsm.safety release.
 
-4. **Scope it to one release before presenting it.** A requirement covers **exactly one release**; if the scope is bigger than one release, draft more than one requirement. The tell is a body that describes phases, or a Tasks section where some items are explicitly "later" — that is two requirements wearing one issue number, and splitting is cheaper now than after the first release ships. See [README — One requirement, one release](../../../README.md#one-requirement-one-release).
+4. **Scope it to one session and one release.** A requirement is the set of tasks one `/goal` run can close and prove — a day or two of work — and covers exactly one release; if it is bigger, draft more than one. Deferring scope off an existing requirement follows the procedure in the contract: note the deferral on the original, file the new requirement with its own milestone, transfer the deferred tasks, close the original with its release.
 
-   When scope is deferred off an **existing** requirement, follow the procedure in that order: note the deferral on the original (what and why), file the new requirement with its own milestone, **transfer** the deferred sub-issues rather than re-filing them, and the original closes with its release. A defect found after release is not deferred scope — it is an ordinary issue against shipped work, and needs no new requirement.
+5. **Present the draft** in the conversation, or as a comment on the objective when the session is unattended, and iterate. Presenting it is not approval; approval is his sign-off comment on the objective once the tree is complete.
 
-5. **Present the draft for review** in the conversation, or as a comment on the objective issue when the session is unattended, and iterate. Presenting it is not approval,
-   and posting it after an unattended session is not approval either. The attribution line names the
-   author only — do not append "and reviewed by @jwildfire" unless he reviewed it, and if he did,
-   record it in `Approved by` where it resolves. 75 of this hub's requirements assert his review in
-   prose and carry no record of it; that is the sentence this convention replaces.
-
-6. **After approval, post** with the required properties: `type:requirement` + `status:planned` + `project:P###` labels, assignee `@me`, and a link to the parent `type:project` issue in the body (the roadmap generator checks for it). Complete the posting checklist (rename draft, share URL).
+6. **Post it**, then link it:
+   ```bash
+   gh issue create -R jwildfire/obot.roadmap --title "Requirement: <title>" --body-file <draft> \
+     --label requirement --label "status: backlog" --milestone <delivery target>
+   ```
+   Link it as a sub-issue of its objective (the `sub-issue-linking` skill) and propose its place in the objective's ordered Requirements list in a comment — the objective body is his to edit.
 
 ## Reference
 
 - [Requirement issue template](../../ISSUE_TEMPLATE/requirement.yml)
-- [README — Requirement lifecycle](../../../README.md#requirement-lifecycle)
-- [`requirement-design`](../requirement-design/SKILL.md) — next lifecycle stage
+- [Issue contract](../../../docs/issue-contract.md) · [Ways of working](../../../docs/ways-of-working.md)
+- [`requirement-design`](../requirement-design/SKILL.md) — next step
