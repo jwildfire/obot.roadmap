@@ -25,8 +25,6 @@ import { esc, age, fmtET, clip, daysAgo } from '../lib/gh.mjs';
 import { siteHeader } from '../lib/nav.mjs';
 import { releaseKey, browserReleaseKeySource } from '../lib/rc.mjs';
 import { T } from '../lib/highlights.mjs';
-import { nowStripHtml, nowStripStyle, nowStripScript } from './nowstrip.mjs';
-import { readConfigCount, CONFIG_COUNT_STALE_DAYS } from '../lib/public-channel.mjs';
 
 const REVIEWER = 'jwildfire';
 const PROJECT_URL = 'https://github.com/users/jwildfire/projects/1';
@@ -44,7 +42,7 @@ const short = (nameWithOwner) => (nameWithOwner || '').split('/')[1] ?? nameWith
 // same list rather than a second computation of it. Two inboxes that disagree
 // would be worse than one, so the briefing cuts what it shows and never
 // changes what counts as waiting.
-export function buildItems({ NOW, reqRes, prRes, relRes, ideaRes, decRes }) {
+export function buildItems({ NOW, reqRes, prRes, relRes, decRes }) {
   const items = [];
 
   // Release candidates: review-requested PRs, plus draft releases deduped
@@ -100,20 +98,6 @@ export function buildItems({ NOW, reqRes, prRes, relRes, ideaRes, decRes }) {
         ? { label: 'Decide in the Q&A thread', href: d.discussion.url }
         : { label: 'Read the artifact and decide', href: artifact },
       cite: { label: d.id ?? d.date ?? 'decision', href: artifact },
-    });
-  }
-
-  // Un-triaged ideas older than the house triage window.
-  for (const idea of ideaRes.value?.open ?? []) {
-    if (daysAgo(idea.createdAt, NOW) <= T.ideaAgeDays) continue;
-    items.push({
-      type: 'triage',
-      since: idea.createdAt,
-      prefix: 'un-triaged',
-      title: idea.title,
-      why: 'Sitting in the ideas inbox with no triage — it becomes work, a note, or a no only when you answer or promote it.',
-      act: { label: 'Answer or promote the idea', href: idea.url },
-      cite: { label: `idea #${idea.number}`, href: idea.url },
     });
   }
 
@@ -258,7 +242,7 @@ function reviewLaneLine(hierRes, proposal) {
 // ------------------------------------------------------------------ recent strip
 // Real counts over the pulse window, from the same bundle the queue reads. A
 // source that failed says so instead of pretending zero happened.
-function recentStrip({ relRes, decRes, ideaRes, NOW }) {
+function recentStrip({ relRes, decRes, NOW }) {
   const parts = [];
   if (relRes.ok) {
     const n = relRes.value.recent.filter((r) => r.publishedAt && daysAgo(r.publishedAt, NOW) <= T.pulseDays).length;
@@ -275,58 +259,20 @@ function recentStrip({ relRes, decRes, ideaRes, NOW }) {
     }).length;
     parts.push(`${n} decision${n === 1 ? '' : 's'} decided`);
   } else parts.push('decisions not readable');
-  if (ideaRes.ok) {
-    const n = ideaRes.value.promoted.filter((d) => d.closedAt && daysAgo(d.closedAt, NOW) <= T.pulseDays).length;
-    parts.push(`${n} idea${n === 1 ? '' : 's'} promoted`);
-  } else parts.push('promoted ideas not readable');
   return `Last ${T.pulseDays} days: ${parts.join(' · ')}. Every event, dated and cited, is on the <a href="wire.html">wire</a>.`;
 }
 
 // ------------------------------------------------------------------------- page
-/**
- * The config bucket, as a count and never as items (#203, BL4).
- *
- * The third of his three buckets — release candidates, decisions, config — and
- * the only one this site cannot show. Each config item names exactly which
- * control stops an agent from acting, so the list is a map of the locks and it
- * lives in a workspace-local file outside every repo; the number reaches this
- * page through data/config-count.json, which carries two integers and a date and
- * is refused by lib/public-channel.mjs if it ever carries anything else.
- *
- * The omission is stated rather than hidden. A bucket that silently vanished from
- * one of the two surfaces would break the spine the surfaces share, and a reader
- * comparing them would be left to guess whether there were no config items or no
- * config section — which are opposite facts.
- */
-function configStrip(count) {
-  const dash = 'the <a href="https://github.com/jwildfire/obot.roadmap/issues/180">Operations Dashboard</a>';
-  if (!count.ok) {
-    return `Config items are cleared on ${dash}, on his own machine. No count has reached this page — `
-      + `${esc(count.why)}, so this page is not saying there are none.`;
-  }
-  const n = count.open;
-  const crit = count.critical ? ` ${count.critical} of them critical.` : '';
-  const when = count.stale
-    ? ` Counted ${esc(fmtET(new Date(count.asOf)))}, which is more than ${CONFIG_COUNT_STALE_DAYS} days ago — treat it as the last reading, not as now.`
-    : '';
-  // Second person, like every other line on this page: its h1 is "Waiting on you".
-  return `<b>${n}</b> item${n === 1 ? '' : 's'} need${n === 1 ? 's' : ''} your keyboard.${crit}${when} `
-    + `What each one is stays off this site by design — every entry names a control that stops an agent, `
-    + `so the text never leaves your machine and only the number crosses. You clear them on ${dash}.`;
-}
-
 export async function render(data) {
-  const configCount = readConfigCount({ now: data.NOW });
-  const { NOW, reqRes, prRes, relRes, ideaRes, decRes, hierRes, proposal, HUB, lightsRes } = data;
+  const { NOW, reqRes, prRes, relRes, decRes, hierRes, proposal, HUB } = data;
   const items = buildItems(data);
   const n = items.length;
-  const allOk = [prRes, relRes, decRes, ideaRes, reqRes].every((r) => r.ok);
+  const allOk = [prRes, relRes, decRes, reqRes].every((r) => r.ok);
 
   const notices = [];
   if (!prRes.ok) notices.push(`${prRes.notice} — review-requested PRs may be missing (the live re-check below still runs).`);
   if (!relRes.ok) notices.push(`${relRes.notice} — draft releases and release decisions are missing.`);
   if (!decRes.ok) notices.push(`${decRes.notice} — open decisions are missing.`);
-  if (!ideaRes.ok) notices.push(`${ideaRes.notice} — un-triaged ideas are missing.`);
   if (!reqRes.ok) notices.push(`${reqRes.notice} — stalled and drifted requirements are missing.`);
 
   const countTxt = n === 1 ? '1 item is waiting' : `${n} items are waiting`;
@@ -334,7 +280,7 @@ export async function render(data) {
 
   const emptyHero = allOk
     ? `<p class="q-zero">Nothing is waiting on you.</p>
-    <p>No reviews, no open decisions, no un-triaged ideas, no stalled work, no release calls. The strip above still says what is running, and the catalog still holds everything that exists.</p>`
+    <p>No reviews, no open decisions, no stalled work, no release calls. The catalog still holds everything that exists.</p>`
     : `<p class="q-zero">Nothing readable is waiting.</p>
     <p>Some sources failed on this build (see the notes above), so the queue may be incomplete rather than clear.</p>`;
 
@@ -421,13 +367,11 @@ export async function render(data) {
 .q-strip h2 { font: 600 .68rem/1.5 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 .3rem; }
 .q-strip p { margin: 0; font-size: .84rem; overflow-wrap: anywhere; }
 
-${nowStripStyle()}
 </style>
 </head>
 <body>
 ${siteHeader({ page: 'queue' })}
 <main class="q-wrap">
-${nowStripHtml({ lightsRes, NOW })}
 <header class="q-head">
   <h1>Waiting on you</h1>
   <p class="q-sum"><span id="q-count">${countTxt}</span><span id="q-longest">${longestTxt}</span></p>
@@ -447,16 +391,12 @@ ${reviewLaneLine(hierRes, proposal)}
 
 <div class="q-strips">
   <section class="q-strip">
-    <h2>Config</h2>
-    <p>${configStrip(configCount)}</p>
-  </section>
-  <section class="q-strip">
     <h2>Recent</h2>
     <p>${recentStrip(data)}</p>
   </section>
   <section class="q-strip">
     <h2>Everything else</h2>
-    <p>Objectives, the requirement hierarchy, every open PR, unreleased work and the ideas queue are on the
+    <p>Objectives, the requirement hierarchy, every open PR and unreleased work are on the
     <a href="catalog.html">catalog</a> — the complete record, filterable by view and repo.</p>
   </section>
 </div>
@@ -474,8 +414,7 @@ ${reviewLaneLine(hierRes, proposal)}
     'sec-requirements': 'catalog.html', 'sec-hierarchy': 'catalog.html',
     'hierarchy-proposed': 'catalog.html', 'sec-goals': 'catalog.html',
     'sec-prs': 'catalog.html', 'sec-upcoming': 'catalog.html',
-    'sec-ideas': 'catalog.html', 'sec-releases': 'catalog.html',
-    'sec-audit': 'catalog.html',
+    'sec-releases': 'catalog.html',
     // The four view deep-links (lib/highlights.mjs) — a shared URL for a
     // particular reading of the inventory.
     live: 'catalog.html', attention: 'catalog.html', pulse: 'catalog.html', all: 'catalog.html',
@@ -491,7 +430,6 @@ ${reviewLaneLine(hierRes, proposal)}
     return;
   }
 
-${nowStripScript()}
 
   // ---- Review re-check: PRs open and close without a push to this repo, and
   // the top of the queue must be as current as a page load. One unauthenticated

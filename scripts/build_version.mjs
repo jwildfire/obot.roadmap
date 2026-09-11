@@ -21,7 +21,6 @@
 // so it carries the boundary like every other. It reaches lib/version.mjs but not
 // lib/repos.mjs, which is where the rest of them pick the guard up, so it says so
 // itself rather than relying on an import it does not make.
-import './lib/local-only-guard.mjs';
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { driftSummary, getVersionState } from './lib/version.mjs';

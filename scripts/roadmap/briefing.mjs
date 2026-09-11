@@ -93,42 +93,10 @@ function section(emoji, label, items, NOW, ordered = true) {
 }
 
 export async function render(data) {
-  const { NOW, prRes, relRes, decRes, ideaRes, reqRes, configRes } = data;
+  const { NOW, prRes, relRes, decRes, reqRes } = data;
   const { buildItems } = await import('./queue.mjs');
   const items = buildItems(data);
   const { rcs, decisions, todos, remainder, overBudget } = cut(items);
-
-  // The count arrives as DATA, read once by the build and handed in like every
-  // other source, rather than being read off disk in here. This page's clock is
-  // injectable, so a renderer that opens a live file holds two clocks nothing
-  // keeps together: on 2026-08-20 the automatic `Config count` commit stamped
-  // the file two days past the clock the test pinned, the age caveat stopped
-  // rendering, the assertion failed, and the site did not deploy for four and a
-  // half hours (#287). With the count injected, a test owns both halves.
-  // A caller that forgets is a hard error. The alternatives — falling back to a
-  // disk read, or to a plausible zero — publish "nothing needs your hands" when
-  // nobody actually looked, which is the silence the strict reader in
-  // lib/public-channel.mjs exists to refuse.
-  if (!configRes || typeof configRes.ok !== 'boolean') {
-    throw new Error('briefing: data.configRes is required — pass readConfigCount({ now: NOW })');
-  }
-  const config = configRes;
-  // The COUNT is the entire permitted payload. That list is local-only by design
-  // and the deploy greps the assembled site for its sentinel, so no item text
-  // reaches this page by any route.
-  // The count carries WHEN IT WAS COUNTED unless it is same-day fresh. It comes
-  // from a committed file that nothing refreshes on a schedule — it updates only
-  // when a session runs tools/config-count by hand — so "9 config items" can be a
-  // day old and read as a current fact. That matters more than tidiness right
-  // now: with obot.agent#206 open, his dashboard shows no config items at all, so
-  // this line is the only surface telling him about them (obot.agent#212).
-  const countAge = config.ok && config.asOf
-    ? Math.floor((NOW - new Date(config.asOf)) / 3600000) : null;
-  const asOf = countAge !== null && countAge >= 6
-    ? ` <span class="b-wait">counted ${countAge >= 48 ? `${Math.floor(countAge / 24)}d` : `${countAge}h`} ago</span>` : '';
-  const configLine = config.ok && config.open > 0
-    ? `  <p class="b-line"><a href="${HUB}/roadmap.html">${config.open} config item${config.open === 1 ? '' : 's'} on your keyboard</a>${asOf}</p>`
-    : '';
 
   const restLine = remainder > 0
     ? `  <p class="b-line"><a href="${HUB}/roadmap.html">${remainder} more waiting — triage, stalled work, release calls</a></p>`
@@ -139,7 +107,7 @@ export async function render(data) {
   // own collectors already carry their notices.
   const failed = [
     ['review-requested PRs', prRes], ['draft releases', relRes],
-    ['decisions', decRes], ['ideas', ideaRes], ['requirements', reqRes],
+    ['decisions', decRes], ['requirements', reqRes],
   ].filter(([, r]) => r && !r.ok).map(([label]) => label);
   const notice = failed.length
     ? `  <p class="b-warn">Incomplete: ${esc(failed.join(', '))} could not be read on this build. Nothing below is a claim that they are clear.</p>`
@@ -147,8 +115,7 @@ export async function render(data) {
 
   // Everything on his plate, not just the two headlines — a footer that counts
   // four beside a page showing eleven teaches him not to trust either number.
-  const waiting = rcs.length + decisions.length + todos.length + remainder
-    + (config.ok ? config.open : 0);
+  const waiting = rcs.length + decisions.length + todos.length + remainder;
   const date = NOW.toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York',
   });
@@ -221,7 +188,6 @@ ${section('🚦', 'Release candidates', rcs, NOW)}
 ${section('🧭', 'Decisions', decisions, NOW)}
 ${section('🙋', 'Also waiting', todos, NOW, false)}
 ${restLine}
-${configLine}
   <p class="b-rec">Overnight: the record of what shipped arrives with the morning fold — until then the <a href="${HUB}/diary/">diary</a> is the archive.</p>
   <p class="b-foot">${waiting} waiting${overBudget ? ', more than this page is meant to hold' : ''} · cumulative, so missing a morning costs nothing · ${esc(fmtET(NOW.toISOString()))} · <a href="${HUB}/roadmap.html">full queue</a></p>
 </main>

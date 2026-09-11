@@ -84,10 +84,12 @@ Two maintainer notes that survive from the earlier build:
   store by `python3 scripts/build_usage_data.py`; the site build renders whatever was
   last committed.
 
-The nightly roadmap audit, its apply lane, the ideas-triage workflow and the
-navigator-era stamps (premise status, config count, session state) belong to the retired
-autonomous prototype and are being retired from this repo under the issue contract, one
-requirement at a time.
+The nightly roadmap audit and its apply lane, the ideas-triage workflow, the local-only
+guard, the premise-status stamp, the config count and the session-state strip belonged to
+the retired autonomous prototype and were removed on 2026-09-10 (Jeremy's call on the
+standards pull request); the site keeps the roadmap and objective pages, the news feed,
+the diary, reports and decision artifacts, the analytics and cost pages, and the status
+dashboard.
 
 # History
 

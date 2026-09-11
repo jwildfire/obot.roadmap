@@ -179,8 +179,7 @@ was more robust than earlier attempts; objectives and memory management were poo
 the effort went into the orchestration itself; @jwildfire had to redirect it constantly;
 and it never produced a release for him to review. It was retired in obot.agent v0.5.0.
 The hub's own scaffold from that era — the nightly audit and its apply lane, the ideas
-triage, the navigator-era stamps — is retired under the same principle, one requirement
-at a time under this contract.
+triage, the navigator-era stamps — was removed on 2026-09-10 under the same principle.
 
 ---
 This document was drafted by Claude Code using Fable 5.1 and reviewed by @jwildfire.

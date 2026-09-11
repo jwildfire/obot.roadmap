@@ -26,7 +26,6 @@ import { esc, fmtET, age, hasToken, day, clip } from '../lib/gh.mjs';
 import { REPOS, ROOT, HUB } from '../lib/repos.mjs';
 import { releaseKey, browserReleaseKeySource } from '../lib/rc.mjs';
 import { hierarchySection } from '../lib/hierarchy/render.mjs';
-import { auditSection } from '../lib/audit/render.mjs';
 import { siteHeader } from '../lib/nav.mjs';
 import {
   VIEWS, DEFAULT_VIEW, goalViews, requirementViews, prViews,
@@ -45,9 +44,6 @@ const RECENT_RELEASES = 10;
 // the diff against that script is about the move and nothing else.
 let NOW = new Date();
 const PROJECT_URL = 'https://github.com/users/jwildfire/projects/1';
-// Heartbeat-published session state (#57 D5): a session-state branch holding one
-// small JSON, fetched client-side so the indicator refreshes without a deploy.
-const SESSION_STATE_URL = `https://raw.githubusercontent.com/${HUB}/session-state/session.json`;
 
 const shortRepo = (nameWithOwner) => nameWithOwner.split('/')[1];
 const stageClass = (stage) => stage.toLowerCase().replace(/ /g, '-');
@@ -320,36 +316,6 @@ function recentSection(res) {
   return section('releases', 'Recent releases', res.value.recent.length, `<div class="rm-rows">\n${html}\n</div>`);
 }
 
-// ---------------------------------------------------------------- ideas
-function ideasSection(res) {
-  if (!res.ok) return section('ideas', 'Ideas', null, '', { notice: res.notice });
-  const { open, promoted, windowDays } = res.value;
-  const openRows = open.map((d) => `  <div class="rm-row" data-repo="${HUB}" data-hl="${openIdeaViews(d, NOW)}">
-    <span class="rm-key"><a href="${d.url}">#${d.number}</a></span>
-    <span class="rm-main">${esc(d.title)}</span>
-    <span class="rm-meta">${age(d.updatedAt)}</span>
-  </div>`).join('\n');
-  const promotedRows = promoted.map((d) => `  <div class="rm-row rm-promoted" data-repo="${HUB}" data-hl="${promotedIdeaViews(d, NOW)}">
-    <span class="rm-key"><a href="${d.url}">#${d.number}</a></span>
-    <span class="rm-main">${esc(d.title)} <span class="rm-anchors">→ <a href="${d.issue.url}">#${d.issue.number}</a></span></span>
-    <span class="rm-meta">${age(d.closedAt)}</span>
-  </div>`).join('\n');
-
-  const body = `<div class="rm-rows">
-${open.length ? openRows : `  ${empty('Inbox empty.')}`}
-</div>
-<div class="rm-sub">
-<h3>Promoted · last ${windowDays} days <span class="rm-count">${promoted.length}</span></h3>
-<div class="rm-rows">
-${promoted.length ? promotedRows : `  ${empty('None promoted in the window.')}`}
-</div>
-</div>`;
-
-  return section('ideas', 'Ideas', open.length, body, {
-    note: `Open threads in the <a href="https://github.com/${HUB}/discussions/categories/ideas">Ideas</a> board, plus what triage promoted to issues.`,
-  });
-}
-
 // ---------------------------------------------------------------- page
 // The staged URL was shared in #57 and in review comments while this page was
 // being built, and again in the D0018 rebuild; keep it resolving to the page it
@@ -379,7 +345,7 @@ export function aliasRedirect() {
 // is proved by diffing the rendered bytes against the page it replaces. Layout
 // that changes output is not cosmetic here.
 export async function render(data) {
-  const { reqRes, prRes, relRes, ideaRes, goalRes, hierRes, decRes, auditLedger, proposal, changelog } = data;
+  const { reqRes, prRes, relRes, goalRes, hierRes, decRes, proposal, changelog } = data;
   NOW = data.NOW ?? new Date();
 
 const auditEntries = [...changelog.entries].sort((a, b) => b.date.localeCompare(a.date));
@@ -477,7 +443,7 @@ const html = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Catalog · obot</title>
-<meta name="description" content="The complete roadmap record: goals, the requirement hierarchy and its review lane, every active requirement, open PRs, upcoming and recent releases, and the ideas queue — filterable by view and repo.">
+<meta name="description" content="The complete roadmap record: objectives, the requirement hierarchy and its review lane, every active requirement, open PRs, upcoming and recent releases, and the ideas queue — filterable by view and repo.">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body class="wide">
@@ -489,7 +455,6 @@ the <a href="wire.html">wire</a>. This is the record both of those read from.</p
 
 <div class="rm-bar">
   <span class="rm-views" id="rm-views" role="group" aria-label="View">${viewChips}</span>
-  <span class="rm-session" id="rm-session" hidden></span>
   <span class="rm-filters" id="rm-filters" role="group" aria-label="Filter by repo">${filterChips}</span>
 </div>
 <p class="rm-blurb" id="rm-blurb"></p>
@@ -498,11 +463,9 @@ ${todoSection(prRes, relRes, decRes)}
 ${goalsSection(goalRes, requirements)}
 ${hierarchySection(hierRes, { requirements, proposal })}
 ${requirementsSection}
-${auditSection(auditLedger, { now: NOW })}
 
 ${prSection(prRes)}
 ${upcomingSection(relRes)}
-${ideasSection(ideaRes)}
 ${recentSection(relRes)}
 
 ${foldedSection}
@@ -629,37 +592,6 @@ ${auditLogHtml}
     if (anchor) anchor.scrollIntoView();
   }
 
-  // Session indicator — published by the session heartbeat to a branch, not by a
-  // deploy, so it stays current between site builds. Renders its own timestamp
-  // rather than claiming to be live: the raw CDN caches for up to 5 minutes.
-  var pill = document.getElementById('rm-session');
-  // The publisher can only fail quietly (a Stop hook must not break a session),
-  // so the page is where a breakage becomes visible: past STALE_MINUTES the pill
-  // stops asserting a live state and says how old the reading is. Showing a
-  // confident "2 working" from a feed that died hours ago is worse than silence.
-  var STALE_MINUTES = 120;
-  fetch(${JSON.stringify(SESSION_STATE_URL)}, { cache: 'no-store' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (s) {
-      if (!s || !s.state) return;
-      var mins = s.updatedAt ? Math.floor((Date.now() - new Date(s.updatedAt)) / 60000) : null;
-      var stale = mins === null || mins > STALE_MINUTES;
-      var idle = s.state === 'idle' || s.state === 'done';
-      var when = mins === null ? 'age unknown'
-        : mins < 1 ? 'just now'
-        : mins < 60 ? mins + 'm ago'
-        : Math.floor(mins / 60) + 'h ago';
-      pill.className = 'rm-session ' + (stale ? 'stale' : idle ? 'idle' : 'live');
-      pill.title = stale
-        ? 'The session feed has not updated recently — it may have stopped publishing.'
-        : 'Published by the session heartbeat.';
-      pill.textContent = stale
-        ? '○ session feed last updated ' + when
-        : (idle ? '○ ' : '● ') + (s.name || 'obot') + ' — ' + (s.detail || s.state) + ' · ' + when;
-      pill.hidden = false;
-    })
-    .catch(function () { /* no session state published yet — stay hidden */ });
-
   // Todo live refresh — the RC PR list re-checks GitHub on load, because PRs
   // open and close without a push to this repo and the section's whole job is
   // "always know what is waiting". One unauthenticated search per page view;
@@ -733,7 +665,7 @@ for <a href="https://github.com/${HUB}/issues/57">requirement #57</a>, re-front-
 `;
 
 const degraded = [
-  ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes], ['goals', goalRes], ['hierarchy', hierRes],
+  ['PRs', prRes], ['releases', relRes], ['goals', goalRes], ['hierarchy', hierRes],
   ['decisions', decRes],
 ].filter(([, r]) => !r.ok).map(([n]) => n);
 const todoRc = rcQueue(prRes, relRes);
@@ -744,8 +676,7 @@ console.log(
   ` + ${decRes.value?.awaiting.length ?? 0} decisions, ` +
   `${active.length} active (+${driftCount} drift${blockedReqs.length ? `, +${blockedReqs.length} board-blocked` : ''}), ${folded.length} folded, ` +
   `${prRes.value?.length ?? 0} PRs, ${relRes.value?.upcoming.length ?? 0} upcoming, ` +
-  `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas, ` +
-  `${auditLedger ? `${auditLedger.counts.total} audit findings` : 'no audit ledger'}` +
+  `${relRes.value?.recent.length ?? 0} releases` +
   (degraded.length ? ` — degraded: ${degraded.join(', ')}` : ''),
 );
 

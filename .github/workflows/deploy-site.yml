@@ -90,21 +90,6 @@ jobs:
           cp -r reports _site/reports
           cp requirements/design/*.html _site/requirements/design/ 2>/dev/null || true
 
-      # THE LOCAL-ONLY BOUNDARY, checked before anything builds (#203).
-      #
-      # Config item text never reaches a public surface — counts only. Four
-      # defences already enforced that (location, sentinel, the deploy grep below,
-      # gitignore) and every one of them sits downstream of the read: they catch a
-      # copy that still carries the marker. A generator that reads the workspace
-      # list and renders its parsed headlines carries no marker and walks through
-      # all four.
-      #
-      # So the guard is upstream now — a public generator physically cannot open a
-      # file outside this repository — and this step is what stops a generator
-      # existing that has not got it. It runs FIRST, so a failure costs a build
-      # rather than a publish.
-      - name: Check the local-only boundary
-        run: node scripts/check_local_only_guard.mjs
 
       # The shared nav (scripts/lib/nav.mjs) into the two hand-written pages.
       # Must run after the copy above, since it rewrites the _site copies in place.
@@ -156,8 +141,6 @@ jobs:
       # The audit reading view (_site/audit/index.html, requirement #92) — the
       # roadmap page's Audit fold is for clearing findings, this page is for
       # reading them. Generated from the same committed ledger.
-      - name: Build audit page
-        run: node scripts/build_audit_page.mjs
 
       # Per-goal pages + goals.json (requirement #53). Goals are the hub's own
       # goal-labeled issues since #53/#71, so no cross-repo checkout is needed.
@@ -218,8 +201,6 @@ jobs:
       # artifact's prose, its recommendation and its recorded decisions are the record.
       # Runs after the decision-status gate so the artifact states it reads have already
       # been checked against the pages they came from.
-      - name: Stamp the premise status onto every decision artifact
-        run: node scripts/stamp_premise_status.mjs
 
       - name: Build news
         run: node scripts/build_news.mjs
@@ -326,10 +307,8 @@ jobs:
           # The queue at roadmap.html: the ranked list container and the NOW
           # strip's live readout. Not a card — zero cards is the goal state.
           have roadmap.html;               says roadmap.html 'id="q-list"'
-                                           says roadmap.html 'id="ns-live"'
           # The wire: the stream container and its own NOW strip.
           have wire.html;                  says wire.html 'id="w-stream"'
-                                           says wire.html 'id="ns-live"'
           # The catalog: the inventory spine, both filters, the Todo section (RC
           # framework — what is waiting on @jwildfire must never silently drop
           # off), the hierarchy review lane, and the audit fold. The audit
@@ -342,19 +321,15 @@ jobs:
                                            says catalog.html sec-todo
                                            says catalog.html sec-hierarchy
                                            says catalog.html hierarchy-proposed
-                                           says catalog.html sec-audit
           # The fragment forwarder on the queue. Published pages link into
           # sections that now live on the catalog (README's #sec-audit, the
           # 2026-07-27 diary's #hierarchy-proposed); without it those land on a
           # real page with no such section and nothing looks broken.
                                            says roadmap.html sec-hierarchy
                                            says roadmap.html sec-usage
-          have audit/findings.json
           # ap-queue is the container the decision table renders into, and
           # ap-data the embedded ledger it renders from — between them they say
           # the page is the queue (#109) and that it carries real findings.
-          have audit/index.html;           says audit/index.html ap-queue
-                                           says audit/index.html ap-data
           # roadmap-next.html was the URL the catalog was staged at during its
           # own review in July and was shared in #57; it still redirects there.
           have roadmap-next.html;          says roadmap-next.html catalog.html
@@ -387,20 +362,6 @@ jobs:
           # the registry rather than asserted on one page: a regex that stopped
           # matching would leave the artifacts looking exactly as they did before this
           # existed, which is the silent-success shape this repo keeps paying for.
-          arts=$(node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync("reports/decisions/registry.json","utf8")).artifacts.length))')
-          strips=$(grep -l 'data-pcx' _site/reports/decisions/*/index.html 2>/dev/null | wc -l | tr -d ' ')
-          [ "$strips" = "$arts" ] || { echo "::error title=Premise strip missing::$strips of $arts decision artifacts carry the premise strip"; fail=1; }
-          # And it is above the argument rather than in a footer, which is the whole
-          # placement decision: an expired premise is a reason to distrust what
-          # follows, so it has to come before what follows. Asserted against the
-          # page's own headline rather than a byte offset, since each artifact
-          # carries its own inline stylesheet and they are not the same length.
-          for f in _site/reports/decisions/*/index.html; do
-            b=$(grep -n 'data-pcx' "$f" | head -1 | cut -d: -f1)
-            h=$(grep -n '<h1' "$f" | head -1 | cut -d: -f1)
-            [ -n "$b" ] && [ -n "$h" ] && [ "$b" -lt "$h" ] \
-              || { echo "::error title=Premise strip buried::$f does not carry the premise strip above its headline"; fail=1; }
-          done
 
           # The briefing (#247): the one URL he bookmarks on his phone. Asserting
           # the two headline sections rather than the page alone, because an empty
@@ -426,7 +387,7 @@ jobs:
           # stale hand-written copy, and the roadmap group — and only the
           # roadmap group — carries the second row.
           for f in index.html roadmap.html wire.html catalog.html news.html status.html \
-                   audit/index.html analytics/index.html diary/index.html goals/index.html \
+                   analytics/index.html diary/index.html goals/index.html \
                    decisions/index.html; do
             # Exactly one shared top nav — two would mean a hand-written copy
             # survived alongside the injected one.
@@ -480,7 +441,7 @@ jobs:
           grep -q '"ci": true' _site/version.json \
             || { echo "::error title=Unstamped build::_site/version.json reports ci=false — the Stamp the build step did not reach the generators"; fail=1; }
 
-          for f in roadmap.html wire.html catalog.html status.html audit/index.html \
+          for f in roadmap.html wire.html catalog.html status.html \
                    analytics/index.html goals/index.html decisions/index.html; do
             grep -q 'nav class="site sub"' "_site/$f" \
               || { echo "::error title=Missing sub-nav::_site/$f is in the roadmap group but has no second nav row"; fail=1; }
@@ -555,17 +516,6 @@ jobs:
       # target's bytes as a regular file. Reproduced both halves on 2026-08-17: the
       # -r grep passed and the tar shipped the content. `-R` follows symlinks in
       # recursion, so grep and tar finally agree about what _site contains.
-      - name: Guard against local-only content
-        run: |
-          M1="LOCAL-ONLY: never publish"
-          M2=", never commit"
-          hits=$(grep -RlF "${M1}${M2}" _site || true)
-          if [ -n "$hits" ]; then
-            echo "$hits"
-            echo "::error title=Local-only content in site::the local blockers sentinel appears in the assembled site (files above) — deploy blocked"
-            exit 1
-          fi
-          echo "local-only guard passed"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
