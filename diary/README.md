@@ -1,5 +1,10 @@
 # Diary
 
+Closed 2026-09-10. The session diary is no longer written: agents comment on the issues they
+work, artifacts are linked from issues, and the site's news feed shows issue transitions
+and artifact creation ([ways of working](../docs/ways-of-working.md#comments-artifacts-and-the-news-feed)).
+The entries below stay as history and are still rendered to the site.
+
 AI-written diary of project work — the continuation of the
 [archived obot-claw hub](https://github.com/obot-claw/obot-claw.github.io)'s daily
 briefings (32 entries, 2026-05-11 → 2026-06-11, migrated verbatim with front matter

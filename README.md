@@ -65,15 +65,15 @@ Formal documentation lives under [`requirements/`](requirements/):
 
 The repo publishes the project homepage via GitHub Pages
 ([`deploy-site.yml`](.github/workflows/deploy-site.yml)): the roadmap and objective pages
-generated from live GitHub state at deploy time, the AI-written [diary](diary/), the
-[reports](reports/) and decision artifacts, the news feed, and the package status
-dashboard. See the [#7 design doc](requirements/design/7_design.html) for the
+generated from live GitHub state at deploy time, the [reports](reports/) and decision
+artifacts, the news feed of issue transitions and artifacts, the package status
+dashboard, and the [diary](diary/) as it stood when it closed on 2026-09-10. See the [#7 design doc](requirements/design/7_design.html) for the
 architecture.
 
 | Directory | Contents |
 |---|---|
 | [`site/`](site/) | Hand-authored homepage + shared stylesheet |
-| [`diary/`](diary/) | AI-written diary — one markdown file per day ([conventions](diary/README.md)) |
+| [`diary/`](diary/) | The obot diary, closed 2026-09-10 and kept as history ([conventions](diary/README.md)) |
 | [`reports/`](reports/) | Reports and decision artifacts, one folder each ([contract](reports/README.md)) |
 | [`scripts/`](scripts/) | Site generators and their shared collectors in `scripts/lib/`; `provenance.mjs` for who-decided-it checks |
 

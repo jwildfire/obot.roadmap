@@ -6,7 +6,8 @@ This is the hub of Jeremy Wildfire's open-source safety-graphics modernization p
 (the "obot" program): its objectives, requirements and designs, the standards every session
 works under, and the site that reports on it. An agent working here plans and tracks —
 files and edits issues under the contract, captures designs, decomposes requirements
-into tasks, writes reports and the diary — and follows the same standards it asks every
+into tasks, comments on the issues it works and writes reports when a comment cannot carry
+it — and follows the same standards it asks every
 other repository to follow.
 
 IMPORTANT: the three documents under [`docs/`](docs/) are the standards and they are
@@ -28,8 +29,8 @@ in its requirement lifecycle; where the two differ, the documents above win.
 Standing grants from @jwildfire (2026-07-04, unchanged by the 2026-09-10 move to requirement sessions):
 
 - Standard updates need no prior approval — filing and editing issues under the
-  contract, requirement lifecycle updates, design and dataspec documents, diary entries,
-  reports, site content, and direct commits to `main` for those.
+  contract, requirement lifecycle updates, design and dataspec documents, reports, site
+  content, and direct commits to `main` for those.
 - Never delete anything without explicit approval — no deleting files, issues, releases
   or branches with unmerged work, and no history rewrites or force-pushes. Cite the
   approval when acting on one.
@@ -70,15 +71,20 @@ reconstruct it from memory or from an existing issue.
   RC and its close, always removing the previous one ([issue contract → Status](docs/issue-contract.md#status)).
   The project board is retired; the site's catalog is the tracker.
 
-## Diary
+## Comments first, artifacts when needed
 
-Before ending a substantive working session, write that session's diary entry —
-`diary/YYYY-MM-DD.md`, or `diary/YYYY-MM-DD-N.md` for a later session the same day —
-in the shape of the existing entries: what needs @jwildfire first (release candidates
-waiting, decisions needed), then what landed, decisions made, and what comes next. Never
-a filler entry for a day without activity. The diary feeds the R/Pharma keynote and is
-rendered to the site at deploy time; [diary/README.md](diary/README.md) has the
-conventions.
+The record of work is the issue thread. An agent comments on the issue it is working —
+at start, at each close with the evidence its definition of done asked for, nightly on the
+requirement, and whenever a decision or a blocker lands — under the shapes in the
+[issue contract](docs/issue-contract.md#comments). A standard comment suffices for almost
+everything. When it cannot carry the content — a page with figures, a design, a decision
+with options laid out — the agent writes an artifact under `reports/` or
+`requirements/design/`, links it from the issue it serves, and the artifact links back.
+The site's [news feed](https://jwildfire.github.io/obot.roadmap/news.html) shows issue
+transitions and artifact creation; nothing else needs writing to be seen.
+
+The session diary closed on 2026-09-10; `diary/` stays as history and is still rendered,
+but no new entries are written ([diary/README.md](diary/README.md)).
 
 ## Identity
 

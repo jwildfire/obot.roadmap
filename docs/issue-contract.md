@@ -179,7 +179,7 @@ phases of the [ways of working](ways-of-working.md#the-three-phases):
 | Backlog | prep | the requirement is filed; its tree or its definition of done is incomplete | whoever files it |
 | Ready | prep → execution | the Ready gate below holds | the prep session, with @jwildfire |
 | In session | execution | the session posts its start comment | the session |
-| Review | execution → review | a release-candidate PR carrying its `Closes` line is open | the session, when it opens the RC |
+| Review | execution → review | a release-candidate PR carrying its `Closes` line is ready for review — CI green, ultrareview run and every finding resolved, @jwildfire requested | the session, when it marks the RC ready |
 | Released | review | closed with its release | @jwildfire at the tag, or the session at close |
 
 The Ready gate — all of these, checked by the prep session and re-checked by the

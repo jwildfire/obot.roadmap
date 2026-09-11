@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// Build _site/news.html — one feed of recent updates across four sources:
-//   blog     — keynote blog posts from jwildfire.github.io (atom feed)
-//   diary    — obot diary entries (diary/*.md)
-//   artifact — agent artifacts: reports/* and requirements/design/*.html
-//   release  — GitHub releases across the portfolio repos
+// Build _site/news.html — one feed of recent updates across five sources:
+//   transition — issue transitions on the hub: a requirement or objective filed,
+//                moved between status labels, closed or reopened (issue events)
+//   artifact   — agent artifacts: reports/* and requirements/design/*.html
+//   release    — GitHub releases across the portfolio repos
+//   blog       — keynote blog posts from jwildfire.github.io (atom feed)
+//   diary      — the obot diary (diary/*.md), closed 2026-09-10 and kept as history
 // A sidebar filters the feed by type and by month (client-side, no data reload).
 // Artifact dates come from git history — the deploy checkout needs fetch-depth: 0.
 import fs from 'node:fs/promises';
@@ -21,11 +23,14 @@ const BLOG_FEED = 'https://jwildfire.github.io/feed.xml';
 const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 
 const TYPES = {
-  blog: { label: 'Blog post', plural: 'Blog posts' },
-  diary: { label: 'obot diary', plural: 'obot diary' },
+  transition: { label: 'Issue transition', plural: 'Issue transitions' },
   artifact: { label: 'Agent artifact', plural: 'Agent artifacts' },
   release: { label: 'Release', plural: 'Releases' },
+  blog: { label: 'Blog post', plural: 'Blog posts' },
+  diary: { label: 'obot diary', plural: 'obot diary (to 2026-09-10)' },
 };
+const HUB_REPO = 'jwildfire/obot.roadmap';
+const FEED_DAYS = 183;
 
 const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const unent = (s = '') => s
@@ -185,6 +190,70 @@ async function artifactItems() {
   return items;
 }
 
+// --- issue transitions ---------------------------------------------------------------
+// The hub's issue events are the record of a requirement's life under the issue
+// contract: filed (the `requirement` / `objective` label lands with the template),
+// moved between `status:` labels by the session, closed with its release. Each is a
+// row. A day on which more than ten requirements move to the same status is a bulk
+// operation — the night the labels replaced the project board — and is one row, so
+// the feed says what happened without drowning the month in it.
+const STATUS_RE = /^status:\s*(.+)$/i;
+const BULK_THRESHOLD = 10;
+async function transitionItems() {
+  const headers = { 'Accept': 'application/vnd.github+json', 'User-Agent': 'obot-news-builder' };
+  if (TOKEN) headers.Authorization = `Bearer ${TOKEN}`;
+  const cutoff = day(new Date(Date.now() - FEED_DAYS * 86400000).toISOString());
+  const events = [];
+  try {
+    for (let page = 1; page <= 25; page += 1) {
+      const res = await fetch(`https://api.github.com/repos/${HUB_REPO}/issues/events?per_page=100&page=${page}`, { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const batch = await res.json();
+      if (!batch.length) break;
+      events.push(...batch);
+      if (day(batch[batch.length - 1].created_at) < cutoff) break;
+    }
+  } catch (err) {
+    console.warn(`news: issue events unavailable (${err.message}); continuing without transitions`);
+    return [];
+  }
+  const rows = [];
+  for (const e of events) {
+    const issue = e.issue;
+    if (!issue || day(e.created_at) < cutoff) continue;
+    const names = (issue.labels || []).map((l) => (l.name || '').toLowerCase());
+    const kind = names.includes('objective') || names.includes('goal') ? 'Objective'
+      : names.includes('requirement') ? 'Requirement' : null;
+    if (!kind) continue;
+    const date = day(e.created_at);
+    const title = clip((issue.title || '').replace(/^(Requirement|Objective|Goal):\s*/i, ''), 120);
+    const base = { type: 'transition', date, url: issue.html_url, summary: title };
+    if (e.event === 'labeled' && e.label) {
+      const m = (e.label.name || '').match(STATUS_RE);
+      if (m) rows.push({ ...base, title: `${kind} #${issue.number} → ${m[1]}`, group: `${date}|${m[1].toLowerCase()}` });
+      else if (/^(requirement|objective)$/i.test(e.label.name)) rows.push({ ...base, title: `${kind} #${issue.number} filed` });
+    } else if (e.event === 'closed') {
+      rows.push({ ...base, title: `${kind} #${issue.number} closed` });
+    } else if (e.event === 'reopened') {
+      rows.push({ ...base, title: `${kind} #${issue.number} reopened` });
+    }
+  }
+  const groups = new Map();
+  for (const r of rows) if (r.group) groups.set(r.group, (groups.get(r.group) || 0) + 1);
+  const out = rows.filter((r) => !r.group || groups.get(r.group) <= BULK_THRESHOLD).map(({ group, ...r }) => r);
+  for (const [g, n] of groups) {
+    if (n <= BULK_THRESHOLD) continue;
+    const [date, status] = g.split('|');
+    out.push({
+      type: 'transition', date,
+      title: `${n} requirements → ${status}`,
+      url: `https://github.com/${HUB_REPO}/issues?q=${encodeURIComponent(`label:"status: ${status}"`)}`,
+      summary: 'A bulk move on one day, shown as one row.',
+    });
+  }
+  return out;
+}
+
 // --- releases --------------------------------------------------------------------
 async function releaseItems() {
   const headers = { 'Accept': 'application/vnd.github+json', 'User-Agent': 'obot-news-builder' };
@@ -233,7 +302,7 @@ function renderItem(it) {
   </article>`;
 }
 
-const all = (await Promise.all([blogItems(), diaryItems(), artifactItems(), releaseItems()]))
+const all = (await Promise.all([transitionItems(), artifactItems(), releaseItems(), blogItems(), diaryItems()]))
   .flat()
   .filter((it) => it.date)
   .sort((a, b) => b.date.localeCompare(a.date));
@@ -263,8 +332,10 @@ const html = `<!DOCTYPE html>
 <body>
 ${siteHeader({ page: 'news' })}
 <h1>News</h1>
-<p class="meta">One feed for the whole portfolio: keynote blog posts, the obot diary, agent
-artifacts (reports and design docs), and releases across the project repos.</p>
+<p class="meta">One feed for the whole portfolio: requirements and objectives filed, moved
+between statuses, and closed; agent artifacts (reports and design docs); releases across
+the project repos; keynote blog posts; and the obot diary as it stood when it closed on
+2026-09-10.</p>
 <div class="news-layout">
 <aside class="news-sidebar">
   <div class="filter-group" id="type-filters">

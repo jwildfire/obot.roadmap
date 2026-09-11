@@ -28,7 +28,7 @@ are the [developer guidelines](developer-guidelines.md).
 | Phase | Where | Who | `status:` label moves | What happens |
 |---|---|---|---|---|
 | 1 · Prep | a session in the `obot.roadmap` cloud environment | agent and @jwildfire together — active collaboration | Backlog → Ready | the requirement is drafted, designed and decomposed with the hub's `requirement-drafting`, `requirement-design` and `requirement-tasks` skills; tasks are filed in their repositories with definitions of done and milestones; the objective's tree is signed off; the Ready gate is checked and the status set |
-| 2 · Execution | a session in the repository's cloud environment | the agent, semi-autonomously; @jwildfire steers on the issue or in the session | Ready → In session → Review | the `requirement-session` skill: set `/goal` from the requirement's definition of done, work the tasks through auto-merging PRs, comment nightly, open the release candidate |
+| 2 · Execution | a session in the repository's cloud environment | the agent, semi-autonomously; @jwildfire steers on the issue or in the session | Ready → In session → Review | the `requirement-session` skill: set `/goal` from the requirement's definition of done, work the tasks through auto-merging PRs, comment nightly, open the release candidate as a draft, run ultrareview on it and resolve every finding, then mark it ready for him |
 | 3 · Review | GitHub | mostly @jwildfire | Review → Released | the RC PR with its demo page and notes; his approving review merges it; the tag closes the requirement |
 
 An execution session that finds its requirement still in Backlog has a prep job in front
@@ -109,8 +109,9 @@ Exactly three things reach him:
 
 1. Trees, for sign-off — a comment on the objective issue covering its requirements and tasks.
 2. Blocked questions — one per blocked issue, answered on the issue.
-3. Release-candidate pull requests — each with a demo page and release notes, merged
-   only on his approving review, which the release branch's ruleset requires.
+3. Release-candidate pull requests — each with a demo page, release notes and an
+   ultrareview whose findings are all resolved, merged only on his approving review,
+   which the release branch's ruleset requires.
 
 Increment pull requests never reach him: they merge on green checks. A session that
 finds itself wanting his opinion on an increment has a blocked question, not a review
@@ -177,7 +178,16 @@ drafted with `Approved by: EMPTY` and the gaps stated, and his sign-off closes t
 Full rules for release candidates, notes, demo pages and rulesets:
 [developer guidelines → Releases](developer-guidelines.md#releases).
 
-## Reports and artifacts
+## Comments, artifacts and the news feed
+
+The record of work is the issue thread: a standard comment on the issue being worked, under
+the shapes in the [issue contract](issue-contract.md#comments), suffices for almost
+everything — start, progress, evidence at close, a decision, a blocker. There is no
+session diary. An artifact is for what a comment cannot carry — a page with figures, a
+design, a decision with its options — and it is always linked from the issue it serves,
+with the issue linked back. The site's news feed shows issue transitions (filed, moved
+between statuses, closed) and artifact creation, so the basics are visible without any
+other writing; weekly round-ups, podcast episodes and the like are additions for later.
 
 Anything written for him lives on this hub's site: reports under `reports/`, designs
 under `requirements/design/`, decisions under `reports/decisions/`. Each is a

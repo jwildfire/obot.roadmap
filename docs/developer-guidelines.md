@@ -98,7 +98,7 @@ after its PR merges; never remove another session's.
 | | Increment PR | Release-candidate PR |
 |---|---|---|
 | Base | integration branch | release branch |
-| Opened | non-draft, auto-merge enabled | non-draft, @jwildfire requested as reviewer |
+| Opened | non-draft, auto-merge enabled | as a draft; marked ready and @jwildfire requested only after the ultrareview gate below |
 | Reviewer | nobody — never assign or request him | @jwildfire, always |
 | Merges | on green checks, by GitHub | on his approving review, by him |
 | Body | exec summary; `Closes <repo>#<task>`; the definition-of-done evidence; details | the release shape under [Releases](#releases) |
@@ -258,7 +258,17 @@ deployed site:
   opens and sits on every issue the release delivers, moved forward off the wave that
   scoped it; the RC body lists them all with `Closes` lines. An issue only partly
   delivered keeps the milestone, stays open, and gets a comment naming what remains.
-- The gate: CI green on the head commit and, for a chart, the definition of done above.
+- The gate, in order: CI green on the head commit; for a chart, the definition of done
+  above; and an ultrareview with every finding resolved. Ultrareview is Claude Code's
+  multi-agent cloud review — `claude ultrareview <PR#> --post` from a script or session,
+  or `/code-review ultra <PR#> --post` inside one — which posts its verified findings on
+  the PR as one comment. The session fixes each finding and pushes, or replies under the
+  comment saying why a finding does not apply, until none is open; only then does it mark
+  the RC ready, request @jwildfire's review and move the requirement to `status: review`.
+  A release candidate is never presented to him with an unresolved ultrareview finding.
+  Ultrareview bills as usage credits after the free runs (typically $5–25 a run), so the
+  account's usage credits must be on; one run per RC, re-run only after a change large
+  enough to invalidate the first.
 - After the tag: the hub requirements it delivered close with their proof comments and
   their label moves to `status: released`, and the requirement's nightly comment reports
   them under Complete. Publishing stays human.
