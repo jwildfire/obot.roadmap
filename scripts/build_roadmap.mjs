@@ -39,11 +39,8 @@ import { collectRequirements } from './lib/collect/requirements.mjs';
 import { collectOpenPRs } from './lib/collect/prs.mjs';
 import { collectReleases } from './lib/collect/releases.mjs';
 import { collectDecisions } from './lib/collect/decisions.mjs';
-import { collectIdeas } from './lib/collect/ideas.mjs';
 import { collectGoals } from './lib/collect/goals.mjs';
 import { collectHierarchy } from './lib/collect/hierarchy.mjs';
-import { collectRepoLights, SESSION_STATE_URL } from './roadmap/nowstrip.mjs';
-import { readConfigCount } from './lib/public-channel.mjs';
 
 import * as queue from './roadmap/queue.mjs';
 import * as wire from './roadmap/wire.mjs';
@@ -72,37 +69,22 @@ async function readJsonOr(rel, fallback) {
 const NOW = new Date();
 
 const [
-  reqRes, prRes, relRes, ideaRes, goalRes, hierRes, decRes, lightsRes, auditLedger, proposal, changelog,
+  reqRes, prRes, relRes, goalRes, hierRes, decRes, proposal, changelog,
 ] = await Promise.all([
   settle('Requirements', collectRequirements),
   settle('Open PRs', collectOpenPRs),
   settle('Releases', collectReleases),
-  settle('Ideas', collectIdeas),
   settle('Goals', collectGoals),
   settle('Hierarchy', collectHierarchy),
   settle('Decisions', collectDecisions),
-  settle('Repo activity', () => collectRepoLights(REPOS)),
-  // The audit ledger (#92) is a committed file written by the nightly audit and
-  // the apply lane; absent renders as "no audit has run yet", not a missing
-  // section. The hierarchy proposal is the same kind of file — absent renders an
-  // empty proposal, because the Current tree is still the truth worth publishing.
-  readJsonOr('site/audit/findings.json', null),
+  // The hierarchy proposal is a committed file — absent renders an empty
+  // proposal, because the Current tree is still the truth worth publishing.
   readJsonOr('scripts/roadmap-proposal.json', { links: [], flags: [] }),
   readJsonOr('site/roadmap-changelog.json', { entries: [] }),
 ]);
 
-// The config count is read ONCE here, with the build's own clock, and handed to
-// the pages - so the clock and the file's date are read together. A page that
-// opens the file for itself can be handed a different clock than the file it
-// reads, which is how the briefing's test went red on a routine count refresh
-// and stopped the site deploying for four and a half hours (#287). The count,
-// and never any item text, is the whole permitted payload; the reader in
-// lib/public-channel.mjs is what enforces that.
-const configRes = readConfigCount({ now: NOW });
-
 const data = {
-  NOW, reqRes, prRes, relRes, ideaRes, goalRes, hierRes, decRes, lightsRes,
-  configRes, auditLedger, proposal, changelog, HUB, REPOS, SESSION_STATE_URL,
+  NOW, reqRes, prRes, relRes, goalRes, hierRes, decRes, proposal, changelog, HUB, REPOS,
 };
 
 const outDir = path.join(ROOT, '_site');
@@ -165,8 +147,8 @@ ${label}: <a href="${href}">${to}</a>.</p>
 }
 
 const degraded = [
-  ['requirements', reqRes], ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes],
-  ['goals', goalRes], ['hierarchy', hierRes], ['decisions', decRes], ['repo activity', lightsRes],
+  ['requirements', reqRes], ['PRs', prRes], ['releases', relRes],
+  ['goals', goalRes], ['hierarchy', hierRes], ['decisions', decRes],
 ].filter(([, r]) => !r.ok).map(([n]) => n);
 
 console.log(

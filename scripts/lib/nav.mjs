@@ -68,9 +68,7 @@ const TOP = [
 const SUB = [
   { key: 'queue', label: 'Queue', href: 'roadmap.html', spine: true, blurb: 'What needs you — release candidates, then decisions, longest wait first' },
   { key: 'wire', label: 'Wire', href: 'wire.html', spine: true, blurb: 'What changed — the last 7 days, newest first' },
-  { key: 'agents', label: 'Agents', href: 'roadmap.html#now', spine: true, blurb: 'What is running — counts only here; the fleet itself is on the local dashboard' },
-  { key: 'catalog', label: 'Catalog', href: 'catalog.html', spine: true, blurb: 'The complete record — goals, requirements, hierarchy, PRs, releases, ideas' },
-  { key: 'audit', label: 'Audit', href: 'audit/index.html', blurb: 'Convention findings from the nightly audit' },
+  { key: 'catalog', label: 'Catalog', href: 'catalog.html', spine: true, blurb: 'The complete record — objectives, requirements, hierarchy, PRs, releases' },
   { key: 'analytics', label: 'Analytics', href: 'analytics/index.html', blurb: 'Charts — token and dollar cost' },
   { key: 'status', label: 'Status', href: 'status.html', blurb: 'Per-repo releases, milestones, PR activity' },
   { key: 'decisions', label: 'Decisions', href: 'decisions/index.html', blurb: 'Every call @jwildfire has made, newest first' },

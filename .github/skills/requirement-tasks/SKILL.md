@@ -22,37 +22,50 @@ Adapted from [gsm.roadmap's requirement-tasks skill](https://github.com/Gilead-B
 
    **Check the decomposition fits one release.** A requirement covers exactly one release, so if the sub-issues you are about to draft cannot plausibly ship together, that is the moment to split — before any of them exist. Draft only the ones for this release; the rest become a second requirement, filed now with its own milestone, not a "phase 2" note in the body. See [README — One requirement, one release](../../../README.md#one-requirement-one-release).
 
-3. **Draft each sub-issue.** Follow the gsm.agent draft-file convention: save under `drafts/{repo}/ISSUE_N_{slug}.md` in the gsm.agent clone, with the `STATUS:` and `GITHUB_PROPERTIES:` headers. Each draft includes:
+3. **Draft each sub-issue** in the task shape of the [issue contract](../../../docs/issue-contract.md#task-issues) — a `Parent:` line, `### What changes`, `### Definition of done` — in a scratch file you will pass to `gh issue create --body-file`:
    - **Title** — `{verb} {what}` in the target repo (e.g. `Extract histogram module into safety.viz`)
    - **Description** — what changes, acceptance criteria, and a link back to the parent (`Parent: jwildfire/obot.roadmap#{N}`)
    - **Target repo** — exactly one
    - **Labels** — repo-appropriate (defer to the target repo's conventions)
-   - **Attribution line** — per the gsm.agent conventions. It names the author and nothing else; whether
-  @jwildfire approved anything is a separate fact, and it lives on the parent requirement's
-  `Approved by` line (#215)
+   - **Attribution line** — the drafted-by line after a `---` rule; it names the author only
 
-Before decomposing, run `node scripts/provenance.mjs resolve <parent number>`. A sub-issue inherits
-whatever authority its parent has, and if the parent's approval is `EMPTY` then so is the sub-issue's
-— which matters the moment a task is approval-gated. A worker briefed from #211 prepared to delete
-files because the requirement it came from read like settled intent; the requirement was the
-Navigator's own, and the task said nothing to correct that impression.
+Before decomposing, check whether the objective's tree is signed off (his comment on the
+objective). If it is not, the tasks are filed as proposals and the objective comment asking for
+sign-off names them.
 
 If a task is approval-gated (a deletion, a merge to a protected surface, anything an invariant names),
 write the citation into the task itself — the specific approval, not the parent's issue number.
 
-4. **Present the drafts for review** with the `issue-review` skill before posting.
+4. **Present the drafts for review** in the conversation, or as a comment on the requirement when the session is unattended, before posting.
 
 5. **Post the sub-issues** to their target repos:
    ```
-   obot.agent/scripts/obot-gh issue create -R jwildfire/<repo> --title "<title>" --body-file <draft_path> --label <labels> --assignee jwildfire
+   gh issue create -R jwildfire/<repo> --title "<title>" --body-file <draft_path> --label <labels> --milestone <release>
    ```
-   The wrapper mints an `obotclaw[bot]` token, so GitHub records the bot as the actor rather than @jwildfire ([obot.agent#197](https://github.com/jwildfire/obot.agent/issues/197)). The assignee is spelled out because `@me` cannot work under it: a GitHub App bot is not an assignable user at all — `GET /repos/jwildfire/obot.roadmap/assignees/obotclaw[bot]` is a 404.
+   The actor is the connected GitHub account; the drafted-by line at the foot of the body records authorship. Give every task its release milestone here — a task with no milestone is not pickable.
 
 6. **Link each posted sub-issue to the parent** using the `sub-issue-linking` skill (gsm.agent). Verify each child appears under the parent in the GitHub Relationships UI.
 
-7. **Mirror the URLs into the parent's Sub-issues section** — append one line per sub-issue URL via `obot-gh issue edit --body-file` (draft-sync convention). This is what the roadmap generator reads; skipping it means the rollup shows no tasks.
+7. **Mirror the URLs into the parent's Sub-issues section** — append one line per sub-issue URL via `gh issue edit --body-file` (draft-sync convention). This is what the roadmap generator reads; skipping it means the rollup shows no tasks.
 
 8. **Summarize** the result: parent #, list of posted sub-issues (`repo#N — title`), and links to each. The rollup refreshes on the next push to `main` (the Deploy site workflow runs `scripts/build_roadmap_next.mjs`); no manual trigger exists.
+
+## The Ready gate
+
+Decomposition ends with the requirement Ready, or with a comment saying what stops it. Check,
+in order, and set the board status only when all four hold:
+
+1. The requirement's Design and Definition of done sections are populated.
+2. Every task is linked as a sub-issue and carries its own definition of done.
+3. Every task carries a milestone in its repository (`gh issue view <n> -R <repo> --json milestone`),
+   and the requirement carries the hub's delivery-target milestone. No milestone, no Ready.
+4. The objective's tree is signed off by @jwildfire in a comment on the objective.
+
+Then move the requirement to ready — one status label at a time:
+
+```bash
+gh issue edit <n> -R jwildfire/obot.roadmap --add-label "status: ready" --remove-label "status: backlog"
+```
 
 ## Deferring a sub-task after the fact
 
@@ -64,7 +77,7 @@ When a sub-issue will not make the requirement's release, it moves — the requi
 4. **Correct any milestone that now names a release the work did not ship in** — a sub-issue milestoned for a shipped release it missed is a false record.
 5. **Close the original requirement** with the release it delivered, and set its board Status to Released.
 
-Two cases need no new requirement: a **defect found after release** (an ordinary issue against shipped work — re-home it to the goal), and scope that **already has a requirement of its own** and was merely nested (re-home it to the goal).
+Two cases need no new requirement: a **defect found after release** (an ordinary issue against shipped work — re-home it to the objective), and scope that **already has a requirement of its own** and was merely nested (re-home it to the objective).
 
 Implementation of each sub-issue is then a `/tdd` run in the target repo — there is no separate implementation skill.
 

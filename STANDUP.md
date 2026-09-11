@@ -1,49 +1,32 @@
 # The spoken standup
 
-**This file is the address, not the standup.** The standup itself is regenerated every
-five minutes and lives here, as plain text with no JavaScript and nothing to render:
+This file is the address, not the standup. The standup itself is rendered nightly and
+lives here, as plain text with no JavaScript and nothing to render:
 
 <https://raw.githubusercontent.com/jwildfire/obot.roadmap/session-state/standup.md>
 
 Fetch that URL — or read `standup.md` on this repository's `session-state` branch — and
-read it aloud. It answers four questions in his terms: what is running, what is blocked,
-what needs a decision from him and where to answer it, and which release candidates are
-waiting on his review. It states its own age at the top, and it says in one sentence what
-it deliberately leaves out.
-
-## Why it is not on the site
-
-Every path the Pages deploy watches rebuilds the whole site, so a file rewritten every
-five minutes would rebuild the world all night and bury this repository's history. It is
-published to the orphan `session-state` branch instead — the same lane the roadmap page's
-session indicator already uses — where it is fetchable as `text/plain` and cached for
-about as long as the cadence that writes it.
-
-`roadmap.html` on the published site is not a substitute: it renders client-side and says
-so in its own text, so anything that fetches it as text gets the shell rather than the
-readout.
+read it aloud. It answers three questions in @jwildfire's terms: which objectives are
+complete, in progress or blocked; what questions are waiting for him, one per blocked
+issue; and which release candidates are waiting on his review.
 
 ## Who writes it
 
-`obot.agent/tools/voice/standup.mjs` composes it and `obot.agent/scripts/obot-standup`
-publishes it, on the Navigator sweep's five-minute cadence. Every line is derived — from
-`navigator-state.md`, this repository's decision registry, the local episode ledger and
-the machine's job records. Nothing in it is hand-maintained, and an edit made to the
-published copy is overwritten on the next pass.
+A scheduled Claude Code cloud routine on this repository
+([obot.agent `routines/standup.md`](https://github.com/jwildfire/obot.agent/blob/main/routines/standup.md))
+renders it every night from GitHub alone: the open objective issues, their sub-issue trees,
+the latest nightly comment on each requirement rolled up per objective, every issue carrying the `blocked` label, and
+the open release-candidate pull requests. Nothing in it is hand-maintained, nothing in
+it comes from any machine's local state, and an edit made to the published copy is
+overwritten on the next run. If a question is not on a blocked issue it is not in the
+standup; that is the [issue contract](docs/issue-contract.md#what-the-standup-reads).
 
-## What never crosses
+## Why it is not on the site
 
-This repository is public. Config items — the jobs only @jwildfire's hands can do — are
-local-only, and neither their text nor a count of them reaches the standup; the file says
-plainly that it leaves them out rather than letting their absence read as an empty queue.
-The publisher refuses to publish a file carrying a config id, a local path, a Spotify
-episode uri or a `private:` marker.
+Every path the Pages deploy watches rebuilds the whole site, so the file is published to
+the orphan `session-state` branch instead, where it is fetchable as `text/plain`.
 
 ## Sending something back
 
-The inbound half of this pathway already exists and is not duplicated here: a note or a
-question dictated in voice goes to this repository's
-[Ideas discussions](https://github.com/jwildfire/obot.roadmap/discussions/categories/ideas),
-where the existing triage picks it up within a minute or two of it landing. The Ideas
-board is public, so anything sent that way is public the moment it posts — the `private:`
-lane only exists on the machine.
+A note dictated in voice about an objective, a requirement or a blocked question is a comment
+on that issue — the next session turn reads it there. There is no separate intake lane.

@@ -18,7 +18,6 @@
 // first generator in the deploy and walks each entrypoint's real import graph, so
 // a generator that stops importing this file fails the build rather than quietly
 // losing its guard.
-import './local-only-guard.mjs';
 
 import fs from 'node:fs';
 import path from 'node:path';

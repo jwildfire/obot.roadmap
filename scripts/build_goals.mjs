@@ -56,7 +56,7 @@ const memberRow = (m, stageOf) => {
   const meta = [
     stage ? esc(stage) : null,
     ...m.labels
-      .filter((l) => !['requirement', 'goal', 'auto', 'draft'].includes(l))
+      .filter((l) => !['requirement', 'objective', 'goal', 'auto', 'draft'].includes(l))
       .map((l) => esc(WORKSTREAMS[l] ?? l)),
   ].filter(Boolean).join(' · ');
   return `<li><a href="${m.url}">#${m.number}</a> ${esc(m.title.replace(/^Requirement:\s*/i, ''))}${meta ? ` <small>(${meta})</small>` : ''}</li>`;
@@ -92,7 +92,7 @@ ${memberGroups(goal, stageOf)}
 <h2>Direction</h2>
 ${marked.parse(goal.prose)}
 <hr>
-<p><small>Members are generated from the goal issue's sub-issue links at build time; priority is the selecting session's judgment, not list order (#53 v2). The <code>--auto</code> policy binding — active/paused, grant profile, repo-level backlog feeds — lives in <a href="https://github.com/jwildfire/obot.agent/blob/main/goals/registry.json">obot.agent/goals/registry.json</a>. Readiness labels: <code>auto</code> = ready for autonomous implementation, <code>draft</code> = needs @jwildfire steering.</small></p>`;
+<p><small>Members are generated from the objective issue's sub-issue links at build time; priority is the selecting session's judgment, not list order (#53 v2). The <code>--auto</code> policy binding — active/paused, grant profile, repo-level backlog feeds — lives in <a href="https://github.com/jwildfire/obot.agent/blob/main/goals/registry.json">obot.agent/goals/registry.json</a>. Readiness labels: <code>auto</code> = ready for autonomous implementation, <code>draft</code> = needs @jwildfire steering.</small></p>`;
   return shell(goal.title, body);
 }
 
@@ -107,7 +107,7 @@ function indexPage(goals) {
 <ul>
 ${cards}
 </ul>`;
-  return shell('Goals', body);
+  return shell('Objectives', body);
 }
 
 const goalRes = await settle('goals', collectGoals);

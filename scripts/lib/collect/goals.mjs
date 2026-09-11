@@ -20,7 +20,7 @@ const [OWNER, NAME] = HUB.split('/');
 const QUERY = `
 query($owner: String!, $name: String!) {
   repository(owner: $owner, name: $name) {
-    issues(labels: ["goal"], states: [OPEN], first: 20, orderBy: {field: CREATED_AT, direction: ASC}) {
+    issues(labels: ["objective", "goal"], states: [OPEN], first: 20, orderBy: {field: CREATED_AT, direction: ASC}) {
       nodes {
         number
         title
@@ -41,7 +41,7 @@ query($owner: String!, $name: String!) {
 }`;
 
 const slugOf = (body = '', number) =>
-  (body.match(/<!--\s*goal-slug:\s*([a-z0-9-]+)\s*-->/) || [])[1] ?? `goal-${number}`;
+  (body.match(/<!--\s*(?:objective|goal)-slug:\s*([a-z0-9-]+)\s*-->/) || [])[1] ?? `goal-${number}`;
 
 export async function collectGoals() {
   const data = await graphql(QUERY, { owner: OWNER, name: NAME });
@@ -73,7 +73,7 @@ export async function collectGoals() {
       backlog: [],
       url: issue.url,
       page: `goals/${slug}.html`,
-      prose: (issue.body ?? '').replace(/<!--\s*goal-slug:[\s\S]*?-->/, '').trim(),
+      prose: (issue.body ?? '').replace(/<!--\s*(?:objective|goal)-slug:[\s\S]*?-->/, '').trim(),
       members,
       progress: {
         done: members.filter((m) => m.state === 'CLOSED').length,

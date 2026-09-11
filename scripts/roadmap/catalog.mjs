@@ -26,7 +26,6 @@ import { esc, fmtET, age, hasToken, day, clip } from '../lib/gh.mjs';
 import { REPOS, ROOT, HUB } from '../lib/repos.mjs';
 import { releaseKey, browserReleaseKeySource } from '../lib/rc.mjs';
 import { hierarchySection } from '../lib/hierarchy/render.mjs';
-import { auditSection } from '../lib/audit/render.mjs';
 import { siteHeader } from '../lib/nav.mjs';
 import {
   VIEWS, DEFAULT_VIEW, goalViews, requirementViews, prViews,
@@ -44,10 +43,6 @@ const RECENT_RELEASES = 10;
 // with a module-level NOW before it became a module, and keeping the shape means
 // the diff against that script is about the move and nothing else.
 let NOW = new Date();
-const PROJECT_URL = 'https://github.com/users/jwildfire/projects/1';
-// Heartbeat-published session state (#57 D5): a session-state branch holding one
-// small JSON, fetched client-side so the indicator refreshes without a deploy.
-const SESSION_STATE_URL = `https://raw.githubusercontent.com/${HUB}/session-state/session.json`;
 
 const shortRepo = (nameWithOwner) => nameWithOwner.split('/')[1];
 const stageClass = (stage) => stage.toLowerCase().replace(/ /g, '-');
@@ -157,9 +152,9 @@ ${decRows.length ? decRows.join('\n') : `  ${empty('No open decisions.')}`}
 
 // ---------------------------------------------------------------- goals
 function goalsSection(res, requirements) {
-  if (!res.ok) return section('goals', 'Goals', null, '', { notice: res.notice });
+  if (!res.ok) return section('goals', 'Objectives', null, '', { notice: res.notice });
   const goals = res.value.filter((g) => g.status !== 'paused');
-  if (!goals.length) return section('goals', 'Goals', 0, empty('No active goals.'));
+  if (!goals.length) return section('goals', 'Objectives', 0, empty('No active goals.'));
 
   const byNumber = new Map(requirements.map((r) => [r.number, r]));
   const rows = goals.map((g) => {
@@ -186,42 +181,17 @@ function goalsSection(res, requirements) {
   </div>`;
   }).join('\n');
 
-  return section('goals', 'Goals', goals.length, `<div class="rm-rows">\n${rows}\n</div>`, {
+  return section('goals', 'Objectives', goals.length, `<div class="rm-rows">\n${rows}\n</div>`, {
     note: `Standing direction from the hub's <a href="https://github.com/${HUB}/issues?q=is%3Aissue+is%3Aopen+label%3Agoal"><code>goal</code>-labeled issues</a> — the same goals autonomous sessions select from (#53/#71); per-goal detail on the <a href="goals/index.html">goal pages</a>.`,
   });
 }
 
 // ---------------------------------------------------------------- requirements
-const PILL = {
-  approved: 'approved',
-  unresolved: 'approval unresolved',
-  undetermined: 'approval unconfirmed',
-};
 
 async function requirementRow(req, prsByRequirement) {
   // 'unstaged' is already what the stage pill says — don't badge it twice.
   const drift = req.drift && req.drift !== 'unstaged'
-    ? ` <span class="status-pill drift" title="Board Status disagrees with the issue state">${esc(req.drift)}</span>`
-    : '';
-  // A requirement nothing could place gets a pill that says so, and a link to
-  // the reason (#254). Red would say "somebody let this slip"; the block is not
-  // that, and the pill is neutral because the row is not a fault.
-  const blocked = req.blocked
-    ? ` <a class="status-pill blocked" href="${esc(req.blocked.url)}" title="${esc(
-      `${req.blocked.onBoard ? 'On the board with no Status' : 'Not on the board'} — nothing can write to the board (#${req.blocked.issue})`
-      + (req.blocked.filedAfterBlock ? ', and this was filed after that was measured' : ', and it has been unplaceable since before this was filed'),
-    )}">board blocked</a>`
-    : '';
-  // Whose decision it carries (#215). A pill appears only where a requirement
-  // claims an approval under the current convention — that is the claim a reader
-  // can believe wrongly, and the legend below says what no pill means.
-  //
-  // `claimed` (the legacy drafted-by line asserting a review nothing records) is
-  // deliberately NOT a pill: it is true of 74 rows, and 74 amber pills would drown
-  // the one pill that matters. It is counted in the legend and named in the report,
-  // which is the same boundary the audit rules draw by date.
-  const prov = PILL[req.provenance?.state]
-    ? ` <span class="status-pill prov-${req.provenance.state}" title="${esc(req.provenance.detail)}">${PILL[req.provenance.state]}</span>`
+    ? ` <span class="status-pill drift" title="The status label disagrees with the issue state">${esc(req.drift)}</span>`
     : '';
   const prs = prsByRequirement.get(req.number) ?? [];
   const activity = prs.length
@@ -231,13 +201,10 @@ async function requirementRow(req, prsByRequirement) {
     ? `${req.tasks.done}/${req.tasks.total}${req.tasks.source === 'checklist' ? '<span class="rm-none" title="from an inline checklist, not sub-issues">*</span>' : ''}`
     : '<span class="rm-none">—</span>';
   const repos = req.repos.map((r) => `<span class="rm-chip">${esc(shortRepo(r))}</span>`).join('');
-  // The word stays `Unstaged` — it has no stage and nothing may pretend it does.
-  // Only the colour changes, from the red that reads as neglect to the grey that
-  // reads as "waiting on a mechanism", which is what this is.
-  const stagePill = req.blocked ? 'blocked' : stageClass(req.stage);
+  const stagePill = stageClass(req.stage);
   return `  <tr data-repo="${repoAttr(req.repos)}" data-hl="${requirementViews(req, prs, NOW)}">
     <td><a href="${req.url}">#${req.number}</a></td>
-    <td>${esc(req.title)}${drift}${blocked}${prov}${activity}</td>
+    <td>${esc(req.title)}${drift}${activity}</td>
     <td><span class="status-pill ${stagePill}">${esc(req.stage)}</span></td>
     <td>${repos}</td>
     <td>${tasks}</td>
@@ -320,36 +287,6 @@ function recentSection(res) {
   return section('releases', 'Recent releases', res.value.recent.length, `<div class="rm-rows">\n${html}\n</div>`);
 }
 
-// ---------------------------------------------------------------- ideas
-function ideasSection(res) {
-  if (!res.ok) return section('ideas', 'Ideas', null, '', { notice: res.notice });
-  const { open, promoted, windowDays } = res.value;
-  const openRows = open.map((d) => `  <div class="rm-row" data-repo="${HUB}" data-hl="${openIdeaViews(d, NOW)}">
-    <span class="rm-key"><a href="${d.url}">#${d.number}</a></span>
-    <span class="rm-main">${esc(d.title)}</span>
-    <span class="rm-meta">${age(d.updatedAt)}</span>
-  </div>`).join('\n');
-  const promotedRows = promoted.map((d) => `  <div class="rm-row rm-promoted" data-repo="${HUB}" data-hl="${promotedIdeaViews(d, NOW)}">
-    <span class="rm-key"><a href="${d.url}">#${d.number}</a></span>
-    <span class="rm-main">${esc(d.title)} <span class="rm-anchors">→ <a href="${d.issue.url}">#${d.issue.number}</a></span></span>
-    <span class="rm-meta">${age(d.closedAt)}</span>
-  </div>`).join('\n');
-
-  const body = `<div class="rm-rows">
-${open.length ? openRows : `  ${empty('Inbox empty.')}`}
-</div>
-<div class="rm-sub">
-<h3>Promoted · last ${windowDays} days <span class="rm-count">${promoted.length}</span></h3>
-<div class="rm-rows">
-${promoted.length ? promotedRows : `  ${empty('None promoted in the window.')}`}
-</div>
-</div>`;
-
-  return section('ideas', 'Ideas', open.length, body, {
-    note: `Open threads in the <a href="https://github.com/${HUB}/discussions/categories/ideas">Ideas</a> board, plus what triage promoted to issues.`,
-  });
-}
-
 // ---------------------------------------------------------------- page
 // The staged URL was shared in #57 and in review comments while this page was
 // being built, and again in the D0018 rebuild; keep it resolving to the page it
@@ -379,7 +316,7 @@ export function aliasRedirect() {
 // is proved by diffing the rendered bytes against the page it replaces. Layout
 // that changes output is not cosmetic here.
 export async function render(data) {
-  const { reqRes, prRes, relRes, ideaRes, goalRes, hierRes, decRes, auditLedger, proposal, changelog } = data;
+  const { reqRes, prRes, relRes, goalRes, hierRes, decRes, proposal, changelog } = data;
   NOW = data.NOW ?? new Date();
 
 const auditEntries = [...changelog.entries].sort((a, b) => b.date.localeCompare(a.date));
@@ -404,36 +341,9 @@ for (const pr of prRes.value ?? []) {
 }
 
 const driftCount = active.filter((r) => r.drift).length;
-// The blocked class, counted and explained where the number is rather than in
-// conversation (#254). It rises every time a requirement is filed, and a number
-// that rises on its own has to carry the reason it rises, or it reads exactly
-// like the discipline decay it is not.
-const blockedReqs = active.filter((r) => r.blocked);
-const blockedSince = blockedReqs.filter((r) => r.blocked.filedAfterBlock).length;
-const blockedOff = blockedReqs.filter((r) => !r.blocked.onBoard).length;
-const blockedIssue = blockedReqs[0]?.blocked;
-const where = blockedOff === blockedReqs.length
-  ? 'are not on the obot Roadmap board at all'
-  : blockedOff === 0
-    ? 'sit on the obot Roadmap board with no Status'
-    : `have no stage on the obot Roadmap board, ${blockedOff} of them not on it at all`;
-const blockedNote = blockedReqs.length
-  ? ` <strong>${blockedReqs.length}</strong> open requirement${blockedReqs.length > 1 ? 's' : ''} ${where}, because nothing can write to it: the obotclaw App is refused on a user-owned project, and the guard denies the only credential that works (<a href="${esc(blockedIssue.url)}">#${blockedIssue.issue}</a>).${
-    blockedSince ? ` ${blockedSince} of them ${blockedSince > 1 ? 'were' : 'was'} filed after that was measured, so no agent could have placed ${blockedSince > 1 ? 'them' : 'it'};` : ''
-  }${
-    blockedReqs.length - blockedSince ? ` ${blockedSince ? 'the other' : ''} ${blockedReqs.length - blockedSince} predate${blockedReqs.length - blockedSince > 1 ? '' : 's'} it and cannot be placed now either.` : ''
-  } They are counted here as blocked rather than as drift, and this number will keep rising as work is filed — that is the block, not the discipline.`
-  : '';
-// Whose decision each requirement carries (#215), stated once under the table
-// people read. The legacy count is the whole population, not this table's share:
-// a number that changes depending on which fold you are looking at is worse than
-// no number, because it reads as a different fact each time.
-const claimedCount = [...active, ...folded].filter((r) => r.provenance?.state === 'claimed').length;
-const requirementsNote = `Board Status from the <a href="${PROJECT_URL}">obot Roadmap project</a>${
-  driftCount ? `, including <strong>${driftCount}</strong> open requirement${driftCount > 1 ? 's' : ''} the board has parked in <code>Released</code> or left unstaged — shown here rather than folded away` : ''
-}.${blockedNote} No approval pill means nobody has approved that requirement — the normal state for work an agent wrote, and recorded on the issue as <code>Approved by: EMPTY</code> rather than left blank (<a href="https://github.com/${HUB}/issues/215">#215</a>); a pill appears only where a requirement claims an approval, because a claim is the thing that can be believed wrongly.${
-  claimedCount ? ` Separately, ${claimedCount} requirements still end with the older attribution line asserting that @jwildfire reviewed them, and nothing on record says he did — counted in the <a href="reports/requirement-provenance/">provenance report</a> rather than rewritten.` : ''
-}`;
+const requirementsNote = `Status from each requirement's <code>status:</code> label — backlog, ready, in session, review, released — the one place it lives${
+  driftCount ? `, including <strong>${driftCount}</strong> open requirement${driftCount > 1 ? 's' : ''} whose label disagrees with the issue — labelled released while open, unlabelled, or doubly labelled — shown here rather than folded away` : ''
+}.`;
 
 const requirementsSection = section(
   'requirements',
@@ -477,7 +387,7 @@ const html = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Catalog · obot</title>
-<meta name="description" content="The complete roadmap record: goals, the requirement hierarchy and its review lane, every active requirement, open PRs, upcoming and recent releases, and the ideas queue — filterable by view and repo.">
+<meta name="description" content="The complete roadmap record: objectives, the requirement hierarchy and its review lane, every active requirement, open PRs, upcoming and recent releases, and the ideas queue — filterable by view and repo.">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body class="wide">
@@ -489,7 +399,6 @@ the <a href="wire.html">wire</a>. This is the record both of those read from.</p
 
 <div class="rm-bar">
   <span class="rm-views" id="rm-views" role="group" aria-label="View">${viewChips}</span>
-  <span class="rm-session" id="rm-session" hidden></span>
   <span class="rm-filters" id="rm-filters" role="group" aria-label="Filter by repo">${filterChips}</span>
 </div>
 <p class="rm-blurb" id="rm-blurb"></p>
@@ -498,11 +407,9 @@ ${todoSection(prRes, relRes, decRes)}
 ${goalsSection(goalRes, requirements)}
 ${hierarchySection(hierRes, { requirements, proposal })}
 ${requirementsSection}
-${auditSection(auditLedger, { now: NOW })}
 
 ${prSection(prRes)}
 ${upcomingSection(relRes)}
-${ideasSection(ideaRes)}
 ${recentSection(relRes)}
 
 ${foldedSection}
@@ -629,37 +536,6 @@ ${auditLogHtml}
     if (anchor) anchor.scrollIntoView();
   }
 
-  // Session indicator — published by the session heartbeat to a branch, not by a
-  // deploy, so it stays current between site builds. Renders its own timestamp
-  // rather than claiming to be live: the raw CDN caches for up to 5 minutes.
-  var pill = document.getElementById('rm-session');
-  // The publisher can only fail quietly (a Stop hook must not break a session),
-  // so the page is where a breakage becomes visible: past STALE_MINUTES the pill
-  // stops asserting a live state and says how old the reading is. Showing a
-  // confident "2 working" from a feed that died hours ago is worse than silence.
-  var STALE_MINUTES = 120;
-  fetch(${JSON.stringify(SESSION_STATE_URL)}, { cache: 'no-store' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (s) {
-      if (!s || !s.state) return;
-      var mins = s.updatedAt ? Math.floor((Date.now() - new Date(s.updatedAt)) / 60000) : null;
-      var stale = mins === null || mins > STALE_MINUTES;
-      var idle = s.state === 'idle' || s.state === 'done';
-      var when = mins === null ? 'age unknown'
-        : mins < 1 ? 'just now'
-        : mins < 60 ? mins + 'm ago'
-        : Math.floor(mins / 60) + 'h ago';
-      pill.className = 'rm-session ' + (stale ? 'stale' : idle ? 'idle' : 'live');
-      pill.title = stale
-        ? 'The session feed has not updated recently — it may have stopped publishing.'
-        : 'Published by the session heartbeat.';
-      pill.textContent = stale
-        ? '○ session feed last updated ' + when
-        : (idle ? '○ ' : '● ') + (s.name || 'obot') + ' — ' + (s.detail || s.state) + ' · ' + when;
-      pill.hidden = false;
-    })
-    .catch(function () { /* no session state published yet — stay hidden */ });
-
   // Todo live refresh — the RC PR list re-checks GitHub on load, because PRs
   // open and close without a push to this repo and the section's whole job is
   // "always know what is waiting". One unauthenticated search per page view;
@@ -733,7 +609,7 @@ for <a href="https://github.com/${HUB}/issues/57">requirement #57</a>, re-front-
 `;
 
 const degraded = [
-  ['PRs', prRes], ['releases', relRes], ['ideas', ideaRes], ['goals', goalRes], ['hierarchy', hierRes],
+  ['PRs', prRes], ['releases', relRes], ['goals', goalRes], ['hierarchy', hierRes],
   ['decisions', decRes],
 ].filter(([, r]) => !r.ok).map(([n]) => n);
 const todoRc = rcQueue(prRes, relRes);
@@ -742,10 +618,9 @@ console.log(
   `catalog: todo ${todoRcCount} RCs` +
   (todoRc.suppressed ? ` (${todoRc.suppressed} draft release${todoRc.suppressed > 1 ? 's' : ''} folded into their RC PR)` : '') +
   ` + ${decRes.value?.awaiting.length ?? 0} decisions, ` +
-  `${active.length} active (+${driftCount} drift${blockedReqs.length ? `, +${blockedReqs.length} board-blocked` : ''}), ${folded.length} folded, ` +
+  `${active.length} active (+${driftCount} drift), ${folded.length} folded, ` +
   `${prRes.value?.length ?? 0} PRs, ${relRes.value?.upcoming.length ?? 0} upcoming, ` +
-  `${relRes.value?.recent.length ?? 0} releases, ${ideaRes.value?.open.length ?? 0} ideas, ` +
-  `${auditLedger ? `${auditLedger.counts.total} audit findings` : 'no audit ledger'}` +
+  `${relRes.value?.recent.length ?? 0} releases` +
   (degraded.length ? ` — degraded: ${degraded.join(', ')}` : ''),
 );
 

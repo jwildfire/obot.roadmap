@@ -25,8 +25,6 @@
 import { esc, day, fmtET, clip, settle, graphql } from '../lib/gh.mjs';
 import { siteHeader } from '../lib/nav.mjs';
 import { releaseKey } from '../lib/rc.mjs';
-import { nowStripHtml, nowStripStyle, nowStripScript } from './nowstrip.mjs';
-import { readConfigCount } from '../lib/public-channel.mjs';
 
 export const meta = { slug: 'wire', out: 'wire.html' };
 
@@ -51,7 +49,7 @@ const etLabelOf = (dayStr) =>
 const cite = (href, label) => ` <a class="w-cite" href="${esc(href)}">${esc(label)}</a>`;
 
 export async function render(data) {
-  const { NOW, prRes, relRes, ideaRes, decRes, changelog, HUB, REPOS, lightsRes } = data;
+  const { NOW, prRes, relRes, decRes, changelog, HUB, REPOS } = data;
   const windowStart = new Date(NOW.getTime() - WINDOW_DAYS * 86400000);
   const inWindow = (iso) => Boolean(iso) && new Date(iso) >= windowStart;
 
@@ -146,18 +144,6 @@ query ($prQ: String!, $reqQ: String!) {
     }
   }
 
-  if (ideaRes.ok) {
-    const { open, promoted } = ideaRes.value;
-    for (const i of [...open, ...promoted]) {
-      if (!inWindow(i.createdAt)) continue;
-      ev(i.createdAt, 'idea', 'idea', `Idea filed: ${esc(i.title)}.${cite(i.url, `#${i.number}`)}`);
-    }
-    for (const i of promoted) {
-      if (!inWindow(i.closedAt)) continue;
-      ev(i.closedAt, 'promoted', 'promoted',
-        `Idea promoted to an issue: ${esc(i.title)}.${cite(i.url, `#${i.number}`)} →${cite(i.issue.url, `#${i.issue.number}`)}`);
-    }
-  }
 
   // Roadmap-audit changelog: each dated version's change lines are already
   // plain-English events. Long entries are clipped; the citation opens the full
@@ -197,7 +183,6 @@ query ($prQ: String!, $reqQ: String!) {
   const missing = [];
   if (!relRes.ok) missing.push(`Releases are missing from this edition — ${relRes.notice}`);
   if (!decRes.ok) missing.push(`Decisions are missing from this edition — ${decRes.notice}`);
-  if (!ideaRes.ok) missing.push(`Ideas are missing from this edition — ${ideaRes.notice}`);
   if (!searchRes.ok) missing.push(`Requirement filings and merged PRs are missing from this edition — ${searchRes.notice}`);
   const noticeHtml = missing.map((m) => `<p class="w-notice">${esc(m)}</p>`).join('\n');
 
@@ -252,19 +237,6 @@ query ($prQ: String!, $reqQ: String!) {
     pinnedLines.push(`<p class="w-pin-line">Waiting longest: ${oldest.html}, since ${esc(day(oldest.ts))}.</p>`);
   }
 
-  // The third bucket. This box has always been counts-only, which makes it the one
-  // place on the public site where the config list fits without any tension at all
-  // (#203): a number is exactly what it already renders. What each item IS never
-  // crosses — see lib/public-channel.mjs, which refuses the payload outright if it
-  // ever arrives carrying anything but integers and a date.
-  const configCount = readConfigCount({ now: NOW });
-  if (configCount.ok && configCount.open > 0) {
-    pinnedLines.push(`<p class="w-pin-line">${configCount.open} config item${configCount.open === 1 ? '' : 's'} `
-      + `need${configCount.open === 1 ? 's' : ''} your keyboard — counted here, never described here, `
-      + `and cleared on the dashboard.${configCount.stale ? ` Last counted ${esc(fmtET(new Date(configCount.asOf)))}.` : ''}</p>`);
-  } else if (!configCount.ok) {
-    pinnedLines.push(`<p class="w-pin-line">Config items: no count has reached this page (${esc(configCount.why)}), so this is not a claim that there are none.</p>`);
-  }
 
   const emptyStream = events.length
     ? ''
@@ -277,7 +249,7 @@ query ($prQ: String!, $reqQ: String!) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wire · obot</title>
-<meta name="description" content="A reverse-chronological wire of the obot roadmap: releases, decisions, merges, requirement filings and ideas from the last 7 days, newest first — scroll until you hit something you already know.">
+<meta name="description" content="A reverse-chronological wire of the obot roadmap: releases, decisions, merges and requirement filings from the last 7 days, newest first — scroll until you hit something you already know.">
 <link rel="stylesheet" href="assets/styles.css">
 <style>
 .w-wrap { max-width: 46rem; margin: 0 auto; }
@@ -330,13 +302,11 @@ li.w-marker { margin: .45rem 0; padding: .28rem .4rem; border-top: 1px dashed va
   li.w-ev { grid-template-columns: 6.2rem minmax(0, 1fr); }
 }
 
-${nowStripStyle()}
 </style>
 </head>
 <body>
 ${siteHeader({ page: 'wire' })}
 <div class="w-wrap">
-${nowStripHtml({ lightsRes, NOW })}
 <header class="w-mast">
   <p class="w-kicker">The obot roadmap, as it happened</p>
   <h1>The wire</h1>
@@ -439,7 +409,6 @@ Everything that exists is on the <a href="catalog.html">catalog</a>.</p>
     localStorage.setItem(KEY, new Date().toISOString());
   } catch (e) { /* storage unavailable — no marker, nothing implied */ }
 
-${nowStripScript()}
 
 })();
 </script>

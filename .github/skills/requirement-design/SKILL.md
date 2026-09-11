@@ -47,13 +47,10 @@ Adapted from [gsm.roadmap's requirement-design skill](https://github.com/Gilead-
    - Dependencies on other requirements, data sources, or upstream repos
    - Open questions
 
-5. **Present the draft for review** and iterate. Design changes to the issue body go through `obot.agent/scripts/obot-gh issue edit --body-file` (draft-sync convention) — the wrapper writes as `obotclaw[bot]`, where a plain `gh` writes as @jwildfire ([obot.agent#197](https://github.com/jwildfire/obot.agent/issues/197)). Verify Design is signed off before decomposing the work — and "signed off" means the requirement's
-`Approved by` line resolves, not that the Design section looks finished. Check it with
-`node scripts/provenance.mjs resolve <number>`: it prints what was asked and what he said, or it says
-nobody has approved this. A design an agent wrote and an agent approved is not signed off (#215).
-
-If the design goes beyond what he approved — which is normal, because a design is mostly the agent's
-work — say so on the `Beyond the approval` line rather than letting the citation cover it silently — then hand off to [`requirement-tasks`](../requirement-tasks/SKILL.md).
+5. **Present the draft for review** and iterate. Design changes to the issue body go through `gh issue edit --body-file` (draft-sync convention) — the wrapper writes as `obotclaw[bot]`, where a plain `gh` writes as @jwildfire ([obot.agent#197](https://github.com/jwildfire/obot.agent/issues/197)). Verify Design is signed off before decomposing the work — and "signed off" means the requirement's
+objective's tree is signed off by @jwildfire in a comment — not that the Design section looks
+finished. When the Design section is populated, say so in a comment on the objective, naming any
+scope you worked out yourself that he has not seen; his sign-off comment covers what it names.
 
 ## Reference
 
