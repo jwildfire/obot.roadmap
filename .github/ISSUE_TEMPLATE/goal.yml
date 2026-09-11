@@ -1,5 +1,5 @@
 name: Goal
-description: A standing goal — the direction issue that groups roadmap requirements (#53/#71).
+description: A goal — the root of an issue tree of requirements and tasks; closes when the tree is closed.
 title: "Goal: {title}"
 labels:
   - goal
@@ -9,13 +9,13 @@ body:
   - type: markdown
     attributes:
       value: |
-        A goal issue is the source of truth for a standing direction of work. It stays open indefinitely — closing it retires the goal. The body is prose only: membership is whatever is linked as sub-issues (requirements or lightweight tasks), generated at read time — nothing list-like is hand-maintained here, and priority is the selecting session's judgment, not list order (#53 v2). The `--auto` policy binding (active/paused, grant profile, repo-level backlog feeds) lives in `obot.agent/goals/registry.json`, not here. Direction and membership are maintained by @jwildfire; autonomous sessions propose changes as comments and never edit goal issues.
+        A goal is the root of an issue tree under the [issue contract](../../docs/issue-contract.md): requirement issues linked as sub-issues, each with task issues in one implementation repo, every node with a definition of done and a milestone. It is complete when every requirement under it is closed. @jwildfire owns the body and the sub-issue links; agents comment and never edit either. A session starts on a goal only after he has signed the tree off in a comment.
 
   - type: textarea
     id: slug_comment
     attributes:
       label: Slug (hidden comment)
-      description: "Replace your-slug-here with a unique kebab-case slug — it names the goal's site page and obot-auto --goal argument. The comment is invisible on the rendered issue."
+      description: "Replace your-slug-here with a unique kebab-case slug — it names the goal's site page. The comment is invisible on the rendered issue."
       value: |
         <!-- goal-slug: your-slug-here -->
     validations:
@@ -25,14 +25,33 @@ body:
     id: intent
     attributes:
       label: Intent
-      description: "What direction does this goal set? What does done look like?"
+      description: "What direction does this goal set, in @jwildfire's words?"
     validations:
       required: true
 
   - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of done
+      description: "The whole goal's end state, how it is proven, and the release it ships in. Write it so it can fail."
+      placeholder: |
+        End state:
+        Proof:
+        Ships in:
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: "The requirement issues under this goal, one per line, in the order a session should take them. Membership is the sub-issue links; this list says the order."
+      placeholder: |
+        1. #N — title
+        2. #N — title
+
+  - type: textarea
     id: boundaries
     attributes:
-      label: Boundaries and weights
-      description: "What a selecting session should weigh that the member issues don't say: constraints, prerequisites, what beats what."
-    validations:
-      required: false
+      label: Boundaries
+      description: "What a session should weigh that the requirements do not say: constraints, prerequisites, what beats what, the cut line if the calendar slips."

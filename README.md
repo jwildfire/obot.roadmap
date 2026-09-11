@@ -1,200 +1,102 @@
 # obot.roadmap
 
-Development roadmap and project homepage for Jeremy Wildfire's open-source safety-graphics modernization work (the "obot" portfolio). This repo tracks high-level requirements, which link to implementation tasks in other repos.
+Development roadmap, standards and project homepage for Jeremy Wildfire's open-source
+safety-graphics modernization work (the "obot" portfolio). This repo holds the goals,
+requirements and designs, the standards every agent and session works under, and the
+site that reports on all of it.
 
-The workflow mirrors [Gilead-BioStats/gsm.roadmap](https://github.com/Gilead-BioStats/gsm.roadmap); see [History](#history) for how this repo replaced the retired `obot-claw` hub.
+# How work runs
+
+Since 2026-09-10 the program runs as goal-based sessions: one clearly defined goal per
+session, running in the cloud for as long as the goal takes, steered by @jwildfire
+through the issues here. The three documents under [`docs/`](docs/) are the standards,
+and complying with them is mandatory for every session in every repository:
+
+| Document | What it settles |
+|---|---|
+| [Issue contract](docs/issue-contract.md) | Goals, requirements and tasks; definitions of done; labels and milestones; blocked; how closing and comments work; who decided what |
+| [Ways of working](docs/ways-of-working.md) | The loop, roles, sessions and `/goal`, what @jwildfire reviews, steering, the standup, decisions, releases |
+| [Developer guidelines](docs/developer-guidelines.md) | Repositories and branches, Claude Code setup, worktrees, commits, pull requests, merging via rulesets, testing, the definition of done for a chart, releases, artifacts, write policy, the GxP stance |
+
+The plan that installed this model and the five goals it runs:
+[Goal Sessions: the Mid-October Plan](https://jwildfire.github.io/obot.roadmap/reports/goal-sessions-plan-2026-09-10/).
+The session core — the `goal-session` skill, the standup routine and the cloud
+environments — lives in [jwildfire/obot.agent](https://github.com/jwildfire/obot.agent).
 
 # Repos
 
 | Repo | Role |
 |------|------|
-| [`obot.roadmap`](https://github.com/jwildfire/obot.roadmap) | This repo — requirements, planning, roadmap tracking |
-| [`safety.agent`](https://github.com/jwildfire/safety.agent) | Agent scaffold — requirement matrices, skills, and workflow conventions for the renderer migration |
-| [`safety.viz`](https://github.com/jwildfire/safety.viz) | Consolidated Chart.js safety-chart library (mirrors `gsm.viz`) |
-| [`gsm.safety`](https://github.com/jwildfire/gsm.safety) | R package — `Widget_*.R` htmlwidgets consuming `safety.viz` (mirrors `gsm.kri`) |
-| [`safety-histogram`](https://github.com/jwildfire/safety-histogram) (archived 2026-08-15) | Retired P004 pilot fork — its renderer lives on as safety.viz's histogram module |
-| `obot-claw/*` (archived) | Legacy RhoInc renderer forks and the retired hub — read-only reference |
+| [`obot.roadmap`](https://github.com/jwildfire/obot.roadmap) | This repo — goals, requirements, designs, standards, the site |
+| [`obot.agent`](https://github.com/jwildfire/obot.agent) | The session core: the goal-session skill, the standup routine, the cloud environments |
+| [`safety.viz`](https://github.com/jwildfire/safety.viz) | Consolidated Chart.js safety-chart library and its site (mirrors `gsm.viz`) |
+| [`gsm.safety`](https://github.com/jwildfire/gsm.safety) | R package — `Widget_*` htmlwidgets over `safety.viz` and the static FDA safety charts (mirrors `gsm.kri`) |
+| [`open.csr`](https://github.com/jwildfire/open.csr), [`open.gismo`](https://github.com/jwildfire/open.gismo), [`demo-301`](https://github.com/jwildfire/demo-301) | The CSR builder, the RBQM platform and its demo study — goals paused or parked for the talk |
+| `safety-histogram` (archived 2026-08-15), `obot-claw/*` (archived) | Retired pilot fork and the legacy hub — read-only reference |
 
 # Daily check-in by voice
 
-The spoken standup — what is running, what is blocked, what needs a decision, and which
-release candidates are waiting — is regenerated every five minutes and published as plain
-text. [STANDUP.md](STANDUP.md) is the address; the file itself is `standup.md` on the
-`session-state` branch. A note dictated back goes to the
-[Ideas discussions](https://github.com/jwildfire/obot.roadmap/discussions/categories/ideas),
-where the existing triage picks it up.
+The spoken standup — every goal's complete / in progress / blocked state, one question
+per blocked issue, and the release candidates waiting — is rendered nightly from GitHub
+by a scheduled cloud routine and published as plain text. [STANDUP.md](STANDUP.md) is the
+address; the file itself is `standup.md` on the `session-state` branch. A note dictated
+back is a comment on the issue it concerns.
 
-Automation acts through the [`obotclaw`](https://github.com/apps/obotclaw) GitHub App
-(`obotclaw[bot]`), installed only on the repos above — see
-[AGENTS.md → Identities](AGENTS.md#identities) and requirement
-[#3](https://github.com/jwildfire/obot.roadmap/issues/3).
+# Requirements and designs
 
-# Requirements
+Issues are filed from the templates — [goal](.github/ISSUE_TEMPLATE/goal.yml),
+[requirement](.github/ISSUE_TEMPLATE/requirement.yml),
+[task](.github/ISSUE_TEMPLATE/task.yml) — under the
+[issue contract](docs/issue-contract.md), and tracked on the
+[obot Roadmap project](https://github.com/users/jwildfire/projects/1). The hub's
+`requirement-drafting`, `requirement-design` and `requirement-tasks` skills under
+[`.github/skills/`](.github/skills/) walk a requirement from idea to filed tasks.
 
-Requirements are captured as GitHub issues using the [requirement issue template](.github/ISSUE_TEMPLATE/requirement.yml) and tracked on the [obot Roadmap project](https://github.com/users/jwildfire/projects/1), whose Status field mirrors the lifecycle stages below. Each issue body has five sections, populated incrementally as the requirement moves through the lifecycle:
-
-| Section | When filled | Required at creation |
-|---|---|---|
-| **Business Requirement** | Step 1 — Backlog | ✓ |
-| **Overview** | Step 1 — Backlog | ✓ |
-| **Data Requirement** | Step 2 — Requirement Gathering | — |
-| **Design** | Step 3 — Design | — |
-| **Tasks** | Step 3 — Design | — |
-
-Below the five sections, after a `---` rule, every requirement carries an attribution line naming who drafted it and a [provenance block](#who-decided-it) saying who approved it.
-
-## Lifecycle
-
-| # | Stage | Trigger | Milestone | Sign-off |
-|---|---|---|---|---|
-| 1 | **Backlog** | Issue created with Business Requirement + short Overview | `backlog` | — |
-| 2 | **Requirement Gathering** | Prioritized for a quarter | `YYYYqN` | Data availability confirmed |
-| 3 | **Design** | Requirement Gathering complete | `YYYYqN` | @jwildfire 👍 on the issue |
-| 4 | **Development** | Design + Tasks complete; sub-issues filed in implementation repos | `YYYYqN` | — |
-| 5 | **Review** | Implementation merged; evidence posted | `YYYYqN` | @jwildfire review |
-| 6 | **Release** | Included in a quarterly release | `YYYYqN` | — |
-
-Since this is a single-maintainer portfolio, all sign-offs are @jwildfire. Agent-drafted issues and PRs carry an attribution line naming who drafted it.
-
-### Who decided it
-
-Most requirements are now written by an agent, and a filed requirement looks like settled intent — milestoned, boarded, linked to a goal — whether the scope in it came from @jwildfire or from an agent's own judgement. Nothing on its face separated the two until #215, and on 2026-08-16 a worker read one as his approval and prepared to delete files on the strength of it.
-
-So the two facts are recorded separately, at the foot of the body:
-
-```
-Authored by: 🧭🤖 obot-navigator (Claude Code using Opus 5)
-Approved by: EMPTY
-```
-
-`Approved by` holds a citation that resolves — a decision id (`D0018.1`), or his native GitHub review (`owner/repo#123 review`) where the approval can live on the object being approved — or the literal `EMPTY`, which means nobody has approved it. `EMPTY` is the normal state for agent-written work: it costs nothing, blocks nothing, and is the honest answer. What cannot happen is an unverifiable claim that he agreed. When an approval is cited, a third line says what the requirement adds that the approval does not cover.
-
-Check one with `node scripts/provenance.mjs resolve <number>`; it prints what was asked, what he said, the channel and the date. An approval-gated action cites that, never the requirement that contains it. The full convention is in [AGENTS.md](AGENTS.md#who-wrote-it-and-who-approved-it) (@jwildfire, #215).
-
-### One requirement, one release
-
-A requirement covers **exactly one release**. If the scope is bigger than one release, it is more than one requirement — split it at authoring time rather than letting one issue span two.
-
-Deferring scope is allowed. It has a procedure, and the order matters:
-
-1. **Note the deferral on the original requirement** — what is being deferred and why, written in the issue itself while someone still remembers.
-2. **File a new requirement** for the deferred scope, carrying its own milestone.
-3. **Transfer the deferred sub-tasks** to it. *Transfer*, not re-file: moving the sub-issue keeps its scoping, comments and history.
-4. **The original closes with its release.**
-
-A requirement never stays open because a later phase is coming — the later phase is a different requirement. "Phase 2 follows in due course" is not a scope line; it is an unfiled requirement.
-
-Two things are *not* deferred scope and need no new requirement:
-
-- **A defect found after release** is an ordinary issue against shipped work. Re-home it to the goal (or to a live requirement it belongs in) and close the requirement that delivered the thing.
-- **Scope that already has its own requirement** just needs re-homing to the goal. Filing a second one is paperwork.
-
-Decided by @jwildfire on 2026-08-15, replacing the audit's proposal to let phased requirements stay open; the reasoning and the retroactive sweep that applied it to seven existing requirements are in the [roadmap-audit decision artifact](https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-15-roadmap-audit/).
-
-## Labels
-
-One or more topic labels per requirement.
-
-| Label | Use |
-|---|---|
-| `safety` | SafetyGraphics renderer modernization (safety.viz, gsm.safety, renderer migrations) |
-| `infrastructure` | Platform / scaffold / operations investment (e.g., the obot GitHub App) |
-| `ai` | Agent workflow and automation work |
-| `blocked` | Blocked on an external dependency or decision |
-| `goal` | Standing goal — parent of requirement issues |
-
-Goals are **not board items**. A goal is permanent, so it has no delivery stage it could ever reach; goals are surfaced by the goal pages and the hierarchy view instead. The nightly audit takes any goal it finds on the obot Roadmap project back off it. (@jwildfire, 2026-08-15 — roadmap audit decision R3-a.)
-| `audit-decision` | Machine-read: an accept/reject decision on audit findings, filed by the roadmap page's Audit section and consumed by the apply lane |
-
-## Milestones
-
-| Milestone | Use |
-|---|---|
-| `backlog` | Step 1 holding pen; not yet prioritized for a quarter |
-| `2026q3`, `2026q4`, … | Quarterly delivery slots (Step 2+), lowercase `YYYYqN` |
-
-## Audit
-
-The lifecycle above only tells the truth if the fields are maintained, so a [nightly audit](.github/workflows/roadmap-audit.yml) checks the roadmap against its own conventions (requirement [#92](https://github.com/jwildfire/obot.roadmap/issues/92)) and publishes what it finds in the **Audit** section of the [catalog page](https://jwildfire.github.io/obot.roadmap/catalog.html#sec-audit).
-
-| Piece | Where |
-|---|---|
-| Rules — one object per convention, pure functions of a snapshot | [`scripts/lib/audit/rules.mjs`](scripts/lib/audit/rules.mjs) |
-| Findings ledger, published and machine-readable | [`site/audit/findings.json`](site/audit/findings.json) |
-| Accept/reject decisions, append-only | [`site/audit/decisions.json`](site/audit/decisions.json) |
-| Apply lane, triggered by an `audit-decision` issue | [`roadmap-audit-apply.yml`](.github/workflows/roadmap-audit-apply.yml) + [policy](.github/roadmap-audit-policy.md) |
-
-Each finding carries a confidence — **high** (deterministic detection, unambiguous fix), **medium** (solid detection, the fix is a judgment call the proposal states outright), **low** (heuristic detection, or an open convention question) — and one specific proposed change. Accepting a finding opens a prefilled decision issue; the apply lane re-validates it against a fresh audit before changing anything, runs mechanical fixes as a closed vocabulary of operations, and hands judgment calls to a bounded agent. Rejecting one changes nothing and mutes the finding for 60 days, or until its evidence changes. Nothing is ever applied without an explicit accept.
-
-Adding a rule is one exported object in `rules.mjs` with a test beside it in `rules.test.mjs` — the nightly run fails rather than publishing findings from an untested registry.
-
-## Site navigation
-
-One top row, and a second row that appears only on the pages inside the roadmap group:
-
-```
-🍊😺 obot    Home   Roadmap   News   ⌗
-            Overview · Audit · Analytics · Status
-```
-
-The brand is the "obot" link, so there is no separate nav entry for it.
-
-**The nav is defined once, in [`scripts/lib/nav.mjs`](scripts/lib/nav.mjs).** Adding a page means adding one row to its `TOP` or `SUB` array — nothing else in the site defines nav. The five page generators call `siteHeader()` directly; the two hand-written pages (`site/index.html`, `site/status.html`) carry a `<!--SITE-HEADER-->` marker that [`scripts/build_static.mjs`](scripts/build_static.mjs) substitutes at deploy time.
-
-This replaced seven hand-maintained copies that had drifted apart — Audit appeared in two navs of seven, Goals in one, and the audit page had no GitHub link at all, so which pages seemed to exist depended on which page you were standing on. `deploy-site.yml` now asserts every page carries the shared nav, that the marker never reaches a published page, and that the second row appears on the roadmap group and nowhere else.
-
-## Cost
-
-The **Cost** section of the [analytics page](https://jwildfire.github.io/obot.roadmap/analytics/index.html#sec-usage) charts what this project has cost to build: one stacked column per day (or week, or month), one segment per agent, toggleable between dollars and tokens.
-
-Unlike every other section, it is **not** built from the GitHub API. It reads @jwildfire's local Claude Code transcript store (`~/.claude/projects/`), which exists only on that machine — so the data is a **committed artifact** and the site build just renders whatever was last committed. The chart says which day the data runs through; refresh it by re-running the generator locally:
-
-```sh
-python3 scripts/build_usage_data.py          # rewrites site/usage/usage.json
-python3 scripts/build_usage_data.py --dry-run  # print the summary, write nothing
-git commit site/usage/usage.json -m "Refresh usage data"
-```
-
-| Piece | Where |
-|---|---|
-| Generator — transcripts to per-day, per-agent totals and cost | [`scripts/build_usage_data.py`](scripts/build_usage_data.py) |
-| Committed data | [`site/usage/usage.json`](site/usage/usage.json) |
-| Section + chart | [`scripts/lib/usage/render.mjs`](scripts/lib/usage/render.mjs) |
-| Page shell | [`scripts/build_analytics.mjs`](scripts/build_analytics.mjs) |
-
-Costs are list-price arithmetic over recorded token counts — what the usage would bill at API rates, not a copy of an invoice. Rates and the cache multipliers are in the generator's `PRICES` table and are shown on the page under **Models and rates**. Because this is a public site, per-agent token and dollar figures are public.
-
-## Documentation
-
-Formal requirement documentation lives under [`requirements/`](requirements/):
+Formal documentation lives under [`requirements/`](requirements/):
 
 | Directory | Contents |
 |---|---|
-| [`requirements/design/`](requirements/design/) | Design documents — one per requirement (`{issue_number}_design.html`, or `.md` for simple designs; HTML per [obot-claw#59](https://github.com/obot-claw/obot-claw.github.io/issues/59)) |
-| [`requirements/dataspec/`](requirements/dataspec/) | Data specification documents (`{issue_number}_dataspec.md`) |
-
-File names use the requirement issue number as prefix. These documents are linked from the issue's Design section.
+| [`requirements/design/`](requirements/design/) | Design documents — one per requirement, `{issue_number}_design.html`, self-contained and published to the site |
+| [`requirements/dataspec/`](requirements/dataspec/) | Data specification documents, `{issue_number}_dataspec.md` |
 
 # Site
 
 The repo publishes the project homepage via GitHub Pages
-([`deploy-site.yml`](.github/workflows/deploy-site.yml)): a static site with key
-metrics on the homepage, a requirement-status roadmap, the AI-written
-[diary](diary/), and [reports](reports/). The metrics and roadmap are generated
-from live GitHub state at deploy time (daily cron) and never committed; see the
-[#7 design doc](requirements/design/7_design.html) for the architecture.
+([`deploy-site.yml`](.github/workflows/deploy-site.yml)): the roadmap and goal pages
+generated from live GitHub state at deploy time, the AI-written [diary](diary/), the
+[reports](reports/) and decision artifacts, the news feed, and the package status
+dashboard. See the [#7 design doc](requirements/design/7_design.html) for the
+architecture.
 
 | Directory | Contents |
 |---|---|
 | [`site/`](site/) | Hand-authored homepage + shared stylesheet |
-| [`diary/`](diary/) | AI-written diary — one markdown file per day with activity ([conventions](diary/README.md)) |
-| [`reports/`](reports/) | AI-generated reports, one folder per report ([index](reports/README.md)) |
-| [`scripts/`](scripts/) | Site generators (`build_roadmap_next.mjs`, `build_goals.mjs`, `build_news.mjs`, `build_metrics.py`, `render_diary.mjs`) plus their shared collectors in `scripts/lib/`, the roadmap audit (`audit_roadmap.mjs`, `apply_audit_decision.mjs`, `scripts/lib/audit/`), and the usage/cost generator (`build_usage_data.py`, `scripts/lib/usage/`) — run locally, not at deploy time |
+| [`diary/`](diary/) | AI-written diary — one markdown file per day ([conventions](diary/README.md)) |
+| [`reports/`](reports/) | Reports and decision artifacts, one folder each ([contract](reports/README.md)) |
+| [`scripts/`](scripts/) | Site generators and their shared collectors in `scripts/lib/`; `provenance.mjs` for who-decided-it checks |
 
-# Agentic scaffold
+Two maintainer notes that survive from the earlier build:
 
-The workflow is designed to be maintained with AI-in-the-loop, following the conventions in [`gsm.agent`](https://github.com/Gilead-BioStats/gsm.agent) and [`safety.agent`](https://github.com/jwildfire/safety.agent). Agents drafting requirements here should read [AGENTS.md](AGENTS.md) first.
+- The nav is defined once, in [`scripts/lib/nav.mjs`](scripts/lib/nav.mjs); adding a
+  page means adding one row there. The deploy asserts every page carries it.
+- The Cost section of the analytics page reads a committed artifact,
+  `site/usage/usage.json`, generated locally from @jwildfire's Claude Code transcript
+  store by `python3 scripts/build_usage_data.py`; the site build renders whatever was
+  last committed.
+
+The nightly roadmap audit, its apply lane, the ideas-triage workflow and the
+navigator-era stamps (premise status, config count, session state) belong to the retired
+autonomous prototype and are being retired from this repo under the issue contract, one
+requirement at a time.
 
 # History
 
-This repo replaced the [`obot-claw` hub](https://github.com/obot-claw/obot-claw.github.io) (archived July 2026), which ran an autonomous-agent portfolio ("Open Source OrangeBot") from May–June 2026. Open requirements were migrated here with links back to their originals, and the hub's diary and reports were migrated into [`diary/`](diary/) and [`reports/`](reports/) under requirement [#7](https://github.com/jwildfire/obot.roadmap/issues/7) — the site published from this repo replaced the hub as the project's memory. The closed P00x project issues remain readable in the archived repo; their disposition is recorded in the [#7 design doc](requirements/design/7_design.html).
+This repo replaced the [`obot-claw` hub](https://github.com/obot-claw/obot-claw.github.io)
+(archived July 2026), which ran an autonomous-agent portfolio ("Open Source OrangeBot")
+from May–June 2026. Open requirements were migrated here with links back to their
+originals, and the hub's diary and reports were migrated into [`diary/`](diary/) and
+[`reports/`](reports/) under requirement [#7](https://github.com/jwildfire/obot.roadmap/issues/7).
+From July to September 2026 a second, fully autonomous prototype ran from
+[`obot.agent`](https://github.com/jwildfire/obot.agent); it was retired on 2026-09-10 in
+favour of the goal-session model above, for the reasons recorded in
+[ways of working](docs/ways-of-working.md#what-was-retired-and-why).

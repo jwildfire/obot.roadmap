@@ -1,5 +1,5 @@
 name: Requirement
-description: A roadmap requirement linked to implementation tasks in other repos.
+description: A roadmap requirement under a goal, with its definition of done and its tasks in implementation repos.
 title: "{title}"
 labels:
   - requirement
@@ -7,22 +7,22 @@ body:
   - type: markdown
     attributes:
       value: |
-       This is a [Requirement](../../README.md#requirements) issue for the obot portfolio. Business Requirement and Overview are required for initialization.
+       A requirement under the [issue contract](../../docs/issue-contract.md): a sub-issue of exactly one goal, with task issues in implementation repos linked as its sub-issues. Business Requirement and Overview are required at creation; Design, Definition of done and Tasks must be populated before a session starts on the goal. One requirement, one release.
 
-       Below the five sections, after a `---` rule, every requirement says who wrote it and who approved it (#215). The web form cannot emit it — a form field would render as a sixth `###` section, and the five are a contract — so paste these two lines at the foot of the body after submitting, or file with `node scripts/provenance.mjs stamp`:
+       Below the sections, after a `---` rule, every requirement says who wrote it and who approved it. The web form cannot emit it — a form field would render as another `###` section — so paste these two lines at the foot of the body after submitting, or file with `node scripts/provenance.mjs stamp`:
 
        ```
        Authored by: <the agent or person who wrote this>
        Approved by: EMPTY
        ```
 
-       `EMPTY` means nobody has approved it, which is the normal and correct state for work an agent wrote. Replace it only with a citation that resolves — a decision id (`D0018.1`) or his native review (`owner/repo#123 review`) — and add a third line, `Beyond the approval:`, saying what the citation does not cover. Never prose: the nightly audit fails a claim that cannot be shown, and `EMPTY` always passes. See [Who decided it](../../README.md#who-decided-it).
+       `EMPTY` means nobody has approved it, which is the normal and correct state for work an agent wrote. Replace it only with a citation that resolves — his sign-off comment on the goal, a decision id (`D0018.1`) or his native review (`owner/repo#123 review`) — and add a third line, `Beyond the approval:`, saying what the citation does not cover. Never prose. See [Who decided it](../../docs/issue-contract.md#who-decided-it).
 
   - type: textarea
     id: business_requirement
     attributes:
       label: Business Requirement
-      description: "What business need does this address? Who benefits, and what does success look like?"
+      description: "What need does this address? Who benefits, and what does success look like?"
       placeholder: |
         State the user-facing or operational need in plain language.
         Avoid technical detail — capture the *why*, not the *how*.
@@ -36,8 +36,7 @@ body:
       description: "Short technical summary + impact. Must be populated when the issue is created."
       placeholder: |
         Briefly describe the proposed approach and which packages /
-        repos / users it affects. Detailed design lives in the Design
-        section, populated during Step 3 of the lifecycle.
+        repos / users it affects. Detailed design lives in the Design section.
     validations:
       required: true
 
@@ -47,9 +46,7 @@ body:
       label: Data Requirement
       description: |
         What source data must exist for this requirement to be feasible?
-        List domains, tables, columns, or data sources required.
-        Can be left blank at creation; must be populated during
-        Requirement Gathering (Step 2).
+        List domains, tables, columns, or data sources required, and their availability.
       placeholder: |
         **Required domains / tables:**
 
@@ -64,25 +61,40 @@ body:
     attributes:
       label: Design
       description: |
-        Detailed description including high-level technical components and
-        affected packages. Can be left blank at creation. Must be populated
-        before Tasks are created. For complex requirements, add artifacts
-        under `requirements/design/{issue_number}_design.md` and link here.
+        The technical design: components, affected packages, the approach.
+        Must be populated before Tasks are filed. For complex requirements,
+        add a self-contained page under `requirements/design/{issue_number}_design.html`
+        and link it here.
       placeholder: |
         **Summary:**
 
         **Affected packages / repos:**
 
-        **Design artifacts:** requirements/design/{issue_number}_design.md
+        **Design artifacts:** requirements/design/{issue_number}_design.html
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of done
+      description: |
+        The observable end state, how a reader who has memorised nothing can check it
+        (a command and what it prints, a URL and what it shows, a test and its result),
+        and the release it ships in. Write it so it can fail — "works as expected" is
+        not a definition of done.
+      placeholder: |
+        End state:
+        Proof:
+        Ships in:
+    validations:
+      required: true
 
   - type: textarea
     id: tasks
     attributes:
       label: Tasks
       description: |
-        List of tasks that must be completed. Each task should be linked to
-        an issue in the appropriate repo. Must be populated before
-        implementation begins.
+        One line per task issue, mirrored from the sub-issue links. Each task lives in
+        exactly one implementation repo with its own definition of done and milestone.
+        Must be populated before a session starts on the goal.
       placeholder: |
-        - [ ] Task description — repo — #issue
-
+        - repo#N — title

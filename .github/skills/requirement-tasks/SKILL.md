@@ -22,7 +22,7 @@ Adapted from [gsm.roadmap's requirement-tasks skill](https://github.com/Gilead-B
 
    **Check the decomposition fits one release.** A requirement covers exactly one release, so if the sub-issues you are about to draft cannot plausibly ship together, that is the moment to split — before any of them exist. Draft only the ones for this release; the rest become a second requirement, filed now with its own milestone, not a "phase 2" note in the body. See [README — One requirement, one release](../../../README.md#one-requirement-one-release).
 
-3. **Draft each sub-issue.** Follow the gsm.agent draft-file convention: save under `drafts/{repo}/ISSUE_N_{slug}.md` in the gsm.agent clone, with the `STATUS:` and `GITHUB_PROPERTIES:` headers. Each draft includes:
+3. **Draft each sub-issue** in the task shape of the [issue contract](../../../docs/issue-contract.md#task-issues) — a `Parent:` line, `### What changes`, `### Definition of done` — in a scratch file you will pass to `gh issue create --body-file`:
    - **Title** — `{verb} {what}` in the target repo (e.g. `Extract histogram module into safety.viz`)
    - **Description** — what changes, acceptance criteria, and a link back to the parent (`Parent: jwildfire/obot.roadmap#{N}`)
    - **Target repo** — exactly one
@@ -40,17 +40,17 @@ Navigator's own, and the task said nothing to correct that impression.
 If a task is approval-gated (a deletion, a merge to a protected surface, anything an invariant names),
 write the citation into the task itself — the specific approval, not the parent's issue number.
 
-4. **Present the drafts for review** with the `issue-review` skill before posting.
+4. **Present the drafts for review** in the conversation, or as a comment on the requirement when the session is unattended, before posting.
 
 5. **Post the sub-issues** to their target repos:
    ```
-   obot.agent/scripts/obot-gh issue create -R jwildfire/<repo> --title "<title>" --body-file <draft_path> --label <labels> --assignee jwildfire
+   gh issue create -R jwildfire/<repo> --title "<title>" --body-file <draft_path> --label <labels> --milestone <release>
    ```
-   The wrapper mints an `obotclaw[bot]` token, so GitHub records the bot as the actor rather than @jwildfire ([obot.agent#197](https://github.com/jwildfire/obot.agent/issues/197)). The assignee is spelled out because `@me` cannot work under it: a GitHub App bot is not an assignable user at all — `GET /repos/jwildfire/obot.roadmap/assignees/obotclaw[bot]` is a 404.
+   The actor is the connected GitHub account; the drafted-by line at the foot of the body records authorship. Give every task its release milestone here — a task with no milestone is not pickable.
 
 6. **Link each posted sub-issue to the parent** using the `sub-issue-linking` skill (gsm.agent). Verify each child appears under the parent in the GitHub Relationships UI.
 
-7. **Mirror the URLs into the parent's Sub-issues section** — append one line per sub-issue URL via `obot-gh issue edit --body-file` (draft-sync convention). This is what the roadmap generator reads; skipping it means the rollup shows no tasks.
+7. **Mirror the URLs into the parent's Sub-issues section** — append one line per sub-issue URL via `gh issue edit --body-file` (draft-sync convention). This is what the roadmap generator reads; skipping it means the rollup shows no tasks.
 
 8. **Summarize** the result: parent #, list of posted sub-issues (`repo#N — title`), and links to each. The rollup refreshes on the next push to `main` (the Deploy site workflow runs `scripts/build_roadmap_next.mjs`); no manual trigger exists.
 
