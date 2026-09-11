@@ -5,7 +5,28 @@ work accumulates under a vX.Y (Upcoming) heading that loses the suffix when the
 release is cut; the GitHub release publishes from the section verbatim.
 -->
 
-# obot.roadmap v0.4 (Upcoming)
+# obot.roadmap v0.5 (Upcoming)
+
+- Nothing yet.
+
+# obot.roadmap v0.4 — the standards home
+
+**See it move:** [Requirement Sessions: the Mid-October Plan](https://jwildfire.github.io/obot.roadmap/reports/goal-sessions-plan-2026-09-10/) — the operating model this release installs, and the five objectives it runs.
+
+The autonomous prototype was shut down on 2026-09-10 and the hub became the standards home: how work is tracked, how sessions run, and how code reaches a release now live here, in more detail than they had anywhere, and every session in every repository is bound to them. The site follows: objectives instead of goals, status on the issue instead of a board, a news feed of what actually moved, and the navigator-era scaffold gone.
+
+## What's new
+
+- **Three standards under `docs/`, mandatory everywhere.** The [issue contract](https://github.com/jwildfire/obot.roadmap/blob/main/docs/issue-contract.md) — objectives, requirements and tasks, definitions of done, status, blocked, comments, who decided it; [ways of working](https://github.com/jwildfire/obot.roadmap/blob/main/docs/ways-of-working.md) — the three phases (prep with @jwildfire, semi-autonomous execution, his review), requirement sessions and `/goal`, steering, the standup; and the [developer guidelines](https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md) — branches, Claude Code setup, pull requests, merging via rulesets, testing, releases with the ultrareview gate, artifacts, the write policy.
+- **Objectives → Requirements → Tasks, with definitions of done.** Goals are objectives, to keep clear of Claude Code's `/goal`; a session runs one requirement, sized so one `/goal` run can close its tasks and prove its definition of done. The [objective](https://github.com/jwildfire/obot.roadmap/blob/main/.github/ISSUE_TEMPLATE/objective.yml), [requirement](https://github.com/jwildfire/obot.roadmap/blob/main/.github/ISSUE_TEMPLATE/requirement.yml) and [task](https://github.com/jwildfire/obot.roadmap/blob/main/.github/ISSUE_TEMPLATE/task.yml) templates carry it; the requirement template is simplified — an Objective field, repositories named, no provenance block.
+- **Status is a label on the issue; the project board is retired.** `status: backlog` → `ready` → `in session` → `review` → `released`, one at a time, applied on filing and moved by the session at its start, its release candidate and its close. The [catalog](https://jwildfire.github.io/obot.roadmap/catalog.html) reads the labels and is the tracker; an open requirement labelled released, unlabelled, or doubly labelled is drift and says so.
+- **The news feed shows what moved.** [News](https://jwildfire.github.io/obot.roadmap/news.html) now carries issue transitions — a requirement or objective filed, moved between statuses, closed, reopened — beside artifact creation and releases; a bulk day collapses to one row. The session diary closed on 2026-09-10: agents comment on the issues they work, and write an artifact only when a comment cannot carry it.
+- **Every release candidate gets an ultrareview before it reaches @jwildfire.** It opens as a draft, `claude ultrareview <PR#> --post` runs, every finding is fixed or answered, and only then is it marked ready and he is asked.
+- **The navigator-era scaffold is gone.** The nightly roadmap audit and its apply lane, the ideas triage, the local-only guard, the premise-status stamp, the config count, the session-state strip, the Audit and Agents nav entries and their labels — 35 files and 20k lines — removed; the roadmap and objective pages, news, diary history, reports and decisions, analytics and the status dashboard stay.
+
+## Landed on main since v0.3, before the change of direction
+
+These shipped to `main` between July and September under the autonomous prototype and are kept on record; several describe machinery this release then removed.
 
 - **A decision artifact now says on the page whether its own premises still hold** — the claim sweep has re-checked them every five minutes since [obot.agent#262](https://github.com/jwildfire/obot.agent/issues/262), and the page itself said nothing, so a reader met an argument built on a premise that might have expired with no sign anything had ever looked. Every artifact now carries a strip above its masthead: the verdict, how old the reading is, and each premise with its own state. A page cannot check itself as you read it, so it does the next honest thing — it recomputes the reading's age in your browser, and past a day it stops asserting anything and tells you how long it has been instead. Holding, expired, "a person has to look" and "nothing has measured this" stay four different sentences ([#266](https://github.com/jwildfire/obot.roadmap/issues/266), [#301](https://github.com/jwildfire/obot.roadmap/issues/301)).
 - **The drift count stops reporting a blocked mechanism as decay** — nothing can put an issue on the [obot Roadmap board](https://github.com/users/jwildfire/projects/1) any more ([#252](https://github.com/jwildfire/obot.roadmap/issues/252)), so every requirement filed since joins the off-board set and the drift number climbs by itself. Those rows are now counted as blocked rather than as drift, still shown and still saying `Unstaged`, with one line under the table naming the block and linking the decision. The queue says it once instead of once per requirement, and the audit marks the 61 findings whose repair is a board write as ones it cannot run — refused before anything is attempted, rather than failing halfway ([#254](https://github.com/jwildfire/obot.roadmap/issues/254)).
