@@ -108,7 +108,7 @@ of exactly one objective. Sections, in order:
 | Data Requirement | the domains, columns and sources the work needs, with availability | only when data is involved |
 | Design | the technical design, inline or as `requirements/design/{N}_design.html` | yes |
 | Definition of done | end state, proof, ships in | yes |
-| Tasks | one line per task issue, `repo#N — title`, mirrored from the sub-issue links | yes |
+| Tasks | one line per task issue, `title (repo#N)`, mirrored from the sub-issue links | yes |
 
 Below the sections, after a `---` rule: the drafted-by line, and nothing else
 ([Who decided it](#who-decided-it)).
@@ -221,6 +221,13 @@ on the issue; whoever reads the answer removes the label. The standup lists ever
 The comments are the record of the work; the standup and @jwildfire read them, so they
 are written for him. Each ends with a `---` rule and the drafted-by line.
 
+Say what a thing is before you say its number. Nobody has issue numbers memorised, so
+every communication with a person — a comment, the standup, a reply in a session, a
+page on the site — describes the issue first and then cites its linkable number in
+parentheses: "the FDA reference-criteria package data (gsm.safety#77)", never
+"gsm.safety#77". A bare number is fine only where a machine reads it: a `Closes` line, a
+`Parent:` line, a milestone description.
+
 | When | Where | Content |
 |---|---|---|
 | Session start | the requirement | the order of its tasks, which agent holds which, the link to his sign-off on the objective |
@@ -234,17 +241,18 @@ The nightly comment's shape, exactly:
 
 ```markdown
 ### Complete
-- #N — one sentence: what @jwildfire can now do that he could not before
+- One sentence: what @jwildfire can now do that he could not before (repo#N)
 
 ### In progress
-- #N — where it stands, and what lands next
+- The task by name, where it stands, and what lands next (repo#N)
 
 ### Blocked
-- #N — the one question, quoted from the issue's latest comment
+- The one question, quoted from the issue's latest comment (repo#N)
 ```
 
 A closure carries a sentence. `#251, #256 and #264 closed` is the failure this exists to
-stop: the sentence is the deliverable and the issue number is a trailing citation.
+stop: the sentence is the deliverable and the issue number is a trailing citation in
+parentheses, after the words that say what it is.
 
 ## Milestones and labels
 
