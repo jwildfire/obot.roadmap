@@ -7,6 +7,7 @@ release is cut; the GitHub release publishes from the section verbatim.
 
 # obot.roadmap v0.5 (Upcoming)
 
+- **The Cost chart counts cloud sessions and refreshes nightly** — the [analytics page](https://jwildfire.github.io/obot.roadmap/analytics/index.html) had stopped on the last day the local usage script was run by hand, and since 2026-09-10 the work runs in cloud containers whose transcripts that script could never see. Each cloud session now publishes its own usage to the `session-state` branch before its container is reclaimed, the nightly deploy merges every fragment with the committed local file, and the local file refreshes itself from a launchd job on @jwildfire's machine. The section says which day each store runs through; cloud sessions are their own role, in green.
 - **The tracker replaces the project board** — [`tracker.html`](https://jwildfire.github.io/obot.roadmap/tracker.html) shows every objective opened to its requirements and their tasks, with status and lifecycle on every row, a sidebar that searches and filters by status, objective, area and milestone and counts what is in each status, and a URL that carries the filter so a view can be sent as a link. The nav is one row of the pages @jwildfire reads — Home, Tracker, Analytics, News; the queue, wire, catalog, objective, decision and status pages still build and are listed on the homepage under Other pages until their retirement is decided.
 
 # obot.roadmap v0.4 — the standards home

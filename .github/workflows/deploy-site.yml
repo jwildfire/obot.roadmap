@@ -125,7 +125,7 @@ jobs:
       # only exercised by live data while both are open — a window of hours — so
       # the test is the standing check that the count on the page is right.
       - name: Test the generators' shared rules
-        run: node --test scripts/lib/*.test.mjs scripts/lib/collect/*.test.mjs
+        run: node --test scripts/lib/*.test.mjs scripts/lib/collect/*.test.mjs scripts/lib/usage/*.test.mjs
 
       # The roadmap page set (requirement #211, design D0018): the queue at
       # roadmap.html, the wire one click behind it, and the catalog carrying the
@@ -154,7 +154,26 @@ jobs:
       - name: Build the tracker
         run: node scripts/build_tracker.mjs
 
-      # The roadmap group's charts page (Cost, from the committed usage data).
+      # The usage ledger: one fragment per cloud session, published by the session
+      # itself to usage/sessions/ on the session-state branch (scripts/usage/
+      # publish_session_usage.sh) because its transcripts exist nowhere else.
+      # Unpacked here for the analytics build to merge with the committed local
+      # file. The daily schedule above is what makes the merge nightly. A missing
+      # branch or directory is not a failure — the page then carries local
+      # sessions only and says so.
+      - name: Fetch the usage ledger
+        run: |
+          mkdir -p _ledger
+          git fetch -q origin session-state 2>/dev/null || echo "::warning title=Usage ledger::no session-state branch — cloud sessions will not appear on the analytics page"
+          if git cat-file -e origin/session-state:usage/sessions 2>/dev/null; then
+            git archive origin/session-state usage/sessions | tar -x -C _ledger
+            echo "usage ledger: $(ls _ledger/usage/sessions | wc -l) fragment(s)"
+          else
+            echo "usage ledger: no usage/sessions on session-state yet"
+          fi
+
+      # The roadmap group's charts page (Cost, from the committed local usage file
+      # merged with the ledger fetched above).
       - name: Build analytics
         run: node scripts/build_analytics.mjs
 

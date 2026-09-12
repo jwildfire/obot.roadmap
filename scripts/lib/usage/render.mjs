@@ -1,20 +1,25 @@
 // The roadmap page's Cost section — per-agent token spend and dollar cost over
 // time, one stacked column per period, one segment per agent.
 //
-// Data source and staleness: site/usage/usage.json is a COMMITTED artifact built
-// from @jwildfire's local Claude Code transcript store by
-// scripts/build_usage_data.py. The site build cannot regenerate it (the
-// transcripts only exist on that machine), so the section renders whatever was
-// last committed and says which day the data runs through. Refresh with:
+// Data source and staleness: the data is merged at build time (lib/usage/merge.mjs)
+// from two stores the site cannot read itself. site/usage/usage.json is a
+// COMMITTED artifact built from @jwildfire's local Claude Code transcript store by
+// scripts/build_usage_data.py — refreshed nightly by scripts/usage/refresh_local.sh
+// on his machine, or by hand:
 //
 //     python3 scripts/build_usage_data.py && git commit site/usage/usage.json
+//
+// Cloud sessions publish their own fragment to the session-state branch before
+// their container is reclaimed (scripts/usage/publish_session_usage.sh); the
+// nightly deploy merges whatever is there. The section says which day each store
+// runs through, so a stale one is visible rather than silent.
 //
 // The chart is built client-side from data inlined into the page rather than
 // fetched: it is ~33 kB, and inlining keeps the section working with no network
 // round trip and no CORS/CSP surface.
 //
-// Color: segments are colored by the agent's ROLE (five slots of the validated
-// categorical palette), not per agent — there are 100+ agents, which no
+// Color: segments are colored by the agent's ROLE (six slots of the validated
+// categorical palette, in slot order), not per agent — there are 100+ agents, which no
 // categorical palette can carry. One segment is still exactly one agent; the
 // legend names the roles and the table names every agent.
 import { esc } from '../gh.mjs';
@@ -24,7 +29,7 @@ import { HUB } from '../repos.mjs';
 // follows this order, which is the ordering the palette was validated on — do
 // not reorder to taste. Light steps sit on the site's paper surface; the dark
 // steps are declared in styles.css for a future site theme.
-const ROLE_ORDER = ['lead', 'sibling', 'ultracode', 'auto', 'interactive'];
+const ROLE_ORDER = ['lead', 'sibling', 'ultracode', 'auto', 'interactive', 'cloud'];
 
 const ROLE_BLURB = {
   lead: 'The interactive session driving the work (😺🤖).',
@@ -32,6 +37,7 @@ const ROLE_BLURB = {
   ultracode: 'Multi-agent ultracode jobs — a workflow fanning out over many agents (⚡️🤖).',
   auto: 'Fully autonomous sessions that picked their own increment (🦾🤖).',
   interactive: 'Sessions with no identity tag — ordinary interactive work, and everything before the tagging convention existed.',
+  cloud: 'Claude Code cloud sessions (☁️) — requirement and prep sessions since 2026-09-10, each reporting its own usage from its container.',
 };
 
 const METRICS = [
@@ -59,6 +65,23 @@ const num = (n) => n.toLocaleString('en-US');
 // A JSON literal inside <script> must not be able to close the tag or open a
 // comment; escaping '<' covers both and keeps the value valid JSON.
 const inlineJson = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
+
+// One sentence on where the data came from and how fresh each store is, so a
+// store that has stopped reporting is visible on the page rather than silent.
+function sourcesNote(sources) {
+  if (!Array.isArray(sources) || !sources.length) return '';
+  const local = sources.find((s) => s.kind === 'local');
+  const cloud = sources.filter((s) => s.kind === 'cloud');
+  const parts = [];
+  if (local) parts.push(`Local sessions through <strong>${esc(local.last ?? '—')}</strong>`);
+  if (cloud.length) {
+    const last = cloud.map((s) => s.last).filter(Boolean).sort().pop();
+    parts.push(`${cloud.length} cloud session${cloud.length === 1 ? '' : 's'} reported, latest <strong>${esc(last ?? '—')}</strong>`);
+  } else {
+    parts.push('no cloud session has reported yet');
+  }
+  return `${parts.join('; ')}.`;
+}
 
 function tile(label, value, sub) {
   return `  <div class="uz-tile">
@@ -158,9 +181,9 @@ export function usageSection(data) {
   return `<section class="rm-sec" id="sec-usage">
 <h2>Cost <span class="uz-total">${esc(money(t.cost))}</span></h2>
 <p class="rm-note">What this project has cost to build, at list API rates — one column per period,
-one segment per agent, colored by the agent's role. Read from this machine's Claude Code
-transcripts by <a href="https://github.com/${HUB}/blob/main/scripts/build_usage_data.py"><code>build_usage_data.py</code></a>;
-data runs through <strong>${esc(t.last ?? '—')}</strong>.</p>
+one segment per agent, colored by the agent's role. Read from Claude Code transcripts by
+<a href="https://github.com/${HUB}/blob/main/scripts/build_usage_data.py"><code>build_usage_data.py</code></a>;
+data runs through <strong>${esc(t.last ?? '—')}</strong>. ${sourcesNote(data.sources)}</p>
 
 <div class="uz-tiles">
 ${tiles}
@@ -193,8 +216,11 @@ ${modelTable(data.models, data.cacheMultipliers)}
 (one line per content block, and streaming snapshots inside sub-agent transcripts), so calls are
 deduped by request id keeping the final record. Sub-agent usage is billed to the agent that spawned it.
 Costs are list-price arithmetic over recorded token counts, not a copy of an invoice.
-Refresh the data by re-running the generator locally and committing
-<a href="https://github.com/${HUB}/blob/main/site/usage/usage.json"><code>site/usage/usage.json</code></a>.</p>
+Local sessions are read on @jwildfire's machine and committed as
+<a href="https://github.com/${HUB}/blob/main/site/usage/usage.json"><code>site/usage/usage.json</code></a>
+(nightly, by <code>scripts/usage/refresh_local.sh</code>); cloud sessions publish their own usage to the
+<a href="https://github.com/${HUB}/tree/session-state/usage/sessions"><code>session-state</code></a> branch
+before their container is reclaimed, and the nightly deploy merges both.</p>
 
 <script id="uz-data" type="application/json">${inlineJson({
     cells: data.cells,
