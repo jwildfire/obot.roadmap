@@ -49,8 +49,8 @@ Issues are filed from the templates — [objective](.github/ISSUE_TEMPLATE/objec
 [task](.github/ISSUE_TEMPLATE/task.yml) — under the
 [issue contract](docs/issue-contract.md). A requirement's status is one `status:` label —
 backlog, ready, in session, review, released — and the site's
-[catalog](https://jwildfire.github.io/obot.roadmap/catalog.html) is the tracker that
-reads it; the project board is retired. The hub's
+[tracker](https://jwildfire.github.io/obot.roadmap/tracker.html) reads it and the
+sub-issue links; the project board is retired. The hub's
 `requirement-drafting`, `requirement-design` and `requirement-tasks` skills under
 [`.github/skills/`](.github/skills/) walk a requirement from idea to filed tasks.
 
@@ -64,8 +64,8 @@ Formal documentation lives under [`requirements/`](requirements/):
 # Site
 
 The repo publishes the project homepage via GitHub Pages
-([`deploy-site.yml`](.github/workflows/deploy-site.yml)): the roadmap and objective pages
-generated from live GitHub state at deploy time, the [reports](reports/) and decision
+([`deploy-site.yml`](.github/workflows/deploy-site.yml)): the tracker, roadmap and objective
+pages generated from live GitHub state at deploy time, the [reports](reports/) and decision
 artifacts, the news feed of issue transitions and artifacts, the package status
 dashboard, and the [diary](diary/) as it stood when it closed on 2026-09-10. See the [#7 design doc](requirements/design/7_design.html) for the
 architecture.
