@@ -71,12 +71,31 @@ release_rules() { # $1 with_copilot (1/0)
 
 # ---------------------------------------------------------------- github helpers
 api() { gh api -H "Accept: application/vnd.github+json" "$@"; }
-ruleset_id() { api "repos/$OWNER/$1/rulesets" --jq --arg n "$2" '.[] | select(.name==$n) | .id' 2>/dev/null | head -1; }
+# `gh api` has no --arg; the lookup runs through jq so a name with spaces is matched exactly.
+ruleset_id() { api "repos/$OWNER/$1/rulesets" 2>/dev/null | jq -r --arg n "$2" '.[] | select(.name==$n) | .id' | head -1; }
 ruleset_get() { api "repos/$OWNER/$1/rulesets/$2" 2>/dev/null; }
 
-# Normalise a live ruleset to the fields we set, so it can be compared with what we want.
-normalise() { jq -c '{name,target,enforcement,conditions:{ref_name:{include:.conditions.ref_name.include,exclude:(.conditions.ref_name.exclude//[])}},rules:[.rules[]|{type,parameters:(.parameters//{})}|if .parameters=={} then {type} else . end]|sort_by(.type)}'; }
-normalise_wanted() { jq -c '{name,target,enforcement,conditions,rules:[.rules[]|if (.parameters//{})=={} then {type} else . end]|sort_by(.type)}'; }
+# Compare a live ruleset with the body we want, on the fields this script sets. GitHub
+# fills in its own pull-request defaults (required_reviewers,
+# require_extra_approval_for_unattributed_changes) and returns keys in its own order, so
+# comparing whole documents would always read as drift. Prints "" when it matches,
+# otherwise the fields that differ.
+compare_ruleset() { # $1 wanted body; live ruleset on stdin
+  jq -r --argjson w "$1" '
+    . as $live
+    | [ (if (.name==$w.name and .target==$w.target and .enforcement==$w.enforcement) then empty else "name/target/enforcement" end),
+        (if ((.conditions.ref_name.include//[])==($w.conditions.ref_name.include//[])
+             and (.conditions.ref_name.exclude//[])==($w.conditions.ref_name.exclude//[])) then empty else "branch" end),
+        ( $w.rules[] as $wr
+          | (($live.rules//[]) | map(select(.type==$wr.type)) | .[0]) as $lr
+          | if $lr==null then "no \($wr.type) rule"
+            else ( ($wr.parameters//{}) | to_entries[]
+                   | select((($lr.parameters//{})[.key]) != .value)
+                   | "\($wr.type).\(.key)" )
+            end ),
+        ( (($live.rules//[])[].type) | select(. as $t | ($w.rules|map(.type)|index($t))==null) | "unexpected \(.) rule" )
+      ] | unique | join(", ")'
+}
 
 upsert_ruleset() { # $1 repo, $2 body → prints ok / ok-without-copilot / error
   local repo=$1 body=$2 name id out
@@ -102,12 +121,16 @@ settings_drift() { # $1 repo → "" or a phrase
   echo "$out"
 }
 ruleset_drift() { # $1 repo, $2 wanted body → "" or a phrase
-  local id live; id=$(ruleset_id "$1" "$(jq -r .name <<<"$2")")
-  [ -z "$id" ] && { echo "missing ruleset '$(jq -r .name <<<"$2")'; "; return; }
-  live=$(ruleset_get "$1" "$id" | normalise)
-  if [ "$live" != "$(normalise_wanted <<<"$2")" ]; then
-    # Tolerate the one difference a plan without Copilot forces.
-    if [ "$live" = "$(jq -c '.rules |= map(select(.type!="copilot_code_review"))' <<<"$2" | normalise_wanted)" ]; then echo "ruleset '$(jq -r .name <<<"$2")' lacks Copilot review; "; else echo "ruleset '$(jq -r .name <<<"$2")' differs; "; fi
+  local id live name why; name=$(jq -r .name <<<"$2"); id=$(ruleset_id "$1" "$name")
+  [ -z "$id" ] && { echo "missing ruleset '$name'; "; return; }
+  live=$(ruleset_get "$1" "$id")
+  why=$(compare_ruleset "$2" <<<"$live")
+  [ -z "$why" ] && return
+  # Tolerate the one difference a plan without Copilot forces.
+  if [ -z "$(compare_ruleset "$(jq -c '.rules |= map(select(.type!="copilot_code_review"))' <<<"$2")" <<<"$live")" ]; then
+    echo "ruleset '$name' lacks Copilot review; "
+  else
+    echo "ruleset '$name' differs ($why); "
   fi
 }
 
