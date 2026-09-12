@@ -22,8 +22,11 @@ const OWNER = 'jwildfire';
 const BLOG_FEED = 'https://jwildfire.github.io/feed.xml';
 const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 
+// `off` marks a type the page hides until its box is ticked (@jwildfire, 2026-09-12:
+// "hide issue transitions by default on the news page") — the transitions are the
+// bulk of the feed, and the page is read for the posts, artifacts and releases.
 const TYPES = {
-  transition: { label: 'Issue transition', plural: 'Issue transitions' },
+  transition: { label: 'Issue transition', plural: 'Issue transitions', off: true },
   artifact: { label: 'Agent artifact', plural: 'Agent artifacts' },
   release: { label: 'Release', plural: 'Releases' },
   blog: { label: 'Blog post', plural: 'Blog posts' },
@@ -317,7 +320,7 @@ for (const ym of months) {
 }
 
 const typeFilters = Object.entries(TYPES).map(([key, t]) =>
-  `      <label><input type="checkbox" value="${key}" checked> ${t.plural} <span class="count">${counts[key]}</span></label>`).join('\n');
+  `      <label><input type="checkbox" value="${key}"${t.off ? '' : ' checked'}> ${t.plural} <span class="count">${counts[key]}</span></label>`).join('\n');
 const monthFilters = [`      <a href="#" data-month="all" class="current" aria-current="true">All months</a>`]
   .concat(months.map((ym) => `      <a href="#" data-month="${ym}">${monthName(ym)}</a>`)).join('\n');
 
@@ -383,6 +386,7 @@ Source: <a href="https://github.com/${OWNER}/obot.roadmap">jwildfire/obot.roadma
       apply();
     });
   });
+  apply(); // the boxes that start unticked hide their items from the first paint
 })();
 </script>
 </body>
