@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gsm.safety v1.2.0 — annotated demo</title>
+<meta name="description" content="Everything gsm.safety ships since v1.1.0 as one release, in four parts: the liver chart that stopped reading a baseline as a peak, the census rebuilt on metrics with the death count corrected, the last two widgets, and the FDA guide's thresholds as data.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;
+  --espresso:#3d2b1f;
+  --bronze:#b05515;
+  --flag:#b83a2e;
+  --amber:#9a7a1e;
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono)}
+
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:17px;margin:34px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--espresso);line-height:0}
+.frame img{display:block;width:100%;height:auto}
+.pin{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  width:23px;height:23px;border-radius:50%;background:var(--paper);color:var(--ink);
+  display:grid;place-items:center;font:700 12px/1 var(--mono);
+  box-shadow:0 0 0 3px var(--espresso),0 1px 4px rgba(0,0,0,.4)}
+figcaption{margin-top:12px}
+.keys{margin:0;padding:0;list-style:none;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 26px}
+.keys li{position:relative;padding-left:28px;font-size:14px;color:var(--ink2);line-height:1.45}
+.keys b{position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:50%;
+  background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font:700 11px/1 var(--mono)}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.cap b{color:var(--ink2);font-weight:600}
+
+table.counts{border-collapse:collapse;margin:18px 0 0;font-size:14.5px;min-width:420px}
+table.counts th{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  text-align:left;padding:8px 18px 8px 0;border-bottom:1px solid var(--rule2)}
+table.counts td{padding:8px 18px 8px 0;border-bottom:1px solid var(--rule);color:var(--ink2)}
+table.counts td.n{font-family:var(--mono)}
+table.counts td.red{color:var(--flag);font-weight:600;font-family:var(--mono)}
+.tablewrap{overflow-x:auto}
+
+.strip{display:grid;grid-template-columns:1fr 340px;gap:0;margin:34px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+pre{background:var(--espresso);color:#f2e9df;border-radius:5px;padding:18px 20px;overflow-x:auto;
+  font:13px/1.7 var(--mono);margin:18px 0 0}
+pre .c{color:#a89887}
+pre .add{color:#8fd6a8}
+pre .mv{color:#f0b46a}
+
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pin{width:20px;height:20px;font-size:10px}
+  .mast{padding-top:36px}
+}
+/* --- W0124 additions to the family stylesheet ------------------------- */
+.callout{border:1px solid var(--rule2);border-left:4px solid var(--bronze);border-radius:5px;
+  background:var(--panel);padding:16px 20px;margin:22px 0 0}
+.callout .lbl{margin-bottom:8px}
+.callout p{margin:0;font-size:15px;color:var(--ink2);max-width:66ch}
+.callout p+p{margin-top:9px}
+.callout ul{margin:8px 0 0;padding-left:18px;font-size:15px;color:var(--ink2)}
+.callout li+li{margin-top:5px}
+.pair{display:grid;grid-template-columns:1fr;gap:22px;margin:22px 0 0}
+.pair figure{margin:0}
+.pair .tag{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  display:inline-block;padding:5px 9px;border-radius:3px;margin:0 0 9px}
+.tag.old{background:#f0e7d8;color:#7d5a1e}
+.tag.new{background:#dcefe2;color:#1f5f3c}
+table.counts td.was{color:var(--mute);font-family:var(--mono)}
+table.counts td.now{color:var(--go);font-weight:600;font-family:var(--mono)}
+table.counts caption{caption-side:top;text-align:left;font-size:14px;color:var(--mute);
+  padding:0 0 10px;max-width:78ch}
+table.counts tr.gone td{color:var(--flag)}
+ul.plain{margin:12px 0 0;padding-left:18px;font-size:15px;color:var(--ink2);max-width:74ch}
+ul.plain li+li{margin-top:6px}
+.facts a{border-bottom-color:rgba(47,111,168,.3)}
+@media (min-width:820px){ .pair{grid-template-columns:1fr 1fr} .pair.stack{grid-template-columns:1fr} }
+@media (max-width:640px){
+  table.counts{font-size:13.5px;min-width:0}
+  table.counts th,table.counts td{padding:7px 10px 7px 0}
+  pre{font-size:11.5px;padding:14px 14px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">gsm.safety <span class="dot"></span> release review <span class="dot"></span> 2026-09-12</p>
+  <h1>What <span class="v">v1.2.0</span> ships, annotated</h1>
+  <p class="lede">One release carrying everything gsm.safety has merged since v1.1.0 in July. Two clinical corrections lead it: the composite liver view no longer reads a participant's own baseline as an on-treatment peak, and the safety overview reports thirteen deaths where it said four. Behind them, four chart widgets so that every renderer safety.viz exports is reachable from R, and the FDA safety guide's laboratory thresholds as package data with the first functions that apply them. The page is in four parts, each measured when its work landed; the dates and branches are stated at the foot of each.</p>
+  <p class="facts">
+    <span>deaths <b>4 → 13</b> of 762</span>
+    <span><b>2</b> participants leave the eDISH plot, <b>0</b> change quadrant</span>
+    <span>widgets <b>13 of 13</b> renderers</span>
+    <span>reference rows <b>46 + 80</b></span>
+    <span>candidate <a href="https://github.com/jwildfire/gsm.safety/pull/88">gsm.safety v1.2.0-RC1</a>, <code>dev</code> → <code>main</code></span>
+  </p>
+</header>
+
+<div class="callout">
+  <p class="lbl">Why one release · @jwildfire, 2026-09-12</p>
+  <p>Three candidates had been opened for this work, one stacked on the next: v1.2.0 for the widget parity, v1.3.0 for the census, v1.5.0 for the FDA data, with the last two widgets between them under a version that never got a candidate. On 12 September he decided: "Let's go with option B, but squash it all into a single release: PR/Release notes/Demo for a single v1.2." This page is that demo; the release notes are one section; the candidate is one pull request from <code>dev</code>.</p>
+</div>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#p1-correction"><span class="ref">part 1</span><span class="t">The liver chart, corrected</span><span class="s">A baseline is no longer a peak; two charts R never had</span></a>
+  <a href="#p2-deaths"><span class="ref">part 2</span><span class="t">The census on metrics</span><span class="s">Four deaths, or thirteen; every figure beside its denominator</span></a>
+  <a href="#p3-widgets"><span class="ref">part 3</span><span class="t">The last two widgets</span><span class="s">Time to event and the participant profile</span></a>
+  <a href="#p4-data"><span class="ref">part 4</span><span class="t">The FDA guide's thresholds</span><span class="s">Tables 56 to 60 as data, three rules applied once</span></a>
+</nav>
+
+<div class="cut" style="margin-top:56px"><span>part 1 <em>· the widget parity work · was the v1.2.0 candidate, measured 2026-08-22</em></span></div>
+<section>
+  <div class="hd"><h2>The liver chart stops reading a baseline as a peak</h2></div>
+  <p class="what">gsm.safety's composite liver view had been reading some participants' own baseline as if it were an on-treatment peak. This part swaps the chart library under all eleven widgets from safety.viz v1.4.0 to v1.7.0, where the rule was corrected, adds two charts that had no R binding at all, and puts a parity guard in CI. Everything below is a run performed on 2026-08-22: both bundles, the same data, the same widget code.</p>
+</section>
+<div class="cut"><span>sv#91 <em>· the clinical change</em></span></div><section id="p1-correction">
+  <div class="hd"><h2>The same chart, drawn by the old bundle and the new one</h2></div>
+  <p class="what">Both captures below come from one report file. The widget code, the settings and all 57 929 rows of the example data are byte-identical between them — the two copies differ only in which <code>safety.viz.js</code> they load. Read the grey line above each chart pair: it is the module's own count of who made it into the plot.</p>
+
+  <div class="pair stack">
+    <figure>
+      <span class="tag old">Before · safety.viz 1.4.0</span>
+      <div class="frame"><img src="media/composite-1.4.0.jpg" alt="The composite eDISH view drawn by the safety.viz 1.4.0 bundle. The note above the charts reads: 295 of 364 participants shown in the composite plot. 69 participants excluded (missing baseline or on-treatment ALT/total bilirubin)." width="1900" height="741" loading="lazy"></div>
+      <figcaption class="cap">295 of 364 shown, 69 excluded. This is what gsm.safety v1.1.0, the version on main, draws.</figcaption>
+    </figure>
+    <figure>
+      <span class="tag new">After · safety.viz 1.7.0</span>
+      <div class="frame"><img src="media/composite-1.7.0.jpg" alt="The composite eDISH view drawn by the safety.viz 1.7.0 bundle. The note above the charts reads: 293 of 364 participants shown in the composite plot. 71 participants excluded (missing baseline or on-treatment ALT/total bilirubin)." width="1900" height="741" loading="lazy"></div>
+      <figcaption class="cap">293 of 364 shown, 71 excluded. Two participants who never had an on-treatment measurement are no longer drawn as though they did.</figcaption>
+    </figure>
+  </div>
+
+  <div class="callout">
+    <p class="lbl">What the difference is</p>
+    <p>A participant's on-treatment peak used to be the largest value recorded after study day zero. For a participant whose earliest liver record is <em>not</em> on day zero, that rule kept their baseline record in the on-treatment set — so their own starting value could be reported as their peak, and their peak could never come out below baseline. The rule is now: on-treatment is every record that is not the baseline record.</p>
+    <p>The two participants who leave the plot each have exactly one liver measurement. Under the old rule that single record served as both their baseline and their peak.</p>
+  </div>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>Measured for this page on 2026-08-22 by opening both reports in Chromium and reading the composite view's own reduction out of each bundle.</caption>
+    <thead><tr><th>Composite eDISH view</th><th>safety.viz 1.4.0</th><th>safety.viz 1.7.0</th></tr></thead>
+    <tbody>
+      <tr><td>Participants plotted</td><td class="was">295</td><td class="now">293</td></tr>
+      <tr><td>Participants excluded</td><td class="was">69</td><td class="now">71</td></tr>
+      <tr><td>On-treatment: Normal &amp; NN</td><td class="was">248</td><td class="now">246</td></tr>
+      <tr><td>On-treatment: Hy's Law</td><td class="was">13</td><td class="was">13</td></tr>
+      <tr><td>On-treatment: Temple's Corollary</td><td class="was">19</td><td class="was">19</td></tr>
+      <tr><td>On-treatment: Cholestasis</td><td class="was">15</td><td class="was">15</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="cap">No participant changes quadrant. The Normal &amp; Not-Notable count falls by two because the two participants who leave the plot were being counted there. Both halves matter: a reader checking the quadrant counts against the chart would find them moved, and a reader asking whether anyone's clinical classification changed would find that nobody's did.</p>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>eDISH is read by eye. A point that sits at its own baseline is indistinguishable from a point that genuinely peaked there, and a participant who improved on treatment could not be drawn below the diagonal at all. On this data nobody crosses into Hy's Law because of it — but that is a property of this study, not of the rule.</p>
+      <p>The same corrected reduction feeds the migration view and the new ALT waterfall. The plain eDISH scatter uses a different per-record path and is unaffected.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <ol>
+        <li>Open the <a href="https://jwildfire.github.io/safety.viz/hep-explorer/">hep-explorer demo</a> on the safety.viz site — it runs the corrected bundle.</li>
+        <li>Choose <em>Composite plot (baseline-referenced)</em> from the View control.</li>
+        <li>Read the count line above the charts, then compare it with the capture on the left.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<div class="cut"><span>the cause <em>· three participants' own records</em></span></div><section id="p1-mechanism">
+  <div class="hd"><h2>Why a baseline became a peak, in the data itself</h2></div>
+  <p class="what">The example data records a study day for every measurement. These are every ALT record the three affected participants have — read out of the package's own <code>ExampleData("adbds")</code> on 2026-08-22, nothing else selected or filtered.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>01-701-1341 — the participant whose reported peak fell the furthest.</caption>
+    <thead><tr><th>Visit</th><th>Study day</th><th>ALT (U/L)</th><th>ULN</th><th>×ULN</th><th>Old rule</th><th>New rule</th></tr></thead>
+    <tbody>
+      <tr><td>Unscheduled 1.1</td><td class="n">1.1</td><td class="n">43</td><td class="n">43</td><td class="n">1.0000</td><td class="was">counted as on-treatment</td><td class="now">baseline</td></tr>
+      <tr><td>Week 2</td><td class="n">4.0</td><td class="n">15</td><td class="n">43</td><td class="n">0.3488</td><td class="was">on-treatment</td><td class="now">on-treatment</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="cap">There is no day-zero record, so the baseline resolves to the day-1.1 measurement. Because 1.1 is after day zero, the old rule kept that same record in the on-treatment set and reported the peak as 1.0000 ×ULN — the participant's own starting value. The peak is 0.3488 ×ULN, and this participant improved rather than peaked.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>01-703-1197 and 01-708-1236 — the two who leave the plot. Each has exactly one ALT record.</caption>
+    <thead><tr><th>Participant</th><th>Visit</th><th>Study day</th><th>ALT (U/L)</th><th>×ULN</th><th>Old rule</th><th>New rule</th></tr></thead>
+    <tbody>
+      <tr><td>01-703-1197</td><td>Unscheduled 1.1</td><td class="n">1.1</td><td class="n">18</td><td class="n">0.5625</td><td class="was">baseline <em>and</em> peak, both 0.5625</td><td class="now">baseline only — no on-treatment record</td></tr>
+      <tr><td>01-708-1236</td><td>Unscheduled 1.1</td><td class="n">1.1</td><td class="n">13</td><td class="n">0.4062</td><td class="was">baseline <em>and</em> peak, both 0.4062</td><td class="now">baseline only — no on-treatment record</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="cap">Total bilirubin behaves the same way for both: one record, serving as its own peak. A participant with no measurement after baseline has no on-treatment peak to plot, and is now counted among the excluded rather than drawn at their starting position.</p>
+
+  <div class="callout">
+    <p class="lbl">How far this reaches</p>
+    <ul>
+      <li>24 of the 318 participants carrying liver measurements have no day-zero record. Those 24 are exactly the population the two rules treat differently.</li>
+      <li>Of the 24, eleven are visible in the composite view: nine whose peak moves and two who leave it. The rest already had their baseline outranked by a later value, so both rules pick the same peak.</li>
+      <li>The count of 71 excluded is against all 364 participants in the dataset. 46 of them carry no liver measurements at all; among the 318 who do, the drop goes from 23 to 25.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="cut"><span>the ledger <em>· every value that moves</em></span></div><section id="p1-ledger">
+  <div class="hd"><h2>The eleven participants, named</h2></div>
+  <p class="what">Read out of each bundle's own reduction — the function whose return value the composite view hands to the chart — for the same 364 participants. Values are peak on-treatment, in multiples of the upper limit of normal.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <thead><tr><th>Participant</th><th>Peak ALT was</th><th>is now</th><th>Peak bilirubin was</th><th>is now</th><th>Quadrant</th></tr></thead>
+    <tbody>
+      <tr><td>01-701-1341</td><td class="was">1.0000</td><td class="now">0.3488</td><td class="was">0.4071</td><td class="was">0.4071</td><td>unchanged</td></tr>
+      <tr><td>01-702-1082</td><td class="was">1.1562</td><td class="now">1.0938</td><td class="was">0.4886</td><td class="was">0.4886</td><td>unchanged</td></tr>
+      <tr><td>01-703-1096</td><td class="was">0.3438</td><td class="now">0.3125</td><td class="was">0.3257</td><td class="was">0.3257</td><td>unchanged</td></tr>
+      <tr><td>01-703-1100</td><td class="was">0.5625</td><td class="now">0.5312</td><td class="was">0.6514</td><td class="now">0.4071</td><td>unchanged</td></tr>
+      <tr><td>01-704-1008</td><td class="was">0.5000</td><td class="now">0.4688</td><td class="was">0.7329</td><td class="was">0.7329</td><td>unchanged</td></tr>
+      <tr><td>01-705-1349</td><td class="was">1.2188</td><td class="was">1.2188</td><td class="was">1.3029</td><td class="now">1.1400</td><td>unchanged</td></tr>
+      <tr><td>01-708-1348</td><td class="was">0.4688</td><td class="now">0.4375</td><td class="was">0.4071</td><td class="was">0.4071</td><td>unchanged</td></tr>
+      <tr><td>01-709-1301</td><td class="was">1.8529</td><td class="was">1.8529</td><td class="was">0.4886</td><td class="now">0.4071</td><td>unchanged</td></tr>
+      <tr><td>01-711-1012</td><td class="was">0.4706</td><td class="was">0.4706</td><td class="was">0.4071</td><td class="now">0.3257</td><td>unchanged</td></tr>
+      <tr class="gone"><td>01-703-1197</td><td>0.5625</td><td>not plotted</td><td>0.3257</td><td>not plotted</td><td>leaves the plot</td></tr>
+      <tr class="gone"><td>01-708-1236</td><td>0.4062</td><td>not plotted</td><td>0.3257</td><td>not plotted</td><td>leaves the plot</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="cap">Nine peaks move and not one of them rises. Every other participant's plotted position is identical between the two bundles, which is the other half of the claim worth checking: the rule change is confined to the participants it was meant to reach.</p>
+
+  <div class="callout">
+    <p class="lbl">What is being shipped is what was measured</p>
+    <ul>
+      <li>The bundle vendored in this release hashes to <code>ecd740ff…</code>, and the bundle the public safety.viz demo serves today hashes to the same value — checked by downloading it while writing this page.</li>
+      <li>That bundle contains the corrected identity check once. The safety.viz 1.4.0 bundle that gsm.safety v1.1.0 ships contains it zero times.</li>
+      <li>Both report files used for the captures are the same 6 984 049 bytes and differ only in the name of the directory they load the library from.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="cut"><span>gs#49 <em>· two charts R never had</em></span></div><section id="p1-widgets">
+  <div class="hd"><h2>The hepatic ALT waterfall and the KDIGO nephrotoxicity explorer</h2></div>
+  <p class="what">Both existed in the JavaScript library and had no R binding. Both captures below were produced by running the package's own report workflows on 2026-08-22 with the release's code and the release's bundled example data.</p>
+
+  <figure>
+    <div class="frame"><img src="media/hep-waterfall.jpg" alt="The hepatic ALT waterfall: 58 participants ranked by baseline ALT, placebo ascending on the left and study drug descending on the right, each bar spanning baseline to maximum on-treatment ALT, with green bars marking new-onset jaundice and flanking box plots summarising each arm." width="1700" height="887" loading="lazy"></div>
+    <figcaption class="cap"><code>Widget_HepWaterfall()</code> on the synthetic abnormal-baseline cohort: 58 of 80 participants plotted, 22 excluded for abnormal baseline bilirubin per the source paper's Table 1, seven marked as developing new-onset jaundice. The chart exists for trials where a normal-baseline eDISH cannot be formed at all.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="frame"><img src="media/nep-explorer.jpg" alt="The KDIGO nephrotoxicity explorer: maximum fold change in creatinine against maximum absolute change, with shaded stage 1, 2 and 3 zones, and a KDIGO stage summary table below giving counts and percentages by fold change, absolute change and combined stage." width="1700" height="1064" loading="lazy"></div>
+    <figcaption class="cap"><code>Widget_NepExplorer()</code>: 276 participants staged, 24 that could not be plotted named rather than dropped silently, and a summary table that says in words that its first two column pairs are separate marginal distributions rather than a cross-tabulation.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <p class="lbl">Both are marked provisional upstream, and the widgets carry that through</p>
+    <p>The waterfall renders behind a prototype banner and the nephrotoxicity explorer is marked experimental pending clinical confirmation of the KDIGO staging ladder. That is the chart library's own labelling, visible on the capture, and wrapping them in R does not promote them.</p>
+  </div>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">The part that outlives the release</p>
+      <p>A check now runs weekly against the latest safety.viz release: a renderer with no widget fails it unless a deferral names a filed requirement. A deferral that cites nothing is refused, so falling behind quietly stops being available.</p>
+      <p>When this part was measured, two renderers were still unwrapped, the participant profile and the time-to-event chart, because both need two datasets where the widget contract carried one. Part 3 of this page is where they arrive, and the deferral list is empty in this release.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try them</p>
+      <ol>
+        <li><a href="https://jwildfire.github.io/safety.viz/hep-waterfall/">The ALT waterfall demo</a> — drag the jaundice threshold and watch the green bars change.</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/nep-explorer/">The KDIGO explorer demo</a> — click a point in a stage zone for that participant's creatinine records.</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/hep-explorer/">The eDISH demo</a> — the chart this release corrects.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+
+<div class="cut" style="margin-top:56px"><span>part 2 <em>· the census rebuild · was the v1.3.0 candidate, measured 2026-08-22</em></span></div>
+<section>
+  <div class="hd"><h2>The safety census rebuilt on metrics</h2></div>
+  <p class="what">A safety overview leads with denominators: how many participants, how many dosed, how many died. gsm.safety computed those inside one function, from whatever columns it was handed, and got several of them wrong. This part replaces every one with a metric that publishes its own numerator, its own denominator and a record of where the figure came from, adds the report that reads them, and keeps <code>SafetyCensus()</code> by name with its arithmetic moved out. Both versions were run on 2026-08-22, on the same study, in the same session.</p>
+</section>
+<div class="cut"><span>the headline <em>· gs#56</em></span></div><section id="p2-deaths">
+  <div class="hd"><h2>The death count</h2></div>
+  <p class="what">On the ecosystem's bundled study, the safety overview reported four deaths. Thirteen enrolled participants have a death recorded. The old count never opened the death domain at all: it matched the text of a discontinuation reason and counted whoever it found, enrolled or not.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>Measured for this page on 2026-08-22 by two routes that share no code — the study's records read directly with base R, and the standard mapping run through the metric workflow end to end. Both give 13.</caption>
+    <thead><tr><th>Where a death is recorded</th><th>Participants</th><th>Of them enrolled</th></tr></thead>
+    <tbody>
+      <tr><td>The death domain</td><td class="n">12</td><td class="n">10</td></tr>
+      <tr><td>Discontinuation reason reads "Death"</td><td class="n">4</td><td class="n">3</td></tr>
+      <tr><td>Named by both</td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td>Union</td><td class="n">16</td><td class="now">13</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="cap">Three of the sixteen were never enrolled — S42425, S97688 and S78705 — and the metric anchors every figure to the enrolled population of 762, so the published number is 13. The old count did not anchor, which is why it reported all four of its matches including the one who was never enrolled.</p>
+
+  <div class="callout">
+    <p class="lbl">The correction is four to thirteen, and it is stated that way deliberately</p>
+    <p>An earlier version of this work said the function reported one death, and that version circulated for about a day before being corrected. One is what it reported on gsm.core 1.2.0, where a single participant's discontinuation reason said Death. The bundled study moved between gsm.core versions under the same name: on 1.3.1 four participants carry that reason, and 762 are enrolled rather than 760.</p>
+    <p>So this is a threefold correction to a published clinical figure, not a thirteenfold one. The metric's own figure of 13 was re-measured on 1.3.1 and did not move.</p>
+  </div>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>The same code, run twice for this page: once against this machine's own R library, once against the versions the release was qualified on.</caption>
+    <thead><tr><th>The bundled study <code>AA-AA-000-0000</code></th><th>gsm.core 1.2.0</th><th>gsm.core 1.3.1</th></tr></thead>
+    <tbody>
+      <tr><td>Participants in the subject domain</td><td class="n">1000</td><td class="n">1000</td></tr>
+      <tr><td>Enrolled</td><td class="was">760</td><td class="now">762</td></tr>
+      <tr><td>Discontinuation reason reads "Death"</td><td class="was">1</td><td class="now">4</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="cap">This is the trap the release exists to close, and it is also the reason this page was not built on the machine's own library: rendering the census here would have republished the superseded figures.</p>
+</section>
+
+<div class="cut"><span>gs#56 <em>· gs#58 · every figure that moves</em></span></div><section id="p2-moves">
+  <div class="hd"><h2>The census, before and after, in one session</h2></div>
+  <p class="what">Both runs call <code>SafetyCensus()</code> on the same mapped domains from the same study, minutes apart: the census as v1.1.0 ships it first (the widget work in part 1 does not touch it), then this release's. Nothing below is copied from the release notes or the qualification records — those were read afterwards, to check this run against them.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <thead><tr><th>Figure on the safety overview</th><th>Before, as v1.1.0 computes it</th><th>This release</th><th>What the old number was doing</th></tr></thead>
+    <tbody>
+      <tr><td>Enrolled participants</td><td class="was">762</td><td class="was">762</td><td>unchanged</td></tr>
+      <tr><td>Randomised to an arm</td><td class="was">blank</td><td class="now">577</td><td>read a treatment-arm column no standard domain carries</td></tr>
+      <tr><td>Received study drug</td><td class="was">744</td><td class="now">762</td><td>inferred dosing from time on treatment exceeding zero</td></tr>
+      <tr><td>Deaths</td><td class="was">4</td><td class="now">13</td><td>matched a discontinuation reason, never read the death domain</td></tr>
+      <tr><td>Person-years on study</td><td class="was">73.2</td><td class="was">73.2</td><td>unchanged</td></tr>
+      <tr><td>Person-years on treatment</td><td class="was">29.5</td><td class="was">29.5</td><td>unchanged</td></tr>
+      <tr><td>Participants with a lab result</td><td class="was">598</td><td class="was">598</td><td>unchanged</td></tr>
+      <tr><td>Participants with an ECG</td><td class="was">blank, of 762</td><td class="now">absent, and it says so</td><td>published a blank where the domain is missing</td></tr>
+      <tr><td>Participants with a reported AE</td><td class="was">661</td><td class="was">661</td><td>unchanged</td></tr>
+      <tr><td>Participants with a disposition record</td><td class="was">100</td><td class="now">76</td><td>counted every identifier in the domain, enrolled or not</td></tr>
+      <tr><td>Completed</td><td class="was">22</td><td class="now">19</td><td>counted the same way, and inside a table rather than as a figure</td></tr>
+      <tr><td>Discontinued</td><td class="was">10</td><td class="now">9</td><td>counted the same way, and inside a table rather than as a figure</td></tr>
+      <tr class="gone"><td>Median days on treatment</td><td>15</td><td>no longer published</td><td>wants an averaging step no metric performs yet</td></tr>
+      <tr class="gone"><td>Ongoing / Not in the disposition domain</td><td>64 / 662</td><td>no longer published</td><td>read out of free text, and a subtraction</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <p class="lbl">Two figures left the page rather than moving, and they are named rather than dropped</p>
+    <ul>
+      <li>The median days on treatment needs an averaging step in the metric layer. Publishing it from the report would put a second counting lane back, which is the defect this release removes.</li>
+      <li>The per-visit data-coverage table is the thirteenth census figure and is carried. Under the standard mapping the lab domain arrives with no visit column at all, so a coverage figure cannot key on a visit — and the expected count needs a scheduled study day no domain supplies. The page renders with no coverage section rather than an empty table, because an empty table reads as a study with no data.</li>
+    </ul>
+  </div>
+
+  <p class="what" style="margin-top:26px">Every figure that is published was measured twice, by routes that share no code, and the pair has to agree or the script exits non-zero. Run either yourself from the branch:</p>
+<pre><span class="c"># the records read directly with base R, against the pipeline, figure by figure</span>
+Rscript tools/qualify-census-metrics.R
+Rscript tools/qualify-death-count.R
+
+<span class="c">#   AGREE - every figure measured twice, and saf0011 stops rather than publishing a zero.</span>
+<span class="c">#   AGREE - 13 participants, of 762 enrolled.</span></pre>
+  <p class="cap">Both were run for this page and both agreed. Every row measured matches what <code>inst/qualification/</code> records, including the eleven figures in the metrics record and all four counts in the death record.</p>
+</section>
+
+<div class="cut"><span>gs#61 <em>· the page it produces</em></span></div><section id="p2-page">
+  <div class="hd"><h2>The census report, rendered</h2></div>
+  <p class="what">One report, reading what the metrics published and computing nothing of its own. Rendered for this page by running the whole pipeline — the standard mapping, the eleven census metrics with a domain on this study, the reporting model, then the report workflow.</p>
+
+  <figure>
+    <div class="frame"><img src="media/census-report.jpg" alt="The rendered Safety Census page for study AA-AA-000-0000: Population, Exposure and Follow-up sections, each figure shown with its value, its denominator and what the denominator counts; then a What the metrics published table listing each metric ID with its numerator, denominator and status, including saf0011 marked not run for this study." width="1700" height="1601" loading="lazy"></div>
+    <figcaption>
+      <ul class="plain">
+        <li>Every figure sits beside the denominator its own metric published, and beside what that denominator counts.</li>
+        <li>Person-time is published in days and presented in years — both numbers are on the page.</li>
+        <li>The foot of the page lists what each metric published verbatim, including the one that published nothing.</li>
+      </ul>
+      <p class="cap">The page carries no flag column and no cut-point. These metrics declare no threshold and publish an empty flag, so a census figure cannot move a site's risk score — and a result arriving with a flag is refused rather than presented.</p>
+    </figcaption>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">Why it matters</p>
+      <p>A figure that is wrong is now wrong in exactly one place. Before, the same count could be produced by a function and by a metric and the two could disagree without anything noticing. Now the function runs the metrics and reads what they published, so there is one counting lane and the page is a reader of it.</p>
+      <p>The test that proves it is not the one that checks the numbers. A structural check reads the function's body and every helper it calls, and fails if an arithmetic operator or an aggregating function appears in any of them. A rebuild that left the counting in place and put a workflow beside it would pass an arithmetic test by accident; it cannot pass that one.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <ol>
+        <li>Compare the top table with the foot of the page: 73.2 person-years above, 26 754 participant-days below, the same figure twice.</li>
+        <li>Find <code>saf0011</code> in the foot: it reads "not run for this study" rather than reporting a zero.</li>
+        <li>Read the denominator column — every figure is <em>of 762</em>, and the page says what 762 counts.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<div class="cut"><span>gs#66 <em>· absent is not zero</em></span></div><section id="p2-absent">
+  <div class="hd"><h2>What happens when a study does not collect something</h2></div>
+  <p class="what">A zero means measured and found none. A blank means the reader has to guess. Both were being published where the honest answer is that nothing was collected. Run for this page: the same call, the same study, with the death domain withheld.</p>
+
+<pre><span class="c"># the death domain supplied</span>
+Deaths                     <span class="add">13</span>  of 762
+
+<span class="c"># the death domain withheld — the same call, everything else identical</span>
+Deaths                     <span class="mv">NA</span>
+
+<span class="c"># and it says so, rather than leaving the reader to notice:</span>
+Warning: No domain was supplied for Deaths (Study) (Mapped_Death);
+         Participants With an ECG (Study) (Mapped_EG).
+         Those figures are absent rather than zero.</pre>
+
+  <div class="callout">
+    <p class="lbl">Three states, kept apart, and checked in the strongest form available</p>
+    <ul>
+      <li>Every column every census definition declares is dropped in turn, and the metric has to stop rather than publish — 34 combinations across the eleven metrics, plus four for the death count.</li>
+      <li>This matters because the underlying check only warns on a missing column: it stops on a missing data frame, but a domain arriving without a column it needs would otherwise sail through. That was verified again on gsm.core 1.3.1 rather than taken from the design, which had called the false-zero problem fixed by construction.</li>
+      <li>The ECG metric is written, declares its domain, and stops on every study available today — no mapping package ships an ECG mapping and the bundled study has no ECG records. Its qualification is structural rather than measured, and the suite fails if a bundled ECG domain ever appears, so it cannot sit there passing on nothing.</li>
+    </ul>
+  </div>
+
+  <p class="cap">On a study that maps no death domain, the death figure now reads as not collected instead of reading a discontinuation reason. That is correct, and it is also a visible change: the demo study's deaths and randomised tiles will read as not collected until its mapping phase adds those two domains.</p>
+</section>
+
+
+<div class="cut" style="margin-top:56px"><span>part 3 <em>· the last two widgets · never a candidate of its own, merged to dev 2026-08-27</em></span></div>
+<section id="p3-widgets">
+  <div class="hd"><h2>Every chart safety.viz draws can now be drawn from R</h2></div>
+  <p class="what">The two renderers part 1 left on the deferral list ship here: the Kaplan-Meier time-to-event display and the participant profile. Both were held back by the same thing, and it was never the JavaScript: each needs a second data frame, and the widget contract carried one. The contract is now general. A widget reads the datasets its module's data contract names rather than assuming there is one, and the eleven existing widgets return byte-for-byte the payload they returned before. The deferral list in <code>.github/parity-allowlist.yaml</code> is empty, and a test asserts it equal to the suite's own list so the two can no longer disagree.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>What each widget takes and draws, from the release notes and the merged pull request (gsm.safety#72, closing gsm.safety#71).</caption>
+    <thead><tr><th>Widget</th><th>Frames</th><th>What it draws</th></tr></thead>
+    <tbody>
+      <tr><td><code>Widget_TimeToEvent(dfResults, dfPopulation, ...)</code></td><td class="n">2</td><td>Kaplan-Meier curves for an endpoint composed while looking at it: multiselect filters over the adverse events decide which events qualify, each participant's first qualifying event counts, everyone else is censored at their own follow-up-end day. Greenwood log-log pointwise 95% bands, censor marks, the at-risk and cumulative-event tables under the axis. Cumulative incidence is the default orientation; survival is a control away.</td></tr>
+      <tr><td><code>Widget_ParticipantProfile(dfResults, chrParticipants, dfAE, ...)</code></td><td class="n">1 + 1 optional</td><td>The drill-down as a report of its own: a demographics header, labs over time standardised to multiples of the upper limit of normal or of baseline, adverse-event tracks on the same study-day axis, a measure table whose sparklines expand into an inset. A cohort of more than one is ranked worst-first and stepped through. Name the cohort with <code>chrParticipants</code>; without one the profile waits for a selection a static report never sends.</td></tr>
+      <tr><td><code>ExampleData("adsl")</code></td><td></td><td>One row per participant with treatment arm, follow-up-end study day and end-of-study status: the population denominator the time-to-event widget censors against, vendored byte-identical from the safety.viz demo data.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <p class="lbl">Proven by what they painted, not by a file existing</p>
+    <p>A widget that loads nothing looks exactly like one that works: a binding that constructs its renderer and never hands it data raises no console error, still emits its element, still ships the bundle and still carries every data value in the page. Both widgets were opened in headless Chromium and measured: 95,478 painted pixels for the curves and 19,717 for the profile, against 0 for a deliberately broken control that no assertion in the suite could tell apart from the real one. A new test now asserts that every binding both constructs and feeds its module, proven red with the feed call removed and green with it restored.</p>
+  </div>
+
+  <div class="callout">
+    <p class="lbl">Two things this part settles that were open</p>
+    <ul>
+      <li>The design question the participant profile was waiting on turned out to be two-thirds already answered by the vendored bundle: the compound widget hosting a chart plus a rail cannot be built from R because safety.viz does not export <code>profileRail</code> on its public object, and the profile-enabled lab widgets already shipped in part 1 (<code>Widget_HepExplorer()</code>, <code>Widget_Histogram()</code> and <code>Widget_OutlierExplorer()</code> mount the rail from their <code>profile</code> setting). The standalone surface was the only real gap, and it is what this part adds.</li>
+      <li>Five workflows had been failing before they started, two of them the qualification checks. The upstream templates moved organisation on 4 August; GitHub redirects an action called from a step but not a reusable workflow called from a job, so <code>pkgdown-all</code>, <code>test-coverage</code>, <code>qcthat</code> and <code>workflow-template-check</code> had failed every run since with zero jobs and raised no check run, and the release workflow failed the same way on v1.1.0, which published with no artifacts. Every workflow file is now the current upstream template (gsm.safety#73), so this release publishes its artifacts and its pull request shows every check.</li>
+    </ul>
+  </div>
+
+  <div class="callout">
+    <p class="lbl">Marked experimental, on purpose</p>
+    <p>When @jwildfire approved safety.viz v1.7.0 he kept its time-to-event chart marked experimental until an external review confirms the Kaplan-Meier implementation. A chart marked experimental in the library and unmarked in its R wrapper would be the same wrong-confidence problem on a different surface, so the R widget carries the marking too until that review completes (the un-marking is filed as obot.roadmap#182).</p>
+  </div>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What this page cannot show</p>
+      <p>No capture was made for this part when it landed, and the package's documentation site rebuilds only when the release is tagged, so the two widgets' reference and gallery pages publish with the tag rather than before it. The safety.viz twins below run the same bundle on the same demo data and draw what the widgets draw.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <ol>
+        <li>Open the <a href="https://jwildfire.github.io/safety.viz/time-to-event/">time-to-event demo</a> on the safety.viz site: change the event filters and watch the endpoint recompose; switch cumulative incidence to survival.</li>
+        <li>Open the <a href="https://jwildfire.github.io/safety.viz/participant-profile/">participant-profile demo</a>: step through a ranked cohort.</li>
+        <li>From R, install the candidate with <code>pak::pak("jwildfire/gsm.safety@dev")</code>, then run <code>Widget_TimeToEvent(ExampleData("adae"), ExampleData("adsl"))</code> and <code>Widget_ParticipantProfile(ExampleData("adbds"), chrParticipants = "01-701-1341", dfAE = ExampleData("adae"))</code>.</li>
+        <li>Open <a href="https://github.com/jwildfire/gsm.safety/blob/dev/.github/parity-allowlist.yaml">the parity allowlist</a> on <code>dev</code> and read that it is empty, and why.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<div class="cut" style="margin-top:56px"><span>part 4 <em>· the FDA guide's thresholds · was the v1.5.0 candidate, measured 2026-09-11</em></span></div>
+<section>
+  <div class="hd"><h2>The FDA safety guide's rules, in R once</h2></div>
+  <p class="what">The FDA's Standard Safety Tables and Figures guide is mostly rules rather than drawings: three levels of laboratory abnormality, values so extreme they are treated as errors, results read as multiples of the upper limit of normal. Nothing in R carried those rules. This part is the foundation the static figures will stand on: the guide's appendix tables as package data, the first three functions that apply them to a lab table and hand the table back with the answers added, a requirement matrix that keys every one of the guide's 22 figures, and a column-by-column check of what the demo data can draw. Every number was produced from <code>dev</code> on 2026-09-11.</p>
+</section>
+<div class="cut"><span>the reference criteria <em>· gs#77</em></span></div><section id="p4-data">
+  <div class="hd"><h2>The guide's appendix tables, as package data</h2></div>
+  <p class="what">Appendix Tables 56 and 57 give the level 1, 2 and 3 abnormality thresholds the guide counts outliers against; Tables 58 to 60 give the values beyond which a result is treated as a laboratory or recording error and left out of the mean-change figures. They existed only as a PDF. They are now two data frames, transcribed row for row, with the printed criterion kept beside the parsed number and the guide page on every row.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>Rows in the guide against rows in the datasets. Both were counted for this page; the suite asserts them and 24 spot values read from the PDF by page.</caption>
+    <thead><tr><th>Guide table</th><th>Page</th><th>Printed rows</th><th>Dataset rows</th></tr></thead>
+    <tbody>
+      <tr><td>Table 56, abnormality levels, chemistry</td><td class="n">119 to 120</td><td class="n">33</td><td class="n">33</td></tr>
+      <tr><td>Table 57, abnormality levels, hematology</td><td class="n">121</td><td class="n">13</td><td class="n">13</td></tr>
+      <tr><td><code>FDA_AbnormalityLevels</code></td><td></td><td class="n">46</td><td class="now">46</td></tr>
+      <tr><td>Table 58, extreme values, chemistry</td><td class="n">122 to 123</td><td class="n">26</td><td class="n">52</td></tr>
+      <tr><td>Table 59, extreme values, hematology</td><td class="n">123</td><td class="n">9</td><td class="n">18</td></tr>
+      <tr><td>Table 60, extreme values, vital signs</td><td class="n">124</td><td class="n">5</td><td class="n">10</td></tr>
+      <tr><td><code>FDA_ExtremeValues</code></td><td></td><td class="n">40 parameters</td><td class="now">80</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="cap">The extreme-value table is long: every parameter appears twice, once in US-conventional units and once in SI, because the guide prints both and the data decide which one applies. The example data are mostly SI with bilirubin in both unit systems, which is exactly the case that would go wrong with one column.</p>
+
+<pre><span class="c">&gt; subset(FDA_AbnormalityLevels, Panel == "Liver Biochemistry",
++        select = c(Parameter, Direction, Basis, Operator, Level1, Level2, Level3, GuidePage))</span>
+                  Parameter Direction        Basis Operator Level1 Level2 Level3 GuidePage
+       Alkaline phosphatase      high uln_multiple        &gt;    1.5    2.0      3       120
+   Alanine Aminotransferase      high uln_multiple        &gt;    3.0    5.0     10       120
+ Aspartate Aminotransferase      high uln_multiple        &gt;    3.0    5.0     10       120
+            Total Bilirubin      high uln_multiple        &gt;    1.5    2.0      3       120
+
+<span class="c">&gt; subset(FDA_ExtremeValues, Parameter == "Glucose", select = c(Specimen, UnitSystem, Unit, Low, High))</span>
+ Specimen UnitSystem   Unit  Low High
+   plasma         US  mg/dL 10.0 2700
+   plasma         SI mmol/L  0.6  150</pre>
+
+  <div class="callout">
+    <p class="lbl">Where the transcription had to read, it says so on the row</p>
+    <p>The hemoglobin level 1 criteria are printed as ranges (12.5 to 13.5 g/dL for men); because the levels are cumulative the row stores the upper bound and keeps the printed text beside it. The platelet unit is kept as the guide prints it although the thresholds read as cells per microlitre. Three hematology thresholds printed without a comparator are read as greater-than like the rest of their table. Each of these is a <code>Note</code> on its row, and the hand-checked CSVs and the build script are in <code>data-raw/</code>, so a correction is one edit in one place.</p>
+  </div>
+
+  <div class="strip">
+    <div class="why"><p>Every later phase reads these two tables: the DILI plots for their 2x and 3x cuts, the outlier tables for their three levels, the mean-change figures for what to exclude. Transcribing them once, with tests, is what stops each figure carrying its own copy of the FDA's numbers.</p></div>
+    <div class="try"><p class="lbl">Try it</p><ol>
+      <li>Install the candidate: <code>pak::pak("jwildfire/gsm.safety@dev")</code>.</li>
+      <li><code>data(FDA_AbnormalityLevels); data(FDA_ExtremeValues)</code>.</li>
+      <li>Open page 121 of the <a href="https://www.fda.gov/media/187065/download">guide PDF</a> and compare any Table 57 row with <code>subset(FDA_AbnormalityLevels, Table == 57)</code>.</li>
+      <li><code>?FDA_ExtremeValues</code> for the column contract and the reading rules.</li>
+    </ol></div>
+  </div>
+</section>
+
+<div class="cut"><span>the first derivations <em>· gs#78</em></span></div><section id="p4-derive">
+  <div class="hd"><h2>Three of the guide's rules, applied once and handed back</h2></div>
+  <p class="what">Each function takes the long lab table the example data already use, one row per participant per test per visit, and returns the same table with its answer added as new columns. Nothing is dropped and nothing is summarised, so a static figure and its interactive twin can read the same derived values. <code>Derive_ULNMultiple()</code> puts each result on the multiple-of-ULN scale. <code>Derive_AbnormalityLevel()</code> grades it against Tables 56 and 57 and says which direction and which printed criterion fired. <code>Derive_ExtremeValueFlag()</code> marks the results Tables 58 to 60 would exclude.</p>
+
+  <div class="frame"><img src="media/liver-grades.png" alt="Four histograms, one per liver test, of every result in the example data on the multiple-of-ULN scale, coloured by the abnormality level it was graded, with the Table 56 level 1, 2 and 3 cut lines drawn on each." width="990" height="682"></div>
+  <p class="cap">Every liver result in the example data, graded. The dashed lines are the Table 56 cuts read from the dataset above, not typed into the plot; the colours are the grade the function assigned. Bilirubin carries 30 level 3 results and alkaline phosphatase 12, which is what the eDISH quadrants will be drawn from in phase 1.</p>
+
+<pre><span class="c">&gt; dfLabs &lt;- ExampleData("adbds")
+&gt; dfLabs &lt;- Derive_AbnormalityLevel(dfLabs)</span>
+Derive_AbnormalityLevel left NA for records it could not evaluate:
+  unit differs from the criteria's (mg/dL): Blood urea nitrogen in mmol/L, Calcium in mmol/L, Cholesterol (total) in mmol/L, Glucose in mmol/L, Phosphate in mmol/L
+  qualifier 'Fasting' needs a column this function does not take: Glucose
+  unit differs from the criteria's (g/dL): Albumin in g/L, Protein (total) in g/L
+  basis 'baseline_multiple' needs a baseline column this function does not take: Creatinine
+  needs a sex column (strSexCol) for the sex-qualified rows: Hemoglobin
+  <span class="c">... (the full list names every skipped parameter and why)</span>
+
+<span class="c">&gt; dfGraded &lt;- dfLabs[!is.na(dfLabs$AbnormalityLevel) &amp; dfLabs$AbnormalityLevel &gt; 0, ]
+&gt; table(dfGraded$TEST, dfGraded$AbnormalityLevel)</span>
+                               1   2   3
+  Alanine Aminotransferase   102  10   0
+  Alkaline Phosphatase       121  14  12
+  Aspartate Aminotransferase  93   0   0
+  Bilirubin                   15  71  30
+  Chloride                   243  27   0
+  Leukocytes                  35   9   0
+  Potassium                   40   9   0
+  Sodium                       5   2   0</pre>
+
+  <div class="callout">
+    <p class="lbl">A threshold is compared only in its own unit, and the function says what it skipped</p>
+    <p>Table 56 prints glucose in mg/dL; the example data carry it in mmol/L. Dividing or multiplying silently would be a second, unstated rule. The function grades an absolute threshold only when the record's unit matches, folds spellings of the same unit (mEq/L and mmol/L for the electrolytes, GI/L and the guide's x 10^9 cells/L), converts nothing, and prints the parameters it left ungraded and the reason. The ULN-multiple rows, the whole liver panel among them, grade in any unit because the multiple has none.</p>
+    <p>The same discipline holds for the extreme values: hemoglobin in mmol/L matches neither the g/dL nor the g/L threshold row, so it is left unflagged and named, while sodium, bilirubin, the transaminases and the vital signs match in the data's own units. On the pilot data nothing is extreme, which is the expected answer for a clean trial dataset and is asserted in the suite.</p>
+  </div>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>Each function against the requirement row it proves, and what the suite checks for it.</caption>
+    <thead><tr><th>Function</th><th>Requirement rows</th><th>What the tests assert</th></tr></thead>
+    <tbody>
+      <tr><td><code>Derive_ULNMultiple()</code></td><td class="n">FDA-RULE-001</td><td>value over its own ULN; NA for a missing or non-positive ULN; the peak per participant reproduces what <code>Input_HysLaw()</code> computes for the same people</td></tr>
+      <tr><td><code>Derive_AbnormalityLevel()</code></td><td class="n">FDA-RULE-002, -003, -016</td><td>one probe beyond each defined level of every absolute and ULN-multiple row in Tables 56 and 57, in both directions; the on-threshold case for strict and non-strict operators; the highest level wins; a substitute criteria table; the sex-qualified rows with and without a sex column</td></tr>
+      <tr><td><code>Derive_ExtremeValueFlag()</code></td><td class="n">FDA-RULE-004, -005</td><td>a value beyond a threshold in either unit system is flagged; a missing threshold is no bound; the printed value itself is not extreme; an unmatched unit is NA with a message</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="strip">
+    <div class="why"><p>The design calls this the L1 contract: normative rules live in R once, and the renderers read enriched participant-level data. Phase 1 will prove it on the DILI pair, where safety.viz's hep-explorer today computes its own ULN multiples in the browser.</p></div>
+    <div class="try"><p class="lbl">Try it</p><ol>
+      <li><code>dfLabs &lt;- Derive_ULNMultiple(ExampleData("adbds"))</code> and look at <code>ULNMultiple</code> for any transaminase row.</li>
+      <li>Run <code>Derive_AbnormalityLevel(dfLabs)</code> and read the message: it is the list of what the demo data cannot be graded on, and why.</li>
+      <li>Pass <code>strSexCol = "SEX"</code> and watch the hemoglobin rows change.</li>
+      <li>Give <code>Derive_ExtremeValueFlag()</code> a row with <code>STRESN = 3000</code> and <code>STRESU = "mg/dL"</code> for Glucose and see it flagged high.</li>
+    </ol></div>
+  </div>
+</section>
+
+<div class="cut"><span>the requirement matrix <em>· gs#79</em></span></div><section id="p4-matrix">
+  <div class="hd"><h2>Every figure in the guide now has a key</h2></div>
+  <p class="what">The safety.viz renderers each carry a requirement matrix, and a test cites a row by its ID. The FDA figures now have one too, in the same shape: <code>FDA-FIG-001</code> to <code>FDA-FIG-022</code> for the 22 figures, numbered as the guide numbers them, and <code>FDA-RULE-001</code> to <code>FDA-RULE-016</code> for the rules the guide states once and several displays read. A static rendering here and an interactive one in safety.viz cite the same ID, so their evidence meets on one row.</p>
+
+<pre><span class="c">$ grep -c '^| FDA-FIG-' requirements/fda-stf.md</span>
+22
+<span class="c">$ grep -cE '^\| FDA-[A-Z]+-[0-9]+' requirements/fda-stf.md</span>
+38
+<span class="c">$ grep -rho 'FDA-RULE-[0-9]*' tests/testthat/ | sort | uniq -c</span>
+      4 FDA-RULE-001
+      6 FDA-RULE-002
+      1 FDA-RULE-003
+      3 FDA-RULE-004
+      2 FDA-RULE-005
+      1 FDA-RULE-008
+      1 FDA-RULE-016</pre>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>What every row carries. Figure rows add the chart engine, the ADaM domains, the safety.viz twin and the phase; rule rows name the function or convention that implements them.</caption>
+    <thead><tr><th>Phase</th><th>Figures</th><th>Engine</th><th>Requirement</th></tr></thead>
+    <tbody>
+      <tr><td>0, this release</td><td>none; rules 001, 002, 004 and 005 ship as the datasets and the three functions</td><td></td><td class="n">obot.roadmap#9</td></tr>
+      <tr><td>1</td><td>F7, F8, F15, F22, F10, F16 to F20, F2, F3</td><td>DILI quadrant scatter, shift scatter, box plot over time, dot and risk-difference forest</td><td class="n">obot.roadmap#323</td></tr>
+      <tr><td>1b</td><td>F5, F21, F12, and the Kaplan-Meier family F1, F4, F11, F13, F14</td><td>paired retention bars, incidence-rate point-range, wrapped Kaplan-Meier</td><td class="n">obot.roadmap#324</td></tr>
+      <tr><td>not scheduled</td><td>F6, F9</td><td>mean change line with CI</td><td></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="strip">
+    <div class="why"><p>A test in this package ends with the issue it proves, and now also names the row: <code>test_that("Derive_ULNMultiple divides the result by the record's own ULN (FDA-RULE-001) (#78)", ...)</code>. The matrix test checks that every ID any test cites exists in the file, so a row cannot be renamed out from under its evidence.</p></div>
+    <div class="try"><p class="lbl">Try it</p><ol>
+      <li>Open <a href="https://github.com/jwildfire/gsm.safety/blob/dev/requirements/fda-stf.md"><code>requirements/fda-stf.md</code></a> on <code>dev</code> and find <code>FDA-FIG-007</code>: the eDISH plot, its engine, its twin and its phase.</li>
+      <li>Read <code>FDA-RULE-010</code>, the 30-day pairing window, and its note on why the interactive twin does not apply it yet.</li>
+      <li><a href="https://github.com/jwildfire/gsm.safety/blob/dev/requirements/README.md"><code>requirements/README.md</code></a> says how a new row is keyed.</li>
+    </ol></div>
+  </div>
+</section>
+
+<div class="cut"><span>the alignment <em>· gs#80</em></span></div><section id="p4-align">
+  <div class="hd"><h2>What the demo data can draw, column by column</h2></div>
+  <p class="what">The guide is written against ADaM. gsm.safety holds two other shapes: the vendored example data and the <code>Mapped_*</code> domains gsm.mapping produces. The design assumed they aligned and said phase 0 should check. The note lists, for ADSL, ADAE, ADLB and ADVS, every column the 22 figures and the three derivations need, marks each as found, mapped, derivable or missing, and records a decision for every gap.</p>
+
+  <div class="tablewrap">
+  <table class="counts">
+    <caption>The note's summary. Fifty-one columns, each in exactly one state; every gap carries a decision and none needed a question.</caption>
+    <thead><tr><th>Domain</th><th>Needed</th><th>Found</th><th>Mapped</th><th>Derived</th><th>Missing</th><th>Decisions</th></tr></thead>
+    <tbody>
+      <tr><td>ADSL</td><td class="n">9</td><td class="n">5</td><td class="n">3</td><td class="n">1</td><td class="n">0</td><td>vendor treatment dates, death and safety flags, sex and age from pharmaverseadam; arm is an engine argument</td></tr>
+      <tr><td>ADAE</td><td class="n">13</td><td class="n">8</td><td class="n">1</td><td class="n">1</td><td class="n">3</td><td>derive the treatment-emergent flag from start day; vendor outcome and relatedness; OCMQ and action taken are out of scope on the demo data</td></tr>
+      <tr><td>ADLB</td><td class="n">17</td><td class="n">10</td><td class="n">0</td><td class="n">4</td><td class="n">3</td><td>derive baseline, change and the baseline flag once; vendor study day, without which there is no 30-day DILI window; absent analytes are out of scope</td></tr>
+      <tr><td>ADVS</td><td class="n">12</td><td class="n">7</td><td class="n">0</td><td class="n">3</td><td class="n">2</td><td>the same derivations on the vital-sign rows; respiratory rate is absent; pulse stands in for heart rate</td></tr>
+      <tr><td>Total</td><td class="now">51</td><td class="n">30</td><td class="n">4</td><td class="n">9</td><td class="n">8</td><td>two vendoring passes, one derivation helper, three declared exclusions</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <p class="lbl">Three things the check found that the design did not know</p>
+    <p>No <code>Mapped_*</code> domain carries a treatment arm, so the engines take an arm column as an argument and render a single arm without one. gsm.mapping's standard lab mapping names the result <code>rptresn</code> and has no upper limit of normal, unit or visit, while this package's own metric workflows declare <code>lbstresn</code> and <code>lbstnrhi</code>; that split is recorded for the phase 1 requirement. And pharmaverseadam shares the pilot study's participants exactly, all 254 of them with the same arm assignments, which makes vendoring the missing columns a join rather than a reconstruction.</p>
+  </div>
+
+  <div class="strip">
+    <div class="why"><p>The note ends with the column contract every lab and vital-sign engine codes against, with the default names in the example data's spelling and their ADaM and <code>Mapped_*</code> equivalents, so phase 1 starts from an agreed frame rather than rediscovering it per figure.</p></div>
+    <div class="try"><p class="lbl">Try it</p><ol>
+      <li>Read <a href="https://github.com/jwildfire/gsm.safety/blob/dev/design/fda-adam-alignment.md"><code>design/fda-adam-alignment.md</code></a> on <code>dev</code>.</li>
+      <li>Find the ADLB row for study day and its decision, then the DILI rule <code>FDA-RULE-010</code> in the matrix that depends on it.</li>
+      <li>The last section is the contract; every default there is a column <code>ExampleData("adbds")</code> already has, or says how it will get one.</li>
+    </ol></div>
+  </div>
+</section>
+
+
+<div class="cut"><span>notes</span></div><section>
+  <div class="hd"><h2>Reading this page</h2></div>
+  <p class="what">Each part was measured when its work landed, on the branch it landed on. Those branches are all inside <code>dev</code>, the candidate's branch, so what the parts measured is what the candidate ships; nothing was re-measured for the consolidation, and each part's provenance is kept as written.</p>
+
+  <h3 style="margin-top:30px">Part 1</h3>
+  <div class="callout">
+    <p class="lbl">What produced the numbers</p>
+    <ul>
+      <li>The widget-parity increment as it stood on <code>release/v1.2.0</code> at <code>4a436ce</code> (the same commits are on <code>dev</code>, the candidate's branch), and gsm.safety 1.1.0 at the <code>v1.1.0</code> tag for the older bundle.</li>
+      <li>gsm.core 1.3.1 and gsm.mapping 1.1.6, built from the Gilead-BioStats <code>main</code> branches into a scratch library — the same versions this package's <code>Remotes</code> resolve to in CI. Both are byte-identical to their release tags, checked while writing this page.</li>
+      <li>R 4.3.3, Chromium via Playwright, on 2026-08-22. Every figure comes from one of those runs; nothing is quoted from the release notes.</li>
+    </ul>
+  </div>
+  <h3 style="margin-top:30px">Part 2</h3>
+  <div class="callout">
+    <p class="lbl">What produced the numbers</p>
+    <ul>
+      <li>The census rebuild as it stood on <code>release/v1.3.0</code> at <code>9f76d42</code> (the same commits are on <code>dev</code>), and the pre-rebuild census from <code>release/v1.2.0</code> at <code>4a436ce</code> for the before column, which is the v1.1.0 census unchanged.</li>
+      <li>gsm.core 1.3.1 and gsm.mapping 1.1.6, built from the Gilead-BioStats <code>main</code> branches into a scratch library, with gsm.reporting 1.1.5. Both main branches are byte-identical to their release tags, checked while writing this page, so this is what CI installs.</li>
+      <li>R 4.3.3, on 2026-08-22. Every figure comes from one of those runs; the qualification records were read afterwards, to check the run against them, and every row agreed.</li>
+    </ul>
+  </div>
+  <h3 style="margin-top:30px">Part 4</h3>
+  <div class="callout">
+    <p class="lbl">What produced the numbers</p>
+    <ul>
+      <li>Row counts, spot values and the sample outputs were run from <code>dev</code> on 2026-09-11 with <code>devtools::load_all()</code> on R 4.3.3; the same numbers are asserted in <code>tests/testthat/test-fda-reference.R</code> and <code>tests/testthat/test-Derive.R</code>.</li>
+      <li>The liver-panel figure is <code>ExampleData("adbds")</code> passed through <code>Derive_ULNMultiple()</code> and <code>Derive_AbnormalityLevel()</code>, drawn with ggplot2; the cut lines are read from <code>FDA_AbnormalityLevels</code>, not typed.</li>
+    </ul>
+  </div>
+
+  <p class="what" style="margin-top:26px">Repeat the comparison from a clean checkout. The second step is the whole method: build the report once, then give the copy the older library.</p>
+<pre><span class="c"># the chart the release corrects, from the package's own workflow</span>
+Rscript -e 'lW &lt;- yaml::read_yaml(system.file("workflow","4_modules","hep_explorer.yaml", package="gsm.safety"));
+            w  &lt;- gsm.safety::Widget_HepExplorer(gsm.safety::ExampleData("adbds"), lW$meta$lSettings);
+            htmlwidgets::saveWidget(w, "after/hep_explorer.html", selfcontained = FALSE)'
+
+<span class="c"># the same report, drawn by the bundle gsm.safety ships today</span>
+cp -R after before
+mv before/hep_explorer_files/safety-viz-1.7.0 before/hep_explorer_files/safety-viz-1.4.0
+cp &lt;v1.1.0&gt;/inst/htmlwidgets/lib/safety.viz-1.4.0/safety.viz.js \
+   before/hep_explorer_files/safety-viz-1.4.0/safety.viz.js
+sed -i '' 's|safety-viz-1\.7\.0|safety-viz-1.4.0|g' before/hep_explorer.html
+
+<span class="c"># open both, choose the composite view, read the count line above the charts</span></pre>
+
+  <div class="close" style="margin-top:34px">
+    <div>
+      <h3>Also in the release, not shown here</h3>
+      <ul>
+        <li>The bundle moves for all eleven widgets, not only the liver ones — participant-profile drill-down on six charts, draggable eDISH cut-lines, study-day playback, a log-base picker, axis-limit prefill.</li>
+        <li>Three changes could move a value on other data and provably do not here: below-detection-limit imputation (nothing imputed on this data), a new treatment-arm column candidate (this data carries none), and a QT example-data rederivation already in the package.</li>
+        <li>The parity guard: a declared library version in <code>DESCRIPTION</code>, an offline test keeping the declaration, the vendored bundle and every binding in agreement, and a weekly check against the latest safety.viz release.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Also in the release, not shown here</h3>
+      <ul>
+        <li>The qualification records now ship inside the package rather than in a directory the build excludes, so the checks that compare them with the code run everywhere the suite runs — including the package check the merge is gated on, where they had been silently skipping.</li>
+        <li>Every document-agreement check prints a line naming the record and how many figures it compared, so a skipped check is visible in a log rather than being one line inside a list of sixteen.</li>
+        <li>Ten column arguments are deprecated and ignored rather than removed: a call that passed one still runs, warns, and changes no figure.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="close" style="margin-top:26px">
+    <div>
+      <h3>What is deliberately not finished</h3>
+      <ul>
+        <li>Data completeness, the thirteenth census figure, is carried with the reason written down: the lab domain carries no visit column under the standard mapping, and the expected count needs a scheduled study day no domain supplies. Both are definitional choices rather than code to write.</li>
+        <li>Migrating off two deprecated pipeline functions is not in this release at all — its 30 warnings are still visible in the logs — and is filed as gsm.safety#60. Three more census defects were found by the code review of the candidate on 11 September and filed rather than fixed: the Input_* steps fail on an integer-keyed subject domain (gsm.safety#89), Input_Deaths errors on an empty subject domain instead of publishing no figure (#90), and the report can render an NA heading and label the page with a visit instead of the study (#91). None moves a figure on the bundled study.</li>
+        <li>The counts pinned in the suite are pinned to gsm.core 1.3.1. A different version skips those assertions with both numbers named in the skip reason, so re-qualifying is a deliberate act by a person. Worth knowing: the development branch of gsm.core already carries a much larger bundled study, so the next release will move it a third time.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What this release lets someone do</h3>
+      <ul>
+        <li>Draw the composite liver view from R and trust its on-treatment peaks; draw the ALT waterfall and the KDIGO explorer, which R never had.</li>
+        <li>Read a safety overview whose every figure sits beside the denominator its own metric published, with a death count that opened the death domain.</li>
+        <li>Draw every one of safety.viz's thirteen renderers from R, including the two that take two frames.</li>
+        <li>Load the FDA guide's laboratory thresholds, traceable to their table and page, grade any long lab table against them, flag what the guide would exclude, and cite an FDA figure or rule by a stable ID.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="strip" style="margin-top:30px">
+    <div class="why">
+      <p class="lbl">Where this fits</p>
+      <p>This page is the review surface for <a href="https://github.com/jwildfire/gsm.safety/pull/88">gsm.safety v1.2.0-RC1</a>, which promotes <code>dev</code> to <code>main</code> and tags v1.2.0 with the release notes as its body. It supersedes the two earlier candidates (gsm.safety#68 and #69) and the three earlier demo pages, which stay published as the record of when each part was measured.</p>
+    </div>
+    <div class="try">
+      <p class="lbl">The rest of the candidate</p>
+      <ol>
+        <li><a href="https://github.com/jwildfire/gsm.safety/blob/dev/NEWS.md">The release notes</a> on <code>dev</code>, one section, publishing verbatim.</li>
+        <li><a href="https://jwildfire.github.io/obot.roadmap/reports/release-review-plan-2026-09-12/">The review plan</a>, with a checklist per part.</li>
+        <li>The requirements this release closes: <a href="https://github.com/jwildfire/obot.roadmap/issues/164">widget parity (#164)</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/274">the census rebuild (#274)</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/165">the last two widgets (#165)</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/9">FDA ST&amp;F phase 0 (#9)</a>.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Assembled by Claude Code using Fable 5.1 on 2026-09-12 from the three demo pages written for the earlier candidates (parts 1 and 2 measured by Claude Code using Opus 5 on 2026-08-22; part 4 by Claude Code using Fable 5.1 on 2026-09-11) and from the release notes and merged pull request for part 3, under @jwildfire's decision of the same day to ship the work as one release. The example data are CDISC Pilot 01 with documented synthetic cohorts and the ecosystem's synthetic bundled study; no real participant data appears on this page.</p>
+</footer>
+
+</div>
+</body></html>
