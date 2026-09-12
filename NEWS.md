@@ -7,7 +7,7 @@ release is cut; the GitHub release publishes from the section verbatim.
 
 # obot.roadmap v0.5 (Upcoming)
 
-- Nothing yet.
+- **The tracker replaces the project board** — [`tracker.html`](https://jwildfire.github.io/obot.roadmap/tracker.html) shows every objective opened to its requirements and their tasks, with status and lifecycle on every row, a sidebar that searches and filters by status, objective, area and milestone and counts what is in each status, and a URL that carries the filter so a view can be sent as a link. The nav is one row of the pages @jwildfire reads — Home, Tracker, Analytics, News; the queue, wire, catalog, objective, decision and status pages still build and are listed on the homepage under Other pages until their retirement is decided.
 
 # obot.roadmap v0.4 — the standards home
 
