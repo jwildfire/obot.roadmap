@@ -147,6 +147,13 @@ jobs:
       - name: Build goal pages
         run: node scripts/build_goals.mjs
 
+      # The tracker (_site/tracker.html, @jwildfire 2026-09-12): the objective →
+      # requirement → task tree with status on every row and a search-and-filter
+      # sidebar — the page that replaces the retired project board. Fatal on an
+      # empty read: a tracker with nothing on it must not publish.
+      - name: Build the tracker
+        run: node scripts/build_tracker.mjs
+
       # The roadmap group's charts page (Cost, from the committed usage data).
       - name: Build analytics
         run: node scripts/build_analytics.mjs
@@ -380,20 +387,28 @@ jobs:
           have analytics/index.html;       says analytics/index.html sec-usage
           have usage/usage.json
 
+          # The tracker (2026-09-12). tk-list is the objective list, tk-side the
+          # sidebar that searches and filters it, tk-obj an objective block —
+          # between them they say the page is the tree and that it carries one.
+          have tracker.html;               says tracker.html 'id="tk-list"'
+                                           says tracker.html 'id="tk-side"'
+                                           says tracker.html 'class="tk-obj '
+                                           says tracker.html 'class="tk-req"'
+
           # Nav consistency (@jwildfire, 2026-07-25). The nav lived in seven
           # hand-maintained copies and drifted; it now comes from
           # scripts/lib/nav.mjs alone. These assertions are what stops it
-          # drifting again: every page carries the top nav, no page carries a
-          # stale hand-written copy, and the roadmap group — and only the
-          # roadmap group — carries the second row.
-          for f in index.html roadmap.html wire.html catalog.html news.html status.html \
+          # drifting again: every page carries the one nav row, with its four
+          # entries (Home · Tracker · Analytics · News, 2026-09-12), and no page
+          # carries a stale hand-written copy.
+          for f in index.html tracker.html roadmap.html wire.html catalog.html news.html status.html \
                    analytics/index.html diary/index.html goals/index.html \
                    decisions/index.html; do
             # Exactly one shared top nav — two would mean a hand-written copy
             # survived alongside the injected one.
             n=$(grep -c 'aria-label="Site"' "_site/$f" || true)
             [ "$n" = 1 ] || { echo "::error title=Nav count::_site/$f has $n shared top navs, expected 1"; fail=1; }
-            for item in '>Home</a>' '>Roadmap</a>' '>News</a>'; do
+            for item in '>Home</a>' '>Tracker</a>' '>Analytics</a>' '>News</a>'; do
               grep -q "$item" "_site/$f" \
                 || { echo "::error title=Incomplete nav::_site/$f is missing the $item entry"; fail=1; }
             done
@@ -441,10 +456,12 @@ jobs:
           grep -q '"ci": true' _site/version.json \
             || { echo "::error title=Unstamped build::_site/version.json reports ci=false — the Stamp the build step did not reach the generators"; fail=1; }
 
-          for f in roadmap.html wire.html catalog.html status.html \
-                   analytics/index.html goals/index.html decisions/index.html; do
+          # The second nav row came down on 2026-09-12 with the roadmap group;
+          # a page still rendering one has a hand-written header.
+          for f in index.html tracker.html roadmap.html wire.html catalog.html news.html status.html \
+                   analytics/index.html diary/index.html goals/index.html decisions/index.html; do
             grep -q 'nav class="site sub"' "_site/$f" \
-              || { echo "::error title=Missing sub-nav::_site/$f is in the roadmap group but has no second nav row"; fail=1; }
+              && { echo "::error title=Unexpected sub-nav::_site/$f still renders the retired second nav row"; fail=1; }
           done
 
           # hub#209. The browser copy of the release-identity rule is emitted
@@ -464,10 +481,6 @@ jobs:
               || { echo "::error title=hub#209 regression::_site/$f has lost the escaped release-key pattern emitted by lib/rc.mjs"; fail=1; }
             grep -qF 'match(/v?(d+)' "_site/$f" \
               && { echo "::error title=hub#209 regression::_site/$f carries a release-key pattern whose escapes were eaten by a template literal"; fail=1; }
-          done
-          for f in index.html news.html diary/index.html; do
-            grep -q 'nav class="site sub"' "_site/$f" \
-              && { echo "::error title=Unexpected sub-nav::_site/$f is outside the roadmap group but shows its second nav row"; fail=1; }
           done
 
           # The shared stylesheets (#294, under #289). Two things can go wrong here and
