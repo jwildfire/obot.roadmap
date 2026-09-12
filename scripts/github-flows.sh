@@ -26,7 +26,7 @@ set -euo pipefail
 
 # repo | integration branch | release branch | CI check name required on the integration branch ("" = none yet)
 REPOS=(
-  "safety.viz|dev|main|"
+  "safety.viz|dev|main|Build, format, and test"
   "gsm.safety|dev|main|"
   "open.csr|dev|main|"
   "open.gismo|dev|main|"

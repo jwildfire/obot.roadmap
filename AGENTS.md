@@ -66,7 +66,7 @@ reconstruct it from memory or from an existing issue.
 - A requirement's status is one `status:` label — backlog, ready, in session, review,
   released — applied by the template on filing and moved by the session at its start, its
   RC and its close, always removing the previous one ([issue contract → Status](docs/issue-contract.md#status)).
-  The project board is retired; the site's catalog is the tracker.
+  The project board is retired; the site's [tracker](https://jwildfire.github.io/obot.roadmap/tracker.html) is the tracker.
 
 ## Comments first, artifacts when needed
 

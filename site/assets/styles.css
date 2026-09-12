@@ -832,3 +832,137 @@ ul.hy-root > .hy-node > details > summary .hy-title { font-family: var(--serif);
 .hy-orphans-head { font-size: .95rem; margin: .8rem 0 .25rem; }
 ul.hy-flags { margin: 0; padding-left: 1.1rem; font-size: .82rem; }
 ul.hy-flags li { margin: .18rem 0; }
+
+/* ---------------------------------------------------------------- Tracker
+   The roadmap's issue tree (tracker.html, 2026-09-12): sidebar + list, rows on
+   the rm-row grid the catalog proved at 390px, drill-down as native <details>
+   so the page reads whole with no script. */
+.tk-layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 1.5rem; align-items: start; margin-top: 1rem; }
+@media (max-width: 52rem) { .tk-layout { grid-template-columns: 1fr; } .tk-side { position: static; } }
+.tk-side {
+  position: sticky; top: 1rem;
+  border: 1px solid var(--rule); border-radius: 14px; background: var(--card);
+  padding: .9rem 1rem .6rem;
+  max-height: calc(100vh - 2rem); overflow-y: auto;
+}
+.tk-side h3 {
+  margin: .9rem 0 .35rem; display: flex; align-items: baseline; gap: .4rem;
+  font: 600 .72rem/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+}
+.tk-side h3 .tk-link { margin-left: auto; letter-spacing: 0; text-transform: none; font-weight: 500; }
+.tk-side h3 .tk-link + .tk-link { margin-left: 0; }
+.tk-side .filter-group:first-of-type h3 { margin-top: 0; }
+.tk-f { display: flex; align-items: baseline; gap: .35rem; margin: .18rem 0; font-size: .86rem; cursor: pointer; }
+.tk-f input { accent-color: var(--accent); margin: 0 .1rem 0 0; flex: none; }
+.tk-f .count { margin-left: auto; color: var(--faint); font-family: var(--mono); font-size: .74rem; }
+.tk-f .tk-f-text { min-width: 0; line-height: 1.25; }
+.tk-search-label { display: block; font: 600 .72rem/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+#tk-q {
+  width: 100%; font: .9rem/1.4 var(--sans); color: var(--ink);
+  padding: .4rem .6rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper);
+}
+#tk-q:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.tk-link { font: inherit; font-size: .78rem; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.tk-link:hover { color: var(--accent-deep); }
+/* The filter groups fold as one on a phone (the script closes it there). */
+.tk-filters > summary { cursor: pointer; font: 600 .72rem/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: .9rem; }
+.tk-filters > summary::marker { color: var(--faint); }
+.tk-filters[open] > summary { display: none; }
+@media (max-width: 52rem) { .tk-filters[open] > summary { display: list-item; } }
+
+/* The four totals — a stat row, not a chart: the number and what it counts. */
+.tk-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; margin-bottom: .9rem; }
+.tk-tile { border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); padding: .4rem .55rem; }
+.tk-tile strong { display: block; font: 600 1.25rem/1.2 var(--sans); color: var(--ink); }
+.tk-tile span { font: 500 .64rem/1.3 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.tk-tile.warn { border-color: #fecaca; background: #fef2f2; }
+.tk-tile.warn strong { color: #991b1b; }
+
+/* Stage swatches (sidebar legend) and the stage bar (one per objective). The
+   five statuses are one plum ramp light→dark in lifecycle order — further
+   along is darker, and review is the accent itself — Released is the good
+   green, Retired the slate the pill wears, Unstaged the fault red. Every
+   segment carries its count as text. */
+.tk-sw { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; border: 1px solid rgba(0,0,0,.08); flex: none; vertical-align: -1px; }
+.tk-sw.backlog, .tk-seg.backlog { background: #efe4ef; }
+.tk-sw.ready, .tk-seg.ready { background: #d3aed3; }
+.tk-sw.in-session, .tk-seg.in-session { background: #a367a4; }
+.tk-sw.review, .tk-seg.review { background: var(--accent); }
+.tk-sw.released, .tk-seg.released { background: #86efac; }
+.tk-sw.retired, .tk-seg.retired { background: #cbd5e1; }
+.tk-sw.unstaged, .tk-seg.unstaged { background: #fca5a5; }
+.tk-bar { display: flex; gap: 2px; height: 1.05rem; width: 100%; max-width: 26rem; border-radius: 4px; overflow: hidden; }
+.tk-seg { display: flex; align-items: center; justify-content: center; min-width: 1.1rem; font: 600 .66rem/1 var(--mono); color: var(--ink); }
+.tk-seg.review, .tk-seg.in-session { color: #fff; }
+.tk-seg b { font-weight: 600; }
+
+/* The meter: closed over total, thin, with the fraction beside it. */
+.tk-meter { display: inline-flex; align-items: center; gap: .35rem; vertical-align: middle; }
+.tk-meter-track { display: inline-block; width: 4rem; height: .38rem; border-radius: 999px; background: var(--rule); overflow: hidden; }
+.tk-meter-fill { display: block; height: 100%; background: var(--good); border-radius: 999px; }
+.tk-meter-num { font: 500 .72rem/1 var(--mono); color: var(--muted); }
+
+/* Objectives: one bordered block each, its summary a two-line head. */
+.tk-obj { border: 1px solid var(--rule); border-radius: 12px; background: var(--card); margin: 0 0 .9rem; padding: 0 .9rem; }
+.tk-obj.closed, .tk-obj.retired, .tk-obj.none { background: var(--panel); }
+.tk-obj > summary { list-style: none; cursor: pointer; padding: .7rem 0 .6rem; }
+.tk-obj > summary::-webkit-details-marker { display: none; }
+.tk-obj > summary::before { content: '▸'; float: left; margin: .1rem .5rem 0 -.2rem; color: var(--faint); font-size: .8rem; }
+.tk-obj[open] > summary::before { content: '▾'; }
+.tk-obj-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .8rem; }
+.tk-obj-title { font-family: var(--serif); font-size: 1.15rem; line-height: 1.25; }
+.tk-obj-num { font: 600 .8rem/1 var(--mono); text-decoration: none; margin-right: .1rem; }
+.tk-obj-meta { font-size: .78rem; color: var(--muted); margin-left: auto; white-space: nowrap; }
+.tk-obj-state { font-family: var(--mono); font-size: .72rem; }
+.tk-obj-state.open { color: var(--accent); }
+.tk-obj-stats { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; margin-top: .45rem; padding-left: 1.05rem; }
+.tk-obj-nums { font-size: .78rem; color: var(--muted); display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
+.tk-reqs { border-top: 1px solid var(--rule); margin: 0 0 .5rem; }
+.tk-obj > .rm-note { margin: 0 0 .3rem 1.05rem; }
+.tk-toolbar { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin: 0 0 .6rem; font-size: .8rem; color: var(--muted); }
+.tk-showing { font-family: var(--mono); font-size: .74rem; }
+
+/* Requirement rows: the rm-row grid as a <summary>, tasks beneath. */
+.tk-req > summary { list-style: none; cursor: pointer; }
+.tk-req > summary::-webkit-details-marker { display: none; }
+.tk-req > summary.rm-row { padding: .3rem 0; }
+.tk-req[open] > summary.rm-row { background: var(--panel); }
+.tk-req .rm-key { display: inline-flex; align-items: center; gap: .35rem; }
+.tk-tasks { margin: 0 0 .4rem 1.25rem; border-top: 0; }
+.tk-tasks .rm-row { font-size: .78rem; }
+.tk-tasks .rm-row:last-child { border-bottom: 0; }
+.tk-design { font: 500 .7rem/1 var(--mono); }
+.tk-none { color: var(--faint); }
+.tk-warn { color: var(--warn); }
+.tk-pr { font: 500 .7rem/1 var(--mono); text-decoration: none; border: 1px solid var(--rule); border-radius: 999px; padding: .05rem .4rem; background: var(--paper); }
+.tk-pr:hover { border-color: var(--accent); }
+
+/* The lifecycle strip: five dots, filled up to the status the requirement
+   carries. Released fills them green; Retired dims them; Unstaged is empty and
+   red-rimmed, because it is not a point on the line. */
+.tk-life { display: inline-flex; gap: 2px; vertical-align: middle; }
+.tk-life i { display: inline-block; width: .42rem; height: .42rem; border-radius: 50%; border: 1px solid var(--faint); background: transparent; }
+.tk-life i.on { background: var(--accent); border-color: var(--accent); }
+.tk-life.released i.on { background: var(--good); border-color: var(--good); }
+.tk-life.retired i { border-color: #cbd5e1; background: #e2e8f0; }
+.tk-life.unstaged i { border-color: #fca5a5; }
+
+/* Task phase, and the area chip. */
+.tk-phase { display: inline-block; font: 600 .64rem/1.5 var(--mono); letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; padding: 0 .4rem; border: 1px solid var(--rule); background: var(--panel); color: var(--muted); white-space: nowrap; }
+.tk-phase.in-review { background: var(--accent-soft); border-color: rgba(108, 50, 112, .3); color: var(--accent); }
+.tk-phase.done { background: #dcfce7; border-color: #bbf7d0; color: var(--good); }
+.tk-phase.retired { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+.rm-chip.tk-area.safety { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
+.rm-chip.tk-area.infrastructure { background: #f3e8dd; border-color: #e4d2bf; color: #6b4423; }
+.rm-chip.tk-area.ai { background: #ede9fe; border-color: #ddd6fe; color: #5b21b6; }
+.status-pill.backlog { background: var(--panel); }
+.status-pill.ready { background: var(--accent-soft); border-color: rgba(108, 50, 112, .3); color: var(--accent); }
+.status-pill.in-session { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+@media (max-width: 40rem) {
+  .tk-obj-meta { margin-left: 0; white-space: normal; }
+  .tk-obj-stats { padding-left: 0; }
+  .tk-tasks { margin-left: .5rem; }
+  .tk-metrics { grid-template-columns: repeat(4, 1fr); }
+  .tk-side { max-height: none; }
+}
