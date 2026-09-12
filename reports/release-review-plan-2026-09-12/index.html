@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Release review plan, 12 September 2026</title>
+<meta name="description" content="The four release candidates waiting on Jeremy's review, what each one lets a user do, the order to take them in, and a checklist per candidate with its pull request, release notes and demo links in one place.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --blue-u:rgba(47,111,168,.32);
+  --espresso:#3d2b1f; --bronze:#b05515; --flag:#b83a2e; --amber:#9a7a1e; --go:#2b7a4b;
+  --tint:#f4efe3;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#171512; --panel:#201d18; --ink:#ece6da; --ink2:#c9c1b3; --mute:#8f8879;
+    --rule:#34302a; --rule2:#4a443b; --blue:#7fb0e0; --blue-u:rgba(127,176,224,.4);
+    --espresso:#0f0d0b; --bronze:#e08a4c; --flag:#e07268; --amber:#d1b04c; --go:#6dbd8b; --tint:#26221c;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#171512; --panel:#201d18; --ink:#ece6da; --ink2:#c9c1b3; --mute:#8f8879;
+  --rule:#34302a; --rule2:#4a443b; --blue:#7fb0e0; --blue-u:rgba(127,176,224,.4);
+  --espresso:#0f0d0b; --bronze:#e08a4c; --flag:#e07268; --amber:#d1b04c; --go:#6dbd8b; --tint:#26221c;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-u)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0;text-wrap:balance}
+code{font-family:var(--mono);font-size:.92em}
+p{max-width:68ch}
+
+.mast{padding:52px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,44px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+.tablewrap{overflow-x:auto;margin:22px 0 0;border-top:1px solid var(--rule2)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:760px;font-variant-numeric:tabular-nums}
+th{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left;padding:10px 16px 8px 0;border-bottom:1px solid var(--rule2);vertical-align:bottom}
+td{padding:10px 16px 10px 0;border-bottom:1px solid var(--rule);color:var(--ink2);vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+td .n{font-family:var(--mono);color:var(--ink)}
+td .sub{display:block;font-size:12.5px;color:var(--mute);margin-top:2px}
+.pill{display:inline-block;font:600 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 8px;border-radius:3px;border:1px solid var(--rule2);color:var(--ink2);white-space:nowrap}
+.pill.wait{border-color:var(--amber);color:var(--amber)}
+.pill.ok{border-color:var(--go);color:var(--go)}
+.pill.hold{border-color:var(--flag);color:var(--flag)}
+
+.cut{position:relative;margin:56px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:24px}
+h2{font-size:clamp(22px,3vw,28px)}
+.what{margin:12px 0 0;font-size:16.5px;color:var(--ink2)}
+.what+.what{margin-top:10px}
+h3{margin:28px 0 0;font-family:var(--mono);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-size:11.5px}
+
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:5px;overflow:hidden;margin:18px 0 0}
+.links a{display:block;background:var(--panel);padding:12px 14px;border:0}
+.links a:hover{background:var(--tint)}
+.links .k{display:block;font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze)}
+.links .t{display:block;margin-top:6px;font-family:var(--display);font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.3}
+.links .s{display:block;margin-top:3px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+ol.check{margin:12px 0 0;padding:0;list-style:none;counter-reset:s}
+ol.check li{counter-increment:s;position:relative;padding-left:32px;font-size:15px;color:var(--ink2);line-height:1.5;max-width:70ch}
+ol.check li+li{margin-top:10px}
+ol.check li::before{content:counter(s);position:absolute;left:0;top:2px;width:20px;height:20px;border-radius:50%;border:1px solid var(--blue);color:var(--blue);display:grid;place-items:center;font:600 11px/1 var(--mono)}
+ol.check b{color:var(--ink);font-weight:600}
+ul.plain{margin:12px 0 0;padding-left:18px;font-size:15px;color:var(--ink2)}
+ul.plain li{max-width:70ch}
+ul.plain li+li{margin-top:8px}
+ul.plain b{color:var(--ink);font-weight:600}
+
+.callout{border:1px solid var(--rule2);border-left:4px solid var(--bronze);border-radius:5px;background:var(--panel);padding:16px 20px;margin:22px 0 0}
+.callout.red{border-left-color:var(--flag)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:0 0 8px}
+.callout p{margin:0;font-size:15px;color:var(--ink2)}
+.callout p+p{margin-top:9px}
+.callout ul{margin:8px 0 0;padding-left:18px;font-size:15px;color:var(--ink2)}
+.callout li+li{margin-top:6px}
+
+.order{margin:18px 0 0;padding:0;list-style:none;counter-reset:o;display:grid;gap:10px}
+.order li{counter-increment:o;display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:baseline;padding:12px 14px;border:1px solid var(--rule);border-radius:5px;background:var(--panel);font-size:15px;color:var(--ink2)}
+.order li::before{content:counter(o);font:700 13px/1 var(--mono);color:var(--bronze)}
+.order .t{color:var(--ink);font-weight:600;font-family:var(--display)}
+.order .m{font:500 12px/1.4 var(--mono);color:var(--mute);white-space:nowrap}
+.order .s{display:block;font-size:13.5px;color:var(--mute);margin-top:2px}
+
+.state{display:flex;flex-wrap:wrap;gap:6px 22px;margin:14px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.state b{color:var(--ink2);font-weight:600}
+
+footer{margin:60px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;font-size:13.5px;color:var(--mute)}
+footer p{max-width:80ch}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:640px){
+  .mast{padding-top:34px}
+  .order li{grid-template-columns:24px 1fr}
+  .order .m{grid-column:2;white-space:normal}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">obot release review <span class="dot"></span> 2026-09-12 <span class="dot"></span> prepared for @jwildfire</div>
+  <h1>Four candidates are waiting on you. <span class="v">Here is the order, and what to look at in each.</span></h1>
+  <p class="lede">Every release candidate in the portfolio that is open and requesting your review, measured from GitHub and the repositories this morning: one in open.csr, three stacked in gsm.safety. Each section below says what the release lets someone do, links its pull request, release notes and demo, and lists what to check before you approve. Nothing here has been reviewed by you yet; the plan is a proposal.</p>
+  <div class="facts">
+    <span><b>4</b> candidates</span>
+    <span><b>2</b> repositories</span>
+    <span>longest wait <b>20 days</b> (gsm.safety v1.2.0)</span>
+    <span>total budget about <b>2 hours</b>, in two sittings</span>
+    <span>safety.viz, obot.agent, open.gismo, demo-301: <b>nothing open</b></span>
+  </div>
+</header>
+
+<section id="queue">
+  <h2>The queue</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Candidate</th><th>What it ships</th><th>Into</th><th>Waiting since</th><th>State</th><th>Budget</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="n"><a href="https://github.com/jwildfire/open.csr/pull/75">open.csr v0.4.0-RC1</a></span><span class="sub">open.csr#75 · release/v0.4.0</span></td>
+        <td>The report describes one study; five more reference displays cell for cell; the sidebar says where every number came from</td>
+        <td>main (v0.3.0)</td>
+        <td>2 Sep · 10 days</td>
+        <td><span class="pill wait">review requested</span></td>
+        <td>45 min</td>
+      </tr>
+      <tr>
+        <td><span class="n"><a href="https://github.com/jwildfire/gsm.safety/pull/68">gsm.safety v1.2.0-RC1</a></span><span class="sub">gsm.safety#68 · release/v1.2.0</span></td>
+        <td>The liver chart stops reading a baseline as a peak; two new widgets; a parity guard</td>
+        <td>main (v1.1.0)</td>
+        <td>23 Aug · 20 days</td>
+        <td><span class="pill wait">review requested</span></td>
+        <td>20 min</td>
+      </tr>
+      <tr>
+        <td><span class="n"><a href="https://github.com/jwildfire/gsm.safety/pull/69">gsm.safety v1.3.0-RC1</a></span><span class="sub">gsm.safety#69 · release/v1.3.0, contains v1.2.0</span></td>
+        <td>The safety census rebuilt on metrics: deaths 4 → 13, every figure beside its denominator</td>
+        <td>main, after v1.2.0</td>
+        <td>23 Aug · approved 27 Aug</td>
+        <td><span class="pill ok">approved, held for order</span></td>
+        <td>15 min</td>
+      </tr>
+      <tr>
+        <td><span class="n"><a href="https://github.com/jwildfire/gsm.safety/pull/88">gsm.safety v1.5.0-RC1</a></span><span class="sub">gsm.safety#88 · dev, contains v1.2.0 to v1.4.0</span></td>
+        <td>The FDA safety guide's thresholds as data, the first Derive_* functions, the requirement matrix</td>
+        <td>main, after the two above</td>
+        <td>11 Sep · 1 day</td>
+        <td><span class="pill wait">review requested</span></td>
+        <td>40 min</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="what">The site's queue and the standup name only the first two; the other two are open in the same repository and requesting the same review, so they belong on the same plan. Waits are counted from the day review was requested.</p>
+</section>
+
+<div class="cut"><span>first <em>· a decision before any reading</em></span></div>
+<section id="stack">
+  <h2>The gsm.safety stack needs one call from you before you review it</h2>
+  <p class="what">gsm.safety's main branch is at v1.1.0, released on 17 August. Three candidates are open into it and each contains the one before: v1.2.0 is three commits on top of main; v1.3.0 is those three plus seven; v1.5.0 is the whole of dev, thirty-five commits, which also carries the v1.4.0 widgets that never got a candidate of their own. Merging any one of them merges everything beneath it. The three pull-request bodies all say the same thing: land them in order, tag each.</p>
+  <div class="callout red">
+    <p class="lbl">The complication</p>
+    <p>The release workflow on both release branches still points at the organisation the templates moved away from on 4 August, so a tag cut from release/v1.2.0 or release/v1.3.0 as they stand publishes a release with no artifacts, exactly as v1.1.0 did (gsm.safety issue 75). The fix is one commit on dev (gsm.safety pull 73, 27 August) and neither release branch has it. Four other workflows fail at startup on those branches for the same reason, so their pull requests read six green checks while the qualification checks never ran.</p>
+  </div>
+  <h3>Two ways through</h3>
+  <ul class="plain">
+    <li><b>A. In order, three tags, the plan of record.</b> Ask a session to cherry-pick the workflow fix onto release/v1.2.0 and merge it forward into release/v1.3.0 first (a few minutes of agent work, one increment each). Then approve v1.2.0 and tag it; v1.3.0 already carries your approval and merges next; v1.5.0 shrinks to the v1.4.0 and v1.5.0 work and is reviewed last. What you keep: a v1.2.0 release whose headline is the liver-chart correction and a v1.3.0 release whose headline is the death count, each readable on its own by the person it affects, and the two demo pages already written for them.</li>
+    <li><b>B. One consolidated release.</b> Review gsm.safety pull 88 as the whole diff from v1.1.0 and tag v1.5.0; close pull requests 68 and 69 as superseded. What you gain: one sitting, and the workflow fix comes along because dev has it. What you lose: no v1.2.0 or v1.3.0 GitHub release, so the two clinical corrections become sections inside the v1.5.0 notes rather than releases of their own, which is the argument the prep session made against this on 23 August.</li>
+  </ul>
+  <div class="callout">
+    <p class="lbl">Recommendation</p>
+    <p>Take A. The cost is one comment asking for the cherry-pick before you start, and it is the only route that keeps the demo pages, your existing approval and the per-release headlines all valid. Take B only if you want gsm.safety finished today in one review.</p>
+    <p>Either way, v1.4.0 is a loose end: its two widgets are on dev and in the v1.5.0 diff, its release-notes section is written, but no candidate or demo page was ever made and its hub requirement (#165) still reads backlog. Decide whether it ships inside v1.5.0 as the notes now stand, or gets its own candidate first.</p>
+  </div>
+</section>
+
+<div class="cut"><span>suggested order <em>· two sittings</em></span></div>
+<section id="order">
+  <h2>Take them in this order</h2>
+  <ol class="order">
+    <li><div><span class="t">Post the gsm.safety call on pull 68</span><span class="s">A or B above, and what happens to v1.4.0. Nothing to read first.</span></div><span class="m">5 min</span></li>
+    <li><div><span class="t">Review open.csr v0.4.0-RC1</span><span class="s">Independent of gsm.safety, the biggest clinical surface, and the one with questions only you can answer.</span></div><span class="m">45 min</span></li>
+    <li><div><span class="t">Review gsm.safety v1.2.0-RC1</span><span class="s">Once the cherry-pick has landed (route A). Small diff, one demo page.</span></div><span class="m">20 min</span></li>
+    <li><div><span class="t">Re-confirm gsm.safety v1.3.0-RC1</span><span class="s">Already approved; three census bugs were found since. Decide if they ship as filed.</span></div><span class="m">15 min</span></li>
+    <li><div><span class="t">Review gsm.safety v1.5.0-RC1</span><span class="s">Last, so its diff is only the new work. One demo page, one resolution table.</span></div><span class="m">40 min</span></li>
+  </ol>
+</section>
+
+<div class="cut"><span>open.csr <em>· v0.4.0-RC1 · open.csr#75</em></span></div>
+<section id="opencsr">
+  <h2>The report describes one study, and the sidebar says where every number came from</h2>
+  <p class="what">v0.3.0 shipped twenty-six displays over two packagings of the CDISC pilot that disagreed about who was on which arm, so section 10 and section 14 of the same document gave different arm sizes. This release reads the pilot's own package everywhere, declares the study once in a model, and fails the build when two displays disagree about it. It carries five more of the 2006 report's displays into the library cell for cell (demographics, exposure, adverse-event and serious-event incidence, subjects by site), draws the disposition flow, derives medications from the study's own SDTM, and fills three in-text tables from the section 14 results. The sidebar work you asked for on 2 September is folded in: Data and Metadata views, every artifact linked both ways, the explorer regrouped as Inputs, Pipeline, Outputs, and a flow diagram on every element.</p>
+  <div class="links">
+    <a href="https://github.com/jwildfire/open.csr/pull/75"><span class="k">Pull request</span><span class="t">open.csr v0.4.0-RC1</span><span class="s">release/v0.4.0 → main · 37 commits · 13 checks green</span></a>
+    <a href="https://github.com/jwildfire/open.csr/blob/release/v0.4.0/NEWS.md"><span class="k">Release notes</span><span class="t">NEWS.md, v0.4.0 section</span><span class="s">publishes verbatim as the release body</span></a>
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/open-csr-v0.4-demo/"><span class="k">Demo · annotated</span><span class="t">v0.4.0 release overview</span><span class="s">change by change, captures from the candidate's tree</span></a>
+    <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html"><span class="k">Demo · live</span><span class="t">The candidate's assembled report</span><span class="s">30 displays · the app the captures came from</span></a>
+    <a href="https://jwildfire.github.io/open.csr/pr/75/reader/index.html"><span class="k">Demo · live</span><span class="t">The CSR reader</span><span class="s">the document as a reader sees it</span></a>
+    <a href="https://jwildfire.github.io/open.csr/pr/75/quality/index.html"><span class="k">Evidence</span><span class="t">Quality evidence</span><span class="s">1,970 cells against the 2006 report, three ways</span></a>
+    <a href="https://github.com/jwildfire/obot.roadmap/issues/319"><span class="k">Requirements</span><span class="t">One study, all thirty-one displays (#319)</span><span class="s">plus the sidebar (#320) and the pipeline order (#321)</span></a>
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-09-02-open-csr-replication-plan/"><span class="k">Plan</span><span class="t">D0032, the replication plan</span><span class="s">the four releases this is the first of</span></a>
+  </div>
+
+  <h3>What to look at before merge</h3>
+  <ol class="check">
+    <li><b>The one-study claim, with your own eyes.</b> Open the live report at <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=documents&amp;doc=csr&amp;focus=study-patients">section 10</a>, then <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=documents&amp;doc=csr&amp;focus=safety-evaluation">section 14</a>. Both should read 86, 84 and 84. That is the release.</li>
+    <li><b>Demographics, Table 14-2.01.</b> Open <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&amp;display=t-demographics">the display</a> and its <a href="https://jwildfire.github.io/open.csr/pr/75/quality/t-demographics.html">evidence page</a>. The candidate reads Race (Origin) as a recode of race plus ethnicity, not a data conflict, and says so in the footnote. Agree or not with that reading; it changes a footnote, not a number.</li>
+    <li><b>Adverse-event incidence, Tables 14-5.01 and 14-5.02.</b> Open <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&amp;display=t-ae-incidence">the incidence table</a>. Four Fisher p-values differ from the 2006 report by one thousandth and are held as known differences on the display. Confirm you accept them as such.</li>
+    <li><b>The sidebar, against what you asked on 2 September.</b> Open the <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=data">Data</a>, <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=metadata">Metadata</a> and <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=pipeline">Pipeline</a> tabs, then any display's flow diagram. Every box should be a link and every name real. This is the part of the release you specified in chat, so it is the part most worth a look on a phone.</li>
+    <li><b>The medications question the notes put to you.</b> Medications now derive from the vendored SDTM CM domain; the relabelled PHUSE copy stays vendored only so the derivation can be checked against it. The release notes say removing the copy is a question for this review. Answer it in the review.</li>
+    <li><b>The Kenward-Roger footnote.</b> Open <a href="https://jwildfire.github.io/open.csr/pr/75/demo/index.html#tab=displays&amp;display=t-eff-adas-mmrm">the repeated-measures display</a>. The spike moved one of the five last-digit differences and not the other four; the footnote now says what was tried. Read it as the wording a reader of the CSR would see.</li>
+    <li><b>The review gate.</b> This candidate opened on 2 September, before the ultrareview rule and before you replaced it with a GitHub code review on 11 September (hub #340). No code review is posted on the pull request. Decide whether to require one before approving or to waive it for this candidate and say so in your review.</li>
+    <li><b>Scope against the requirement.</b> The six laboratory families (open.csr#64) and Table 12-3 are deferred to v0.4.1 by D0032, so the requirement titled all thirty-one displays (#319) is delivered less those. Decide whether #319 stays open until v0.4.1 or is split now.</li>
+    <li><b>Checks.</b> Thirteen gates green on the head per the body (R 166 of 166, vitest 465 of 465). A glance at the Checks tab confirms it on the current commit.</li>
+  </ol>
+  <div class="callout">
+    <p class="lbl">On approval</p>
+    <p>The tag v0.4.0 publishes with the notes as its body, the three hub requirements move to released, and v0.4.1 (lab families, Table 12-3, the explorer scroll fix) is the next candidate. Requested changes retitle this same pull request to RC2.</p>
+  </div>
+  <div class="state"><span>opened <b>2026-09-02</b></span><span>refreshed twice the same day as the sidebar work landed</span><span>dev is fully inside the candidate: <b>0</b> commits behind</span><span>closes <b>11</b> open.csr issues</span></div>
+</section>
+
+<div class="cut"><span>gsm.safety <em>· v1.2.0-RC1 · gsm.safety#68</em></span></div>
+<section id="gs120">
+  <h2>The liver chart stops reading a participant's baseline as their peak</h2>
+  <p class="what">gsm.safety's composite eDISH view had been treating some participants' own baseline record as an on-treatment peak, because the on-treatment set was everything after study day zero and some participants' first record is not on day zero. This release swaps the chart library under all eleven widgets from safety.viz v1.4.0 to v1.7.0, where the rule was corrected, and adds the two charts R never had: the ALT waterfall and the kidney explorer. A parity guard in CI compares the latest safety.viz release against the package and fails on drift, with an allowlist that must cite a filed requirement for every deferral.</p>
+  <p class="what">Measured on the example data: 293 of 364 participants plotted instead of 295, nine plotted peaks move and all move down, two participants leave the plot, and nobody changes quadrant. That is the clinical content of the release; everything else is feature or appearance.</p>
+  <div class="links">
+    <a href="https://github.com/jwildfire/gsm.safety/pull/68"><span class="k">Pull request</span><span class="t">gsm.safety v1.2.0-RC1</span><span class="s">release/v1.2.0 → main · 3 commits</span></a>
+    <a href="https://github.com/jwildfire/gsm.safety/blob/release/v1.2.0/NEWS.md"><span class="k">Release notes</span><span class="t">NEWS.md, v1.2.0 section</span><span class="s">on the release branch</span></a>
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/gs-v1.2-demo/"><span class="k">Demo · annotated</span><span class="t">What v1.2.0 corrects</span><span class="s">both bundles side by side on the same data</span></a>
+    <a href="https://jwildfire.github.io/safety.viz/hep-explorer/"><span class="k">Demo · live</span><span class="t">hep-explorer on the safety.viz site</span><span class="s">runs the corrected bundle; choose the composite view</span></a>
+    <a href="https://github.com/jwildfire/obot.roadmap/issues/164"><span class="k">Requirement</span><span class="t">Widget parity and the parity guard (#164)</span><span class="s">delivered on dev by gsm.safety pull 51</span></a>
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-parity-2026-08-15/"><span class="k">Background</span><span class="t">The parity report</span><span class="s">the matrix that found the drift</span></a>
+  </div>
+
+  <h3>What to look at before merge</h3>
+  <ol class="check">
+    <li><b>The side-by-side on the demo page.</b> Two captures from one report file, differing only in which bundle they load. Read the count line above each chart: 295 of 364 before, 293 after.</li>
+    <li><b>The ledger of every value that moves.</b> Nine peaks, two exits, quadrant counts 248 → 246 in Normal and Not-Notable only. Confirm you are content that no participant's classification changes on this data, and that the page says this is a property of the study and not of the rule.</li>
+    <li><b>The three participants' own records.</b> The demo prints every ALT record for the participants whose peak moved furthest, with the old and new rule applied line by line. This is the part to read if you want to be sure the correction is right rather than just different.</li>
+    <li><b>Try it live.</b> Open hep-explorer on the safety.viz site, choose the composite plot, read the count line and compare with the capture.</li>
+    <li><b>The two new widgets.</b> Widget_HepWaterfall and Widget_NepExplorer follow the established pattern; the demo links their safety.viz twins. A glance at each is enough; they carry no correction.</li>
+    <li><b>Checks, honestly read.</b> Six checks pass on the head. Four workflows fail at startup with zero jobs, two of them the qualification checks, so what ships was qualified locally, not by CI. Route A above fixes this before you approve; if the cherry-pick has not landed when you open the pull request, wait for it.</li>
+  </ol>
+  <div class="callout">
+    <p class="lbl">On approval</p>
+    <p>release/v1.2.0 merges to main and v1.2.0 is tagged with the notes as its body; the requirement (#164) moves to released; v1.3.0 becomes mergeable. The pull request has waited twenty days, the longest of anything in your queue.</p>
+  </div>
+  <div class="state"><span>opened <b>2026-08-23</b></span><span>author obotclaw[bot], before the identity was retired</span><span>predates every review gate; none applies to it</span></div>
+</section>
+
+<div class="cut"><span>gsm.safety <em>· v1.3.0-RC1 · gsm.safety#69 · approved 27 Aug</em></span></div>
+<section id="gs130">
+  <h2>The safety census rebuilt on metrics, and the death count corrected</h2>
+  <p class="what">The safety overview reported four deaths on a study with thirteen. The old count matched the text of a discontinuation reason, never opened the death domain, and counted people who were never enrolled. This release replaces every figure on that page with a metric that publishes its own numerator, denominator and provenance, adds the report workflow that reads them and computes nothing of its own, and keeps SafetyCensus() by name with its arithmetic moved out from under it. Five published figures move: deaths 4 → 13, randomised blank → 577, dosed 744 → 762, with a disposition record 100 → 76, and participants with an ECG now says the domain is absent rather than printing a blank. Every figure was measured twice by routes that share no code.</p>
+  <p class="what">You approved this on 27 August. The session held the merge because the candidate contains v1.2.0 and would have released it unreviewed. Two things are new since your approval and are the reason it is on this plan at all.</p>
+  <div class="links">
+    <a href="https://github.com/jwildfire/gsm.safety/pull/69"><span class="k">Pull request</span><span class="t">gsm.safety v1.3.0-RC1</span><span class="s">release/v1.3.0 → main · 10 commits, 3 of them v1.2.0's</span></a>
+    <a href="https://github.com/jwildfire/gsm.safety/blob/release/v1.3.0/NEWS.md"><span class="k">Release notes</span><span class="t">NEWS.md, v1.3.0 section</span><span class="s">the table of every figure that moves, and why</span></a>
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/gs-v1.3-demo/"><span class="k">Demo · annotated</span><span class="t">What v1.3.0 corrects</span><span class="s">before and after in one session on the same study</span></a>
+    <a href="https://github.com/jwildfire/gsm.safety/tree/release/v1.3.0/inst/qualification"><span class="k">Evidence</span><span class="t">The qualification records</span><span class="s">shipped inside the package, read under R CMD check</span></a>
+    <a href="https://github.com/jwildfire/obot.roadmap/issues/274"><span class="k">Requirement</span><span class="t">SafetyCensus stays and is rebuilt (#274)</span><span class="s">from your dictated decision of 18 August</span></a>
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-20-safety-census-rebuild/"><span class="k">Design</span><span class="t">D0023, the rebuild design</span><span class="s">the six answers you gave on 20 August</span></a>
+  </div>
+
+  <h3>What to look at before it merges</h3>
+  <ol class="check">
+    <li><b>Three census bugs found on 11 September, filed rather than fixed.</b> The code review of the v1.5.0 candidate read the census code this release ships and found that the Input_* steps fail on an integer-keyed subject domain (gsm.safety#89), Input_Deaths errors on an empty subject domain instead of publishing no figure (#90), and the report can render an NA heading and label the page with a visit instead of the study (#91). None affects the bundled study's figures. Decide whether v1.3.0 ships with them filed for the next release, or whether the fixes go onto release/v1.3.0 first.</li>
+    <li><b>The workflow fix.</b> Same point as v1.2.0: without the cherry-pick, the tag publishes no artifacts and the qualification checks never ran in CI.</li>
+    <li><b>Re-read the moving figures once.</b> The demo's before-and-after table is the clinical content. If your 27 August approval already covered it, a skim is enough.</li>
+    <li><b>Two questions still open from the design, not blocking the tag.</b> Data completeness, the thirteenth metric, is not in this release because the lab domain carries no visit column under the standard mapping (gsm.safety#58). The disagreement metric you approved as D0023.1 was argued as reading one and reads thirteen of thirteen on the current study; the session asked you to re-decide it before it is written. Neither needs an answer to ship v1.3.0, but both are waiting on you.</li>
+  </ol>
+  <div class="callout">
+    <p class="lbl">On merge</p>
+    <p>release/v1.3.0 merges after v1.2.0 and v1.3.0 is tagged; the requirement (#274) moves to released. Your existing approval stands unless you push changes onto the branch for the three bugs, in which case a fresh approval is needed.</p>
+  </div>
+  <div class="state"><span>opened <b>2026-08-23</b></span><span>approved <b>2026-08-27</b>, silently</span><span>held for merge order, not for work</span></div>
+</section>
+
+<div class="cut"><span>gsm.safety <em>· v1.5.0-RC1 · gsm.safety#88</em></span></div>
+<section id="gs150">
+  <h2>The FDA safety guide's thresholds arrive in R as tested data</h2>
+  <p class="what">Phase 0 of the FDA Standard Safety Tables and Figures work. The guide's Appendix Tables 56 to 60 become two package datasets, transcribed row for row with the printed criterion kept beside the parsed number and the guide page on every row: 46 abnormality-level rows and 40 extreme-value parameters in both unit systems. Three functions apply the guide's first rules to a long lab table and hand it back with the answers added: the result as a multiple of its upper limit of normal, the level 1, 2 or 3 abnormality grade with the criterion that fired, and the flag the extreme-value exclusion reads. A requirement matrix keys all 22 of the guide's figures and 16 cross-cutting rules so a static rendering here and its interactive twin in safety.viz cite one ID. An alignment note marks 51 ADaM columns as found, mapped, derived or missing and ends in the column contract phase 1 codes against.</p>
+  <p class="what">Because this candidate is dev into main, it also carries v1.4.0, which has no candidate of its own: Widget_TimeToEvent and Widget_ParticipantProfile, the widget contract generalised to more than one data frame, an example ADSL, and the workflow fix. If v1.2.0 and v1.3.0 land first, the diff you review here is v1.4.0 plus v1.5.0.</p>
+  <div class="links">
+    <a href="https://github.com/jwildfire/gsm.safety/pull/88"><span class="k">Pull request</span><span class="t">gsm.safety v1.5.0-RC1</span><span class="s">dev → main · 35 commits · resolution table of 12 findings</span></a>
+    <a href="https://github.com/jwildfire/gsm.safety/blob/dev/NEWS.md"><span class="k">Release notes</span><span class="t">NEWS.md, v1.5.0 section</span><span class="s">with the v1.4.0 and v1.3.0 sections beneath it</span></a>
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/gsm-safety-v1.5.0-demo/"><span class="k">Demo · annotated</span><span class="t">What v1.5.0 puts in the package</span><span class="s">every liver result in the example data, graded</span></a>
+    <a href="https://github.com/jwildfire/gsm.safety/blob/dev/requirements/fda-stf.md"><span class="k">Evidence</span><span class="t">The requirement matrix</span><span class="s">22 figure rows, 16 rule rows</span></a>
+    <a href="https://github.com/jwildfire/gsm.safety/blob/dev/design/fda-adam-alignment.md"><span class="k">Evidence</span><span class="t">The ADaM alignment note</span><span class="s">51 columns, none unmarked</span></a>
+    <a href="https://github.com/jwildfire/obot.roadmap/issues/9"><span class="k">Requirement</span><span class="t">FDA ST&amp;F phase 0 (#9)</span><span class="s">its definition of done is the checklist</span></a>
+    <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/9_design.html"><span class="k">Design</span><span class="t">The phased design you reviewed in July</span><span class="s">rescoped to phase 0 on 11 September</span></a>
+  </div>
+
+  <h3>What to look at before merge</h3>
+  <ol class="check">
+    <li><b>The graded liver panel on the demo page.</b> Every liver result in the example data through the ULN-multiple and grading functions, with the Table 56 cut lines read from the dataset rather than typed. Bilirubin carries 30 level 3 results and alkaline phosphatase 12; these are what the eDISH quadrants in phase 1 will be drawn from.</li>
+    <li><b>One row against the PDF.</b> The demo's try-it step: open page 121 of the guide and compare any Table 57 row with the dataset. The transcription is the thing most worth a human spot check, because everything later reads from it.</li>
+    <li><b>Where the transcription had to read.</b> Hemoglobin's level 1 criteria are printed as ranges and stored as the upper bound; the platelet unit is kept as printed; three hematology thresholds printed without a comparator are read as greater-than. Each is a Note on its row. Agree with the readings or ask for a change; a correction is one edit in data-raw.</li>
+    <li><b>What the grading refuses to do.</b> A result in a unit the guide does not print is left NA and named in a message rather than misgraded; sex-qualified and baseline-qualified rows need columns the functions do not yet take. Read the message block on the demo and decide whether that behaviour is what you want phase 1 to inherit.</li>
+    <li><b>The resolution table on the pull request.</b> Twelve findings from a max-effort code review: seven in phase 0 code fixed in gsm.safety pull 92, five in the census code filed as issues 89, 90, 91 and the existing 60. This is the gate you set on 11 September in place of ultrareview; confirm the table satisfies it.</li>
+    <li><b>The definition of done, item by item.</b> Datasets exported with every row of Tables 56 to 60; three functions with worked examples; 22 figure rows in the matrix; every alignment column marked with a decision; the NEWS section; the candidate open with its demo. The closing comment on the requirement (#9) claims each with its proof. The pkgdown reference will show the new functions only after the tag.</li>
+    <li><b>v1.4.0, riding along.</b> The developer guidelines say a pull request without a demo is not a release candidate, and v1.4.0 has none. Its notes section is the walkthrough. Decide whether that is enough for the two widgets to ship inside this tag, and have the requirement (#165) moved off backlog either way.</li>
+    <li><b>Checks.</b> The body reports devtools::check() clean and the four required checks green on every increment; the Checks tab on the head commit is the confirmation, and on this branch the workflow fix is present so all workflows actually run.</li>
+  </ol>
+  <div class="callout">
+    <p class="lbl">On approval</p>
+    <p>dev merges to main, v1.5.0 is tagged with the notes as its body, the pkgdown site rebuilds with the new datasets and functions, and the requirement (#9) closes with its proof. Phase 1 (#323, four static engines and twelve figures) starts from the alignment note's column contract.</p>
+  </div>
+  <div class="state"><span>opened as a draft <b>2026-09-11</b></span><span>marked ready the same day after you dropped the ultrareview gate</span><span>demo page deployed <b>2026-09-12</b></span></div>
+</section>
+
+<footer>
+  <p>Measured on 2026-09-12 from GitHub and from the repositories at these heads: gsm.safety main 6a7dca3 (v1.1.0), release/v1.2.0 4a436ce, release/v1.3.0 9f76d42, dev c4ece06 (v1.5.0); open.csr main ff03f52 (v0.3.0), release/v0.4.0 7cb2710, dev d07f944. Candidate facts come from the four pull-request pages, the hub requirements they close and each repository's NEWS.md; the clinical figures are quoted from the demo pages, not re-measured here. safety.viz, obot.agent, open.gismo and demo-301 have no open pull requests. The rules this plan reads against are the <a href="https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md">developer guidelines</a> and the <a href="https://github.com/jwildfire/obot.roadmap/blob/main/docs/ways-of-working.md">ways of working</a>.</p>
+  <p>This page was drafted by Claude Code using Fable 5.1 in the 2026-09-12 prep session. Not reviewed by @jwildfire; the recommendations are the author's.</p>
+</footer>
+
+</div>
+</body></html>
