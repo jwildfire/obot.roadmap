@@ -1,18 +1,17 @@
 /* obot.roadmap site — layout and components for the homepage, generated pages and diary.
-   Look & feel matches jwildfire.github.io's keynote theme:
-   espresso #271810 · paper #faf6f1 · orange #f97316 accent
+   Look & feel matches jwildfire.github.io's site theme (2026-09-12):
+   paper #fafaf8 · graphite ink #1f2328 · plum #6c3270 links · a seven-hue honeycomb
+   strip along the header and footer edges and on every <hr>
    Instrument Serif (headings) · Instrument Sans (body) · IBM Plex Mono (meta)
 
-   The palette itself is no longer declared here. It moved to the shared keynote sheet
-   imported below (jwildfire/obot.roadmap#294, under #289 — @jwildfire, 2026-08-20:
-   "Prioritize creating a shared style sheet for the project"). Four sites carried this
-   espresso theme in four separate files; fourteen of the token values were byte-identical
-   across three of them and the three font stacks had already started to drift apart by
-   quote character and fallback list.
+   The palette itself is not declared here. It lives in the shared keynote sheet imported
+   below (jwildfire/obot.roadmap#294, under #289 — @jwildfire, 2026-08-20: "Prioritize
+   creating a shared style sheet for the project"), which this repository now holds as the
+   canonical copy. This file adds the chrome and the components on top of the tokens.
 
-   Nothing here changed colour. The values in the shared sheet are the values that were in
-   this file, and the font stacks are the union of the fallbacks the four sheets carried,
-   so no site loses one it had. */
+   The 2026-09-12 retone replaced the espresso masthead with a light band under a
+   honeycomb strip, the orange accent with plum, and the warm shadows with graphite ones.
+   Orange is the R/Pharma keynote's colour now (--event) and nothing here wears it. */
 @import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
 @import url("obot-keynote.css");
 
@@ -35,15 +34,37 @@ body {
 body.wide { max-width: 72rem; }
 body.wide header.site { padding-left: max(calc(50vw - 34.5rem), 1.5rem); padding-right: max(calc(50vw - 34.5rem), 1.5rem); }
 body.wide footer.site { padding-left: max(calc(50vw - 34.5rem), 1.5rem); padding-right: max(calc(50vw - 34.5rem), 1.5rem); }
-h1, h2, h3, h4, h5, h6 { font-family: var(--serif); font-weight: 400; line-height: 1.15; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--serif); font-weight: 400; line-height: 1.15; letter-spacing: -0.01em; }
 h1 { font-size: 2rem; }
 h2 { font-size: 1.5rem; margin: 2.2rem 0 .75rem; }
 h3 { font-size: 1.2rem; margin: 1.5rem 0 .5rem; }
 a { color: var(--accent); }
-a:hover { color: var(--accent-bright); text-decoration: underline; text-underline-offset: .2em; }
+a:hover { color: var(--accent-deep); text-decoration: underline; text-underline-offset: .2em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 
-/* Espresso full-bleed bands (header/footer) inside the centered column.
+/* Full-bleed bands (header/footer) inside the centered column, on the pale rail grey
+   the homepage's sidebar wears, each carrying the honeycomb strip along its outer
+   edge the way the homepage's header and footer do. The strip is a pseudo-element so
+   the text on the band is unaffected; its mask declarations are the keynote sheet's.
    Header structure adopts the obot-claw hub bar: 🍊😺 brand left, nav right. */
+header.site::before, footer.site::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  height: 9px;
+  opacity: .9;
+  background: var(--spec-gradient);
+  -webkit-mask-image: var(--hex-mask);
+  mask-image: var(--hex-mask);
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-size: auto 9.6px;
+  mask-size: auto 9.6px;
+  -webkit-mask-position: left top;
+  mask-position: left top;
+}
+header.site::before { top: 0; }
+footer.site::before { top: -1px; }
 header.site {
   display: flex;
   align-items: center;
@@ -51,17 +72,18 @@ header.site {
   flex-wrap: wrap;
   gap: .5rem 1rem;
   margin: -2.5rem calc(50% - 50vw) 2rem;
-  padding: .9rem max(calc(50vw - 25.5rem), 1.5rem) 1rem;
+  padding: 1.2rem max(calc(50vw - 25.5rem), 1.5rem) 1rem;
   background: var(--side-bg);
-  border-top: 4px solid var(--accent-bright);
-  border-bottom: none;
+  border-top: none;
+  border-bottom: 1px solid var(--rule);
 }
 .brand, .brand:hover { font-family: var(--serif); font-size: 1.35rem; color: var(--side-ink); text-decoration: none; }
+.brand:hover { color: var(--accent); }
 .tagline { color: var(--muted); margin: 0 0 1rem; }
 nav.site { display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; margin: 0; }
 nav.site a { text-decoration: none; font-family: var(--mono); font-size: .84rem; color: var(--side-soft); }
-nav.site a:hover { color: var(--accent-bright); text-decoration: none; }
-nav.site a.current { color: var(--accent-bright); border-bottom: 2px solid var(--accent-bright); padding-bottom: .1rem; }
+nav.site a:hover { color: var(--accent); text-decoration: none; }
+nav.site a.current { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: .1rem; }
 
 /* Second nav row — the roadmap group's sections (Overview · Audit · Analytics ·
    Status), rendered only on those pages. It is a third flex child of the header
@@ -71,20 +93,21 @@ nav.site.sub {
   flex: 0 0 100%;
   gap: .3rem .9rem;
   padding-top: .5rem;
-  border-top: 1px solid rgba(196, 169, 149, .25);
+  border-top: 1px solid var(--rule);
 }
 nav.site.sub a { font-size: .78rem; }
 footer.site {
+  position: relative;
   margin: 3rem calc(50% - 50vw) -5rem;
-  padding: 1.4rem max(calc(50vw - 25.5rem), 1.5rem) 2rem;
+  padding: 1.6rem max(calc(50vw - 25.5rem), 1.5rem) 2rem;
   background: var(--side-bg);
-  border-top: none;
+  border-top: 1px solid var(--rule);
   color: var(--side-soft);
   font-family: var(--mono);
   font-size: .8rem;
 }
 footer.site a { color: var(--side-ink); text-decoration: none; }
-footer.site a:hover { color: var(--accent-bright); }
+footer.site a:hover { color: var(--accent); }
 
 code { font-family: var(--mono); font-size: .86em; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: .1em .35em; }
 pre { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 1rem; overflow-x: auto; }
@@ -100,8 +123,8 @@ th {
   text-transform: uppercase;
   color: var(--muted);
 }
-blockquote { border-left: 4px solid var(--accent-bright); margin: 1rem 0; padding: .25rem 1rem; color: var(--muted); }
-hr { border: 0; border-top: 1px solid var(--rule); }
+blockquote { border-left: 4px solid var(--accent); margin: 1rem 0; padding: .25rem 1rem; color: var(--muted); }
+/* <hr> is the honeycomb strip — declared in the keynote sheet, nothing to add here. */
 
 /* Cards (homepage sections) */
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; margin: 1.25rem 0; }
@@ -112,7 +135,7 @@ hr { border: 0; border-top: 1px solid var(--rule); }
   background: var(--card);
   transition: box-shadow 140ms ease, transform 140ms ease;
 }
-.card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(39, 24, 16, .12); }
+.card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(31, 35, 40, .12); }
 .card h3 { margin: 0 0 .35rem; }
 .card h3 a { text-decoration: none; }
 .card p { margin: 0; font-size: .92rem; color: var(--muted); }
@@ -141,7 +164,7 @@ hr { border: 0; border-top: 1px solid var(--rule); }
 .status-pill.retired { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
 .status-pill.still-open { background: #fef3c7; border-color: #fde68a; color: var(--warn); }
 details.closed-reqs summary { cursor: pointer; color: var(--muted); font-family: var(--mono); font-size: .85rem; }
-details.closed-reqs summary:hover { color: var(--accent); }
+details.closed-reqs summary:hover { color: var(--accent-deep); }
 nav.entry-nav { display: flex; justify-content: space-between; gap: 1rem; margin: 1rem 0;
                 padding: .5rem 0; border-bottom: 1px solid var(--rule); font-size: .92rem; }
 nav.entry-nav a { font-family: var(--mono); font-size: .85rem; text-decoration: none; }
@@ -170,11 +193,11 @@ nav.entry-nav a { font-family: var(--mono); font-size: .85rem; text-decoration: 
 .news-sidebar .filter-group:first-child h3 { margin-top: 0; }
 .news-sidebar label { display: block; margin: .25rem 0; font-size: .9rem; cursor: pointer; }
 .news-sidebar label .count { color: var(--faint); font-family: var(--mono); font-size: .76rem; }
-.news-sidebar input { accent-color: var(--accent-bright); margin-right: .3rem; }
+.news-sidebar input { accent-color: var(--accent); margin-right: .3rem; }
 #month-filters a { display: block; margin: .2rem 0; font-size: .9rem; text-decoration: none; color: var(--accent); }
-#month-filters a:hover { color: var(--accent-bright); }
+#month-filters a:hover { color: var(--accent-deep); }
 #month-filters a.current { color: var(--ink); font-weight: 600; }
-#month-filters a.current::before { content: "› "; color: var(--accent-bright); }
+#month-filters a.current::before { content: "› "; color: var(--accent); }
 .news-month > h2 { border-bottom: 1px solid var(--rule); padding-bottom: .3rem; margin-top: 1.2rem; }
 .news-month:first-child > h2 { margin-top: 0; }
 .news-item { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); gap: .9rem; padding: .55rem 0; }
@@ -224,7 +247,7 @@ nav.entry-nav a { font-family: var(--mono); font-size: .85rem; text-decoration: 
   background: var(--panel);
   color: var(--muted);
 }
-.news-pill.blog { background: #ffedd5; border-color: #fed7aa; color: #c2410c; }
+.news-pill.blog { background: var(--accent-soft); border-color: rgba(108, 50, 112, .3); color: var(--accent); }
 .news-pill.diary { background: #f3e8dd; border-color: #e4d2bf; color: #6b4423; }
 .news-pill.artifact { background: #ede9fe; border-color: #ddd6fe; color: #5b21b6; }
 .news-pill.release { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
@@ -239,20 +262,20 @@ nav.entry-nav a { font-family: var(--mono); font-size: .85rem; text-decoration: 
   font: 500 .78rem/1.5 var(--mono);
   color: var(--side-soft);
   background: none;
-  border: 1px solid rgba(196, 169, 149, .4);
+  border: 1px solid var(--faint);
   border-radius: 999px;
   padding: .1rem .65rem;
   cursor: pointer;
 }
-.version-badge:hover { color: var(--accent-bright); border-color: var(--accent-bright); }
-.version-badge:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+.version-badge:hover { color: var(--accent); border-color: var(--accent); }
+.version-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* The changelog-behind-the-build signal. It recolours the badge rather than adding a
    mark beside it: a dot measured twelve pixels, and twelve pixels is exactly what
    decides whether the nav sits beside the brand at 390px or wraps onto its own line on
    every page. Unobtrusive by request — it is his hover, not a public announcement —
    but it is the one thing that would tell him at a glance, and the state is in the
    button's accessible name too so it is never carried by colour alone. */
-.version-badge[data-drift] { color: var(--accent-bright); border-color: rgba(176, 92, 47, .45); }
+.version-badge[data-drift] { color: var(--warn); border-color: rgba(146, 64, 14, .45); }
 
 /* Anchored to header.site, NOT to the badge. Measured at a real 390px viewport:
    anchored to the badge, `left: 0` runs 131px past the right edge and `right: 0` runs
@@ -268,7 +291,7 @@ header.site { position: relative; }
   width: max-content; max-width: min(22rem, calc(100vw - 3rem)); margin-top: -.6rem;
   font: 400 .74rem/1.55 var(--mono); color: var(--ink); background: var(--card);
   border: 1px solid var(--faint); border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(39, 24, 16, .18); padding: .5rem .7rem; text-align: left;
+  box-shadow: 0 6px 20px rgba(31, 35, 40, .18); padding: .5rem .7rem; text-align: left;
   display: none;
 }
 body.wide .version-panel { right: max(calc(50vw - 34.5rem), 1.5rem); }
@@ -288,8 +311,8 @@ header.site[data-vs-open="true"] .version-panel { display: block; }
 .version-panel code { font-size: .72rem; }
 .version-panel .vs-note { margin: .45rem 0 0; padding-top: .4rem; border-top: 1px solid var(--faint); color: var(--muted); }
 .version-panel .vs-more { margin: .35rem 0 0; }
-.version-panel .vs-warn { color: var(--accent-bright); }
-.version-panel .vs-local { color: var(--accent-bright); }
+.version-panel .vs-warn { color: var(--warn); }
+.version-panel .vs-local { color: var(--warn); }
 
 /* The 38px that keeps the badge from pushing the nav below the brand at 390px. The
    longhand is deliberate: plain `gap` here would also shrink the ROW gap and re-inflate
@@ -301,15 +324,15 @@ dialog.audit-log {
   background: var(--paper);
   color: var(--ink);
   border: 1px solid var(--rule);
-  border-top: 4px solid var(--accent-bright);
+  border-top: 4px solid var(--accent);
   border-radius: 12px;
   padding: 1.4rem 1.6rem 1.6rem;
 }
-dialog.audit-log::backdrop { background: rgba(39, 24, 16, .55); }
+dialog.audit-log::backdrop { background: rgba(31, 35, 40, .55); }
 dialog.audit-log h2 { margin: 0 0 .3rem; }
 dialog.audit-log form { float: right; margin: -.4rem -.6rem 0 0; }
 .audit-close { font: 1.2rem/1 var(--mono); color: var(--muted); background: none; border: none; cursor: pointer; padding: .2rem .5rem; }
-.audit-close:hover { color: var(--accent-bright); }
+.audit-close:hover { color: var(--accent); }
 .audit-entry h3 { margin: 1.1rem 0 .3rem; }
 .audit-entry ul { margin: 0; padding-left: 1.2rem; font-size: .92rem; }
 .audit-entry li { margin: .15rem 0; }
@@ -356,7 +379,7 @@ dialog.audit-log form { float: right; margin: -.4rem -.6rem 0 0; }
   padding: .12rem .55rem;
   cursor: pointer;
 }
-.rm-chip-btn:hover { color: var(--accent); border-color: var(--accent-bright); }
+.rm-chip-btn:hover { color: var(--accent); border-color: var(--accent); }
 .rm-chip-btn.current { color: var(--paper); background: var(--accent); border-color: var(--accent); }
 .rm-stamp { font-family: var(--mono); font-size: .72rem; color: var(--faint); }
 .rm-session {
@@ -376,7 +399,7 @@ dialog.audit-log form { float: right; margin: -.4rem -.6rem 0 0; }
 /* Todo — what is waiting on @jwildfire, always the first section. Bordered so
    the page opens with the queue rather than the narrative. */
 .rm-sec.rm-todo {
-  border: 1.5px solid var(--accent-bright);
+  border: 1.5px solid var(--accent);
   border-radius: 12px;
   background: var(--card);
   padding: .35rem 1rem .85rem;
@@ -532,7 +555,7 @@ table.rm-table td:first-child a { text-decoration: none; font-weight: 600; }
   cursor: pointer;
 }
 .rm-view-btn:hover { color: var(--accent); }
-.rm-view-btn.current { color: var(--side-ink); background: var(--side-bg); border-color: var(--side-bg); }
+.rm-view-btn.current { color: #fff; background: var(--ink); border-color: var(--ink); }
 .rm-blurb { margin: -.5rem 0 .8rem; font-size: .8rem; color: var(--faint); font-style: italic; }
 .rm-sub[hidden] { display: none; }
 
@@ -560,7 +583,7 @@ details.audit-rule > summary code { font-size: .74rem; color: var(--ink); }
   margin: .3rem 0 .3rem .2rem;
   font-size: .82rem;
 }
-.audit-finding:hover { border-left-color: var(--accent-bright); background: var(--panel); }
+.audit-finding:hover { border-left-color: var(--accent); background: var(--panel); }
 .audit-finding.muted { opacity: .55; }
 .audit-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem; }
 .audit-subject { font-family: var(--mono); font-size: .76rem; }
@@ -597,7 +620,7 @@ details.audit-rule > summary code { font-size: .74rem; color: var(--ink); }
   white-space: nowrap;
 }
 .audit-btn.accept { color: var(--paper); background: var(--accent); border-color: var(--accent); }
-.audit-btn.accept:hover { background: var(--accent-bright); border-color: var(--accent-bright); text-decoration: none; }
+.audit-btn.accept:hover { background: var(--accent-deep); border-color: var(--accent-deep); text-decoration: none; }
 .audit-btn.reject { color: var(--muted); background: var(--panel); }
 .audit-btn.reject:hover { color: var(--ink); border-color: var(--faint); text-decoration: none; }
 table.rm-table.audit-rules td { vertical-align: top; padding-bottom: .4rem; }
@@ -639,7 +662,7 @@ table.rm-table.audit-rules td:nth-child(2) { white-space: nowrap; }
   --uz-auto: #eda100;
   --uz-interactive: #e87ba4;
   --uz-cloud: #008300;
-  --uz-surface: var(--paper);
+  --uz-surface: var(--paper); /* #fafaf8 since the 2026-09-12 retone; the series were validated on light paper and stay */
 }
 :root[data-theme="dark"] {
   --uz-lead: #3987e5;
@@ -691,8 +714,8 @@ table.rm-table.audit-rules td:nth-child(2) { white-space: nowrap; }
   padding: .05rem .6rem;
   cursor: pointer;
 }
-.uz-btn:hover { color: var(--accent); border-color: var(--accent-bright); }
-.uz-btn.current { color: var(--side-ink); background: var(--side-bg); border-color: var(--side-bg); }
+.uz-btn:hover { color: var(--accent); border-color: var(--accent); }
+.uz-btn.current { color: #fff; background: var(--ink); border-color: var(--ink); }
 
 /* Legend is always present — identity never rests on color alone. */
 .uz-legend { display: inline-flex; flex-wrap: wrap; gap: .1rem .7rem; font-size: .72rem; color: var(--muted); }
@@ -745,7 +768,7 @@ table.rm-table.audit-rules td:nth-child(2) { white-space: nowrap; }
   background: var(--card);
   border: 1px solid var(--faint);
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(39, 24, 16, .14);
+  box-shadow: 0 2px 8px rgba(31, 35, 40, .14);
 }
 .uz-tip strong { font: 600 .9rem/1.2 var(--sans); color: var(--ink); }
 .uz-tip-share { font-family: var(--mono); font-size: .68rem; color: var(--muted); }
@@ -790,8 +813,8 @@ table.uz-table td .uz-swatch { margin-right: .35rem; vertical-align: -1px; }
   padding: .12rem .7rem;
   cursor: pointer;
 }
-.hy-btn:hover { color: var(--accent); border-color: var(--accent-bright); }
-.hy-btn.current { color: var(--side-ink); background: var(--side-bg); border-color: var(--side-bg); }
+.hy-btn:hover { color: var(--accent); border-color: var(--accent); }
+.hy-btn.current { color: #fff; background: var(--ink); border-color: var(--ink); }
 .hy-coverage { margin: 0 0 .5rem; font-size: .8rem; color: var(--muted); }
 .hy-view[hidden] { display: none; }
 ul.hy-tree { list-style: none; margin: 0; padding: 0; }
@@ -805,7 +828,7 @@ ul.hy-root > .hy-node > .hy-leaf { padding-left: 0; }
 .hy-progress { font: 500 .7rem/1.5 var(--mono); color: var(--faint); white-space: nowrap; }
 ul.hy-root > .hy-node > details > summary .hy-title { font-family: var(--serif); font-size: .98rem; }
 .hy-proposed > details > summary, .hy-proposed > .hy-leaf {
-  border-left: 3px dashed #fdba74;
+  border-left: 3px dashed rgba(108, 50, 112, .45);
   padding-left: .45rem;
   margin-left: -.45rem;
 }
@@ -834,7 +857,7 @@ ul.hy-flags li { margin: .18rem 0; }
 .tk-side h3 .tk-link + .tk-link { margin-left: 0; }
 .tk-side .filter-group:first-of-type h3 { margin-top: 0; }
 .tk-f { display: flex; align-items: baseline; gap: .35rem; margin: .18rem 0; font-size: .86rem; cursor: pointer; }
-.tk-f input { accent-color: var(--accent-bright); margin: 0 .1rem 0 0; flex: none; }
+.tk-f input { accent-color: var(--accent); margin: 0 .1rem 0 0; flex: none; }
 .tk-f .count { margin-left: auto; color: var(--faint); font-family: var(--mono); font-size: .74rem; }
 .tk-f .tk-f-text { min-width: 0; line-height: 1.25; }
 .tk-search-label { display: block; font: 600 .72rem/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
@@ -842,9 +865,9 @@ ul.hy-flags li { margin: .18rem 0; }
   width: 100%; font: .9rem/1.4 var(--sans); color: var(--ink);
   padding: .4rem .6rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper);
 }
-#tk-q:focus { outline: 2px solid var(--accent-bright); outline-offset: 1px; border-color: var(--accent-bright); }
+#tk-q:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
 .tk-link { font: inherit; font-size: .78rem; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-.tk-link:hover { color: var(--accent-bright); }
+.tk-link:hover { color: var(--accent-deep); }
 /* The filter groups fold as one on a phone (the script closes it there). */
 .tk-filters > summary { cursor: pointer; font: 600 .72rem/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: .9rem; }
 .tk-filters > summary::marker { color: var(--faint); }
@@ -860,14 +883,15 @@ ul.hy-flags li { margin: .18rem 0; }
 .tk-tile.warn strong { color: #991b1b; }
 
 /* Stage swatches (sidebar legend) and the stage bar (one per objective). The
-   five statuses are one orange ramp light→dark in lifecycle order — further
-   along is darker — Released is the good green, Retired the slate the pill
-   wears, Unstaged the fault red. Every segment carries its count as text. */
+   five statuses are one plum ramp light→dark in lifecycle order — further
+   along is darker, and review is the accent itself — Released is the good
+   green, Retired the slate the pill wears, Unstaged the fault red. Every
+   segment carries its count as text. */
 .tk-sw { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; border: 1px solid rgba(0,0,0,.08); flex: none; vertical-align: -1px; }
-.tk-sw.backlog, .tk-seg.backlog { background: #fde8cf; }
-.tk-sw.ready, .tk-seg.ready { background: #fdba74; }
-.tk-sw.in-session, .tk-seg.in-session { background: #f97316; }
-.tk-sw.review, .tk-seg.review { background: #c2410c; }
+.tk-sw.backlog, .tk-seg.backlog { background: #efe4ef; }
+.tk-sw.ready, .tk-seg.ready { background: #d3aed3; }
+.tk-sw.in-session, .tk-seg.in-session { background: #a367a4; }
+.tk-sw.review, .tk-seg.review { background: var(--accent); }
 .tk-sw.released, .tk-seg.released { background: #86efac; }
 .tk-sw.retired, .tk-seg.retired { background: #cbd5e1; }
 .tk-sw.unstaged, .tk-seg.unstaged { background: #fca5a5; }
@@ -915,29 +939,29 @@ ul.hy-flags li { margin: .18rem 0; }
 .tk-none { color: var(--faint); }
 .tk-warn { color: var(--warn); }
 .tk-pr { font: 500 .7rem/1 var(--mono); text-decoration: none; border: 1px solid var(--rule); border-radius: 999px; padding: .05rem .4rem; background: var(--paper); }
-.tk-pr:hover { border-color: var(--accent-bright); }
+.tk-pr:hover { border-color: var(--accent); }
 
 /* The lifecycle strip: five dots, filled up to the status the requirement
    carries. Released fills them green; Retired dims them; Unstaged is empty and
    red-rimmed, because it is not a point on the line. */
 .tk-life { display: inline-flex; gap: 2px; vertical-align: middle; }
 .tk-life i { display: inline-block; width: .42rem; height: .42rem; border-radius: 50%; border: 1px solid var(--faint); background: transparent; }
-.tk-life i.on { background: var(--accent-bright); border-color: var(--accent-bright); }
+.tk-life i.on { background: var(--accent); border-color: var(--accent); }
 .tk-life.released i.on { background: var(--good); border-color: var(--good); }
 .tk-life.retired i { border-color: #cbd5e1; background: #e2e8f0; }
 .tk-life.unstaged i { border-color: #fca5a5; }
 
 /* Task phase, and the area chip. */
 .tk-phase { display: inline-block; font: 600 .64rem/1.5 var(--mono); letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; padding: 0 .4rem; border: 1px solid var(--rule); background: var(--panel); color: var(--muted); white-space: nowrap; }
-.tk-phase.in-review { background: #ffedd5; border-color: #fed7aa; color: #c2410c; }
+.tk-phase.in-review { background: var(--accent-soft); border-color: rgba(108, 50, 112, .3); color: var(--accent); }
 .tk-phase.done { background: #dcfce7; border-color: #bbf7d0; color: var(--good); }
 .tk-phase.retired { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
 .rm-chip.tk-area.safety { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
 .rm-chip.tk-area.infrastructure { background: #f3e8dd; border-color: #e4d2bf; color: #6b4423; }
 .rm-chip.tk-area.ai { background: #ede9fe; border-color: #ddd6fe; color: #5b21b6; }
 .status-pill.backlog { background: var(--panel); }
-.status-pill.ready { background: #ffedd5; border-color: #fed7aa; color: #c2410c; }
-.status-pill.in-session { background: #f97316; border-color: #f97316; color: #fff; }
+.status-pill.ready { background: var(--accent-soft); border-color: rgba(108, 50, 112, .3); color: var(--accent); }
+.status-pill.in-session { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 @media (max-width: 40rem) {
   .tk-obj-meta { margin-left: 0; white-space: normal; }
