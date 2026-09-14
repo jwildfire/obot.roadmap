@@ -1,13 +1,29 @@
 #!/usr/bin/env python3
-"""Aggregate this machine's Claude Code token usage for the obot2 workspace into
-site/usage/usage.json — the data behind the roadmap page's Cost section.
+"""Aggregate one machine's Claude Code token usage into a usage file — the data
+behind the analytics page's Cost section.
 
-The source is the local transcript store (~/.claude/projects/<slugged-cwd>/*.jsonl),
-which only exists on @jwildfire's machine. The site build cannot regenerate it, so
-the output is committed and refreshed by re-running this script locally:
+The source is a Claude Code transcript store (~/.claude/projects/<slugged-cwd>/*.jsonl).
+Two kinds of machine hold one:
 
-    python3 scripts/build_usage_data.py            # writes site/usage/usage.json
-    python3 scripts/build_usage_data.py --dry-run  # print the summary, write nothing
+- @jwildfire's own, for local sessions. The site build cannot reach it, so the output
+  is committed as site/usage/usage.json and refreshed by re-running this script there
+  (scripts/usage/refresh_local.sh does that unattended, nightly):
+
+      python3 scripts/build_usage_data.py            # writes site/usage/usage.json
+      python3 scripts/build_usage_data.py --dry-run  # print the summary, write nothing
+
+- A cloud session's container, for that session alone. The transcripts vanish with
+  the container, so the session publishes its own fragment to the `session-state`
+  branch before it ends (scripts/usage/publish_session_usage.sh), and the deploy
+  merges every fragment with the committed file (scripts/lib/usage/merge.mjs).
+  The flags below point the scan at a different store and name the source:
+
+      python3 scripts/build_usage_data.py --projects-dir ~/.claude/projects \
+          --prefix -home-user- --role cloud --agent "☁️ obot.roadmap · <branch>" \
+          --source cloud:obot.roadmap:<session> --out fragment.json
+
+Every output has the same shape (schema 1) whatever the store, plus a `source`
+block naming where it came from, so the merge treats them alike.
 
 What counts as one API call
 ---------------------------
@@ -43,6 +59,7 @@ would bill at API rates. It is not a copy of an invoice.
 """
 import argparse
 import collections
+import datetime
 import json
 import os
 import re
@@ -64,7 +81,9 @@ PRICES = {
     "claude-opus-4-6": (5.00, 25.00),
     "claude-opus-4-5": (5.00, 25.00),
     "claude-fable-5": (10.00, 50.00),
+    "claude-fable-5-1": (10.00, 50.00),
     "claude-mythos-5": (10.00, 50.00),
+    "claude-mythos-5-1": (10.00, 50.00),
     # Sonnet 5 introductory pricing runs through 2026-08-31 ($2/$10); list is
     # $3/$15. Every session here falls inside the intro window, so intro is what
     # this usage bills at.
@@ -82,6 +101,9 @@ FAST_PRICES = {
 FREE_MODELS = {"<synthetic>", None, ""}
 
 CACHE_MULT = {"read": 0.10, "write5m": 1.25, "write1h": 2.00}
+# Models whose cache-read rate is a flat per-million price rather than 0.10x of
+# input (Fable 5.1 reads cache at $0.25/MTok, a quarter of the multiplier).
+CACHE_READ_RATE = {"claude-fable-5-1": 0.25}
 
 # Session-framework identity tags (memory: bg-session-identity). The emoji prefix
 # on an agent's name is its role, which is what the chart colors by.
@@ -98,6 +120,9 @@ ROLE_LABELS = {
     "ultracode": "Ultracode job",
     "auto": "Autonomous session",
     "interactive": "Interactive / untagged",
+    # Cloud sessions carry no identity tag in their transcripts; the publish script
+    # assigns the role with --role, since the store itself says it is a container.
+    "cloud": "Cloud session",
 }
 # Sessions predating the identity convention (and ordinary interactive ones) carry
 # no role tag, only a conversation title. They still get their own segment — the
@@ -184,7 +209,8 @@ def price(model, speed, usage):
     return (
         usage.get("input_tokens", 0) * rate_in
         + usage.get("output_tokens", 0) * rate_out
-        + usage.get("cache_read_input_tokens", 0) * rate_in * CACHE_MULT["read"]
+        + usage.get("cache_read_input_tokens", 0)
+        * CACHE_READ_RATE.get(model, rate_in * CACHE_MULT["read"])
         + w5m * rate_in * CACHE_MULT["write5m"]
         + w1h * rate_in * CACHE_MULT["write1h"]
     ) / 1_000_000
@@ -214,14 +240,15 @@ def add(bucket, usage, cost, is_sub):
         bucket["subCost"] += cost
 
 
-def scan(verbose=False):
+def scan(projects=PROJECTS, prefix=PROJECT_PREFIX, verbose=False):
     """Walk the transcript store and return per-(day, session) usage buckets."""
-    if not PROJECTS.is_dir():
-        sys.exit(f"no transcript store at {PROJECTS}")
-    dirs = sorted(d for d in PROJECTS.iterdir()
-                  if d.is_dir() and d.name.startswith(PROJECT_PREFIX))
+    projects = Path(projects)
+    if not projects.is_dir():
+        sys.exit(f"no transcript store at {projects}")
+    dirs = sorted(d for d in projects.iterdir()
+                  if d.is_dir() and d.name.startswith(prefix))
     if not dirs:
-        sys.exit(f"no project directories under {PROJECTS} match {PROJECT_PREFIX!r}")
+        sys.exit(f"no project directories under {projects} match {prefix!r}")
 
     names = {}                                     # sessionId -> agent name
     cells = collections.defaultdict(blank)         # (day, sessionId) -> bucket
@@ -286,7 +313,15 @@ def scan(verbose=False):
     return names, cells, models, unknown_models
 
 
-def build(names, cells, models):
+def build(names, cells, models, source=None, default_role="interactive",
+          default_agent=None):
+    """Assemble the output document.
+
+    `source` names where the store came from (written through to the output so
+    the merge can list it); `default_role` and `default_agent` apply to every
+    session without an identity tag — a cloud container's store, where the
+    transcripts carry no name and the publish script knows the session's handle.
+    """
     from_state = job_names()
     # sessionId -> (label, role). Best available identity: the framework
     # `agent-name`, else the background job's state.json, else the conversation
@@ -297,7 +332,7 @@ def build(names, cells, models):
             continue
         titles = names.get(sid, {})
         tagged = titles.get("agent-name") or from_state.get(sid[:8])
-        label = tagged or next(
+        label = tagged or default_agent or next(
             (titles[k] for k in TITLE_PRIORITY if titles.get(k)),
             f"{UNTITLED} {sid[:8]}",
         )
@@ -305,7 +340,7 @@ def build(names, cells, models):
         # tooltip via the detail table, so a display cap is safe here.
         if len(label) > LABEL_MAX:
             label = label[: LABEL_MAX - 1].rstrip() + "…"
-        ident[sid] = (label, role_of(tagged))
+        ident[sid] = (label, role_of(tagged) if tagged else default_role)
 
     # One cell per (day, agent), so an agent that ran across two session ids (a
     # resumed session) is one segment rather than two.
@@ -345,6 +380,11 @@ def build(names, cells, models):
     return {
         "schema": 1,
         "project": "obot2",
+        "source": {
+            "id": source or "local",
+            "generatedAt": datetime.datetime.now(datetime.timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%SZ"),
+        },
         "days": days,
         "cells": out_cells,
         "models": model_rows,
@@ -369,12 +409,25 @@ def main():
     ap.add_argument("--out", default=None,
                     help="output path (default: site/usage/usage.json beside this script's repo)")
     ap.add_argument("--dry-run", action="store_true", help="print the summary, write nothing")
+    ap.add_argument("--projects-dir", default=str(PROJECTS),
+                    help="the transcript store to scan (default: ~/.claude/projects)")
+    ap.add_argument("--prefix", default=PROJECT_PREFIX,
+                    help="only project directories whose name starts with this "
+                         f"(default: {PROJECT_PREFIX!r})")
+    ap.add_argument("--source", default=None,
+                    help="source id written into the output (default: local)")
+    ap.add_argument("--role", default="interactive", choices=sorted(ROLE_LABELS),
+                    help="role for sessions with no identity tag (default: interactive)")
+    ap.add_argument("--agent", default=None,
+                    help="agent label for sessions with no identity tag "
+                         "(default: the session's own title or id)")
     args = ap.parse_args()
 
-    names, cells, models, unknown = scan(verbose=True)
+    names, cells, models, unknown = scan(args.projects_dir, args.prefix, verbose=True)
     if not cells:
         sys.exit("no usage records found — nothing to write")
-    data = build(names, cells, models)
+    data = build(names, cells, models, source=args.source,
+                 default_role=args.role, default_agent=args.agent)
 
     t = data["totals"]
     billed = t["input"] + t["output"] + t["cacheRead"] + t["cacheWrite"]
@@ -395,8 +448,23 @@ def main():
     out = Path(args.out) if args.out else (
         Path(__file__).resolve().parent.parent / "site" / "usage" / "usage.json")
     out.parent.mkdir(parents=True, exist_ok=True)
+    # Leave the file alone when only the generation stamp would change, so the
+    # nightly refresh commits nothing on a night with no new usage.
+    if out.is_file():
+        try:
+            old = json.loads(out.read_text())
+        except ValueError:
+            old = None
+        if isinstance(old, dict) and same_but_stamp(old, data):
+            print(f"unchanged {out} — kept the existing file")
+            return
     out.write_text(json.dumps(data, indent=1, sort_keys=False) + "\n")
     print(f"wrote {out} ({out.stat().st_size:,} bytes)")
+
+
+def same_but_stamp(old, new):
+    strip = lambda d: {**d, "source": {**(d.get("source") or {}), "generatedAt": None}}
+    return strip(old) == strip(new)
 
 
 if __name__ == "__main__":

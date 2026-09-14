@@ -18,6 +18,6 @@ with milestones, his sign-off on the objective — using the `requirement-drafti
 
 # Commands
 
-- `node --test scripts/lib/*.test.mjs scripts/lib/collect/*.test.mjs` — the site generators' tests
+- `node --test scripts/lib/*.test.mjs scripts/lib/collect/*.test.mjs scripts/lib/usage/*.test.mjs` — the site generators' tests
 - `node scripts/check_artifact_descriptions.mjs` — every report and design page carries its one-line description
 - The site builds on push to `main` (`.github/workflows/deploy-site.yml`); to build locally, run the workflow's steps in order with `GITHUB_TOKEN` set.

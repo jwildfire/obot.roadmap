@@ -194,8 +194,9 @@ execution session before it sets its goal:
   carries a milestone in each; no task without a milestone, no Ready.
 - The objective's tree is signed off by @jwildfire in a comment on the objective.
 
-The site's requirements collector reads the labels and renders them on the catalog and
-roadmap pages — the tracker on the hub site — and the standup reads them too. An open
+The site's requirements collector reads the labels and renders them on the
+[tracker](https://jwildfire.github.io/obot.roadmap/tracker.html) — every objective opened
+to its requirements and their tasks — and the standup reads them too. An open
 requirement labelled released, an open one with no status label, or one carrying two, is
 drift and is reported as such; a closed requirement reads Released whatever it carries.
 

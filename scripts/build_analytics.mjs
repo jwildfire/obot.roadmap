@@ -7,24 +7,68 @@
 // to land here as sections beside it rather than back on the roadmap.
 //
 // Unlike the rest of the site, the data here is not an API read: it is built from
-// @jwildfire's local Claude Code transcripts and committed. See the section's own
-// footnote, or scripts/build_usage_data.py.
+// Claude Code transcripts. Two stores feed it — @jwildfire's machine (committed as
+// site/usage/usage.json) and each cloud session's container (published to the
+// session-state branch, fetched into _ledger/ by the deploy) — merged here by
+// lib/usage/merge.mjs. See the section's own footnote, or scripts/usage/README.md.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { ROOT, HUB } from './lib/repos.mjs';
 import { siteHeader } from './lib/nav.mjs';
 import { usageSection } from './lib/usage/render.mjs';
+import { mergeUsage, validateFragment } from './lib/usage/merge.mjs';
 
 const OUT_DIR = path.join(ROOT, '_site', 'analytics');
+// Where the deploy unpacks usage/sessions/ from the session-state branch. Absent
+// locally, which merges the baseline alone.
+const LEDGER_DIR = process.env.USAGE_LEDGER_DIR || path.join(ROOT, '_ledger', 'usage', 'sessions');
 
 // A missing data file renders the section's own "not generated yet" notice — the
 // page still builds, because the deploy cannot produce this data itself.
 let usage = null;
 try {
-  usage = JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'usage', 'usage.json'), 'utf8'));
-} catch {
+  const baseline = JSON.parse(await fs.readFile(path.join(ROOT, 'site', 'usage', 'usage.json'), 'utf8'));
+  const problems = validateFragment(baseline);
+  if (problems.length) throw new Error(`site/usage/usage.json is malformed: ${problems.slice(0, 3).join('; ')}`);
+  usage = mergeUsage(baseline, await readLedger(LEDGER_DIR));
+  // The published JSON is the merged document, so a reader of usage/usage.json
+  // sees the same numbers as the page.
+  await fs.mkdir(path.join(ROOT, '_site', 'usage'), { recursive: true });
+  await fs.writeFile(path.join(ROOT, '_site', 'usage', 'usage.json'), JSON.stringify(usage, null, 1) + '\n');
+} catch (err) {
+  if (err.code !== 'ENOENT') throw err;
   console.warn('analytics: site/usage/usage.json missing — rendering the empty-state notice');
+}
+
+// Every *.json under the ledger directory, validated; a bad one is skipped with a
+// warning rather than failing the deploy, since any session can write there.
+async function readLedger(dir) {
+  let names;
+  try {
+    names = (await fs.readdir(dir)).filter((n) => n.endsWith('.json')).sort();
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    console.warn(`analytics: no usage ledger at ${path.relative(ROOT, dir)} — local sessions only`);
+    return [];
+  }
+  const fragments = [];
+  for (const name of names) {
+    const id = name.replace(/\.json$/, '');
+    try {
+      const data = JSON.parse(await fs.readFile(path.join(dir, name), 'utf8'));
+      const problems = validateFragment(data);
+      if (problems.length) {
+        console.warn(`analytics: skipping ledger fragment ${name}: ${problems.slice(0, 3).join('; ')}`);
+        continue;
+      }
+      fragments.push({ id: data.source?.id ?? id, data });
+    } catch (err) {
+      console.warn(`analytics: skipping ledger fragment ${name}: ${err.message}`);
+    }
+  }
+  console.log(`analytics: ${fragments.length} cloud session fragment(s) from the ledger`);
+  return fragments;
 }
 
 const html = `<!DOCTYPE html>
