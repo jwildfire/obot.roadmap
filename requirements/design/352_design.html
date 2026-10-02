@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design #352 — The basic app: load, map and view a study on one page</title>
+<meta name="description" content="How a user's own files reach the safety charts with nothing leaving the browser: what the page shows, the three things a user maps, how each chart says whether it can draw, and the four pull requests that build it.">
+<style>
+  :root {
+    --ground:#f4f6f7; --surface:#ffffff; --surface-2:#eef2f3; --ink:#16232d; --muted:#536470; --faint:#7f929e;
+    --border:#dde4e7; --hairline:#e8edef; --accent:#0e7c86; --accent-deep:#0a5b63; --accent-tint:#e2f1f2;
+    --own:#1a8f5a; --own-tint:#e3f4ec; --part:#b3760f; --part-tint:#f8efdd; --gap:#b0472e; --gap-tint:#f8e8e3;
+    --f-display:"SF Pro Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --f-serif:"Iowan Old Style","Palatino Linotype","Charter",Georgia,Cambria,"Times New Roman",serif;
+    --f-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+    --shadow-soft:0 1px 2px rgba(20,40,55,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831; --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+      --border:#263640; --hairline:#1f2d36; --accent:#3cc3d0; --accent-deep:#2a99a4; --accent-tint:#0f2e33;
+      --own:#47c98a; --own-tint:#103026; --part:#e0a94b; --part-tint:#33270f; --gap:#e08466; --gap-tint:#3a201a;
+      --shadow-soft:0 1px 2px rgba(0,0,0,.25);
+    }
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--f-serif);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px 96px}
+  h1,h2,h3,.eyebrow,th,.kicker,.ptag,.wf{font-family:var(--f-display)}
+  .mono{font-family:var(--f-mono);font-size:.9em;overflow-wrap:anywhere}
+  a{color:var(--accent);text-underline-offset:2px}
+  a:hover{color:var(--accent-deep)}
+  header.hero{padding:56px 0 26px;border-bottom:1px solid var(--border);margin-bottom:36px}
+  .eyebrow{font-size:12px;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0}
+  h1{font-size:clamp(27px,4vw,40px);line-height:1.12;letter-spacing:-.02em;font-weight:700;margin:12px 0 14px}
+  .standfirst{font-size:19px;color:var(--muted);max-width:74ch;margin:0}
+  .meta{margin:18px 0 0;font-size:13.5px;color:var(--faint);font-family:var(--f-display)}
+  section{margin:44px 0}
+  h2{font-size:24px;font-weight:680;letter-spacing:-.01em;margin:0 0 12px}
+  h2 .num{color:var(--accent);margin-right:9px;font-variant-numeric:tabular-nums}
+  h3{font-size:17.5px;font-weight:650;margin:26px 0 8px}
+  p{margin:0 0 15px;max-width:76ch}
+  ul,ol{margin:0 0 15px;padding-left:22px;max-width:76ch}
+  li{margin-bottom:7px}
+  .callout{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:4px;padding:18px 22px;margin:22px 0;box-shadow:var(--shadow-soft)}
+  .callout p:last-child,.callout ul:last-child{margin-bottom:0}
+  .callout .kicker{font-size:12px;font-weight:650;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:7px}
+  .callout.warn{border-left-color:var(--gap)}
+  .callout.warn .kicker{color:var(--gap)}
+  .callout.ok{border-left-color:var(--own)}
+  .callout.ok .kicker{color:var(--own)}
+  .tbl-scroll{overflow-x:auto;margin:20px 0;border:1px solid var(--border);border-radius:5px;background:var(--surface);box-shadow:var(--shadow-soft)}
+  table{border-collapse:collapse;width:100%;font-size:14.5px;font-family:var(--f-display)}
+  th{text-align:left;font-weight:650;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:11px 13px;border-bottom:1px solid var(--border);background:var(--surface-2);white-space:nowrap}
+  td{padding:10px 13px;border-bottom:1px solid var(--hairline);vertical-align:top;line-height:1.45}
+  tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;font-size:11.5px;font-weight:620;padding:2.5px 8px;border-radius:20px;white-space:nowrap;font-family:var(--f-display)}
+  .t-own{background:var(--own-tint);color:var(--own)}
+  .t-part{background:var(--part-tint);color:var(--part)}
+  .t-gap{background:var(--gap-tint);color:var(--gap)}
+  .t-none{background:var(--surface-2);color:var(--faint)}
+  .phase{border-left:2px solid var(--border);padding-left:20px;margin:0 0 24px;position:relative}
+  .phase::before{content:"";position:absolute;left:-6px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+  .phase h3{margin-top:0}
+  .ptag{font-size:11.5px;font-weight:620;color:var(--faint);letter-spacing:.08em;text-transform:uppercase;margin:0}
+  .decision{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:18px 22px;margin-bottom:12px;box-shadow:var(--shadow-soft)}
+  .dhead{font-family:var(--f-display);font-weight:680;font-size:15.5px;margin-bottom:9px}
+  .dhead .dnum{color:var(--accent);margin-right:8px}
+  .rec{background:var(--own-tint);color:var(--own);font-size:13.5px;font-family:var(--f-display);font-weight:600;padding:8px 12px;border-radius:4px;margin-top:10px}
+  .decision p,.decision ul{font-size:15.5px;margin-bottom:9px}
+  /* wireframe */
+  .wf{border:1px solid var(--border);border-radius:8px;background:var(--surface);box-shadow:var(--shadow-soft);margin:22px 0;font-size:13.5px;line-height:1.4;overflow:hidden}
+  .wf-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+  .wf-bar b{font-weight:680}
+  .wf-btn{border:1px solid var(--border);border-radius:6px;padding:4px 10px;background:var(--surface);color:var(--muted);white-space:nowrap}
+  .wf-body{display:grid;grid-template-columns:230px 1fr}
+  .wf-nav{border-right:1px solid var(--border);padding:12px 14px}
+  .wf-nav h4{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px;font-weight:650}
+  .wf-nav h4:first-child{margin-top:0}
+  .wf-item{display:flex;justify-content:space-between;gap:8px;padding:4px 6px;border-radius:5px}
+  .wf-item.on{background:var(--accent-tint)}
+  .wf-main{padding:14px;min-width:0}
+  .wf-main h4{font-size:13px;margin:0 0 8px;font-weight:680}
+  .wf-drop{border:1.5px dashed var(--border);border-radius:8px;padding:14px;text-align:center;color:var(--muted);margin-bottom:12px}
+  .wf-main table{font-size:13px}
+  .wf-main td,.wf-main th{padding:7px 9px}
+  .wf-sel{border:1px solid var(--border);border-radius:5px;padding:2px 7px;display:inline-block;background:var(--surface);white-space:nowrap}
+  .wf-note{color:var(--muted);margin:10px 0 0;font-size:12.5px}
+  footer{border-top:1px solid var(--border);margin-top:56px;padding-top:22px;font-size:13.5px;color:var(--faint);font-family:var(--f-display)}
+  @media(max-width:640px){
+    body{font-size:16px}.standfirst{font-size:17.5px}.wrap{padding:0 16px 72px}
+    .wf-body{grid-template-columns:1fr}.wf-nav{border-right:none;border-bottom:1px solid var(--border)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Design · Requirement #352 · safety.viz</p>
+  <h1>The basic app: load, map and view a study on one page</h1>
+  <p class="standfirst">A study programmer drops their own files onto one page, corrects what the tool guessed, and looks at their study in the safety charts. Nothing is installed and nothing leaves the browser. This is the thinnest version of that path that is still useful, built so the existing requirements widen it instead of replacing it.</p>
+  <p class="meta">2026-10-02 · Requirement: <a href="https://github.com/jwildfire/obot.roadmap/issues/352">the basic app (#352)</a> · Objective: <a href="https://github.com/jwildfire/obot.roadmap/issues/329">data loading and mapping (#329)</a> · Depends on: <a href="https://github.com/jwildfire/obot.roadmap/issues/325">the standard domain set and its manifest (#325)</a></p>
+</header>
+
+<section>
+  <h2><span class="num">1</span>What the user sees</h2>
+  <p>One page at <span class="mono">portfolio/</span> on the safety.viz site, with two parts: a list of charts on the left and whatever the user chose on the right. The right side is either the data panel or one chart.</p>
+
+  <div class="wf" role="img" aria-label="Wireframe of the basic app page: a chart list grouped by domain on the left, each chart with a status; the data panel on the right with a file drop zone and a mapping table.">
+    <div class="wf-bar"><span><b>safety.viz</b> · portfolio</span><span><span class="wf-btn">Load demo data</span> <span class="wf-btn">Download mapping</span></span></div>
+    <div class="wf-body">
+      <div class="wf-nav">
+        <div class="wf-item on"><span>Data</span><span class="tag t-part">3 files</span></div>
+        <h4>Labs and vitals</h4>
+        <div class="wf-item"><span>Histogram</span><span class="tag t-own">ready</span></div>
+        <div class="wf-item"><span>Shift plot</span><span class="tag t-own">ready</span></div>
+        <div class="wf-item"><span>Hepatic explorer</span><span class="tag t-gap">1 missing</span></div>
+        <div class="wf-item"><span>… six more</span><span></span></div>
+        <h4>Adverse events</h4>
+        <div class="wf-item"><span>AE explorer</span><span class="tag t-own">ready</span></div>
+        <div class="wf-item"><span>AE timelines</span><span class="tag t-own">ready</span></div>
+        <div class="wf-item"><span>Time to event</span><span class="tag t-none">no subject file</span></div>
+        <h4>ECG</h4>
+        <div class="wf-item"><span>QT explorer</span><span class="tag t-none">no ECG file</span></div>
+      </div>
+      <div class="wf-main">
+        <div class="wf-drop">Drop CSV or JSON files here, or choose files. They are read in this browser and sent nowhere.</div>
+        <h4>labs_final.csv → Labs and vitals <span class="tag t-part">9 of 13 columns found</span></h4>
+        <div class="tbl-scroll" style="margin:0">
+          <table>
+            <tr><th>The charts need</th><th>Your column</th><th></th></tr>
+            <tr><td>Participant</td><td><span class="wf-sel">SUBJECT ▾</span></td><td><span class="tag t-part">guessed</span></td></tr>
+            <tr><td>Measure name</td><td><span class="wf-sel">LBTEST ▾</span></td><td><span class="tag t-part">guessed</span></td></tr>
+            <tr><td>Result</td><td><span class="wf-sel">STRESN ▾</span></td><td><span class="tag t-own">same name</span></td></tr>
+            <tr><td>Upper limit of normal</td><td><span class="wf-sel">choose… ▾</span></td><td><span class="tag t-gap">needed by 3 charts</span></td></tr>
+            <tr><td>ALT is called</td><td><span class="wf-sel">Alanine Aminotransferase ▾</span></td><td><span class="tag t-part">guessed</span></td></tr>
+          </table>
+        </div>
+        <p class="wf-note">Changing a row updates the chart statuses on the left at once.</p>
+      </div>
+    </div>
+  </div>
+
+  <ol>
+    <li>The page opens on the demo study when it is served from the site, and on an empty data panel when it is the downloaded file.</li>
+    <li>The user drops files. Each file is read, assigned to a domain, and shown with how many of that domain's columns it carries.</li>
+    <li>Under each file is one mapping table. Rows the tool is sure of are filled; rows it guessed are filled and say so; rows it could not fill say which charts need them.</li>
+    <li>The chart list on the left reports, for every chart, whether the data supports it and, if not, exactly what is missing.</li>
+    <li>Choosing a chart draws it from the user's data. Choosing another replaces it.</li>
+    <li>The mapping downloads as a small JSON file. Dropping that file back onto the page restores it.</li>
+  </ol>
+</section>
+
+<section>
+  <h2><span class="num">2</span>Why this is small</h2>
+  <p>Read from safety.viz <span class="mono">dev</span> on 2026-10-02.</p>
+  <ul>
+    <li>Every chart already takes its column names as settings, with ADaM names as defaults. A mapping is therefore a settings object per chart, and the user's data is never renamed or rewritten.</li>
+    <li>Every chart has a JSON schema under <span class="mono">src/data/schema/</span> that lists those settings, their defaults and which are required. The manifest collects them per domain.</li>
+    <li>The charts share one layout, one filter contract and one selection event, so they sit on one page without adapters for chrome.</li>
+    <li>The build already produces one script that contains every chart.</li>
+  </ul>
+  <p>What does not exist yet: the manifest, any page hosting more than one chart, and a shared file parser. The same CSV parser is pasted into each chart's demo script.</p>
+</section>
+
+<section>
+  <h2><span class="num">3</span>Three things get mapped, not one</h2>
+  <p>The requirement as filed spoke only of columns. Reading the charts showed two more things a user's data has to tell the tool, and the basic app handles all three in the same table.</p>
+  <div class="tbl-scroll">
+    <table>
+      <tr><th>What</th><th>The question</th><th>How it is pre-filled</th></tr>
+      <tr><td>Which file is which domain</td><td>Is this the labs file, the adverse events file, the subject file or the ECG file?</td><td>The domain whose columns the file matches best, with the count shown. The user can change it, or set a file aside.</td></tr>
+      <tr><td>Columns</td><td>Which of your columns holds the participant, the measure name, the result, and so on?</td><td>Same name first; then a short list of known alternatives, such as the SDTM name.</td></tr>
+      <tr><td>Key measure names</td><td>What does your data call ALT, AST, total bilirubin, alkaline phosphatase, creatinine, QTcF, QTcB and heart rate?</td><td>A short list of known names per measure, compared with the values actually present in the measure column.</td></tr>
+    </table>
+  </div>
+  <div class="callout warn">
+    <span class="kicker">Why measure names are in the basic version</span>
+    <p>Five charts find their measures by name: the hepatic explorer, the hepatic waterfall, the kidney explorer, the QT explorer and the participant profile. The library's default for ALT is "Aminotransferase, alanine (ALT)"; the site's own demo data calls it "Alanine Aminotransferase", and every demo page overrides the setting by hand. Without this row in the mapping table those five charts would draw nothing on the demo data, let alone on a user's.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">4</span>The fourteen charts</h2>
+  <p>What each chart reads and what it cannot draw without, taken from its schema. "Must have" is the schema's required list; everything else degrades when absent.</p>
+  <div class="tbl-scroll">
+    <table>
+      <tr><th>Chart</th><th>Reads</th><th>Must have</th><th>Measure names</th></tr>
+      <tr><td>Safety Histogram</td><td>Labs and vitals</td><td>measure, result</td><td></td></tr>
+      <tr><td>Safety Outlier Explorer</td><td>Labs and vitals</td><td>measure, result</td><td></td></tr>
+      <tr><td>Safety Results Over Time</td><td>Labs and vitals</td><td>measure, result, visit</td><td></td></tr>
+      <tr><td>Safety Shift Plot</td><td>Labs and vitals</td><td>measure, result, visit</td><td></td></tr>
+      <tr><td>Safety Delta-Delta</td><td>Labs and vitals</td><td>participant, measure, result, visit</td><td></td></tr>
+      <tr><td>Hepatic Safety Explorer</td><td>Labs and vitals</td><td>participant, measure, result, upper limit of normal</td><td>ALT, AST, total bilirubin, ALP</td></tr>
+      <tr><td>Hepatic ALT Waterfall</td><td>Labs and vitals</td><td>participant, measure, result, upper limit of normal, arm</td><td>ALT, total bilirubin</td></tr>
+      <tr><td>Nephrotoxicity Explorer</td><td>Labs and vitals</td><td>participant, measure, result</td><td>creatinine</td></tr>
+      <tr><td>QT Safety Explorer</td><td>ECG</td><td>measure, result, arm, baseline value</td><td>QTcF, QTcB, heart rate</td></tr>
+      <tr><td>Adverse Event Explorer</td><td>Adverse events</td><td>participant, body system, preferred term, arm</td><td></td></tr>
+      <tr><td>Adverse Event Timelines</td><td>Adverse events</td><td>participant, sequence, start day, end day, term</td><td></td></tr>
+      <tr><td>Time-to-Event Explorer</td><td>Adverse events and subject</td><td>both files; participant, event day, follow-up day</td><td></td></tr>
+      <tr><td>Participant Profile</td><td>Labs and vitals, plus adverse events</td><td>participant, measure, result, upper limit of normal</td><td>ALT, AST, total bilirubin, ALP</td></tr>
+      <tr><td>Patient Journey Explorer</td><td>Six domains of its own</td><td colspan="2">Not drawable from the four standard domains; listed as "needs more domains"</td></tr>
+    </table>
+  </div>
+  <p>Three charts do not mount like the rest, so the app carries one small recipe per chart saying how to hand it its data:</p>
+  <ul>
+    <li>Eleven charts take one table of rows.</li>
+    <li>The Time-to-Event Explorer takes two: the adverse events, with the placeholder rows for event-free participants removed, and the subject table as its denominator.</li>
+    <li>The Participant Profile is not a destination of its own. It is the rail that opens beside a chart when a participant is selected, and it is listed with a status so the user knows whether that rail will work.</li>
+    <li>The Patient Journey Explorer is listed and not mountable until the manifest names its domains.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">5</span>The rules</h2>
+
+  <h3>Placing a file</h3>
+  <ul>
+    <li>For each domain, count how many of its manifest columns the file carries, by exact name or known alternative. The best count wins, and the count is shown as "9 of 13 columns found".</li>
+    <li>A file that matches no domain by more than two columns is not placed. The page says so in one sentence that names the file and the columns it did find, and offers the domain picker.</li>
+    <li>Two files placed in one domain: the second replaces the first, and the page says which was replaced.</li>
+    <li>Reading the standard as well as the domain, and showing the runner-up, stay with the file loading requirement (#333).</li>
+  </ul>
+
+  <h3>Guessing</h3>
+  <ul>
+    <li>A column with the same name as the manifest's is filled and marked "same name".</li>
+    <li>A column matched through the list of known alternatives is filled and marked "guessed".</li>
+    <li>Nothing else is filled. There is no fuzzy matching and no confidence number.</li>
+  </ul>
+  <div class="callout">
+    <span class="kicker">Carried over from the August data-loading designs</span>
+    <p>The four open.gismo loading designs measured that a matcher's most confident wrong guess is the dangerous one, because it empties charts silently. Two of their conclusions are kept here: a guess is always labelled as a guess, and a gap is priced in the charts it turns off, never in a count of columns. The recommendation is at <a href="../../reports/og-recommended-path-2026-08-27/">The read, and the bench behind it</a>.</p>
+  </div>
+
+  <h3>Chart status</h3>
+  <div class="tbl-scroll">
+    <table>
+      <tr><th>Status</th><th>Means</th><th>What the page says</th></tr>
+      <tr><td><span class="tag t-own">ready</span></td><td>The domain is loaded and every required column and measure name is mapped.</td><td>Nothing more; choosing it draws it.</td></tr>
+      <tr><td><span class="tag t-gap">missing</span></td><td>The domain is loaded and something required is unmapped.</td><td>The names of what is missing, in the user's terms: "needs upper limit of normal".</td></tr>
+      <tr><td><span class="tag t-none">no file</span></td><td>No file is placed in a domain the chart reads.</td><td>"No ECG file loaded". A legitimate final state, not an error.</td></tr>
+      <tr><td><span class="tag t-none">needs more domains</span></td><td>The chart reads domains the manifest does not name.</td><td>Which chart and why.</td></tr>
+      <tr><td><span class="tag t-gap">did not draw</span></td><td>The chart was ready, was chosen, and threw or drew nothing.</td><td>The chart's own message. Status is corrected by what happened, not left at "ready".</td></tr>
+    </table>
+  </div>
+  <p>The supported count at the top of the list is the number of charts that are ready. On the demo study it reads 13 of 14, the exception being the Patient Journey Explorer.</p>
+
+  <h3>Filters and grouping</h3>
+  <p>Each chart keeps its own filter controls. The app offers a chart whichever of arm, site, sex and race are mapped in the domain it reads. One set of filters across every chart stays with the study-level settings requirement (#327).</p>
+
+  <h3>Limits stated on the page</h3>
+  <ul>
+    <li>Files are read into memory. Tens of megabytes work; hundreds do not. A file over 100 MB is refused with that sentence.</li>
+    <li>CSV and JSON only. SAS transport files and <span class="mono">sas7bdat</span> are named as not supported yet.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">6</span>How it is built</h2>
+  <div class="tbl-scroll">
+    <table>
+      <tr><th>Piece</th><th>Where</th><th>What it does</th></tr>
+      <tr><td>Parser</td><td class="mono">src/app/parse.js</td><td>CSV and JSON text to rows. The quote-aware parser the demo pages already use, in one place.</td></tr>
+      <tr><td>Detection</td><td class="mono">src/app/detect.js</td><td>Column names and the manifest in; the best domain and its count out.</td></tr>
+      <tr><td>Mapping</td><td class="mono">src/app/mapping.js</td><td>Builds the pre-filled mapping for a domain, with each row's source: same name, guessed or empty. Holds the lists of known alternatives for columns and measure names.</td></tr>
+      <tr><td>Status</td><td class="mono">src/app/status.js</td><td>Mapping and manifest in; one status per chart out, with the names of what is missing.</td></tr>
+      <tr><td>Chart recipes</td><td class="mono">src/app/charts.js</td><td>Per chart: which domains it takes, how to turn a mapping into its settings, and how to hand it its data.</td></tr>
+      <tr><td>Page</td><td class="mono">src/app/page.js</td><td>The chart list, the data panel and the single chart mount. The only piece that touches the document.</td></tr>
+      <tr><td>Bundle</td><td class="mono">npm run build:app</td><td>One script holding the charts and the app, and one HTML file with that script and its styles inlined.</td></tr>
+      <tr><td>Site</td><td class="mono">scripts/site.mjs</td><td>Builds <span class="mono">portfolio/index.html</span> and <span class="mono">portfolio/safety.viz-app.html</span>, and copies the demo extracts beside them for the Load demo data button.</td></tr>
+    </table>
+  </div>
+  <ul>
+    <li>The first four pieces are pure functions with no document access, so they are tested without a browser.</li>
+    <li>The app is its own bundle. The chart library's bundle, which the gsm.safety widgets vendor, does not grow.</li>
+    <li>The app bundle and the single file are build outputs and are not committed, unlike the chart library's <span class="mono">dist/</span>.</li>
+    <li>The single file carries no demo data. The labs and vitals extract alone is 5.9 MB against a 1.7 MB script. Inlining a demo study and setting a size budget stay with the single-file build requirement (#336).</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">7</span>Tests and evidence</h2>
+  <ul>
+    <li>A requirement matrix, <span class="mono">requirements/portfolio-app.md</span>, with rows prefixed <span class="mono">APP-</span>; tests are named to those rows and to their task issue, as the repository's traceability convention asks.</li>
+    <li>Unit tests for parsing, placing, mapping and status, run by <span class="mono">npm test</span>.</li>
+    <li>A renamed-column study for the browser tests: about thirty participants cut from the demo extracts by a script, with SDTM-style and invented column names, different names for the key measures, and one file that belongs to no domain. It is generated and committed under <span class="mono">tests/e2e/fixtures/app/</span>, and is the first cut of the non-standard dataset the file loading requirement (#333) describes.</li>
+    <li>Browser tests, run by <span class="mono">npm run test:e2e -- basic-app</span>: the demo study reads 13 of 14; the renamed study is placed, reports what is missing, is corrected by hand and draws; no network request leaves the page from the first file selection onward; the mapping file round-trips; the single file opens from disk with the network off and repeats the load.</li>
+    <li>Screenshots of the page on the demo study, the data panel mid-mapping and one chart on the renamed study go into the evidence set. An evidence page with one test per chart stays with the portfolio shell requirement (#326).</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">8</span>Four pull requests, in order</h2>
+
+  <div class="phase">
+    <p class="ptag">Task 1 · needs the manifest</p>
+    <h3>Add the app core: parsing, placing, mapping and chart status</h3>
+    <p>The four pure pieces, the lists of known alternatives, the requirement matrix and their unit tests. Nothing visible yet. It reads the manifest, so it starts when the manifest task (safety.viz#138) has merged.</p>
+  </div>
+  <div class="phase">
+    <p class="ptag">Task 2</p>
+    <h3>Add the portfolio page on the demo study</h3>
+    <p>The chart recipes, the page, the app bundle and the site generator's new page. After this the dev site shows every chart behind one list, with statuses, on the demo data.</p>
+  </div>
+  <div class="phase">
+    <p class="ptag">Task 3</p>
+    <h3>Add the data panel: load files, correct the mapping, redraw</h3>
+    <p>The drop zone, the mapping table, the mapping file, the renamed-column study and the browser tests that load it and prove nothing leaves the page.</p>
+  </div>
+  <div class="phase">
+    <p class="ptag">Task 4</p>
+    <h3>Add the single-file build and serve it from the site</h3>
+    <p>One HTML file that opens from disk with no network, with its size printed by the build, linked from the portfolio page.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">9</span>Decisions taken in this design</h2>
+  <p>Each is the default the session builds unless you say otherwise.</p>
+
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D1</span>Key measure names are mapped in the basic version</div>
+    <p>Section 3. It adds one kind of row to the mapping table and makes five charts work that otherwise would not.</p>
+    <div class="rec">Taken: in scope. The requirement's definition of done is revised to say so.</div>
+  </div>
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D2</span>Guesses are filled but always labelled</div>
+    <p>The data loading objective asks for a mapping auto-filled from the detected standard. The August designs argued for filling nothing automatically. This takes the middle: same-name and known-alternative matches are filled, each says which it was, and nothing fuzzier is attempted.</p>
+    <div class="rec">Taken: fill and label.</div>
+  </div>
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D3</span>One chart on screen at a time</div>
+    <p>The portfolio objective speaks of every chart on one page. Drawing fourteen at once on a 5.9 MB extract is slow and unreadable; the old app also showed one at a time. Every chart is on the page's list; one is drawn.</p>
+    <div class="rec">Taken: a list of all, one drawn.</div>
+  </div>
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D4</span>The app is a separate bundle and is not committed</div>
+    <p>Keeps the chart library's bundle, and so the R widgets, unchanged in size. The cost is that the app cannot be loaded from the committed <span class="mono">dist/</span>; it exists on the site and as a build output.</p>
+    <div class="rec">Taken: separate, built by the site.</div>
+  </div>
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D5</span>The mapping file can be dropped back in</div>
+    <p>Not in the requirement as filed. Without it a user who maps thirty columns and closes the tab starts again. Its format is provisional and is replaced by the study configuration when that requirement (#327) lands.</p>
+    <div class="rec">Taken: in scope, marked provisional in the file itself.</div>
+  </div>
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D6</span>The Participant Profile is a rail, not a destination</div>
+    <p>It opens beside the charts that already host it. Opening it from every chart, on the mapped identifier, stays with the portfolio shell (#326) and fit and load (#335).</p>
+    <div class="rec">Taken: listed with a status; opens where it already does.</div>
+  </div>
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D7</span>The Patient Journey Explorer waits for the manifest</div>
+    <p>It reads exposure, adverse events, labs, concomitant medications, medical history and disposition under SDTM names. The four-domain manifest names none of those as it needs them.</p>
+    <div class="rec">Taken: listed as "needs more domains"; the supported count on the demo study is 13 of 14.</div>
+  </div>
+  <div class="decision">
+    <div class="dhead"><span class="dnum">D8</span>Release</div>
+    <p>safety.viz v1.9.0, whose milestone exists and is empty. The manifest ships in v1.8.0 before it.</p>
+    <div class="rec">Taken: v1.9.0, proposed until you confirm the version plan.</div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">10</span>What stays with the existing requirements</h2>
+  <div class="tbl-scroll">
+    <table>
+      <tr><th>Requirement</th><th>Keeps</th></tr>
+      <tr><td>The portfolio shell (<a href="https://github.com/jwildfire/obot.roadmap/issues/326">#326</a>)</td><td>The participant profile as one shared drill-down from any chart; the evidence page with one test per chart.</td></tr>
+      <tr><td>Study-level settings and filters (<a href="https://github.com/jwildfire/obot.roadmap/issues/327">#327</a>)</td><td>All of it: arm, site and population filters across every chart, and the study configuration that replaces the provisional mapping file.</td></tr>
+      <tr><td>Local file loading and standard detection (<a href="https://github.com/jwildfire/obot.roadmap/issues/333">#333</a>)</td><td>Detecting the standard, showing the runner-up, the full set of placement messages, and extending the renamed-column study.</td></tr>
+      <tr><td>The mapping module (<a href="https://github.com/jwildfire/obot.roadmap/issues/334">#334</a>)</td><td>Field-by-field validation of values, such as a result column that is not numeric, and saving into the study configuration.</td></tr>
+      <tr><td>Fit and load (<a href="https://github.com/jwildfire/obot.roadmap/issues/335">#335</a>)</td><td>The drill-down following the mapped participant identifier across charts and domains.</td></tr>
+      <tr><td>The single-file build (<a href="https://github.com/jwildfire/obot.roadmap/issues/336">#336</a>)</td><td>The inlined demo study, the size budget and the fresh-machine test in Chrome, Safari and Edge.</td></tr>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <p>Design for <a href="https://github.com/jwildfire/obot.roadmap/issues/352">the basic app requirement (#352)</a> under <a href="https://github.com/jwildfire/obot.roadmap/issues/329">the data loading and mapping objective (#329)</a>. Nothing here is built.</p>
+  <p style="margin-top:12px;">This design was drafted by Claude Code using Opus 5.5.</p>
+</footer>
+
+</div>
+</body>
+</html>
