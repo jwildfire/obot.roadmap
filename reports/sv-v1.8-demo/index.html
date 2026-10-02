@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>safety.viz v1.8.0 — annotated demo</title>
-<meta name="description" content="What v1.8.0 adds, shown on the live site: a demo app that loads your own study and maps its columns in the browser, the Patient Journey Explorer with drafted narratives, and nine long-standing requests on the existing charts.">
+<meta name="description" content="What v1.8.0 adds, shown on the live site: a demo app that loads your own study and maps its columns in the browser, nine long-standing requests on the existing charts, and a prototype of the Patient Journey Explorer with drafted narratives.">
 <style>
 :root{
   /* Paper matched to the dev site's own background so the captures sit flush
@@ -147,10 +147,11 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 <header class="mast">
   <p class="eyebrow">safety.viz <span class="dot"></span> release review <span class="dot"></span> 2026-10-02</p>
   <h1>What <span class="v">v1.8.0</span> adds, annotated</h1>
-  <p class="lede">safety.viz becomes something you can use on your own study. A demo app puts every chart on one study, says which ones your data can feed, and lets you load your own files and map their columns, all in the browser. A fourteenth renderer follows one participant through a trial. And nine requests from the people who used the original renderers land on the existing charts. Every capture below was taken from the live dev site, which is the release-candidate build.</p>
+  <p class="lede">safety.viz becomes something you can use on your own study. A demo app puts every chart on one study, says which ones your data can feed, and lets you load your own files and map their columns, all in the browser. Nine requests from the people who used the original renderers land on the existing charts. And a prototype of a fourteenth chart follows one participant through a trial; a prototype is not ready for production, so it is on the docs site only. Every capture below was taken from the live dev site, which is the release-candidate build.</p>
   <p class="facts">
-    <span><b>14</b> renderers, <b>1</b> demo app</span>
-    <span><b>1,891</b> unit + <b>335</b> browser tests</span>
+    <span><b>13</b> charts in <b>1</b> demo app, <b>1</b> prototype</span>
+    <span><b>2,174</b> unit + <b>349</b> browser tests</span>
+    <span>reviewed in three parts: <b>22</b> findings fixed, <b>12</b> filed</span>
     <span>nothing leaves the browser: asserted by test</span>
     <span>promotes <b>dev → main</b> via <a href="https://github.com/jwildfire/safety.viz/pull/158">sv#158</a></span>
   </p>
@@ -168,7 +169,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   <p class="what">The docs site keeps its gallery and its per-chart demos. The app is a page of its own, with its own header and footer, so the chart has the full width of the screen. The header has a tab for your data and a tab for each data domain, saying how many of that domain’s charts the loaded data supports. Beneath the tabs, on one line, are the open domain’s charts.</p>
 
   <figure>
-    <div class="frame"><img src="media/app-chart.jpg" alt="The demo app on the demo study: a header with the safety.viz wordmark, a Data tab and tabs for Labs and vitals, ECG, Adverse events and Other with their supported counts; beneath it one row of the nine labs charts with Hepatic Explorer highlighted; and the hepatic safety explorer drawn across the full width of the page." loading="lazy" width="1440" height="900"></div>
+    <div class="frame"><img src="media/app-chart.jpg" alt="The demo app on the demo study: a header with the safety.viz wordmark, a Data tab and tabs for Labs and vitals, ECG and Adverse events with their supported counts; beneath it one row of the nine labs charts with Hepatic Explorer highlighted; and the hepatic safety explorer drawn across the full width of the page." loading="lazy" width="1440" height="900"></div>
     <p class="cap">The demo study, on the hepatic explorer. Each domain has a hue, carried by a small hex beside its name: blue for labs and vitals, violet for ECG, teal for adverse events. The open chart’s chip is highlighted, and that chip is the view’s name: there is no separate heading taking up room.</p>
   </figure>
 
@@ -179,7 +180,8 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 
   <ul class="list">
     <li>A filled hex means the chart is ready. A red one means something it needs is missing, and the chip says how many things. A hollow one means no file is loaded for it.</li>
-    <li>On the demo study thirteen of the fourteen charts are ready. The Patient Journey Explorer sits under Other, reading “needs more domains”: it takes six domains of its own that the four standard ones do not supply.</li>
+    <li>On the demo study all thirteen charts are ready. The Patient Journey Explorer is a prototype and is not in the app.</li>
+    <li>A chart’s status now means one thing. Prototype: not ready for production, on the docs site only. Experimental: still being worked on and fine to use, in the app with a badge. No badge: stable.</li>
     <li>The four standard domains, their columns, and what each chart needs from them are on the new <a href="https://jwildfire.github.io/safety.viz/dev/domains/index.html">Domains</a> page, generated from one manifest that a test holds to every chart’s own schema.</li>
   </ul>
 
@@ -195,23 +197,23 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
         <li>Click the ECG tab: it opens straight onto the QT explorer.</li>
         <li>Click Labs and vitals, then Hepatic Explorer in the row beneath.</li>
         <li>Click a point on the scatter: the participant profile opens beside the chart.</li>
-        <li>Click Other: the Patient Journey Explorer says why it is not drawn here.</li>
+        <li>Change the address to end in <code>#data</code>, or use back and forward: the app follows it.</li>
       </ol>
     </div>
   </div>
 </section>
 
-<div class="cut"><span>sv#151–#152, #159 <em>· hub#352</em></span></div><section id="load">
+<div class="cut"><span>sv#151–#152, #159, #163, #165 <em>· hub#352</em></span></div><section id="load">
   <div class="hd"><h2>Load your own study</h2></div>
   <p class="what">Drop CSV or JSON files on the Data view. Each file is read in the browser and placed in a domain by its column names, with the number of that domain’s columns it carries. A sidebar keeps the work in sight: three steps, each showing where it stands, and the list of loaded files. A test asserts that no network request leaves the page from the first file onward.</p>
 
   <figure>
-    <div class="frame"><img src="media/data-sidebar.jpg" alt="The Data view on the pilot demo study. A sidebar on the left lists three steps: Load your files, done, with a demo study menu reading Pilot study, a sentence describing the study, and Choose files and Reset buttons; Check the mapping, current, reading 4 guessed, 0 needed by a chart, with a Download mapping button; and Open a chart, reading 13 of 14 charts ready, with an Open first chart button. Beneath them the four loaded files are listed, adbds.csv flagged 4 guessed. To the right are the drop zone and the mapping table for adsl.csv." loading="lazy" width="1440" height="900"></div>
+    <div class="frame"><img src="media/data-sidebar.jpg" alt="The Data view on the pilot demo study. A sidebar on the left lists three steps: Load your files, done, with a demo study menu reading Pilot study, a sentence describing the study, and Choose files and Reset buttons; Check the mapping, done, reading 4 guessed, 0 needed by a chart, with a Download mapping button; and Open a chart, current, reading 13 of 13 charts ready, with an Open first chart button. Beneath them the four loaded files are listed, adbds.csv flagged 4 guessed. To the right are the drop zone and the mapping table for adsl.csv." loading="lazy" width="1440" height="900"></div>
     <p class="cap">The Data view as it opens. The sidebar’s three steps carry their own buttons, and the list beneath them flags a file only when one of its rows wants a look. The demo study menu offers three studies: the pilot study, a renamed-column study, and a labs-only liver cohort. The pilot study’s description says its labs file carries 110 synthetic liver and kidney participants who are in no other file. Chart views have no sidebar.</p>
   </figure>
 
   <figure>
-    <div class="frame"><img src="media/load-placed.jpg" alt="The Data view after Reset and then choosing five files: a note that site_notes.csv was not placed in a domain; the sidebar reading 4 files loaded, 23 guessed, 6 needed by a chart, and 7 of 14 charts ready, with each file flagged by its guessed and needed rows and site_notes.csv listed as not placed; and a card for dm.csv placed in Subject-level with 3 of 7 columns found and its mapping table." loading="lazy" width="1440" height="900"></div>
+    <div class="frame"><img src="media/load-placed.jpg" alt="The Data view after Reset and then choosing five files: a note that site_notes.csv was not placed in a domain; the sidebar reading 4 files loaded, 23 guessed, 6 needed by a chart, and 7 of 13 charts ready, with each file flagged by its guessed and needed rows and site_notes.csv listed as not placed; and a card for dm.csv placed in Subject-level with 3 of 7 columns found and its mapping table." loading="lazy" width="1440" height="900"></div>
     <p class="cap">A study whose columns carry none of the default names, loaded after Reset. Four files are placed; the fifth belongs to no domain, and the page says so in one sentence and keeps it, with a picker to place it by hand. The sidebar counts what is left to do: 23 rows guessed, and six rows that a chart is waiting on.</p>
   </figure>
 
@@ -254,9 +256,9 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
       <p class="lbl">Try it</p>
       <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/demo/#data"><span>Open the Data view</span></a>
       <ol>
-        <li>In the sidebar’s demo study menu choose Renamed columns. The sidebar reads 23 guessed, 6 needed by a chart, and 7 of 14 charts ready.</li>
+        <li>In the sidebar’s demo study menu choose Renamed columns. The sidebar reads 23 guessed, 6 needed by a chart, and 7 of 13 charts ready.</li>
         <li>Click labs_final.csv in the sidebar. In its table set Upper limit of normal to ULN, Treatment arm to TREATMENT, and Total bilirubin to Tot. Bilirubin.</li>
-        <li>Set Treatment arm to TREATMENT under ae.csv and ecg.json, and End-of-study day to LASTDAY under dm.csv. The sidebar now reads 0 needed by a chart and 13 of 14 charts ready.</li>
+        <li>Set Treatment arm to TREATMENT under ae.csv and ecg.json, and End-of-study day to LASTDAY under dm.csv. The sidebar now reads 0 needed by a chart and 13 of 13 charts ready, and “Check the mapping” is done: guesses stay counted and flagged, but only a row a chart is waiting on holds the step.</li>
         <li>Click Open first chart, then Hepatic Explorer in the row of charts.</li>
         <li>Back on Data, click Reset, then choose Liver cohort, labs only: one file, and the charts of the other domains say they have no file.</li>
         <li>To load the same study as files of your own, save <a href="https://raw.githubusercontent.com/jwildfire/safety.viz/dev/tests/e2e/fixtures/app/labs_final.csv">labs_final.csv</a>, <a href="https://raw.githubusercontent.com/jwildfire/safety.viz/dev/tests/e2e/fixtures/app/dm.csv">dm.csv</a>, <a href="https://raw.githubusercontent.com/jwildfire/safety.viz/dev/tests/e2e/fixtures/app/ae.csv">ae.csv</a> and <a href="https://raw.githubusercontent.com/jwildfire/safety.viz/dev/tests/e2e/fixtures/app/ecg.json">ecg.json</a>, click Reset, and drop them on the drop zone.</li>
@@ -267,8 +269,17 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 </section>
 
 <div class="cut"><span>sv#142, #146 <em>· hub#349, #351</em></span></div><section id="journey">
-  <div class="hd"><h2>Patient Journey Explorer</h2><span class="tag exp">Experimental</span></div>
-  <p class="what">The fourteenth renderer, and the first that looks at one participant and not across them: exposure, dose changes, adverse events, labs, concomitant medications, medical history and disposition as stacked lanes on one study-day axis. Clicking any mark anchors time on it and lists what was recorded around it. The chart can also draft a narrative of what the record shows, every sentence carrying the rows it came from, marked as a draft until a reviewer accepts it.</p>
+  <div class="hd"><h2>Patient Journey Explorer</h2><span class="tag exp">Prototype</span></div>
+  <p class="what">A prototype of a fourteenth chart, and the first that looks at one participant and not across them: exposure, dose changes, adverse events, labs, concomitant medications, medical history and disposition as stacked lanes on one study-day axis. Clicking any mark anchors time on it and lists what was recorded around it. The chart can also draft a narrative of what the record shows, every sentence carrying the rows it came from, marked as a draft until a reviewer accepts it.</p>
+
+  <div class="note">
+    <p class="lbl">Not counted a finished chart</p>
+    <ul class="list" style="margin-top:0">
+      <li>The review of this release found five cases where the chart misdraws or drops part of a record, among them false dose changes when two drugs are given over the same days, and a record far to the left of the axis that is counted as drawn but cannot be seen (<a href="https://github.com/jwildfire/safety.viz/issues/167">safety.viz#167</a>).</li>
+      <li>It found seven defects in the narrative layer, among them that a draft can cite another participant’s rows and pass validation (<a href="https://github.com/jwildfire/safety.viz/issues/168">safety.viz#168</a>).</li>
+      <li>So it ships as a prototype: on the docs site, outside the demo app and the standard domain set, and its two requirements stay open.</li>
+    </ul>
+  </div>
 
   <figure>
     <div class="frame"><img src="media/pje.jpg" alt="The Patient Journey Explorer for one participant: an AI narrative summary card marked Draft, AI generated, above lanes for exposure, dose changes, adverse events, four lab tests with reference bands, and concomitant medications, with a subject picker and lane and filter controls on the left." loading="lazy" width="1440" height="900"></div>
@@ -294,7 +305,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   </div>
 </section>
 
-<div class="cut"><span>sv#136 <em>· hub#33</em></span></div><section id="legacy">
+<div class="cut"><span>sv#136, #166 <em>· hub#33</em></span></div><section id="legacy">
   <div class="hd"><h2>Nine requests from the original renderers’ users</h2></div>
   <p class="what">When the RhoInc and SafetyGraphics renderers were retired they left 282 open issues behind. A <a href="https://jwildfire.github.io/obot.roadmap/reports/legacy-tracker-migration-2026-08-24/">survey of all twelve trackers</a> found 144 still worth carrying over and picked nine that the shared modules made cheap. All nine are in this release.</p>
 
@@ -310,12 +321,12 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   </div>
 
   <ul class="list">
-    <li>A filter means the same thing in every chart: it can open on a value, drop its All option, or take several values at once.</li>
+    <li>A filter means the same thing in every chart: it can open on a value, drop its All option, or take several values at once, and the dropdown always shows what the chart is filtered by. One test runs the same cases against all twelve charts.</li>
     <li>A measures setting chooses which measures the Measure control offers, and in what order.</li>
     <li>A Reset chart control on nine charts returns filters, measures, visits, scales and selections to how the chart opened.</li>
     <li>The Adverse Event Explorer says what kind of empty an empty table is.</li>
     <li>The Shift Plot learns a log scale.</li>
-    <li>The QT explorer prints its confidence intervals as a table, and carries its safety language permanently.</li>
+    <li>The QT explorer prints its confidence intervals as a table, and carries its safety language permanently. Replicate readings are averaged per participant and visit first, so the sample size counts participants.</li>
     <li>The Hepatic Safety Explorer can include or exclude unscheduled visits, and re-derives baseline and peak when it does.</li>
     <li>Fixed: the Adverse Event Explorer drew no counts for a single-arm study with the per-group columns switched off.</li>
   </ul>
@@ -346,7 +357,8 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
         <li>The participant profile opening from every chart on the mapped identifier.</li>
         <li>Detecting the standard, not only the domain, of a file.</li>
         <li>A demo study inlined in the single file, and a size budget for it.</li>
-        <li>The Patient Journey Explorer inside the demo app: the manifest does not name its six domains yet.</li>
+        <li>The Patient Journey Explorer as a finished chart: it is a prototype, with its review findings filed.</li>
+        <li>Several files in one domain, such as labs and vitals delivered apart: a second file takes the domain and the first is kept, set aside (<a href="https://github.com/jwildfire/obot.roadmap/issues/365">hub#365</a>).</li>
       </ul>
     </div>
     <div>
@@ -361,7 +373,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 </section>
 
 <footer>
-  <p>Captures taken 2026-10-02 with Playwright against the live dev deploy of safety.viz, the release-candidate build. Requirements: the basic app (<a href="https://github.com/jwildfire/obot.roadmap/issues/352">hub#352</a>), the standard domain set (<a href="https://github.com/jwildfire/obot.roadmap/issues/325">hub#325</a>), the Patient Journey Explorer (<a href="https://github.com/jwildfire/obot.roadmap/issues/349">hub#349</a>) and its narratives (<a href="https://github.com/jwildfire/obot.roadmap/issues/351">hub#351</a>).</p>
+  <p>Captures taken 2026-10-02 with Playwright against the live dev deploy of safety.viz, the release-candidate build. Requirements: the basic app (<a href="https://github.com/jwildfire/obot.roadmap/issues/352">hub#352</a>), the standard domain set (<a href="https://github.com/jwildfire/obot.roadmap/issues/325">hub#325</a>), and, as a prototype whose requirements stay open, the Patient Journey Explorer (<a href="https://github.com/jwildfire/obot.roadmap/issues/349">hub#349</a>) and its narratives (<a href="https://github.com/jwildfire/obot.roadmap/issues/351">hub#351</a>).</p>
   <p style="margin-top:12px">This page was drafted by Claude Code using Opus 5.5.</p>
 </footer>
 
