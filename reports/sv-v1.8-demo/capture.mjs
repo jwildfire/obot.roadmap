@@ -115,7 +115,7 @@ const STUDY = ['labs_final.csv', 'dm.csv', 'ae.csv', 'ecg.json'].map(
   await page.close();
 }
 
-// ---- the Patient Journey Explorer and its narratives
+// ---- the Patient Journey Explorer
 {
   const page = await context.newPage();
   await page.goto(`${base}patient-journey-explorer/index.html`);

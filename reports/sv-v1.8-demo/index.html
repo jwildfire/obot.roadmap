@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>safety.viz v1.8.0 — annotated demo</title>
-<meta name="description" content="What v1.8.0 adds, shown on the live site: a demo app that loads your own study and maps its columns in the browser, nine long-standing requests on the existing charts, and a prototype of the Patient Journey Explorer with drafted narratives.">
+<meta name="description" content="What v1.8.0 adds, shown on the live site: a demo app that loads your own study and maps its columns in the browser, nine long-standing requests on the existing charts, and a prototype of the Patient Journey Explorer.">
 <style>
 :root{
   /* Paper matched to the dev site's own background so the captures sit flush
@@ -150,8 +150,8 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   <p class="lede">safety.viz becomes something you can use on your own study. A demo app puts every chart on one study, says which ones your data can feed, and lets you load your own files and map their columns, all in the browser. Nine requests from the people who used the original renderers land on the existing charts. And a prototype of a fourteenth chart follows one participant through a trial; a prototype is not ready for production, so it is on the docs site only. Every capture below was taken from the live dev site, which is the release-candidate build.</p>
   <p class="facts">
     <span><b>13</b> charts in <b>1</b> demo app, <b>1</b> prototype</span>
-    <span><b>2,176</b> unit + <b>350</b> browser tests</span>
-    <span>reviewed in three parts: <b>22</b> findings fixed, <b>12</b> filed</span>
+    <span><b>2,100</b> unit + <b>344</b> browser tests</span>
+    <span>reviewed in three parts: <b>22</b> findings fixed, <b>5</b> filed, the narrative layer taken out</span>
     <span>nothing leaves the browser: asserted by test</span>
     <span>promotes <b>dev → main</b> via <a href="https://github.com/jwildfire/safety.viz/pull/158">sv#158</a></span>
   </p>
@@ -160,7 +160,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 <nav class="toc" aria-label="Contents">
   <a href="#app"><span class="ref">hub#352</span><span class="t">The demo app</span><span class="s">Every chart on one study, and what your data supports</span></a>
   <a href="#load"><span class="ref">hub#352</span><span class="t">Load your own study</span><span class="s">Drop files, correct the mapping, redraw</span></a>
-  <a href="#journey"><span class="ref">hub#349 · #351</span><span class="t">Patient Journey Explorer</span><span class="s">One participant, one study-day axis, a drafted narrative</span></a>
+  <a href="#journey"><span class="ref">hub#349</span><span class="t">Patient Journey Explorer</span><span class="s">One participant, one study-day axis: a prototype</span></a>
   <a href="#legacy"><span class="ref">sv#136</span><span class="t">Nine old requests</span><span class="s">Asked for by the original renderers’ users</span></a>
 </nav>
 
@@ -268,29 +268,28 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   </div>
 </section>
 
-<div class="cut"><span>sv#142, #146 <em>· hub#349, #351</em></span></div><section id="journey">
+<div class="cut"><span>sv#142, #176 <em>· hub#349</em></span></div><section id="journey">
   <div class="hd"><h2>Patient Journey Explorer</h2><span class="tag exp">Prototype</span></div>
-  <p class="what">A prototype of a fourteenth chart, and the first that looks at one participant and not across them: exposure, dose changes, adverse events, labs, concomitant medications, medical history and disposition as stacked lanes on one study-day axis. Clicking any mark anchors time on it and lists what was recorded around it. The chart can also draft a narrative of what the record shows, every sentence carrying the rows it came from, marked as a draft until a reviewer accepts it.</p>
+  <p class="what">A prototype of a fourteenth chart, and the first that looks at one participant and not across them: exposure, dose changes, adverse events, labs, concomitant medications, medical history and disposition as stacked lanes on one study-day axis. Clicking any mark anchors time on it and lists what was recorded around it.</p>
 
   <div class="note">
     <p class="lbl">Not counted a finished chart</p>
     <ul class="list" style="margin-top:0">
       <li>The review of this release found five cases where the chart misdraws or drops part of a record, among them false dose changes when two drugs are given over the same days, and a record far to the left of the axis that is counted as drawn but cannot be seen (<a href="https://github.com/jwildfire/safety.viz/issues/167">safety.viz#167</a>).</li>
-      <li>It found seven defects in the narrative layer, among them that a draft can cite another participant’s rows and pass validation (<a href="https://github.com/jwildfire/safety.viz/issues/168">safety.viz#168</a>).</li>
+      <li>The AI narrative layer that sat on top of this chart is not in the release. The reviews found it could cite another participant’s rows and pass its own checks, so it was taken out; its code is kept on a branch and its findings are filed (<a href="https://github.com/jwildfire/safety.viz/issues/168">safety.viz#168</a>, <a href="https://github.com/jwildfire/safety.viz/issues/176">safety.viz#176</a>).</li>
       <li>So it ships as a prototype: on the docs site, outside the demo app and the standard domain set, and its two requirements stay open.</li>
     </ul>
   </div>
 
   <figure>
-    <div class="frame"><img src="media/pje.jpg" alt="The Patient Journey Explorer for one participant: an AI narrative summary card marked Draft, AI generated, above lanes for exposure, dose changes, adverse events, four lab tests with reference bands, and concomitant medications, with a subject picker and lane and filter controls on the left." loading="lazy" width="1440" height="900"></div>
-    <p class="cap">One participant’s course, with the drafted summary above the lanes. The summary on the site comes from a built-in stub that writes its sentences from the participant’s own rows; a host supplies a model.</p>
+    <div class="frame"><img src="media/pje.jpg" alt="The Patient Journey Explorer for one participant: lanes for exposure, dose changes, adverse events, four lab tests with reference bands, and concomitant medications, with a subject picker and lane and filter controls on the left." loading="lazy" width="1440" height="900"></div>
+    <p class="cap">One participant’s course on one study-day axis. Click any event and the panel beside the chart lists what was recorded around it, each item linked to its source row.</p>
   </figure>
 
   <div class="strip">
     <div class="why">
       <p class="lbl">Why it matters</p>
       <p>Reviewing a single participant usually means opening five listings and lining the days up by eye. This puts them on one axis, and makes the question “what else was happening then” one click.</p>
-      <p>The narrative layer is the program’s first AI feature. Its rules are the product: grounded in the rows on screen, cited sentence by sentence, never published without a reviewer’s accept.</p>
     </div>
     <div class="try">
       <p class="lbl">Try it</p>
@@ -298,7 +297,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
       <ol>
         <li>Pick a participant from the list on the left.</li>
         <li>Click an adverse-event bar: the panel beside the chart lists the labs, medications and dose changes around it.</li>
-        <li>Choose Show full narrative, and click a citation to see the row it points to.</li>
+        <li>Click an item in the panel: it opens the source row it came from.</li>
         <li>Read the <a href="https://jwildfire.github.io/safety.viz/dev/patient-journey-explorer/evidence.html">evidence page</a>: each requirement row traces to a named test.</li>
       </ol>
     </div>
@@ -358,6 +357,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
         <li>Detecting the standard, not only the domain, of a file.</li>
         <li>A demo study inlined in the single file, and a size budget for it.</li>
         <li>The Patient Journey Explorer as a finished chart: it is a prototype, with its review findings filed.</li>
+        <li>AI narratives on the Patient Journey Explorer: taken out before release, kept on a branch.</li>
         <li>Several files in one domain, such as labs and vitals delivered apart: a second file takes the domain and the first is kept, set aside (<a href="https://github.com/jwildfire/obot.roadmap/issues/365">hub#365</a>).</li>
       </ul>
     </div>
@@ -373,7 +373,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 </section>
 
 <footer>
-  <p>Captures taken 2026-10-02 with Playwright against the live dev deploy of safety.viz, the release-candidate build. Requirements: the basic app (<a href="https://github.com/jwildfire/obot.roadmap/issues/352">hub#352</a>), the standard domain set (<a href="https://github.com/jwildfire/obot.roadmap/issues/325">hub#325</a>), and, as a prototype whose requirements stay open, the Patient Journey Explorer (<a href="https://github.com/jwildfire/obot.roadmap/issues/349">hub#349</a>) and its narratives (<a href="https://github.com/jwildfire/obot.roadmap/issues/351">hub#351</a>).</p>
+  <p>Captures taken 2026-10-02 with Playwright against the live dev deploy of safety.viz, the release-candidate build. Requirements: the basic app (<a href="https://github.com/jwildfire/obot.roadmap/issues/352">hub#352</a>), the standard domain set (<a href="https://github.com/jwildfire/obot.roadmap/issues/325">hub#325</a>), and, as a prototype whose requirement stays open, the Patient Journey Explorer (<a href="https://github.com/jwildfire/obot.roadmap/issues/349">hub#349</a>). Its narrative layer (<a href="https://github.com/jwildfire/obot.roadmap/issues/351">hub#351</a>) is not in this release.</p>
   <p style="margin-top:12px">This page was drafted by Claude Code using Opus 5.5.</p>
 </footer>
 
