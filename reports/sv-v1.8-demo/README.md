@@ -9,3 +9,5 @@ Walkthrough of what v1.8.0 adds, built as the review surface for the v1.8.0 rele
 The "load your own study" captures use the renamed-column study committed in safety.viz under `tests/e2e/fixtures/app/`, loaded through the page's own file input, with six mapping rows set by hand. The single-file capture is the file served at `dev/demo/safety.viz-app.html`, saved and opened from disk with the network off.
 
 Media: 1.5× JPEG stills under `media/`.
+
+Captures are reproducible: from a safety.viz checkout (for its Playwright install and the fixture study), run `node <path to>/capture.mjs https://jwildfire.github.io/safety.viz/dev/ <out dir>`. It writes three stills the page does not use (`app-header`, `domains`, `legacy-reset`).
