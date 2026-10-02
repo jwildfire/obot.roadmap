@@ -1,6 +1,6 @@
 # safety.viz v1.8.0 — annotated demo
 
-Walkthrough of what v1.8.0 adds, built as the review surface for the v1.8.0 release-candidate PR (dev → main). Captures taken 2026-10-02 with Playwright against the live dev deploy of safety.viz at commit `1c62598`, the build the release candidate promotes. The sections cover:
+Walkthrough of what v1.8.0 adds, built as the review surface for the v1.8.0 release-candidate PR (dev → main, safety.viz [#158](https://github.com/jwildfire/safety.viz/pull/158)). Captures taken 2026-10-02 with Playwright against the live dev deploy of safety.viz at commit `1c62598`, the build the release candidate promotes. The sections cover:
 
 - the demo app and loading your own study (hub [#352](https://github.com/jwildfire/obot.roadmap/issues/352), on the standard domain set of hub [#325](https://github.com/jwildfire/obot.roadmap/issues/325); safety.viz [#155](https://github.com/jwildfire/safety.viz/pull/155));
 - the Patient Journey Explorer and its narratives (hub [#349](https://github.com/jwildfire/obot.roadmap/issues/349), [#351](https://github.com/jwildfire/obot.roadmap/issues/351));
