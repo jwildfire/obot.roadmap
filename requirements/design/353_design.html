@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design — bio.viz and gsm.bio: biomarker charts with every test computed by R</title>
+<meta name="description" content="Six chart types for comparing groups and relating variables in biomarker data, how they avoid repeating what the safety charts already draw, why R computes every test instead of JavaScript, and the nine requirements that build it.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column; chart types are cards with a sketch on the left and the spec on the right, stacking on a phone. */
+:root {
+  --bg: #f3f6f7;
+  --surface: #ffffff;
+  --ink: #14222a;
+  --muted: #566871;
+  --rule: #d3dce1;
+  --accent: #0b6470;
+  --s1: #0b6470;
+  --s2: #b0562a;
+  --s1-soft: #cfe6e8;
+  --s2-soft: #f3dccf;
+  --keep: #354e9e;
+  --keep-bg: #e1e7f8;
+  --new: #1c7048;
+  --new-bg: #dff1e7;
+  --warn: #a8322e;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e161b; --surface: #162129; --ink: #e3ebee; --muted: #94a5ae; --rule: #2a3a45; --accent: #62c6cf;
+    --s1: #62c6cf; --s2: #e89a6c; --s1-soft: #1d3f44; --s2-soft: #4a2c1c;
+    --keep: #9db0f2; --keep-bg: #1e2748; --new: #6ccb99; --new-bg: #173527; --warn: #f0908a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e161b; --surface: #162129; --ink: #e3ebee; --muted: #94a5ae; --rule: #2a3a45; --accent: #62c6cf;
+  --s1: #62c6cf; --s2: #e89a6c; --s1-soft: #1d3f44; --s2-soft: #4a2c1c;
+  --keep: #9db0f2; --keep-bg: #1e2748; --new: #6ccb99; --new-bg: #173527; --warn: #f0908a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 16px; line-height: 1.55;
+  padding-inline: 16px; padding-block: 28px 56px;
+}
+.page { max-width: 920px; margin-inline: auto; display: flex; flex-direction: column; gap: 44px; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2rem, 6vw, 2.9rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.6rem; }
+h3 { margin: 0; font-size: 0.8rem; font-family: var(--mono); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+h4 { font-size: 1.25rem; }
+p { margin: 0; }
+ul, ol { margin: 0; padding-left: 1.15em; display: flex; flex-direction: column; gap: 8px; }
+section { display: flex; flex-direction: column; gap: 16px; }
+.lede { max-width: 68ch; }
+code { font-family: var(--mono); font-size: 0.88em; }
+header { display: flex; flex-direction: column; gap: 14px; border-bottom: 2px solid var(--ink); padding-bottom: 22px; }
+.eyebrow { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.meta { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 18px; }
+
+.chip { font-family: var(--mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; white-space: nowrap; }
+.chip.keep { background: var(--keep-bg); color: var(--keep); }
+.chip.new { background: var(--new-bg); color: var(--new); }
+.chip.open { background: var(--s2-soft); color: var(--s2); }
+.what .chip { margin-left: 6px; vertical-align: 2px; }
+.options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 800px) { .options { grid-template-columns: minmax(0, 1fr); } }
+.option { background: var(--surface); border: 1px solid var(--rule); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; font-size: 0.93rem; }
+.option.pick { border-top: 3px solid var(--new); }
+.option h4 { font-size: 1.12rem; }
+.option .k { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+.note { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--accent); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.note .label { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.note.warn { border-left-color: var(--warn); }
+.note.warn .label { color: var(--warn); }
+
+/* decisions */
+.decisions { display: flex; flex-direction: column; }
+.decision { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 14px; padding-block: 12px; border-top: 1px solid var(--rule); }
+.decision .id { font-family: var(--mono); font-size: 0.85rem; color: var(--accent); padding-top: 2px; }
+.decision .what { font-weight: 600; }
+.decision .why { grid-column: 2; font-size: 0.93rem; color: var(--muted); }
+
+/* boundary */
+.split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 720px) { .split { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--rule); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel ul { font-size: 0.94rem; }
+
+/* chart cards */
+.charts { display: flex; flex-direction: column; gap: 18px; }
+.chart { background: var(--surface); border: 1px solid var(--rule); display: grid; grid-template-columns: 250px minmax(0, 1fr); }
+.chart .sketch { padding: 16px; border-right: 1px solid var(--rule); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.chart .sketch svg { width: 100%; height: auto; max-width: 260px; }
+.chart .sketch .cap { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
+.chart .spec { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.chart .spec .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.chart .spec .fn { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+.chart dl { margin: 0; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px 14px; font-size: 0.93rem; }
+.chart dt { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.chart dd { margin: 0; min-width: 0; }
+@media (max-width: 720px) {
+  .chart { grid-template-columns: minmax(0, 1fr); }
+  .chart .sketch { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .chart dl { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .chart dd { margin-bottom: 8px; }
+}
+/* sketch marks */
+.ax { stroke: var(--muted); stroke-width: 1; fill: none; }
+.g1 { fill: var(--s1-soft); stroke: var(--s1); stroke-width: 1.5; }
+.g2 { fill: var(--s2-soft); stroke: var(--s2); stroke-width: 1.5; }
+.l1 { stroke: var(--s1); stroke-width: 2; fill: none; }
+.l2 { stroke: var(--s2); stroke-width: 2; fill: none; }
+.d1 { fill: var(--s1); }
+.d2 { fill: var(--s2); }
+.band { fill: var(--s1-soft); stroke: none; }
+.thin { stroke: var(--ink); stroke-width: 1; fill: none; }
+.dash { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+.t { font-family: var(--mono); font-size: 9px; fill: var(--ink); }
+.tm { font-family: var(--mono); font-size: 9px; fill: var(--muted); }
+
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 620px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-top: 1px solid var(--rule); }
+th { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; border-top: 0; }
+td code { white-space: nowrap; }
+
+pre.code { margin: 0; background: var(--surface); border: 1px solid var(--rule); padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: 0.82rem; line-height: 1.5; color: var(--ink); }
+
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 720px) { .flow { grid-template-columns: minmax(0, 1fr); } }
+.step { background: var(--surface); border: 1px solid var(--rule); border-top: 3px solid var(--accent); padding: 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 0.9rem; }
+.step .k { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+
+.repos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 720px) { .repos { grid-template-columns: minmax(0, 1fr); } }
+.repo { background: var(--surface); border: 1px solid var(--rule); padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 0.92rem; }
+.repo .nm { font-family: var(--mono); font-weight: 500; font-size: 1rem; }
+.repo .dep { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+
+footer { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 0.85rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+
+<div class="page">
+
+<header>
+  <span class="eyebrow">Design · objective <a href="https://github.com/jwildfire/obot.roadmap/issues/353">#353</a></span>
+  <h1>bio.viz and gsm.bio</h1>
+  <p class="lede">A second chart library and its R package, for comparing groups and relating variables in biomarker data, with the test result on the chart. It repeats nothing safety.viz already draws.</p>
+  <div class="meta">
+    <span>2 Oct 2026</span>
+    <span>Six core charts</span>
+    <span>Scope: charts, statistics, export, specifications</span>
+    <span>Not here: data loading, mapping, the app</span>
+  </div>
+</header>
+
+<section>
+  <h2>Decisions</h2>
+  <p class="lede">Agreed with @jwildfire in session on 2 Oct 2026 unless marked as a default. A default stands until someone objects on the objective.</p>
+  <div class="decisions">
+    <div class="decision">
+      <span class="id">D1</span>
+      <span class="what">One rule divides the two libraries: safety.viz describes, bio.viz compares and relates.</span>
+      <span class="why">A chart whose main output is a test, an effect estimate or a relationship between two variables belongs in bio.viz. A chart that shows one measure's distribution or course stays in safety.viz and is reused untouched.</span>
+    </div>
+    <div class="decision">
+      <span class="id">D2</span>
+      <span class="what">R computes every test. Neither chart library holds any inference code. <span class="chip new">Agreed</span></span>
+      <span class="why">This replaces the question of which library p-values live in. They live in R, as plain functions in gsm.bio, and a chart shows them when R is attached. No statistical library is written in JavaScript.</span>
+    </div>
+    <div class="decision">
+      <span class="id">D3</span>
+      <span class="what">bio.viz runs beside safety.viz on the page and borrows its shared parts. <span class="chip new">Agreed</span></span>
+      <span class="why">safety.viz will be present for any study using this. So bio.viz does not copy the control sidebar, filters, record listing, participant rail or the Kaplan–Meier estimator; safety.viz exposes them as a kit and bio.viz calls them. That needs one small change in safety.viz first.</span>
+    </div>
+    <div class="decision">
+      <span class="id">D4</span>
+      <span class="what">Charts reach R through one connection with three forms: precomputed, in the browser, or on a server. <span class="chip open">Default</span></span>
+      <span class="why">In the browser is the default for the app, because it needs no server and data stays on the machine. Precomputed serves static reports. The server form waits until someone needs it. The first requirement measures what the browser form costs, and that measurement confirms or overturns this default.</span>
+    </div>
+    <div class="decision">
+      <span class="id">D5</span>
+      <span class="what">Six chart types are the core, including the biomarker screen. <span class="chip new">Agreed</span></span>
+      <span class="why">Five answer the standard exploratory questions one biomarker at a time. The screen answers them across every biomarker at once, which is otherwise done by writing one figure per biomarker. It pulls the hazard ratio forward, because its survival rows need one.</span>
+    </div>
+    <div class="decision">
+      <span class="id">D6</span>
+      <span class="what">Static figures and tables come from R, as ggplot twins that share the chart's settings.</span>
+      <span class="why">Same pattern as the FDA static figures planned for gsm.safety. The interactive chart also offers a PNG download so nobody waits for the R path.</span>
+    </div>
+    <div class="decision">
+      <span class="id">D7</span>
+      <span class="what">A specification is the chart's own settings saved as JSON. No expressions are ever evaluated.</span>
+      <span class="why">A specification is data, so loading one can never run code. A filter is a column, an operator and values, nothing more.</span>
+    </div>
+    <div class="decision">
+      <span class="id">D9</span>
+      <span class="what">Only the results table is required. Participant data is optional. <span class="chip new">Agreed</span></span>
+      <span class="why">With it you get filters and participant-level variables. Without it the charts still draw and the filters are simply absent. A group may come from a column on the results rows.</span>
+    </div>
+    <div class="decision">
+      <span class="id">D8</span>
+      <span class="what">Names: bio.viz and gsm.bio, matching safety.viz and gsm.safety.</span>
+      <span class="why">The dot keeps the family consistent.</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Statistics engine</h2>
+  <p class="lede">Before writing tests in JavaScript, the question was whether a framework already exists. One partly does, and it does not cover this design. So no inference is written in JavaScript at all.</p>
+
+  <h3>What exists in JavaScript</h3>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Library</th><th>Has</th><th>Missing for this design</th></tr></thead>
+      <tbody>
+        <tr><td>stdlib</td><td>t-tests, one-way ANOVA, Kruskal–Wallis, chi-square, Pearson correlation test, p-value adjustment. Apache licence.</td><td>Wilcoxon rank-sum, Fisher's exact, Spearman test, log-rank, Cox, Kaplan–Meier.</td></tr>
+        <tr><td>Anything for survival</td><td>Nothing I could find.</td><td>Log-rank and hazard ratios would be ours to write.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="lede">So adopting a library still leaves five tests to write by hand, including the hardest one, and every number still has to be reconciled with R's defaults.</p>
+
+  <div class="options">
+    <div class="option">
+      <span class="k">Option 1</span>
+      <h4>A JavaScript library</h4>
+      <p>stdlib for what it covers, our own code for the rest.</p>
+      <h3>For</h3>
+      <ul>
+        <li>Instant, no extra download.</li>
+        <li>Fits inside one offline HTML file.</li>
+      </ul>
+      <h3>Against</h3>
+      <ul>
+        <li>We still write and prove rank-sum, Fisher, Spearman, log-rank and Cox.</li>
+        <li>Every statistic exists twice: once here, once in R for the static figure.</li>
+        <li>A statistician has to trust our code, not R's.</li>
+      </ul>
+    </div>
+    <div class="option pick">
+      <span class="k">Option 2 · recommended default</span>
+      <h4>R in the browser</h4>
+      <p>webR is R itself compiled to WebAssembly by Posit. It runs on the user's machine, off the main thread.</p>
+      <h3>For</h3>
+      <ul>
+        <li>No inference code to write. The number printed is R's own.</li>
+        <li>The same functions make the static figure, so nothing exists twice.</li>
+        <li>Data never leaves the machine and no server is needed.</li>
+        <li>Works on plain static hosting such as GitHub Pages.</li>
+      </ul>
+      <h3>Against</h3>
+      <ul>
+        <li>Weight: the engine is about 12 MB and the full distribution about 49 MB unpacked, fetched as needed and cached.</li>
+        <li>The first test waits for R to start. I have not measured how long.</li>
+        <li>It will not fit inside the single offline HTML file. It ships as a folder beside the page, or is fetched.</li>
+        <li>The project says its interface may still change, and packages are rebuilt for each release.</li>
+      </ul>
+    </div>
+    <div class="option">
+      <span class="k">Option 3</span>
+      <h4>R on a server</h4>
+      <p>gsm.bio installed on a server and called over the network. OpenCPU exposes any R package's functions this way with no extra code; plumber and Shiny are alternatives.</p>
+      <h3>For</h3>
+      <ul>
+        <li>Lightest page and full R, any package.</li>
+        <li>Familiar wherever Shiny already runs.</li>
+      </ul>
+      <h3>Against</h3>
+      <ul>
+        <li>Needs hosting, and someone to keep it up.</li>
+        <li>Participant data travels to the server.</li>
+        <li>No offline use, and the app would need a server behind it.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="label">Recommendation: R behind one connection</span>
+    <ul>
+      <li>Statistics are plain R functions in gsm.bio that rely only on the stats and survival packages. They are the one source of every test.</li>
+      <li>A chart never computes a test. It hands over its one-row-per-participant table and receives estimates, intervals, p-values and counts.</li>
+      <li>Three forms of the connection run the same functions and give the same answers.
+        <ul>
+          <li>Precomputed: gsm.bio works out the opening view and ships the results with the widget. For static reports.</li>
+          <li>In the browser: webR, loaded the first time a test is asked for. The default for the app.</li>
+          <li>Server: built later, only if an organisation wants it.</li>
+        </ul>
+      </li>
+      <li>With no R attached, a chart still draws and says that statistics are unavailable.</li>
+      <li>Start with the first two forms. The first release measures how long R takes to start and how much it downloads, and that measurement decides whether the default holds.</li>
+    </ul>
+  </div>
+  <div class="note">
+    <span class="label">What this settles about p-values</span>
+    <ul>
+      <li>They live in R, not in either chart library. The earlier three-way choice goes away.</li>
+      <li>safety.viz's time-to-event chart can show the log-rank test the FDA figures require through the same connection, and its static twin gets it from R as already planned.</li>
+      <li>The Kaplan–Meier estimate stays in safety.viz as it is. It is needed to draw the curve and is already checked against R.</li>
+      <li>The histogram's two approximate screens could later be swapped for R's real tests the same way. That is a separate decision.</li>
+    </ul>
+  </div>
+  <p style="font-size:0.85rem;color:var(--muted)">Checked on 2 Oct 2026: webR 0.6.0, released May 2026, ships R 4.6.0; sizes read from the published package and its file headers; survival 3.8-6 is available prebuilt for it. Not checked: start-up time, and the size of survival with its dependencies.
+    <a href="https://docs.r-wasm.org/webr/latest/">webR documentation</a> ·
+    <a href="https://docs.r-wasm.org/webr/latest/serving.html">serving pages with webR</a> ·
+    <a href="https://github.com/stdlib-js/stats">stdlib statistics</a>
+  </p>
+</section>
+
+<section>
+  <h2>The boundary</h2>
+  <div class="split">
+    <div class="panel">
+      <h3>Reused from safety.viz, not rebuilt</h3>
+      <ul>
+        <li><span class="chip keep">Keep</span> Histogram, for one biomarker's distribution.</li>
+        <li><span class="chip keep">Keep</span> Results over time, for box plots by visit, and the mean and median lines when they land there.</li>
+        <li><span class="chip keep">Keep</span> Outlier explorer, for one line per participant.</li>
+        <li><span class="chip keep">Keep</span> Shift plot and delta-delta, for one measure across two visits and change against change.</li>
+        <li><span class="chip keep">Keep</span> Time to event, for curves by arm on a safety endpoint.</li>
+        <li><span class="chip keep">Keep</span> Participant profile, as the drill-down from every bio.viz chart.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>New in bio.viz</h3>
+      <ul>
+        <li><span class="chip new">New</span> Group comparison, with tests.</li>
+        <li><span class="chip new">New</span> Association scatter, with correlation.</li>
+        <li><span class="chip new">New</span> Correlation matrix.</li>
+        <li><span class="chip new">New</span> Cross-tabulation, with tests.</li>
+        <li><span class="chip new">New</span> Stratified survival, with biomarker cut-offs and a log-rank test.</li>
+        <li><span class="chip new">New</span> Biomarker screen, one row per biomarker.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">
+    <span class="label">Two places the line needs care</span>
+    <ul>
+      <li>Scatter. Shift plot and delta-delta stay as they are. The association scatter takes any two variables and exists to report a correlation, so it does not replace either. The earlier suggestion to widen delta-delta is dropped.</li>
+      <li>Survival. bio.viz does not write a second Kaplan–Meier estimator. It calls safety.viz's, and adds what safety.viz lacks: a ready-made time and censor column as input, groups cut from a biomarker, and, from R, the log-rank test and a hazard ratio.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Core chart types</h2>
+  <p class="lede">Six charts. The sketches show layout only; they are not drawn from data.</p>
+  <div class="charts">
+
+    <article class="chart">
+      <div class="sketch">
+        <svg viewBox="0 0 240 140" role="img" aria-label="Sketch: three box plots with points and a bracket carrying a p-value">
+          <path class="ax" d="M30 12 V118 H228"/>
+          <path class="thin" d="M70 26 H180 M70 26 v5 M180 26 v5"/>
+          <text class="t" x="125" y="21" text-anchor="middle">Kruskal–Wallis p = 0.012</text>
+          <path class="ax" d="M70 52 V104 M125 44 V96 M180 36 V84"/>
+          <rect class="g1" x="54" y="68" width="32" height="24"/>
+          <rect class="g1" x="109" y="58" width="32" height="24"/>
+          <rect class="g2" x="164" y="46" width="32" height="24"/>
+          <path class="l1" d="M54 80 H86 M109 69 H141"/>
+          <path class="l2" d="M164 57 H196"/>
+          <circle class="d1" cx="62" cy="60" r="2"/><circle class="d1" cx="78" cy="98" r="2"/><circle class="d1" cx="117" cy="50" r="2"/><circle class="d1" cx="133" cy="90" r="2"/>
+          <circle class="d2" cx="172" cy="40" r="2"/><circle class="d2" cx="188" cy="78" r="2"/>
+          <text class="tm" x="70" y="130" text-anchor="middle">n=24</text><text class="tm" x="125" y="130" text-anchor="middle">n=31</text><text class="tm" x="180" y="130" text-anchor="middle">n=22</text>
+        </svg>
+        <span class="cap">Sketch</span>
+      </div>
+      <div class="spec">
+        <div class="head"><h4>Group comparison</h4><span class="fn">groupComparison · Widget_GroupComparison</span></div>
+        <dl>
+          <dt>Question</dt><dd>Does this biomarker differ between these groups?</dd>
+          <dt>Draws</dt><dd>One value across the levels of a category at chosen visits: box, violin or points, with the number in each group beneath.</dd>
+          <dt>Controls</dt><dd>Value and visit; category on the axis and its levels; second grouping by colour; panels by one further variable; log scale; test; pairwise comparisons on or off.</dd>
+          <dt>Statistics</dt><dd>Welch t-test or Wilcoxon for two groups; one-way ANOVA or Kruskal–Wallis for more; pairwise tests with Holm adjustment; difference in means with its interval.</dd>
+          <dt>Click</dt><dd>A box or point lists its participants and opens the profile.</dd>
+          <dt>Not overlap</dt><dd>Results over time always has visits on the axis and reports no test.</dd>
+        </dl>
+      </div>
+    </article>
+
+    <article class="chart">
+      <div class="sketch">
+        <svg viewBox="0 0 240 140" role="img" aria-label="Sketch: scatter of points with a fitted line, a band and a correlation label">
+          <path class="ax" d="M30 12 V118 H228"/>
+          <path class="band" d="M40 104 L220 34 L220 58 L40 116 Z"/>
+          <path class="l1" d="M40 110 L220 46"/>
+          <circle class="d1" cx="52" cy="100" r="2.5"/><circle class="d1" cx="70" cy="108" r="2.5"/><circle class="d1" cx="84" cy="88" r="2.5"/><circle class="d1" cx="102" cy="94" r="2.5"/><circle class="d1" cx="118" cy="72" r="2.5"/><circle class="d1" cx="136" cy="84" r="2.5"/><circle class="d1" cx="150" cy="62" r="2.5"/><circle class="d1" cx="170" cy="70" r="2.5"/><circle class="d1" cx="186" cy="48" r="2.5"/><circle class="d1" cx="206" cy="56" r="2.5"/>
+          <circle class="d2" cx="64" cy="84" r="2.5"/><circle class="d2" cx="96" cy="70" r="2.5"/><circle class="d2" cx="128" cy="98" r="2.5"/><circle class="d2" cx="160" cy="44" r="2.5"/><circle class="d2" cx="196" cy="78" r="2.5"/>
+          <text class="t" x="38" y="24">Spearman r = 0.62 (0.41, 0.77)</text>
+          <text class="tm" x="129" y="132" text-anchor="middle">biomarker A at baseline</text>
+        </svg>
+        <span class="cap">Sketch</span>
+      </div>
+      <div class="spec">
+        <div class="head"><h4>Association scatter</h4><span class="fn">associationScatter · Widget_AssociationScatter</span></div>
+        <dl>
+          <dt>Question</dt><dd>Do these two variables move together?</dd>
+          <dt>Draws</dt><dd>One point per participant; either axis can be a biomarker at a visit or any participant-level number.</dd>
+          <dt>Controls</dt><dd>X and Y variable; colour by group; panels; log scale per axis; fitted line (linear, smooth, identity) with band; correlation method.</dd>
+          <dt>Statistics</dt><dd>Pearson or Spearman coefficient with interval and p-value, overall and per group; slope and intercept of the linear fit.</dd>
+          <dt>Click</dt><dd>Brush a region to list participants; click a point for the profile.</dd>
+          <dt>Not overlap</dt><dd>Shift plot is one measure at two visits; delta-delta is change against change. Neither reports a correlation.</dd>
+        </dl>
+      </div>
+    </article>
+
+    <article class="chart">
+      <div class="sketch">
+        <svg viewBox="0 0 240 140" role="img" aria-label="Sketch: lower-triangle matrix of circles sized and coloured by correlation">
+          <g class="ax"><path d="M60 14 H200 V126 H60 Z"/><path d="M60 42 H200 M60 70 H200 M60 98 H200 M95 14 V126 M130 14 V126 M165 14 V126"/></g>
+          <circle class="d1" cx="77" cy="56" r="10"/><circle class="d1" cx="77" cy="84" r="6"/><circle class="d2" cx="77" cy="112" r="8"/>
+          <circle class="d1" cx="112" cy="84" r="11"/><circle class="d2" cx="112" cy="112" r="4"/>
+          <circle class="d1" cx="147" cy="112" r="7"/>
+          <text class="t" x="112" y="31" text-anchor="middle">0.71</text><text class="t" x="147" y="31" text-anchor="middle">0.38</text><text class="t" x="182" y="31" text-anchor="middle">−0.52</text>
+          <text class="t" x="147" y="59" text-anchor="middle">0.80</text><text class="t" x="182" y="59" text-anchor="middle">−0.21</text>
+          <text class="t" x="182" y="87" text-anchor="middle">0.44</text>
+          <text class="tm" x="54" y="31" text-anchor="end">A</text><text class="tm" x="54" y="59" text-anchor="end">B</text><text class="tm" x="54" y="87" text-anchor="end">C</text><text class="tm" x="54" y="115" text-anchor="end">D</text>
+        </svg>
+        <span class="cap">Sketch</span>
+      </div>
+      <div class="spec">
+        <div class="head"><h4>Correlation matrix</h4><span class="fn">correlationMatrix · Widget_CorrelationMatrix</span></div>
+        <dl>
+          <dt>Question</dt><dd>Which of these biomarkers, or which visits of one biomarker, are related?</dd>
+          <dt>Draws</dt><dd>A grid: marks sized and coloured by the coefficient on one side, the numbers on the other. For six variables or fewer, a small-multiple scatter mode.</dd>
+          <dt>Controls</dt><dd>Mode (across biomarkers at one visit, or across visits for one biomarker); which biomarkers or visits; value type; method; minimum pairs required to show a cell.</dd>
+          <dt>Statistics</dt><dd>Pairwise Pearson or Spearman on complete pairs, with the pair count and interval per cell. No p-values on the grid.</dd>
+          <dt>Click</dt><dd>A cell opens the association scatter for that pair.</dd>
+          <dt>Not overlap</dt><dd>Nothing like it in safety.viz.</dd>
+        </dl>
+      </div>
+    </article>
+
+    <article class="chart">
+      <div class="sketch">
+        <svg viewBox="0 0 240 140" role="img" aria-label="Sketch: two stacked proportion bars beside a two-by-two table with a test result">
+          <rect class="g1" x="24" y="30" width="34" height="50"/><rect class="g2" x="24" y="80" width="34" height="34"/>
+          <rect class="g1" x="68" y="30" width="34" height="26"/><rect class="g2" x="68" y="56" width="34" height="58"/>
+          <text class="tm" x="41" y="126" text-anchor="middle">low</text><text class="tm" x="85" y="126" text-anchor="middle">high</text>
+          <g class="ax"><path d="M122 30 H226 V96 H122 Z M122 52 H226 M122 74 H226 M162 30 V96 M194 30 V96"/></g>
+          <text class="tm" x="178" y="45" text-anchor="middle">low</text><text class="tm" x="210" y="45" text-anchor="middle">high</text>
+          <text class="tm" x="126" y="67">resp.</text><text class="tm" x="126" y="89">none</text>
+          <text class="t" x="178" y="67" text-anchor="middle">18</text><text class="t" x="210" y="67" text-anchor="middle">9</text>
+          <text class="t" x="178" y="89" text-anchor="middle">12</text><text class="t" x="210" y="89" text-anchor="middle">21</text>
+          <text class="t" x="174" y="114" text-anchor="middle">Fisher p = 0.020</text>
+        </svg>
+        <span class="cap">Sketch</span>
+      </div>
+      <div class="spec">
+        <div class="head"><h4>Cross-tabulation</h4><span class="fn">crossTab · Widget_CrossTab</span></div>
+        <dl>
+          <dt>Question</dt><dd>Is this category associated with that one?</dd>
+          <dt>Draws</dt><dd>A two-way table of counts with totals, beside stacked proportion bars of the same numbers.</dd>
+          <dt>Controls</dt><dd>Row and column variable; either can be a biomarker cut at the median, tertiles, quartiles or typed values; row or column percentages; test.</dd>
+          <dt>Statistics</dt><dd>Chi-square or Fisher's exact test, with a warning when expected counts are too small for chi-square.</dd>
+          <dt>Click</dt><dd>A cell lists its participants.</dd>
+          <dt>Not overlap</dt><dd>safety.viz has fixed count tables inside the QT, liver and kidney charts; none is general and none is tested.</dd>
+        </dl>
+      </div>
+    </article>
+
+    <article class="chart">
+      <div class="sketch">
+        <svg viewBox="0 0 240 140" role="img" aria-label="Sketch: two survival step curves with a small biomarker histogram and its cut line">
+          <path class="ax" d="M30 12 V104 H228"/>
+          <path class="l1" d="M30 20 H62 V30 H98 V40 H140 V48 H190 V56 H226"/>
+          <path class="l2" d="M30 20 H50 V38 H78 V56 H112 V72 H150 V84 H196 V92 H226"/>
+          <text class="t" x="226" y="24" text-anchor="end">log-rank p = 0.004</text>
+          <path class="ax" d="M36 136 H116"/>
+          <rect class="g2" x="40" y="126" width="9" height="10"/><rect class="g2" x="51" y="120" width="9" height="16"/><rect class="g2" x="62" y="114" width="9" height="22"/>
+          <rect class="g1" x="77" y="118" width="9" height="18"/><rect class="g1" x="88" y="124" width="9" height="12"/><rect class="g1" x="99" y="130" width="9" height="6"/>
+          <path class="dash" d="M74 110 V138"/>
+          <text class="tm" x="124" y="122">cut at median</text>
+          <text class="tm" x="124" y="134">low n=41 · high n=40</text>
+        </svg>
+        <span class="cap">Sketch</span>
+      </div>
+      <div class="spec">
+        <div class="head"><h4>Stratified survival</h4><span class="fn">stratifiedSurvival · Widget_StratifiedSurvival</span></div>
+        <dl>
+          <dt>Question</dt><dd>Do participants with high and low levels of this biomarker have different outcomes?</dd>
+          <dt>Draws</dt><dd>Kaplan–Meier curves per group with band, censor marks and at-risk strip, above a small histogram of the biomarker showing where the cut falls and how many land each side.</dd>
+          <dt>Controls</dt><dd>Endpoint; grouping by a biomarker cut (median, tertile, quartile, typed value, on raw, baseline, change or fold change at a chosen visit) or by any category; drag the cut line.</dd>
+          <dt>Statistics</dt><dd>Log-rank test; median survival with interval; participants and events per group; hazard ratio with interval when there are two groups.</dd>
+          <dt>Click</dt><dd>A curve or an at-risk cell lists its participants.</dd>
+          <dt>Not overlap</dt><dd>Uses safety.viz's estimator and drawing. safety.viz's own chart builds a safety endpoint from event records and groups by arm only.</dd>
+        </dl>
+      </div>
+    </article>
+
+    <article class="chart">
+      <div class="sketch">
+        <svg viewBox="0 0 240 140" role="img" aria-label="Sketch: forest of estimates with intervals, one row per biomarker, around a zero line">
+          <path class="dash" d="M150 12 V128"/>
+          <g class="l1"><path d="M160 24 H214"/><path d="M148 44 H196"/><path d="M130 64 H176"/></g>
+          <g class="ax"><path d="M118 84 H170"/><path d="M110 104 H164"/></g>
+          <g class="l2"><path d="M84 124 H132"/></g>
+          <circle class="d1" cx="187" cy="24" r="4"/><circle class="d1" cx="172" cy="44" r="4"/><circle class="d1" cx="153" cy="64" r="4"/>
+          <circle cx="144" cy="84" r="4" fill="var(--muted)"/><circle cx="137" cy="104" r="4" fill="var(--muted)"/>
+          <circle class="d2" cx="108" cy="124" r="4"/>
+          <text class="tm" x="12" y="27">IL-6</text><text class="tm" x="12" y="47">CRP</text><text class="tm" x="12" y="67">TNF-α</text><text class="tm" x="12" y="87">IL-10</text><text class="tm" x="12" y="107">IFN-γ</text><text class="tm" x="12" y="127">IL-2</text>
+        </svg>
+        <span class="cap">Sketch</span>
+      </div>
+      <div class="spec">
+        <div class="head"><h4>Biomarker screen</h4><span class="fn">biomarkerScreen · Widget_BiomarkerScreen</span></div>
+        <dl>
+          <dt>Question</dt><dd>Across every biomarker, where is the signal?</dd>
+          <dt>Draws</dt><dd>One row per biomarker: an estimate and its interval for a comparison chosen once, sorted, with raw and adjusted p-values alongside. The estimate is unit-free so rows can be compared.</dd>
+          <dt>Controls</dt><dd>The comparison (group difference, correlation with one fixed variable, or survival split); visit; adjustment method; sort.</dd>
+          <dt>Statistics</dt><dd>Per biomarker: a standardised difference between two groups, a correlation coefficient, or a hazard ratio for high against low. The same tests as the single charts, with Benjamini–Hochberg or Holm adjustment across the rows.</dd>
+          <dt>Click</dt><dd>A row opens the matching single chart for that biomarker.</dd>
+          <dt>Not overlap</dt><dd>Nothing like it in safety.viz. The usual alternative is one figure per biomarker. This is the one place where adjustment for many tests has a clear meaning.</dd>
+        </dl>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section>
+  <h2>The shared core</h2>
+  <p class="lede">All six charts are thin layers over the same four steps. Steps 1, 2 and 4 are bio.viz; step 3 is R.</p>
+  <div class="flow">
+    <div class="step"><span class="k">1 · Variable</span>Name a variable once: a biomarker at a visit with a value type, or a participant-level column. Any axis, group or split takes one.</div>
+    <div class="step"><span class="k">2 · Frame</span>Resolve the named variables to one row per participant. Rows that cannot be resolved are dropped and counted.</div>
+    <div class="step"><span class="k">3 · Statistic</span>The frame goes to R, which returns estimates, intervals, p-values and the counts it used.</div>
+    <div class="step"><span class="k">4 · Draw</span>The chart draws the frame and prints the statistic with its method and counts.</div>
+  </div>
+  <ul class="lede">
+    <li>A variable is written the same way everywhere, whether it is a biomarker at a visit or a plain column.</li>
+    <li>Value types are raw, baseline, change, fold change and percent change, computed from the baseline visits named in settings, the way the shift plot already does.</li>
+    <li>Any continuous variable can be cut into groups by one shared rule: median, tertiles, quartiles or typed cut points. Cross-tabulation, group comparison and stratified survival all use it.</li>
+    <li>A wide, one-row-per-participant dataset needs no special handling: every column is already a participant-level variable.</li>
+  </ul>
+  <pre class="code">BioViz.groupComparison('#chart', {
+  y:     { measure: 'IL6', visit: 'Week 4', value: 'change' },
+  x:     { col: 'ARM' },
+  panel: { measure: 'CRP', visit: 'Baseline', cut: 'median' },
+  test:  'wilcoxon'
+}).init({ results, participants });</pre>
+</section>
+
+<section>
+  <h2>Statistics</h2>
+  <p class="lede">One thin R function per row in gsm.bio, each a wrapper that fixes the inputs and the shape of the answer around the R function named. Nothing here is reimplemented.</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Statistic</th><th>Used by</th><th>R function called</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Welch two-sample t</td><td>Group comparison</td><td><code>t.test()</code></td><td>Unequal variances, R's default.</td></tr>
+        <tr><td>Wilcoxon rank-sum</td><td>Group comparison</td><td><code>wilcox.test()</code></td><td>R's defaults, including its switch between exact and approximate.</td></tr>
+        <tr><td>One-way ANOVA</td><td>Group comparison</td><td><code>aov()</code></td><td></td></tr>
+        <tr><td>Kruskal–Wallis</td><td>Group comparison</td><td><code>kruskal.test()</code></td><td>With tie correction.</td></tr>
+        <tr><td>Pearson correlation</td><td>Scatter, matrix</td><td><code>cor.test()</code></td><td>Interval by Fisher's z.</td></tr>
+        <tr><td>Spearman correlation</td><td>Scatter, matrix</td><td><code>cor.test(method = "spearman")</code></td><td></td></tr>
+        <tr><td>Chi-square</td><td>Cross-tabulation</td><td><code>chisq.test()</code></td><td>Continuity correction on two-by-two, R's default; small expected counts flagged.</td></tr>
+        <tr><td>Fisher's exact</td><td>Cross-tabulation</td><td><code>fisher.test()</code></td><td>Any table size R will accept.</td></tr>
+        <tr><td>Standardised difference</td><td>Screen</td><td>A few lines of our own R</td><td>Unit-free, with interval, so biomarkers on different scales share one axis. The one row not handed to an existing function, to avoid a heavy dependency; tested against <code>effectsize::hedges_g()</code>.</td></tr>
+        <tr><td>Log-rank</td><td>Stratified survival, screen</td><td><code>survdiff()</code></td><td>Two or more groups.</td></tr>
+        <tr><td>Median survival and interval</td><td>Stratified survival</td><td><code>survfit()</code></td><td>For the printed table. The curve itself is still drawn from safety.viz's estimate.</td></tr>
+        <tr><td>Holm, Benjamini–Hochberg</td><td>Pairwise tests, screen</td><td><code>p.adjust()</code></td><td></td></tr>
+        <tr><td>Cox hazard ratio</td><td>Stratified survival, screen</td><td><code>coxph()</code></td><td>Arrives with stratified survival, because the screen's survival rows need it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note">
+    <span class="label">How a p-value is shown</span>
+    <ul>
+      <li>These rules are written once and one shared function applies them, whichever chart prints the number.</li>
+      <li>Always with the method's name and the counts it used, never alone.</li>
+      <li>Recomputed on whatever the filters leave, with the filter stated in the footnote.</li>
+      <li>Labelled exploratory and unadjusted by default. Adjustment is offered only where the family of tests is visible: pairwise comparisons inside one chart, and rows of the screen.</li>
+      <li>No stars and no word “significant”.</li>
+      <li>Not computed below a minimum group size; the chart says why instead of printing a number.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Data the charts expect</h2>
+  <p class="lede">One required table and two optional ones, each with column names supplied as settings and ADaM names as defaults, so the basic app's mapping page can drive them the same way it drives safety.viz.</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Table</th><th>Required</th><th>One row per</th><th>Needs</th><th>What it adds</th></tr></thead>
+      <tbody>
+        <tr><td>results</td><td>Yes</td><td>participant, biomarker, visit</td><td>participant, measure, value, visit, visit order</td><td>Every chart except stratified survival runs on this alone.</td></tr>
+        <tr><td>participants</td><td>No</td><td>participant</td><td>participant; any categories and numbers</td><td>Filters, and participant-level variables for groups, panels and axes.</td></tr>
+        <tr><td>outcomes</td><td>No</td><td>participant, endpoint</td><td>participant, endpoint, time, censor flag</td><td>Stratified survival, and survival rows in the screen.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="lede">
+    <li>Without participant data there are no filters. A group can still come from a biomarker cut, or from a column already carried on the results rows.</li>
+    <li>Without outcomes, stratified survival reports that it needs them and the screen offers only its other two comparisons.</li>
+    <li>bio.viz publishes a chart list in the same format as safety.viz's portfolio manifest, so the app can list both libraries' charts together. That file is the whole interface to the data loading, mapping and app work, which is designed elsewhere.</li>
+    <li>Example data is public or made up: the pharmaverse ADaM sets gsm.safety already ships, plus a seeded synthetic biomarker panel with known planted effects so a test can assert the answer.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Repositories</h2>
+  <div class="repos">
+    <div class="repo">
+      <span class="nm">safety.viz</span>
+      <span class="dep">existing · one change</span>
+      <span>Exposes its shared parts as a kit: control sidebar, filters, axis limits, record listing, participant rail, box drawing, Kaplan–Meier estimator, and the connection to R with the p-value formatter.</span>
+    </div>
+    <div class="repo">
+      <span class="nm">bio.viz</span>
+      <span class="dep">new · needs safety.viz on the page</span>
+      <span>The six charts, the variable and frame core, PNG download, specification read and write. No statistics code. Same stack and conventions as safety.viz.</span>
+    </div>
+    <div class="repo">
+      <span class="nm">gsm.safety</span>
+      <span class="dep">existing · unchanged</span>
+      <span>Still carries the safety.viz bundle for R users.</span>
+    </div>
+    <div class="repo">
+      <span class="nm">gsm.bio</span>
+      <span class="dep">new · imports gsm.safety</span>
+      <span>The statistics functions, a widget per chart, a static ggplot twin per chart, table builders with RTF output, and a batch runner for saved specifications.</span>
+    </div>
+  </div>
+  <ul class="lede">
+    <li>The statistics functions depend on nothing from the gsm packages, so the same file runs in a normal R session, in the browser and on a server.</li>
+    <li>bio.viz follows safety.viz's house rules: Chart.js on canvas, one requirement matrix per chart, tests named by requirement, an evidence page per chart, a gallery, and committed bundles.</li>
+    <li>A chart is done when it is in the gallery with evidence, an API reference and its gsm.bio widget, the same gate safety.viz charts pass.</li>
+    <li>Every chart raises safety.viz's participant-selected event, so the existing profile rail and the app's shared drill-down work without new code.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Getting results out</h2>
+  <ul class="lede">
+    <li>Titles and footnotes. Every bio.viz chart takes a title, a subtitle and a list of footnotes, with named placeholders filled from its settings. One footnote is written automatically: date, library version, method and counts.</li>
+    <li>From the browser. Download the figure as a PNG with its title and footnotes drawn in; download the statistics and the underlying frame as CSV.</li>
+    <li>From R. Each chart has a static twin in gsm.bio that returns a ggplot from the same settings, saved to PDF, PNG or SVG. Tables come back as data frames with an RTF writer on top.</li>
+    <li>Specifications. A chart can hand back its current settings and filters as JSON, and be rebuilt from them. A list of these is a specification book.</li>
+    <li>Batch. gsm.bio runs a specification book against a dataset and writes every figure and table to a folder. One specification can be expanded across every biomarker in the data.</li>
+    <li>The interface that collects specifications while someone explores is part of the app, so it is not designed here.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Order of work</h2>
+  <p class="lede">Nine requirements, one session and one release each, in this order. Each ends with something to look at.</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th></th><th>Requirement</th><th>Ships in</th><th>Why this order</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>R in the browser, measured, and safety.viz's shared parts opened up (<a href="https://github.com/jwildfire/obot.roadmap/issues/354">#354</a>)</td><td>safety.viz 1.10.0</td><td>Everything else calls it, and it settles the one unmeasured cost.</td></tr>
+        <tr><td>2</td><td>Group comparison, the picture (<a href="https://github.com/jwildfire/obot.roadmap/issues/355">#355</a>)</td><td>bio.viz 0.1.0</td><td>Proves the kit and the core on the simplest chart.</td></tr>
+        <tr><td>3</td><td>Group comparison, the tests (<a href="https://github.com/jwildfire/obot.roadmap/issues/356">#356</a>)</td><td>gsm.bio 0.1.0, bio.viz 0.2.0</td><td>Proves the route to R and the p-value rules on a real chart.</td></tr>
+        <tr><td>4</td><td>Association scatter and correlation matrix (<a href="https://github.com/jwildfire/obot.roadmap/issues/357">#357</a>)</td><td>bio.viz 0.3.0, gsm.bio 0.2.0</td><td>One statistic, two charts, and the matrix drills into the scatter.</td></tr>
+        <tr><td>5</td><td>Biomarker screen (<a href="https://github.com/jwildfire/obot.roadmap/issues/358">#358</a>)</td><td>bio.viz 0.4.0, gsm.bio 0.3.0</td><td>The way in: find the biomarker, then open its chart. Needs only the tests already shipped.</td></tr>
+        <tr><td>6</td><td>Cross-tabulation and the shared cut rule (<a href="https://github.com/jwildfire/obot.roadmap/issues/359">#359</a>)</td><td>bio.viz 0.5.0, gsm.bio 0.4.0</td><td>The cut rule is needed by the next one.</td></tr>
+        <tr><td>7</td><td>Stratified survival, and survival rows in the screen (<a href="https://github.com/jwildfire/obot.roadmap/issues/360">#360</a>)</td><td>bio.viz 0.6.0, gsm.bio 0.5.0</td><td>Depends on the cut rule and on the estimator from the kit.</td></tr>
+        <tr><td>8</td><td>Results out of the browser (<a href="https://github.com/jwildfire/obot.roadmap/issues/361">#361</a>)</td><td>bio.viz 0.7.0</td><td>Export is cheaper once the charts have stopped moving.</td></tr>
+        <tr><td>9</td><td>Results out of R (<a href="https://github.com/jwildfire/obot.roadmap/issues/362">#362</a>)</td><td>gsm.bio 0.6.0</td><td>The static twins copy settings that are by then stable.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="lede">The first five are the smallest useful product. Version numbers are proposed and fixed when each requirement is prepped.</p>
+</section>
+
+<section>
+  <h2>Risks and open points</h2>
+  <ul class="lede">
+    <li>R in the browser is heavy and its start-up time is unmeasured. If the first release shows it is too slow, the fallback is the server form, not hand-written JavaScript.</li>
+    <li>It does not fit the single offline HTML file the safety app promises. A bio study offline would ship as a folder.</li>
+    <li>Tests arrive a moment after the chart draws, so every chart needs a visible waiting state and must never show a stale number after a filter changes.</li>
+    <li>webR's interface may change and its packages are rebuilt each release, so the version is pinned and upgrades are deliberate.</li>
+    <li>The PNG from the browser is not vector quality. Anything bound for a document should come from the R twin.</li>
+    <li>Exposing the kit turns safety.viz's internals into a public surface that bio.viz depends on. Changes there will need version discipline.</li>
+    <li>A correlation matrix across hundreds of biomarkers needs a cap or background computation; the first version limits the count and says so.</li>
+    <li>Tests can be printed by charts in two libraries. The shared formatter is what stops their wording drifting apart.</li>
+  </ul>
+  <p style="font-size:0.85rem;color:var(--muted)">Sources:
+    <a href="https://jwildfire.github.io/obot.roadmap/reports/decisions/2026-08-21-clinical-priorities/">clinical-priorities decision, 21 Aug</a> ·
+    <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/352_design.html">basic app design</a> ·
+    <a href="https://github.com/jwildfire/obot.roadmap/issues/323">FDA static figures phase 1</a> ·
+    <a href="https://github.com/jwildfire/safety.viz/issues/128">time-to-event phase 1</a>
+  </p>
+</section>
+
+<footer>
+  <p>This design was drafted by Claude Code using Opus 5.5.</p>
+</footer>
+
+</div>
+
+</body>
+</html>
