@@ -28,6 +28,8 @@ set -euo pipefail
 REPOS=(
   "safety.viz|dev|main|Build, format, and test"
   "gsm.safety|dev|main|"
+  "bio.viz|dev|main|"
+  "gsm.bio|dev|main|"
   "open.csr|dev|main|"
   "open.gismo|dev|main|"
   "demo-301|main|site|"

@@ -129,7 +129,8 @@ Rules that carry over unchanged from the earlier lifecycle:
   hub's `requirement-drafting`, `requirement-design` and `requirement-tasks` skills
   walk the three steps and now each add the definition-of-done section.
 - Labels: `requirement` plus one area label — `safety` (charts, safety.viz, gsm.safety),
-  `infrastructure` (platform and scaffold), `ai` (agent workflow). Milestone: the objective's
+  `bio` (biomarker charts, bio.viz, gsm.bio), `infrastructure` (platform and scaffold),
+  `ai` (agent workflow). Milestone: the objective's
   delivery target.
 
 ## Task issues
@@ -265,7 +266,7 @@ for planning beyond the target. In a repository: the release version, `vX.Y.Z`.
 |---|---|---|
 | `objective` | hub | an objective issue |
 | `requirement` | hub | a requirement issue |
-| `safety`, `infrastructure`, `ai` | hub | the requirement's area |
+| `safety`, `bio`, `infrastructure`, `ai` | hub | the requirement's area |
 | `blocked` | any repo | the issue is waiting on one question for @jwildfire |
 
 Labels the retired prototype used for selection and bookkeeping — `auto`, `draft`,

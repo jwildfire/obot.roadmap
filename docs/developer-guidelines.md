@@ -14,6 +14,8 @@ merge, and what a chart must have before it is done. The tracking rules are the
 |---|---|---|---|
 | safety.viz | clinical, JS | `dev` | `main` |
 | gsm.safety | clinical, R | `dev` | `main` |
+| bio.viz | clinical, JS | `dev` | `main` |
+| gsm.bio | clinical, R | `dev` | `main` |
 | open.csr, open.gismo | clinical | `dev` | `main` |
 | demo-301 | clinical | `main` | `site` |
 | obot.roadmap | operational | `main` | — |

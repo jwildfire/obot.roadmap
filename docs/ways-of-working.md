@@ -170,7 +170,7 @@ drafted with the gaps stated in its body, and his sign-off on the objective clos
 - Operational repositories (obot.agent, obot.roadmap): work merges to `main` on green
   checks; obot.agent cuts releases to its lagging `stable` branch by a `main → stable`
   release-candidate PR he reviews.
-- Clinical repositories (safety.viz, gsm.safety, open.csr, open.gismo, demo-301): he
+- Clinical repositories (safety.viz, gsm.safety, bio.viz, gsm.bio, open.csr, open.gismo, demo-301): he
   reviews everything before it reaches a released surface — the release-candidate PR
   from the integration branch to the release branch, with its demo page and notes.
 - The calendar sets what each week must show. A release candidate is the vehicle for

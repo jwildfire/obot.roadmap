@@ -30,7 +30,7 @@ where the two differ, the contract wins. This is prep-phase work, done with @jwi
    - The six sections are present in template order: Objective, Business Requirement, Overview, Data Requirement, Design, Definition of done, Tasks (`gh issue view <n> --json body -q .body | grep '^### '`).
    - **Business Requirement** and **Overview** are populated (required at filing) and **Objective** names the objective the issue is a sub-issue of.
    - **Data Requirement** is populated, or the requirement is clearly not data-dependent. If the gap matters, surface it before proceeding — Design depends on it.
-   - Labels are `requirement`, one area label (`safety`, `infrastructure` or `ai`) and one `status:` label; the milestone is the hub's delivery target. Fix what is wrong before designing.
+   - Labels are `requirement`, one area label (`safety`, `bio`, `infrastructure` or `ai`) and one `status:` label; the milestone is the hub's delivery target. Fix what is wrong before designing.
 
 2. **Identify affected repositories** — named in the Overview's **Repositories** line; typically `safety.viz` (charts, the portfolio, the loader), `gsm.safety` (widgets, static figures), `obot.roadmap` (hub work) or `obot.agent` (the session core). Check the open issues and pull requests in those repositories for in-flight overlap. Architecture references live outside the account (`Gilead-BioStats/rbm-viz`, `Gilead-BioStats/gsm.kri`); chart work traces to the requirement matrices in [safety.viz `requirements/`](https://github.com/jwildfire/safety.viz/tree/HEAD/requirements).
 
