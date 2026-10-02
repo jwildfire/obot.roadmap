@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Design — bio.viz and gsm.bio: biomarker charts with every test computed by R</title>
-<meta name="description" content="Six chart types for comparing groups and relating variables in biomarker data, how they avoid repeating what the safety charts already draw, why R computes every test instead of JavaScript, and the nine requirements that build it.">
+<meta name="description" content="Six chart types for comparing groups and relating variables in biomarker data, how they avoid repeating what the safety charts already draw, why R computes every test instead of JavaScript, and the eleven requirements that build it.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
 <style>
 /* Layout: one reading column; chart types are cards with a sketch on the left and the spec on the right, stacking on a phone. */
@@ -183,12 +183,12 @@ footer { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 0.85re
     <div class="decision">
       <span class="id">D3</span>
       <span class="what">bio.viz runs beside safety.viz on the page and borrows its shared parts. <span class="chip new">Agreed</span></span>
-      <span class="why">safety.viz will be present for any study using this. So bio.viz does not copy the control sidebar, filters, record listing, participant rail or the Kaplan–Meier estimator; safety.viz exposes them as a kit and bio.viz calls them. That needs one small change in safety.viz first.</span>
+      <span class="why">safety.viz will be present for any study using this. So bio.viz does not copy the control sidebar, filters, record listing, participant rail or the Kaplan–Meier estimator; safety.viz exposes them as a kit and bio.viz calls them. That is one small, additive change in safety.viz, and the only one this design asks of it.</span>
     </div>
     <div class="decision">
       <span class="id">D4</span>
       <span class="what">Charts reach R through one connection with three forms: precomputed, in the browser, or on a server. <span class="chip open">Default</span></span>
-      <span class="why">In the browser is the default for the app, because it needs no server and data stays on the machine. Precomputed serves static reports. The server form waits until someone needs it. The first requirement measures what the browser form costs, and that measurement confirms or overturns this default.</span>
+      <span class="why">In the browser is the default for the app, because it needs no server and data stays on the machine. Precomputed serves static reports. The server form waits until someone needs it. The second requirement measures what the browser form costs, and that measurement confirms or overturns this default.</span>
     </div>
     <div class="decision">
       <span class="id">D5</span>
@@ -308,7 +308,7 @@ footer { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 0.85re
     <span class="label">What this settles about p-values</span>
     <ul>
       <li>They live in R, not in either chart library. The earlier three-way choice goes away.</li>
-      <li>safety.viz's time-to-event chart can show the log-rank test the FDA figures require through the same connection, and its static twin gets it from R as already planned.</li>
+      <li>The connection to R is built in bio.viz and handed to a chart as a setting. safety.viz's time-to-event chart can be handed the same connection to show the log-rank test the FDA figures require, without importing anything, and its static twin gets it from R as already planned.</li>
       <li>The Kaplan–Meier estimate stays in safety.viz as it is. It is needed to draw the curve and is already checked against R.</li>
       <li>The histogram's two approximate screens could later be swapped for R's real tests the same way. That is a separate decision.</li>
     </ul>
@@ -617,12 +617,12 @@ footer { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 0.85re
     <div class="repo">
       <span class="nm">safety.viz</span>
       <span class="dep">existing · one change</span>
-      <span>Exposes its shared parts as a kit: control sidebar, filters, axis limits, record listing, participant rail, box drawing, Kaplan–Meier estimator, and the connection to R with the p-value formatter.</span>
+      <span>Exposes its shared parts as a kit: control sidebar, filters, axis limits, record listing, participant rail, box drawing, Kaplan–Meier estimator, and the copy of Chart.js it already carries.</span>
     </div>
     <div class="repo">
       <span class="nm">bio.viz</span>
       <span class="dep">new · needs safety.viz on the page</span>
-      <span>The six charts, the variable and frame core, PNG download, specification read and write. No statistics code. Same stack and conventions as safety.viz.</span>
+      <span>The connection to R and the p-value formatter, the six charts, the variable and frame core, PNG download, specification read and write. No statistics code. Same stack and conventions as safety.viz.</span>
     </div>
     <div class="repo">
       <span class="nm">gsm.safety</span>
@@ -657,24 +657,26 @@ footer { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 0.85re
 
 <section>
   <h2>Order of work</h2>
-  <p class="lede">Nine requirements, one session and one release each, in this order. Each ends with something to look at.</p>
+  <p class="lede">Eleven requirements, one session and one release each. The first three do not depend on one another and can run in parallel; only the first touches safety.viz.</p>
   <div class="scroll">
     <table>
       <thead><tr><th></th><th>Requirement</th><th>Ships in</th><th>Why this order</th></tr></thead>
       <tbody>
-        <tr><td>1</td><td>R in the browser, measured, and safety.viz's shared parts opened up (<a href="https://github.com/jwildfire/obot.roadmap/issues/354">#354</a>)</td><td>safety.viz 1.10.0</td><td>Everything else calls it, and it settles the one unmeasured cost.</td></tr>
-        <tr><td>2</td><td>Group comparison, the picture (<a href="https://github.com/jwildfire/obot.roadmap/issues/355">#355</a>)</td><td>bio.viz 0.1.0</td><td>Proves the kit and the core on the simplest chart.</td></tr>
-        <tr><td>3</td><td>Group comparison, the tests (<a href="https://github.com/jwildfire/obot.roadmap/issues/356">#356</a>)</td><td>gsm.bio 0.1.0, bio.viz 0.2.0</td><td>Proves the route to R and the p-value rules on a real chart.</td></tr>
-        <tr><td>4</td><td>Association scatter and correlation matrix (<a href="https://github.com/jwildfire/obot.roadmap/issues/357">#357</a>)</td><td>bio.viz 0.3.0, gsm.bio 0.2.0</td><td>One statistic, two charts, and the matrix drills into the scatter.</td></tr>
-        <tr><td>5</td><td>Biomarker screen (<a href="https://github.com/jwildfire/obot.roadmap/issues/358">#358</a>)</td><td>bio.viz 0.4.0, gsm.bio 0.3.0</td><td>The way in: find the biomarker, then open its chart. Needs only the tests already shipped.</td></tr>
-        <tr><td>6</td><td>Cross-tabulation and the shared cut rule (<a href="https://github.com/jwildfire/obot.roadmap/issues/359">#359</a>)</td><td>bio.viz 0.5.0, gsm.bio 0.4.0</td><td>The cut rule is needed by the next one.</td></tr>
-        <tr><td>7</td><td>Stratified survival, and survival rows in the screen (<a href="https://github.com/jwildfire/obot.roadmap/issues/360">#360</a>)</td><td>bio.viz 0.6.0, gsm.bio 0.5.0</td><td>Depends on the cut rule and on the estimator from the kit.</td></tr>
-        <tr><td>8</td><td>Results out of the browser (<a href="https://github.com/jwildfire/obot.roadmap/issues/361">#361</a>)</td><td>bio.viz 0.7.0</td><td>Export is cheaper once the charts have stopped moving.</td></tr>
-        <tr><td>9</td><td>Results out of R (<a href="https://github.com/jwildfire/obot.roadmap/issues/362">#362</a>)</td><td>gsm.bio 0.6.0</td><td>The static twins copy settings that are by then stable.</td></tr>
+        <tr><td>1</td><td>safety.viz's shared parts opened to a second library (<a href="https://github.com/jwildfire/obot.roadmap/issues/354">#354</a>)</td><td>safety.viz 1.10.0</td><td>One additive pull request. Merging it to dev is all bio.viz needs.</td></tr>
+        <tr><td>2</td><td>R in the browser, measured (<a href="https://github.com/jwildfire/obot.roadmap/issues/363">#363</a>)</td><td>bio.viz 0.1.0</td><td>Settles the one unmeasured cost, with no wait on safety.viz.</td></tr>
+        <tr><td>3</td><td>gsm.bio's statistics and the synthetic study (<a href="https://github.com/jwildfire/obot.roadmap/issues/364">#364</a>)</td><td>gsm.bio 0.1.0</td><td>Plain R that needs nothing else here, so it is proven first.</td></tr>
+        <tr><td>4</td><td>Group comparison, the picture (<a href="https://github.com/jwildfire/obot.roadmap/issues/355">#355</a>)</td><td>bio.viz 0.2.0</td><td>Proves the kit and the core on the simplest chart. Needs 1 and the study from 3.</td></tr>
+        <tr><td>5</td><td>Group comparison, the tests (<a href="https://github.com/jwildfire/obot.roadmap/issues/356">#356</a>)</td><td>gsm.bio 0.2.0, bio.viz 0.3.0</td><td>Joins the chart, the connection and the statistics. Needs 2, 3 and 4.</td></tr>
+        <tr><td>6</td><td>Association scatter and correlation matrix (<a href="https://github.com/jwildfire/obot.roadmap/issues/357">#357</a>)</td><td>bio.viz 0.4.0, gsm.bio 0.3.0</td><td>One statistic, two charts, and the matrix drills into the scatter.</td></tr>
+        <tr><td>7</td><td>Biomarker screen (<a href="https://github.com/jwildfire/obot.roadmap/issues/358">#358</a>)</td><td>bio.viz 0.5.0, gsm.bio 0.4.0</td><td>The way in: find the biomarker, then open its chart.</td></tr>
+        <tr><td>8</td><td>Cross-tabulation and the shared cut rule (<a href="https://github.com/jwildfire/obot.roadmap/issues/359">#359</a>)</td><td>bio.viz 0.6.0, gsm.bio 0.5.0</td><td>The cut rule is needed by the next one.</td></tr>
+        <tr><td>9</td><td>Stratified survival, and survival rows in the screen (<a href="https://github.com/jwildfire/obot.roadmap/issues/360">#360</a>)</td><td>bio.viz 0.7.0, gsm.bio 0.6.0</td><td>Depends on the cut rule and on the estimator from the kit.</td></tr>
+        <tr><td>10</td><td>Results out of the browser (<a href="https://github.com/jwildfire/obot.roadmap/issues/361">#361</a>)</td><td>bio.viz 0.8.0</td><td>Export is cheaper once the charts have stopped moving.</td></tr>
+        <tr><td>11</td><td>Results out of R (<a href="https://github.com/jwildfire/obot.roadmap/issues/362">#362</a>)</td><td>gsm.bio 0.7.0</td><td>The static twins copy settings that are by then stable.</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="lede">The first five are the smallest useful product. Version numbers are proposed and fixed when each requirement is prepped.</p>
+  <p class="lede">The first seven are the smallest useful product. Version numbers after the first three are proposed and fixed when each requirement is prepped.</p>
 </section>
 
 <section>
