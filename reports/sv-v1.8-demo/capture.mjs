@@ -51,6 +51,11 @@ const STUDY = ['labs_final.csv', 'dm.csv', 'ae.csv', 'ecg.json'].map(
   await page.evaluate('window.__safetyVizApp.ready');
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => window.__safetyVizApp.select('data'));
+  // the Data view as it opens: the sidebar on the pilot demo study
+  await settle(page);
+  await shot(page, 'data-sidebar');
+  // Reset, so the study's own files arrive on an empty view rather than replacing the demo's
+  await page.locator('.sva-side [data-action="reset"]').click();
   await page.locator('.sva-file-input').setInputFiles([...STUDY, 'tests/e2e/fixtures/app/site_notes.csv']);
   await page.waitForSelector('.sva-file[data-domain="bds"]');
   await settle(page);
