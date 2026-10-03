@@ -1,19 +1,19 @@
 # safety.viz v1.9.0 — annotated demo
 
-Walkthrough of what v1.9.0 adds, built as the review surface for the safety.viz v1.9.0 release candidate. v1.9.0 is everything on safety.viz `dev` at [`3acaf62`](https://github.com/jwildfire/safety.viz/commit/3acaf62) (the merge of safety.viz [#186](https://github.com/jwildfire/safety.viz/pull/186), R on request); the dev site was deployed from that commit. The sections cover:
+Walkthrough of what v1.9.0 adds, built as the review surface for the safety.viz v1.9.0 release candidate. v1.9.0 is everything on safety.viz `dev` at [`096cc26`](https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307), the merge of release prep (safety.viz [#189](https://github.com/jwildfire/safety.viz/pull/189), for [#187](https://github.com/jwildfire/safety.viz/issues/187)) on top of [`3acaf62`](https://github.com/jwildfire/safety.viz/commit/3acaf62) (the merge of safety.viz [#186](https://github.com/jwildfire/safety.viz/pull/186), R on request). Release prep set the version to 1.9.0, added the `dist/safety.viz-1.9.0/` bundles, rebuilt `dist/safety.viz-1.8.0/` without the kit and updated NEWS, README and test fixtures; it changed no file under `src/` or `site/`. So the app, R-on-request and single-file captures, taken against the dev deploy of `3acaf62`, still hold. The single file served at `096cc26` measures the same 1,165,774 bytes. The two stills that show the version, `kit.jpg` and `domains-top.jpg`, were re-captured against the dev deploy of `096cc26` (its Pages run succeeded) and now show `v1.9.0`, with `safety.viz-1.9.0` in the kit's loading snippet. The sections cover:
 
 - the Biomarkers tab in the demo app (hub [#366](https://github.com/jwildfire/obot.roadmap/issues/366); safety.viz [#182](https://github.com/jwildfire/safety.viz/issues/182));
 - starting R on request, and the single file without it (safety.viz [#183](https://github.com/jwildfire/safety.viz/issues/183));
 - the chart list's format version 2 and the Domains page (safety.viz [#181](https://github.com/jwildfire/safety.viz/issues/181));
 - the kit, `SafetyViz.kit` (hub [#354](https://github.com/jwildfire/obot.roadmap/issues/354); safety.viz [#154](https://github.com/jwildfire/safety.viz/issues/154)).
 
-Release prep (safety.viz [#187](https://github.com/jwildfire/safety.viz/issues/187)) was still open at capture, so the version shown on the site is 1.8.0. Stills that show a version: `kit.jpg` (header badge `v1.8.0`, and `safety.viz-1.8.0` in its loading snippet) and `domains-top.jpg` (header badge). The app's own version line (`safety.viz 1.8.0`, `app_version_lines`) is not in any still.
+The app's own version line (`app_version_lines`, read at `3acaf62`: `safety.viz 1.8.0`) is in no still.
 
 Data: the app's pilot demo study, `site/data/` in safety.viz: 254 participants from the public CDISC pilot study; its labs file also carries 110 synthetic participants who are in no other file. No real participant appears.
 
 ## How it was made
 
-- `capture.mjs` — Playwright, headless Chromium, real webR, against `https://jwildfire.github.io/safety.viz/dev/`. Run from the root of a fresh `npm ci` clone of safety.viz at `3acaf62` (for its Playwright install and the pilot study's files): `node <path>/capture.mjs <out dir>`. `ONLY=1,3` runs some sections and keeps the others' numbers. Stills are 1.5× JPEG at 1440 × 900, and 390 × 844 for the phone stills. R's download is counted from the browser context's finished requests to webR's hosts, as compressed response-body bytes (`request.sizes().responseBodySize`), from the press of Start R. Every section starts in a fresh context with an empty cache.
+- `capture.mjs` — Playwright, headless Chromium, real webR, against `https://jwildfire.github.io/safety.viz/dev/`. Run from the root of a fresh `npm ci` clone of safety.viz (`3acaf62` for the first captures; sections 3 and 5 only read the live site) (for its Playwright install and the pilot study's files): `node <path>/capture.mjs <out dir>`. `ONLY=1,3` runs some sections and keeps the others' numbers. Stills are 1.5× JPEG at 1440 × 900, and 390 × 844 for the phone stills. R's download is counted from the browser context's finished requests to webR's hosts, as compressed response-body bytes (`request.sizes().responseBodySize`), from the press of Start R. Every section starts in a fresh context with an empty cache.
 - `capture-count.mjs` — reads the Data view's chart count and the app's version line into `capture-numbers.json`.
 - The single file is the one served at `dev/demo/safety.viz-app.html`, saved and opened from disk in a browser context with `offline: true`; the pilot study's four files (`adsl.csv`, `adae.csv`, `adbds.csv`, `adeg.csv`) were dropped on it through its own file input. Every http(s) request it made was recorded (`single_file_requests`: none).
 - `desktop-r.R` — R 4.3.3. Sources the gsm.bio statistics file the app vendors (`site/vendor/gsm.bio/statistics.R`, gsm.bio `8720f73`, sha256 `ea129ee3…`, the file R in the browser is given) and reads the app's own `site/data/adbds.csv` and `adsl.csv`. It recomputes:
@@ -22,7 +22,7 @@ Data: the app's pilot demo study, `site/data/` in safety.viz: 254 participants f
 
   Output: `desktop-r.json`. Run: `Rscript desktop-r.R <safety.viz checkout> desktop-r.json`. This is independent of safety.viz's own `scripts/app-statistics.R`, which answers requests recorded from the app.
 
-Captured 2026-10-03 from 06:39 UTC; the run start of each section is in `captured_at`.
+Captured 2026-10-03 from 06:39 UTC; `kit.jpg` and both Domains stills re-captured at 07:07 UTC against `096cc26` (`domains-bio.jpg` came out byte-identical). The run start of each section is in `captured_at`.
 
 ## Every number on the page, and where it came from
 
@@ -39,9 +39,9 @@ Captured 2026-10-03 from 06:39 UTC; the run start of each section is in `capture
 | ANOVA p and counts, Baseline to Week 26 (table) | `r_test_panels` | `alt_by_visit`: every visit matches (e.g. Week 4 p 0.004889, 75/67/65; Week 20 p 0.0502) |
 | R's reason under small unscheduled visits (minimum group size 5) | `r_test_panels` | `alt_by_visit` (status not computed, NA p) |
 | Screen: Platelet 0.3404 (0.01 to 0.6696), p 0.042 / 0.295; 28 biomarkers | `screen.rows`, `screen.caption` | `screen_baseline.top3` (0.340401, 0.0099997 to 0.669613, 0.04219, 0.29536, 78/65) |
-| Single file 1,165,774 bytes, no Start R, the unavailable sentence, 0 requests | `single_file_bytes`, `single_file_action` = 0, `single_file_lines`, `single_file_requests` = [] | — |
+| Single file 1,165,774 bytes (the same at `096cc26`), no Start R, the unavailable sentence, 0 requests | `single_file_bytes`, `single_file_action` = 0, `single_file_lines`, `single_file_requests` = [] | — |
 | Domains: 17 charts read the standard set; format version 2; "Biomarkers, from bio.viz" | `domains_summary`, `domains_format`, `domains_biomarker_section` | — |
-| Kit: 36 members, 8 shared modules, Chart.js 4.5.1, public from v1.9.0 | `kit_page.text` | — |
+| Kit: 36 members, 8 shared modules, Chart.js 4.5.1, public from v1.9.0 | `kit_page.text` (re-read at `096cc26`) | — |
 | 254 participants; 110 synthetic in the labs file only | live notes "of 254 participants drawn"; the pilot study's description in `src/app/studies.js` | `participants` = 254 |
 
 ## Stills
