@@ -184,6 +184,11 @@ if (ONLY.includes('4')) // ---- 4. biomarker screen: IL-6 at the top, and its ro
   await toChart(page);
   await settle(page, 400);
   await shot(page, 'screen');
+  // the statistics line under the rows: R's notes, the fourth on the pooled interval
+  numbers.screen.notes = await page.locator('#chart .bv-statistic').first().innerText();
+  const line = page.locator('#chart .bv-statistic').first();
+  await line.scrollIntoViewIfNeeded();
+  await shot(line, 'screen-notes');
   await page.locator('.bv-screen-row[data-biomarker="IL-6"]').click();
   await waitStats(page, '.bv-statistic', 1);
   await settle(page, 1500);
