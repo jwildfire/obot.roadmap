@@ -28,7 +28,7 @@ are the [developer guidelines](developer-guidelines.md).
 | Phase | Where | Who | `status:` label moves | What happens |
 |---|---|---|---|---|
 | 1 · Prep | a session in the `obot.roadmap` cloud environment | agent and @jwildfire together — active collaboration | Backlog → Ready | the requirement is drafted, designed and decomposed with the hub's `requirement-drafting`, `requirement-design` and `requirement-tasks` skills; tasks are filed in their repositories with definitions of done and milestones; the objective's tree is signed off; the Ready gate is checked and the status set |
-| 2 · Execution | a session in the repository's cloud environment | the agent, semi-autonomously; @jwildfire steers on the issue or in the session | Ready → In session → Review | the `requirement-session` skill: set `/goal` from the requirement's definition of done, work the tasks through auto-merging PRs, comment nightly, open the release candidate as a draft, run ultrareview on it and resolve every finding, then mark it ready for him |
+| 2 · Execution | a session in the repository's cloud environment | the agent, semi-autonomously; @jwildfire steers on the issue or in the session | Ready → In session → Review | the `requirement-session` skill: set `/goal` from the requirement's definition of done, work the tasks through auto-merging PRs, comment nightly, open the release candidate as a draft, review it with independent subagent reviewers and resolve every finding, then mark it ready for him |
 | 3 · Review | GitHub | mostly @jwildfire | Review → Released | the RC PR with its demo page and notes; his approving review merges it; the tag closes the requirement |
 
 An execution session that finds its requirement still in Backlog has a prep job in front
@@ -64,7 +64,7 @@ is Ready ([issue contract → Status](issue-contract.md#status)).
 |---|---|---|
 | @jwildfire | owns objective bodies and their links; signs off trees; answers blocked questions; reviews and merges release candidates; applies rulesets and creates cloud environments | review increment PRs; get asked in chat what could be asked on an issue |
 | A requirement session | one requirement, start to finish; files missing tree nodes and stops for sign-off; works its tasks through PRs; comments on the requirement; reports its tasks' state every turn | edit an objective or requirement body or its links; start a second requirement; merge a release branch |
-| A subagent or Workflow stage | one task or one bounded investigation, briefed with its issue and definition of done; returns evidence | act without an issue to be bound to |
+| A subagent or Workflow stage | one task, one bounded investigation, or one review dimension on a PR, briefed with its issue and definition of done; returns evidence | act without an issue to be bound to; edit, push or comment when it is a reviewer |
 | The standup routine | reads GitHub nightly and publishes the standup | comment, label, open or close anything |
 
 ## Sessions
@@ -110,8 +110,9 @@ Exactly three things reach him:
 1. Trees, for sign-off — a comment on the objective issue covering its requirements and tasks.
 2. Blocked questions — one per blocked issue, answered on the issue.
 3. Release-candidate pull requests — each with a demo page, release notes and an
-   ultrareview whose findings are all resolved, merged only on his approving review,
-   which the release branch's ruleset requires.
+   independent review posted on the PR with every finding resolved
+   ([developer guidelines → Releases](developer-guidelines.md#releases)), merged only on
+   his approving review, which the release branch's ruleset requires.
 
 Increment pull requests never reach him: they merge on green checks. A session that
 finds itself wanting his opinion on an increment has a blocked question, not a review

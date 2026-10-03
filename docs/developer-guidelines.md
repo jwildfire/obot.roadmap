@@ -100,7 +100,7 @@ after its PR merges; never remove another session's.
 | | Increment PR | Release-candidate PR |
 |---|---|---|
 | Base | integration branch | release branch |
-| Opened | non-draft, auto-merge enabled | as a draft; marked ready and @jwildfire requested only after the ultrareview gate below |
+| Opened | non-draft, auto-merge enabled | as a draft; marked ready and @jwildfire requested only after the review gate under [Releases](#releases) |
 | Reviewer | nobody — never assign or request him | @jwildfire, always |
 | Merges | on green checks, by GitHub | on his approving review, by him |
 | Body | exec summary; `Closes <repo>#<task>`; the definition-of-done evidence; details | the release shape under [Releases](#releases) |
@@ -261,16 +261,46 @@ deployed site:
   scoped it; the RC body lists them all with `Closes` lines. An issue only partly
   delivered keeps the milestone, stays open, and gets a comment naming what remains.
 - The gate, in order: CI green on the head commit; for a chart, the definition of done
-  above; and an ultrareview with every finding resolved. Ultrareview is Claude Code's
-  multi-agent cloud review — `claude ultrareview <PR#> --post` from a script or session,
-  or `/code-review ultra <PR#> --post` inside one — which posts its verified findings on
-  the PR as one comment. The session fixes each finding and pushes, or replies under the
-  comment saying why a finding does not apply, until none is open; only then does it mark
-  the RC ready, request @jwildfire's review and move the requirement to `status: review`.
-  A release candidate is never presented to him with an unresolved ultrareview finding.
-  Ultrareview bills as usage credits after the free runs (typically $5–25 a run), so the
-  account's usage credits must be on; one run per RC, re-run only after a change large
-  enough to invalidate the first.
+  above; and an independent review with every finding resolved. The session runs the
+  review itself, so an unattended session can satisfy it; the same gate applies to any PR
+  opened as a draft, before it is marked ready.
+  - Reviewers: three review subagents, spawned in parallel, one per dimension —
+    correctness (bugs, regressions, edge cases, tests that do not test what they claim);
+    the definition of done and its proof (every issue the PR closes meets its definition
+    of done, and the evidence shows it); the program's hard rules (no statistical
+    inference in JavaScript — R computes every test and the browser renders the result;
+    public or synthetic data only; the release-notes shape above).
+  - Each brief carries the diff, the PR body, the issues it closes with their definitions
+    of done, and these guidelines — never the session's own verification conclusions, so
+    the read is not anchored on the author's. Reviewers are read-only: they edit, commit,
+    push and comment on nothing, and return each finding with its file and line and how to
+    see it.
+  - Verify before acting: the session checks every finding against the code — reproduces
+    it, or shows why it does not hold. Then it fixes the finding on the PR and pushes, or
+    answers it with the reason it does not apply; "outside this release" is a reason only
+    with the follow-up issue linked.
+  - The review and its resolution are posted on the PR as one comment:
+
+    ```markdown
+    ### Review of {short head sha}
+    Three independent reviewers: correctness; definition of done and proof; hard rules.
+
+    - {finding}, `{file}:{line}` — fixed in {sha}
+    - {finding}, `{file}:{line}` — does not apply: {reason}
+
+    Every finding is resolved.
+
+    ---
+    This comment was drafted by Claude Code using {model}.
+    ```
+
+  - A re-review is owed when the head changes after the review by anything other than the
+    fixes for its own findings — a merge from the integration branch, new work, a fix that
+    grew past its finding — and for every new `-RCn`. It reviews the diff since the
+    reviewed commit and posts its own comment.
+  - Only then does the session mark the RC ready, request @jwildfire's review and move
+    the requirement to `status: review`. A release candidate is never presented to him
+    with an unresolved finding.
 - After the tag: the hub requirements it delivered close with their proof comments and
   their label moves to `status: released`, and the requirement's nightly comment reports
   them under Complete. Publishing stays human.
