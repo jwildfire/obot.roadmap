@@ -1,6 +1,6 @@
 # bio.viz and gsm.bio v0.1.0 — annotated demo
 
-The review surface for the first two release candidates of the biomarker charts objective (hub [#353](https://github.com/jwildfire/obot.roadmap/issues/353)): bio.viz v0.1.0, the JavaScript chart library, and gsm.bio v0.1.0, the R package. v0.1.0 is everything on bio.viz `dev` at [`29ac722`](https://github.com/jwildfire/bio.viz/commit/29ac722) and gsm.bio `dev` at [`8720f73`](https://github.com/jwildfire/gsm.bio/commit/8720f73). The live bio.viz dev site was deployed from `29ac722` (its Pages run of 2026-10-03 03:50 UTC); the gsm.bio reference site from `8720f73`.
+The review surface for the first two release candidates of the biomarker charts objective (hub [#353](https://github.com/jwildfire/obot.roadmap/issues/353)): bio.viz v0.1.0, the JavaScript chart library, and gsm.bio v0.1.0, the R package. v0.1.0 is everything on bio.viz `dev` at [`29ac722`](https://github.com/jwildfire/bio.viz/commit/29ac722) and gsm.bio `dev` at [`4299af6`](https://github.com/jwildfire/gsm.bio/commit/4299af6) (after gsm.bio [#20](https://github.com/jwildfire/gsm.bio/pull/20), which re-copied the widgets' bundles). The live bio.viz dev site was deployed from `29ac722` (its Pages run of 2026-10-03 03:50 UTC). At `4299af6` gsm.bio's `inst/htmlwidgets/lib/SOURCE.json` records bio.viz `29ac722` (bio.viz bundle sha256 `bbc93e78…`, the same as bio.viz's committed dist) and, through bio.viz's own record, safety.viz `dev` at `a57dbb2` (sha256 `67236ba4…`, `merged_to_dev: true`), still marked as a stand-in until gsm.safety carries a safety.viz bundle with the kit.
 
 Requirements it walks: R in the browser (hub [#363](https://github.com/jwildfire/obot.roadmap/issues/363)), gsm.bio's statistics (hub [#364](https://github.com/jwildfire/obot.roadmap/issues/364)), the group comparison chart and its tests (hub [#355](https://github.com/jwildfire/obot.roadmap/issues/355), [#356](https://github.com/jwildfire/obot.roadmap/issues/356)), the association scatter and correlation matrix (hub [#357](https://github.com/jwildfire/obot.roadmap/issues/357)), the biomarker screen (hub [#358](https://github.com/jwildfire/obot.roadmap/issues/358)) and safety.viz's kit (hub [#354](https://github.com/jwildfire/obot.roadmap/issues/354)). The chart list (`BioViz.portfolio`) on bio.viz dev belongs to the demo-app hosting requirement (hub [#366](https://github.com/jwildfire/obot.roadmap/issues/366)), still in session.
 
@@ -9,9 +9,9 @@ Data: gsm.bio's synthetic study only (200 made-up participants, 11,472 results, 
 ## How it was made
 
 - `capture.mjs` — Playwright, headless Chromium, real webR, against `https://jwildfire.github.io/bio.viz/dev/`. Run from a fresh `npm ci` clone of bio.viz (for its Playwright install): `node capture.mjs <out dir> <dir of saved widgets>`. `ONLY=1,3` runs only some sections and keeps the other sections' numbers. It writes the stills to `media/` (1.5× JPEG; 1440 × 900 desktop, 390 × 844 phone) and every number it read to `capture-numbers.json`. R's download is counted from the browser context's finished requests to webR's two hosts (`webr.r-wasm.org`, `repo.r-wasm.org`), as compressed response-body bytes (`request.sizes().responseBodySize`), each section in a fresh context with an empty cache.
-- `desktop-r.R` — run with R 4.3.3 against gsm.bio installed from a fresh clone at `8720f73` (`R CMD INSTALL` into a scratch library): recomputes in desktop R every number the page prints, writing `desktop-r.json`, and saves the four widgets with `htmlwidgets::saveWidget(selfcontained = TRUE)` using each widget's own help-page example settings. The capture opens those four files from disk in a browser context with `offline: true` and records every http(s) request any of them makes (`widgets_network_requests`: none).
+- `desktop-r.R` — run with R 4.3.3 against gsm.bio installed from a fresh clone at `4299af6` (`R CMD INSTALL` into a scratch library): recomputes in desktop R every number the page prints, writing `desktop-r.json`, and saves the four widgets with `htmlwidgets::saveWidget(selfcontained = TRUE)` using each widget's own help-page example settings. The capture opens those four files from disk in a browser context with `offline: true` and records every http(s) request any of them makes (`widgets_network_requests`: none).
 
-Captured 2026-10-03 between 04:14 and 04:20 UTC.
+Captured 2026-10-03 between 04:14 and 04:20 UTC. The three widget stills were re-captured at 05:25 UTC from widgets re-saved at `4299af6`; the first capture used widgets saved from `8720f73`, which carried bio.viz's bundle from bio.viz `23ccdc4` and a safety.viz copy from the unmerged kit branch at `17125bf`. Every widget number, the offline zero-request check and `desktop-r.json` came out the same both times; only the provenance time and the file sizes changed.
 
 ## Every number on the page, and where it came from
 
@@ -35,9 +35,9 @@ Captured 2026-10-03 between 04:14 and 04:20 UTC.
 | Recorded cost 26.22 MB / 3.568 s, 0.00 / 2.143 s, 0.00 / 0.004 s | `r_check_recorded.table` (the page's table, from bio.viz `site/r-check/measured.json`, recorded 2026-10-02) | — |
 | This capture: 26.22 MB, 4.4 s, repeat 6 ms | `r_check_now.r_megabytes` (11 requests to webR's hosts; the page's own R source is not counted here), `.timings.firstResult` = 4372 ms, `.timings.repeat[0]` | — |
 | 10 Mbit/s → about 21 seconds | the R check page's own footnote (`r_check_recorded.footnote`) | — |
-| 7 statistics functions, 4 widgets | gsm.bio `NAMESPACE` at `8720f73` | — |
-| Widgets "R 4.3.3 with gsm.bio 0.1.0 on 2026-10-03 04:19 UTC" | `widgets.*.provenance` | `r_version`, `gsm_bio` |
-| Widget files about 2.6 to 2.7 MB | `ls` of the saved files: 2,637,447 to 2,730,775 bytes | — |
+| 7 statistics functions, 4 widgets | gsm.bio `NAMESPACE` at `4299af6` | — |
+| Widgets "R 4.3.3 with gsm.bio 0.1.0 on 2026-10-03 05:25 UTC" | `widgets.*.provenance` | `r_version`, `gsm_bio` |
+| Widget files about 2.5 to 2.6 MB | `ls` of the saved files: 2,490,998 to 2,584,326 bytes | — |
 | Widget group comparison and screen drill-down 1.235 (0.844 to 1.626); scatter widget 0.6384 | `widgets.group-comparison.statistics`, `widgets.biomarker-screen.drill_statistics`, `widgets.association-scatter.statistics` | as above |
 | Filtered widget view says statistics are unavailable | `widgets.group-comparison.filtered_statistics` | — |
 | No widget network requests | `widgets_network_requests` = [] | — |
