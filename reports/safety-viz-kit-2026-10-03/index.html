@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The safety.viz kit — what changed, and what did not (2026-10-03)</title>
+<meta name="description" content="What the new kit in safety.viz is: one added export that hands a second chart library the 36 parts safety.viz's own charts are built from. What it changes (almost nothing), what it commits you to (those 36 become public surface in v1.9.0), and who uses it.">
+<style>
+:root {
+  --ground:#f4f6f7; --surface:#ffffff; --surface-2:#eef2f3;
+  --ink:#16232d; --muted:#536470; --faint:#7f929e;
+  --border:#dde4e7; --hairline:#e8edef;
+  --accent:#0e7c86; --accent-deep:#0a5b63; --accent-tint:#e2f1f2;
+  --p1:#2a78d6; --p1-tint:#e6effb;
+  --p3:#1baf7a; --p3-tint:#e4f6ef;
+  --p4:#8a5cd6; --p4-tint:#efe8fb;
+  --warn:#b4520f; --warn-tint:#fbecdf;
+  --f-display:"SF Pro Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(20,40,55,.05), 0 8px 24px -12px rgba(20,40,55,.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831;
+    --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+    --border:#263640; --hairline:#1f2d36;
+    --accent:#3cc3d0; --accent-deep:#7fd8e0; --accent-tint:#0f2e33;
+    --p1:#5f9ff0; --p1-tint:#16273a;
+    --p3:#3ec89a; --p3-tint:#0e2a20;
+    --p4:#a687e4; --p4-tint:#221a35;
+    --warn:#e08a4a; --warn-tint:#33210f;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#0d141a; --surface:#141e26; --surface-2:#1a2831;
+  --ink:#e7eef2; --muted:#9aabb6; --faint:#6f828e;
+  --border:#263640; --hairline:#1f2d36;
+  --accent:#3cc3d0; --accent-deep:#7fd8e0; --accent-tint:#0f2e33;
+  --p1:#5f9ff0; --p1-tint:#16273a;
+  --p3:#3ec89a; --p3-tint:#0e2a20;
+  --p4:#a687e4; --p4-tint:#221a35;
+  --warn:#e08a4a; --warn-tint:#33210f;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--f-display); font-size:16px; line-height:1.6; -webkit-text-size-adjust:100%; }
+.wrap { max-width:56rem; margin:0 auto; padding:1.6rem 1rem 4rem; }
+a { color:var(--accent-deep); text-underline-offset:2px; overflow-wrap:anywhere; }
+h1 { font-size:clamp(1.6rem,5vw,2.3rem); line-height:1.15; margin:.2rem 0 .5rem; letter-spacing:-.015em; }
+h2 { font-size:clamp(1.15rem,3.4vw,1.45rem); margin:2.2rem 0 .7rem; letter-spacing:-.01em; }
+h3 { font-size:1rem; margin:1.2rem 0 .35rem; }
+p { margin:0 0 .8rem; }
+ul { margin:0 0 .9rem; padding-left:1.2rem; }
+li { margin:.25rem 0; }
+code { font-family:var(--f-mono); font-size:.88em; background:var(--surface-2); padding:.05em .3em; border-radius:4px; overflow-wrap:anywhere; }
+.eyebrow { text-transform:uppercase; letter-spacing:.08em; font-size:.75rem; color:var(--muted); margin:0; }
+.lede { font-size:1.08rem; color:var(--ink); }
+.facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(9rem,1fr)); gap:.6rem; margin:1.1rem 0 1.4rem; }
+.fact { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.6rem .75rem; box-shadow:var(--shadow); }
+.fact .k { display:block; font-size:.74rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.fact .v { display:block; font-size:1.05rem; font-weight:600; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1rem 1.1rem; box-shadow:var(--shadow); margin:0 0 1rem; }
+.callout { border-left:4px solid var(--accent); background:var(--accent-tint); border-radius:8px; padding:.8rem 1rem; margin:1rem 0 1.2rem; }
+.callout .label { display:block; font-size:.76rem; text-transform:uppercase; letter-spacing:.07em; color:var(--accent-deep); font-weight:700; margin-bottom:.3rem; }
+.callout.warn { border-left-color:var(--warn); background:var(--warn-tint); }
+.callout.warn .label { color:var(--warn); }
+.callout p:last-child, .callout ul:last-child { margin-bottom:0; }
+.split { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
+@media (max-width:40rem) { .split { grid-template-columns:1fr; } }
+.split .card h3 { margin-top:0; }
+.yes h3 { color:var(--p3); }
+.no h3 { color:var(--warn); }
+/* the page picture */
+.page { border:2px dashed var(--border); border-radius:14px; padding:.8rem; background:var(--surface); }
+.page > .ptitle { font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; margin:0 0 .5rem; }
+.libs { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+@media (max-width:40rem) { .libs { grid-template-columns:1fr; } }
+.lib { border-radius:10px; padding:.7rem .8rem; border:1px solid var(--border); }
+.lib.sv { background:var(--p1-tint); }
+.lib.bv { background:var(--p4-tint); }
+.lib h3 { margin:0 0 .3rem; font-size:.98rem; }
+.lib ul { margin:0; }
+.kitbox { margin-top:.5rem; border:2px solid var(--p1); border-radius:8px; padding:.45rem .6rem; background:var(--surface); font-size:.92rem; }
+.arrow { text-align:center; font-size:.9rem; color:var(--muted); margin:.5rem 0; }
+table { width:100%; border-collapse:collapse; font-size:.93rem; }
+th, td { text-align:left; vertical-align:top; padding:.5rem .55rem; border-bottom:1px solid var(--hairline); }
+th { font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+.tablewrap { background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; }
+@media (max-width:40rem) {
+  table, thead, tbody, tr, th, td { display:block; }
+  thead { display:none; }
+  tr { border-bottom:1px solid var(--border); padding:.5rem .2rem; }
+  td { border:0; padding:.2rem .5rem; }
+  td::before { content:attr(data-h); display:block; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+}
+.timeline { list-style:none; padding:0; margin:0; border-left:2px solid var(--border); }
+.timeline li { position:relative; padding:0 0 .8rem 1rem; margin:0; }
+.timeline li::before { content:""; position:absolute; left:-7px; top:.45rem; width:12px; height:12px; border-radius:50%; background:var(--accent); }
+.timeline .when { display:block; font-size:.8rem; color:var(--muted); }
+footer { margin-top:2.5rem; font-size:.85rem; color:var(--muted); border-top:1px solid var(--border); padding-top:1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="eyebrow">Biomarker charts objective · safety.viz v1.9.0 · 3 October 2026</p>
+<h1>The safety.viz kit: what changed, and what did not</h1>
+<p class="lede">safety.viz's bundle gained one thing: a frozen list, called <code>kit</code>, of 36 parts its own thirteen charts are already built from. It exists so a second chart library on the same page can build its charts from the same parts instead of copying them. Nothing in safety.viz moved, was renamed or behaves differently.</p>
+
+<div class="facts">
+  <div class="fact"><span class="k">What was added</span><span class="v">1 export</span></div>
+  <div class="fact"><span class="k">Parts in it</span><span class="v">36</span></div>
+  <div class="fact"><span class="k">Charts changed</span><span class="v">0 of 13</span></div>
+  <div class="fact"><span class="k">Screenshots changed</span><span class="v">0</span></div>
+  <div class="fact"><span class="k">On dev</span><span class="v">3 Oct, 00:56 UTC</span></div>
+  <div class="fact"><span class="k">Ships in</span><span class="v">v1.9.0</span></div>
+</div>
+
+<div class="callout">
+  <span class="label">Decisions for you</span>
+  <ul>
+    <li>From v1.9.0 these 36 parts are public surface: changing how any of them is called becomes a breaking change for bio.viz. That is the one real cost, and it is yours to accept at the v1.9.0 release candidate.</li>
+    <li>It is milestoned v1.9.0, not the v1.10.0 the task first said, because it merged to <code>dev</code> after v1.8.0 shipped and so rides the next release. Say so if you want it held out.</li>
+    <li>One part, <code>reconcileFilters</code>, joined after the task was written, because the v1.8.0 review made it the step every chart now calls to settle its filters. Without it bio.viz's filters would behave differently from safety.viz's.</li>
+  </ul>
+</div>
+
+<h2>Why it exists</h2>
+<ul>
+  <li>bio.viz, the biomarker chart library, runs beside safety.viz on the same page. The design decision you agreed on 2 October was that it borrows safety.viz's shared parts rather than copying them.</li>
+  <li>Before the kit, those parts lived inside safety.viz's source as internal functions. A second library could not reach them from the published bundle at all.</li>
+  <li>The kit is the reach: one name on the bundle, <code>SafetyViz.kit</code>, pointing at exactly the functions safety.viz's charts already call. It is a re-export, not new code and not a refactor.</li>
+  <li>The payoff: bio.viz's charts have the same sidebar, filters, record listing and participant profile as safety.viz's, draw with the same copy of Chart.js, and cannot drift away from them, because they are literally the same functions.</li>
+</ul>
+
+<h2>How the two libraries meet on a page</h2>
+<div class="page">
+  <p class="ptitle">One web page</p>
+  <div class="libs">
+    <div class="lib sv">
+      <h3>safety.viz bundle</h3>
+      <ul>
+        <li>The thirteen safety charts, unchanged</li>
+        <li>Its own copy of Chart.js</li>
+      </ul>
+      <div class="kitbox"><code>SafetyViz.kit</code>: 36 parts, the same functions the thirteen charts use, read-only</div>
+    </div>
+    <div class="lib bv">
+      <h3>bio.viz bundle</h3>
+      <ul>
+        <li>Four biomarker charts (group comparison, scatter, correlation matrix, and the screen in progress)</li>
+        <li>The variable-and-frame core, and the connection to R</li>
+        <li>No Chart.js and nothing of safety.viz inside it</li>
+      </ul>
+    </div>
+  </div>
+  <p class="arrow">bio.viz's charts look for <code>SafetyViz.kit</code> on the page and build their sidebar, filters, listing, profile rail and canvases from it</p>
+</div>
+
+<h2>What changed in safety.viz, and what did not</h2>
+<div class="split">
+  <div class="card yes">
+    <h3>Changed</h3>
+    <ul>
+      <li>A new file, <code>src/kit.js</code>, that gathers the 36 parts and freezes the list.</li>
+      <li>One export line in <code>src/main.js</code>, so the bundle carries <code>kit</code>. The committed bundle differs by that object and nothing else.</li>
+      <li>A kit page in the API reference, listing every part, where it comes from and how to call it.</li>
+      <li>A requirement matrix for the kit, tests named to it, and a line in the v1.9.0 release notes saying the parts are public surface from now on.</li>
+    </ul>
+  </div>
+  <div class="card no">
+    <h3>Not changed</h3>
+    <ul>
+      <li>No function moved, was renamed or got a new signature.</li>
+      <li>No chart, settings schema or default changed; all thirteen charts behave as they did.</li>
+      <li>No screenshot in any chart's evidence differs, and every existing evidence record is identical; only kit records were added.</li>
+      <li>Nothing for a safety.viz user to do or notice.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>The 36 parts</h2>
+<p>Grouped by where they live in safety.viz. Each is the very function object safety.viz's charts use; a test fails if any is not.</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Group</th><th>What it is for</th><th>Parts</th></tr></thead>
+  <tbody>
+    <tr><td data-h="Group">Drawing engine</td><td data-h="What it is for">Chart.js 4.5.1, the copy safety.viz already carries, so a page loads one. Bar, line and scatter are registered; anything else is a plugin on it.</td><td data-h="Parts"><code>Chart</code></td></tr>
+    <tr><td data-h="Group">The page frame</td><td data-h="What it is for">The sidebar of controls, the chart area, the view switcher and the shared styles every chart sits in.</td><td data-h="Parts"><code>renderShell</code>, <code>controlBuilders</code>, <code>renderViewSelector</code>, <code>applyShellStyles</code>, <code>createElement</code>, <code>option</code>, <code>multiSelect</code></td></tr>
+    <tr><td data-h="Group">Filters</td><td data-h="What it is for">The filter controls and the rules for what a filter lets through, including the reconciling step every chart now calls.</td><td data-h="Parts"><code>reconcileFilters</code>, <code>renderFilterControl</code>, <code>normalizeFilterSpec</code>, <code>initFilterState</code>, <code>filterMatches</code>, <code>ALL_VALUE</code></td></tr>
+    <tr><td data-h="Group">Axis limits</td><td data-h="What it is for">The minimum and maximum inputs for an axis.</td><td data-h="Parts"><code>syncAxisLimits</code>, <code>seedLimitInput</code>, <code>applyLimitEdit</code>, <code>clearAxisLimits</code>, <code>formatLimit</code>, <code>limitDigits</code></td></tr>
+    <tr><td data-h="Group">Record listing</td><td data-h="What it is for">The table of participants under a chart: search, sort, pages and a CSV download.</td><td data-h="Parts"><code>renderListing</code>, <code>searchRows</code>, <code>sortRows</code>, <code>paginate</code>, <code>buildCsv</code>, <code>exportCsv</code></td></tr>
+    <tr><td data-h="Group">Participant profile</td><td data-h="What it is for">The side panel that opens one participant's results when a row or point is clicked.</td><td data-h="Parts"><code>mountProfileRail</code>, <code>unmountProfileRail</code>, <code>syncProfileRail</code>, <code>resetProfileRail</code>, <code>buildProfileRows</code></td></tr>
+    <tr><td data-h="Group">Box drawing</td><td data-h="What it is for">How a box and its whiskers are drawn.</td><td data-h="Parts"><code>drawBoxWhisker</code>, <code>boxWhiskerPlugin</code></td></tr>
+    <tr><td data-h="Group">Measure list</td><td data-h="What it is for">Which measures a chart offers, and in what order.</td><td data-h="Parts"><code>resolveMeasureList</code>, <code>presentMeasures</code></td></tr>
+    <tr><td data-h="Group">Survival curve</td><td data-h="What it is for">The Kaplan–Meier estimate behind safety.viz's time-to-event curve, for bio.viz's stratified survival chart to draw from rather than reimplement.</td><td data-h="Parts"><code>kmEstimate</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p style="margin-top:.8rem">Left out on purpose: the two status banners, <code>prototypeBanner</code> and <code>experimentalBanner</code>, because their wording is about safety.viz's own release status.</p>
+
+<h2>How it was proven</h2>
+<ul>
+  <li>Unit tests named <code>KIT-API</code> hold each of the 36 parts identical to the function its own module exports, hold the list to exactly those 36, and fail if a module gains an export that is neither listed nor deliberately left out.</li>
+  <li>Browser tests named <code>KIT-USE</code> drive a test page that loads only the committed bundle and builds a working page from the kit alone: a sidebar, a filter that narrows a bar chart drawn with <code>kit.Chart</code>, a click that fills the record listing, and a listing row that opens the participant rail. A test fails if that page reaches for any of safety.viz's charts directly.</li>
+  <li>All 2,124 unit tests and 350 browser tests passed; CI passed on the final commit; no screenshot changed. You ran the evidence workflow on the branch so the evidence records name the Linux runner, and that run changed provenance only.</li>
+  <li>The orchestrating session re-ran every check itself in a fresh copy before each step, and read the bundle's exported names directly: <code>dev</code>'s names plus <code>kit</code>, none removed.</li>
+</ul>
+
+<h2>Two things worth knowing</h2>
+<div class="callout warn">
+  <span class="label">Rough edges, not blockers</span>
+  <ul>
+    <li>The listing's CSV download, <code>exportCsv</code>, always names its file after the safety histogram. bio.viz builds its own download from <code>buildCsv</code> instead, so its files are named for its charts. Fixing <code>exportCsv</code> itself would now be a kit change.</li>
+    <li>Separately from the kit, the v1.8.0 review changed what a filter's <code>start</code> setting means: it now only sets what a filter opens on, and only <code>all: false</code> removes the All option. bio.viz takes that in when it re-copies safety.viz's bundle from <code>dev</code>.</li>
+  </ul>
+</div>
+
+<h2>How it got here</h2>
+<ol class="timeline">
+  <li><span class="when">2 October, morning</span>You agreed that bio.viz borrows safety.viz's parts rather than copying them, and approved the task.</li>
+  <li><span class="when">2 October, afternoon</span>Built and verified as a draft, then held unmerged while the v1.8.0 release candidate was open, at your decision ("Build now, merge after v1.8.0 is cut"). bio.viz's first chart was built against the draft meanwhile ("Start now against the draft").</li>
+  <li><span class="when">2 October, 21:41 UTC</span>v1.8.0 shipped. The kit was brought up to <code>dev</code>; <code>reconcileFilters</code> joined; the milestone moved to v1.9.0.</li>
+  <li><span class="when">3 October, 00:45 UTC</span>You ran the evidence workflow on the branch.</li>
+  <li><span class="when">3 October, 00:56 UTC</span>Merged to <code>dev</code>. It reaches <code>main</code> with v1.9.0, through your review of that release candidate.</li>
+</ol>
+
+<h2>Who uses it, and what comes next</h2>
+<ul>
+  <li>bio.viz's three charts on its dev site already run on it, from a copy of the draft. They now re-copy safety.viz's bundle from <code>dev</code> (bio.viz task 37).</li>
+  <li>gsm.bio's three R widgets carry the same copy of safety.viz's bundle, as a recorded stand-in until gsm.safety ships one with the kit.</li>
+  <li>The demo app requirement you approved yesterday puts the biomarker charts in safety.viz's demo app; the app hands them the kit from its own bundle.</li>
+</ul>
+
+<footer>
+  <p>Sources: the kit pull request (<a href="https://github.com/jwildfire/safety.viz/pull/161">safety.viz#161</a>), its task (<a href="https://github.com/jwildfire/safety.viz/issues/154">safety.viz#154</a>), the requirement and its closing proof (<a href="https://github.com/jwildfire/obot.roadmap/issues/354">#354</a>), the kit's API reference (<a href="https://jwildfire.github.io/safety.viz/dev/kit/index.html">safety.viz dev site</a>), the design page (<a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html">biomarker charts design</a>), and the objective (<a href="https://github.com/jwildfire/obot.roadmap/issues/353">#353</a>).</p>
+  <p>This page was drafted by Claude Code using Opus 5.5.</p>
+</footer>
+
+</div>
+</body>
+</html>
