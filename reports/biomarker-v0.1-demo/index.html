@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bio.viz and gsm.bio v0.1.0 — annotated demo</title>
+<meta name="description" content="The first releases of the biomarker charts and their R package, shown on the live site: four charts whose every test is R's, R started inside the browser, and R widgets that keep their results offline, with the numbers you should see.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;        /* interactive: links, steps */
+  --bronze:#b4531a;      /* accent: the bio.viz site's orange, darkened for text */
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32);overflow-wrap:anywhere}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono);font-size:.92em}
+code{overflow-wrap:anywhere}
+pre code{overflow-wrap:normal}
+
+/* ---------- masthead ---------- */
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+/* ---------- callouts ---------- */
+.note{margin:22px 0 0;padding:14px 18px;border:1px solid var(--rule);border-left:3px solid var(--bronze);border-radius:5px;background:var(--panel);font-size:15px;color:var(--ink2);max-width:78ch}
+.note .lbl{margin-bottom:8px}
+.note ol,.note ul{margin:0;padding-left:20px}
+.note li+li{margin-top:7px}
+.list{margin:14px 0 0;padding-left:20px;max-width:74ch;font-size:15.5px;color:var(--ink2)}
+.list li+li{margin-top:7px}
+
+/* ---------- contents ---------- */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+/* ---------- section rule ---------- */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:19px;margin:42px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+/* ---------- figures ---------- */
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--panel);line-height:0}
+.frame img{display:block;width:100%;height:auto}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.pair figure{margin:0}
+.pair .cap{margin-top:10px}
+.phones{display:grid;grid-template-columns:repeat(2,minmax(0,300px));gap:20px;margin-top:20px}
+.phones figure{margin:0}
+.side{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;align-items:start;margin-top:20px}
+.side figure{margin:0}
+
+/* ---------- see/try strip ---------- */
+.strip{display:grid;grid-template-columns:1fr 360px;gap:0;margin:24px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px;min-width:0}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.why ul{margin:0;padding-left:18px;font-size:15px;color:var(--ink2)}
+.why li+li{margin-top:6px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+/* ---------- tables and code ---------- */
+.scroll{overflow-x:auto;margin:16px 0 0;max-width:100%}
+table{border-collapse:collapse;font-size:14px;color:var(--ink2);min-width:100%}
+th,td{text-align:left;padding:7px 12px 7px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font:600 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+td.n{font-family:var(--mono);white-space:nowrap}
+pre{margin:16px 0 0;padding:14px 16px;background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  overflow-x:auto;font:13px/1.5 var(--mono);color:var(--ink2);max-width:100%}
+dl.fns{margin:16px 0 0;display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;font-size:15px;color:var(--ink2);max-width:80ch}
+dl.fns dt{font-family:var(--mono);font-size:13.5px;padding-top:2px}
+dl.fns dd{margin:0}
+
+/* ---------- closing ---------- */
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+  .side{grid-template-columns:1fr}
+  .side figure:last-child{max-width:300px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pair{grid-template-columns:1fr}
+  .phones{grid-template-columns:1fr 1fr;gap:12px}
+  .mast{padding-top:36px}
+  dl.fns{grid-template-columns:1fr;gap:2px 0}
+  dl.fns dd{margin-bottom:10px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">bio.viz <span class="dot"></span> gsm.bio <span class="dot"></span> release review <span class="dot"></span> 2026-10-03</p>
+  <h1>What <span class="v">v0.1.0</span> of bio.viz and gsm.bio adds, annotated</h1>
+  <p class="lede">bio.viz is a new chart library for biomarker data and gsm.bio is the R package behind it: four charts that compare groups and relate variables, where every test, coefficient and fitted line is computed by R, either started inside your browser or run at a desk and stored in the page. Below, each chart is shown on its live demo with the numbers you should see when you try it, followed by the R side.</p>
+  <p class="facts">
+    <span><b>4</b> charts, built on safety.viz’s shared parts</span>
+    <span><b>7</b> statistics functions and <b>4</b> widgets in R</span>
+    <span>made-up study: <b>200</b> participants, <b>12</b> biomarkers, <b>5</b> visits</span>
+    <span>R in the browser: <b>13.26 MB</b>, once</span>
+    <span>bio.viz <b>dev</b> at <a href="https://github.com/jwildfire/bio.viz/commit/29ac722">29ac722</a>, gsm.bio <b>dev</b> at <a href="https://github.com/jwildfire/gsm.bio/commit/8720f73">8720f73</a></span>
+  </p>
+
+  <div class="note">
+    <p class="lbl">What to look at</p>
+    <ol>
+      <li>On the group comparison, open IL-6 and set Value to Change from baseline. At Week 4, R’s Welch test prints p &lt; 0.001 for Placebo n = 95 against Treatment n = 91, with a difference in means of 1.235 (0.844 to 1.626). The made-up study planted a difference of 1.5.</li>
+      <li>The biomarker screen puts IL-6 at the top at 0.9133, and clicking its row opens that same test with the same numbers.</li>
+      <li>On the R check page, press the button: R in the browser gives the same answers as desktop R in all 6 values of one test and all 20 of the other.</li>
+      <li>A gsm.bio widget saved as one file opens with the network off and still shows R’s numbers, with a line saying which R computed them. Move a filter and it says statistics are unavailable rather than showing another view’s numbers.</li>
+    </ol>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#charts"><span class="ref">01</span><span class="t">The four charts</span><span class="s">Each on its live demo, with R’s numbers</span></a>
+  <a href="#r"><span class="ref">02</span><span class="t">R in the browser</span><span class="s">What starting R costs, and why the numbers are R’s</span></a>
+  <a href="#gsmbio"><span class="ref">03</span><span class="t">gsm.bio</span><span class="s">The statistics, and the charts from R, offline</span></a>
+  <a href="#where"><span class="ref">04</span><span class="t">Where it runs</span><span class="s">Beside safety.viz, on its shared parts</span></a>
+</nav>
+
+<!-- ============================================================ 01 -->
+<div class="cut"><span>01 <em>· the four charts</em></span></div><section id="charts">
+  <div class="hd"><h2>The four charts</h2></div>
+  <p class="what">Each demo runs on gsm.bio’s made-up biomarker study, where three effects were planted and every other biomarker is null. A chart draws and lists participants; it never computes a test. The first time a demo needs a statistic, it starts R in your browser, which takes a few seconds and happens once per visit.</p>
+
+  <h3>Group comparison</h3>
+  <p class="what">Does this biomarker differ between these groups? It opens on every biomarker at every visit and prints no test there, so a page never shows dozens of unadjusted p-values at once, and R is not started until you open one biomarker.</p>
+  <figure>
+    <div class="frame"><img src="media/gc-overview.jpg" alt="The group comparison overview: a control sidebar with Biomarker set to All Biomarkers, and rows for CRP, D-dimer and Ferritin, each with a box plot of Placebo against Treatment at Baseline, Week 2, Week 4, Week 8 and Week 12 and the number in each group beneath." loading="lazy" width="2160" height="1350"></div>
+    <p class="cap">The overview: a row per biomarker, a panel per visit, the count in each group beneath. The page reads “All 12 biomarkers are shown.” No R had been downloaded at this point.</p>
+  </figure>
+  <figure>
+    <div class="frame"><img src="media/gc-il6.jpg" alt="IL-6 opened alone with Value set to Change from baseline: panels for Week 2, Week 4 and Week 8 show Treatment boxes lower than Placebo, and under each panel R’s Welch two-sample t-test with p less than 0.001, the group counts and the difference in means with its 95 percent interval." loading="lazy" width="2160" height="1350"></div>
+    <p class="cap">IL-6, change from baseline, by arm. Under each visit is R’s Welch test of the participants drawn in that panel, with its method and counts, labelled exploratory and unadjusted. The Baseline panel is not drawn, because every participant’s change there is nought.</p>
+  </figure>
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What you should see</p>
+      <ul>
+        <li>Week 2: difference 1.245 (0.8598 to 1.631), Placebo n = 92, Treatment n = 93.</li>
+        <li>Week 4: 1.235 (0.844 to 1.626), n = 95 and 91.</li>
+        <li>Week 8: 1.358 (0.9882 to 1.729), n = 93 and 95.</li>
+        <li>Week 12: 1.419 (1.016 to 1.822), n = 92 and 92.</li>
+        <li>Every one p &lt; 0.001. Desktop R running gsm.bio on the same rows gives the same numbers.</li>
+      </ul>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/bio.viz/dev/group-comparison/"><span>Open the group comparison</span></a>
+      <ol>
+        <li>Click IL-6 in the overview, or choose it in the Biomarker control.</li>
+        <li>Set Value to Change from baseline, and wait a few seconds for R to start.</li>
+        <li>Change the Test control to the Wilcoxon rank-sum test: each line clears, says it is waiting for R, and prints the new answer.</li>
+        <li>Click a box to list its participants, then a row to open the participant profile.</li>
+      </ol>
+    </div>
+  </div>
+
+  <h3>Association scatter</h3>
+  <p class="what">Do these two variables move together? It opens on the pair the study planted a correlation of 0.6 in: TNF-alpha against IL-10 at Baseline, coloured by arm, with R’s straight-line fit.</p>
+  <figure>
+    <div class="frame"><img src="media/scatter.jpg" alt="The association scatter of IL-10 against TNF-alpha at Baseline, points coloured Placebo and Treatment, with a fitted line and band for each arm and a dashed line for everyone. Beneath it, Pearson’s r 0.6384 with its interval, a table for each arm, and the slope, intercept and R-squared of the linear fit." loading="lazy" width="2160" height="1350"></div>
+    <p class="cap">Every point of each fitted line, and its band, is R’s. With no R attached, the points and the y = x line still draw and the chart says the rest is unavailable.</p>
+  </figure>
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What you should see</p>
+      <ul>
+        <li>Pearson’s r 0.6384, 95% interval 0.5482 to 0.7139, n = 200, p &lt; 0.001.</li>
+        <li>Within each arm: Placebo 0.5918, Treatment 0.6737, 100 participants each.</li>
+        <li>Linear fit: slope 0.3275 (0.2721 to 0.3828), intercept 2.028, R-squared 0.4075.</li>
+      </ul>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/bio.viz/dev/association-scatter/"><span>Open the association scatter</span></a>
+      <ol>
+        <li>Switch Method to Spearman: R gives a coefficient with no interval, because R has none for it, and the page invents none.</li>
+        <li>Set Fitted line to Smooth: R’s curve and its band replace the straight line.</li>
+        <li>Drag across a cluster of points to list those participants. On a phone, tap Select a region first.</li>
+      </ol>
+    </div>
+  </div>
+
+  <h3>Correlation matrix</h3>
+  <p class="what">Which of these biomarkers are related? Below the diagonal each pair is a mark, wider and darker the stronger R’s coefficient; above it is the number. It prints no p-values, by design.</p>
+  <figure>
+    <div class="frame"><img src="media/matrix.jpg" alt="The correlation matrix of twelve biomarkers at Baseline. Almost every mark is small; the cell for TNF-alpha with IL-10 is one large blue disc, highlighted, and its mirror cell above the diagonal reads 0.64. Beneath the grid, the hovered cell is described: Pearson’s r 0.6384, interval 0.5482 to 0.7139, n = 200." loading="lazy" width="2160" height="1350"></div>
+    <p class="cap">Twelve biomarkers at Baseline: 66 pairs, each with its own pair count. The planted pair is the one large mark. Pointing at it prints its coefficient, interval and count under the grid.</p>
+  </figure>
+  <figure>
+    <div class="frame"><img src="media/matrix-drill.jpg" alt="After clicking the large cell: the association scatter of TNF-alpha against IL-10 at Baseline opened in place, with a Back to the correlation matrix button above it, and beneath it Pearson’s r 0.6384, interval 0.5482 to 0.7139." loading="lazy" width="2160" height="1350"></div>
+    <p class="cap">Clicking the cell opens that pair in the association scatter, in place, with the same R, method and filters. Back returns to the grid as it was without asking R again.</p>
+  </figure>
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What you should see</p>
+      <ul>
+        <li>The cell for TNF-alpha with IL-10 reads 0.64. Pointing at it gives 0.6384 (0.5482 to 0.7139), n = 200.</li>
+        <li>The scatter it opens prints the same 0.6384, now with its p-value: p &lt; 0.001.</li>
+        <li>No other pair at Baseline reaches 0.2 either way.</li>
+      </ul>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/bio.viz/dev/correlation-matrix/"><span>Open the correlation matrix</span></a>
+      <ol>
+        <li>Find the large blue disc in the TNF-alpha row and the IL-10 column.</li>
+        <li>Click it, or move to it with the arrow keys and press Enter.</li>
+        <li>Press Back to the correlation matrix.</li>
+        <li>Under the grid, open the list of every pair and download it as CSV.</li>
+      </ol>
+    </div>
+  </div>
+
+  <h3>Biomarker screen</h3>
+  <p class="what">Which biomarkers differ between the arms? One comparison, run by R across every biomarker, one row each: the standardised difference with its interval, and the p-value unadjusted and adjusted across the rows.</p>
+  <figure>
+    <div class="frame"><img src="media/screen.jpg" alt="The biomarker screen of change from baseline at Week 4, Placebo against Treatment: twelve rows sorted by estimate on one axis from minus 2 to 2 with nought marked. IL-6 is the top row at 0.9133 with its interval clear of nought and both p-values below 0.001; every other row’s interval crosses nought." loading="lazy" width="2160" height="1350"></div>
+    <p class="cap">Change from baseline at Week 4, Placebo against Treatment, sorted by R’s estimate. IL-6 is the top row; every other interval crosses nought. 187 of the 200 participants have a value for at least one biomarker, and each row has its own counts.</p>
+  </figure>
+  <figure>
+    <div class="frame"><img src="media/screen-drill.jpg" alt="After clicking the IL-6 row: the group comparison of IL-6 change from baseline at Week 4 opened in place, Placebo n = 95 and Treatment n = 91, with a Back to the biomarker screen button and R’s Welch test beneath: p less than 0.001, difference in means 1.235, interval 0.844 to 1.626." loading="lazy" width="2160" height="1350"></div>
+    <p class="cap">Clicking the IL-6 row opens IL-6 in the group comparison, at the same visit and value, with the same two groups and Welch’s test. Its p-value is the one the screen’s row was built from.</p>
+  </figure>
+  <div class="phones">
+    <figure>
+      <div class="frame"><img src="media/phone-screen.jpg" alt="The biomarker screen on a phone 390 pixels wide: each row stacks the biomarker name, its dot and interval line, the estimate, the two p-values and the counts. IL-6 is first." loading="lazy" width="585" height="1266"></div>
+      <p class="cap">The screen at 390 px: each row stacks, and nothing scrolls sideways.</p>
+    </figure>
+    <figure>
+      <div class="frame"><img src="media/phone-scatter.jpg" alt="The association scatter on a phone 390 pixels wide, with the coefficient and the table for each arm beneath it." loading="lazy" width="585" height="1266"></div>
+      <p class="cap">The scatter at 390 px, with the phone’s own hint: tap Select a region before dragging.</p>
+    </figure>
+  </div>
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What you should see</p>
+      <ul>
+        <li>IL-6 first: 0.9133 (0.6111 to 1.213), p &lt; 0.001 unadjusted and after Benjamini-Hochberg, n = 95 and 91.</li>
+        <li>Second, IL-1beta at 0.2589: p = 0.080 unadjusted and 0.481 adjusted.</li>
+        <li>The IL-6 row opens to 1.235 (0.844 to 1.626), the same as the group comparison at Week 4.</li>
+      </ul>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/bio.viz/dev/biomarker-screen/"><span>Open the biomarker screen</span></a>
+      <ol>
+        <li>Set Sort to Adjusted p-value, smallest first.</li>
+        <li>Switch Adjustment to Holm: the adjusted column changes and the caption names the method.</li>
+        <li>Click the IL-6 row, then Back to the biomarker screen.</li>
+        <li>Set Compare to Correlation with one variable to screen every biomarker against one number.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 02 -->
+<div class="cut"><span>02 <em>· R in the browser</em></span></div><section id="r">
+  <div class="hd"><h2>R in the browser</h2></div>
+  <p class="what">A chart asks R for a statistic through one call, which always answers: with what R returned, with a statement that statistics are unavailable and why, or with R’s own error. Behind it, answers worked out ahead of time can ship with the page; otherwise R itself, built for the browser (webR 0.6.0), is fetched from its public host the first time an answer is needed. The R check page runs two tests on two small public tables and puts each browser answer beside desktop R’s, in full.</p>
+
+  <figure>
+    <div class="frame"><img src="media/r-check.jpg" alt="The R check page after pressing Start R and run both tests: Done, R in this browser gave the same answers as desktop R. R in this browser is 4.6.0 with survival 3.8.6; the desktop answers were made by R 4.3.3 with survival 3.5.8. The Wilcoxon rank-sum test’s p-value and statistic are listed for desktop R and this browser with a difference of 0." loading="lazy" width="2160" height="1350"></div>
+    <p class="cap">After pressing the button. R in the browser is a different version, built by a different compiler, from the desktop R that wrote the expected answers, and the two agree. The tables are cut from the public CDISC pilot study data.</p>
+  </figure>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>What starting R cost</th><th>Megabytes</th><th>Seconds</th></tr></thead>
+      <tbody>
+        <tr><td>First visit, nothing cached: recorded on the page</td><td class="n">26.22</td><td class="n">3.568</td></tr>
+        <tr><td>Reload, R’s files cached: recorded on the page</td><td class="n">0.00</td><td class="n">2.143</td></tr>
+        <tr><td>Second call, R already running: recorded on the page</td><td class="n">0.00</td><td class="n">0.004</td></tr>
+        <tr><td>First visit, this capture</td><td class="n">26.22</td><td class="n">4.4</td></tr>
+        <tr><td>Group comparison demo, first test, this capture</td><td class="n">13.26</td><td class="n">1.5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="cap">The check page installs R’s survival package for its log-rank test; the chart demos do not need it, which is why opening a biomarker costs about half. Seconds depend on the network: headless Chromium on this capture’s network, which was not measured. At 10 megabits a second, the page notes, the 26.2 MB alone would take about 21 seconds to arrive.</p>
+
+  <div class="note">
+    <p class="lbl">Statistics come from R only</p>
+    <ul>
+      <li>bio.viz contains no inference code. Each chart decides which test to ask for and prints what R returns, through one set of formatting rules: the method, the counts, “Exploratory, unadjusted” unless an adjustment is named, no stars, no verdict.</li>
+      <li>The R functions the browser runs are gsm.bio’s own source file, copied into bio.viz byte for byte with a checksum, so the browser and a desk run the same lines.</li>
+      <li>Where R declines to compute, such as a group that is too small, the chart prints R’s reason, not a number.</li>
+    </ul>
+  </div>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What you should see</p>
+      <ul>
+        <li>“Done. R in this browser gave the same answers as desktop R.”</li>
+        <li>Same as desktop R in all 6 values of the rank-sum test and all 20 of the log-rank test.</li>
+        <li>A first result in a few seconds; a repeated call in a few milliseconds (6 ms here).</li>
+      </ul>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/bio.viz/dev/r-check/"><span>Open the R check page</span></a>
+      <ol>
+        <li>Read the first two answers: one with no R attached, one from results shipped with the page. Nothing has been downloaded yet.</li>
+        <li>Press Start R and run both tests.</li>
+        <li>Open “The other 4 values” to see every member compared.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 03 -->
+<div class="cut"><span>03 <em>· gsm.bio</em></span></div><section id="gsmbio">
+  <div class="hd"><h2>gsm.bio</h2></div>
+  <p class="what">The R package the charts ask. Each function wraps a test from base R’s stats package or the survival package, called with R’s defaults, and returns the same plain result: method, estimates, counts, p-value, and a reason in place of the numbers when it cannot compute. It also carries the made-up study the demos use, with the true size of each planted effect.</p>
+
+  <dl class="fns">
+    <dt><a href="https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.html">Analyze_GroupDifference</a></dt><dd>A value between groups: Welch t-test, Wilcoxon rank-sum, one-way ANOVA or Kruskal-Wallis, with Holm-adjusted pairs.</dd>
+    <dt><a href="https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.html">Analyze_Correlation</a></dt><dd>Pearson or Spearman correlation of one pair, overall and within each group.</dd>
+    <dt><a href="https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.html">Analyze_CorrelationMatrix</a></dt><dd>The correlation of every pair of several variables, with each pair’s count and no p-values.</dd>
+    <dt><a href="https://jwildfire.github.io/gsm.bio/reference/Analyze_Fit.html">Analyze_Fit</a></dt><dd>A straight line from <code>lm()</code> or a smooth from <code>loess()</code>, with its band as points a chart draws as they are.</dd>
+    <dt><a href="https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.html">Analyze_Contingency</a></dt><dd>A two-way table by chi-squared, flagging small expected counts, or Fisher’s exact test.</dd>
+    <dt><a href="https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.html">Analyze_Survival</a></dt><dd>Time to an event between groups: log-rank test, each group’s median, and the hazard ratio for two groups.</dd>
+    <dt><a href="https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.html">Analyze_Screen</a></dt><dd>One comparison across every biomarker, a row each, with the p-values adjusted across the rows.</dd>
+  </dl>
+
+  <h3>The four charts from R</h3>
+  <p class="what"><a href="https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.html">Widget_GroupComparison</a>, <a href="https://jwildfire.github.io/gsm.bio/reference/Widget_AssociationScatter.html">Widget_AssociationScatter</a>, <a href="https://jwildfire.github.io/gsm.bio/reference/Widget_CorrelationMatrix.html">Widget_CorrelationMatrix</a> and <a href="https://jwildfire.github.io/gsm.bio/reference/Widget_BiomarkerScreen.html">Widget_BiomarkerScreen</a> draw the same charts from R. When a widget is made, R computes every statistic the chart will ask for on the views it opens on, including the chart behind every matrix cell and every screen row, and stores them in the page. A page saved as one file then needs no R and no network.</p>
+
+  <div class="side">
+    <figure>
+      <div class="frame"><img src="media/widget-group-comparison.jpg" alt="The group comparison widget saved by R and opened from disk with the network off: IL-6 change from baseline at Week 2, 4, 8 and 12, each with R’s Welch test beneath, and at the foot the line: Statistics computed by R 4.3.3 with gsm.bio 0.1.0 on 2026-10-03 04:19 UTC and stored with this page." loading="lazy" width="2160" height="1350"></div>
+      <p class="cap">The group comparison widget, saved with <code>htmlwidgets::saveWidget(selfcontained = TRUE)</code> and opened from disk with the network off. The four tests are the browser demo’s numbers exactly. The line at the foot says which R computed them, and when.</p>
+    </figure>
+    <figure>
+      <div class="frame"><img src="media/widget-unavailable.jpg" alt="One panel of the same widget after setting the Sex filter to F: the boxes redraw for fewer participants, and the line beneath reads Statistics are unavailable for this view: the page holds no stored result for it, and no R is attached to compute one." loading="lazy" width="381" height="675"></div>
+      <p class="cap">Set a filter the widget did not compute and the boxes redraw, but the line says statistics are unavailable. It never shows another view’s numbers.</p>
+    </figure>
+  </div>
+  <figure>
+    <div class="frame"><img src="media/widget-screen-drill.jpg" alt="The biomarker screen widget opened offline, after clicking its IL-6 row: the IL-6 group comparison at Week 4 with R’s Welch test, difference 1.235, interval 0.844 to 1.626, and the provenance line at the foot." loading="lazy" width="2160" height="1350"></div>
+    <p class="cap">The biomarker screen widget, offline, after clicking IL-6: the chart a row opens is stored too, so the same 1.235 (0.844 to 1.626) appears with no R anywhere.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What you should see</p>
+      <ul>
+        <li>Each saved page is one file of about 2.6 to 2.7 MB, and none of the four made a network request when opened.</li>
+        <li>Under the chart: “Statistics: computed by R 4.3.3 with gsm.bio 0.1.0 on …” with the time it was made.</li>
+        <li>The association scatter widget prints 0.6384 (0.5482 to 0.7139), and its Method and Fitted line controls still answer offline.</li>
+      </ul>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it in R</p>
+      <a class="golink" href="https://jwildfire.github.io/gsm.bio/reference/"><span>gsm.bio reference</span></a>
+      <ol>
+        <li>Install: <code>remotes::install_github("jwildfire/gsm.bio@dev")</code>.</li>
+        <li>Run the example on any widget’s reference page; the group comparison’s opens on IL-6.</li>
+        <li>Save it as below, turn the network off, and open the file.</li>
+      </ol>
+    </div>
+  </div>
+  <pre>library(gsm.bio)
+w &lt;- Widget_BiomarkerScreen(
+  Synthetic_Results, Synthetic_Participants,
+  lSettings = list(visit = "Week 4", value_type = "change",
+                   group_by = "ARM", baseline_visits = "Baseline")
+)
+htmlwidgets::saveWidget(w, "screen.html", selfcontained = TRUE)</pre>
+</section>
+
+<!-- ============================================================ 04 -->
+<div class="cut"><span>04 <em>· where it runs</em></span></div><section id="where">
+  <div class="hd"><h2>Where it runs</h2></div>
+  <ul class="list">
+    <li>In any browser page that loads bio.viz beside safety.viz. Nothing is bundled into bio.viz: safety.viz, and R when it is used, are loaded beside it.</li>
+    <li>With R in the browser, fetched from webR’s public host by default, or from wherever a deployment serves its own copy.</li>
+    <li>With no R at all, from answers worked out ahead of time and stored with the page, which is how every gsm.bio widget works.</li>
+    <li>From R, as an htmlwidget: in the viewer, in an R Markdown document, or saved as one file.</li>
+    <li>With neither R nor stored answers, a chart still draws, and says where a statistic would be that statistics are unavailable.</li>
+  </ul>
+
+  <div class="note">
+    <p class="lbl">Built on safety.viz’s kit</p>
+    <p style="margin:0">The charts look and behave like safety.viz’s because they are built from safety.viz’s own shared parts: the control sidebar, the filters, the record listing, the participant profile rail and its copy of Chart.js. safety.viz now hands these out as one export, its kit, instead of a second copy drifting in bio.viz. <a href="https://jwildfire.github.io/obot.roadmap/reports/safety-viz-kit-2026-10-03/">The kit, explained in one page</a>.</p>
+  </div>
+
+  <p class="what" style="font-size:15.5px">bio.viz also lists its four charts in safety.viz’s chart-list format, published as <a href="https://jwildfire.github.io/bio.viz/dev/portfolio.json">portfolio.json</a>, so safety.viz’s demo app can offer them in a Biomarkers group on a study’s own files. That hosting is its own requirement, still being built.</p>
+</section>
+
+<div class="cut"><span>before you approve</span></div><section id="close">
+  <div class="close">
+    <div>
+      <h3>What is not in this release</h3>
+      <ul>
+        <li>The biomarker charts inside safety.viz’s demo app: the chart list is here, the hosting is not.</li>
+        <li>A survival chart. <code>Analyze_Survival</code> and a screen by hazard ratio exist in R only; the screen chart offers a difference or a correlation.</li>
+        <li>A safety.viz bundle with the kit taken from gsm.safety. Until it has one, each widget carries a copy of the safety.viz bundle bio.viz uses, recorded as a stand-in.</li>
+        <li>The released bio.viz site: only the dev build is published until the tag is cut.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Where to look further</h3>
+      <ul>
+        <li>The release notes as they will publish: <a href="https://github.com/jwildfire/bio.viz/blob/dev/NEWS.md">bio.viz</a> and <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md">gsm.bio</a>.</li>
+        <li>The <a href="https://jwildfire.github.io/bio.viz/dev/gallery/">bio.viz gallery</a>: each chart’s evidence page traces its requirements to named tests, and its API reference documents every setting.</li>
+        <li><a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html">The design for the biomarker charts</a>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Captures taken 2026-10-03 with Playwright in headless Chromium against the live dev deploys, running real webR in the browser: bio.viz <code>dev</code> at 29ac722 and gsm.bio <code>dev</code> at 8720f73, which is everything v0.1.0 contains. Every number on this page was read from the page that shows it at capture time, or from gsm.bio in desktop R; the README records which. Requirements: R in the browser, measured (<a href="https://github.com/jwildfire/obot.roadmap/issues/363">#363</a>); gsm.bio’s statistics and the synthetic study (<a href="https://github.com/jwildfire/obot.roadmap/issues/364">#364</a>); the group comparison chart (<a href="https://github.com/jwildfire/obot.roadmap/issues/355">#355</a>) and its tests and widget (<a href="https://github.com/jwildfire/obot.roadmap/issues/356">#356</a>); the association scatter and correlation matrix (<a href="https://github.com/jwildfire/obot.roadmap/issues/357">#357</a>); the biomarker screen (<a href="https://github.com/jwildfire/obot.roadmap/issues/358">#358</a>); and safety.viz’s shared parts opened to a second library (<a href="https://github.com/jwildfire/obot.roadmap/issues/354">#354</a>). The chart list for the demo app belongs to the hosting requirement (<a href="https://github.com/jwildfire/obot.roadmap/issues/366">#366</a>), which stays open. Objective: biomarker charts with every test computed by R (<a href="https://github.com/jwildfire/obot.roadmap/issues/353">#353</a>).</p>
+  <p style="margin-top:12px">This page was drafted by Claude Code using Opus 5.5.</p>
+</footer>
+
+</div>
+</body>
+</html>
