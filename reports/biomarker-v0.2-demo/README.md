@@ -1,8 +1,8 @@
 # bio.viz and gsm.bio v0.2.0 — annotated demo
 
-The review surface for the second release candidates of the biomarker charts objective (hub [#353](https://github.com/jwildfire/obot.roadmap/issues/353)): bio.viz v0.2.0, the JavaScript chart library, and gsm.bio v0.2.0, the R package. This version of the page is captured before release prep (bio.viz [#75](https://github.com/jwildfire/bio.viz/issues/75), gsm.bio [#44](https://github.com/jwildfire/gsm.bio/issues/44)) has merged: the live bio.viz dev site was built from [`f421a90`](https://github.com/jwildfire/bio.viz/commit/f421a90) (the merge of bio.viz [#73](https://github.com/jwildfire/bio.viz/pull/73), as its own footer says), and gsm.bio `dev` was at [`7200def`](https://github.com/jwildfire/gsm.bio/commit/7200defe111f3535eed579f93c977a5eba0264d5) (the merge of gsm.bio [#42](https://github.com/jwildfire/gsm.bio/pull/42)), version `0.1.0.9000`. So every footnote in the stills reads "bio.viz 0.1.0 with development changes" or "gsm.bio 0.1.0.9000"; the stills that show a version are re-captured once release prep merges (list below).
+The review surface for the second release candidates of the biomarker charts objective (hub [#353](https://github.com/jwildfire/obot.roadmap/issues/353)): bio.viz v0.2.0, the JavaScript chart library, and gsm.bio v0.2.0, the R package. The bio.viz side is captured at bio.viz's release prep (bio.viz [#75](https://github.com/jwildfire/bio.viz/issues/75), merged as [`8f188bf`](https://github.com/jwildfire/bio.viz/commit/8f188bf), the merge of bio.viz [#76](https://github.com/jwildfire/bio.viz/pull/76)): the live dev site was built from `8f188bf` (its footer says so, and every demo page loads `dist/bio.viz-0.2.0/`), and every chart footnote reads "bio.viz 0.2.0". The gsm.bio side is not yet: gsm.bio's release prep (gsm.bio [#44](https://github.com/jwildfire/gsm.bio/issues/44), PR [#45](https://github.com/jwildfire/gsm.bio/pull/45)) is re-copying bio.viz 0.2.0, so the widget, the batch run and the gallery are still from gsm.bio `dev` at [`7200def`](https://github.com/jwildfire/gsm.bio/commit/7200defe111f3535eed579f93c977a5eba0264d5) (the merge of gsm.bio [#42](https://github.com/jwildfire/gsm.bio/pull/42)), version `0.1.0.9000`, carrying bio.viz from before its release prep. Those three stills, the specifications the batch ran on and the gsm.bio text are re-made once it merges (list below).
 
-The bio.viz dev site vendors safety.viz 1.9.0 and gsm.bio's statistics file from gsm.bio `514cbc3` (sha256 `ca87eee2…`, the same file gsm.bio `7200def` ships at `inst/statistics/statistics.R`).
+The bio.viz dev site vendors safety.viz 1.9.0 and gsm.bio's statistics file from gsm.bio `514cbc3` (the site's footer still calls it "gsm.bio's, version 0.1.0", which is the release that file comes from) (sha256 `ca87eee2…`, the same file gsm.bio `7200def` ships at `inst/statistics/statistics.R`).
 
 Requirements it walks: the cross-tabulation and the cut rule (hub [#359](https://github.com/jwildfire/obot.roadmap/issues/359)), stratified survival and the screen's hazard rows (hub [#360](https://github.com/jwildfire/obot.roadmap/issues/360)), results out of the browser (hub [#361](https://github.com/jwildfire/obot.roadmap/issues/361)) and results out of R (hub [#362](https://github.com/jwildfire/obot.roadmap/issues/362)).
 
@@ -17,10 +17,13 @@ Run in this order, from this folder, with a scratch folder `$S`:
 3. Move the two widget pages alone into `$S/widgets/` (so nothing beside them can be loaded), then `ONLY=5 node capture.mjs . $S`. It opens each widget from disk in a browser context with `offline: true` and records every request other than the page itself (`widgets_network_requests`: none). It reads the CRP RTF table back from the file's cells (`rtf_rows`), and captures the live gsm.bio gallery.
 4. `sips` converts two files to the JPEGs in `media/`: the batch figure `$S/batch/01-stratified-survival-crp.png` → `batch-figure.jpg` (full size), and the downloaded PNG `$S/survival.png` → `downloaded-png.jpg` (resampled to 1,200 wide).
 5. `Rscript desktop-r.R <gsm.bio>/inst/extdata desktop-r.json` — recomputes every number below from the three CSV files with base R and the survival package alone. No gsm.bio function is called; jsonlite only writes the answers. R 4.3.3, survival 3.5.8.
+6. `node check-numbers.mjs` — formats each desktop-R value as the chart prints it and looks for it in the text the live page showed (`capture-numbers.json`): 61 checks, covering the cross-tabulation, both survival views, the screen row opened, all 12 screen rows and their order, and the two CSV downloads. 0 failed at `8f188bf`.
 
 An RTF still was tried and dropped: macOS's text system (`textutil`) and pandoc both misread r2rtf's table rows, and Pages would not export unattended, so the page prints the RTF's cells as a table instead, read back from the file.
 
-Captured 2026-10-04: sections 1–3 from 18:51 UTC, section 4 at 18:45, section 5 at 18:49; widgets and batch made at 18:46 (`captured_at`, the run start of each section).
+Captured 2026-10-04: sections 1–4 (the bio.viz stills) at 20:13 UTC against `8f188bf`; section 5 at 18:49, and the widgets and batch made at 18:46, from gsm.bio `7200def` (`captured_at`, the run start of each section).
+
+History. The first capture (sections 1–3 at 18:51, section 4 at 18:45 UTC) was of the dev site built from `f421a90`, before bio.viz's release prep, and its footnotes read "bio.viz 0.1.0 with development changes". The bio.viz stills were re-captured at `8f188bf`. What changed: the version in each footnote, in the PNG's text chunks (`Software` now `bio.viz 0.2.0`) and in the specification (`bio_viz_version` `0.2.0`), and the PNG's size, 473,153 to 470,205 bytes. Every number in `capture-numbers.json` came out the same, and `check-numbers.mjs` holds them to desktop R. The committed `spec-*.json` are still the ones the batch ran on, written at `f421a90` with `bio_viz_version` `0.1.0`; they are replaced when the batch is run again at gsm.bio's release prep.
 
 ## Every number on the page, and where it came from
 
@@ -57,17 +60,17 @@ Captured 2026-10-04: sections 1–3 from 18:51 UTC, section 4 at 18:45, section 
 
 | File | Shows | Shows a version? |
 |---|---|---|
-| `crosstab.jpg` | Response by CRP cut at its median, R's chi-square, footnotes | yes, bio.viz |
-| `crosstab-listing.jpg` | The 59 participants of one cell listed (page footer text included) | yes, bio.viz, and the site's footer ("version 0.1.0") |
-| `survival.jpg` | Stratified survival at the median | yes, bio.viz |
-| `survival-dragged.jpg` | The cut dragged to 4.34, R's answer for it | yes, bio.viz |
-| `screen-hazard.jpg` | The screen's hazard-ratio rows at Baseline | yes, bio.viz |
-| `screen-hazard-drill.jpg` | The CRP row opened in the survival chart | yes, bio.viz |
-| `footnotes.jpg` | The footnotes and the download buttons | yes, bio.viz |
-| `downloaded-png.jpg` | The PNG the button saved | yes, bio.viz |
-| `widget-survival.jpg` | The saved survival widget, offline | yes, bio.viz and gsm.bio |
-| `gallery.jpg` | The gsm.bio gallery's survival pair | yes, gsm.bio (built in CI on R 4.6.1) |
-| `batch-figure.jpg` | One batch figure | yes, gsm.bio |
+| `crosstab.jpg` | Response by CRP cut at its median, R's chi-square, footnotes | bio.viz 0.2.0, re-captured at `8f188bf` |
+| `crosstab-listing.jpg` | The 59 participants of one cell listed (page footer text included) | bio.viz 0.2.0, re-captured at `8f188bf` |
+| `survival.jpg` | Stratified survival at the median | bio.viz 0.2.0, re-captured at `8f188bf` |
+| `survival-dragged.jpg` | The cut dragged to 4.34, R's answer for it | bio.viz 0.2.0, re-captured at `8f188bf` |
+| `screen-hazard.jpg` | The screen's hazard-ratio rows at Baseline | bio.viz 0.2.0, re-captured at `8f188bf` |
+| `screen-hazard-drill.jpg` | The CRP row opened in the survival chart | bio.viz 0.2.0, re-captured at `8f188bf` |
+| `footnotes.jpg` | The footnotes and the download buttons | bio.viz 0.2.0, re-captured at `8f188bf` |
+| `downloaded-png.jpg` | The PNG the button saved | bio.viz 0.2.0, re-captured at `8f188bf` |
+| `widget-survival.jpg` | The saved survival widget, offline | gsm.bio 0.1.0.9000 and pre-release bio.viz: to re-capture |
+| `gallery.jpg` | The gsm.bio gallery's survival pair | gsm.bio 0.1.0.9000 (built in CI on R 4.6.1): to re-capture |
+| `batch-figure.jpg` | One batch figure | gsm.bio 0.1.0.9000: to re-capture |
 
 The page text quotes "gsm.bio 0.1.0.9000" in the RTF footnote caption and the figure's alt text; those change with the recapture too.
 
