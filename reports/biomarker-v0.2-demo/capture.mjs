@@ -14,7 +14,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 const { chromium } = createRequire(import.meta.url)('playwright');
 
-const BASE = 'https://jwildfire.github.io/bio.viz/dev/';
+// The released site by default; BASE=https://jwildfire.github.io/bio.viz/dev/ for dev.
+const BASE = process.env.BASE || 'https://jwildfire.github.io/bio.viz/';
 const GALLERY = 'https://jwildfire.github.io/gsm.bio/articles/gallery.html';
 const [out, scratch] = process.argv.slice(2);
 const media = path.join(out, 'media');
@@ -48,7 +49,7 @@ const waitR = (page, previous = null) =>
       );
     },
     previous,
-    { timeout: 200000 }
+    { timeout: 400000 }
   );
 const V = '#chart .sv-root:not(.sv-hidden)';
 const statistics = (page) => page.locator(`${V} .bv-statistic`).first().innerText();
