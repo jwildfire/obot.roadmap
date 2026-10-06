@@ -83,8 +83,9 @@ Two maintainer notes that survive from the earlier build:
   page means adding one row there. The deploy asserts every page carries it.
 - The Cost section of the analytics page reads a committed artifact,
   `site/usage/usage.json`, generated locally from @jwildfire's Claude Code transcript
-  store by `python3 scripts/build_usage_data.py`; the site build renders whatever was
-  last committed.
+  store by `python3 scripts/build_usage_data.py`, which merges into the file rather than
+  rebuilding it because the machine deletes old transcripts; the site build renders
+  whatever was last committed ([scripts/usage/README.md](scripts/usage/README.md)).
 
 The nightly roadmap audit and its apply lane, the ideas-triage workflow, the local-only
 guard, the premise-status stamp, the config count and the session-state strip belonged to

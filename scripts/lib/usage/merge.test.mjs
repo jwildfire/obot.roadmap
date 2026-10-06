@@ -90,3 +90,12 @@ test('a baseline alone merges to itself with one local source', () => {
   assert.equal(m.sources[0].id, 'local');
   assert.equal(m.cacheMultipliers.read, 0.1);
 });
+
+test('the cache-read exceptions come from the baseline and are validated', () => {
+  const base = doc({ cacheReadMultipliers: { 'claude-opus-5-5': 0.05 } });
+  assert.deepEqual(validateFragment(base), []);
+  assert.deepEqual(mergeUsage(base, []).cacheReadMultipliers, { 'claude-opus-5-5': 0.05 });
+  assert.deepEqual(mergeUsage(doc(), []).cacheReadMultipliers, {});
+  assert.ok(validateFragment(doc({ cacheReadMultipliers: { 'claude-opus-5-5': 5 } })).some((e) => e.includes('cacheReadMultipliers')));
+  assert.ok(validateFragment(doc({ cacheReadMultipliers: ['x'] })).some((e) => e.includes('cacheReadMultipliers')));
+});

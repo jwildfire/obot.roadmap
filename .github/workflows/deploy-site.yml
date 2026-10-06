@@ -127,6 +127,13 @@ jobs:
       - name: Test the generators' shared rules
         run: node --test scripts/lib/*.test.mjs scripts/lib/collect/*.test.mjs scripts/lib/usage/*.test.mjs
 
+      # The usage aggregator runs on @jwildfire's machine, not here, but its rule
+      # that a rebuild never publishes less than is already published is what
+      # protects the committed history from a pruned transcript store — so it is
+      # tested wherever the site is built.
+      - name: Test the usage aggregator
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+
       # The roadmap page set (requirement #211, design D0018): the queue at
       # roadmap.html, the wire one click behind it, and the catalog carrying the
       # complete record that used to be the front door. One generator, one

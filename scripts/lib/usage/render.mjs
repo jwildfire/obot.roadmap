@@ -11,8 +11,9 @@
 //
 // Cloud sessions publish their own fragment to the session-state branch before
 // their container is reclaimed (scripts/usage/publish_session_usage.sh); the
-// nightly deploy merges whatever is there. The section says which day each store
-// runs through, so a stale one is visible rather than silent.
+// nightly deploy merges whatever is there. The section says which days each store
+// covers and where the record is known to be incomplete (KNOWN_GAPS), so a stale
+// store or a thin month is visible rather than silent.
 //
 // The chart is built client-side from data inlined into the page rather than
 // fetched: it is ~33 kB, and inlining keeps the section working with no network
@@ -66,21 +67,61 @@ const num = (n) => n.toLocaleString('en-US');
 // comment; escaping '<' covers both and keeps the value valid JSON.
 const inlineJson = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
 
-// One sentence on where the data came from and how fresh each store is, so a
-// store that has stopped reporting is visible on the page rather than silent.
-function sourcesNote(sources) {
-  if (!Array.isArray(sources) || !sources.length) return '';
-  const local = sources.find((s) => s.kind === 'local');
-  const cloud = sources.filter((s) => s.kind === 'cloud');
-  const parts = [];
-  if (local) parts.push(`Local sessions through <strong>${esc(local.last ?? '—')}</strong>`);
-  if (cloud.length) {
-    const last = cloud.map((s) => s.last).filter(Boolean).sort().pop();
-    parts.push(`${cloud.length} cloud session${cloud.length === 1 ? '' : 's'} reported, latest <strong>${esc(last ?? '—')}</strong>`);
-  } else {
-    parts.push('no cloud session has reported yet');
+// Stretches where the record is known to be incomplete. These are facts about
+// the two stores, not about the data file, and nothing in the file can show them:
+// a day whose transcripts were deleted looks exactly like a quiet day. They are
+// stated on the page so a low column is not read as a cheap month. Sources and
+// the arithmetic are in scripts/usage/README.md ("What the record does not hold").
+export const KNOWN_GAPS = [
+  {
+    from: '2026-08-20', to: '2026-09-18', label: '20 August to 18 September is a floor',
+    why: 'The nightly refresh was not running, and Claude Code deletes a transcript it has not '
+      + 'touched for 30 days. By the time this stretch was read, on 5 October, only sessions that '
+      + 'had stayed open were left — mostly the two coordinating sessions, which were 16% of the '
+      + 'spend in the last fully recorded week (14 to 18 August). The background sessions they '
+      + 'dispatched are gone. From 10 September the work also moved to cloud sessions, and one '
+      + 'of those has published its usage.',
+  },
+  {
+    from: '2026-09-19', to: '2026-09-30', label: 'Nothing is recorded for 19 to 30 September',
+    why: 'No transcript from those days was on the machine on 5 October and no cloud session '
+      + 'reported. The page cannot tell an idle stretch from an unrecorded one.',
+  },
+];
+
+const dayRange = (first, last) => {
+  if (!first && !last) return '—';
+  return first === last || !first ? esc(last) : `${esc(first)} to ${esc(last)}`;
+};
+
+// What each store covers and where the record is thin — a list, because he reads
+// it on a phone and a store that has stopped reporting has to be findable.
+export function coverageNote(sources, gaps = KNOWN_GAPS) {
+  const items = [];
+  if (Array.isArray(sources) && sources.length) {
+    const local = sources.find((s) => s.kind === 'local');
+    const cloud = sources.filter((s) => s.kind === 'cloud');
+    if (local) {
+      const read = local.generatedAt ? `, last read ${esc(String(local.generatedAt).slice(0, 10))}` : '';
+      items.push(`Local sessions, read on @jwildfire's machine: ${dayRange(local.first, local.last)}${read}.`);
+    }
+    if (cloud.length) {
+      const first = cloud.map((s) => s.first).filter(Boolean).sort()[0];
+      const last = cloud.map((s) => s.last).filter(Boolean).sort().pop();
+      items.push(`Cloud sessions: ${cloud.length} reported, ${dayRange(first, last)}.`);
+    } else {
+      items.push('Cloud sessions: none has reported.');
+    }
   }
-  return `${parts.join('; ')}.`;
+  for (const g of gaps) items.push(`${esc(g.label)}. ${esc(g.why)}`);
+  if (!items.length) return '';
+  return `<div class="uz-coverage">
+<p class="uz-coverage-head">What the record covers</p>
+<ul>
+${items.map((i) => `  <li>${i}</li>`).join('\n')}
+</ul>
+<p class="uz-coverage-foot">Days are UTC. The totals are a floor: usage that was never recorded is not estimated.</p>
+</div>`;
 }
 
 function tile(label, value, sub) {
@@ -127,7 +168,15 @@ ${rows}
 </div>`;
 }
 
-function modelTable(models, mult) {
+// "claude-opus-5-5 ×0.05" for each model whose cache reads are priced below the
+// standard multiplier, so the note above the table matches the arithmetic.
+function readExceptions(readMult) {
+  const rows = Object.entries(readMult ?? {}).filter(([, v]) => typeof v === 'number' && Number.isFinite(v));
+  if (!rows.length) return '';
+  return ` (${rows.map(([m, v]) => `<code>${esc(m)}</code> &times;${v}`).join(', ')})`;
+}
+
+function modelTable(models, mult, readMult) {
   const rows = models.filter((m) => m.calls).map((m) => `  <tr>
     <td><code>${esc(m.model)}</code></td>
     <td class="uz-num">${m.rateIn === null ? '—' : `$${m.rateIn.toFixed(2)} / $${m.rateOut.toFixed(2)}`}</td>
@@ -138,7 +187,7 @@ function modelTable(models, mult) {
     <td class="uz-num">${money(m.cost)}</td>
   </tr>`).join('\n');
   return `<p class="uz-fine">Rates are per million tokens, input / output. Cache traffic is priced off the
-input rate: reads &times;${mult.read}, writes &times;${mult.write5m} (5-minute TTL) or &times;${mult.write1h} (1-hour TTL).
+input rate: reads &times;${mult.read}${readExceptions(readMult)}, writes &times;${mult.write5m} (5-minute TTL) or &times;${mult.write1h} (1-hour TTL).
 <code>&lt;synthetic&gt;</code> messages are generated locally by the CLI — no request, no charge.</p>
 <div class="rm-scroll">
 <table class="rm-table uz-table">
@@ -183,7 +232,9 @@ export function usageSection(data) {
 <p class="rm-note">What this project has cost to build, at list API rates — one column per period,
 one segment per agent, colored by the agent's role. Read from Claude Code transcripts by
 <a href="https://github.com/${HUB}/blob/main/scripts/build_usage_data.py"><code>build_usage_data.py</code></a>;
-data runs through <strong>${esc(t.last ?? '—')}</strong>. ${sourcesNote(data.sources)}</p>
+data runs through <strong>${esc(t.last ?? '—')}</strong>.</p>
+
+${coverageNote(data.sources)}
 
 <div class="uz-tiles">
 ${tiles}
@@ -209,16 +260,18 @@ ${agentTable(data.cells)}
 
 <details class="rm-fold uz-fold">
 <summary>Models and rates</summary>
-${modelTable(data.models, data.cacheMultipliers)}
+${modelTable(data.models, data.cacheMultipliers, data.cacheReadMultipliers)}
 </details>
 
 <p class="uz-fine">One API call is counted once — a response is written to the transcript several times
 (one line per content block, and streaming snapshots inside sub-agent transcripts), so calls are
 deduped by request id keeping the final record. Sub-agent usage is billed to the agent that spawned it.
 Costs are list-price arithmetic over recorded token counts, not a copy of an invoice.
-Local sessions are read on @jwildfire's machine and committed as
+Local sessions are read on @jwildfire's machine and merged into
 <a href="https://github.com/${HUB}/blob/main/site/usage/usage.json"><code>site/usage/usage.json</code></a>
-(nightly, by <code>scripts/usage/refresh_local.sh</code>); cloud sessions publish their own usage to the
+(by <code>scripts/usage/refresh_local.sh</code>) — merged, not rebuilt, because the machine forgets old
+transcripts: a day already published is never replaced by a smaller reading of it.
+Cloud sessions publish their own usage to the
 <a href="https://github.com/${HUB}/tree/session-state/usage/sessions"><code>session-state</code></a> branch
 before their container is reclaimed, and the nightly deploy merges both.</p>
 
