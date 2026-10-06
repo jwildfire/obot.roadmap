@@ -64,6 +64,13 @@ export function validateFragment(frag) {
       }
     });
   }
+  if (frag.cacheReadMultipliers !== undefined) {
+    const m = frag.cacheReadMultipliers;
+    if (!m || typeof m !== 'object' || Array.isArray(m)
+        || Object.entries(m).some(([k, v]) => !isText(k, LIMITS.model) || !isCount(v) || v > 1)) {
+      errors.push('cacheReadMultipliers is not a map of model to a multiplier between 0 and 1');
+    }
+  }
   if (frag.roleLabels !== undefined) {
     if (!frag.roleLabels || typeof frag.roleLabels !== 'object' || Array.isArray(frag.roleLabels)) {
       errors.push('roleLabels is not an object');
@@ -143,6 +150,7 @@ export function mergeUsage(baseline, fragments = []) {
     models: outModels,
     roleLabels,
     cacheMultipliers: baseline.cacheMultipliers ?? {},
+    cacheReadMultipliers: baseline.cacheReadMultipliers ?? {},
     sources,
     totals: {
       input: total('input'), output: total('output'),
