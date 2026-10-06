@@ -7,6 +7,15 @@
 # night's local sessions by morning. Cloud sessions are not here: they report
 # themselves (publish_session_usage.sh) and the deploy merges the two.
 #
+# The aggregator merges into the published file and exits non-zero rather than
+# publish a day smaller than it already is; `set -e` stops this script there, so
+# nothing is committed and the reason is in the log.
+#
+# launchd runs a COPY of this file from ~/.obot/bin (install_local_refresh.sh puts
+# it there): macOS will not let a launchd job read a script under ~/Documents,
+# which is where the checkout lives. So that the copy cannot go stale, it hands
+# over to the version in its own clone once that is up to date.
+#
 # It works in its own clone (~/.obot/usage-refresh by default), never in a working
 # checkout, so a half-edited tree is never committed by accident. Nothing else is
 # written to main: one file, one commit, only when it changed. The commit is
@@ -32,6 +41,13 @@ if [ ! -d "$WORK/.git" ]; then
 fi
 git -C "$WORK" fetch -q origin main
 git -C "$WORK" reset -q --hard origin/main
+
+# Hand over to main's copy of this script if it differs from the one running.
+LATEST="$WORK/scripts/usage/refresh_local.sh"
+if [ -z "${OBOT_USAGE_HANDED_OVER:-}" ] && [ -f "$LATEST" ] && ! cmp -s "$LATEST" "${BASH_SOURCE[0]}"; then
+  log "handing over to $LATEST"
+  OBOT_USAGE_HANDED_OVER=1 exec /bin/bash "$LATEST" "$@"
+fi
 
 # The aggregator leaves the file untouched when only its timestamp would change,
 # so a quiet night makes no commit.
