@@ -6,11 +6,15 @@
 //   3. each of those formatted values is looked for in index.html, so a number
 //      typed on the page that desktop R did not compute fails here.
 //   node check-numbers.mjs
+// A later capture is held the same way by naming its two files, as the
+// re-run on the two candidates is:
+//   node check-numbers.mjs recheck/capture-numbers.json recheck/gsm-bio.json
 import { readFileSync } from 'node:fs';
 const here = (f) => readFileSync(new URL('./' + f, import.meta.url), 'utf8');
-const c = JSON.parse(here('capture-numbers.json'));
+const [captureFile = 'capture-numbers.json', gsmBioFile = 'gsm-bio.json'] = process.argv.slice(2);
+const c = JSON.parse(here(captureFile));
 const r = JSON.parse(here('desktop-r.json'));
-const g = JSON.parse(here('gsm-bio.json'));
+const g = JSON.parse(here(gsmBioFile));
 const page = here('index.html').replace(/<[^>]+>/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
 const sig = (x, d = 4) => Number(Number(x).toPrecision(d)).toString();
 const p3 = (x) => (x < 0.001 ? 'p < 0.001' : 'p = ' + x.toFixed(3));
