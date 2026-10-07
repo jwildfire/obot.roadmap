@@ -1,12 +1,13 @@
 <!--
 NEWS.md is the running release log and the draft of each release's notes
-(obot.agent/skills/rc-release-notes/SKILL.md): newest section first; unreleased
+(obot.agent/skills/release-notes/SKILL.md): newest section first; unreleased
 work accumulates under a vX.Y (Upcoming) heading that loses the suffix when the
 release is cut; the GitHub release publishes from the section verbatim.
 -->
 
 # obot.roadmap v0.5 (Upcoming)
 
+- **Release notes are held to a length** — at most 600 words a section and 70 a feature bullet, with the detail on the release's demo page; the template is safety.viz v1.9.1 and obot.agent's `release-notes` skill has the checker ([developer guidelines](docs/developer-guidelines.md#releases); @jwildfire, 2026-10-06).
 - **The Cost chart counts cloud sessions and refreshes nightly** — the [analytics page](https://jwildfire.github.io/obot.roadmap/analytics/index.html) had stopped on the last day the local usage script was run by hand, and since 2026-09-10 the work runs in cloud containers whose transcripts that script could never see. Each cloud session now publishes its own usage to the `session-state` branch before its container is reclaimed, the nightly deploy merges every fragment with the committed local file, and the local file refreshes itself from a launchd job on @jwildfire's machine. The section says which day each store runs through; cloud sessions are their own role, in green.
 - **The tracker replaces the project board** — [`tracker.html`](https://jwildfire.github.io/obot.roadmap/tracker.html) shows every objective opened to its requirements and their tasks, with status and lifecycle on every row, a sidebar that searches and filters by status, objective, area and milestone and counts what is in each status, and a URL that carries the filter so a view can be sent as a link. The nav is one row of the pages @jwildfire reads — Home, Tracker, Analytics, News; the queue, wire, catalog, objective, decision and status pages still build and are listed on the homepage under Other pages until their retirement is decided.
 - **Release candidates are reviewed by subagents the session spawns itself** — the ultrareview gate is gone, because only a person can launch ultrareview and an unattended session could never pass it (@jwildfire, 2026-10-03). Before a release candidate is marked ready, three read-only reviewers each read the diff, the issues and their definitions of done, one on correctness, one on the definition of done and its proof, one on the program's hard rules; the session verifies each finding, fixes it or answers why it does not apply, and posts the review and its resolution on the pull request as one comment ([developer guidelines → Releases](https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md#releases)).

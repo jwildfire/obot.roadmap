@@ -225,8 +225,19 @@ deployed site:
   user-facing, each linking its hub requirement and implementing PRs — then
   `## Also in this release` for process and housekeeping, then a tests-and-provenance
   line. The section publishes verbatim as the release body when the tag is cut, and the
-  heading loses `(Upcoming)` in the same pass. Altitude exemplar:
-  [safety.viz v1.5.0](https://github.com/jwildfire/safety.viz/releases/tag/v1.5.0).
+  heading loses `(Upcoming)` in the same pass.
+- Release notes are short, and the detail goes on the demo page (@jwildfire, 2026-10-06:
+  "Release notes are way too wordy. … see the latests safety.viz releases notes for a
+  decent template. The details go in the demo page."). A section is at most 600 words,
+  a `## What's new` bullet at most 70, with at most six of them; the only other
+  headings are `## Deprecated` and `## Removed`, when something is. How a feature
+  works, its settings, its edge cases, the before and after for an existing page, and
+  what the review found are the demo page's. The template is
+  [safety.viz v1.9.1](https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md); the
+  procedure and the checker that fails notes over a limit are obot.agent's
+  [`release-notes`](https://github.com/jwildfire/obot.agent/blob/main/skills/release-notes/SKILL.md)
+  skill (`node ~/obot.agent/skills/release-notes/check-notes.mjs NEWS.md`). The review
+  gate's hard-rules reviewer runs it.
 - The demo page, the hard requirement: a self-contained HTML page under this hub's
   `reports/{slug}/`, walking each change with screenshots or short clips and
   try-it-yourself steps against the live surface; its URL above the fold in the PR body
