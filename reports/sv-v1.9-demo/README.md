@@ -60,4 +60,62 @@ Captured 2026-10-03 from 06:39 UTC; `kit.jpg` and both Domains stills re-capture
 
 Media total about 2.4 MB.
 
+## The v1.9.2 note (2026-10-07)
+
+The note `<div class="note" id="v192">` in the page's masthead is the whole demo of the v1.9.2 patch release, linked from the release notes as `#v192`. It is worded for a candidate: v1.9.2 is safety.viz `dev` at [`dfbb4f4`](https://github.com/jwildfire/safety.viz/commit/dfbb4f4f1644e8bd0d42fe006024b9811f2ace92), not yet released. It covers the installer for the demo app (safety.viz [#214](https://github.com/jwildfire/safety.viz/issues/214), PR [#215](https://github.com/jwildfire/safety.viz/pull/215)) and the demo app's biomarker charts rebuilt on bio.viz v0.3.0 and gsm.bio v0.3.0 (hub [#367](https://github.com/jwildfire/obot.roadmap/issues/367); safety.viz [#212](https://github.com/jwildfire/safety.viz/issues/212), PR [#213](https://github.com/jwildfire/safety.viz/pull/213)). No existing still or section was changed.
+
+### How it was made
+
+- `capture-v192.mjs` — Playwright, headless Chromium, real webR, against `https://jwildfire.github.io/safety.viz/dev/demo/`. `PLAYWRIGHT_FROM=<a package.json whose node_modules holds playwright> node capture-v192.mjs <out dir>`; `LOCAL=http://127.0.0.1:8711/` also captures the page the installer serves, and `ONLY=1,2,3` runs some sections. Stills are 1.5× JPEG at 1280 × 800 (the cross-tabulation's is taller, to hold R's line), and 390 × 844 for the phone stills. It writes what it read to `capture-v192-numbers.json` and holds 30 things the note says to the page that shows them; it exits 1 when one fails. All 30 passed.
+- The installer was run for real on macOS 14 with Node 24.14.0 and git 2.39.3, in an empty scratch folder:
+  - `install-demo.mjs` was downloaded from `raw.githubusercontent.com/jwildfire/safety.viz/dev/scripts/install-demo.mjs` (12,371 bytes, byte-identical to `origin/dev`). The same address on `main` answered 404, which is why the note's commands name `dev`.
+  - `node install-demo.mjs --ref dev --no-open --port 8711` cloned `dfbb4f4`, installed, built and served; the page answered 200 about 51 seconds after the command started. The listener was `127.0.0.1:8711` and nothing else. The folder measured 275 MB (`du -sh`): 127 MB `node_modules`, 14 MB `build`.
+  - An interrupt to the installer ended it and the demo, and the address stopped answering. Run again with no `--ref`, it printed "safety.viz 1.9.1 is already in …; using it." and answered within seconds.
+  - With no `--ref` in a fresh folder it cloned `main` (v1.9.1) and stopped with "has no demo command: it came in v1.9.2."; run again over that folder with `--ref dev` it stopped with "already holds safety.viz 1.9.1, and it is used as it is."
+  - The first clone attempt was cut off by the network ("RPC failed; curl 56"); the installer stopped with git's message and left no folder. The second went through.
+- `desktop-r-v192.R` — R 4.3.3, base R alone (it sources nothing from gsm.bio), on `site/data/adsl.csv` and `adbds.csv` of the clone the installer made. `Rscript desktop-r-v192.R <safety.viz checkout> desktop-r-v192.json`. It recomputes the one-way ANOVA of Alanine Aminotransferase by arm at the ten scheduled visits (`anova(lm())`, a participant's first result at the visit, the arm from the subject-level file) and the table of arm by end-of-study status with `chisq.test()` and `fisher.test()`.
+
+### Every number in the note, and where it came from
+
+| Number in the note | Read from (`capture-v192-numbers.json`) | Desktop R (`desktop-r-v192.json`) |
+|---|---|---|
+| Biomarkers 5 of 5, the five charts ready; 18 of 18 charts | `tabs`, `biomarker_charts`, `charts_line`; "18 of 18 charts ready" is in `v192-local.jpg` | — |
+| bio.viz 0.3.0; the footer reads safety.viz 1.9.1 | `bio_viz_version`, `app_version` | — |
+| 28 trend tiles, no statistic, 9 unscheduled visits not drawn, no request to R | `tiles`, `tiles_statistic`, `tiles_hidden_visits`, `r_requests_at_tiles` = 0 | `biomarkers` = 28, `unscheduled_visits` = 9 |
+| Ten visits; "Statistics unavailable" before R | `over_time_before_r`, `over_time_before_r_line` | — |
+| The one-way ANOVA row: p = 0.515, 0.127, 0.005, 0.037, 0.013, 0.380, 0.170, 0.050, 0.517, 0.252, and the number in each arm | `over_time` | `alt_by_visit`: every p-value and count matches |
+| Week 4 alone: Visit "1 of 10"; p = 0.005 (75, 67, 65); the trail and its way back | `one_visit_control`, `one_visit_lines`, `one_visit_trail`, `trail_back_one`, `trail_back_two` | `alt_by_visit["Week 4"]` |
+| Cross-tabulation: 58 and 28, 27 and 45, 25 and 71, total 254; chi-square and Fisher both p < 0.001 (n = 254) | `cross_tab` | `cross_tab`: the same counts; p = 6.7e-08 and 5.6e-08 |
+| Starting R: 13.25 MB in 7 requests, all to webr.r-wasm.org; nothing more afterwards | `r_megabytes`, `r_requests`, `r_hosts`, `r_requests_after_walk` = 7 | — |
+| At 390 px the page does not scroll sideways | `phone` (both scroll widths 390) | — |
+| The Biomarker screen's `init()` sentence | `screen_sentence` | — |
+| The installed demo: 18 of 18, Biomarkers 5 of 5, 28 tiles, asked `127.0.0.1:8711` only | `local` | — |
+| 254 participants; 110 synthetic in the labs file only | the charts' own notes, in `v192-cross-tab.jpg` | `participants` = 254 |
+| 2,239 unit and 385 browser tests; ten behaviours broken on purpose; three review findings | not measured here: safety.viz `NEWS.md` and the two pull requests | — |
+
+### Stills
+
+| File | Shows |
+|---|---|
+| `v192-local.jpg` | The demo app the installer served at `http://127.0.0.1:8711/`, on the Data view |
+| `v192-tiles.jpg` | The Biomarkers tab, 5 of 5, the group comparison on its trend tiles |
+| `v192-over-time.jpg` | Alanine Aminotransferase over time, R's test under each visit |
+| `v192-one-visit.jpg` | Week 4 opened alone, the trail above it |
+| `v192-cross-tab.jpg` | The cross-tabulation with R's chi-square test |
+| `v192-phone-tiles.jpg`, `v192-phone-over-time.jpg` | The tiles and one biomarker over time at 390 px |
+| `v192-screen-note.jpg` | The Biomarker screen's sentence about `init()` (bio.viz [#119](https://github.com/jwildfire/bio.viz/issues/119)) |
+
+The v1.9.2 stills total about 1.1 MB.
+
+### What changes when v1.9.2 is tagged
+
+Every element worded for a candidate carries a `data-flip` attribute in `index.html`:
+
+- `label`, `status`, `links`, `version`, `installer-branch` — the note's label and its "Where it stands" list: say it is released and link the release; drop the footer-version and dev-branch lines.
+- `installer-commands` — the try-it box: the file's address goes from `/dev/` to `/main/`, and `--ref dev` goes.
+- `before-release` — the label and list about keeping `--ref dev`: remove.
+- `transcript` — the run shown used `--ref dev`; keep it as the run it was, or take it again on the release.
+- `app-link` — the demo app's address goes from `/safety.viz/dev/demo/` to `/safety.viz/demo/`, once the released site is checked to read 18 of 18 and bio.viz 0.3.0.
+- `notes-link`, `readme-link` — `blob/dev` becomes `blob/main`, and "as they will publish" goes.
+
 This page and README were drafted by Claude Code using Opus 5.5; the numbers were read by script, not typed from memory.

@@ -126,6 +126,23 @@ footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
   font-size:13.5px;color:var(--mute)}
 footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 
+/* ---------- the v1.9.2 note: a patch release's whole demo, in the masthead ---------- */
+#v192{max-width:900px}
+#v192>p,#v192>ul,#v192>ol{max-width:76ch}
+#v192>p{margin:8px 0 0}
+#v192>p.lbl{margin:0 0 8px}
+#v192>p.sub{margin:22px 0 8px}
+#v192>p.cap{margin-top:8px}
+#v192 h3{font-size:18px;margin:30px 0 0;padding-top:20px;border-top:1px dashed var(--rule2);color:var(--ink)}
+#v192 figure{margin:16px 0 0}
+#v192 figure.small{max-width:252px}
+#v192 figure+ul{margin-top:12px}
+#v192 pre{margin-top:12px}
+#v192 .try{margin:18px 0 0;padding:16px 18px;border:1px solid var(--rule);border-radius:5px;background:var(--paper);max-width:76ch}
+#v192 .try pre{margin:0 0 14px;background:var(--panel)}
+#v192 .phones{margin-top:16px}
+#v192 .phones figure{margin:0}
+
 @media (max-width:900px){
   .toc{grid-template-columns:1fr 1fr}
   .toc a:nth-child(3){border-left:0}
@@ -172,6 +189,213 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
       <li>Press Start R. It reads Starting R…, then R started, and each visit prints R’s one-way ANOVA across the three arms: at Week 4, p = 0.005 for 75, 67 and 65 participants. Desktop R gives the same.</li>
       <li>Open the single-file build with the network off: the same tab draws, there is no Start R, and each line says why statistics are unavailable there.</li>
     </ol>
+  </div>
+
+  <div class="note" id="v192">
+    <!-- FLIP AT RELEASE: every element marked data-flip below is worded for a candidate. -->
+    <p class="lbl" data-flip="label">Patch release v1.9.2: a candidate, not yet released</p>
+    <p>A patch on v1.9.1, and this note is its whole demo. Two things are new. The demo app can be installed and run on your own machine with one script. And the app’s biomarker charts are rebuilt on bio.viz v0.3.0 and gsm.bio v0.3.0, with the cross-tabulation as a fifth. No safety chart changes, and nothing in the library’s API changes.</p>
+
+    <p class="lbl sub">In this note</p>
+    <ul>
+      <li><a href="#v192-install">Run the demo app on your own machine</a>: the commands, what the installer does and touches, and what was tried.</li>
+      <li><a href="#v192-biomarkers">The biomarker charts, rebuilt</a>: pictures, eight steps to try, and the numbers to expect.</li>
+      <li><a href="#v192-not">Not in the release</a>, and <a href="#v192-known">known and not fixed</a>.</li>
+      <li>The v1.9.1 note and the v1.9.0 demo follow: <a href="#v191">the v1.9.1 patch</a>, then <a href="#tab">the Biomarkers tab as v1.9.0 added it</a>.</li>
+    </ul>
+
+    <p class="lbl sub">Where it stands</p>
+    <ul>
+      <li data-flip="status">It is a candidate. Both changes are merged to safety.viz’s dev branch, at <a href="https://github.com/jwildfire/safety.viz/commit/dfbb4f4f1644e8bd0d42fe006024b9811f2ace92">dfbb4f4</a>, and the dev site is built from that commit. The release to the main branch is a separate step that waits for the owner’s review.</li>
+      <li data-flip="links">Where this note sends you to the demo app, it is to <a href="https://jwildfire.github.io/safety.viz/dev/demo/">the demo app on the dev site</a>. <a href="https://jwildfire.github.io/safety.viz/demo/">The released demo app</a> shows v1.9.1 until the release.</li>
+      <li data-flip="version">The candidate’s footer still reads “safety.viz 1.9.1”. Release preparation sets the version to 1.9.2.</li>
+      <li data-flip="installer-branch">The installer’s two commands below each name the dev branch, because the file is not on the main branch yet. Once v1.9.2 is released, neither has to.</li>
+      <li>Captured on 2026-10-07 from the dev site, with real R running in the browser. A script beside this page holds 30 things this note says to the page that shows them, and all 30 held. Desktop R gives the same p-values and counts from the study’s own files.</li>
+    </ul>
+
+    <!-- ============================================================ v1.9.2, 1 -->
+    <h3 id="v192-install">1. Run the demo app on your own machine</h3>
+    <p>One file, <code>scripts/install-demo.mjs</code>, puts the demo app on your own computer. It downloads safety.viz, builds the demo app and opens it in your browser with the pilot study loaded, served to that computer and to nothing else. In a clone you already have, <code>npm run demo</code> does the same. This is the task for a script that installs and runs the demo app (<a href="https://github.com/jwildfire/safety.viz/issues/214">safety.viz#214</a>), merged by its pull request (<a href="https://github.com/jwildfire/safety.viz/pull/215">safety.viz#215</a>).</p>
+
+    <figure>
+      <div class="frame"><img src="media/v192-local.jpg" alt="The demo app served from this machine by the installer, on its Data view: the Pilot study chosen, four files loaded, the step Open a chart reading 18 of 18 charts ready, and the tabs reading Labs and vitals 9 of 9, ECG 1 of 1, Adverse events 3 of 3 and Biomarkers 5 of 5." loading="lazy" width="1920" height="1200"></div>
+      <p class="cap">The demo app as the installer served it on a Mac for this page, at <code>http://127.0.0.1:8711/</code>, on the Data view: the pilot study’s four files loaded, 18 of 18 charts ready, Biomarkers 5 of 5. To load and to open the Biomarkers tab, the page asked that address for everything and no other host for anything.</p>
+    </figure>
+
+<pre data-flip="transcript"><code>$ node install-demo.mjs --ref dev --no-open --port 8711
+Downloading safety.viz (dev) into /…/safety.viz…
+Cloning into '/…/safety.viz'...
+Installing what it needs to build (this can take a minute)…
+
+added 129 packages in 1s
+Starting the demo…
+Building the demo app…
+
+The safety.viz demo app is running at http://127.0.0.1:8711/
+It answers this computer only. Files you load are read in your browser.
+Press Ctrl+C to stop it.</code></pre>
+    <p class="cap">What the installer printed on that run, with the folder’s path shortened. The browser was left closed and the port named so that a script could open the page and take the picture above.</p>
+
+    <div class="try" data-flip="installer-commands">
+      <p class="lbl">Try it, on the candidate</p>
+<pre><code>curl -fsSLO https://raw.githubusercontent.com/jwildfire/safety.viz/dev/scripts/install-demo.mjs
+node install-demo.mjs --ref dev</code></pre>
+      <ol>
+        <li>Check that you have Node.js 22 or later and git: <code>node --version</code> and <code>git --version</code>.</li>
+        <li>In a folder of your choice, run the two lines above. In Windows PowerShell write <code>curl.exe</code> in place of <code>curl</code>.</li>
+        <li>Wait for the line “The safety.viz demo app is running at http://127.0.0.1:8642/”. Your browser opens at that address. Here it took under a minute.</li>
+        <li>Read the tabs: Biomarkers 5 of 5. Click Data: “18 of 18 charts ready”, on the Pilot study.</li>
+        <li>Press Ctrl+C in the terminal. The demo stops, and the address no longer answers.</li>
+        <li>Run <code>node install-demo.mjs</code> again, or <code>cd safety.viz</code> and <code>npm run demo</code>. It starts in a few seconds, with nothing downloaded or installed a second time.</li>
+      </ol>
+    </div>
+
+    <p class="lbl sub" data-flip="before-release">Before the release, keep <code>--ref dev</code></p>
+    <ul data-flip="before-release">
+      <li>Left out, the installer downloads the latest release, v1.9.1, which has no demo command, and stops with “safety.viz 1.9.1, in /…/safety.viz, has no demo command: it came in v1.9.2.”</li>
+      <li>That download of v1.9.1 stays in the <code>safety.viz</code> folder, and an install is never moved to another release. Run it again into another folder: <code>node install-demo.mjs --ref dev --dir safety.viz-dev</code>.</li>
+      <li>Both were run for this page, and the installer said what the two lines above say.</li>
+    </ul>
+
+    <p class="lbl sub">What it does, in order</p>
+    <ol>
+      <li>It checks before it changes anything. Node.js 22 or later, git and npm must be there, and the folder it installs into must be absent, empty or already a safety.viz clone. If not, it says what it found and where to get what is missing, and stops with “Nothing was changed.”</li>
+      <li>It downloads one release with git, without its history, into <code>./safety.viz</code>. With no <code>--ref</code> that is the main branch, which holds the latest release.</li>
+      <li>It installs the tools the release’s lock file names, with <code>npm ci</code>, inside that folder.</li>
+      <li>It builds the demo app into <code>build/demo</code> inside that folder: the page, the app, the single-file build, every demo study, the typefaces, bio.viz’s bundle and gsm.bio’s statistics file.</li>
+      <li>It serves that folder at <code>http://127.0.0.1:8642/</code>, or at the next free port if that one is busy, prints the address and opens it in your browser.</li>
+    </ol>
+
+    <p class="lbl sub">What it needs</p>
+    <ul>
+      <li>Node.js 22 or later, which brings npm, and git.</li>
+      <li>A network connection, for the download from GitHub and the tools from npm.</li>
+      <li>About 275 MB of disk. Measured on the run above: 127 MB of build tools, 14 MB of built demo, and the rest the release’s own files.</li>
+      <li>That is the cost of building from source. A demo already built and attached to the release would need no build tools and no git, and is not in this release.</li>
+    </ul>
+
+    <p class="lbl sub">What it touches on your machine</p>
+    <ul>
+      <li>One folder: <code>safety.viz</code> in the folder you ran it from, or the one you name with <code>--dir</code>. The download, the tools and the built demo are all inside it.</li>
+      <li>npm’s own cache of downloads in your home folder, as any npm install does.</li>
+      <li>One port on 127.0.0.1 while it runs.</li>
+      <li>Your browser, which it opens at the address unless you pass <code>--no-open</code>.</li>
+      <li>Nothing else. It installs nothing outside that folder and changes no setting, so the folder is the whole install.</li>
+    </ul>
+
+    <p class="lbl sub">Who can reach the page</p>
+    <ul>
+      <li>The server listens on 127.0.0.1 only, so no other computer can open the page.</li>
+      <li>It refuses a request that names any host but 127.0.0.1 or localhost, so a page on another site cannot read the demo through your browser.</li>
+      <li>It only reads. It gives no file from outside the built demo’s folder, and it accepts nothing sent to it.</li>
+      <li>Files you load are read in your browser. The one thing the page asks the network for is R, from webr.r-wasm.org, and only when you press Start R.</li>
+    </ul>
+
+    <p class="lbl sub">Stopping, starting again, and the options</p>
+    <ul>
+      <li>Ctrl+C stops it. Stopping the installer stops the demo with it and frees the port.</li>
+      <li>Run it again to start it again. A clone already in the folder is used as it is.</li>
+      <li>An install is never moved to another release. Give a later release a folder of its own: <code>--ref v1.9.3 --dir safety.viz-1.9.3</code>.</li>
+      <li><code>--port</code> names the port, <code>--no-open</code> leaves the browser alone, and <code>--help</code> lists every option.</li>
+      <li>If the download is cut off, the installer stops with git’s own message and leaves nothing behind. Run it again. That happened once while this page was made.</li>
+    </ul>
+
+    <p class="lbl sub">What was tried, and what was not</p>
+    <ul>
+      <li>macOS with Node 24: the installer was run end to end from an empty folder, for its pull request and again for this page on 2026-10-07. Stopped with an interrupt, it freed the port. Run again, it started without downloading or installing anything.</li>
+      <li>Linux with Node 22: the test runner. The installer’s tests run the file itself against small made-up releases, with nothing installed from the network. A browser test starts the demo command, reads the address it prints, and holds the page to the pilot study with every chart supported, R starting on request and a clean stop.</li>
+      <li>Windows: written for, and not yet tried. There the installer starts npm through a shell, and the demo opens the browser with <code>cmd /c start</code>.</li>
+      <li>A Node older than 22: the file is written so that an old Node can read it and be told it is too old. It has not been run on one.</li>
+      <li>Ten behaviours were broken on purpose, and each failed its test. Among them: the server answering on every network interface, a path climbing out of the folder, and a release named over an existing install.</li>
+      <li>An independent reviewer read the first version and found three faults, each fixed with a test: a named release was ignored once a clone existed, every run installed again, and stopping the installer alone left the demo running.</li>
+    </ul>
+
+    <!-- ============================================================ v1.9.2, 2 -->
+    <h3 id="v192-biomarkers">2. The biomarker charts, rebuilt on bio.viz v0.3.0 and gsm.bio v0.3.0</h3>
+    <p>In the demo app’s Biomarkers tab, the group comparison opens on a trend tile for every biomarker. A tile opens that biomarker across the visits, with R’s test under each visit once R is started. A visit opens alone, and a trail leads back. The cross-tabulation joins as a fifth biomarker chart. This is the requirement that the group comparison opens on trends over time and drills down to one visit (<a href="https://github.com/jwildfire/obot.roadmap/issues/367">obot.roadmap#367</a>), brought to the app by the task to rebuild it on bio.viz v0.3.0 (<a href="https://github.com/jwildfire/safety.viz/issues/212">safety.viz#212</a>) and its pull request (<a href="https://github.com/jwildfire/safety.viz/pull/213">safety.viz#213</a>).</p>
+
+    <figure>
+      <div class="frame"><img src="media/v192-tiles.jpg" alt="The demo app’s Biomarkers tab, reading 5 of 5, with five charts beneath the tabs: Group comparison, Association scatter, Correlation matrix, Biomarker screen and Cross-tabulation. The group comparison is open on a grid of small tiles, one per biomarker, each with a blue, a green and an orange line from Baseline to Week 26 and its own value range printed beneath. Above the tiles: 9 unscheduled visits not drawn." loading="lazy" width="1920" height="1200"></div>
+      <p class="cap">The Biomarkers tab on the pilot study: 5 of 5, and the group comparison open on 28 trend tiles, a line for each arm through its median at every scheduled visit. No statistic is printed, and R has been asked for nothing. The first line says 9 unscheduled visits are not drawn.</p>
+    </figure>
+
+    <figure>
+      <div class="frame"><img src="media/v192-over-time.jpg" alt="Alanine Aminotransferase over time after R was started: box plots for the three arms at ten visits from Baseline to Week 26, and beneath them a table with the number in each arm at each visit and a row headed One-way ANOVA reading p = 0.515, 0.127, 0.005, 0.037, 0.013, 0.380, 0.170, 0.050, 0.517 and 0.252. Above the chart a trail reads All biomarkers, then Alanine Aminotransferase over time." loading="lazy" width="1920" height="1200"></div>
+      <p class="cap">The Alanine Aminotransferase tile, opened, after Start R: ten visits, the number in each arm, and R’s one-way ANOVA under each visit. The trail above the chart leads back to the tiles.</p>
+    </figure>
+
+    <figure>
+      <div class="frame"><img src="media/v192-one-visit.jpg" alt="Week 4 opened alone: the trail reads All biomarkers, Alanine Aminotransferase over time, Week 4; the Visit control reads 1 of 10; three boxes for Placebo n = 75, Xanomeline High Dose n = 67 and Xanomeline Low Dose n = 65; and under the chart, One-way analysis of variance: p = 0.005." loading="lazy" width="1920" height="1200"></div>
+      <p class="cap">Week 4, clicked under the picture, opens alone. The Visit control reads “1 of 10”, and the line under the chart is R’s test of that one visit.</p>
+    </figure>
+
+    <figure>
+      <div class="frame"><img src="media/v192-cross-tab.jpg" alt="The cross-tabulation in the app: a table of ARM by EOSSTT with counts 58 and 28 for Placebo, 27 and 45 for Xanomeline High Dose, 25 and 71 for Xanomeline Low Dose, total 254, each with its percentage of the row; the same table as stacked bars; and beneath, Pearson's Chi-squared test: p &lt; 0.001 (n = 254)." loading="lazy" width="1920" height="1412"></div>
+      <p class="cap">The cross-tabulation, the fifth biomarker chart: treatment arm by end-of-study status, the same table as bars, and R’s chi-square test beneath.</p>
+    </figure>
+
+    <div class="phones">
+      <figure>
+        <div class="frame"><img src="media/v192-phone-tiles.jpg" alt="The trend tiles at 390 pixels wide: two tiles to a row, beneath the note about unscheduled visits and the key to the three arms." loading="lazy" width="585" height="1266"></div>
+        <p class="cap">At 390 px: the tiles, two to a row.</p>
+      </figure>
+      <figure>
+        <div class="frame"><img src="media/v192-phone-over-time.jpg" alt="Alanine Aminotransferase over time at 390 pixels wide after R started: the box plots and the table beneath them, showing Baseline to Week 8 with the later visits off to the right, and the row of p-values starting 0.515, 0.127, 0.005." loading="lazy" width="585" height="1266"></div>
+        <p class="cap">At 390 px: one biomarker over time. The picture and its table scroll sideways inside their own box, and the page does not.</p>
+      </figure>
+    </div>
+
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" data-flip="app-link" href="https://jwildfire.github.io/safety.viz/dev/demo/"><span>Open the demo app on the dev site</span></a>
+      <ol>
+        <li>Click the Biomarkers tab. It reads 5 of 5: Group comparison, Association scatter, Correlation matrix, Biomarker screen, Cross-tabulation. On the Data view the app counts 18 of 18 charts.</li>
+        <li>The group comparison opens on 28 trend tiles, a line for each arm and no statistic. The first line says 9 unscheduled visits are not drawn.</li>
+        <li>Click the Alanine Aminotransferase tile. Ten visits are drawn, Baseline to Week 26, and the One-way ANOVA row reads “Statistics unavailable”.</li>
+        <li>Press Start R, at the left beneath the tabs. It downloads about 13 MB, once, from webr.r-wasm.org, and the study’s data stays in the browser. The row then reads p = 0.515, 0.127, 0.005, 0.037, 0.013, 0.380, 0.170, 0.050, 0.517, 0.252.</li>
+        <li>Click Week 4 under the picture. That visit opens alone: the Visit control reads “1 of 10”, and the line reads “One-way analysis of variance: p = 0.005 (Placebo n = 75, Xanomeline High Dose n = 67, Xanomeline Low Dose n = 65)”.</li>
+        <li>Read the trail above the chart: All biomarkers › Alanine Aminotransferase over time › Week 4. Click a step to go back to it.</li>
+        <li>Open Cross-tabulation. ARM by EOSSTT counts 58 and 28, 27 and 45, 25 and 71, total 254, and the line reads “Pearson's Chi-squared test: p &lt; 0.001 (n = 254)”.</li>
+        <li>Under Test, choose Fisher’s exact test. The line reads “Fisher's Exact Test for Count Data: p &lt; 0.001 (n = 254)”.</li>
+      </ol>
+    </div>
+
+    <p class="lbl sub">The detail the release notes leave out</p>
+    <ul>
+      <li>The copies: bio.viz’s bundle and gsm.bio’s statistics file are copied from their release tags, <a href="https://github.com/jwildfire/bio.viz/releases/tag/v0.3.0">bio.viz v0.3.0</a> and <a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0">gsm.bio v0.3.0</a>. The test runner holds each copy to its tag, byte for byte.</li>
+      <li>How the three levels work, their settings and what R is asked at each are on <a href="https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.3-demo/">the demo page of those two releases</a>: <a href="https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.3-demo/#tiles">the tiles</a>, <a href="https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.3-demo/#overtime">one biomarker over time</a> and <a href="https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.3-demo/#onevisit">one visit</a>. This note shows them only as the demo app draws them on the pilot study.</li>
+      <li>Before R: the tiles ask R for nothing. Over time, the test row reads “Statistics unavailable” and the line under the chart says what starting R costs. No request had gone to R’s host before the press.</li>
+      <li>Starting R, measured here: 13.25 MB in 7 requests, all to webr.r-wasm.org, once. Every biomarker chart then uses that one R. Opening the visit, the cross-tabulation and the biomarker screen fetched nothing more from it.</li>
+      <li>The numbers: desktop R, with base R alone on the study’s own files, gives the same ten p-values with the same number in each arm, and the same table and both tests for the cross-tabulation. The script and its answers are beside this page.</li>
+      <li>The ten p-values are also the ones in the table in <a href="#r">section 02</a> below. The test and the data have not changed, only where the chart prints them.</li>
+      <li>Who is counted: the subject-level file has 254 participants. The labs file also carries 110 synthetic participants who are in no other file, and the biomarker charts leave them out and say so.</li>
+      <li>The single-file build, opened with the network off, draws every chart and each level of the group comparison and sends no request. A browser test holds it to that.</li>
+      <li>What did not move: no safety chart’s source, bundle, demo page or data is in the change. The app’s count goes from 17 charts to 18, and from four biomarker charts to five.</li>
+      <li>Tests: 2,239 unit tests and 385 browser tests pass. One browser test walks this tab with real R started in the browser and holds each of R’s answers to desktop R’s on the same rows.</li>
+    </ul>
+
+    <!-- ============================================================ v1.9.2, the rest -->
+    <h3 id="v192-not">Not in the release</h3>
+    <ul>
+      <li>The group comparison’s difference grid, a second opening view, is paused and has a requirement of its own (<a href="https://github.com/jwildfire/obot.roadmap/issues/371">obot.roadmap#371</a>). bio.viz v0.3.0 does not ship it, so the app does not draw it and asks R for nothing for it.</li>
+    </ul>
+
+    <h3 id="v192-known">Known, and not fixed</h3>
+    <figure class="small">
+      <div class="frame"><img src="media/v192-screen-note.jpg" alt="The Biomarker screen’s Compare control in the app, set to Difference between two groups, with a sentence beneath it: A hazard ratio needs an outcomes table: give outcomes, one row per participant and endpoint, with a time and a flag, as init({ results, participants, outcomes })." loading="lazy" width="377" height="252"></div>
+    </figure>
+    <ul>
+      <li>On the Biomarker screen, under Compare, the chart prints a sentence telling the reader to give an outcomes table by calling <code>init()</code>. A reader of the app cannot do that. It has been bio.viz’s wording since v0.2.0, and rewording it is in the backlog (<a href="https://github.com/jwildfire/bio.viz/issues/119">bio.viz#119</a>).</li>
+      <li>On a phone, the row labels of the table over time break inside a word, as the second phone picture above shows. It was seen while this page was captured and has no issue yet.</li>
+      <li>The installer has not been tried on Windows, as said above.</li>
+    </ul>
+
+    <p class="lbl sub">Where to look further</p>
+    <ul>
+      <li data-flip="notes-link"><a href="https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md">The release notes</a>, as they will publish.</li>
+      <li data-flip="readme-link">The README’s section on <a href="https://github.com/jwildfire/safety.viz/blob/dev/README.md#run-the-demo-app-on-your-own-machine">running the demo app on your own machine</a>, and <a href="https://github.com/jwildfire/safety.viz/blob/dev/scripts/install-demo.mjs">the installer itself</a>, one file to read before you run it.</li>
+      <li><a href="https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.3-demo/">The demo of bio.viz v0.3.0 and gsm.bio v0.3.0</a>, for the three levels in full.</li>
+    </ul>
   </div>
 
   <div class="note" id="v191">
