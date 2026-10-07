@@ -91,7 +91,7 @@ The note `<div class="note" id="v192">` in the page's masthead is the whole demo
 | The Biomarker screen's `init()` sentence | `screen_sentence` | — |
 | The installed demo: 18 of 18, Biomarkers 5 of 5, 28 tiles, asked `127.0.0.1:8711` only | `local` | — |
 | 254 participants; 110 synthetic in the labs file only | the charts' own notes, in `v192-cross-tab.jpg` | `participants` = 254 |
-| 2,239 unit and 385 browser tests; ten behaviours broken on purpose; three review findings | not measured here: safety.viz `NEWS.md` and the two pull requests | — |
+| 2,242 unit and 385 browser tests; ten behaviours broken on purpose; three review findings | not measured here: safety.viz `NEWS.md` and the two pull requests | — |
 
 ### Stills
 
