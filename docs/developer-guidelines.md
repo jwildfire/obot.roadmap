@@ -92,8 +92,13 @@ after its PR merges; never remove another session's.
   that wrote it. No secrets, no tokens, no generated bundles unless the repository
   commits them by design.
 - The actor is the connected GitHub account of the session — in the cloud, the account
-  that authorized Claude Code; locally, the person's own credentials. There is no bot
-  identity.
+  that authorized Claude Code; locally, the person's own credentials. One exception,
+  kept by @jwildfire on 2026-10-07: a session on his machine may author issues,
+  commits and pull requests as obotclaw[bot], with a token from
+  [`scripts/obot-app-token`](../scripts/obot-app-token), and a release-candidate pull
+  request opened there must be — GitHub does not let him approve a pull request he
+  authored, and the release ruleset requires his approval. Nothing else of the bot
+  identity remains: no hook, no wrapper, no policy file.
 
 ## Pull requests
 

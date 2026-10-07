@@ -76,8 +76,8 @@ ${sub}${inner}
 const empty = (text) => `<p class="rm-empty">${text}</p>`;
 
 // ---------------------------------------------------------------- todo
-// What is waiting on @jwildfire, always first. Per the RC framework
-// (obot.agent docs/rc-framework.md) he reviews exactly two kinds of thing:
+// What is waiting on @jwildfire, always first. Per the release rules
+// (docs/developer-guidelines.md, Releases) he reviews exactly two kinds of thing:
 // release candidates — review-requested PRs, plus draft releases where the
 // integration branch IS the release branch — and decision artifacts, each
 // answered in its hub Q&A thread. Rows carry every view tag so no filter can
@@ -143,7 +143,7 @@ ${decRows.length ? decRows.join('\n') : `  ${empty('No open decisions.')}`}
 
   return section('todo', 'Todo', rcList.length + decRows.length, body, {
     cls: 'rm-todo',
-    note: `Everything waiting on @jwildfire, per the <a href="https://github.com/jwildfire/obot.agent/blob/main/docs/rc-framework.md">RC framework</a>: ` +
+    note: `Everything waiting on @jwildfire, per the <a href="https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md#releases">release rules</a>: ` +
       `release candidates (review-requested PRs and draft releases) and <a href="reports/decisions/">decision artifacts</a>, ` +
       `each decided in its <a href="https://github.com/${HUB}/discussions/categories/q-a">Q&amp;A thread</a>. ` +
       `The PR list re-checks GitHub on page load; drafts and decisions are as of the last deploy.`,
