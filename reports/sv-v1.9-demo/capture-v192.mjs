@@ -257,7 +257,7 @@ if (ONLY.includes('1')) {
   const box = await control.boundingBox();
   const note = await page.locator('.sva-chart .bv-control-note').first().boundingBox();
   const bottom = Math.max(box.y + box.height, note ? note.y + note.height : 0);
-  await shot(page, 'v192-screen-note', { clip: { x: box.x - 16, y: box.y - 8, width: box.width + 32, height: bottom - box.y + 16 } });
+  await shot(page, 'v192-screen-note', { clip: { x: box.x - 16, y: box.y - 8, width: box.width + 32, height: bottom - box.y + 10 } });
   numbers.r_requests_after_walk = m.requests;
   await context.close();
   save();
