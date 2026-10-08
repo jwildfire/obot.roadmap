@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz v1.10.0 — annotated demo</title>
+<meta name="description" content="What safety.viz v1.10.0 adds, shown on the live site: an RBQM tab in the demo app that scores a study's sites with gsm's own metrics, run by R in your browser on the study already loaded, with steps to try and the numbers to expect.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#7b8089;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;        /* interactive: links, steps */
+  --bronze:#6c3270;      /* accent: the demo app's plum */
+  --go:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32);overflow-wrap:anywhere}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono);font-size:.92em}
+code{overflow-wrap:anywhere}
+pre code{overflow-wrap:normal}
+
+/* ---------- masthead ---------- */
+.mast{padding:56px 0 30px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:64ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:22px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+/* ---------- callouts ---------- */
+.note{margin:22px 0 0;padding:14px 18px;border:1px solid var(--rule);border-left:3px solid var(--bronze);border-radius:5px;background:var(--panel);font-size:15px;color:var(--ink2);max-width:78ch}
+.note .lbl{margin-bottom:8px}
+.note ol,.note ul{margin:0;padding-left:20px}
+.note li+li{margin-top:7px}
+.list{margin:14px 0 0;padding-left:20px;max-width:74ch;font-size:15.5px;color:var(--ink2)}
+.list li+li{margin-top:7px}
+
+/* ---------- contents ---------- */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+/* ---------- section rule ---------- */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:19px;margin:42px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+/* ---------- figures ---------- */
+figure{margin:20px 0 0}
+.frame{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;
+  background:var(--panel);line-height:0}
+.frame img{display:block;width:100%;height:auto}
+.cap{margin:12px 0 0;font-size:14px;color:var(--mute);max-width:78ch}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.pair figure{margin:0}
+.pair .cap{margin-top:10px}
+.phones{display:grid;grid-template-columns:repeat(2,minmax(0,300px));gap:20px;margin-top:20px}
+.phones figure{margin:0}
+.side{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;align-items:start;margin-top:20px}
+.side figure{margin:0}
+
+/* ---------- see/try strip ---------- */
+.strip{display:grid;grid-template-columns:1fr 360px;gap:0;margin:24px 0 0;
+  border:1px solid var(--rule);border-radius:5px;background:var(--panel);overflow:hidden}
+.strip>div{padding:20px 22px;min-width:0}
+.strip .why{border-right:1px solid var(--rule)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  margin:0 0 10px}
+.why p{margin:0;font-size:15px;color:var(--ink2);max-width:60ch}
+.why p+p{margin-top:10px}
+.why ul{margin:0;padding-left:18px;font-size:15px;color:var(--ink2)}
+.why li+li{margin-top:6px}
+.try ol{margin:0;padding:0;list-style:none;counter-reset:s}
+.try li{counter-increment:s;position:relative;padding-left:26px;font-size:14px;color:var(--ink2);
+  line-height:1.5}
+.try li+li{margin-top:7px}
+.try li::before{content:counter(s);position:absolute;left:0;top:2px;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  display:grid;place-items:center;font:600 10.5px/1 var(--mono)}
+.golink{display:inline-block;margin:0 0 14px;font:600 14px/1.3 var(--body);border:0}
+.golink span{border-bottom:1px solid rgba(47,111,168,.4)}
+.golink::after{content:" ↗";font-size:12px;color:var(--mute)}
+
+/* ---------- tables and code ---------- */
+.scroll{overflow-x:auto;margin:16px 0 0;max-width:100%}
+table{border-collapse:collapse;font-size:14px;color:var(--ink2);min-width:100%}
+th,td{text-align:left;padding:7px 12px 7px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font:600 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+td.n{font-family:var(--mono);white-space:nowrap}
+pre{margin:16px 0 0;padding:14px 16px;background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  overflow-x:auto;font:13px/1.5 var(--mono);color:var(--ink2);max-width:100%}
+dl.fns{margin:16px 0 0;display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;font-size:15px;color:var(--ink2);max-width:80ch}
+dl.fns dt{font-family:var(--mono);font-size:13.5px;padding-top:2px}
+dl.fns dd{margin:0}
+
+/* ---------- closing ---------- */
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;
+  font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(3){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip .why{border-right:0;border-bottom:1px solid var(--rule)}
+  .close{grid-template-columns:1fr;gap:26px}
+  .side{grid-template-columns:1fr}
+  .side figure:last-child{max-width:300px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .pair{grid-template-columns:1fr}
+  .phones{grid-template-columns:1fr 1fr;gap:12px}
+  .mast{padding-top:36px}
+  dl.fns{grid-template-columns:1fr;gap:2px 0}
+  dl.fns dd{margin-bottom:10px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">safety.viz <span class="dot"></span> release review <span class="dot"></span> 2026-10-08</p>
+  <h1>What <span class="v">v1.10.0</span> adds, annotated</h1>
+  <p class="lede">The demo app gains an RBQM tab. It scores a study’s sites with gsm’s own site metrics, worked out by R in your browser and drawn with gsm.viz’s own charts, on the study the other tabs are already drawing. The tab is Experimental. The histogram loses two deprecated settings, and no other chart changes.</p>
+  <p class="facts">
+    <span><b>3</b> of <b>8</b> metrics on the study the app opens with, at <b>17</b> sites</span>
+    <span><b>8</b> of <b>8</b> on gsm’s raw files, at <b>150</b> sites</span>
+    <span>starting R: about <b>55.2 MB</b>, once</span>
+    <span>safety.viz <b>dev</b> at <a href="https://github.com/jwildfire/safety.viz/commit/0308b53034fd25507a1dbaf93dff2ed45ba00e53">0308b53</a></span>
+  </p>
+
+  <div class="note">
+    <p class="lbl">What to look at</p>
+    <ol>
+      <li>Open the demo app and click the RBQM tab. Nothing else is chosen or loaded. The tab says it will run on the loaded study’s two files, and that they support 3 of 8 metrics.</li>
+      <li>Press Start R. The tab says what R is doing while it starts, then draws a site overview of 17 sites, with a scatter plot and a bar chart for the metric you choose.</li>
+      <li>Choose a metric that did not run. In place of its charts it says which file it needs.</li>
+      <li>On the Data tab choose the RBQM study, then go back to the RBQM tab. R is already running, so all eight metrics draw in a few seconds, at 150 sites.</li>
+    </ol>
+  </div>
+
+  <div class="note">
+    <p class="lbl">Where it stands</p>
+    <ul>
+      <li>This is the review page for a release candidate. Nothing here is released until the owner approves it (<a href="https://github.com/jwildfire/safety.viz/pull/257">the release candidate</a>).</li>
+      <li>Every picture was taken on 2026-10-08 from the dev site, which is built from the commit above, with real R running in the browser.</li>
+      <li>A script beside this page holds 23 things the page says to the live page that shows them, and all 23 held (<a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/sv-v1.10-demo/capture-numbers.json">the numbers it read</a>).</li>
+      <li>The data is public or synthetic: the app’s pilot study is the public CDISC pilot study, and the RBQM study is gsm’s synthetic demo study.</li>
+    </ul>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#study"><span class="ref">01</span><span class="t">The RBQM tab, on the loaded study</span><span class="s">One press, three metrics, 17 sites</span></a>
+  <a href="#raw"><span class="ref">02</span><span class="t">All eight metrics</span><span class="s">gsm’s raw files: the RBQM study, or your own</span></a>
+  <a href="#how"><span class="ref">03</span><span class="t">What R does</span><span class="s">Whose code runs, what it downloads, what stays put</span></a>
+  <a href="#rest"><span class="ref">04</span><span class="t">The rest of the release</span><span class="s">Chart footnotes, and two histogram settings removed</span></a>
+</nav>
+
+<!-- ============================================================ 01 -->
+<div class="cut"><span>01 <em>· the RBQM tab, on the loaded study</em></span></div><section id="study">
+  <div class="hd"><h2>The RBQM tab, on the study you already loaded</h2></div>
+  <p class="what">The tab reads the loaded study’s subject-level and adverse events files, the same two the safety charts read, through the column mapping on the Data tab. There is no second study to load. On the pilot study those two files support three of gsm’s eight site metrics: adverse event rate, serious adverse event rate and study discontinuation rate.</p>
+
+  <figure>
+    <div class="frame"><img src="media/rbqm-before.jpg" alt="The demo app on the pilot study with the RBQM tab open. A Start R button sits beside a sentence saying R will run gsm’s workflows on the loaded study’s adsl.csv and adae.csv and download about 55 MB once. Beneath it, a closed line reads: The loaded study supports 3 of 8 metrics." loading="lazy" width="1920" height="1200"></div>
+    <p class="cap">Before the press. The tab says what it will run on, what starting R downloads and from where, and that the files stay in the browser. Nothing has been asked of R’s addresses yet.</p>
+  </figure>
+
+  <div class="pair">
+    <figure>
+      <div class="frame"><img src="media/rbqm-supports.jpg" alt="The list under the summary line, opened. It says adsl.csv, the Subject-level file, gives Raw_SITE, Raw_STUDCOMP, Raw_STUDY and Raw_SUBJ, and adae.csv, the Adverse events file, gives Raw_AE. Under What they support, three metrics are marked as supported and five say which file they need." loading="lazy" width="1920" height="1200"></div>
+      <p class="cap">Opened, the line lists what each file of the study gives gsm and which metrics that supports. It is worked out from the files’ columns before R starts, and R says the same when it runs.</p>
+    </figure>
+    <figure>
+      <div class="frame"><img src="media/rbqm-starting.jpg" alt="The RBQM tab while R starts. The button is disabled and the sentence reads: Starting R: installing its packages, about 40 MB from repo.r-wasm.org and about 2 MB from this page. This is the longest step." loading="lazy" width="1920" height="1200"></div>
+      <p class="cap">While R starts, the tab says which step it is on and counts the seconds.</p>
+    </figure>
+  </div>
+
+  <figure>
+    <div class="frame"><img src="media/rbqm-pilot.jpg" alt="The RBQM tab after R has run. A sentence says R ran 3 of 8 metrics on the loaded study’s adsl.csv and adae.csv. The site overview table has 17 rows, with columns for enrolled participants, red flags, amber flags and the three metrics. Beneath it, a row of eight metric buttons, three marked ran, and the adverse event rate’s scatter plot and bar chart." loading="lazy" width="1920" height="2175"></div>
+    <p class="cap">After the press: “R ran 3 of 8 metrics on the loaded study’s adsl.csv and adae.csv in 2.7 seconds, 115 seconds after Start R was pressed.” The overview has a row for each of the 17 sites, and site 705 leads it with a red flag for adverse events. Each tick, arrow and number is the row R returned.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What you should see</p>
+      <ul>
+        <li>The RBQM tab reads “not run”, then “3 of 8”.</li>
+        <li>17 sites in the overview, with columns AE, SAE and SDSC.</li>
+        <li>The first row is site 705: 16 enrolled, 1 red flag.</li>
+        <li>A scatter plot and a bar chart under the metric buttons.</li>
+        <li>The line of versions ends: “The metric workflows are gsm.kri 1.7.0’s and the charts gsm.viz 2.4.1’s.”</li>
+      </ul>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/demo/#rbqm"><span>Open the RBQM tab</span></a>
+      <ol>
+        <li>Read the sentence beside Start R, then press it.</li>
+        <li>Wait a minute or two the first time. The sentence says what R is doing.</li>
+        <li>Click a cell in the SDSC column: the charts beneath switch to study discontinuation.</li>
+        <li>Hover a cell to read its score, rate, numerator and denominator.</li>
+      </ol>
+    </div>
+  </div>
+
+  <h3>A metric that could not run says why</h3>
+  <p class="what">Five metrics need records the pilot study does not have: protocol deviations, lab toxicity grades, treatment completion and screening. Each stays in the row of metrics, marked “did not run”, and says which file it needs.</p>
+  <div class="pair">
+    <figure>
+      <div class="frame"><img src="media/rbqm-pilot-sdsc.jpg" alt="The study discontinuation rate chosen: its scatter plot of discontinuations against enrolled participants, and its bar chart of each site’s score." loading="lazy" width="1920" height="1200"></div>
+      <p class="cap">Study discontinuation rate, the third metric the pilot study supports.</p>
+    </figure>
+    <figure>
+      <div class="frame"><img src="media/rbqm-did-not-run.jpg" alt="The screen failure rate chosen. In place of charts a sentence reads: Screen Failure Rate needs Raw_ENROLL.csv, which is not loaded." loading="lazy" width="1920" height="1200"></div>
+      <p class="cap">“Screen Failure Rate needs Raw_ENROLL.csv, which is not loaded.” The sentence is R’s own.</p>
+    </figure>
+  </div>
+
+  <h3>It follows the mapping on the Data tab</h3>
+  <p class="what">R is handed only the columns the metrics need, under the app’s standard names, read through your mapping. So a study with its own column names works once its site, end-of-study day and end-of-study status are mapped. Clear a row of the mapping and R runs the study again at once, and names the column.</p>
+  <figure>
+    <div class="frame"><img src="media/rbqm-not-mapped.jpg" alt="The RBQM tab after the site column’s row of the mapping was cleared. It reads R ran 0 of 8 metrics, and the adverse event rate says it needs the column SITEID, which no column of adsl.csv is mapped to." loading="lazy" width="1920" height="1200"></div>
+    <p class="cap">With the site’s row cleared: “Adverse Event Rate needs the column SITEID, which no column of adsl.csv is mapped to.” The file may hold the column under another name, so the tab says it is not mapped, not that it is missing.</p>
+  </figure>
+
+  <h3>On a phone</h3>
+  <div class="phones">
+    <figure>
+      <div class="frame"><img src="media/phone-overview.jpg" alt="The RBQM tab at phone width after R has run: the sentence, and the site overview table fitted to the screen." loading="lazy" width="585" height="1266"></div>
+      <p class="cap">The overview at 390 pixels wide. Nothing scrolls sideways.</p>
+    </figure>
+    <figure>
+      <div class="frame"><img src="media/phone-charts.jpg" alt="The metric buttons and the adverse event rate’s scatter plot at phone width." loading="lazy" width="585" height="1266"></div>
+      <p class="cap">The metric buttons and a chart, stacked.</p>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================================================ 02 -->
+<div class="cut"><span>02 <em>· all eight metrics</em></span></div><section id="raw">
+  <div class="hd"><h2>All eight metrics, on gsm’s raw files</h2></div>
+  <p class="what">A study that has gsm’s raw files runs every metric. The demo app carries one as a fourth demo study, and the tab takes your own files too. A raw file that is loaded is used as it is; the study’s own files fill in only for a table that is not loaded.</p>
+
+  <figure>
+    <div class="frame"><img src="media/rbqm-study.jpg" alt="The RBQM tab on the RBQM study: R ran 8 of 8 metrics on the 9 loaded files. The site overview has eight metric columns and its first rows are sites named with their investigators." loading="lazy" width="1920" height="1200"></div>
+    <p class="cap">The RBQM study: gsm’s nine raw files for 765 enrolled participants at 150 sites. “R ran 8 of 8 metrics on the 9 loaded files in 4.1 seconds, 106 seconds after Start R was pressed.” Here a site is labelled with its investigator’s name, because these files have one.</p>
+  </figure>
+
+  <figure>
+    <div class="frame"><img src="media/rbqm-own-files.jpg" alt="The RBQM tab after three files were chosen from disk. The list says Raw_SUBJ.csv is Raw_SUBJ, by its name; Raw_AE.csv is Raw_AE, by its name; and site_notes.csv is not recognised. The summary says 3 files loaded, 2 placed in a gsm raw domain, supporting 2 of 8 metrics." loading="lazy" width="1920" height="1200"></div>
+    <p class="cap">Three files chosen from disk: “3 files loaded, 2 placed in a gsm raw domain. They support 2 of 8 metrics.” A file the tab does not recognise is named and stays out of R.</p>
+  </figure>
+
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What you should see</p>
+      <ul>
+        <li>On the RBQM study: “8 of 8”, and 150 sites.</li>
+        <li>Eight metric columns: AE, SAE, PD, IPD, LB, SDSC, TDSC, SF.</li>
+        <li>R is not started again: a study loaded after R is up runs at once.</li>
+        <li>For your own files: each placed in a raw domain by its name or its columns.</li>
+      </ul>
+    </div>
+    <div class="try">
+      <p class="lbl">Try it</p>
+      <a class="golink" href="https://jwildfire.github.io/safety.viz/dev/demo/#data"><span>Open the Data tab</span></a>
+      <ol>
+        <li>Choose “RBQM study” from the study menu.</li>
+        <li>Click the RBQM tab and press Start R, if R is not running yet.</li>
+        <li>To try files of your own, open the line under the sentence and drop gsm raw files there, as CSV. Their column names must be gsm’s.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 03 -->
+<div class="cut"><span>03 <em>· what R does</em></span></div><section id="how">
+  <div class="hd"><h2>What R does, and what stays in the browser</h2></div>
+  <p class="what">R computes every number the tab shows. The app’s JavaScript decides when R is asked, hands R’s tables to gsm.viz and writes the sentences. It computes no rate, score or flag.</p>
+
+  <h3>Whose code runs</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>What</th><th>From</th><th>How it gets here</th></tr></thead>
+    <tbody>
+      <tr><td>R itself</td><td>webR, R 4.6.0</td><td>Downloaded from webr.r-wasm.org when you press Start R</td></tr>
+      <tr><td>The functions that work out each metric</td><td>gsm.core 1.3.1</td><td>Built for R in the browser from its release tag, served beside the app</td></tr>
+      <tr><td>The mapping and reporting workflows, and the engine that runs them</td><td>gsm.mapping 1.1.6, gsm.reporting 1.1.7, workr 1.1.0</td><td>Built from their release tags, served beside the app</td></tr>
+      <tr><td>The eight metric workflows</td><td>gsm.kri 1.7.0</td><td>Its workflow files and one R file are copied from its release tag. The package itself is not installed</td></tr>
+      <tr><td>The charts</td><td>gsm.viz 2.4.1</td><td>Its built bundle, copied from its release tag</td></tr>
+      <tr><td>R’s other packages</td><td>The public index for R in the browser</td><td>Downloaded from repo.r-wasm.org</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <ul class="list">
+    <li>gsm.kri is not in the tab’s list of R’s versions because R cannot report a package it has not installed. The tab now names it in the sentence after that list.</li>
+    <li>The steps gsm.kri’s workflows name (input, transform, analyze, flag, summarize) are gsm.core’s functions. Installing gsm.kri would also bring the packages it uses for tables and reports, which the tab does not need.</li>
+    <li>Every copy is held to its release tag by a check that runs on every change.</li>
+  </ul>
+
+  <h3>How the loaded study becomes gsm’s tables</h3>
+  <p class="what">Five small workflows, in the same format as gsm’s own and run by the same engine in R, make gsm’s raw tables from the app’s standard columns. These are choices, and each can change:</p>
+  <ul class="list">
+    <li>Days on study is the study’s end day.</li>
+    <li>A participant completed the study when the end-of-study status is COMPLETED, and left it when it is DISCONTINUED.</li>
+    <li>Everyone in the subject-level file counts as enrolled.</li>
+    <li>An adverse events row with no term is a participant with no event, and is left out, as the app’s charts leave it out.</li>
+    <li>The pilot study names no investigators, so a site is labelled with its number.</li>
+    <li>The pilot study’s subject-level file gained one column for this, the site. Every other column of it is unchanged.</li>
+  </ul>
+
+  <h3>What it downloads, and what leaves</h3>
+  <ul class="list">
+    <li>On this capture, starting R downloaded 55.2 MB: 13.0 MB of R from webr.r-wasm.org, 40.0 MB of packages from repo.r-wasm.org, and 2.2 MB of gsm’s packages from the page’s own address. The tab says about 55 MB.</li>
+    <li>The first result came 115 seconds after the press on this capture, over a home connection. On the test runner, which has a faster one, it takes 30 to 50 seconds. A later run takes a few seconds, because R is already up.</li>
+    <li>Before the press, nothing is asked of R’s addresses.</li>
+    <li>Your files are never sent. A test watches every request the tab makes on the pilot study and holds each to a read with no body, to three addresses: the page’s own, webr.r-wasm.org and repo.r-wasm.org. No address carries a participant’s ID.</li>
+    <li>The single-file build of the app cannot start R, and its RBQM tab says so.</li>
+  </ul>
+
+  <h3>How the numbers are checked</h3>
+  <ul class="list">
+    <li>R in the browser is held to R on a desktop: all 1,186 site rows of the eight metrics on the RBQM study, and the 51 rows of three metrics on the pilot study, agree to eight decimal places.</li>
+    <li>Every number in the overview table is read back against the row R returned.</li>
+    <li>On the pilot study, R’s totals are counted another way from the files: 1,122 adverse events, 3 of them serious, and 144 of 254 participants who left the study early.</li>
+    <li>The tests and their pictures are on <a href="https://jwildfire.github.io/safety.viz/dev/">the dev site’s evidence pages</a>.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ 04 -->
+<div class="cut"><span>04 <em>· the rest of the release</em></span></div><section id="rest">
+  <div class="hd"><h2>The rest of the release</h2></div>
+
+  <h3>Each chart links to its guide and its evidence</h3>
+  <p class="what">Under every chart in the demo app, a footnote links the chart’s clinical guide, where it has one, and its test evidence. The links open in a new tab, so a study you loaded stays loaded.</p>
+  <figure>
+    <div class="frame"><img src="media/footnote.jpg" alt="The hepatic explorer in the demo app. Beneath the chart a footnote reads: Hepatic Safety Explorer: Clinical guide · Test evidence." loading="lazy" width="1920" height="1200"></div>
+    <p class="cap">“Hepatic Safety Explorer: Clinical guide · Test evidence” Six charts have a clinical guide; every chart has test evidence.</p>
+  </figure>
+
+  <h3>The histogram’s two p-value settings are removed</h3>
+  <p class="what">The v1.9.1 release notes said v1.10.0 would remove <code>test_normality</code> and <code>compare_distributions</code>, and it does. Each put a p-value on the chart that safety.viz worked out in JavaScript with a shortcut. safety.viz now computes no statistical test in JavaScript; a test belongs in R.</p>
+  <figure>
+    <div class="frame"><img src="media/histogram-no-p.jpg" alt="The safety histogram of alanine aminotransferase with a panel for each treatment group beneath it. No p-value or note about a test appears on the main chart or on any panel." loading="lazy" width="1920" height="1200"></div>
+    <p class="cap">The histogram given both removed settings. It draws as it would without them: no p-value on the main chart or on a panel.</p>
+  </figure>
+  <div class="strip">
+    <div class="why">
+      <p class="lbl">What changes for you</p>
+      <ul>
+        <li>Take both settings out of your histogram settings. Nothing in safety.viz replaces them.</li>
+        <li>A chart still given one draws as before, without the p-value.</li>
+        <li>The console says so once for each: “safety.viz histogram: `test_normality` was removed in v1.10.0 and is ignored. safety.viz computes no statistical test in JavaScript: run the test in R.”</li>
+        <li>A chart that never set them is unchanged.</li>
+      </ul>
+    </div>
+    <div class="try">
+      <p class="lbl">Checked on the live page</p>
+      <ol>
+        <li>The script gave the histogram on the dev site both settings, grouped by treatment group.</li>
+        <li>It drew 5 panels and no p-value.</li>
+        <li>The console said each setting was removed, once.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<div class="cut"><span>before you approve</span></div><section id="close">
+  <div class="close">
+    <div>
+      <h3>What is not in this release</h3>
+      <ul>
+        <li>The query, data entry and data change metrics, and the three newer site metrics.</li>
+        <li>Country-level metrics, the time series chart and the report.</li>
+        <li>Mapping the column names of raw files that differ from gsm’s.</li>
+        <li>R in the single file: it loads nothing, so its RBQM tab says it needs R.</li>
+        <li>Investigator names on the pilot study’s sites: the study has none.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Where to look further</h3>
+      <ul>
+        <li><a href="https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md">The release notes</a>, as they will publish.</li>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/demo/#rbqm">The RBQM tab on the dev site</a>.</li>
+        <li>The requirements this release delivers: <a href="https://github.com/jwildfire/obot.roadmap/issues/373">gsm’s packages running in the browser</a>, <a href="https://github.com/jwildfire/obot.roadmap/issues/374">the RBQM tab</a>, and <a href="https://github.com/jwildfire/obot.roadmap/issues/398">the tab running on the loaded study</a>.</li>
+        <li><a href="https://github.com/jwildfire/obot.roadmap/issues/375">The objective, with what comes next</a>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Captures taken 2026-10-08 with Playwright in headless Chromium against the live dev deploy of safety.viz at 0308b53, running real R in the browser. Stills are 1280 by 800 at 1.5 times, and 390 by 844 for the phone. The pilot study is 254 participants from the public CDISC pilot study; the RBQM study is gsm’s synthetic demo study. No real participant appears. How each picture and number was made is in <a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/sv-v1.10-demo/README.md">the README beside this page</a>.</p>
+  <p style="margin-top:12px">This page was drafted by Claude Code using Opus 5.5.</p>
+</footer>
+
+</div>
+</body>
+</html>
