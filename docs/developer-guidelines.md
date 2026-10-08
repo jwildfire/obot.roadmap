@@ -295,8 +295,9 @@ deployed site:
   Repositories with no visual surface still owe a walkthrough of the behaviour change.
 - The release-candidate PR: title `{package} vX.Y.Z-RCn` and nothing else. `n` counts
   candidates put in front of him — `-RC1` first; incremented only when review is
-  re-requested after a `CHANGES_REQUESTED` decision; the same PR retitled, never
-  replaced; reset per version; dropped from the tag. Body, in order:
+  re-requested after a `CHANGES_REQUESTED` decision, or after he picks "Request changes"
+  in the session's approval prompt, which leaves no decision on GitHub; the same PR
+  retitled, never replaced; reset per version; dropped from the tag. Body, in order:
 
   ```markdown
   {One sentence: what this release lets someone do that they could not do before.}
