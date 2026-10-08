@@ -7,7 +7,7 @@
 // member requirements grouped by readiness: `auto` (ready for autonomous
 // implementation) vs `draft` (needs @jwildfire input/steering), with closed
 // members as a Done group. Requires the `marked` package (the deploy workflow
-// runs `npm install --no-save marked`).
+// installs one named version of it).
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { marked } from 'marked';

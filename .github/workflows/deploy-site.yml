@@ -48,6 +48,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.ROADMAP_TOKEN != '' && secrets.ROADMAP_TOKEN || github.token }}
+    # ROADMAP_TOKEN is @jwildfire's personal token, and the line above gives it to
+    # every step. A step that downloads and runs other people's code - npm, R, the
+    # R packages - sets GITHUB_TOKEN back to the workflow's own token, which reads
+    # this repository and nothing else (#382). A new step that installs anything
+    # does the same.
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -79,8 +84,12 @@ jobs:
         with:
           node-version: 20
 
+      # One named version, install scripts off: "whatever is newest today" is how a
+      # bad release of a dependency reaches a build. Raise the version on purpose.
       - name: Install renderer dependency
-        run: npm install --no-save marked
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm install --no-save --ignore-scripts marked@18.1.0
 
       - name: Assemble static content
         run: |
@@ -270,10 +279,14 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
         continue-on-error: true
         timeout-minutes: 5
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - uses: r-lib/actions/setup-r@v2
         continue-on-error: true
         timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           use-public-rspm: true
 
@@ -294,6 +307,8 @@ jobs:
         continue-on-error: true
         timeout-minutes: 15
         uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           working-directory: gh.dash-src
           packages: |
@@ -303,6 +318,8 @@ jobs:
       - name: Install gh.dash
         continue-on-error: true
         timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: R CMD INSTALL --no-docs gh.dash-src
 
       - name: Build package status dashboard
