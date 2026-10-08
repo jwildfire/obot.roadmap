@@ -1,7 +1,7 @@
 // Release identity — the key that says two Todo rows are one release.
 //
-// Since the operational repos ship via `main → stable` RC PRs (obot.agent
-// docs/rc-framework.md), one release exists as two GitHub objects at the same
+// Since the operational repos ship via `main → stable` RC PRs (developer
+// guidelines → Releases), one release exists as two GitHub objects at the same
 // time: the **RC PR** proposing it, and the **draft release** that is its
 // published form waiting to be tagged. The Todo section collected both and
 // listed the release twice — obot.agent v0.4.0 appeared as `obot.agent#99`

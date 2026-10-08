@@ -11,10 +11,14 @@ import { rest } from '../gh.mjs';
 import { REPOS } from '../repos.mjs';
 import { releaseVersion, UNTAGGED } from '../rc.mjs';
 
+const LIST_DRAFTS = false;
+
 async function repoReleases(repo) {
-  // Read with the build's own token, which cannot see draft releases: only a token
-  // with push access can, and the build has not held one since 2026-10-07 (#384).
-  // The draft handling below stays for a caller that does hold one.
+  // GitHub returns draft releases only to a token with push access. The build's
+  // token is @jwildfire's own when ROADMAP_TOKEN is set and the workflow's when it
+  // is not, so whether a draft came back would depend on which one a build held.
+  // Drafts are left out whatever the token can see (below): a release candidate
+  // is a pull request (developer guidelines → Releases), and the Todo list says so.
   const list = (await rest(`/repos/${repo.nameWithOwner}/releases?per_page=30`)) ?? [];
   // Release names are often just "<repo> <tag>" or the tag again — that is noise
   // next to a column already showing both, so only a name that says something
@@ -37,12 +41,12 @@ async function repoReleases(repo) {
     }))
     .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
 
-  // Draft releases are release candidates for repos whose integration branch IS
-  // the release branch (rc-framework: obot.agent, obot.roadmap, demo-301) —
-  // proposed, awaiting @jwildfire's publish. The API only returns drafts when
-  // the token has push access; without it this is simply empty, never an error.
+  // Draft releases were release candidates for repos whose integration branch IS
+  // the release branch, until 2026-10-07. LIST_DRAFTS is the one switch: the
+  // shaping below, and the Todo rows that read it, are kept for the day a draft
+  // release is a thing he reviews again.
   const drafts = list
-    .filter((r) => r.draft)
+    .filter((r) => LIST_DRAFTS && r.draft)
     .map((r) => ({
       repo: repo.nameWithOwner,
       // A draft that has not chosen a tag gets GitHub's `untagged-<hex>`

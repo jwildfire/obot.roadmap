@@ -30,7 +30,7 @@
 # allowed by the standing grant for direct commits of site content.
 #
 #     bash scripts/usage/refresh_local.sh            # once, by hand
-#     bash scripts/usage/install_local_refresh.sh    # nightly at 02:30 via launchd
+#     bash scripts/usage/install_local_refresh.sh    # the nightly job, retired 2026-10-07
 #
 # Environment (optional): OBOT_HUB_URL (clone URL — use the SSH form if that is how
 # this machine authenticates), OBOT_USAGE_WORKDIR (the clone's location).
@@ -62,6 +62,6 @@ fi
 LAST=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["totals"]["last"])' "$WORK/$FILE")
 git -C "$WORK" add "$FILE"
 git -C "$WORK" commit -q -m "usage: local sessions through ${LAST}" \
-  -m "Nightly refresh by scripts/usage/refresh_local.sh on @jwildfire's machine."
+  -m "Refreshed by scripts/usage/refresh_local.sh on @jwildfire's machine."
 git -C "$WORK" push -q origin main
 log "pushed $FILE through $LAST — the site redeploys on this push"

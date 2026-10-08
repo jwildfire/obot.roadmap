@@ -69,7 +69,7 @@ is Ready ([issue contract → Status](issue-contract.md#status)).
 
 | Who | Does | Does not |
 |---|---|---|
-| @jwildfire | owns objective bodies and their links; signs off trees; answers blocked questions; reviews and merges release candidates; applies rulesets and creates cloud environments | review increment PRs; get asked in chat what could be asked on an issue |
+| @jwildfire | owns objective bodies and their links; signs off trees; answers blocked questions; reviews and merges release candidates; applies rulesets | review increment PRs; get asked in chat what could be asked on an issue |
 | A requirement session | one requirement, start to finish; files missing tree nodes and stops for sign-off; works its tasks through PRs; comments on the requirement; reports its tasks' state every turn | edit an objective or requirement body or its links; start a second requirement; merge a release branch |
 | A subagent or Workflow stage | one task, one bounded investigation, or one review dimension on a PR, briefed with its issue and definition of done; returns evidence | act without an issue to be bound to; edit, push or comment when it is a reviewer |
 | The standup routine | reads GitHub nightly and publishes the standup | comment, label, open or close anything |
@@ -138,9 +138,9 @@ request.
 
 ## The standup
 
-A scheduled cloud routine on this repository
-([obot.agent `routines/standup.md`](https://github.com/jwildfire/obot.agent/blob/main/routines/standup.md))
-renders, every night, from GitHub alone. It is not scheduled as of 2026-10-07: the
+The standup is written as a scheduled cloud routine on this repository
+([obot.agent `routines/standup.md`](https://github.com/jwildfire/obot.agent/blob/main/routines/standup.md)),
+rendering every night from GitHub alone. It is not scheduled as of 2026-10-07: the
 published file is still the placeholder of 2026-09-11, and scheduling it is his call. It
 is written to render:
 
