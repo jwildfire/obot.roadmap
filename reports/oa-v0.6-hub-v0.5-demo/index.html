@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>obot.agent v0.6.0 and obot.roadmap v0.5 — annotated demo</title>
+<meta name="description" content="What the two releases change, shown running: sessions that write as the bot, release notes held to a length, a ruleset check that fails when it cannot look, and the tracker and Cost chart.">
+<style>
+:root{
+  --paper:#f7f5f1; --panel:#fffdfa; --ink:#16181b; --ink2:#434850; --mute:#787d86;
+  --rule:#e0dbd1; --rule2:#c5bcab;
+  --blue:#2f6fa8; --bronze:#a95d10; --flag:#b83a2e; --go:#2b7a4b;
+  --term-bg:#1b1d21; --term-fg:#dcd8d0;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1020px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.3)}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code{font-family:var(--mono)}
+p{max-width:72ch}
+
+/* masthead */
+.mast{padding:56px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:66ch;margin:16px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:24px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+/* contents */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:32px 0 0;
+  display:grid;grid-template-columns:repeat(5,1fr)}
+.toc a{display:block;padding:16px 18px 18px;border:0;border-left:1px solid var(--rule)}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+@media (max-width:1000px){.toc{grid-template-columns:repeat(3,1fr)}.toc a:nth-child(4){border-left:0}}
+@media (max-width:860px){.toc{grid-template-columns:repeat(2,1fr)}.toc a:nth-child(odd){border-left:0}}
+@media (max-width:520px){.toc{grid-template-columns:1fr}.toc a{border-left:0;border-top:1px solid var(--rule)}.toc a:first-child{border-top:0}}
+
+/* section rule */
+.cut{position:relative;margin:66px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;
+  font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.prs{font:600 11px/1 var(--mono);color:var(--mute);letter-spacing:.04em}
+.prs a{color:var(--mute);border-bottom-color:rgba(120,125,134,.4)}
+.what{max-width:70ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+h3{font-size:16px;margin:32px 0 0;font-family:var(--display)}
+
+/* terminal frames */
+.term{margin:14px 0 0;background:var(--term-bg);border:1px solid #2c3037;border-radius:6px;overflow:hidden}
+.term .bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#24272c;border-bottom:1px solid #2c3037;
+  font:600 10.5px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:#8a9099}
+.term .bar .lamp{width:8px;height:8px;border-radius:50%;background:#3a3f47}
+.term .bar .who{margin-left:auto;text-transform:none;letter-spacing:0;color:#6e747c;font-weight:500}
+.term pre{margin:0;padding:14px 16px;color:var(--term-fg);font:12.8px/1.7 var(--mono);
+  overflow-x:auto;white-space:pre;tab-size:2}
+.term.before{border-color:#4a3330}
+.term.before .bar{background:#2c211f;color:#c08b83}
+.term.after{border-color:#2f4a38}
+.term.after .bar{background:#1f2c24;color:#84b795}
+.c{color:#868c95}
+.g{color:#8fd39a}.r{color:#f2857a}.y{color:#e6c07b}.b{color:#7fb2dd}.m{color:#c8a0d8}.dim{color:#6e747c}
+.lnk{color:#7fb2dd;text-decoration:underline}
+.esc{color:#5d636b}
+
+/* repro block */
+.repro{margin:16px 0 0;border-left:3px solid var(--rule2);padding:2px 0 2px 16px}
+.repro .k{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.repro pre{margin:9px 0 0;background:var(--panel);border:1px solid var(--rule);border-radius:4px;
+  padding:11px 13px;font:12.6px/1.6 var(--mono);color:var(--ink);overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0 0}
+@media (max-width:820px){.ba{grid-template-columns:1fr}}
+.note{margin:16px 0 0;background:var(--panel);border:1px solid var(--rule);border-left:3px solid var(--bronze);
+  border-radius:4px;padding:14px 16px;font-size:14.5px;color:var(--ink2)}
+.note b{color:var(--ink)}
+ul{max-width:72ch;padding-left:22px}
+li{margin:7px 0}
+.foot{margin:72px 0 0;border-top:1px solid var(--rule);padding:24px 0 64px;font-size:13.5px;color:var(--mute)}
+.foot a{color:var(--mute)}
+
+/* additions for this page */
+.toc{grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);border-width:1px 0}
+.toc a,.toc a:first-child,.toc a:nth-child(odd),.toc a:nth-child(4){border:0;background:var(--paper)}
+@media (max-width:1000px){.toc{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:860px){.toc{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.toc{grid-template-columns:1fr}.toc a{border:0}}
+.shot{margin:16px 0 0;border:1px solid var(--rule2);border-radius:6px;overflow:hidden;background:var(--panel)}
+.shot img{display:block;width:100%;height:auto}
+.facts span{min-width:0}
+.term pre{-webkit-overflow-scrolling:touch}
+.repro pre{overflow-wrap:anywhere}
+@media (max-width:520px){.wrap{padding:0 16px}.mast{padding-top:36px}}
+.note .lbl{display:block;font:600 10.5px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze);margin-bottom:7px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>obot.agent</span><span class="dot"></span><span>obot.roadmap</span><span class="dot"></span><span>Release candidates</span><span class="dot"></span><span>2026-10-07</span></div>
+  <h1>obot.agent <span class="v">v0.6.0</span> and obot.roadmap <span class="v">v0.5</span> — what changed, shown running</h1>
+  <p class="lede">Two releases that go together. One is the skill a session runs; the other is the standards it runs under and the site that reports on it. Most of what is new has no page to look at, so each section pairs the change with real output from this machine and the command that produced it. Where the change is a fix, the old behaviour is captured beside the new one.</p>
+  <div class="facts">
+    <span><b>Releases</b> obot.agent v0.6.0 · obot.roadmap v0.5</span>
+    <span><b>Since</b> v0.5.0 and v0.4 · 2026-09-11</span>
+    <span><b>Tests</b> 11 checker · 135 + 15 hub</span>
+    <span><b>Gate</b> security review, 2026-10-07</span>
+  </div>
+
+  <nav class="toc">
+    <a href="#bot"><span class="ref">01</span><span class="t">Sessions write as the bot</span><span class="s">Locally, and never under @jwildfire's name</span></a>
+    <a href="#notes"><span class="ref">02</span><span class="t">Release notes held to a length</span><span class="s">A skill, and a checker that fails long notes</span></a>
+    <a href="#review"><span class="ref">03</span><span class="t">Three reviewers before he is asked</span><span class="s">The session spawns its own review</span></a>
+    <a href="#author"><span class="ref">04</span><span class="t">Who wrote the comment</span><span class="s">Sign-off and standup read the author</span></a>
+    <a href="#rules"><span class="ref">05</span><span class="t">The ruleset check</span><span class="s">It fails when it could not look</span></a>
+    <a href="#build"><span class="ref">06</span><span class="t">The site build</span><span class="s">No bot key, no personal token for installs</span></a>
+    <a href="#tracker"><span class="ref">07</span><span class="t">The tracker</span><span class="s">In place of the project board</span></a>
+    <a href="#cost"><span class="ref">08</span><span class="t">The Cost chart</span><span class="s">Through October, and what it covers</span></a>
+  </nav>
+</header>
+
+<div class="cut"><span>01 &nbsp;<em>Both releases</em></span></div>
+<section id="bot">
+  <div class="hd">
+    <h2>A session runs locally and writes to GitHub as the bot</h2>
+    <span class="prs">obot.agent <a href="https://github.com/jwildfire/obot.agent/pull/347">#347</a> · hub <a href="https://github.com/jwildfire/obot.roadmap/pull/385">#385</a></span>
+  </div>
+  <p class="what">v0.5.0 moved sessions to the cloud, where a session acts as the account that connected it. That account is @jwildfire's, and it is admin on every repository in the program. On 2026-10-07 he parked cloud sessions: "we can probably just park cloud support for now and i'll just do local here or on the agent laptop". A session now starts from his workspace, on his own machines, and every issue, comment, commit, push, pull request and merge of an increment goes out as obotclaw[bot].</p>
+  <p class="what">What the two releases ship is the description: obot.agent's skill, <code>AGENTS.md</code> and README, and the hub's developer guidelines, ways of working and <code>AGENTS.md</code>. The token and the guard that enforce it are tooling of his workspace and are in no repository, by his choice. The captures below are that guard, so the claim in the documents can be seen holding.</p>
+
+  <h3>A write with no token is refused before it runs</h3>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>the workspace guard<span class="who">obot2 · 2026-10-07</span></div>
+<pre><span class="c">$ gh issue comment 12 -R jwildfire/safety.viz --body hello</span>
+<span class="r">github-write-guard: this is a `gh issue`/`gh pr` write, and with no token set it runs
+as @jwildfire, so GitHub records him doing it.</span>
+
+Write as obotclaw[bot], in the one form that stops when the mint fails:
+
+  <span class="g">T=$(/Users/jwildfire/Documents/obot2/bin/obot-app-token)
+  GH_TOKEN=${T:?} gh &lt;the same args&gt;</span>
+
+<span class="dim">Both lines go in the same Bash call; shell variables do not carry over to the next
+one. If the write has to carry @jwildfire's name, do not run it: give him the command
+in a bash block and he runs it himself.</span></pre>
+  </div>
+  <p class="what" style="margin-top:14px">The form matters. Handed an empty token, <code>gh</code> quietly uses the stored login, so a failed mint used to produce a write under his name that looked like a success. <code>${T:?}</code> stops the command instead.</p>
+
+  <h3>Three things are his alone, with any token</h3>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>the workspace guard<span class="who">with the bot's token set</span></div>
+<pre><span class="c">$ GH_TOKEN=${T:?} gh pr review 9 -R jwildfire/safety.viz --approve</span>
+<span class="r">github-write-guard: this approves a pull request. Approval is @jwildfire's review,
+given on GitHub, and it is the gate on every release branch.</span>
+
+Stop and tell @jwildfire what you wanted to do and why. If he agrees, he runs it
+himself; a session never does, with any token.</pre>
+  </div>
+  <p class="what" style="margin-top:14px">The other two are merging past a ruleset and changing a ruleset or a branch protection. The guard has 53 cases, each a command it must refuse or leave alone:</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>bin/test-guard -v, eight of 53 lines<span class="who">obot2 · 2026-10-07</span></div>
+<pre><span class="g">ok</span>    deny  ambient pr create
+<span class="g">ok</span>    deny  one-line substitution
+<span class="g">ok</span>    deny  approve, as the bot
+<span class="g">ok</span>    deny  ruleset edit
+<span class="g">ok</span>    allow two lines
+<span class="g">ok</span>    allow issue view
+<span class="g">ok</span>    allow prose in a heredoc
+53 cases, 0 failed</pre>
+  </div>
+  <div class="note"><span class="lbl">A seatbelt, not a wall</span>The guard reads shell commands by pattern. It does not see inside a script or a <code>git push</code>, and a session set on getting round it could. The walls are GitHub's: the branch rulesets, and the bot's narrow permissions.</div>
+
+  <div class="repro">
+    <div class="k">See it yourself</div>
+    <pre>Read the Identity section of each AGENTS.md:
+https://github.com/jwildfire/obot.agent/blob/main/AGENTS.md#identity-and-attribution
+https://github.com/jwildfire/obot.roadmap/blob/main/AGENTS.md#identity
+
+On the workspace machine:  /Users/jwildfire/Documents/obot2/bin/test-guard -v
+
+On GitHub: every issue and pull request linked from this page was opened by obotclaw[bot].</pre>
+  </div>
+
+  <h3>What changed in the standards, passage by passage</h3>
+  <ul>
+    <li><a href="https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md">Developer guidelines</a>: an amendment note under the status line; the skills, permissions and hooks bullets under "Setting up a repository"; the first sentence of "Local work: worktrees"; the actor bullet under "Commits", now three bullets.</li>
+    <li><a href="https://github.com/jwildfire/obot.roadmap/blob/main/docs/ways-of-working.md">Ways of working</a>: an amendment note; the "Nothing bespoke" principle, which now names its one exception, the guard; the "Where" column of the phases table; steps 2, 3 and 5 of the loop; the "Sessions" bullets; steering "In the session"; the first sentence of "The standup".</li>
+    <li>obot.agent: the <a href="https://github.com/jwildfire/obot.agent/blob/main/skills/requirement-session/SKILL.md">session skill</a> loses the step in which a cloud session published its own cost before its container was reclaimed, and the <a href="https://github.com/jwildfire/obot.agent/blob/main/docs/cloud-environments.md">cloud page</a> is kept, marked parked, with the two reasons for parking.</li>
+  </ul>
+</section>
+
+<div class="cut"><span>02 &nbsp;<em>obot.agent, and the hub's guidelines</em></span></div>
+<section id="notes">
+  <div class="hd">
+    <h2>Release notes are held to a length</h2>
+    <span class="prs">obot.agent <a href="https://github.com/jwildfire/obot.agent/pull/341">#341</a> · <a href="https://github.com/jwildfire/obot.agent/pull/343">#343</a> · <a href="https://github.com/jwildfire/obot.agent/pull/345">#345</a> · <a href="https://github.com/jwildfire/obot.agent/pull/347">#347</a></span>
+  </div>
+  <p class="what">@jwildfire, 2026-10-06, on two sets of notes that ran to 2,088 and 1,754 words: "Release notes are way too wordy. … The details go in the demo page." The <code>release-notes</code> skill gives the shape, taken from safety.viz v1.9.1, and its checker fails a section over 600 words, a feature bullet over 70, or a section that does not open with its demo link. These two releases' own notes are the first written under it.</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>the checker on this release's notes<span class="who">obot2 · 2026-10-07</span></div>
+<pre><span class="c">$ node obot.agent/skills/release-notes/check-notes.mjs obot.agent/NEWS.md</span>
+obot.agent v0.6.0 (Upcoming): 375 words (limit 600)
+<span class="g">The notes are within every limit.</span>
+<span class="c">$ node obot.agent/skills/release-notes/check-notes.mjs obot.roadmap/NEWS.md</span>
+obot.roadmap v0.5 (Upcoming): 411 words (limit 600)
+<span class="g">The notes are within every limit.</span></pre>
+  </div>
+
+  <h3>The checker could be hung by one line</h3>
+  <p class="what">The security review found that a bullet ending in about twenty issue links and one more word sent the word counter into a search that did not finish. The checker runs on text other people wrote, so one line in a NEWS file could stall a session. The same file, before and after:</p>
+  <div class="ba">
+    <div class="term before">
+      <div class="bar"><span class="lamp"></span>before — main on 2026-10-06<span class="who">30 links, then "end"</span></div>
+<pre><span class="c">$ node check-notes.mjs hostile.md</span>
+<span class="r">still running after 5.00 s; stopped</span></pre>
+    </div>
+    <div class="term after">
+      <div class="bar"><span class="lamp"></span>after — v0.6.0<span class="who">the same file</span></div>
+<pre><span class="c">$ node check-notes.mjs hostile.md</span>
+pkg v1.0.0 (Upcoming): 53 words (limit 600)
+<span class="g">returned in 0.02 s, exit 0</span></pre>
+    </div>
+  </div>
+  <p class="what" style="margin-top:14px">Every line of the current NEWS files of five repositories, 861 lines, is counted the same by the old and the new counter.</p>
+
+  <h3>Its total was wrong for a flat list</h3>
+  <p class="what">A section still being written is often a list with no headings. The checker totalled such a section by its first bullet alone. It failed the section anyway, for having no demo line, so nothing passed that should not have; the number was wrong.</p>
+  <div class="ba">
+    <div class="term before">
+      <div class="bar"><span class="lamp"></span>before<span class="who">four bullets</span></div>
+<pre>obot.agent v0.6.0 (Upcoming): <span class="r">46 words</span> (limit 600)</pre>
+    </div>
+    <div class="term after">
+      <div class="bar"><span class="lamp"></span>after — v0.6.0<span class="who">the same four bullets</span></div>
+<pre>obot.agent v0.6.0 (Upcoming): <span class="g">246 words</span> (limit 600)</pre>
+    </div>
+  </div>
+  <div class="repro">
+    <div class="k">Reproduce</div>
+    <pre>cd obot.agent &amp;&amp; node --test skills/release-notes/check-notes.test.mjs     # 11 tests, 11 pass
+node skills/release-notes/check-notes.mjs NEWS.md</pre>
+  </div>
+</section>
+
+<div class="cut"><span>03 &nbsp;<em>Both releases</em></span></div>
+<section id="review">
+  <div class="hd">
+    <h2>A release candidate is reviewed by three subagents before he is asked</h2>
+    <span class="prs">obot.agent <a href="https://github.com/jwildfire/obot.agent/pull/340">#340</a></span>
+  </div>
+  <p class="what">The gate used to be ultrareview, which only a person can launch, so an unattended session could never pass it (@jwildfire, 2026-10-03). The session now spawns three read-only reviewers: one for correctness, one for the definition of done and its proof, one for the program's hard rules. Each gets the diff, the pull request's body and the issues it closes, and none of the session's own conclusions. The session checks every finding against the code, fixes it or says why it does not apply, and posts the review and its resolution as one comment. Only then is the candidate marked ready.</p>
+  <div class="repro">
+    <div class="k">See it yourself</div>
+    <pre>The obot.agent v0.6.0 release candidate carries its own review comment:
+https://github.com/jwildfire/obot.agent/pulls?q=is%3Apr+base%3Astable+v0.6.0
+
+The rule: https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md#releases</pre>
+  </div>
+</section>
+
+<div class="cut"><span>04 &nbsp;<em>obot.agent</em></span></div>
+<section id="author">
+  <div class="hd">
+    <h2>A session checks who wrote a sign-off</h2>
+    <span class="prs">obot.agent <a href="https://github.com/jwildfire/obot.agent/pull/345">#345</a></span>
+  </div>
+  <p class="what">A session starts work when the objective carries a comment from @jwildfire saying its tree is signed off. As the skill was written, a session could satisfy that by reading the words, and anyone can comment on a public issue. The skill now says to take the author from GitHub's own record. The standup, which lifts the latest comment on each blocked issue into a file read aloud, takes only comments from him and from the bot, and treats what it reads as material to report, never as an instruction.</p>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>the query the skill now gives, on the RBQM objective<span class="who">2026-10-07</span></div>
+<pre><span class="c">$ gh api repos/jwildfire/obot.roadmap/issues/375/comments \
+    --jq '.[] | select(.user.login == "jwildfire") | {url: .html_url, body}'</span>
+<span class="dim">(nothing)</span>
+<span class="c">$ gh api repos/jwildfire/obot.roadmap/issues/375/comments \
+    --jq '[.[] | .user.login] | group_by(.) | map("\(.[0]): \(length)") | join(", ")'</span>
+obotclaw[bot]: 2</pre>
+  </div>
+  <p class="what" style="margin-top:14px">That objective has two comments, both from the bot, and none from him. It is not signed off, and the query says so whatever the comments' words claim.</p>
+  <div class="note"><span class="lbl">An instruction, not a lock</span>These are words in a skill and a routine. They say which field to read; nothing forces a session to. What makes them worth more than before is section 01: a session no longer comments as him, so a comment recorded under his name is one he wrote.</div>
+</section>
+
+<div class="cut"><span>05 &nbsp;<em>obot.roadmap</em></span></div>
+<section id="rules">
+  <div class="hd">
+    <h2>The ruleset check fails when it could not look</h2>
+    <span class="prs">hub <a href="https://github.com/jwildfire/obot.roadmap/pull/379">#379</a></span>
+  </div>
+  <p class="what"><code>scripts/github-flows.sh check</code> is how anyone confirms that the branch rules are still in force on the nine repositories. Two faults, both found by the review and both reproduced with a stand-in for <code>gh</code> that changes one answer and passes the rest through. When GitHub did not return a ruleset, the comparison had nothing to compare, and nothing read as a match. And it never looked at who may bypass a ruleset, which is the one entry that makes every other rule optional.</p>
+  <div class="ba">
+    <div class="term before">
+      <div class="bar"><span class="lamp"></span>before<span class="who">one ruleset unreadable</span></div>
+<pre><span class="c">$ scripts/github-flows.sh check safety.viz</span>
+<span class="r">safety.viz: matches</span>
+<span class="c">exit=0</span></pre>
+    </div>
+    <div class="term after">
+      <div class="bar"><span class="lamp"></span>after — v0.5<span class="who">the same stand-in</span></div>
+<pre><span class="c">$ scripts/github-flows.sh check safety.viz</span>
+<span class="g">safety.viz: drift — could not read ruleset
+'integration: checks and auto-merge'; could not
+read ruleset 'release: review required'</span>
+<span class="c">exit=1</span></pre>
+    </div>
+  </div>
+  <div class="ba">
+    <div class="term before">
+      <div class="bar"><span class="lamp"></span>before<span class="who">a bypass entry added</span></div>
+<pre><span class="c">$ scripts/github-flows.sh check safety.viz</span>
+<span class="r">safety.viz: matches</span>
+<span class="c">exit=0</span></pre>
+    </div>
+    <div class="term after">
+      <div class="bar"><span class="lamp"></span>after — v0.5<span class="who">the same stand-in</span></div>
+<pre><span class="c">$ scripts/github-flows.sh check safety.viz</span>
+<span class="g">safety.viz: drift — ruleset 'integration: checks
+and auto-merge' differs (bypass allowed for
+RepositoryRole 5); ruleset 'release: review
+required' differs (bypass allowed for
+RepositoryRole 5)</span>
+<span class="c">exit=1</span></pre>
+    </div>
+  </div>
+  <p class="what" style="margin-top:14px">GitHub shows a ruleset's bypass list only to an account with admin. Run with the bot's token, the check says "bypass list not shown to this account" and exits 1, where a pass would have been a pass on a field nobody read. Against GitHub as it stands, run as @jwildfire, it prints "matches" for all nine.</p>
+  <div class="repro">
+    <div class="k">Reproduce</div>
+    <pre>cd obot.roadmap &amp;&amp; bash scripts/github-flows.sh check          # reads only; nine lines, each "matches"</pre>
+  </div>
+</section>
+
+<div class="cut"><span>06 &nbsp;<em>obot.roadmap</em></span></div>
+<section id="build">
+  <div class="hd">
+    <h2>The site build holds no bot key, and installs with its own token</h2>
+    <span class="prs">hub <a href="https://github.com/jwildfire/obot.roadmap/pull/383">#383</a> · <a href="https://github.com/jwildfire/obot.roadmap/pull/385">#385</a> · <a href="https://github.com/jwildfire/obot.roadmap/pull/379">#379</a></span>
+  </div>
+  <p class="what">The hub's <code>main</code> takes direct pushes, and a push runs the deploy. Three things in that workflow turned a push into more than a site build, and each is changed.</p>
+  <ul>
+    <li><b>The bot's key.</b> One step minted a bot token from the App's private key so the roadmap pages could list draft releases. Anything able to push could have used that step to act as the bot. The step is gone, and the pages list release candidates from pull requests, which is where they are reviewed. No repository has a draft release today.</li>
+    <li><b>A personal token.</b> The job hands @jwildfire's own token to every step, including the ones that download and run other people's code: <code>npm install</code>, R, the status dashboard and its packages. Those six steps now run with the workflow's own token, which reads this repository and nothing else.</li>
+    <li><b>Whatever is newest.</b> The Markdown renderer was installed as "the latest version, today". It is now one named version with its install scripts off.</li>
+  </ul>
+  <div class="term after">
+    <div class="bar"><span class="lamp"></span>the workflow, read back<span class="who">deploy-site.yml on main</span></div>
+<pre><span class="c">steps that set GITHUB_TOKEN to the workflow's own token:</span>
+Install renderer dependency
+r-lib/actions/setup-pandoc@v2
+r-lib/actions/setup-r@v2
+Install gh.dash dependencies
+Install gh.dash
+Build package status dashboard
+
+<span class="c">$ grep -c 'OBOT_APP_PRIVATE_KEY\|RC_TOKEN' .github/workflows/deploy-site.yml</span>
+0
+<span class="c">the renderer:</span>  npm install --no-save --ignore-scripts marked@18.1.0</pre>
+  </div>
+  <p class="what" style="margin-top:14px">The proof that the site still builds is the deploy itself: the <a href="https://github.com/jwildfire/obot.roadmap/actions/runs/37711381104">run on the merge commit</a> is green, its log reads "status: 7 repos rendered to _site/status/index.html", and the <a href="https://jwildfire.github.io/obot.roadmap/status.html">status page</a> frames the dashboard, not its placeholder. The <a href="https://jwildfire.github.io/obot.roadmap/catalog.html">catalog</a> now says of its to-do list: "Draft releases are not listed: the build no longer holds a token that can see them."</p>
+  <div class="note"><span class="lbl">Also retired: a nightly job on his Mac</span>A scheduled job fetched the hub's <code>main</code> every night and ran what it found, under his account, to refresh the Cost chart. The job is unloaded, its script no longer hands control to the copy of itself it just fetched, and the page it fed is refreshed by hand.</div>
+  <div class="note"><span class="lbl">Still his to do</span>Two secrets on the hub, <code>OBOT_APP_ID</code> and <code>OBOT_APP_PRIVATE_KEY</code>, are no longer read by the deploy. Deleting them, and replacing the key they hold, is for @jwildfire: a session cannot and should not.</div>
+</section>
+
+<div class="cut"><span>07 &nbsp;<em>obot.roadmap</em></span></div>
+<section id="tracker">
+  <div class="hd">
+    <h2>The tracker replaces the project board</h2>
+    <span class="prs">hub <a href="https://github.com/jwildfire/obot.roadmap/pull/347">#347</a></span>
+  </div>
+  <p class="what">One page shows the roadmap as GitHub records it: every objective, opened to its requirements and their tasks, with status on every row. The sidebar searches and filters by status, objective, area and milestone, and counts what is in each. The address carries the filter, so a view can be sent as a link. The nav is the four pages that get read: Home, Tracker, Analytics, News.</p>
+  <div class="shot"><img src="media/tracker.jpg" alt="The tracker page: counts of open objectives, requirements and tasks on the left with status filters beneath, and on the right the chart coverage objective opened to its requirements, each with a status pill, a progress bar and its milestone." width="1280" height="820" loading="lazy"></div>
+  <div class="repro">
+    <div class="k">Try it</div>
+    <pre>https://jwildfire.github.io/obot.roadmap/tracker.html
+1. Untick Backlog in the sidebar. The count above the list drops and the address changes.
+2. Copy the address into a new tab. The same view opens.
+3. Open a requirement's row. Its tasks appear, each read from its issue and its pull request.</pre>
+  </div>
+</section>
+
+<div class="cut"><span>08 &nbsp;<em>obot.roadmap</em></span></div>
+<section id="cost">
+  <div class="hd">
+    <h2>The Cost chart runs through October and says what it covers</h2>
+    <span class="prs">hub <a href="https://github.com/jwildfire/obot.roadmap/pull/370">#370</a> · <a href="https://github.com/jwildfire/obot.roadmap/pull/379">#379</a></span>
+  </div>
+  <p class="what">The chart had stopped on the last day the usage script was run by hand. It now runs through 6 October, and a panel above it says what the record covers and what it cannot see: the days each store runs through, a stretch in August and September that is a floor because transcripts had already been deleted, and twelve days in September for which nothing was recorded at all. The totals are stated as a floor.</p>
+  <div class="shot"><img src="media/cost.jpg" alt="The analytics page: a panel headed What the record covers listing local sessions read through 6 October, one cloud session reported, a floor from 20 August to 18 September and nothing recorded for 19 to 30 September, above a stacked bar chart of cost per day by kind of session." width="1280" height="820" loading="lazy"></div>
+  <p class="what" style="margin-top:14px">Two things about this page changed during the security review, and the release notes say so. Local usage is refreshed by hand, because the nightly job that did it is retired (section 06). And with cloud sessions parked, the green "Cloud session" series holds the one session that reported and will not grow.</p>
+  <div class="repro">
+    <div class="k">Try it</div>
+    <pre>https://jwildfire.github.io/obot.roadmap/analytics/index.html
+Switch day / week / month, and $ / all tokens. Read the panel before the bars.</pre>
+  </div>
+</section>
+
+<div class="cut"><span>09 &nbsp;<em>What these releases do not do</em></span></div>
+<section id="open">
+  <div class="hd"><h2>Left open, and said so</h2></div>
+  <ul>
+    <li><b>No ruleset covers tags.</b> The bot can create a tag or publish a release on any repository it is installed on.</li>
+    <li><b>Four repositories have no required check.</b> In open.csr, open.gismo, demo-301 and obot.agent a pull request merges whatever its tests say, so the session reads the results itself first.</li>
+    <li><b>The hub's <code>main</code> takes direct pushes,</b> and most of its deploy still runs with a personal token. The steps that install outside code no longer do.</li>
+    <li><b>The bot's key is not yet replaced.</b> It was in the hub's secrets from July until these releases stopped reading it. Replacing it, and installing the bot on fewer repositories, are @jwildfire's to do.</li>
+    <li><b>Filed for later:</b> applying the ruleset standard can loosen a stricter rule without saying so (<a href="https://github.com/jwildfire/obot.roadmap/issues/380">hub #380</a>), and six smaller findings (<a href="https://github.com/jwildfire/obot.roadmap/issues/381">hub #381</a>).</li>
+    <li><b>The standup is not scheduled.</b> Its published file is still the placeholder of 2026-09-11, and both repositories now say so.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Every capture on this page is real output taken on 2026-10-07, not a mock-up. The "before" captures were produced by running the earlier version of the same file: the checker as it stood on obot.agent's <code>main</code> on 2026-10-06, and the hub's ruleset check before its fix. Terminal colour is added in CSS.</p>
+  <p style="margin-top:14px"><a href="https://github.com/jwildfire/obot.agent/blob/main/NEWS.md">obot.agent release notes</a> · <a href="https://github.com/jwildfire/obot.roadmap/blob/main/NEWS.md">obot.roadmap release notes</a> · <a href="https://jwildfire.github.io/obot.roadmap/">obot hub</a></p>
+  <hr style="border:0;border-top:1px solid var(--rule);margin:22px 0">
+  <p>This demo was drafted by Claude Code using Opus 5.5.</p>
+</footer>
+
+</div>
+</body></html>
