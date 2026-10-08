@@ -113,20 +113,11 @@ jobs:
       - name: Render diary
         run: node scripts/render_diary.mjs
 
-      # Draft releases are release candidates (rc-framework) and only visible to
-      # a token with push access, which neither the workflow token nor a
-      # project-read PAT has. The obot app does (Contents RW on the installed
-      # portfolio repos), so mint its token for the release reads. Optional by
-      # design: on failure the roadmap's Todo section simply shows no drafts.
-      - name: Mint obot app token for draft-release reads
-        id: obot-token
-        continue-on-error: true
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.OBOT_APP_ID }}
-          private-key: ${{ secrets.OBOT_APP_PRIVATE_KEY }}
-          owner: jwildfire
-          repositories: obot.roadmap,obot.agent,safety.viz,gsm.safety,safety-histogram
+      # Draft releases are not read. Only a token with push access can see them,
+      # and until 2026-10-07 a step here minted one from the obot app's private
+      # key. This repository's main takes direct pushes, so that step was a way
+      # for any push to act as the bot. It is gone (#384): the roadmap pages list
+      # release candidates from pull requests, which is where they are reviewed.
 
       # The Todo section's release-identity rule (scripts/lib/rc.mjs) decides
       # whether an open RC PR and a draft release are one release or two. It is
@@ -149,8 +140,6 @@ jobs:
       # morning. Replaced build_roadmap_next.mjs and the design spike's
       # build_spike.mjs (#202/#204) when D0018 landed on 2026-08-16.
       - name: Build the roadmap page set
-        env:
-          RC_TOKEN: ${{ steps.obot-token.outputs.token }}
         run: node scripts/build_roadmap.mjs
 
       # The audit reading view (_site/audit/index.html, requirement #92) — the
@@ -322,9 +311,13 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: R CMD INSTALL --no-docs gh.dash-src
 
+      # gh.dash is outside code, so it gets the workflow's own token too. Every
+      # repository it reports on is public.
       - name: Build package status dashboard
         continue-on-error: true
         timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: Rscript scripts/build_status.R
 
       - name: Publish placeholder if the dashboard did not build

@@ -89,12 +89,14 @@ but no new entries are written ([diary/README.md](diary/README.md)).
 
 ## Identity
 
-The actor is the connected GitHub account of the session — in a cloud session, the
-account that authorized Claude Code; locally, @jwildfire's own `gh` credentials. The
-obotclaw[bot] App identity was retired with the autonomous prototype on 2026-09-10; its
-App still exists and the `actions/create-github-app-token` secrets remain for workflows
-that need them. The drafted-by line at the foot of every issue, PR and comment records
-who wrote the content; say @jwildfire reviewed it only when he did.
+A session writes to GitHub as obotclaw[bot], the program's GitHub App, and never as
+@jwildfire (his decision, 2026-10-07; developer guidelines → Commits). Sessions run
+locally, from his workspace; the bot's token and the guard that refuses any other kind of
+write are tooling of that workspace and are in no repository. No workflow here holds the
+bot's key. Three things are his alone, with any token: approving a pull request, merging
+past a ruleset, and changing a ruleset. The drafted-by line at the foot of every issue,
+PR and comment records who wrote the content; say @jwildfire reviewed it only when he
+did.
 
 ## Constraints
 
@@ -116,8 +118,8 @@ who wrote the content; say @jwildfire reviewed it only when he did.
 ## Related repositories
 
 - [`obot.agent`](https://github.com/jwildfire/obot.agent) — the session core: the
-  `requirement-session` skill every working session runs, the standup routine, the cloud
-  environments. It carries no standards of its own; it points here.
+  `requirement-session` skill every working session runs, the standup routine, and the
+  parked page on cloud environments. It carries no standards of its own; it points here.
 - [`gsm.agent`](https://github.com/Gilead-BioStats/gsm.agent) — the upstream harness
   this ecosystem aligns with (drafts, attribution, worktrees, TDD); the documents above
   say where this program diverges.

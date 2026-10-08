@@ -144,9 +144,9 @@ ${decRows.length ? decRows.join('\n') : `  ${empty('No open decisions.')}`}
   return section('todo', 'Todo', rcList.length + decRows.length, body, {
     cls: 'rm-todo',
     note: `Everything waiting on @jwildfire, per the <a href="https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md#releases">release rules</a>: ` +
-      `release candidates (review-requested PRs and draft releases) and <a href="reports/decisions/">decision artifacts</a>, ` +
+      `release candidates (pull requests that request his review) and <a href="reports/decisions/">decision artifacts</a>, ` +
       `each decided in its <a href="https://github.com/${HUB}/discussions/categories/q-a">Q&amp;A thread</a>. ` +
-      `The PR list re-checks GitHub on page load; drafts and decisions are as of the last deploy.`,
+      `The PR list re-checks GitHub on page load; decisions are as of the last deploy. Draft releases are not listed: the build no longer holds a token that can see them.`,
   });
 }
 

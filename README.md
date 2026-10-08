@@ -8,7 +8,7 @@ site that reports on all of it.
 # How work runs
 
 Since 2026-09-10 the program runs as requirement sessions: objectives broken into
-requirements and tasks with definitions of done, one requirement per cloud session,
+requirements and tasks with definitions of done, one requirement per session, run locally from @jwildfire's workspace and writing to GitHub as obotclaw[bot],
 running as long as it takes, steered by @jwildfire through the issues here. The three documents under [`docs/`](docs/) are the standards,
 and complying with them is mandatory for every session in every repository:
 
@@ -20,15 +20,14 @@ and complying with them is mandatory for every session in every repository:
 
 The plan that installed this model and the five objectives it runs:
 [Requirement Sessions: the Mid-October Plan](https://jwildfire.github.io/obot.roadmap/reports/goal-sessions-plan-2026-09-10/).
-The session core — the `requirement-session` skill, the standup routine and the cloud
-environments — lives in [jwildfire/obot.agent](https://github.com/jwildfire/obot.agent).
+The session core — the `requirement-session` skill and the standup routine — lives in [jwildfire/obot.agent](https://github.com/jwildfire/obot.agent).
 
 # Repos
 
 | Repo | Role |
 |------|------|
 | [`obot.roadmap`](https://github.com/jwildfire/obot.roadmap) | This repo — objectives, requirements, designs, standards, the site |
-| [`obot.agent`](https://github.com/jwildfire/obot.agent) | The session core: the requirement-session skill, the standup routine, the cloud environments |
+| [`obot.agent`](https://github.com/jwildfire/obot.agent) | The session core: the requirement-session skill, the standup routine, the parked page on cloud environments |
 | [`safety.viz`](https://github.com/jwildfire/safety.viz) | Consolidated Chart.js safety-chart library and its site (mirrors `gsm.viz`) |
 | [`gsm.safety`](https://github.com/jwildfire/gsm.safety) | R package — `Widget_*` htmlwidgets over `safety.viz` and the static FDA safety charts (mirrors `gsm.kri`) |
 | [`open.csr`](https://github.com/jwildfire/open.csr), [`open.gismo`](https://github.com/jwildfire/open.gismo), [`demo-301`](https://github.com/jwildfire/demo-301) | The CSR builder, the RBQM platform and its demo study — objectives paused or parked for the talk |
@@ -37,8 +36,9 @@ environments — lives in [jwildfire/obot.agent](https://github.com/jwildfire/ob
 # Daily check-in by voice
 
 The spoken standup — every objective's complete / in progress / blocked state, one question
-per blocked issue, and the release candidates waiting — is rendered nightly from GitHub
-by a scheduled cloud routine and published as plain text. [STANDUP.md](STANDUP.md) is the
+per blocked issue, and the release candidates waiting — is rendered from GitHub
+by a cloud routine and published as plain text. The routine is not scheduled as of
+2026-10-07, and the published file is a placeholder. [STANDUP.md](STANDUP.md) is the
 address; the file itself is `standup.md` on the `session-state` branch. A note dictated
 back is a comment on the issue it concerns.
 

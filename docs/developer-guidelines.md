@@ -8,6 +8,11 @@ merge, and what a chart must have before it is done. The tracking rules are the
 [issue contract](issue-contract.md); the operating model is
 [ways of working](ways-of-working.md).
 
+Amended 2026-10-07 by @jwildfire's decision: sessions run locally, from his workspace on
+his own machines, and write to GitHub as obotclaw[bot]. Cloud sessions are parked ("we
+can probably just park cloud support for now and i'll just do local here or on the agent
+laptop"). The passages that said otherwise are changed below; nothing else is.
+
 ## Repositories and branches
 
 | Repository | Kind | Integration branch — merges on green checks | Release branch — @jwildfire's review |
@@ -40,14 +45,15 @@ This follows [Claude Code's best practices](https://code.claude.com/docs/en/best
   in a cloud environment). Work runs one requirement per session (`/requirement-session <hub requirement>`).
   ```
 
-- Skills for procedures. The `requirement-session` skill is installed by the cloud environment's
-  setup script; a repository adds its own skills under `.claude/skills/` for things
+- Skills for procedures. The `requirement-session` skill is linked into the workspace's
+  `.claude/skills/`; a repository adds its own skills under `.claude/skills/` for things
   specific to it — how its evidence pages are generated, how its site builds.
-- Permissions: cloud sessions run in auto mode. Local sessions use the workspace's
-  allowlist; do not add a permission rule to work around a refusal.
+- Permissions: sessions run in auto mode with the workspace's allowlist; do not add a
+  permission rule to work around a refusal.
 - Hooks only for deterministic gates that must happen every time with zero exceptions — a
   formatter after edits, a check that blocks writes to a generated directory. No hook
-  publishes state, nags, or interrupts a turn.
+  publishes state, nags, or interrupts a turn. @jwildfire's workspace has one such gate:
+  it refuses a GitHub write that would go out under his name (Commits, below).
 - Plan mode before code on any task that is not trivially scoped: explore, propose,
   then implement against the plan.
 - Subagents for investigation and verification, so research does not fill the main
@@ -59,7 +65,7 @@ This follows [Claude Code's best practices](https://code.claude.com/docs/en/best
 
 ## Local work: worktrees
 
-A cloud session has its own clone. A local session on a shared checkout never switches
+Sessions share the checkouts in the workspace, so a session never switches
 branches under another session; it uses a linked worktree inside the repository:
 
 ```bash
@@ -91,14 +97,19 @@ after its PR merges; never remove another session's.
 - Every commit carries the `Co-Authored-By` trailer the harness supplies for the model
   that wrote it. No secrets, no tokens, no generated bundles unless the repository
   commits them by design.
-- The actor is the connected GitHub account of the session — in the cloud, the account
-  that authorized Claude Code; locally, the person's own credentials. One exception,
-  kept by @jwildfire on 2026-10-07: a session on his machine may author issues,
-  commits and pull requests as obotclaw[bot], with a token from
-  [`scripts/obot-app-token`](../scripts/obot-app-token), and a release-candidate pull
-  request opened there must be — GitHub does not let him approve a pull request he
-  authored, and the release ruleset requires his approval. Nothing else of the bot
-  identity remains: no hook, no wrapper, no policy file.
+- A session writes to GitHub as obotclaw[bot], the program's GitHub App, and never as
+  @jwildfire (his decision, 2026-10-07): issues, comments, commits, pushes, pull
+  requests and the merges of increments. `gh` on his machine is signed in as him and
+  he is admin on every repository, so a write with no token set is recorded as his. A
+  release-candidate pull request has a second reason: GitHub does not let him approve
+  a pull request he authored, and the release ruleset requires his approval.
+- The bot's token, and the guard that refuses a GitHub write made any other way, are
+  tooling of his workspace. They are in no repository, this one included, and the
+  bot's key is in his machines' Keychains and nowhere else. The workspace's README
+  describes them.
+- Three things are his alone, and a session does not do them with any token:
+  approving a pull request, merging past a ruleset, and changing a ruleset or a
+  branch protection.
 
 ## Pull requests
 
@@ -241,7 +252,7 @@ deployed site:
   [safety.viz v1.9.1](https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md); the
   procedure and the checker that fails notes over a limit are obot.agent's
   [`release-notes`](https://github.com/jwildfire/obot.agent/blob/main/skills/release-notes/SKILL.md)
-  skill (`node ~/obot.agent/skills/release-notes/check-notes.mjs NEWS.md`). The review
+  skill (`check-notes.mjs`, beside that skill). The review
   gate's hard-rules reviewer runs it.
 - The demo page, the hard requirement: a self-contained HTML page under this hub's
   `reports/{slug}/`, walking each change with screenshots or short clips and
