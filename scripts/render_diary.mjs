@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Render diary/*.md to static HTML under _site/diary/.
-// Requires the `marked` package (the deploy workflow runs `npm install --no-save marked`).
+// Requires the `marked` package (the deploy workflow installs one named version of it).
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { marked } from 'marked';
