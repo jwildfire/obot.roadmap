@@ -121,8 +121,8 @@ li{margin:7px 0}
   <div class="facts">
     <span><b>Releases</b> obot.agent v0.6.0 · obot.roadmap v0.5</span>
     <span><b>Since</b> v0.5.0 and v0.4 · 2026-09-11</span>
-    <span><b>Tests</b> 11 checker · 135 + 15 hub</span>
-    <span><b>Gate</b> security review, 2026-10-07</span>
+    <span><b>Tests</b> 36 checker · 138 + 15 hub</span>
+    <span><b>Gate</b> security review, then four release reviews, 2026-10-07</span>
   </div>
 
   <nav class="toc">
@@ -212,16 +212,16 @@ The earlier ones linked here, such as the tracker's pull request, predate the de
 <section id="notes">
   <div class="hd">
     <h2>Release notes are held to a length</h2>
-    <span class="prs">obot.agent <a href="https://github.com/jwildfire/obot.agent/pull/341">#341</a> · <a href="https://github.com/jwildfire/obot.agent/pull/343">#343</a> · <a href="https://github.com/jwildfire/obot.agent/pull/345">#345</a> · <a href="https://github.com/jwildfire/obot.agent/pull/347">#347</a></span>
+    <span class="prs">obot.agent <a href="https://github.com/jwildfire/obot.agent/pull/341">#341</a> · <a href="https://github.com/jwildfire/obot.agent/pull/343">#343</a> · <a href="https://github.com/jwildfire/obot.agent/pull/345">#345</a> · <a href="https://github.com/jwildfire/obot.agent/pull/347">#347</a> · <a href="https://github.com/jwildfire/obot.agent/pull/352">#352</a> · <a href="https://github.com/jwildfire/obot.agent/pull/355">#355</a></span>
   </div>
   <p class="what">@jwildfire, 2026-10-06, on two sets of notes that ran to 2,088 and 1,754 words: "Release notes are way too wordy. … The details go in the demo page." The <code>release-notes</code> skill gives the shape, taken from safety.viz v1.9.1, and its checker fails a section over 600 words, a feature bullet over 70, or a section that does not open with its demo link. These two releases' own notes are the first written under it.</p>
   <div class="term after">
     <div class="bar"><span class="lamp"></span>the checker on this release's notes<span class="who">obot2 · 2026-10-07</span></div>
 <pre><span class="c">$ node obot.agent/skills/release-notes/check-notes.mjs obot.agent/NEWS.md</span>
-obot.agent v0.6.0 (Upcoming): 375 words (limit 600)
+obot.agent v0.6.0 (Upcoming): 388 words (limit 600)
 <span class="g">The notes are within every limit.</span>
 <span class="c">$ node obot.agent/skills/release-notes/check-notes.mjs obot.roadmap/NEWS.md</span>
-obot.roadmap v0.5 (Upcoming): 411 words (limit 600)
+obot.roadmap v0.5 (Upcoming): 428 words (limit 600)
 <span class="g">The notes are within every limit.</span></pre>
   </div>
 
@@ -254,9 +254,29 @@ pkg v1.0.0 (Upcoming): 53 words (limit 600)
 <pre>obot.agent v0.6.0 (Upcoming): <span class="g">246 words</span> (limit 600)</pre>
     </div>
   </div>
+  <h3>What it cannot read, it reports</h3>
+  <p class="what">The release reviews found the checker could be talked out of its own rules. A command in a code block under a bullet, with a <code># comment</code> in it, ended the section at the comment, and the 150-word bullet below was never looked at. Two attempts to teach it code blocks each left another way to lose words, so it no longer tries: a line that opens a code block is named, and so is a list or a heading it cannot read. This adds one rule to release notes: no code blocks; a command goes on a page like this one.</p>
+  <div class="ba">
+    <div class="term before">
+      <div class="bar"><span class="lamp"></span>before — as first written<span class="who">a code block, then a 150-word bullet</span></div>
+<pre><span class="c">$ node check-notes.mjs with-code.md</span>
+pkg v1.0.0 (Upcoming): 30 words (limit 600)
+<span class="r">The notes are within every limit.</span>
+exit 0</pre>
+    </div>
+    <div class="term after">
+      <div class="bar"><span class="lamp"></span>after — v0.6.0<span class="who">the same file</span></div>
+<pre><span class="c">$ node check-notes.mjs with-code.md</span>
+pkg v1.0.0 (Upcoming): 30 words (limit 600)
+<span class="g">- A line opens with a code-block marker (1 of them): a command or a snippet goes on the demo page, and inline code is fine.</span>
+exit 1</pre>
+    </div>
+  </div>
+  <p class="what" style="margin-top:14px">How it was checked: every limit is tested at the last count that passes and the first that fails; 143 rules were switched off or bent one at a time and a test noticed each; and it was compared with the checker as first written on a million generated sections and on all 43 sections of the program's 13 release-note files, where no verdict changed. What it still reads differently from a reader is listed in <a href="https://github.com/jwildfire/obot.agent/issues/354">obot.agent#354</a>.</p>
+
   <div class="repro">
     <div class="k">Reproduce</div>
-    <pre>cd obot.agent &amp;&amp; node --test skills/release-notes/check-notes.test.mjs     # 11 tests, 11 pass
+    <pre>cd obot.agent &amp;&amp; node --test skills/release-notes/check-notes.test.mjs     # 36 tests, 36 pass
 node skills/release-notes/check-notes.mjs NEWS.md</pre>
   </div>
 </section>
@@ -268,6 +288,7 @@ node skills/release-notes/check-notes.mjs NEWS.md</pre>
     <span class="prs">obot.agent <a href="https://github.com/jwildfire/obot.agent/pull/340">#340</a></span>
   </div>
   <p class="what">The gate used to be ultrareview, which only a person can launch, so an unattended session could never pass it (@jwildfire, 2026-10-03). The session now spawns three read-only reviewers: one for correctness, one for the definition of done and its proof, one for the program's hard rules. Each gets the diff, the pull request's body and the issues it closes, and none of the session's own conclusions. The session checks every finding against the code, fixes it or says why it does not apply, and posts the review and its resolution as one comment. Only then is the candidate marked ready.</p>
+  <p class="what" style="margin-top:14px">On this release the gate ran four times. The first review found a small fault in the release-notes checker; the fix for it was reviewed again, as the rule asks when a fix grows past its finding, and that review and the next each showed the fix had made something worse. The fourth compared the result with the original on a million generated sections. Every round and how each finding was resolved is in the one comment on the release candidate.</p>
   <div class="repro">
     <div class="k">See it yourself</div>
     <pre>The obot.agent v0.6.0 release candidate carries its own review comment:
