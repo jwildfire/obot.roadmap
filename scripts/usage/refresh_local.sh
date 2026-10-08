@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-# Nightly refresh of the committed local usage file, for @jwildfire's machine.
+# Refresh of the committed local usage file, for @jwildfire's machine.
+#
+# NOT SCHEDULED since 2026-10-07: the launchd job that ran this every night was
+# retired. Run it by hand. It fetches the hub's main and runs the aggregator from
+# that fresh copy, under your account, so look at what changed on main first
+# (`git log -p origin/main -- scripts/build_usage_data.py`): main takes direct
+# pushes, and whatever is there is what runs.
 #
 # Aggregates this machine's Claude Code transcripts with scripts/build_usage_data.py
 # and, when the numbers moved, commits site/usage/usage.json to main and pushes —
@@ -11,10 +17,12 @@
 # publish a day smaller than it already is; `set -e` stops this script there, so
 # nothing is committed and the reason is in the log.
 #
-# launchd runs a COPY of this file from ~/.obot/bin (install_local_refresh.sh puts
-# it there): macOS will not let a launchd job read a script under ~/Documents,
-# which is where the checkout lives. So that the copy cannot go stale, it hands
-# over to the version in its own clone once that is up to date.
+# When it was scheduled, launchd ran a COPY of this file from ~/.obot/bin
+# (install_local_refresh.sh puts it there): macOS will not let a launchd job read
+# a script under ~/Documents, which is where the checkout lives. The copy used to
+# hand over to the version in its own clone; it no longer does (#378), because
+# that made a push to main into code running here. Re-run the installer to update
+# the copy.
 #
 # It works in its own clone (~/.obot/usage-refresh by default), never in a working
 # checkout, so a half-edited tree is never committed by accident. Nothing else is
@@ -41,13 +49,6 @@ if [ ! -d "$WORK/.git" ]; then
 fi
 git -C "$WORK" fetch -q origin main
 git -C "$WORK" reset -q --hard origin/main
-
-# Hand over to main's copy of this script if it differs from the one running.
-LATEST="$WORK/scripts/usage/refresh_local.sh"
-if [ -z "${OBOT_USAGE_HANDED_OVER:-}" ] && [ -f "$LATEST" ] && ! cmp -s "$LATEST" "${BASH_SOURCE[0]}"; then
-  log "handing over to $LATEST"
-  OBOT_USAGE_HANDED_OVER=1 exec /bin/bash "$LATEST" "$@"
-fi
 
 # The aggregator leaves the file untouched when only its timestamp would change,
 # so a quiet night makes no commit.

@@ -6,6 +6,10 @@
 #   scripts/github-flows.sh apply [repo…]   set repository settings and upsert the rulesets
 #   scripts/github-flows.sh check [repo…]   one line per repository: matches / drift; exit 1 on drift
 #
+# check says "matches" only for what it read and compared. A ruleset it could not
+# list or read is drift, and so is one whose bypass list it was not shown: GitHub
+# returns that list only to an account with admin, so run check as @jwildfire.
+#
 # Needs `gh` authenticated as an account with admin on the repositories (the
 # rulesets API refuses anything less) and `jq`. Idempotent: rulesets are found by
 # name and updated in place; settings are only written when they differ.
@@ -19,6 +23,7 @@
 #                         pull request and on every later push, no force push, no deletion
 #   the hub               no-force-push and no-deletion on main only: prep sessions
 #                         commit to main directly under the standing grant (2026-09-11)
+#   every ruleset         nobody may bypass it: the bypass list is empty
 #
 # Copilot code review as a ruleset rule needs a Copilot plan that offers it; when the
 # API rejects the rule the release ruleset is written without it and the line says so.
@@ -57,7 +62,7 @@ protect_rules() { jq -cn '[{type:"non_fast_forward"},{type:"deletion"}]'; }
 
 ruleset_body() { # $1 name, $2 branch, $3 rules-json-array
   jq -cn --arg name "$1" --arg ref "refs/heads/$2" --argjson rules "$3" \
-    '{name:$name,target:"branch",enforcement:"active",conditions:{ref_name:{include:[$ref],exclude:[]}},rules:$rules}'
+    '{name:$name,target:"branch",enforcement:"active",bypass_actors:[],conditions:{ref_name:{include:[$ref],exclude:[]}},rules:$rules}'
 }
 
 integration_rules() { # $1 check
@@ -74,7 +79,12 @@ release_rules() { # $1 with_copilot (1/0)
 # ---------------------------------------------------------------- github helpers
 api() { gh api -H "Accept: application/vnd.github+json" "$@"; }
 # `gh api` has no --arg; the lookup runs through jq so a name with spaces is matched exactly.
-ruleset_id() { api "repos/$OWNER/$1/rulesets" 2>/dev/null | jq -r --arg n "$2" '.[] | select(.name==$n) | .id' | head -1; }
+# Prints the id, "" when no ruleset has that name, or "?" when the list could not be
+# read - which is not the same as there being none.
+ruleset_id() {
+  local list; list=$(api "repos/$OWNER/$1/rulesets" 2>/dev/null) && jq -e 'type=="array"' <<<"$list" >/dev/null 2>&1 || { echo "?"; return; }
+  jq -r --arg n "$2" '.[] | select(.name==$n) | .id' <<<"$list" | head -1
+}
 ruleset_get() { api "repos/$OWNER/$1/rulesets/$2" 2>/dev/null; }
 
 # Compare a live ruleset with the body we want, on the fields this script sets. GitHub
@@ -86,6 +96,9 @@ compare_ruleset() { # $1 wanted body; live ruleset on stdin
   jq -r --argjson w "$1" '
     . as $live
     | [ (if (.name==$w.name and .target==$w.target and .enforcement==$w.enforcement) then empty else "name/target/enforcement" end),
+        (if (has("bypass_actors")|not) then "bypass list not shown to this account"
+         elif ((.bypass_actors//[])|length)>0 then "bypass allowed for \(.bypass_actors|map("\(.actor_type) \(.actor_id//"-")")|join(" and "))"
+         else empty end),
         (if ((.conditions.ref_name.include//[])==($w.conditions.ref_name.include//[])
              and (.conditions.ref_name.exclude//[])==($w.conditions.ref_name.exclude//[])) then empty else "branch" end),
         ( $w.rules[] as $wr
@@ -102,6 +115,7 @@ compare_ruleset() { # $1 wanted body; live ruleset on stdin
 upsert_ruleset() { # $1 repo, $2 body → prints ok / ok-without-copilot / error
   local repo=$1 body=$2 name id out
   name=$(jq -r .name <<<"$body"); id=$(ruleset_id "$repo" "$name")
+  [ "$id" = "?" ] && { echo "error: could not list the rulesets, so nothing was written"; return; }
   if [ -n "$id" ]; then
     out=$(api -X PUT "repos/$OWNER/$repo/rulesets/$id" --input - <<<"$body" 2>&1) && { echo ok; return; }
   else
@@ -124,8 +138,11 @@ settings_drift() { # $1 repo → "" or a phrase
 }
 ruleset_drift() { # $1 repo, $2 wanted body → "" or a phrase
   local id live name why; name=$(jq -r .name <<<"$2"); id=$(ruleset_id "$1" "$name")
+  [ "$id" = "?" ] && { echo "could not list the rulesets; "; return; }
   [ -z "$id" ] && { echo "missing ruleset '$name'; "; return; }
-  live=$(ruleset_get "$1" "$id")
+  # An empty or broken answer has nothing in it to differ, so it used to read as a match.
+  live=$(ruleset_get "$1" "$id") && jq -e 'type=="object" and has("rules")' <<<"$live" >/dev/null 2>&1 \
+    || { echo "could not read ruleset '$name'; "; return; }
   why=$(compare_ruleset "$2" <<<"$live")
   [ -z "$why" ] && return
   # Tolerate the one difference a plan without Copilot forces.

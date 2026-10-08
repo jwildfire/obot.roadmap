@@ -4,8 +4,9 @@
 // Data source and staleness: the data is merged at build time (lib/usage/merge.mjs)
 // from two stores the site cannot read itself. site/usage/usage.json is a
 // COMMITTED artifact built from @jwildfire's local Claude Code transcript store by
-// scripts/build_usage_data.py — refreshed nightly by scripts/usage/refresh_local.sh
-// on his machine, or by hand:
+// scripts/build_usage_data.py — refreshed by hand on his machine, with
+// scripts/usage/refresh_local.sh or the commands below (the nightly job that ran
+// that script was retired on 2026-10-07):
 //
 //     python3 scripts/build_usage_data.py && git commit site/usage/usage.json
 //
