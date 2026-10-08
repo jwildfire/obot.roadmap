@@ -1,11 +1,16 @@
 # Ways of working
 
 Status: v1, 2026-09-10. How the obot program runs since the autonomous prototype was shut
-down: requirement sessions in the cloud, driven by @jwildfire through the issues on this
+down: requirement sessions, driven by @jwildfire through the issues on this
 hub. The decision and the five objectives it applies to are on the
 [plan page](https://jwildfire.github.io/obot.roadmap/reports/goal-sessions-plan-2026-09-10/).
 The tracking rules are the [issue contract](issue-contract.md); the engineering rules
 are the [developer guidelines](developer-guidelines.md).
+
+Amended 2026-10-07 by @jwildfire's decision: sessions run locally, from his workspace on
+his own machines, and write to GitHub as obotclaw[bot]. Cloud sessions are parked ("we
+can probably just park cloud support for now and i'll just do local here or on the agent
+laptop"). The passages that said otherwise are changed below; nothing else is.
 
 ## Principles
 
@@ -14,10 +19,12 @@ are the [developer guidelines](developer-guidelines.md).
   between and write it down where he reads.
 - The measure is clinical deliverables and user-facing tools. Orchestration health,
   worker reporting and scaffold polish are not progress; the deployed site on Friday is.
-- Nothing bespoke. Sessions use Claude Code as shipped — cloud sessions, `/goal`, plan
+- Nothing bespoke. Sessions use Claude Code as shipped — `/goal`, plan
   mode, subagents, the Workflow tool, routines, skills — and GitHub as shipped — issues,
   sub-issues, labels, milestones, rulesets, auto-merge. Anything that would need its own
-  daemon, hook, ledger or dashboard is a smell.
+  daemon, hook, ledger or dashboard is a smell. One exception was made on 2026-10-07: a
+  hook in @jwildfire's workspace that refuses a GitHub write made under his name, because
+  a session there holds his login and his login is admin everywhere.
 - Everything is on GitHub. If it is not on an issue, a pull request, a release or a page
   on the site, it did not happen.
 
@@ -27,8 +34,8 @@ are the [developer guidelines](developer-guidelines.md).
 
 | Phase | Where | Who | `status:` label moves | What happens |
 |---|---|---|---|---|
-| 1 · Prep | a session in the `obot.roadmap` cloud environment | agent and @jwildfire together — active collaboration | Backlog → Ready | the requirement is drafted, designed and decomposed with the hub's `requirement-drafting`, `requirement-design` and `requirement-tasks` skills; tasks are filed in their repositories with definitions of done and milestones; the objective's tree is signed off; the Ready gate is checked and the status set |
-| 2 · Execution | a session in the repository's cloud environment | the agent, semi-autonomously; @jwildfire steers on the issue or in the session | Ready → In session → Review | the `requirement-session` skill: set `/goal` from the requirement's definition of done, work the tasks through auto-merging PRs, comment nightly, open the release candidate as a draft, review it with independent subagent reviewers and resolve every finding, then mark it ready for him |
+| 1 · Prep | a session in the workspace, on the hub | agent and @jwildfire together — active collaboration | Backlog → Ready | the requirement is drafted, designed and decomposed with the hub's `requirement-drafting`, `requirement-design` and `requirement-tasks` skills; tasks are filed in their repositories with definitions of done and milestones; the objective's tree is signed off; the Ready gate is checked and the status set |
+| 2 · Execution | a session in the workspace, on the requirement's repository | the agent, semi-autonomously; @jwildfire steers on the issue or in the session | Ready → In session → Review | the `requirement-session` skill: set `/goal` from the requirement's definition of done, work the tasks through auto-merging PRs, comment nightly, open the release candidate as a draft, review it with independent subagent reviewers and resolve every finding, then mark it ready for him |
 | 3 · Review | GitHub | mostly @jwildfire | Review → Released | the RC PR with its demo page and notes; his approving review merges it; the tag closes the requirement |
 
 An execution session that finds its requirement still in Backlog has a prep job in front
@@ -41,18 +48,18 @@ is Ready ([issue contract → Status](issue-contract.md#status)).
 
 1. @jwildfire states an objective. The objective issue is filed under the contract, with its
    definition of done.
-2. Prep: the tree is built in the hub environment — requirements with designs and
+2. Prep: the tree is built on the hub — requirements with designs and
    definitions of done, tasks in the implementation repositories, all milestoned and
    linked. Agents draft with him; he signs off on the objective issue; the requirement
    goes Ready.
-3. A cloud session starts on the first requirement. It sets `/goal` from the
+3. A session starts on the first requirement. It sets `/goal` from the
    requirement's definition of done and works its tasks: branch, tests, pull request,
    auto-merge, closing comment with evidence. The next requirement gets the next session.
 4. Every night the session comments on its requirement — complete, in progress, blocked —
    and the standup routine rolls every objective's state and every blocked question up into
    the voice-readable standup.
-5. @jwildfire steers: answers on the blocked issue, redirects the running session on
-   claude.ai/code, or changes the objective body.
+5. @jwildfire steers: answers on the blocked issue, redirects the running session, or
+   changes the objective body.
 6. When the tree ships a release, the release-candidate pull request goes to him with
    its demo page and notes. He merges; the tag is cut; the objective closes.
 7. Every Friday the deployed site must show what the plan said it would. That is the
@@ -70,9 +77,11 @@ is Ready ([issue contract → Status](issue-contract.md#status)).
 ## Sessions
 
 - One requirement per session. An objective is the steering unit and is never a session;
-  its requirements run one at a time, each as a Claude Code cloud session bound to the
-  repository where the requirement's tasks live, running in auto mode, in the environment
-  for that repository ([obot.agent `docs/cloud-environments.md`](https://github.com/jwildfire/obot.agent/blob/main/docs/cloud-environments.md)).
+  its requirements run one at a time, each as a Claude Code session started from
+  @jwildfire's workspace, on the repository where the requirement's tasks live, in auto
+  mode. It writes to GitHub as obotclaw[bot] (developer guidelines → Commits). Cloud
+  sessions are parked; what they would need is kept in
+  [obot.agent `docs/cloud-environments.md`](https://github.com/jwildfire/obot.agent/blob/main/docs/cloud-environments.md).
 - The session runs the [`requirement-session`](https://github.com/jwildfire/obot.agent/blob/main/skills/requirement-session/SKILL.md)
   skill: read the requirement and its tree, check it, set the goal from the requirement's
   definition of done, work the tasks, comment, finish — moving the requirement's `status:`
@@ -97,11 +106,11 @@ is Ready ([issue contract → Status](issue-contract.md#status)).
 - Concurrency: two sessions at a time as the plan stands — one on the app lane, one on
   the charts lane — so there are two threads to steer and never more. A third is
   possible; it doubles the steering load on the busiest weeks.
-- Idle: a cloud session waiting on @jwildfire idles and its VM is eventually reclaimed.
-  Nothing is lost — the question is on the blocked issue and `/goal` survives a resume.
-- Local sessions: a person at a terminal may run a requirement session locally under the same
-  contract, using the worktree layout in the developer guidelines. What no longer exists
-  is anything unattended on a person's machine.
+- Idle: a session waiting on @jwildfire idles. Nothing is lost — the question is on the
+  blocked issue and `/goal` survives a resume.
+- Where: his workspace, on this Mac or the agent laptop, using the worktree layout in
+  the developer guidelines. Nothing is scheduled on a person's machine: no launchd job,
+  no cron, no background process.
 
 ## What @jwildfire reviews
 
@@ -122,8 +131,8 @@ request.
 
 - On the issue: answer the blocked question, change a definition of done, reorder the
   requirements list, add a boundary. The next turn reads it.
-- In the session: open it on claude.ai/code or the phone and redirect it. A message
-  queues into a running session and is read at the next turn.
+- In the session: open it and redirect it. A message queues into a running session and
+  is read at the next turn.
 - By voice: the daily check-in reads `standup.md` aloud; a note dictated back is a
   comment on the issue it concerns, not a new intake lane.
 
@@ -131,7 +140,9 @@ request.
 
 A scheduled cloud routine on this repository
 ([obot.agent `routines/standup.md`](https://github.com/jwildfire/obot.agent/blob/main/routines/standup.md))
-renders, every night, from GitHub alone:
+renders, every night, from GitHub alone. It is not scheduled as of 2026-10-07: the
+published file is still the placeholder of 2026-09-11, and scheduling it is his call. It
+is written to render:
 
 - every open objective with its requirements' status labels and its complete / in
   progress / blocked counts across tasks, and the sentences from its requirements' latest
