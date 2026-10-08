@@ -9,16 +9,16 @@ release is cut; the GitHub release publishes from the section verbatim.
 
 **See it move:** the [annotated v0.5 demo](https://jwildfire.github.io/obot.roadmap/reports/oa-v0.6-hub-v0.5-demo/) has screenshots, captures and the detail behind everything below.
 
-The hub's first release as the standards home: a tracker in place of the project board, a cost chart that says what it covers, shorter release notes, and the fixes from a security review. Since 2026-10-07 the standards say a session runs locally and writes to GitHub as obotclaw[bot]; cloud sessions are parked. The roadmap pages no longer list draft releases.
+The hub's first release since it became the standards home: a tracker in place of the project board, a cost chart that says what it covers, shorter release notes, and the fixes from a security review. Since 2026-10-07 the standards say a session runs locally and writes to GitHub as obotclaw[bot]; cloud sessions are parked. The roadmap pages no longer list draft releases.
 
 ## What's new
 
 - **The tracker replaces the project board.** [`tracker.html`](https://jwildfire.github.io/obot.roadmap/tracker.html) shows every objective opened to its requirements and their tasks, with search, filters and a link that carries the view. The nav is the four pages that get read. PR [#347](https://github.com/jwildfire/obot.roadmap/pull/347)
 - **The Cost chart runs through October and says what it covers.** The [analytics page](https://jwildfire.github.io/obot.roadmap/analytics/index.html) names the days each record runs through and the stretches where nothing was recorded. Local usage is refreshed by hand. PR [#370](https://github.com/jwildfire/obot.roadmap/pull/370)
 - **The standards say how a session runs now.** A session runs locally, from @jwildfire's workspace, and writes to GitHub as obotclaw[bot]. Approving a pull request, merging past a ruleset and changing a ruleset stay his alone. [#384](https://github.com/jwildfire/obot.roadmap/issues/384), PR [#385](https://github.com/jwildfire/obot.roadmap/pull/385)
-- **Release notes are held to a length.** At most 600 words a section and 70 a feature bullet, with the detail on the release's demo page ([developer guidelines](docs/developer-guidelines.md#releases)).
-- **A release candidate is reviewed by three subagents the session spawns.** They replace ultrareview, which only a person can launch. The session resolves every finding and posts the review before @jwildfire is asked.
-- **The bot's key is out of the site build.** No workflow mints a bot token, so a push to `main` cannot act as the bot, and the steps that install outside code no longer see a personal token. [#382](https://github.com/jwildfire/obot.roadmap/issues/382), [#384](https://github.com/jwildfire/obot.roadmap/issues/384), PR [#383](https://github.com/jwildfire/obot.roadmap/pull/383), PR [#385](https://github.com/jwildfire/obot.roadmap/pull/385)
+- **Release notes are held to a length.** At most 600 words a section and 70 a feature bullet, with the detail on the release's demo page ([developer guidelines](https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md#releases)). obot.agent PR [#341](https://github.com/jwildfire/obot.agent/pull/341)
+- **A release candidate is reviewed by three subagents the session spawns.** They replace ultrareview, which only a person can launch. The session resolves every finding and posts the review before @jwildfire is asked. obot.agent PR [#340](https://github.com/jwildfire/obot.agent/pull/340)
+- **The site build no longer uses the bot's key.** The step that minted a bot token is gone, and the steps that install outside code no longer see a personal token. A push to `main` cannot act as the bot once @jwildfire deletes the two secrets the build has stopped reading. [#382](https://github.com/jwildfire/obot.roadmap/issues/382), [#384](https://github.com/jwildfire/obot.roadmap/issues/384), PR [#383](https://github.com/jwildfire/obot.roadmap/pull/383), PR [#385](https://github.com/jwildfire/obot.roadmap/pull/385)
 
 ## Also in this release
 

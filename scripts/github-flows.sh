@@ -130,7 +130,10 @@ upsert_ruleset() { # $1 repo, $2 body → prints ok / ok-without-copilot / error
 }
 
 settings_drift() { # $1 repo → "" or a phrase
-  local s; s=$(api "repos/$OWNER/$1" --jq '{a:.allow_auto_merge,d:.delete_branch_on_merge}')
+  # A failed read has neither setting in it, and used to be reported as both being off.
+  local s; s=$(api "repos/$OWNER/$1" --jq '{a:.allow_auto_merge,d:.delete_branch_on_merge}') \
+    && jq -e '(.a|type)=="boolean" and (.d|type)=="boolean"' <<<"$s" >/dev/null 2>&1 \
+    || { echo "could not read the settings; "; return; }
   local out=""
   [ "$(jq -r .a <<<"$s")" = true ] || out+="auto-merge off; "
   [ "$(jq -r .d <<<"$s")" = true ] || out+="delete-branch-on-merge off; "
@@ -153,6 +156,10 @@ ruleset_drift() { # $1 repo, $2 wanted body → "" or a phrase
   fi
 }
 
+# What plan prints after "now:". A ruleset that matches prints no line at all, so
+# this takes the text and not a pipe: sed has nothing to rewrite when nothing arrives.
+now() { local d="${1%; }"; echo "${d:-as wanted}"; }
+
 # ---------------------------------------------------------------- per repository
 drift=0
 for row in "${REPOS[@]}"; do
@@ -170,9 +177,9 @@ for row in "${REPOS[@]}"; do
   case $MODE in
     plan)
       echo "== $repo"
-      echo "settings: allow_auto_merge=true delete_branch_on_merge=true  (now: $(settings_drift "$repo" | sed 's/; $//;s/^$/as wanted/'))"
+      echo "settings: allow_auto_merge=true delete_branch_on_merge=true  (now: $(now "$(settings_drift "$repo")"))"
       for b in "${bodies[@]}"; do
-        echo "ruleset '$(jq -r .name <<<"$b")' on $(jq -r '.conditions.ref_name.include[0]' <<<"$b"): $(jq -r '[.rules[].type]|join(", ")' <<<"$b")  (now: $(ruleset_drift "$repo" "$b" | sed 's/; $//;s/^$/as wanted/'))"
+        echo "ruleset '$(jq -r .name <<<"$b")' on $(jq -r '.conditions.ref_name.include[0]' <<<"$b"): $(jq -r '[.rules[].type]|join(", ")' <<<"$b")  (now: $(now "$(ruleset_drift "$repo" "$b")"))"
       done ;;
     apply)
       printf '%s: ' "$repo"

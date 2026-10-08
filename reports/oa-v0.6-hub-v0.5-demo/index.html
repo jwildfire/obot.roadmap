@@ -108,6 +108,7 @@ li{margin:7px 0}
 .repro pre{overflow-wrap:anywhere}
 @media (max-width:520px){.wrap{padding:0 16px}.mast{padding-top:36px}}
 .note .lbl{display:block;font:600 10.5px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bronze);margin-bottom:7px}
+@media (max-width:520px){.term .bar,.repro .k,.note .lbl{font-size:11.5px}.eyebrow,.prs,.toc .ref{font-size:12px}.term .bar .who{font-size:11.5px}}
 </style>
 </head>
 <body>
@@ -154,14 +155,14 @@ as @jwildfire, so GitHub records him doing it.</span>
 
 Write as obotclaw[bot], in the one form that stops when the mint fails:
 
-  <span class="g">T=$(/Users/jwildfire/Documents/obot2/bin/obot-app-token)
+  <span class="g">T=$(&lt;workspace&gt;/bin/obot-app-token)
   GH_TOKEN=${T:?} gh &lt;the same args&gt;</span>
 
 <span class="dim">Both lines go in the same Bash call; shell variables do not carry over to the next
 one. If the write has to carry @jwildfire's name, do not run it: give him the command
 in a bash block and he runs it himself.</span></pre>
   </div>
-  <p class="what" style="margin-top:14px">The form matters. Handed an empty token, <code>gh</code> quietly uses the stored login, so a failed mint used to produce a write under his name that looked like a success. <code>${T:?}</code> stops the command instead.</p>
+  <p class="what" style="margin-top:14px">The form matters. The first line asks for a bot token; the second hands it to <code>gh</code>. Handed an empty token, <code>gh</code> quietly uses the stored login, so a failed request used to produce a write under his name that looked like a success. <code>${T:?}</code> is the shell's way of saying "stop here if T is empty".</p>
 
   <h3>Three things are his alone, with any token</h3>
   <div class="term after">
@@ -193,9 +194,10 @@ himself; a session never does, with any token.</pre>
 https://github.com/jwildfire/obot.agent/blob/main/AGENTS.md#identity-and-attribution
 https://github.com/jwildfire/obot.roadmap/blob/main/AGENTS.md#identity
 
-On the workspace machine:  /Users/jwildfire/Documents/obot2/bin/test-guard -v
+On the workspace machine:  bin/test-guard -v
 
-On GitHub: every issue and pull request linked from this page was opened by obotclaw[bot].</pre>
+On GitHub: every issue and pull request opened for these releases on 2026-10-07 was opened by obotclaw[bot].
+The earlier ones linked here, such as the tracker's pull request, predate the decision and were opened by @jwildfire.</pre>
   </div>
 
   <h3>What changed in the standards, passage by passage</h3>
@@ -336,6 +338,7 @@ RepositoryRole 5)</span>
 <span class="c">exit=1</span></pre>
     </div>
   </div>
+  <p class="what" style="margin-top:14px">"RepositoryRole 5" is GitHub's own name for the repository's admin role, which is the entry the stand-in added.</p>
   <p class="what" style="margin-top:14px">GitHub shows a ruleset's bypass list only to an account with admin. Run with the bot's token, the check says "bypass list not shown to this account" and exits 1, where a pass would have been a pass on a field nobody read. Against GitHub as it stands, run as @jwildfire, it prints "matches" for all nine.</p>
   <div class="repro">
     <div class="k">Reproduce</div>
@@ -369,7 +372,7 @@ Build package status dashboard
 0
 <span class="c">the renderer:</span>  npm install --no-save --ignore-scripts marked@18.1.0</pre>
   </div>
-  <p class="what" style="margin-top:14px">The proof that the site still builds is the deploy itself: the <a href="https://github.com/jwildfire/obot.roadmap/actions/runs/37711381104">run on the merge commit</a> is green, its log reads "status: 7 repos rendered to _site/status/index.html", and the <a href="https://jwildfire.github.io/obot.roadmap/status.html">status page</a> frames the dashboard, not its placeholder. The <a href="https://jwildfire.github.io/obot.roadmap/catalog.html">catalog</a> now says of its to-do list: "Draft releases are not listed: the build no longer holds a token that can see them."</p>
+  <p class="what" style="margin-top:14px">The proof that the site still builds is the deploy itself: the <a href="https://github.com/jwildfire/obot.roadmap/actions/runs/37711381104">run on the merge commit</a> is green, its log reads "status: 7 repos rendered to _site/status/index.html", and the <a href="https://jwildfire.github.io/obot.roadmap/status.html">status page</a> frames the dashboard, not its placeholder. The <a href="https://jwildfire.github.io/obot.roadmap/catalog.html">catalog</a> now says of its to-do list: "Draft releases are not listed: a release candidate is a pull request."</p>
   <div class="note"><span class="lbl">Also retired: a nightly job on his Mac</span>A scheduled job fetched the hub's <code>main</code> every night and ran what it found, under his account, to refresh the Cost chart. The job is unloaded, its script no longer hands control to the copy of itself it just fetched, and the page it fed is refreshed by hand.</div>
   <div class="note"><span class="lbl">Still his to do</span>Two secrets on the hub, <code>OBOT_APP_ID</code> and <code>OBOT_APP_PRIVATE_KEY</code>, are no longer read by the deploy. Deleting them, and replacing the key they hold, is for @jwildfire: a session cannot and should not.</div>
 </section>
@@ -421,7 +424,7 @@ Switch day / week / month, and $ / all tokens. Read the panel before the bars.</
 </section>
 
 <footer class="foot">
-  <p>Every capture on this page is real output taken on 2026-10-07, not a mock-up. The "before" captures were produced by running the earlier version of the same file: the checker as it stood on obot.agent's <code>main</code> on 2026-10-06, and the hub's ruleset check before its fix. Terminal colour is added in CSS.</p>
+  <p>Every capture on this page is real output taken on 2026-10-07, not a mock-up. The workspace's folder path is shortened to <code>&lt;workspace&gt;</code> in the first capture. The "before" captures were produced by running the earlier version of the same file: the checker as it stood on obot.agent's <code>main</code> on 2026-10-06, and the hub's ruleset check before its fix. Terminal colour is added in CSS.</p>
   <p style="margin-top:14px"><a href="https://github.com/jwildfire/obot.agent/blob/main/NEWS.md">obot.agent release notes</a> · <a href="https://github.com/jwildfire/obot.roadmap/blob/main/NEWS.md">obot.roadmap release notes</a> · <a href="https://jwildfire.github.io/obot.roadmap/">obot hub</a></p>
   <hr style="border:0;border-top:1px solid var(--rule);margin:22px 0">
   <p>This demo was drafted by Claude Code using Opus 5.5.</p>

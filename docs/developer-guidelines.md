@@ -11,7 +11,9 @@ merge, and what a chart must have before it is done. The tracking rules are the
 Amended 2026-10-07 by @jwildfire's decision: sessions run locally, from his workspace on
 his own machines, and write to GitHub as obotclaw[bot]. Cloud sessions are parked ("we
 can probably just park cloud support for now and i'll just do local here or on the agent
-laptop"). The passages that said otherwise are changed below; nothing else is.
+laptop"). The passages that said otherwise are changed below. One is left as it was: the
+block every repository's `CLAUDE.md` carries, which still names the cloud path, so that
+no repository drifts from it.
 
 ## Repositories and branches
 
@@ -104,9 +106,10 @@ after its PR merges; never remove another session's.
   release-candidate pull request has a second reason: GitHub does not let him approve
   a pull request he authored, and the release ruleset requires his approval.
 - The bot's token, and the guard that refuses a GitHub write made any other way, are
-  tooling of his workspace. They are in no repository, this one included, and the
-  bot's key is in his machines' Keychains and nowhere else. The workspace's README
-  describes them.
+  tooling of his workspace. They are in no repository, this one included. The bot's
+  key belongs in his machines' Keychains and nowhere else; this repository's secrets
+  held a copy for the site build, which no longer reads it, and deleting that copy is
+  his to do. The workspace's README describes the tooling.
 - Three things are his alone, and a session does not do them with any token:
   approving a pull request, merging past a ruleset, and changing a ruleset or a
   branch protection.
