@@ -92,8 +92,9 @@ but no new entries are written ([diary/README.md](diary/README.md)).
 A session writes to GitHub as obotclaw[bot], the program's GitHub App, and never as
 @jwildfire (his decision, 2026-10-07; developer guidelines → Commits). Sessions run
 locally, from his workspace; the bot's token and the guard that refuses any other kind of
-write are tooling of that workspace and are in no repository. No workflow here holds the
-bot's key. Three things are his alone, with any token: approving a pull request, merging
+write are tooling of that workspace and are in no repository. The site build no longer
+reads the bot's key. The key is still among this repository's secrets until @jwildfire
+deletes it, and one retired workflow, the App smoke test, would read it if run by hand. Three things are his alone, with any token: approving a pull request, merging
 past a ruleset, and changing a ruleset. His approval of a release candidate may be
 given in the session's approval prompt and recorded by the session as his review
 (developer guidelines → Commits). The drafted-by line at the foot of every issue,
