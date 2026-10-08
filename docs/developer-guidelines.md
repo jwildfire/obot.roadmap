@@ -15,6 +15,10 @@ laptop"). The passages that said otherwise are changed below. One is left as it 
 block every repository's `CLAUDE.md` carries, which still names the cloud path, so that
 no repository drifts from it.
 
+Amended 2026-10-07 by @jwildfire's decision, given as a multiple-choice answer in a local
+session ("Tag it, fix the line"): obot.roadmap releases by a tag on `main`. The Releases
+section said it "does not cut releases" while v0.1 to v0.4 stood as GitHub releases.
+
 ## Repositories and branches
 
 | Repository | Kind | Integration branch — merges on green checks | Release branch — @jwildfire's review |
@@ -334,8 +338,9 @@ deployed site:
 - After the tag: the hub requirements it delivered close with their proof comments and
   their label moves to `status: released`, and the requirement's nightly comment reports
   them under Complete. Publishing stays human.
-- obot.agent releases by `main → stable` PR; demo-301 by `main → site`; obot.roadmap
-  does not cut releases.
+- obot.agent releases by `main → stable` PR; demo-301 by `main → site`. obot.roadmap has
+  no release branch: it releases by a tag on `main`, after the same review gate, when
+  @jwildfire says to tag it, and the GitHub release publishes from its `NEWS.md` section.
 
 ## Artifacts and pages on the hub
 

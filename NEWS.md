@@ -5,7 +5,7 @@ work accumulates under a vX.Y (Upcoming) heading that loses the suffix when the
 release is cut; the GitHub release publishes from the section verbatim.
 -->
 
-# obot.roadmap v0.5 (Upcoming)
+# obot.roadmap v0.5 — local sessions and the tracker
 
 **See it move:** the [annotated v0.5 demo](https://jwildfire.github.io/obot.roadmap/reports/oa-v0.6-hub-v0.5-demo/) has screenshots, captures and the detail behind everything below.
 
@@ -22,14 +22,14 @@ The hub's first release since it became the standards home: a tracker in place o
 
 ## Also in this release
 
-- **The ruleset check fails when it cannot look.** `scripts/github-flows.sh check` reports a ruleset it cannot read as drift, and any entry on a bypass list. It used to print "matches" for both. [#378](https://github.com/jwildfire/obot.roadmap/issues/378), PR [#379](https://github.com/jwildfire/obot.roadmap/pull/379)
+- **The ruleset check fails when it cannot look.** `scripts/github-flows.sh check` reports a ruleset it cannot read as drift, and any entry on a bypass list. It used to print "matches" for both. [#378](https://github.com/jwildfire/obot.roadmap/issues/378), PR [#379](https://github.com/jwildfire/obot.roadmap/pull/379), PR [#387](https://github.com/jwildfire/obot.roadmap/pull/387), PR [#390](https://github.com/jwildfire/obot.roadmap/pull/390)
 - **The nightly local usage job is retired.** Its script no longer hands control to a freshly fetched copy of itself. [#378](https://github.com/jwildfire/obot.roadmap/issues/378), PR [#379](https://github.com/jwildfire/obot.roadmap/pull/379)
-- **The roadmap pages list release candidates from pull requests only.** Reading draft releases needed a token that can write. [#384](https://github.com/jwildfire/obot.roadmap/issues/384), PR [#385](https://github.com/jwildfire/obot.roadmap/pull/385)
+- **The roadmap pages list release candidates from pull requests only.** Reading draft releases needed a token that can write. [#384](https://github.com/jwildfire/obot.roadmap/issues/384), PR [#385](https://github.com/jwildfire/obot.roadmap/pull/385), PR [#387](https://github.com/jwildfire/obot.roadmap/pull/387)
 - **Links to pages obot.agent removed point at their new homes.** [#372](https://github.com/jwildfire/obot.roadmap/issues/372), PR [#376](https://github.com/jwildfire/obot.roadmap/pull/376)
 
 ## Tests and provenance
 
-135 generator tests and 15 usage-aggregator tests pass, and the deploy checks that every published page describes itself. Each security finding fixed here was reproduced before its fix. The bot's token and the guard behind the third bullet are tooling of @jwildfire's workspace and are in no repository.
+138 generator tests and 15 usage-aggregator tests pass, and the deploy checks that every published page describes itself. Each security finding fixed here was reproduced before its fix. The bot's token and the guard behind the third bullet are tooling of @jwildfire's workspace and are in no repository.
 
 # obot.roadmap v0.4 — the standards home
 
