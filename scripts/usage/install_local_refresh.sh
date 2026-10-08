@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Install (or reinstall) the nightly usage refresh as a launchd agent on this Mac.
 #
+# RETIRED on 2026-10-07: the job was unloaded and is not meant to be reinstalled
+# as it stands. It runs the hub's main, freshly fetched, every night under
+# @jwildfire's account, and main takes direct pushes. Kept for the record and for
+# whoever redesigns it; refresh by hand instead (README.md beside this file).
+#
 # Copies this checkout's scripts/usage/refresh_local.sh to ~/.obot/bin/ and writes
 # ~/Library/LaunchAgents/com.obot.usage-refresh.plist pointing at the copy,
 # scheduled for 02:30 local time every day, logging to
@@ -11,7 +16,7 @@
 # ~/Documents, macOS privacy protection (TCC) refuses a launchd job access to
 # that folder, and every night ended at "Operation not permitted", exit 126,
 # before the script's first line. ~/.obot is not a protected folder. The copy
-# keeps itself current by handing over to the script in its own clone.
+# no longer updates itself (#378); running this installer again replaces it.
 #
 # Remove with:
 #

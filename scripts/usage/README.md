@@ -64,6 +64,12 @@ machine may say about itself in public
 
 ## The local half, on his machine
 
+> The nightly job was retired on 2026-10-07 and is not installed. It ran the hub's `main`,
+> freshly fetched, every night under @jwildfire's account, and `main` takes direct
+> pushes: a push was a way to run code on his Mac. Local usage is refreshed by hand, with
+> the two commands at the end of this section, until the job is redesigned. What follows
+> describes the job as it was.
+
 Once, in the checkout:
 
 ```sh
@@ -77,8 +83,10 @@ to: from its installation on 2026-09-12 until 2026-10-05 the job pointed at the 
 inside the checkout, the checkout is under `~/Documents`, and macOS privacy protection
 refuses a launchd job access to that folder — so all 25 runs ended at `Operation not
 permitted`, exit 126, before the script's first line, and the page went seven weeks
-without a local update. Re-run the installer once to pick up the fix. The copy hands over
-to the script in its own clone, so it does not go stale.
+without a local update. Re-run the installer once to pick up the fix. The copy used to
+hand over to the script in its own clone so that it did not go stale; that hand-over is
+removed ([#378](https://github.com/jwildfire/obot.roadmap/issues/378)), and re-running
+the installer is how the copy is updated.
 
 `refresh_local.sh` keeps its own clone under `~/.obot/usage-refresh` so a working
 checkout is never committed from. It uses the machine's own git credentials and the
