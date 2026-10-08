@@ -220,11 +220,12 @@ query ($prQ: String!, $reqQ: String!) {
   const rcCount = rcPrs.length + drafts.length;
   const pinnedNotices = [];
   if (!prRes.ok) pinnedNotices.push(`Release-candidate PRs unknown — ${prRes.notice}`);
-  if (!relRes.ok) pinnedNotices.push(`Draft releases unknown — ${relRes.notice}`);
+  if (!relRes.ok) pinnedNotices.push(`Releases unknown — ${relRes.notice}`);
   if (!decRes.ok) pinnedNotices.push(`Decisions unknown — ${decRes.notice}`);
 
   const countBits = [];
-  if (prRes.ok || relRes.ok) countBits.push(`${rcCount} release candidate${rcCount === 1 ? '' : 's'} in the review queue`);
+  // Release candidates are pull requests, so only that read can vouch for the count.
+  if (prRes.ok) countBits.push(`${rcCount} release candidate${rcCount === 1 ? '' : 's'} in the review queue`);
   if (decRes.ok) countBits.push(`${awaiting.length} decision${awaiting.length === 1 ? '' : 's'} waiting`);
   const allOk = prRes.ok && relRes.ok && decRes.ok;
   const pinnedLines = [];

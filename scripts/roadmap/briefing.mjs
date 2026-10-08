@@ -106,7 +106,7 @@ export async function render(data) {
   // failed queries is the failure this programme keeps having, and the queue's
   // own collectors already carry their notices.
   const failed = [
-    ['review-requested PRs', prRes], ['draft releases', relRes],
+    ['review-requested PRs', prRes], ['releases', relRes],
     ['decisions', decRes], ['requirements', reqRes],
   ].filter(([, r]) => r && !r.ok).map(([label]) => label);
   const notice = failed.length
