@@ -5,6 +5,10 @@ work accumulates under a vX.Y (Upcoming) heading that loses the suffix when the
 release is cut; the GitHub release publishes from the section verbatim.
 -->
 
+# obot.roadmap v0.6 (Upcoming)
+
+So far: @jwildfire approves a release candidate on GitHub or in the session's approval prompt, and the session then merges, tags and publishes it as obotclaw[bot]. The developer guidelines were amended on 2026-10-07.
+
 # obot.roadmap v0.5 — local sessions and the tracker
 
 **See it move:** the [annotated v0.5 demo](https://jwildfire.github.io/obot.roadmap/reports/oa-v0.6-hub-v0.5-demo/) has screenshots, captures and the detail behind everything below.

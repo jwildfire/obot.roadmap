@@ -19,6 +19,13 @@ Amended 2026-10-07 by @jwildfire's decision, given as a multiple-choice answer i
 session ("Tag it, fix the line"): obot.roadmap releases by a tag on `main`. The Releases
 section said it "does not cut releases" while v0.1 to v0.4 stood as GitHub releases.
 
+Amended 2026-10-07 by @jwildfire's decision, typed in a local session: "I want to be able
+to approve here and have you merge/release. update the rules to make that the standard."
+He approves a release candidate on GitHub or in an approval prompt in the session; the
+session records an approval given in the prompt as his review, then merges, tags and
+publishes as obotclaw[bot]. The passages that said the merge and the publishing were his
+are changed below.
+
 ## Repositories and branches
 
 | Repository | Kind | Integration branch — merges on green checks | Release branch — @jwildfire's review |
@@ -105,7 +112,7 @@ after its PR merges; never remove another session's.
   commits them by design.
 - A session writes to GitHub as obotclaw[bot], the program's GitHub App, and never as
   @jwildfire (his decision, 2026-10-07): issues, comments, commits, pushes, pull
-  requests and the merges of increments. `gh` on his machine is signed in as him and
+  requests and merges. `gh` on his machine is signed in as him and
   he is admin on every repository, so a write with no token set is recorded as his. A
   release-candidate pull request has a second reason: GitHub does not let him approve
   a pull request he authored, and the release ruleset requires his approval.
@@ -117,6 +124,26 @@ after its PR merges; never remove another session's.
 - Three things are his alone, and a session does not do them with any token:
   approving a pull request, merging past a ruleset, and changing a ruleset or a
   branch protection.
+- His approval of a release candidate can be given in the session, and the session then
+  records it on GitHub from his account (his decision, 2026-10-07). It is the only write
+  a session makes as him, and it is not the session approving: the approval is his
+  click.
+  - The session asks with a multiple-choice prompt whose every word is fixed: the
+    question is
+    `Approve <repo> vX.Y.Z-RCn for merge and release? https://github.com/jwildfire/<repo>/pull/<n> at commit <first 12 characters of the head>`,
+    and the options are "Approve and continue", "Request changes" and "Pause". Only
+    "Approve and continue", picked plainly, is an approval, and only of a pull request
+    titled as a release candidate. A "yes" typed in chat is not one.
+  - The approval stands while it is his last word in the session, and for 30 minutes.
+    Anything he says afterwards withdraws it, and the session asks again.
+  - The review it records names the head commit and says in its body that a session
+    recorded it. The workspace's guard admits that one write only when the session's
+    record shows the click and GitHub shows the same head, so a new commit needs a new
+    click. The merge that follows names the same commit
+    (`gh pr merge --match-head-commit`).
+  - It is asked only after the review gate under [Releases](#releases) has passed.
+  - He can always approve on GitHub instead. Either way the release branch's ruleset
+    sees an approving review from his account.
 
 ## Pull requests
 
@@ -125,7 +152,7 @@ after its PR merges; never remove another session's.
 | Base | integration branch | release branch |
 | Opened | non-draft, auto-merge enabled | as a draft; marked ready and @jwildfire requested only after the review gate under [Releases](#releases) |
 | Reviewer | nobody — never assign or request him | @jwildfire, always |
-| Merges | on green checks, by GitHub | on his approving review, by him |
+| Merges | on green checks, by GitHub | on his approving review, by the session as obotclaw[bot], never past the ruleset |
 | Body | exec summary; `Closes <repo>#<task>`; the definition-of-done evidence; details | the release shape under [Releases](#releases) |
 
 The increment PR body:
@@ -274,8 +301,9 @@ deployed site:
   ```markdown
   {One sentence: what this release lets someone do that they could not do before.}
 
-  <!-- Release candidate. Merges only on @jwildfire's approving review; the release
-       branch's ruleset enforces it. Agent-facing note. -->
+  <!-- Release candidate. Merges only on @jwildfire's approving review, given on
+       GitHub or in the session's approval prompt; the release branch's ruleset
+       enforces it. Agent-facing note. -->
 
   - **See it move:** [annotated demo]({deployed hub URL})
   - **Release notes:** [NEWS.md]({repo}/blob/{head branch}/NEWS.md)
@@ -337,7 +365,12 @@ deployed site:
     with an unresolved finding.
 - After the tag: the hub requirements it delivered close with their proof comments and
   their label moves to `status: released`, and the requirement's nightly comment reports
-  them under Complete. Publishing stays human.
+  them under Complete.
+- Merging and publishing follow his approval, and the session does both as obotclaw[bot]
+  (his decision, 2026-10-07; until then the standard read "Publishing stays human"). On
+  his approving review the session merges the release candidate, creates the tag on the
+  release branch and publishes the GitHub release from the `NEWS.md` section. The
+  approval covers the commit he approved and nothing after it.
 - obot.agent releases by `main → stable` PR; demo-301 by `main → site`. obot.roadmap has
   no release branch: it releases by a tag on `main`, after the same review gate, when
   @jwildfire says to tag it, and the GitHub release publishes from its `NEWS.md` section.

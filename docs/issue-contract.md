@@ -282,7 +282,8 @@ the thing being approved:
   `status: ready` label is the record that the gate held, and the session quotes the
   comment's link in its start comment.
 - A release is approved by his approving review on the release-candidate PR, which the
-  release branch's ruleset requires.
+  release branch's ruleset requires. When he gives it in the session's approval prompt,
+  the session records it as that review, and the review's body says so.
 - A decision he makes is recorded where he made it — the issue comment, the review, the
   Q&A thread — and an approval-gated action (a deletion, a merge to a release branch,
   anything an invariant names) cites that record, with its date, not the requirement that

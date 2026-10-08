@@ -36,7 +36,7 @@ laptop"). The passages that said otherwise are changed below; nothing else is.
 |---|---|---|---|---|
 | 1 · Prep | a session in the workspace, on the hub | agent and @jwildfire together — active collaboration | Backlog → Ready | the requirement is drafted, designed and decomposed with the hub's `requirement-drafting`, `requirement-design` and `requirement-tasks` skills; tasks are filed in their repositories with definitions of done and milestones; the objective's tree is signed off; the Ready gate is checked and the status set |
 | 2 · Execution | a session in the workspace, on the requirement's repository | the agent, semi-autonomously; @jwildfire steers on the issue or in the session | Ready → In session → Review | the `requirement-session` skill: set `/goal` from the requirement's definition of done, work the tasks through auto-merging PRs, comment nightly, open the release candidate as a draft, review it with independent subagent reviewers and resolve every finding, then mark it ready for him |
-| 3 · Review | GitHub | mostly @jwildfire | Review → Released | the RC PR with its demo page and notes; his approving review merges it; the tag closes the requirement |
+| 3 · Review | GitHub | mostly @jwildfire | Review → Released | the RC PR with its demo page and notes; he approves it on GitHub or in the session's approval prompt, and the session merges, tags and publishes; the tag closes the requirement |
 
 An execution session that finds its requirement still in Backlog has a prep job in front
 of it, not an execution job: it files what is missing and stops for sign-off. The
@@ -61,7 +61,8 @@ is Ready ([issue contract → Status](issue-contract.md#status)).
 5. @jwildfire steers: answers on the blocked issue, redirects the running session, or
    changes the objective body.
 6. When the tree ships a release, the release-candidate pull request goes to him with
-   its demo page and notes. He merges; the tag is cut; the objective closes.
+   its demo page and notes. He approves, on GitHub or in the session's approval prompt;
+   the session merges it, cuts the tag and publishes the release; the objective closes.
 7. Every Friday the deployed site must show what the plan said it would. That is the
    honest measure of the week.
 
@@ -69,8 +70,8 @@ is Ready ([issue contract → Status](issue-contract.md#status)).
 
 | Who | Does | Does not |
 |---|---|---|
-| @jwildfire | owns objective bodies and their links; signs off trees; answers blocked questions; reviews and merges release candidates; applies rulesets | review increment PRs; get asked in chat what could be asked on an issue |
-| A requirement session | one requirement, start to finish; files missing tree nodes and stops for sign-off; works its tasks through PRs; comments on the requirement; reports its tasks' state every turn | edit an objective or requirement body or its links; start a second requirement; merge a release branch |
+| @jwildfire | owns objective bodies and their links; signs off trees; answers blocked questions; reviews and approves release candidates; applies rulesets | review increment PRs; get asked in chat what could be asked on an issue |
+| A requirement session | one requirement, start to finish; files missing tree nodes and stops for sign-off; works its tasks through PRs; comments on the requirement; reports its tasks' state every turn | edit an objective or requirement body or its links; start a second requirement; merge a release branch without his approving review; treat a "yes" in chat as that review |
 | A subagent or Workflow stage | one task, one bounded investigation, or one review dimension on a PR, briefed with its issue and definition of done; returns evidence | act without an issue to be bound to; edit, push or comment when it is a reviewer |
 | The standup routine | reads GitHub nightly and publishes the standup | comment, label, open or close anything |
 
@@ -121,7 +122,9 @@ Exactly three things reach him:
 3. Release-candidate pull requests — each with a demo page, release notes and an
    independent review posted on the PR with every finding resolved
    ([developer guidelines → Releases](developer-guidelines.md#releases)), merged only on
-   his approving review, which the release branch's ruleset requires.
+   his approving review, which the release branch's ruleset requires. He gives it on
+   GitHub or in the session's approval prompt
+   ([developer guidelines → Commits](developer-guidelines.md#commits)).
 
 Increment pull requests never reach him: they merge on green checks. A session that
 finds itself wanting his opinion on an increment has a blocked question, not a review
