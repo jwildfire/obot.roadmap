@@ -250,7 +250,7 @@ export async function render(data) {
 
   const notices = [];
   if (!prRes.ok) notices.push(`${prRes.notice} — review-requested PRs may be missing (the live re-check below still runs).`);
-  if (!relRes.ok) notices.push(`${relRes.notice} — draft releases and release decisions are missing.`);
+  if (!relRes.ok) notices.push(`${relRes.notice} — release decisions are missing.`);
   if (!decRes.ok) notices.push(`${decRes.notice} — open decisions are missing.`);
   if (!reqRes.ok) notices.push(`${reqRes.notice} — stalled and drifted requirements are missing.`);
 

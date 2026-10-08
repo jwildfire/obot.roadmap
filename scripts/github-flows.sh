@@ -48,7 +48,12 @@ ONLY=("$@")
 need() { command -v "$1" >/dev/null || { echo "needs $1" >&2; exit 2; }; }
 need gh; need jq
 
-wanted() { [ ${#ONLY[@]} -eq 0 ] || printf '%s\n' "${ONLY[@]}" | grep -qx "$1"; }
+# -F: a repository name is a name, not a pattern ("safety-viz" matched "safety.viz").
+wanted() { [ ${#ONLY[@]} -eq 0 ] || printf '%s\n' "${ONLY[@]}" | grep -qxF "$1"; }
+# A name that is not in the list above used to print nothing and exit 0, which reads as a pass.
+for name in ${ONLY[@]+"${ONLY[@]}"}; do
+  printf '%s\n' "${REPOS[@]%%|*}" | grep -qxF "$name" || { echo "unknown repository: $name (known: ${REPOS[*]%%|*})" >&2; exit 2; }
+done
 
 # ---------------------------------------------------------------- rule builders
 pr_rule() { # $1 approvals
