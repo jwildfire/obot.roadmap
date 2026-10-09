@@ -53,6 +53,28 @@ where the two differ, the contract wins. This is prep-phase work, done with @jwi
    The page holds at a 390-pixel viewport; he reads it on the deployed site, so commit and
    push it to `main` before sharing its URL.
 
+   **A design of something people look at is shown, not described.** When the requirement
+   changes a page, an app view or a chart, the recommended form is the annotated mockup
+   (@jwildfire, 2026-10-09, on the design for safety.viz release 1.11: "Layout of the
+   document is A+… note the screenshot+Callout as a recommended standard"). The model is
+   [`reports/sv-v1.11-design-2026-10-09/`](../../../reports/sv-v1.11-design-2026-10-09/):
+
+   - One mockup per key view, of the whole page at desktop width and not a cropped
+     component, built from the product's own styles around a still of the real chart.
+   - Numbered markers on every changed place, and a legend under the mockup with one
+     line per number saying what changed and why.
+   - A Today switch on the same mockup that swaps in a capture of the released page in
+     the same state, so the change is seen and not remembered.
+   - Pieces that respond to a click do so in the mockup, and a state switch (before,
+     running, after) stands in for three pictures.
+   - Above the mockups: three lines of summary, then only the decisions still open, each
+     with the recommended answer first. Below them: the change list, grouped so that each
+     group can become one requirement, with the files it touches and its size.
+   - A mockup scales to fit or scrolls inside its own frame; the page itself still holds
+     at a 390-pixel viewport.
+   - When he asks for options, each option is a mockup in the same frame with the
+     recommendation first.
+
 4. **Draft the design** covering:
    - Summary of the approach
    - Affected repositories
