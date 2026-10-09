@@ -26,6 +26,13 @@ session records an approval given in the prompt as his review, then merges, tags
 publishes as obotclaw[bot]. The passages that said the merge and the publishing were his
 are changed below.
 
+Amended 2026-10-09 by @jwildfire's decisions on the design for safety.viz release 1.11,
+given in a local session: "All of this is 'exploratory' - nothing is qualified. All
+results should be confirmed", and "Make sure that these new design principles land in the
+scaffold." Two sections are new, Designing and checking what people look at and Status
+ladder, and the definition of done for a chart gains a sixth line. Nothing else is
+reworded.
+
 ## Repositories and branches
 
 | Repository | Kind | Integration branch — merges on green checks | Release branch — @jwildfire's review |
@@ -254,7 +261,7 @@ merging anything there. Never work around a ruleset.
 
 ## Definition of done for a chart
 
-A chart is not done — and its requirement is not Released — until all five hold on the
+A chart is not done — and its requirement is not Released — until all six hold on the
 deployed site:
 
 1. Gallery demo on the safety.viz site, on the canonical demo data.
@@ -265,6 +272,35 @@ deployed site:
 5. Static twin in gsm.safety driven by the same derived data and the same settings names
    (objective 2, 2026-09-10), or filed as a milestoned requirement where the plan schedules it
    later.
+6. Its rung on the [status ladder](#status-ladder), stated in the site's configuration
+   and shown by the status label wherever the chart is below Exploratory. A chart that
+   states none is Exploratory.
+
+## Designing and checking what people look at
+
+For an app view, a tab, a chart or a page: anything a person looks at. The form of a
+design page is in the hub's
+[`requirement-design`](../.github/skills/requirement-design/SKILL.md) skill.
+
+- Designed before it is built: whole-page mockups at desktop width, with every change
+  numbered and today's page one click away; options shown as mockups; rounds until
+  @jwildfire approves.
+- Judged as a first-time visitor on a shared screen would see it, and it still holds at a
+  390-pixel viewport.
+- Built from its mockup. A task that changes what a person sees is looked at in a browser
+  at the design's width before it closes, and the screenshot goes in the pull request's
+  evidence. Where the mockup cannot be built as drawn, the session asks on the
+  requirement; it does not redesign.
+- One way to do a thing across an app: one control that starts R, in one place; one place
+  where files come in; one status label.
+- Every module looks like the others: a tab with a colour of its own, never grey, and a
+  row of names under the header.
+- The result first, the machinery folded: a log, a list of versions or a run's steps
+  stays closed until asked for, and a control shrinks once it has done its job.
+- Status is an icon with its words in the accessible name; grey means missing, and red is
+  kept for an error.
+- A table takes the width its content needs.
+- An interim path gets the least that it needs.
 
 ## Releases
 
@@ -413,6 +449,29 @@ discipline — traceable requirements, controlled changes, documented evidence,
 deterministic tests, explicit review checkpoints — and says so in those words:
 "GxP-oriented", "qualification-ready evidence", "traceability support". Never
 "validated" unless a formal validation process exists.
+
+## Status ladder
+
+How far to trust a chart, a tab or an app is said once, in one form. @jwildfire,
+2026-10-09: "All of this is 'exploratory' - nothing is qualified. All results should be
+confirmed."
+
+- Four rungs, highest first: Qualified, Exploratory, Experimental, Prototype.
+- Qualified: it has been through qualification, and there is a record to point at.
+  Nothing in the program is Qualified. A build refuses the word until that record exists.
+- Exploratory: tested and documented, and every result is confirmed in a qualified system
+  before anyone relies on it. This is the best anything is today, and the rung of
+  anything that states no other.
+- Experimental: tested and documented, but what it shows or how it behaves may still
+  change. It may ship in an app and is counted among a library's charts. It says so
+  wherever it is opened, with one sentence giving the reason.
+- Prototype: an early look. It is shown on a docs site only, never in an app, and is not
+  counted among a library's charts.
+- Because the best anything is today is Exploratory, nothing is called stable, validated
+  or qualified: not on a page, in a label, in release notes or in an issue.
+- One label carries the rung everywhere: the same component and the same four words in an
+  app, on a docs site and on a chart drawn alone. An app carries one label for its own
+  rung, and a chart or tab carries its own only when it is below the app's.
 
 ---
 This document was drafted by Claude Code using Fable 5.1 and reviewed by @jwildfire.
