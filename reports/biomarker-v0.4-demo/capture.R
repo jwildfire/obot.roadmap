@@ -91,6 +91,10 @@ Choose <- function(lPage, strChart, strControl, strValue) {
     strChart, strControl, strValue
   ))
 }
+# What a part of the app's own page says, its white space made one space.
+Said <- function(lPage, strSelector) {
+  lPage$Evaluate(sprintf("document.querySelector('%s').textContent.replace(/\\s+/g, ' ').trim()", strSelector))
+}
 # What the chart asked R and what it was answered, as the page holds it.
 Asked <- function(lPage, strChart) lPage$Evaluate(sprintf("%s.statistics()", Chart(strChart)))
 # The same request as a widget made in this session stores it: every stored
@@ -119,9 +123,11 @@ lPage <- Open(lApp$address, 1280L, 900L)
 Wait(lPage, Chart("GroupComparison"), "the group comparison drawn")
 Wait(lPage, "document.querySelectorAll('#GroupComparison button.bv-tile').length === 12", "twelve tiles")
 lNumbers$opens <- list(
-  charts = unlist(lPage$Evaluate("Array.from(document.querySelectorAll('a[data-value]')).map((node) => node.textContent.trim())")),
+  charts = unlist(lPage$Evaluate("Array.from(document.querySelectorAll('a[data-value]')).map((node) => node.textContent.replace(/\\s+/g, ' ').trim())")),
+  chip = Said(lPage, "#gsm_bio_study_said"),
   source = lPage$Evaluate("document.querySelector('#gsm_bio_source').textContent"),
-  foot = Foot(lPage, "GroupComparison")
+  foot = Foot(lPage, "GroupComparison"),
+  page_foot = Said(lPage, ".gsm-bio-app-foot")
 )
 lNumbers$opens$text_size <- lPage$Evaluate("({ root: getComputedStyle(document.documentElement).fontSize, foot: getComputedStyle(document.querySelector('#GroupComparison .bv-foot-line')).fontSize })")
 lPage$Picture("app-opens.jpg")
@@ -191,8 +197,10 @@ lPhone <- Open(lApp$address, 390L, 844L)
 Wait(lPhone, "document.querySelectorAll('#GroupComparison button.bv-tile').length === 12", "twelve tiles on a phone")
 lNumbers$phone <- list(
   wide = lPhone$Evaluate("document.documentElement.scrollWidth"),
+  room = lPhone$Evaluate("document.documentElement.clientWidth"),
   window = lPhone$Evaluate("window.innerWidth")
 )
+if (lNumbers$phone$wide > lNumbers$phone$room) stop("the app scrolls sideways on a phone", call. = FALSE)
 lPhone$Picture("app-phone.jpg")
 lPhone$Close()
 lApp$Stop()
@@ -209,7 +217,31 @@ haven::write_xpt(dfOwn, strResults)
 dfPeople <- Synthetic_Participants
 strPeople <- file.path(strDir, "dm.csv")
 utils::write.csv(dfPeople, strPeople, row.names = FALSE)
-lNumbers$own_file <- list(results = "lb.xpt", columns = names(dfOwn), participants = "dm.csv", rows = nrow(dfOwn))
+# A file R cannot read: text under a SAS transport file's name.
+strBroken <- file.path(strDir, "adtte.xpt")
+writeLines("not a table", strBroken)
+lNumbers$own_file <- list(results = "lb.xpt", columns = names(dfOwn), participants = "dm.csv", rows = nrow(dfOwn), unreadable = "adtte.xpt")
+# The page's width beside the room it has: equal when nothing scrolls sideways.
+Wide <- function(lPage) lPage$Evaluate("({ wide: document.documentElement.scrollWidth, room: document.documentElement.clientWidth })")
+# The three results columns the file names its own way, said.
+SayColumns <- function(lPage) {
+  for (strPair in list(c("USUBJID", "SUBJID"), c("TEST", "LBTEST"), c("STRESN", "LBSTRESN"))) {
+    lPage$Evaluate(sprintf(
+      "(() => { const node = document.querySelector('#gsm_bio_column_results_%s'); node.value = '%s'; node.dispatchEvent(new Event('change', { bubbles: true })); return node.value; })()",
+      strPair[1], strPair[2]
+    ))
+  }
+  Sys.sleep(0.5)
+}
+# An outcomes file R cannot read, chosen and then taken away again.
+ChooseUnreadable <- function(lPage) {
+  lPage$Upload("#gsm_bio_file_outcomes", strBroken)
+  Wait(lPage, "document.querySelector('#gsm_bio_columns_outcomes .gsm-bio-app-problem')", "the outcomes card saying its file was not read")
+}
+RemoveUnreadable <- function(lPage) {
+  lPage$Evaluate("document.querySelector('#gsm_bio_remove_outcomes').click()")
+  Wait(lPage, "!document.querySelector('#gsm_bio_columns_outcomes .gsm-bio-app-problem')", "the unreadable file taken away")
+}
 
 lApp <- lRunApp("RunApp()")
 lPage <- Open(lApp$address, 1280L, 900L)
@@ -225,6 +257,7 @@ Viewer <- function() {
   )
 }
 lNumbers$own_file$viewer_opens <- Viewer()
+lNumbers$own_file$rail_opens <- Said(lPage, "#gsm_bio_rail")
 lPage$Picture("data-empty.jpg")
 lPage$Upload("#gsm_bio_file_results", strResults)
 Wait(lPage, "document.querySelector('#gsm_bio_column_results_USUBJID')", "the results columns asked for")
@@ -235,6 +268,8 @@ lNumbers$own_file$preview <- list(
   header = unlist(lPage$Evaluate("Array.from(document.querySelectorAll('#gsm_bio_columns_results thead th')).map((cell) => cell.textContent)"))
 )
 lNumbers$own_file$guessed <- lPage$Evaluate("Object.fromEntries(Array.from(document.querySelectorAll('select[id^=\"gsm_bio_column_\"]')).map((node) => [node.id, node.value]))")
+lNumbers$own_file$tags <- unlist(lPage$Evaluate("Array.from(document.querySelectorAll('#gsm_bio_columns_results .gsm-bio-app-tag')).map((node) => node.textContent.trim())"))
+lNumbers$own_file$will_draw <- Said(lPage, "#gsm_bio_data_files")
 lPage$Picture("data-asked.jpg")
 
 # Apply with three columns unsaid: a sentence, and nothing drawn on it.
@@ -242,21 +277,32 @@ lPage$Evaluate("document.querySelector('#gsm_bio_apply').click()")
 Wait(lPage, "document.querySelector('#gsm_bio_data_said').textContent.trim().length > 0", "what the Data view says of a table half said")
 lNumbers$own_file$half_said <- lPage$Evaluate("document.querySelector('#gsm_bio_data_said').textContent.trim()")
 lNumbers$own_file$source_after_refusal <- lPage$Evaluate("document.querySelector('#gsm_bio_source').textContent")
+lNumbers$own_file$rail_refused <- Said(lPage, "#gsm_bio_rail")
 lPage$Picture("data-refused.jpg")
 
-for (strPair in list(c("USUBJID", "SUBJID"), c("TEST", "LBTEST"), c("STRESN", "LBSTRESN"))) {
-  lPage$Evaluate(sprintf(
-    "(() => { const node = document.querySelector('#gsm_bio_column_results_%s'); node.value = '%s'; node.dispatchEvent(new Event('change', { bubbles: true })); return node.value; })()",
-    strPair[1], strPair[2]
-  ))
-}
-Sys.sleep(0.5)
+# A third file, which R cannot read: its own card says so, and the page names
+# it among the files the button would draw. Then it is taken away.
+ChooseUnreadable(lPage)
+lNumbers$own_file$unread <- list(
+  card = Said(lPage, "#gsm_bio_columns_outcomes"),
+  will_draw = Said(lPage, "#gsm_bio_data_files"),
+  rail = Said(lPage, "#gsm_bio_rail")
+)
+lPage$Picture("data-unread.jpg")
+RemoveUnreadable(lPage)
+lNumbers$own_file$will_draw_after_remove <- Said(lPage, "#gsm_bio_data_files")
+
+SayColumns(lPage)
 lPage$Evaluate("(() => { window.gsmBioWas = HTMLWidgets.find('#GroupComparison').chart(); return true; })()")
 lPage$Evaluate("document.querySelector('#gsm_bio_apply').click()")
 Wait(lPage, "document.querySelector('#gsm_bio_source').textContent.includes('lb.xpt')", "the charts drawn on the reader's file")
 lNumbers$own_file$source <- lPage$Evaluate("document.querySelector('#gsm_bio_source').textContent")
 Wait(lPage, "document.querySelector('#gsm_bio_view .gsm-bio-app-what').textContent.includes('lb.xpt')", "the viewer on the reader's file")
 lNumbers$own_file$viewer_applied <- Viewer()
+lNumbers$own_file$chip <- Said(lPage, "#gsm_bio_study_said")
+lNumbers$own_file$rail_applied <- Said(lPage, "#gsm_bio_rail")
+lNumbers$own_file$said_applied <- Said(lPage, "#gsm_bio_data_said")
+lNumbers$own_file$tags_applied <- unlist(lPage$Evaluate("Array.from(document.querySelectorAll('#gsm_bio_columns_results .gsm-bio-app-tag')).map((node) => node.textContent.trim())"))
 lPage$Picture("data-applied.jpg")
 Go(lPage, "GroupComparison")
 Wait(lPage, sprintf("%s && %s !== window.gsmBioWas && document.querySelectorAll('#GroupComparison button.bv-tile').length === 12", Chart("GroupComparison"), Chart("GroupComparison")), "the tiles drawn on the reader's file")
@@ -272,6 +318,37 @@ if (!lNumbers$own_file$over_time$same_as_packaged) stop("the reader's file gave 
 lPage$Picture("data-drawn.jpg")
 lPage$Close()
 lApp$Stop()
+
+# ---- the Data page on a phone, in each of its states --------------------------
+cat("The Data page on a phone\n")
+lApp <- lRunApp("RunApp()")
+lPhone <- Open(lApp$address, 390L, 844L)
+Wait(lPhone, "document.querySelectorAll('#GroupComparison button.bv-tile').length === 12", "twelve tiles on a phone")
+Go(lPhone, "Data")
+Wait(lPhone, "document.querySelector('#gsm_bio_view table')", "the Data page on a phone")
+lNumbers$phone_data <- list(opens = Wide(lPhone))
+lPhone$Picture("data-phone-opens.jpg")
+lPhone$Upload("#gsm_bio_file_results", strResults)
+Wait(lPhone, "document.querySelector('#gsm_bio_column_results_USUBJID')", "the results columns asked for, on a phone")
+lPhone$Upload("#gsm_bio_file_participants", strPeople)
+Wait(lPhone, "document.querySelector('#gsm_bio_column_participants_USUBJID')", "the participants column asked for, on a phone")
+ChooseUnreadable(lPhone)
+lPhone$Evaluate("document.querySelector('#gsm_bio_apply').click()")
+Wait(lPhone, "document.querySelector('#gsm_bio_data_said').textContent.trim().length > 0", "what the Data page says of a table half said, on a phone")
+lNumbers$phone_data$unsaid <- Wide(lPhone)
+lPhone$Picture("data-phone-unsaid.jpg")
+RemoveUnreadable(lPhone)
+SayColumns(lPhone)
+lPhone$Evaluate("document.querySelector('#gsm_bio_apply').click()")
+Wait(lPhone, "document.querySelector('#gsm_bio_source').textContent.includes('lb.xpt')", "the charts drawn on the reader's file, on a phone")
+Wait(lPhone, "document.querySelector('#gsm_bio_view .gsm-bio-app-what').textContent.includes('lb.xpt')", "the viewer on the reader's file, on a phone")
+lNumbers$phone_data$drawn <- Wide(lPhone)
+lPhone$Picture("data-phone-drawn.jpg")
+lPhone$Close()
+lApp$Stop()
+for (strState in names(lNumbers$phone_data)) {
+  if (lNumbers$phone_data[[strState]]$wide > lNumbers$phone_data[[strState]]$room) stop("the Data page scrolls sideways on a phone: ", strState, call. = FALSE)
+}
 
 writeLines(jsonlite::toJSON(lNumbers, auto_unbox = TRUE, pretty = TRUE, digits = NA, null = "null"), file.path(strOut, "capture-numbers.json"))
 cat("wrote capture-numbers.json\n")

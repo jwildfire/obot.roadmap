@@ -94,6 +94,13 @@ figure{margin:20px 0 0}
 .side figure{margin:0}
 .side>*{min-width:0}
 .narrow{max-width:760px}
+.trio{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 200px;gap:16px;margin-top:16px;align-items:start}
+.trio figure,.phones figure{margin:0;min-width:0}
+.trio .cap,.phones .cap{margin-top:8px;font-size:13px}
+.phones{display:grid;grid-template-columns:repeat(2,minmax(0,280px));gap:16px;margin-top:16px;align-items:start}
+.frame.tall{max-height:520px;overflow-y:auto}
+.frame a{display:block;border:0}
+.frame.tall:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
 /* ---------- see/try strip ---------- */
 .strip{display:grid;grid-template-columns:1fr 360px;gap:0;margin:24px 0 0;
@@ -152,6 +159,8 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   .close{grid-template-columns:1fr;gap:26px}
   .side{grid-template-columns:1fr}
   .side figure:last-child{max-width:340px}
+  .trio{grid-template-columns:1fr 1fr}
+  .trio figure:last-child{max-width:300px}
 }
 @media (max-width:640px){
   .wrap{padding:0 16px}
@@ -159,6 +168,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   .toc a{border-left:0}
   .toc a:nth-child(n+2){border-top:1px solid var(--rule)}
   .pair{grid-template-columns:1fr}
+  .trio{grid-template-columns:1fr}
   .mast{padding-top:36px}
   dl.fns{grid-template-columns:1fr;gap:2px 0}
   dl.fns dd{margin-bottom:10px}
@@ -186,10 +196,10 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   <div class="note">
     <p class="lbl">Where the two stand</p>
     <ul>
-      <li id="rc-links">Both are release candidates, opened together and waiting on review: gsm.bio v0.4.0 (<a href="https://github.com/jwildfire/gsm.bio/pull/83">#83</a>) and bio.viz v0.4.0 (<a href="https://github.com/jwildfire/bio.viz/pull/126">#126</a>). Until they are tagged, the install line on this page names the <code>dev</code> branch.</li>
-      <li>The app has no public address. Nothing here was deployed to a server, and no one has deployed the app to Posit Connect yet. Section 05 says what stands in for that and what your first deployment will be the check on.</li>
-      <li>The stills are of the app run on a laptop by R 4.3.3, from gsm.bio at <a href="https://github.com/jwildfire/gsm.bio/commit/2e33634b8763ddfb6a6b06031710de2ae2c39521">2e33634</a>, opened in a headless Chrome. A script beside this page takes them again.</li>
-      <li>The app’s look is a first version: a default Shiny page, a list of links beside the chart, released as it is. A designed header, navigation and Data page are the next release’s work, under a requirement of their own (obot.roadmap <a href="https://github.com/jwildfire/obot.roadmap/issues/400">#400</a>).</li>
+      <li id="rc-links">Both are release candidates, put in front of @jwildfire together: gsm.bio v0.4.0 (<a href="https://github.com/jwildfire/gsm.bio/pull/83">#83</a>) and bio.viz v0.4.0 (<a href="https://github.com/jwildfire/bio.viz/pull/126">#126</a>). Until they are tagged, the install line on this page names the <code>dev</code> branch.</li>
+      <li>The app has no public address. Nothing here was deployed to a server, and no one has deployed the app to Posit Connect yet. Section 06 says what stands in for that and what your first deployment will be the check on.</li>
+      <li>The stills are of the app run on a laptop by R 4.3.3, from gsm.bio at <a href="https://github.com/jwildfire/gsm.bio/commit/d2e018a09c3c13395a9429ea89e383a18b435341">d2e018a</a>, opened in a headless Chrome. A script beside this page takes them again.</li>
+      <li>The app’s look was designed during this release: a header with a pill for each chart, a chip that says what the charts are drawn on, and a Data page laid out as three steps. Section 04 puts it beside the mockup it was built from (the requirement for the app as a web app, obot.roadmap <a href="https://github.com/jwildfire/obot.roadmap/issues/400">#400</a>).</li>
       <li>The release notes are short, and the detail behind them is here: under “The detail” in each section.</li>
     </ul>
   </div>
@@ -197,11 +207,11 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   <div class="note">
     <p class="lbl">What to look at</p>
     <ol>
-      <li>Run <code>gsm.bio::RunApp()</code>. The six charts open in one page, on the made-up study, with a Data entry above them.</li>
+      <li>Run <code>gsm.bio::RunApp()</code>. The six charts open in one page, on the made-up study, with a pill in the header for Data and for each chart.</li>
       <li>Click the IL-6 tile. R’s test of the arms is under each visit, and the footnote says it was computed on this server.</li>
       <li>Open Week 4 and switch the test to the Wilcoxon rank-sum test. A saved widget cannot answer that view; the app does.</li>
       <li>Open Data. The tables that are loaded are shown there. Choose a file of your own, say which column is which, and press the button: the charts are drawn again on your file.</li>
-      <li>Read section 05 before you deploy: the one file, the call, and what has not been tested.</li>
+      <li>Read section 06 before you deploy: the one file, the call, and what has not been tested.</li>
     </ol>
   </div>
 </header>
@@ -210,34 +220,36 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   <a href="#app"><span class="ref">01</span><span class="t">The app</span><span class="s">Six charts in one page, from one call</span></a>
   <a href="#server"><span class="ref">02</span><span class="t">R on the server</span><span class="s">Every view answered, and said so</span></a>
   <a href="#files"><span class="ref">03</span><span class="t">Your own files</span><span class="s">See what is loaded, choose a file, say its columns</span></a>
-  <a href="#shiny"><span class="ref">04</span><span class="t">In a Shiny page of your own</span><span class="s">Each widget, with the session answering</span></a>
-  <a href="#connect"><span class="ref">05</span><span class="t">On Posit Connect</span><span class="s">One file, and what is not tested</span></a>
-  <a href="#biovz"><span class="ref">06</span><span class="t">What changed in bio.viz</span><span class="s">A third way to reach R</span></a>
-  <a href="#measured"><span class="ref">07</span><span class="t">What was measured</span><span class="s">How long a reader waits</span></a>
-  <a href="#held"><span class="ref">08</span><span class="t">How it is held</span><span class="s">The tests behind each release</span></a>
+  <a href="#look"><span class="ref">04</span><span class="t">The look</span><span class="s">Beside the mockup it was built from</span></a>
+  <a href="#shiny"><span class="ref">05</span><span class="t">In a Shiny page of your own</span><span class="s">Each widget, with the session answering</span></a>
+  <a href="#connect"><span class="ref">06</span><span class="t">On Posit Connect</span><span class="s">One file, and what is not tested</span></a>
+  <a href="#biovz"><span class="ref">07</span><span class="t">What changed in bio.viz</span><span class="s">A third way to reach R</span></a>
+  <a href="#measured"><span class="ref">08</span><span class="t">What was measured</span><span class="s">How long a reader waits</span></a>
+  <a href="#held"><span class="ref">09</span><span class="t">How it is held</span><span class="s">The tests behind each release</span></a>
 </nav>
 
 <!-- ============================================================ 01 -->
 <div class="cut"><span>01 <em>· the app</em></span></div><section id="app">
   <h2>The app: six charts in one page</h2>
-  <p class="what">How do you look at a study’s biomarkers without writing a page of your own? <code>RunApp()</code> returns a Shiny app: a list of the six charts beside one chart drawn at a time. With no table it opens on the made-up study that ships with the package.</p>
+  <p class="what">How do you look at a study’s biomarkers without writing a page of your own? <code>RunApp()</code> returns a Shiny app: a header with a pill for Data and for each of the six charts, and one chart drawn at a time. With no table it opens on the made-up study that ships with the package.</p>
   <div class="side">
     <figure>
-      <div class="frame"><img src="media/app-opens.jpg" alt="The app as it opens. On the left a list: Data, Group comparison, Association scatter, Correlation matrix, Biomarker screen, Cross-tabulation, Stratified survival, with Group comparison chosen. Beside it the group comparison's controls and twelve trend tiles, one per biomarker, with a blue line for Placebo and a green line for Treatment. Under the chart a line reads: Statistics: computed on request by R with gsm.bio on this server." loading="lazy" width="2560" height="2094"></div>
-      <p class="cap">The app as it opens. The chart and its controls are the package’s own widget, unchanged; Shiny adds the list on the left and the line under the chart.</p>
+      <div class="frame"><img src="media/app-opens.jpg" alt="The app as it opens. A header reads Biomarker charts, gsm.bio 0.4.0, with a chip at its right reading Synthetic study, 200 participants, 3 tables. Under the name a row of pills: Data, 3 tables; Group comparison, which is chosen; Association scatter; Correlation matrix; Biomarker screen; Cross-tabulation; Stratified survival. Below, in a card, the group comparison's controls and twelve trend tiles, one per biomarker, with a blue line for Placebo and a green line for Treatment. Under the chart a line reads: Statistics: computed on request by R 4.3.3 with gsm.bio 0.4.0 on this server. A footer line says which R computes the statistics and that files are held in this session's memory and nowhere else." loading="lazy" width="2560" height="2172"></div>
+      <p class="cap">The app as it opens. The chart and its controls are the package’s own widget, unchanged; the app adds the header, the line under the chart and the footer.</p>
     </figure>
     <figure class="phone">
-      <div class="frame"><img src="media/app-phone.jpg" alt="The same app on a phone, 390 pixels wide: the list of charts above, the controls folded into one bar, and the tiles two to a row, with no sideways scroll." loading="lazy" width="780" height="3582"></div>
-      <p class="cap">On a phone the list sits above the chart.</p>
+      <div class="frame"><img src="media/app-phone.jpg" alt="The same app on a phone, 390 pixels wide: the name and the chip in one row, the pills in a second row that scrolls sideways with Group comparison chosen, the controls folded into one bar, and the tiles two to a row. The page itself does not scroll sideways." loading="lazy" width="780" height="3036"></div>
+      <p class="cap">On a phone the header is two rows, and the pills scroll inside their own.</p>
     </figure>
   </div>
   <div class="strip">
     <div class="why">
       <p class="lbl">What you should see</p>
       <ul>
-        <li>Seven entries in the list: Data, then the six charts. The app opens on the group comparison.</li>
-        <li>Under the title: “Drawn on the synthetic study that ships with gsm.bio.”</li>
+        <li>Seven pills in the header: Data, then the six charts. The app opens on the group comparison.</li>
+        <li>At the header’s right, a chip: “Synthetic study 200 participants · 3 tables”. It says what the charts are drawn on, on every page, and opens Data when pressed.</li>
         <li>Under the chart: “Statistics: computed on request by R … with gsm.bio 0.4.0 on this server.”</li>
+        <li>The tiles the app opens on draw medians and ask R for nothing, so the chart’s own footnote reads “No statistic was asked of R.” until a biomarker is opened.</li>
         <li>A chart is drawn when you choose it, so only the one you are looking at has been sent to the page.</li>
       </ul>
     </div>
@@ -246,7 +258,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
       <ol>
         <li>Once: <code>install.packages(c("remotes", "shiny", "haven"))</code>, then <code>remotes::install_github("jwildfire/gsm.bio@dev")</code>.</li>
         <li>Run <code>gsm.bio::RunApp()</code> at the R console. Your browser opens on the app.</li>
-        <li>Click each chart in the list in turn. Each draws, and its footnote ends “on this server.”</li>
+        <li>Click each of the other five chart pills in turn. Each chart draws, and its footnote ends “on this server.”</li>
         <li>Stop the app with Esc in the console.</li>
       </ol>
     </div>
@@ -265,9 +277,12 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
       <li><code>lSettings</code> opens a chart on a view of your choosing, under the chart’s name and bio.viz’s setting names: <code>RunApp(lSettings = list(GroupComparison = list(start_value = "CRP", group_by = "ARM")))</code>.</li>
       <li><code>RunApp()</code> returns the app and starts nothing. Printed at the console it runs; as the last line of an <code>app.R</code> it is what a server runs.</li>
       <li>No control of a chart is made again as a Shiny input. Shiny holds the tables and answers statistics, and that is all it does.</li>
+      <li>The pills are Shiny’s own tab links, restyled: each is still a link, reached with Tab and the arrow keys. A pill’s hover text says what its chart draws.</li>
+      <li>With no outcomes table the stratified survival pill is dimmed, in grey with a hollow dot, and says why. It can still be opened.</li>
+      <li>The page asks Google Fonts for two typefaces and uses the system’s when the request is not answered; it does not wait for them. It is the reader’s browser that makes the request; where it is blocked, the app is drawn in the system’s fonts.</li>
       <li>shiny is suggested, not imported: the widgets do not need it, and <code>RunApp()</code> says so in one sentence when it is missing.</li>
     </ul>
-    <p class="ref">Reference: <a href="https://jwildfire.github.io/gsm.bio/reference/RunApp.html">RunApp()</a>. Task: the app (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/72">#72</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/76">#76</a>).</p>
+    <p class="ref">Reference: <a href="https://jwildfire.github.io/gsm.bio/reference/RunApp.html">RunApp()</a>. Tasks: the app (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/72">#72</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/76">#76</a>), and its header, pills, chip and footer (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/84">#84</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/92">#92</a>).</p>
   </div>
 </section>
 
@@ -276,12 +291,12 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   <h2>Every view takes its statistics from R on the server</h2>
   <p class="what">A saved widget carries the answers R gave when it was made, so it can show only the views it stored. In the app the chart asks the R session behind the page each time, and the line under the chart says which R answered.</p>
   <figure>
-    <div class="frame"><img src="media/over-time.jpg" alt="The group comparison in the app with IL-6 open across its five visits: a box for each arm at each visit, and under each visit each arm's count and R's test of the arms. The footnote ends: computed by R with gsm.bio on this server." loading="lazy" width="2560" height="2254"></div>
+    <div class="frame"><img src="media/over-time.jpg" alt="The group comparison in the app with IL-6 open across its five visits: a box for each arm at each visit, and under each visit each arm's count and R's test of the arms. The footnote ends: computed by R with gsm.bio on this server." loading="lazy" width="2560" height="2188"></div>
     <p class="cap">IL-6 across the visits, after a click on its tile. The row of tests was asked of the session in one request.</p>
   </figure>
   <div class="pair">
     <figure>
-      <div class="frame"><img src="media/server-answer.jpg" alt="IL-6 at Week 4 in the app with the test switched to the Wilcoxon rank-sum test. The statistics line reads: Wilcoxon rank sum test with continuity correction: p less than 0.001, Placebo n = 95, Treatment n = 91. The footnote ends: computed by R with gsm.bio on this server." loading="lazy" width="2560" height="2094"></div>
+      <div class="frame"><img src="media/server-answer.jpg" alt="IL-6 at Week 4 in the app with the test switched to the Wilcoxon rank-sum test. The statistics line reads: Wilcoxon rank sum test with continuity correction: p less than 0.001, Placebo n = 95, Treatment n = 91. The footnote ends: computed by R with gsm.bio on this server." loading="lazy" width="2560" height="2172"></div>
       <p class="cap">In the app: Week 4, with the test switched to the rank-sum test. R answers.</p>
     </figure>
     <figure>
@@ -330,27 +345,28 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 <!-- ============================================================ 03 -->
 <div class="cut"><span>03 <em>· your own files</em></span></div><section id="files">
   <h2>Your own files: choose one, say its columns</h2>
-  <p class="what">A reader does not need R to load a study. The Data entry takes a results file, and optionally a participants and an outcomes file, each as <code>.csv</code>, <code>.xpt</code> or <code>.sas7bdat</code>. R reads it on the server and asks which column is which.</p>
+  <p class="what">A reader does not need R to load a study. The Data page takes a results file, and optionally a participants and an outcomes file, each as <code>.csv</code>, <code>.xpt</code> or <code>.sas7bdat</code>. R reads it on the server and asks which column is which, and a rail beside the cards counts what is left to do.</p>
   <figure>
-    <div class="frame"><img src="media/data-empty.jpg" alt="The app's Data view as it opens. At the top, under the heading The tables the charts are drawn on, a tab for each table that is loaded, reading Results, 11,472 rows; Participants, 200 rows; and Outcomes, 200 rows, with Results chosen, a line saying Results, from the synthetic study that ships with gsm.bio: 11,472 rows, 6 columns, rows 1 to 10, and a table of those ten rows with the columns USUBJID, VISIT, VISITNUM, TEST, STRESU and STRESN, with buttons for the previous and the next rows. Below it the heading A study of your own and three places to choose a file." loading="lazy" width="2560" height="2216"></div>
-    <p class="cap">The Data view as it opens. Its first part shows what is loaded: the tables the charts are drawn on, ten rows at a time.</p>
+    <div class="frame"><img src="media/data-empty.jpg" alt="The app's Data page as it opens. On the left a rail headed Workflow with three steps: Choose files, none chosen; Say which column is which, nothing to say; Draw the charts, 6 of 6 charts ready, with a button Open group comparison. Under the steps, what the charts are drawn on: Results, 11,472 rows; Participants, 200 rows; Outcomes, 200 rows. On the right a card headed The tables the charts are drawn on, with a tab for each table and Results chosen, a line saying Results, from the synthetic study that ships with gsm.bio: 11,472 rows, 6 columns, rows 1 to 10, and a table of those ten rows with the columns USUBJID, VISIT, VISITNUM, TEST, STRESU and STRESN, and buttons for the previous and the next rows. Below it a card each for Results, tagged needed, and for Participants and Outcomes, tagged optional, each with a place to choose a file, and then the button Draw the charts on these files." loading="lazy" width="2560" height="2194"></div>
+    <p class="cap">The Data page as it opens. The rail counts what is left to do; the first card shows what is loaded, ten rows at a time; then there is a card for each file.</p>
   </figure>
   <figure>
-    <div class="frame"><img src="media/data-refused.jpg" alt="The app's Data view with two files chosen, lb.xpt and dm.csv. Under the results file five selects ask for Participant, Biomarker, Result, Visit and Visit order: the first three read Not said yet and the last two are filled in as VISIT and VISITNUM. Under the selects are the file's first five rows, under its own column names. Under the button a red sentence reads: Say which column of lb.xpt is each of these, and the charts can be drawn: participant, biomarker, result." loading="lazy" width="2560" height="3642"></div>
-    <p class="cap">A results file whose columns are named <code>SUBJID</code>, <code>LBTEST</code> and <code>LBSTRESN</code>. The two columns that already had gsm.bio’s names are filled in, the file’s first rows are shown under the selects, and the button was pressed with three columns still unsaid.</p>
+    <div class="frame"><img src="media/data-refused.jpg" alt="The Data page with two files chosen, lb.xpt and dm.csv. The rail's second step reads 3 of 6 columns still to say, in lb.xpt: participant, biomarker, result. In the results card five selects ask for Participant, Biomarker, Result, Visit and Visit order: the first three read Not said yet, in amber, each tagged say which; the last two are filled in as VISIT and VISITNUM and tagged same name. Under the selects are the file's first five rows, under its own column names. Each file's card has a Remove button. Under the Draw button a line reads These files: lb.xpt (results), dm.csv (participants), and beside the button a red sentence reads: Say which column of lb.xpt is each of these, and the charts can be drawn: participant, biomarker, result." loading="lazy" width="2560" height="3822"></div>
+    <p class="cap">A results file whose columns are named <code>SUBJID</code>, <code>LBTEST</code> and <code>LBSTRESN</code>. The two columns that already had gsm.bio’s names are filled in and tagged “same name”, the three still to say are in amber, and the button was pressed with them unsaid: R’s sentence is beside the button.</p>
   </figure>
   <figure>
-    <div class="frame"><img src="media/data-drawn.jpg" alt="The group comparison in the app after the file was applied: the line under the title reads Drawn on lb.xpt, dm.csv, loaded in this session, and IL-6 is drawn across its five visits with R's test under each." loading="lazy" width="2560" height="2254"></div>
-    <p class="cap">With the three columns said and the button pressed, the charts are drawn on the file. The line under the title names it.</p>
+    <div class="frame"><img src="media/data-drawn.jpg" alt="The group comparison in the app after the file was applied: the chip in the header reads lb.xpt, dm.csv, this session; the Data pill reads 2 tables; the Stratified survival pill is dimmed; and IL-6 is drawn across its five visits with R's test under each." loading="lazy" width="2560" height="2188"></div>
+    <p class="cap">With the three columns said and the button pressed, the charts are drawn on the file. The chip in the header names it, and the survival pill is dimmed because no outcomes file was loaded.</p>
   </figure>
   <div class="strip">
     <div class="why">
       <p class="lbl">What you should see</p>
       <ul>
-        <li>As the view opens: “Results, from the synthetic study that ships with gsm.bio: 11,472 rows, 6 columns. Rows 1 to 10, page 1 of 1,148.”, and those rows.</li>
-        <li>After a file is chosen: its name, its rows and columns, such as “lb.xpt: 11,472 rows, 6 columns”, a select for each column the charts need, and its first five rows.</li>
-        <li>With a column unsaid, a sentence naming it, and the charts left as they were.</li>
-        <li>After the button: “Drawn on lb.xpt, dm.csv, loaded in this session.”, and the viewer shows the file’s rows.</li>
+        <li>As the page opens: “Results, from the synthetic study that ships with gsm.bio: 11,472 rows, 6 columns. Rows 1 to 10, page 1 of 1,148.”, those rows, and in the rail “6 of 6 charts ready”.</li>
+        <li>After a file is chosen: its name, its rows and columns, such as “lb.xpt: 11,472 rows, 6 columns”, a select for each column the charts need, tagged “same name” or “say which”, and its first five rows.</li>
+        <li>Under the button, before it is pressed, the files it would draw: “These files: lb.xpt (results), dm.csv (participants).”</li>
+        <li>With a column unsaid: R’s sentence naming it beside the button, “3 of 6 columns still to say” in the rail, and the charts left as they were.</li>
+        <li>After the button: “The charts are drawn on lb.xpt, dm.csv, loaded in this session. 5 of the 6 charts are ready.”, a link to each chart, and the viewer on the file’s rows.</li>
         <li>In the stills the file is the made-up study under other column names, so IL-6 reads as in section 02: p = 0.221 at Baseline, then p &lt; 0.001.</li>
       </ul>
     </div>
@@ -359,15 +375,20 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
       <ol>
         <li>In the running app, click Data. Press “Next rows”, and click the Participants tab.</li>
         <li>Choose a results file of your own. Any of the three types will do.</li>
-        <li>Choose a column in each select that reads “Not said yet”.</li>
-        <li>Press “Draw the charts on these files”, then open a chart.</li>
+        <li>Choose a column in each select tagged “say which”.</li>
+        <li>Press “Draw the charts on these files”, then open a chart from the list beside the button.</li>
+        <li>Choose another file, then press its Remove: it is gone from “These files”.</li>
       </ol>
     </div>
   </div>
   <div class="more">
     <p class="lbl">The detail</p>
     <ul>
-      <li>The viewer shows the tables the charts are drawn on, so after the button it shows your file under gsm.bio’s column names. Values are shown as R holds them, not rounded, and a missing value reads <code>NA</code>.</li>
+      <li>The viewer shows the tables the charts are drawn on, so after the button it shows your file under gsm.bio’s column names. A number is written in full, to the fifteen digits that identify it, never as <code>1e+05</code>, and a missing value reads <code>NA</code>.</li>
+      <li>A chosen file can be taken away with the Remove button in its card. The first candidate of this release had no way to do that, so a file left over from an earlier choice was drawn with the next one.</li>
+      <li>A file R could not read is reported in its own card, in R’s words, with what to do. While it is there the button draws nothing, even when the file is an optional one: remove it or choose another.</li>
+      <li>A file R warns about as it reads it is not drawn. A <code>.csv</code> with a byte outside UTF-8, or a quote never closed, would otherwise be read short with no sign of it.</li>
+      <li>Not fixed: an <code>.xpt</code> file that has been cut short is read short, and haven says nothing (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/90">#90</a>). Check the rows the page counts against your own.</li>
       <li>A column is filled in only when its name is exactly gsm.bio’s. Nothing else is guessed.</li>
       <li>On the button R renames the chosen columns to gsm.bio’s names. A column of the file that already had one of those names, and was not the one chosen for it, is kept with <code>_original</code> added.</li>
       <li>Each of these is answered with a sentence, and the tables already drawn stay:
@@ -383,12 +404,109 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
       <li><code>.xpt</code> and <code>.sas7bdat</code> files are read with the haven package, which is suggested. Without it a SAS file is answered with a sentence naming the package, and a <code>.csv</code> file is read all the same.</li>
       <li>The <code>.sas7bdat</code> files in the tests are written by haven, which is the only way R has to make one. A file SAS itself wrote is read too, haven’s own example.</li>
     </ul>
-    <p class="ref">Tasks: a reader’s own files (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/73">#73</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/77">#77</a>), and the viewer (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/80">#80</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/81">#81</a>).</p>
+    <p class="ref">Tasks: a reader’s own files (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/73">#73</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/77">#77</a>), the viewer (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/80">#80</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/81">#81</a>), the page’s layout (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/85">#85</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/95">#95</a>), and what the release review found (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/86">#86</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/91">#91</a>).</p>
   </div>
 </section>
 
 <!-- ============================================================ 04 -->
-<div class="cut"><span>04 <em>· in a Shiny page of your own</em></span></div><section id="shiny">
+<div class="cut"><span>04 <em>· the look</em></span></div><section id="look">
+  <h2>The look: beside the mockup it was built from</h2>
+  <p class="what">The first candidate of this release was a default Shiny page with a list of links down one side. Three shells were mocked up on <a href="https://jwildfire.github.io/obot.roadmap/reports/gsm-bio-app-design-2026-10-08/">an options page</a>, the page recommended the first, option A, and that is what was built. Each mockup is below, beside the app as built at 1280 pixels and on a 390-pixel phone. A still opens at full size when pressed, and a tall one scrolls inside its frame.</p>
+
+  <h3>The shell</h3>
+  <div class="pair">
+    <figure>
+      <div class="frame"><a href="media/mock-a-chart.jpg" aria-label="Open this still at full size"><img src="media/mock-a-chart.jpg" alt="The mockup of option A at 1280 pixels: one header row with the name Biomarker charts, the pills, of which three are cut off, and the study chip, above a chart card with the group comparison's tiles." loading="lazy" width="2060" height="1688"></a></div>
+      <p class="cap">As mocked up. One header row, which at this width has room for three of the six chart pills.</p>
+    </figure>
+    <figure>
+      <div class="frame tall" tabindex="0" role="group" aria-label="The app as built, at 1280 pixels; scrolls"><a href="media/app-opens.jpg" aria-label="Open this still at full size"><img src="media/app-opens.jpg" alt="The app as built at 1280 pixels: the name and the chip in a first header row, all seven pills in a second, and the same chart card under them." loading="lazy" width="2560" height="2172"></a></div>
+      <p class="cap">As built. Two header rows, so every pill is in view.</p>
+    </figure>
+  </div>
+  <div class="phones">
+    <figure>
+      <div class="frame tall" tabindex="0" role="group" aria-label="The mockup at 390 pixels; scrolls"><a href="media/mock-a-phone.jpg" aria-label="Open this still at full size"><img src="media/mock-a-phone.jpg" alt="The mockup of option A on a phone: the name, a row of pills that scrolls, and the chart with its controls folded into one bar. It has no study chip." loading="lazy" width="756" height="1862"></a></div>
+      <p class="cap">As mocked up, on a phone.</p>
+    </figure>
+    <figure>
+      <div class="frame tall" tabindex="0" role="group" aria-label="The app as built, at 390 pixels; scrolls"><a href="media/app-phone.jpg" aria-label="Open this still at full size"><img src="media/app-phone.jpg" alt="The app as built on a phone: the name and the study chip in one row, the pills in a second row that scrolls, and the chart with its controls folded into one bar." loading="lazy" width="780" height="3036"></a></div>
+      <p class="cap">As built. The chip is kept, so a phone also says what the charts are drawn on.</p>
+    </figure>
+  </div>
+
+  <h3>The Data page as it opens</h3>
+  <div class="trio">
+    <figure>
+      <div class="frame"><a href="media/mock-a-data-opens.jpg" aria-label="Open this still at full size"><img src="media/mock-a-data-opens.jpg" alt="The mockup of the Data page as it opens: a rail with three steps on the left, and on the right the viewer of the loaded tables as a card, then a card for each of the three files with a place to choose it, and the Draw button." loading="lazy" width="2060" height="1504"></a></div>
+      <p class="cap">As mocked up.</p>
+    </figure>
+    <figure>
+      <div class="frame tall" tabindex="0" role="group" aria-label="The Data page as built, as it opens, at 1280 pixels; scrolls"><a href="media/data-empty.jpg" aria-label="Open this still at full size"><img src="media/data-empty.jpg" alt="The Data page as built, as it opens, at 1280 pixels: the rail on the left, the viewer card with its tabs and ten rows, a card for each of the three files, and the Draw button." loading="lazy" width="2560" height="2194"></a></div>
+      <p class="cap">As built, 1280 pixels.</p>
+    </figure>
+    <figure>
+      <div class="frame tall" tabindex="0" role="group" aria-label="The Data page as built, as it opens, at 390 pixels; scrolls"><a href="media/data-phone-opens.jpg" aria-label="Open this still at full size"><img src="media/data-phone-opens.jpg" alt="The Data page as built, as it opens, on a phone: the rail first, then the viewer card, then the three file cards and the Draw button, in one column." loading="lazy" width="780" height="3744"></a></div>
+      <p class="cap">As built, 390 pixels.</p>
+    </figure>
+  </div>
+
+  <h3>Files chosen: columns still to say, and a file R could not read</h3>
+  <div class="trio">
+    <figure>
+      <div class="frame"><a href="media/mock-a-data-unsaid.jpg" aria-label="Open this still at full size"><img src="media/mock-a-data-unsaid.jpg" alt="The mockup of the Data page with three files chosen: the rail counts 2 of 6 columns still to say and 1 file not read; the results card has two selects in amber tagged say which; the third file's card holds a red sentence that it could not be read; and R's refusal is beside the Draw button." loading="lazy" width="2060" height="1442"></a></div>
+      <p class="cap">As mocked up.</p>
+    </figure>
+    <figure>
+      <div class="frame tall" tabindex="0" role="group" aria-label="The Data page as built with files chosen, at 1280 pixels; scrolls"><a href="media/data-unread.jpg" aria-label="Open this still at full size"><img src="media/data-unread.jpg" alt="The Data page as built at 1280 pixels with lb.xpt, dm.csv and adtte.xpt chosen: the rail's first step reads 1 not read, its second 3 of 6 columns still to say; the results card has three selects in amber tagged say which and two tagged same name; the outcomes card holds a red sentence that adtte.xpt could not be read as a .xpt file, with a Remove button; and under the Draw button the page names the three files, the last as not read." loading="lazy" width="2560" height="4126"></a></div>
+      <p class="cap">As built, 1280 pixels. The viewer stays open above the cards; in the mockup it folds to one line.</p>
+    </figure>
+    <figure>
+      <div class="frame tall" tabindex="0" role="group" aria-label="The Data page as built with files chosen, at 390 pixels; scrolls"><a href="media/data-phone-unsaid.jpg" aria-label="Open this still at full size"><img src="media/data-phone-unsaid.jpg" alt="The same state on a phone, after the Draw button was pressed: the rail, the viewer, the three file cards in one column, and R's refusal in red under the button." loading="lazy" width="780" height="6184"></a></div>
+      <p class="cap">As built, 390 pixels, with the button pressed: R’s refusal is under it.</p>
+    </figure>
+  </div>
+
+  <h3>The charts drawn on the reader’s files</h3>
+  <div class="trio">
+    <figure>
+      <div class="frame"><a href="media/mock-a-data-drawn.jpg" aria-label="Open this still at full size"><img src="media/mock-a-data-drawn.jpg" alt="The mockup of the Data page after the charts are drawn: a green banner at the top says so, the chip in the header names the files, the survival pill is dimmed, and the rail's third step says which chart is missing and why." loading="lazy" width="2060" height="1008"></a></div>
+      <p class="cap">As mocked up: the confirmation is a banner at the top.</p>
+    </figure>
+    <figure>
+      <div class="frame tall" tabindex="0" role="group" aria-label="The Data page as built after the charts are drawn, at 1280 pixels; scrolls"><a href="media/data-applied.jpg" aria-label="Open this still at full size"><img src="media/data-applied.jpg" alt="The Data page as built at 1280 pixels after the charts are drawn on lb.xpt and dm.csv: the chip names the two files, the survival pill is dimmed, every step of the rail is done with 5 of 6 charts ready, the three said columns are tagged said, and beside the Draw button a green panel says the charts are drawn and lists the six charts, each a link with one line on what it draws, the survival chart with what it lacks." loading="lazy" width="2560" height="4158"></a></div>
+      <p class="cap">As built, 1280 pixels: the confirmation and the list of charts are beside the button.</p>
+    </figure>
+    <figure>
+      <div class="frame tall" tabindex="0" role="group" aria-label="The Data page as built after the charts are drawn, at 390 pixels; scrolls"><a href="media/data-phone-drawn.jpg" aria-label="Open this still at full size"><img src="media/data-phone-drawn.jpg" alt="The same state on a phone: the rail with every step done, the viewer on the reader's file, the file cards, and under the Draw button the green panel listing the charts." loading="lazy" width="780" height="6198"></a></div>
+      <p class="cap">As built, 390 pixels.</p>
+    </figure>
+  </div>
+
+  <div class="more">
+    <p class="lbl">The detail</p>
+    <ul>
+      <li>How it was chosen. @jwildfire, 2026-10-08, with the first version open in his browser: “Want it to look like a professional web app, not an ad hoc shiny app.” On 2026-10-09, with the options page read: “I’m good with the recommendation in the design dock.” The recommendation was option A.</li>
+      <li>Where the app differs from the mockup, each a choice made while building:
+        <ul>
+          <li>The header is two rows below 1880 pixels wide. One row at 1280 pixels cuts off three pills.</li>
+          <li>On a phone the chip is kept; the mockup’s phone had none. The version mark is hidden there.</li>
+          <li>The dimmed pill is grey with a hollow dot. The mockup dimmed it by opacity, which was too faint to read.</li>
+          <li>The confirmation and the list of ready charts are beside the button, not a banner at the top.</li>
+          <li>The viewer and the file cards do not fold away once a file is chosen or the charts are drawn.</li>
+          <li>A card has no count of its own columns said; the rail counts them. The rail has no “Choose files” button; the three file controls are drawn alike.</li>
+          <li>A column changed after the button was pressed clears R’s refusal, and the page says the charts are not drawn on what is now said.</li>
+        </ul>
+      </li>
+      <li>Every still on this page was held to have no sideways scroll at 390 pixels: the page is as wide as the window in each of the four phone states. The capture script stops otherwise.</li>
+      <li>Not checked: any browser but Chrome, and a real phone.</li>
+    </ul>
+    <p class="ref">Requirement: the biomarker app as a web app (obot.roadmap <a href="https://github.com/jwildfire/obot.roadmap/issues/400">#400</a>). Tasks: the shell (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/84">#84</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/92">#92</a>) and the Data page (gsm.bio <a href="https://github.com/jwildfire/gsm.bio/issues/85">#85</a>, pull request <a href="https://github.com/jwildfire/gsm.bio/pull/95">#95</a>).</p>
+  </div>
+</section>
+
+<!-- ============================================================ 05 -->
+<div class="cut"><span>05 <em>· in a Shiny page of your own</em></span></div><section id="shiny">
   <h2>Each widget in a Shiny page of your own</h2>
   <p class="what">The app is built from parts you can use without it. Every widget has an output function and a render function, and one call in the server function makes the session answer whatever a chart asks.</p>
 <pre><code>library(shiny)
@@ -419,7 +537,7 @@ shinyApp(ui, server)</code></pre>
 </section>
 
 <!-- ============================================================ 05 -->
-<div class="cut"><span>05 <em>· on Posit Connect</em></span></div><section id="connect">
+<div class="cut"><span>06 <em>· on Posit Connect</em></span></div><section id="connect">
   <h2>On Posit Connect: one file, and what has not been tested</h2>
   <p class="what">The deployment is one file, which ships with the package. The article on gsm.bio’s site gives the call and what the server needs.</p>
 <pre><code>library(shiny)
@@ -467,13 +585,15 @@ rsconnect::deployApp("gsm-bio-app", appName = "gsm-bio", appTitle = "Biomarker c
 </section>
 
 <!-- ============================================================ 06 -->
-<div class="cut"><span>06 <em>· what changed in bio.viz</em></span></div><section id="biovz">
+<div class="cut"><span>07 <em>· what changed in bio.viz</em></span></div><section id="biovz">
   <h2>What changed in bio.viz: a third way to reach R</h2>
   <p class="what">A bio.viz chart computes no test. It asks a connection to R, which until now took two forms: results stored with the page, and R started in the browser. v0.4.0 adds a third, R on a server, and words its answer under the chart.</p>
 <pre><code>const connection = BioViz.r.createConnection({
   server: {
-    start: () =&gt; openMyServer(),
-    call: (name, { data, args }) =&gt; askMyServer(name, data, args),
+    engine: {
+      start: () =&gt; openMyServer(),
+      call: (name, { data, args }) =&gt; askMyServer(name, data, args)
+    },
     computedBy: { r_version: '4.5.1', gsm_bio_version: '0.4.0' }
   }
 });</code></pre>
@@ -492,7 +612,7 @@ rsconnect::deployApp("gsm-bio-app", appName = "gsm-bio", appTitle = "Biomarker c
 </section>
 
 <!-- ============================================================ 07 -->
-<div class="cut"><span>07 <em>· what was measured</em></span></div><section id="measured">
+<div class="cut"><span>08 <em>· what was measured</em></span></div><section id="measured">
   <h2>What was measured: how long a reader waits</h2>
   <p class="what">On the made-up study, 11,472 results rows for 200 participants, with the browser and the server on one laptop. A network adds its own time.</p>
   <div class="scroll"><table>
@@ -515,20 +635,21 @@ rsconnect::deployApp("gsm-bio-app", appName = "gsm-bio", appTitle = "Biomarker c
 </section>
 
 <!-- ============================================================ 08 -->
-<div class="cut"><span>08 <em>· how it is held</em></span></div><section id="held">
+<div class="cut"><span>09 <em>· how it is held</em></span></div><section id="held">
   <h2>How it is held</h2>
   <div class="close">
     <div>
       <h3>The tests behind each release</h3>
       <ul>
-        <li>gsm.bio: 368 tests, 55,487 expectations, none failed and none skipped from the repository, and <code>R CMD check</code> clean.
+        <li>gsm.bio: 396 tests, 56,376 expectations, none failed and none skipped from the repository, and <code>R CMD check</code> clean.
           <ul>
-            <li>The app is run by a second R session and driven in a headless Chrome: each of the six charts is opened, a view no saved widget stores is asked for and held to R’s own answer, and a file of each of the three types is loaded and drawn.</li>
+            <li>The app is run by a second R session and driven in a headless Chrome: each of the six charts is opened and every answer on it is held to its <code>Analyze_*()</code> function called directly, a view no saved widget stores is asked for, and a file of each of the three types is loaded and drawn.</li>
+            <li>The header and the Data page are driven in the same browser: each pill by click and by keyboard, the rail’s counts in each state, a file taken away, and the page’s width at 390 pixels in every state.</li>
             <li>A name outside the nine statistics functions is sent to the session, and the file it would have made does not exist.</li>
             <li>In the repository these tests fail when the browser cannot start; they never skip.</li>
           </ul>
         </li>
-        <li>bio.viz: 510 unit and 401 browser tests, and 773 requirement rows, each with a test named for it.
+        <li>bio.viz: 515 unit and 401 browser tests, and 778 requirement rows, each with a test named for it.
           <ul>
             <li>A test holds the three wordings apart: on this server, in this browser, stored with the page.</li>
           </ul>
@@ -541,7 +662,7 @@ rsconnect::deployApp("gsm-bio-app", appName = "gsm-bio", appTitle = "Biomarker c
       <ul>
         <li id="where-links">The release candidates: gsm.bio (<a href="https://github.com/jwildfire/gsm.bio/pull/83">#83</a>) and bio.viz (<a href="https://github.com/jwildfire/bio.viz/pull/126">#126</a>). The notes: gsm.bio’s <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md">NEWS.md</a> and bio.viz’s <a href="https://github.com/jwildfire/bio.viz/blob/dev/NEWS.md">NEWS.md</a>.</li>
         <li>The article: <a href="https://jwildfire.github.io/gsm.bio/articles/app.html">The app, and putting it on Posit Connect</a>, and gsm.bio’s <a href="https://jwildfire.github.io/gsm.bio/reference/">function reference</a>.</li>
-        <li>The requirement: an R app for the biomarker charts (obot.roadmap <a href="https://github.com/jwildfire/obot.roadmap/issues/399">#399</a>).</li>
+        <li>The requirement: an R app for the biomarker charts (obot.roadmap <a href="https://github.com/jwildfire/obot.roadmap/issues/399">#399</a>), and the app as a web app (obot.roadmap <a href="https://github.com/jwildfire/obot.roadmap/issues/400">#400</a>), with <a href="https://jwildfire.github.io/obot.roadmap/reports/gsm-bio-app-design-2026-10-08/">its options page</a>.</li>
         <li><a href="https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.3-demo/">The v0.3.0 demo</a>, for the group comparison’s three levels.</li>
       </ul>
     </div>
@@ -549,7 +670,7 @@ rsconnect::deployApp("gsm-bio-app", appName = "gsm-bio", appTitle = "Biomarker c
 </section>
 
 <footer>
-  <p>Stills taken on 2026-10-09 (UTC) with chromote in a headless Chrome, of the app run by R 4.3.3 on a laptop from gsm.bio at <a href="https://github.com/jwildfire/gsm.bio/commit/2e33634b8763ddfb6a6b06031710de2ae2c39521">2e33634</a>, version 0.4.0, which carries bio.viz 0.4.0. Desktop stills are of a 1280 by 900 window at twice its pixels; the phone still is 390 wide. Every number on this page that R computed was read from the page that shows it and held to gsm.bio called directly on the same rows; <code>capture.R</code> beside this page does both, and the README records how. The study is gsm.bio’s made-up one: no real participant appears. Requirement: an R app for the biomarker charts (<a href="https://github.com/jwildfire/obot.roadmap/issues/399">#399</a>). Objective: biomarker charts with every test computed by R (<a href="https://github.com/jwildfire/obot.roadmap/issues/353">#353</a>).</p>
+  <p>Stills taken on 2026-10-09 (UTC) with chromote in a headless Chrome, of the app run by R 4.3.3 on a laptop from gsm.bio at <a href="https://github.com/jwildfire/gsm.bio/commit/d2e018a09c3c13395a9429ea89e383a18b435341">d2e018a</a>, version 0.4.0, which carries bio.viz 0.4.0. Desktop stills are of a 1280 by 900 window at twice its pixels; the phone stills are 390 wide. The mockups in section 04 are stills of the options page. Every number on this page that R computed was read from the page that shows it and held to gsm.bio called directly on the same rows; <code>capture.R</code> beside this page does both, and the README records how. The study is gsm.bio’s made-up one: no real participant appears. Requirements: an R app for the biomarker charts (<a href="https://github.com/jwildfire/obot.roadmap/issues/399">#399</a>) and the app as a web app (<a href="https://github.com/jwildfire/obot.roadmap/issues/400">#400</a>). Objective: biomarker charts with every test computed by R (<a href="https://github.com/jwildfire/obot.roadmap/issues/353">#353</a>).</p>
   <p style="margin-top:12px">This page was drafted by Claude Code using Opus 5.5.</p>
 </footer>
 
