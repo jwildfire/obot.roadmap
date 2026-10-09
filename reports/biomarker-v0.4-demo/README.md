@@ -1,6 +1,6 @@
 # bio.viz and gsm.bio v0.4.0 — annotated demo
 
-The demo page for the fourth releases of the biomarker charts objective (hub [#353](https://github.com/jwildfire/obot.roadmap/issues/353)): gsm.bio v0.4.0, the R package, and bio.viz v0.4.0, the JavaScript chart library. They are release candidates, opened together: gsm.bio [#83](https://github.com/jwildfire/gsm.bio/pull/83) and bio.viz [#126](https://github.com/jwildfire/bio.viz/pull/126). The page is also where the detail behind the two releases' short notes lives (hub developer guidelines, Releases).
+The demo page for the fourth releases of the biomarker charts objective (hub [#353](https://github.com/jwildfire/obot.roadmap/issues/353)): gsm.bio v0.4.0, the R package, and bio.viz v0.4.0, the JavaScript chart library. Both were released on 2026-10-09: [gsm.bio v0.4.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.4.0) and [bio.viz v0.4.0](https://github.com/jwildfire/bio.viz/releases/tag/v0.4.0), each on @jwildfire's approval of its release candidate (gsm.bio [#83](https://github.com/jwildfire/gsm.bio/pull/83), bio.viz [#126](https://github.com/jwildfire/bio.viz/pull/126)). The page is also where the detail behind the two releases' short notes lives (hub developer guidelines, Releases).
 
 Requirements it walks:
 
@@ -46,7 +46,7 @@ From this folder:
 
 ## Assumptions
 
-- The page is written before the releases are tagged. Its install line names the `dev` branch until then, and its status line names the two release candidates.
+- The page was written before the releases were tagged, and its stills are of the two release candidates' heads, the commits that were then released. After the tags, on 2026-10-09, its status line and links were changed to name the releases and its install line to name the `v0.4.0` tag; that line was run once against the tag (gsm.bio 0.4.0 installed and `RunApp()` returned the app). Nothing else on the page was retaken.
 - The quotes of @jwildfire in section 04 are his words in the session of 2026-10-08 and 2026-10-09, as the requirement (hub #400) records them.
 
 ---
