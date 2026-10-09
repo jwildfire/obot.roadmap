@@ -1,0 +1,1089 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The biomarker app: three shells and a Data page</title>
+<meta name="description" content="Three ways to turn the gsm.bio biomarker app from a default Shiny page into a professional web app, each drawn at desktop and phone width with the Data page in its three states, what each costs to build, the decisions inside them, and a recommendation.">
+<style>
+:root{
+  --ground:#faf7f0; --surface:#fffdf9; --surface-2:#f3eee4;
+  --ink:#17191c; --muted:#4f555d; --faint:#7b8089;
+  --border:#e2dccf; --hairline:#ece7dc;
+  --accent:#2f6fa8; --accent-tint:#e6eef6;
+  --plum:#6c3270; --plum-tint:#f1e6f2;
+  --warn:#9a3412; --warn-tint:#fdeee2;
+  --good:#2b7a4b; --good-tint:#e3f3e8;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(30,25,15,.05),0 10px 28px -16px rgba(30,25,15,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#121417; --surface:#1a1d22; --surface-2:#22262c;
+    --ink:#e8e6e1; --muted:#b4b0a8; --faint:#7f8590;
+    --border:#2e333a; --hairline:#272b31;
+    --accent:#7fb0e0; --accent-tint:#1b2a3a;
+    --plum:#c79acb; --plum-tint:#2d2130;
+    --warn:#f0a070; --warn-tint:#3a2516;
+    --good:#7fcf9c; --good-tint:#163123;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -16px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121417; --surface:#1a1d22; --surface-2:#22262c;
+  --ink:#e8e6e1; --muted:#b4b0a8; --faint:#7f8590;
+  --border:#2e333a; --hairline:#272b31;
+  --accent:#7fb0e0; --accent-tint:#1b2a3a;
+  --plum:#c79acb; --plum-tint:#2d2130;
+  --warn:#f0a070; --warn-tint:#3a2516;
+  --good:#7fcf9c; --good-tint:#163123;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -16px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;overflow-x:clip}
+body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+a:hover{border-bottom-color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+h1,h2,h3,h4{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:.08em .35em;border-radius:4px}
+
+/* masthead */
+.mast{padding:52px 0 26px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--border)}
+h1{font-size:clamp(28px,5vw,44px);margin:14px 0 0;text-wrap:balance}
+.lede{max-width:66ch;margin:14px 0 0;font-size:17px;color:var(--muted)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:20px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--faint)}
+
+/* callouts and lists */
+.note{margin:22px 0 0;padding:14px 18px;border:1px solid var(--border);border-left:3px solid var(--plum);border-radius:6px;background:var(--surface);font-size:15px;color:var(--muted);max-width:80ch;box-shadow:var(--shadow)}
+.note.pick{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 10px}
+.note ol,.note ul{margin:0;padding-left:20px}
+.note li+li{margin-top:7px}
+.list{margin:14px 0 0;padding-left:20px;max-width:76ch;font-size:15.5px;color:var(--muted)}
+.list li+li{margin-top:7px}
+.list li>span.k{color:var(--ink)}
+.short{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0;padding:0;list-style:none}
+.short dt{font:700 13px/1.6 var(--mono);color:var(--plum)}
+.short dd{margin:0;color:var(--ink)}
+.short dd .s{color:var(--muted)}
+
+/* contents */
+.toc{border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:28px 0 0;display:grid;grid-template-columns:repeat(5,1fr)}
+.toc a{display:block;padding:14px 16px 16px;border:0;border-left:1px solid var(--border);min-width:0}
+.toc a:first-child{border-left:0}
+.toc a:hover{background:var(--surface)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--plum);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--faint);line-height:1.4}
+
+/* sections */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--border)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--ground);padding-right:14px;font:600 12px/1 var(--mono);color:var(--plum);letter-spacing:.06em}
+section{padding-top:26px}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:72ch;margin:12px 0 0;font-size:17px;color:var(--muted)}
+h3{font-size:19px;margin:40px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+h4{font-size:15px;margin:26px 0 0;color:var(--ink)}
+h4+.what{margin-top:6px;font-size:15px}
+
+/* figures */
+figure{margin:18px 0 0}
+.frame{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface);line-height:0;box-shadow:var(--shadow)}
+.frame img{display:block;width:100%;height:auto}
+.cap{margin:10px 0 0;font-size:14px;color:var(--faint);max-width:80ch;line-height:1.5}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;margin-top:18px;align-items:start}
+.pair figure{margin:0;min-width:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:18px}
+.two figure{margin:0;min-width:0}
+.ref-still{max-width:300px}
+
+/* better / worse / cost strip */
+.strip{display:grid;grid-template-columns:1fr 1fr 1.2fr;margin:26px 0 0;border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
+.strip>div{padding:18px 20px;min-width:0;border-left:1px solid var(--border)}
+.strip>div:first-child{border-left:0}
+.strip ul{margin:0;padding-left:18px;font-size:14.5px;color:var(--muted)}
+.strip li+li{margin-top:6px}
+
+/* decisions */
+.dec{display:grid;grid-template-columns:1fr;gap:12px;margin:18px 0 0}
+.dec>div{border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:14px 18px;box-shadow:var(--shadow)}
+.dec .n{font:700 11px/1 var(--mono);color:var(--plum);letter-spacing:.08em}
+.dec .q{font-family:var(--display);font-weight:600;font-size:16px;margin:6px 0 8px;color:var(--ink)}
+.dec ul{margin:0;padding-left:18px;font-size:14.5px;color:var(--muted)}
+.dec li+li{margin-top:4px}
+.dec .p{margin:10px 0 0;padding:8px 12px;border-radius:6px;background:var(--good-tint);color:var(--ink);font-size:14.5px;border-left:3px solid var(--good)}
+
+/* mock scaler: a frame of fixed design width, scaled to the room it has */
+.fit{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:#e9e4dc;box-shadow:var(--shadow)}
+.fit[data-w="390"]{max-width:390px;border-radius:26px;border:6px solid #2b2b2e;background:#2b2b2e}
+.fit-in{position:absolute;left:0;top:0;transform-origin:0 0;font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#2a211b;-webkit-font-smoothing:antialiased;overflow-wrap:normal}
+.fit-in *{box-sizing:border-box}
+.fit-in img{display:block;width:100%;height:auto}
+.fit.full{overflow-x:auto}
+.fit.full .fit-in{position:static;transform:none!important}
+.fit-toggle{display:inline-block;margin:8px 0 0;font:500 12px/1.4 var(--mono);color:var(--accent);background:none;border:0;border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent);padding:0;cursor:pointer}
+.fit-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.no-js .fit{overflow-x:auto}
+.no-js .fit-in{position:static}
+.ph{height:760px;overflow:hidden;position:relative;background:#faf6f1}
+.ph::after{content:"";position:absolute;left:0;right:0;bottom:0;height:60px;background:linear-gradient(to bottom,rgba(250,246,241,0),rgba(250,246,241,.9))}
+
+/* ---- shared mock parts (literal colours: these are pictures of a light-mode app) ---- */
+.mk-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid #ddd3c6;border-radius:999px;padding:4px 11px;font-size:12px;color:#2a211b;background:#fff;white-space:nowrap}
+.mk-chip .d{width:7px;height:7px;border-radius:50%;background:#f97316}
+.mk-chip .m{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#6b5d52;letter-spacing:.04em}
+.mk-sel{display:flex;justify-content:space-between;align-items:center;border:1px solid #cfc6b9;border-radius:6px;background:#fff;padding:6px 9px;font-size:12.5px;color:#2a211b;min-width:0}
+.mk-sel.unsaid{border-color:#e0a467;background:#fff7ed;color:#9a3412}
+.mk-sel .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk-sel .c{color:#8a7d70;font-size:10px;margin-left:8px}
+.mk-btn{display:inline-block;border:1px solid #cfc6b9;border-radius:6px;background:#fff;padding:7px 13px;font-size:12.5px;color:#2a211b;white-space:nowrap}
+.mk-btn.pri{background:#271810;color:#f5ede4;border-color:#271810}
+.mk-btn.ghost{border-style:dashed;color:#6b5d52}
+.mk-tag{display:inline-block;font:600 10px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:2px 6px}
+.mk-tag.same{background:#dcfce7;color:#166534}
+.mk-tag.opt{background:#f5efe7;color:#6b5d52}
+.mk-tag.need{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+.mk-tag.guess{background:#fef3c7;color:#92400e}
+.mk-bad{border:1px solid #fecaca;border-left:3px solid #b91c1c;background:#fff5f5;color:#7f1d1d;border-radius:6px;padding:8px 12px;font-size:12.5px;line-height:1.45}
+.mk-ok{border:1px solid #bbf7d0;border-left:3px solid #166534;background:#f0fdf4;color:#14532d;border-radius:6px;padding:8px 12px;font-size:12.5px;line-height:1.45}
+.mk-h{font:600 10.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:#8a7d70;margin:0 0 8px}
+.mk-tbl{border-collapse:collapse;font-size:12px;width:100%;color:#2a211b}
+.mk-tbl th,.mk-tbl td{text-align:left;padding:4px 10px 4px 0;border-bottom:1px solid #ece2d7;white-space:nowrap}
+.mk-tbl th{font:600 10.5px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:#8a7d70}
+.mk-tbl td.r{color:#a3958a}
+.mk-tabs{display:flex;gap:4px;border-bottom:1px solid #ece2d7;margin-bottom:8px}
+.mk-tabs span{padding:6px 10px;font-size:12.5px;color:#6b5d52;border-bottom:2px solid transparent;margin-bottom:-1px}
+.mk-tabs span.on{color:#2a211b;border-bottom-color:#f97316;font-weight:600}
+.mk-steps{display:flex;gap:0;margin:0 0 14px;border:1px solid #ece2d7;border-radius:8px;overflow:hidden;background:#fff}
+.mk-steps>div{flex:1;padding:9px 12px;font-size:12px;color:#6b5d52;border-left:1px solid #ece2d7;display:flex;gap:8px;align-items:center}
+.mk-steps>div:first-child{border-left:0}
+.mk-steps .n{width:18px;height:18px;border-radius:50%;background:#f5efe7;color:#6b5d52;font:600 10.5px/18px ui-monospace,Menlo,monospace;text-align:center;flex:none}
+.mk-steps>div.on{background:#fff7ed;color:#2a211b;font-weight:600}
+.mk-steps>div.on .n{background:#f97316;color:#fff}
+.mk-steps>div.done .n{background:#271810;color:#fff}
+.mk-card{background:#fff;border:1px solid #ece2d7;border-radius:10px;padding:14px 16px}
+.mk-card+.mk-card{margin-top:12px}
+.mk-file{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.mk-file .nm{font:600 13px/1.4 ui-monospace,Menlo,monospace;color:#2a211b}
+.mk-file .meta{font-size:12px;color:#6b5d52}
+.mk-rows{display:grid;grid-template-columns:150px 1fr 110px;gap:6px 12px;align-items:center;font-size:12.5px}
+.mk-rows .k{color:#2a211b}
+.mk-drop{border:1.5px dashed #cfc6b9;border-radius:10px;padding:16px;text-align:center;color:#6b5d52;font-size:12.5px;background:#fff}
+.mk-drop .t{font-family:Georgia,"Iowan Old Style",serif;font-size:17px;color:#2a211b;margin-bottom:3px}
+.mk-foot{font-size:11.5px;color:#6b5d52;padding:10px 24px;border-top:1px solid #ece2d7;background:#faf6f1}
+
+/* ---- option A: sibling of the safety.viz demo app ---- */
+.a-shell{background:#fafaf8;min-height:100%}
+.a-head{height:56px;background:#f3f4f1;border-bottom:1px solid #e4e6e3;display:flex;align-items:center;gap:16px;padding:0 18px}
+.a-head::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:repeating-linear-gradient(90deg,#f97316 0 10px,#c2410c 10px 20px,#fdba74 20px 30px)}
+.a-logo{display:flex;align-items:baseline;gap:9px;font-family:Georgia,"Iowan Old Style",serif;font-size:20px;color:#1f2328;white-space:nowrap}
+.a-logo .m{font:600 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:#6c3270}
+.a-hex{width:22px;height:22px;background:#f97316;clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%);align-self:center;margin-right:-2px}
+.a-pills{display:flex;gap:6px;align-items:center;flex:1;min-width:0;overflow:hidden}
+.a-pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid transparent;font-size:13px;color:#1f2328;white-space:nowrap}
+.a-pill .d{width:8px;height:8px;border-radius:50%;background:#f97316}
+.a-pill.data .d{background:#6c3270}
+.a-pill .m{font:500 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;color:#6b6b6b}
+.a-pill.on{background:#ffedd5;border-color:#c2410c}
+.a-pill.data.on{background:#ebe2ec;border-color:#6c3270}
+.a-study{margin-left:auto}
+.a-main{padding:18px 20px 10px}
+.a-chart{background:#fff;border:1px solid #e4e6e3;border-radius:12px;padding:10px;overflow:hidden}
+.a-phone .a-head{height:auto;flex-wrap:wrap;gap:8px 12px;padding:12px 14px 0}
+.a-phone .a-pills{flex:none;width:100%;overflow:visible;padding:4px 0 10px;mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.a-phone .a-main{padding:12px 10px}
+.a-phone .a-chart{padding:4px}
+
+/* option A: data page */
+.a-data{display:grid;grid-template-columns:270px 1fr;gap:18px;padding:18px 20px}
+.a-rail{background:#fff;border:1px solid #e4e6e3;border-radius:12px;padding:16px;align-self:start}
+.a-step{display:flex;gap:10px;align-items:flex-start;padding:6px 0 12px}
+.a-step .n{flex:none;width:24px;height:24px;background:#271810;color:#fff;clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%);font:600 11px/24px ui-monospace,Menlo,monospace;text-align:center}
+.a-step.todo .n{background:#6c3270}
+.a-step .t{font-weight:600;font-size:13.5px;color:#1f2328}
+.a-step .s{font:12px/1.5 ui-monospace,Menlo,monospace;color:#6b5d52}
+.a-step p{margin:6px 0 8px;font-size:12px;color:#6b5d52;line-height:1.5}
+.a-loaded{border-top:1px solid #ece2d7;margin-top:8px;padding-top:12px}
+.a-loaded div{display:flex;gap:8px;align-items:baseline;font-size:12px;color:#6b5d52;padding:3px 0}
+.a-loaded .nm{font:600 12.5px ui-monospace,Menlo,monospace;color:#1f2328}
+.a-loaded .d{width:8px;height:8px;border-radius:50%;background:#f97316;align-self:center;flex:none}
+
+/* ---- option B: workbench with an espresso rail ---- */
+.b-shell{display:grid;grid-template-columns:264px 1fr;min-height:100%;background:#faf6f1}
+.b-rail{background:#271810;color:#f5ede4;padding:18px 18px 16px;display:flex;flex-direction:column;gap:14px;border-right:3px solid #f97316}
+.b-name{font-family:Georgia,"Iowan Old Style",serif;font-size:21px;line-height:1.1}
+.b-name small{display:block;font:500 10.5px/1.6 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:#c4a995;margin-top:3px}
+.b-study{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 12px;font-size:12px;color:#f5ede4;line-height:1.5}
+.b-study .k{font:600 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#c4a995;text-transform:uppercase;margin-bottom:6px}
+.b-study a{color:#fdba74;border:0;font-size:12px}
+.b-study.on{outline:2px solid #f97316;outline-offset:1px}
+.b-grp{font:600 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:#c4a995;margin:8px 0 4px}
+.b-item{padding:7px 10px;border-radius:8px;font-size:13.5px;color:#f5ede4;line-height:1.3}
+.b-item small{display:block;font-size:11.5px;color:#c4a995;margin-top:2px}
+.b-item.on{background:#f97316;color:#271810}
+.b-item.on small{color:#4a2a16}
+.b-item.dim{opacity:.55}
+.b-rline{margin-top:auto;font-size:11px;color:#c4a995;line-height:1.5;border-top:1px solid rgba(255,255,255,.12);padding-top:12px}
+.b-main{padding:18px 22px 10px;min-width:0}
+.b-title{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.b-title h5{margin:0;font-family:Georgia,"Iowan Old Style",serif;font-weight:400;font-size:24px;color:#2a211b}
+.b-title span{font-size:12.5px;color:#6b5d52}
+.b-chart{background:#fff;border:1px solid #ece2d7;border-radius:14px;padding:10px;overflow:hidden}
+.b-top{background:#271810;color:#f5ede4;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:3px solid #f97316}
+.b-top .b-name{font-size:18px;flex:1}
+.b-top .mk-sel{background:#3a271c;color:#f5ede4;border-color:#5a4234;font-size:12.5px;padding:5px 9px}
+.b-top .mk-sel .c{color:#c4a995}
+.b-sub{background:#3a271c;color:#c4a995;font-size:11px;padding:5px 14px;display:flex;gap:10px;justify-content:space-between}
+.b-sub a{color:#fdba74;border:0}
+
+/* option B: data as the study page */
+.b-data{padding:18px 22px}
+.b-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.b-tcard{background:#fff;border:1px solid #ece2d7;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#6b5d52}
+.b-tcard .nm{font-weight:600;font-size:14px;color:#2a211b}
+.b-tcard .n{font:600 20px/1.2 Georgia,serif;color:#2a211b;margin:4px 0 2px}
+.b-tcard.none{border-style:dashed;background:transparent}
+
+/* ---- option C: chart first, Data in a drawer ---- */
+.c-bar{height:54px;background:#fff;border-bottom:1px solid #ece2d7;display:flex;align-items:center;gap:16px;padding:0 20px}
+.c-name{font-family:Georgia,"Iowan Old Style",serif;font-size:19px;color:#2a211b;white-space:nowrap}
+.c-name small{font:500 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;color:#6b5d52;margin-left:8px}
+.c-seg{display:flex;border:1px solid #ddd3c6;border-radius:8px;overflow:hidden;background:#faf6f1}
+.c-seg span{padding:6px 9px;font-size:12px;color:#6b5d52;border-left:1px solid #ddd3c6;white-space:nowrap}
+.c-seg span:first-child{border-left:0}
+.c-seg span.on{background:#271810;color:#f5ede4}
+.c-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.c-main{padding:16px 20px 8px;background:#faf6f1}
+.c-chart{background:#fff;border:1px solid #ece2d7;border-radius:12px;padding:10px;overflow:hidden}
+.c-stage{position:relative;min-height:100%}
+.c-dim{position:absolute;inset:0;background:rgba(39,24,16,.35)}
+.c-drawer{position:absolute;top:0;right:0;bottom:0;width:560px;background:#faf6f1;border-left:1px solid #ece2d7;box-shadow:-20px 0 40px -20px rgba(0,0,0,.4);padding:16px 18px;overflow:hidden}
+.c-dhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.c-dhead .t{font-family:Georgia,"Iowan Old Style",serif;font-size:20px;color:#2a211b}
+.c-dhead .x{width:28px;height:28px;border:1px solid #cfc6b9;border-radius:50%;text-align:center;line-height:26px;color:#6b5d52;background:#fff}
+.c-phone .c-bar{height:auto;flex-wrap:wrap;gap:8px;padding:10px 12px}
+.c-phone .c-right{margin-left:0;width:100%;justify-content:space-between}
+.c-phone .c-main{padding:10px}
+.c-phone .c-chart{padding:4px}
+.c-phone .c-drawer{width:100%;left:0;border-left:0}
+
+/* closing */
+.close{margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:30px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--muted)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--border);padding:22px 0 60px;font-size:13.5px;color:var(--faint)}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr 1fr}
+  .toc a:nth-child(4){border-left:0}
+  .strip{grid-template-columns:1fr}
+  .strip>div{border-left:0;border-top:1px solid var(--border)}
+  .strip>div:first-child{border-top:0}
+  .pair{grid-template-columns:1fr}
+  .two{grid-template-columns:1fr}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .mast{padding-top:36px}
+  .toc{grid-template-columns:1fr}
+  .toc a{border-left:0;border-top:1px solid var(--border)}
+  .toc a:first-child{border-top:0}
+  .short{grid-template-columns:1fr;gap:2px 0}
+  .short dd{margin-bottom:8px}
+}
+</style>
+</head>
+<body class="no-js"><script>document.body.classList.remove('no-js')</script>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">gsm.bio <span class="dot"></span> the app's shell and Data page <span class="dot"></span> design options <span class="dot"></span> 2026-10-08</div>
+  <h1>The biomarker app: three shells and a Data page</h1>
+  <p class="lede">Today the six biomarker charts sit in a default Shiny page: a blue list on the left, Bootstrap's grey file boxes, no header, no footer worth the name. This page puts three honest alternatives beside each other, each drawn at desktop and phone width with a real chart in place, each with its Data page in the three states it has to handle, and says what each costs to build. Nothing here is built; nothing under gsm.bio, bio.viz or safety.viz was changed.</p>
+  <div class="facts"><span>3 shells, A to C</span><span>each at 1280px and 390px</span><span>Data page in 3 states each</span><span>8 decisions with a pick</span><span>chart stills taken from the running app</span></div>
+  <p class="cap" style="margin-top:10px">For the requirement to give the biomarker app a designed header, navigation and Data page (obot.roadmap <a href="https://github.com/jwildfire/obot.roadmap/issues/400">#400</a>). gsm.bio v0.4.0 releases the app as it looks today; whichever option is picked here is built for the release after it.</p>
+
+  <div class="note pick">
+    <p class="lbl">The short version</p>
+    <dl class="short">
+      <dt>A</dt><dd>A sibling of the safety.viz demo app: light header, a row of pills for Data and the six charts, the Data page as a three-step rail beside file cards. <span class="s">Cheapest, proven, reads as the same product.</span></dd>
+      <dt>B</dt><dd>A workbench: a dark espresso rail from bio.viz's own site holds the name, a study card and the chart list with one-line descriptions; the chart gets the rest. <span class="s">Most distinctive; costs the chart about 260px.</span></dd>
+      <dt>C</dt><dd>Chart first: a thin bar with a chart switcher and a study chip; Data opens as a drawer over the chart in three steps. <span class="s">Most room for the chart; the biggest change to the tests.</span></dd>
+      <dt>Pick</dt><dd>A, with B's one-line chart descriptions carried into A's pills as hover text, and the header study chip from both. Build the header, pills and footer first; the Data page second.</dd>
+    </dl>
+  </div>
+
+  <nav class="toc" aria-label="Contents">
+    <a href="#today"><span class="ref">1</span><span class="t">Today</span><span class="s">what reads as ad hoc Shiny</span></a>
+    <a href="#fixed"><span class="ref">2</span><span class="t">What stays fixed</span><span class="s">and the app this one should resemble</span></a>
+    <a href="#options"><span class="ref">3</span><span class="t">Options A, B, C</span><span class="s">shell, phone, Data page, cost</span></a>
+    <a href="#decisions"><span class="ref">4</span><span class="t">Decisions</span><span class="s">eight small calls with a pick</span></a>
+    <a href="#rec"><span class="ref">5</span><span class="t">Recommendation</span><span class="s">and what gets built first</span></a>
+  </nav>
+</header>
+
+<div class="cut"><span>1 · TODAY</span></div>
+<section id="today">
+  <h2>What reads as ad hoc Shiny</h2>
+  <p class="what">The charts are fine. The page around them is Shiny's default page, and a reader who has used the safety.viz demo app or any product site will see it in the first second.</p>
+  <div class="pair">
+    <figure><div class="frame"><img src="media/today-app.jpg" alt="Today's app at 1280px: a plain title, a blue stacked list on the left, the group comparison chart to its right" width="1400" height="1145"></div><figcaption class="cap">Today at desktop width, as the app opens. Taken from the app running on this machine.</figcaption></figure>
+    <figure><div class="frame"><img src="media/today-phone.jpg" alt="Today's app at 390px: the title, then the seven-item list down the top half of the first screen, then the chart's collapsed Controls bar and its first tiles" width="780" height="1688"></div><figcaption class="cap">Today at 390px, the first screen.</figcaption></figure>
+  </div>
+  <figure style="margin:20px 0 0"><div class="frame"><img src="media/today-data.jpg" alt="Today's Data page at 1280px: the same blue list, a row of tabs over ten rows of the results table, then three grey file boxes one under another and a blue button" width="1400" height="1212" loading="lazy"></div><figcaption class="cap">Today’s Data page at desktop width, as it opens.</figcaption></figure>
+  <ul class="list">
+    <li><span class="k">No header.</span> A 22px title and a grey sentence float in the corner. There is no band, no mark, no name a reader would repeat, and nothing that says which study is loaded until they read the small print.</li>
+    <li><span class="k">Bootstrap 3's blue stacked list.</span> The active item is a solid blue block with 12px margins between items; it is the look of every Shiny tutorial since 2014, and it is the one element on the page that is not in the charts' visual family (the charts use a soft grey panel, 1px rules and a 6px radius).</li>
+    <li><span class="k">The list and the chart share one grid with nothing between them.</span> The chart's own Controls panel starts flush against the list, so a reader sees two columns of controls side by side and has to work out which belongs to what.</li>
+    <li><span class="k">The Data page is a form.</span> Three grey Browse boxes with a blue progress bar each, headings in three sizes, and the column questions as a flex row of selects. The thing it is for, "which column is which", has no visual grammar: a guessed column and an unsaid one look the same until you read the words.</li>
+    <li><span class="k">Nothing persists.</span> The source line is a sentence under the title; the "computed by R" line is a footer that scrolls away. Both are facts a reader should be able to find from any chart without scrolling.</li>
+    <li><span class="k">On a phone the list wins.</span> Seven items stacked one under another take the top half of the first screen; the chart's own collapsed Controls bar sits under them, and the first tile starts two thirds of the way down.</li>
+  </ul>
+</section>
+
+<div class="cut"><span>2 · WHAT STAYS FIXED</span></div>
+<section id="fixed">
+  <h2>What every option has to respect</h2>
+  <ul class="list">
+    <li><span class="k">The chart is the chart.</span> Each of the six is a bio.viz widget with its own Controls panel, title, footnotes, statistics line and downloads. The shell wraps it and never redraws a control as a Shiny input or restyles anything inside it. A chart wants about 1000px at desktop width and has to work at 390px, where its own Controls panel collapses to a bar.</li>
+    <li><span class="k">One Shiny app, one app.R, Posit Connect.</span> Shiny is the only interface dependency, and it is suggested, not imported; the package's imports cannot grow. HTML and CSS written with shiny's own tags cost nothing. A new package such as bslib is possible but is a new Suggests entry and a larger Connect manifest; every option below says whether it needs one, and none does.</li>
+    <li><span class="k">Two facts stay visible.</span> Which R computed the statistics, and that loaded files live in this session's memory and nowhere else.</li>
+    <li><span class="k">390px, no sideways scroll, keyboard.</span> Shiny's tab links are real anchors, so a shell that keeps them keeps keyboard navigation for free.</li>
+    <li><span class="k">The browser tests find things by id.</span> The source line, the table viewer, the file inputs, the column selects, the Draw button and the tab links. Each option says which it keeps.</li>
+    <li><span class="k">Public or synthetic data only.</span> Every mockup uses the synthetic study's real names and counts: 200 participants, 11,472 results, 12 biomarkers, 5 visits, and made-up file names such as lb.xpt and dm.csv.</li>
+  </ul>
+
+  <h3>The app this one should look related to</h3>
+  <p class="what">The program already has one professional web app with a header, a chart list and a data page: the safety.viz demo app. Its header is a light band with a serif name and a row of pills, one per data domain, each carrying a count; the charts of a domain are a second row of pills. Its Data page is a three-step rail on the left (load files, check the mapping, open a chart) with the loaded files listed under it, and on the right a drop zone and one card per file showing what the charts need against what the file calls it, with a small tag per row: same name, guessed, optional.</p>
+  <div class="two">
+    <figure><div class="frame"><img src="media/svz-demo-desktop.jpg" alt="The safety.viz demo app at 1280px: light header with the name and domain pills, a second row of chart pills, the histogram chart in a card" width="800" height="563"></div><figcaption class="cap">The safety.viz demo app, a chart open. Captured from the live dev site at 1280px.</figcaption></figure>
+    <figure><div class="frame"><img src="media/svz-demo-data.jpg" alt="The safety.viz demo app's Data page: a workflow rail on the left, a drop zone and per-file mapping cards on the right" width="800" height="562"></div><figcaption class="cap">Its Data page: the workflow rail, the drop zone, one mapping card per file.</figcaption></figure>
+  </div>
+  <p class="cap">Its type and colour come from the same stylesheet as bio.viz's own site: an espresso band, warm paper, orange for the accent, a serif for names and headings. Both families are on the table below: option A borrows the demo app's light header, option B borrows the site's espresso band. The mockups on this page use system fonts because the page loads nothing from outside; the real app would ask for the family's web fonts and fall back to the system ones where a server cannot reach them.</p>
+</section>
+
+<div class="cut"><span>3 · THE OPTIONS</span></div>
+<section id="options">
+  <h2>Three shells, honestly different</h2>
+  <p class="what">Each option is drawn at 1280px with a chart in place and at 390px, then its Data page in three states: as it opens on the synthetic study; a results file chosen with two columns still to say, an outcomes file R could not read, and the button pressed once; and applied on the reader's files with no outcomes table. The chart in every desktop frame is a still of the real chart element, captured from the running app and scaled to the room the shell gives it; the phone frames use a still of the real chart at 390px with its Controls collapsed.</p>
+
+  <!-- ================= OPTION A ================= -->
+  <h3 id="a">Option A · A sibling of the safety.viz demo app</h3>
+  <p class="what">One light header band carries the name, a row of pills (Data first, then the six charts) and a study chip on the right that always says what the charts are drawn on. The chart sits in a white card under it and gets the full width. On a phone the pills scroll sideways under the name, like the demo app's.</p>
+
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="a-shell" style="position:relative">
+        <div class="a-head">
+          <div class="a-logo"><span class="a-hex"></span>Biomarker charts <span class="m">GSM.BIO 0.4.0</span></div>
+          <div class="a-pills">
+            <span class="a-pill data"><span class="d"></span>Data <span class="m">3 TABLES</span></span>
+            <span class="a-pill on"><span class="d"></span>Group comparison</span>
+            <span class="a-pill"><span class="d"></span>Association scatter</span>
+            <span class="a-pill"><span class="d"></span>Correlation matrix</span>
+            <span class="a-pill"><span class="d"></span>Biomarker screen</span>
+            <span class="a-pill"><span class="d"></span>Cross-tabulation</span>
+            <span class="a-pill"><span class="d"></span>Stratified survival</span>
+          </div>
+          <span class="mk-chip a-study"><span class="d" style="background:#6c3270"></span>Synthetic study <span class="m">200 PARTICIPANTS · 3 TABLES</span></span>
+        </div>
+        <div class="a-main"><div class="a-chart"><img src="media/chart-wide.jpg" alt="The group comparison chart, its Controls panel on the left and twelve biomarker tiles" width="2022" height="1501"></div></div>
+        <div class="mk-foot">Every statistic is computed on request by R 4.3.3 with gsm.bio 0.4.0 on this server. Files you load are held in this session's memory and nowhere else.</div>
+      </div>
+    </div></div>
+    <figcaption class="cap">A at 1280px. The chart card is 1240px wide, 300px more than today, because the list no longer takes a column. The study chip is the source line, moved up and made persistent; pressing it opens Data.</figcaption>
+  </figure>
+
+  <div class="pair">
+    <figure>
+      <div class="fit" data-w="390"><div class="fit-in"><div class="ph">
+        <div class="a-shell a-phone">
+          <div class="a-head">
+            <div class="a-logo"><span class="a-hex"></span>Biomarker charts <span class="m">GSM.BIO</span></div>
+            <div class="a-pills">
+              <span class="a-pill data"><span class="d"></span>Data <span class="m">3</span></span>
+              <span class="a-pill on"><span class="d"></span>Group comparison</span>
+              <span class="a-pill"><span class="d"></span>Association scatter</span>
+              <span class="a-pill"><span class="d"></span>Correlation</span>
+            </div>
+          </div>
+          <div class="a-main"><div class="a-chart"><img src="media/chart-phone.jpg" alt="The group comparison chart at phone width with its Controls collapsed to a bar" width="780" height="1800"></div></div>
+        </div>
+      </div></div></div>
+      <figcaption class="cap">A at 390px. Two rows of header, then the chart with its own collapsed Controls bar. The pills scroll sideways; the active one is always brought into view.</figcaption>
+    </figure>
+    <div>
+      <h4>What the shell is made of</h4>
+      <ul class="list" style="margin-top:8px">
+        <li>The header is a div of shiny tags above a tab set of type pills, restyled by about sixty lines of CSS. The pills are Shiny's own tab links, so they stay anchors, keep keyboard focus and keep the data-value the tests click.</li>
+        <li>The study chip is the existing source output, moved into the header and wrapped in a link to the Data tab.</li>
+        <li>The footer is the existing footer sentence plus the session sentence, in one line.</li>
+        <li>No new package. The only JavaScript is six lines that scroll the active pill into view on a phone.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h4>A's Data page: as it opens on the synthetic study</h4>
+  <p class="what">A three-step rail on the left, exactly the demo app's grammar: choose files, say which column is which, draw the charts. The right side shows what the charts are drawn on now, ten rows a page, then one card per table the reader can load.</p>
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="a-shell" style="position:relative">
+        <div class="a-head">
+          <div class="a-logo"><span class="a-hex"></span>Biomarker charts <span class="m">GSM.BIO 0.4.0</span></div>
+          <div class="a-pills">
+            <span class="a-pill data on"><span class="d"></span>Data <span class="m">3 TABLES</span></span>
+            <span class="a-pill"><span class="d"></span>Group comparison</span><span class="a-pill"><span class="d"></span>Association scatter</span><span class="a-pill"><span class="d"></span>Correlation matrix</span><span class="a-pill"><span class="d"></span>Biomarker screen</span><span class="a-pill"><span class="d"></span>Cross-tabulation</span><span class="a-pill"><span class="d"></span>Stratified survival</span>
+          </div>
+          <span class="mk-chip a-study"><span class="d" style="background:#6c3270"></span>Synthetic study <span class="m">200 PARTICIPANTS · 3 TABLES</span></span>
+        </div>
+        <div class="a-data">
+          <div class="a-rail">
+            <p class="mk-h">Workflow</p>
+            <div class="a-step"><span class="n">✓</span><div><div class="t">Choose files</div><div class="s">none chosen: the synthetic study</div><p>The charts open on the study that ships with gsm.bio: 200 participants, 12 biomarkers, 5 visits. Choose a results file to draw them on a study of your own.</p><span class="mk-btn">Choose files</span></div></div>
+            <div class="a-step"><span class="n">✓</span><div><div class="t">Say which column is which</div><div class="s">nothing to say: gsm.bio's own names</div></div></div>
+            <div class="a-step todo"><span class="n">3</span><div><div class="t">Draw the charts</div><div class="s">6 of 6 charts ready</div><p style="margin-top:8px"><span class="mk-btn">Open group comparison</span></p></div></div>
+            <div class="a-loaded">
+              <p class="mk-h">Drawn on</p>
+              <div><span class="d"></span><span class="nm">Results</span>11,472 rows · 6 columns</div>
+              <div><span class="d"></span><span class="nm">Participants</span>200 rows · 6 columns</div>
+              <div><span class="d"></span><span class="nm">Outcomes</span>200 rows · 5 columns</div>
+              <p style="margin:10px 0 0;font-size:11.5px;color:#6b5d52;line-height:1.5">A file you choose is read by R on this server and held in this session's memory only. Nothing is kept when the session ends.</p>
+            </div>
+          </div>
+          <div>
+            <div class="mk-card">
+              <div class="mk-file"><span class="nm">The tables the charts are drawn on</span><span class="meta">the synthetic study that ships with gsm.bio</span></div>
+              <div class="mk-tabs"><span class="on">Results · 11,472 rows</span><span>Participants · 200 rows</span><span>Outcomes · 200 rows</span></div>
+              <table class="mk-tbl"><thead><tr><th>Row</th><th>USUBJID</th><th>VISIT</th><th>VISITNUM</th><th>TEST</th><th>STRESU</th><th>STRESN</th></tr></thead><tbody>
+                <tr><td class="r">1</td><td>BIO-001</td><td>Baseline</td><td>0</td><td>IL-6</td><td>pg/mL</td><td>6.927</td></tr>
+                <tr><td class="r">2</td><td>BIO-001</td><td>Week 2</td><td>2</td><td>IL-6</td><td>pg/mL</td><td>5.473</td></tr>
+                <tr><td class="r">3</td><td>BIO-001</td><td>Week 4</td><td>4</td><td>IL-6</td><td>pg/mL</td><td>5.9</td></tr>
+                <tr><td class="r">4</td><td>BIO-001</td><td>Week 8</td><td>8</td><td>IL-6</td><td>pg/mL</td><td>6.379</td></tr>
+                <tr><td class="r">5</td><td>BIO-001</td><td>Week 12</td><td>12</td><td>IL-6</td><td>pg/mL</td><td>5.879</td></tr>
+                <tr><td class="r">6</td><td>BIO-001</td><td>Baseline</td><td>0</td><td>CRP</td><td>mg/L</td><td>1.537</td></tr>
+                <tr><td class="r">7</td><td>BIO-001</td><td>Week 2</td><td>2</td><td>CRP</td><td>mg/L</td><td>1.103</td></tr>
+                <tr><td class="r">8</td><td>BIO-001</td><td>Week 4</td><td>4</td><td>CRP</td><td>mg/L</td><td>3.482</td></tr>
+                <tr><td class="r">9</td><td>BIO-001</td><td>Week 8</td><td>8</td><td>CRP</td><td>mg/L</td><td>3.463</td></tr>
+                <tr><td class="r">10</td><td>BIO-001</td><td>Week 12</td><td>12</td><td>CRP</td><td>mg/L</td><td>1.061</td></tr>
+              </tbody></table>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:#6b5d52"><span class="mk-btn">Previous rows</span><span class="mk-btn">Next rows</span><span>Rows 1 to 10 of 11,472 · page 1 of 1,148 · NA is a missing value</span></div>
+            </div>
+            <div class="mk-card" style="margin-top:14px">
+              <div class="mk-file"><span class="nm">Results</span><span class="mk-tag need">needed</span><span class="meta">one row per participant, biomarker and visit · .csv, .xpt or .sas7bdat</span></div>
+              <div class="mk-drop"><div class="t">Choose the results file</div>Read by R on this server; held for this session only.</div>
+            </div>
+            <div class="mk-card">
+              <div class="mk-file"><span class="nm">Participants</span><span class="mk-tag opt">optional</span><span class="meta">one row per participant; its other columns become the groups and filters</span></div>
+              <span class="mk-btn ghost">Choose a file</span>
+            </div>
+            <div class="mk-card">
+              <div class="mk-file"><span class="nm">Outcomes</span><span class="mk-tag opt">optional</span><span class="meta">one row per participant and endpoint, for the survival chart</span></div>
+              <span class="mk-btn ghost">Choose a file</span>
+            </div>
+            <div style="margin-top:14px"><span class="mk-btn pri">Draw the charts on these files</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption class="cap">A's Data page as it opens. The viewer is the existing viewer with its tabs; the file slots are the existing file inputs, restyled as cards with the choose control drawn as a drop zone. The Draw button keeps its id.</figcaption>
+  </figure>
+
+  <h4>A's Data page: a file chosen, two columns to say, one file R could not read, the button pressed once</h4>
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="a-shell" style="position:relative">
+        <div class="a-head">
+          <div class="a-logo"><span class="a-hex"></span>Biomarker charts <span class="m">GSM.BIO 0.4.0</span></div>
+          <div class="a-pills"><span class="a-pill data on"><span class="d"></span>Data <span class="m">3 TABLES</span></span><span class="a-pill"><span class="d"></span>Group comparison</span><span class="a-pill"><span class="d"></span>Association scatter</span><span class="a-pill"><span class="d"></span>Correlation matrix</span><span class="a-pill"><span class="d"></span>Biomarker screen</span><span class="a-pill"><span class="d"></span>Cross-tabulation</span><span class="a-pill"><span class="d"></span>Stratified survival</span></div>
+          <span class="mk-chip a-study"><span class="d" style="background:#6c3270"></span>Synthetic study <span class="m">200 PARTICIPANTS · 3 TABLES</span></span>
+        </div>
+        <div class="a-data">
+          <div class="a-rail">
+            <p class="mk-h">Workflow</p>
+            <div class="a-step"><span class="n">✓</span><div><div class="t">Choose files</div><div class="s">lb.xpt, dm.csv · 1 not read</div><p>notes.xlsx could not be read; the charts can be drawn without an outcomes table.</p><span class="mk-btn">Choose files</span></div></div>
+            <div class="a-step todo"><span class="n">2</span><div><div class="t">Say which column is which</div><div class="s">2 of 6 columns still to say</div><p>Participant and biomarker in lb.xpt.</p></div></div>
+            <div class="a-step"><span class="n" style="background:#cfc6b9">3</span><div><div class="t" style="color:#8a7d70">Draw the charts</div><div class="s">waiting on step 2</div></div></div>
+            <div class="a-loaded">
+              <p class="mk-h">Drawn on, still</p>
+              <div><span class="d"></span><span class="nm">Results</span>11,472 rows · synthetic</div>
+              <div><span class="d"></span><span class="nm">Participants</span>200 rows · synthetic</div>
+              <div><span class="d"></span><span class="nm">Outcomes</span>200 rows · synthetic</div>
+              <p style="margin:10px 0 0;font-size:11.5px;color:#6b5d52;line-height:1.5">The charts stay on these tables until every column is said and the button is pressed.</p>
+            </div>
+          </div>
+          <div>
+            <div class="mk-card" style="padding:10px 16px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#6b5d52"><span>The tables the charts are drawn on now: the synthetic study · Results 11,472 · Participants 200 · Outcomes 200</span><span class="mk-btn">Browse rows</span></div>
+            <div class="mk-card" style="margin-top:14px">
+              <div class="mk-file"><span class="nm">lb.xpt</span><span class="mk-tag need">results</span><span class="meta">11,472 rows · 6 columns · read by R as a .xpt file</span><span class="meta" style="margin-left:auto">4 of 6 columns said</span></div>
+              <div class="mk-rows">
+                <span class="k">Participant</span><span class="mk-sel unsaid"><span class="v">Not said yet</span><span class="c">▾</span></span><span class="mk-tag need">say which</span>
+                <span class="k">Biomarker</span><span class="mk-sel unsaid"><span class="v">Not said yet</span><span class="c">▾</span></span><span class="mk-tag need">say which</span>
+                <span class="k">Result, a number</span><span class="mk-sel"><span class="v">STRESN</span><span class="c">▾</span></span><span class="mk-tag same">same name</span>
+                <span class="k">Visit</span><span class="mk-sel"><span class="v">VISIT</span><span class="c">▾</span></span><span class="mk-tag same">same name</span>
+                <span class="k">Visit order, a number</span><span class="mk-sel"><span class="v">VISITNUM</span><span class="c">▾</span></span><span class="mk-tag same">same name</span>
+              </div>
+              <p class="mk-h" style="margin:14px 0 6px">The first 5 rows of lb.xpt, as R read them</p>
+              <table class="mk-tbl"><thead><tr><th>Row</th><th>SUBJID</th><th>VISIT</th><th>VISITNUM</th><th>LBTEST</th><th>STRESU</th><th>STRESN</th></tr></thead><tbody>
+                <tr><td class="r">1</td><td>BIO-001</td><td>Baseline</td><td>0</td><td>IL-6</td><td>pg/mL</td><td>6.927</td></tr>
+                <tr><td class="r">2</td><td>BIO-001</td><td>Week 2</td><td>2</td><td>IL-6</td><td>pg/mL</td><td>5.473</td></tr>
+                <tr><td class="r">3</td><td>BIO-001</td><td>Week 4</td><td>4</td><td>IL-6</td><td>pg/mL</td><td>5.9</td></tr>
+                <tr><td class="r">4</td><td>BIO-001</td><td>Week 8</td><td>8</td><td>IL-6</td><td>pg/mL</td><td>6.379</td></tr>
+                <tr><td class="r">5</td><td>BIO-001</td><td>Week 12</td><td>12</td><td>IL-6</td><td>pg/mL</td><td>5.879</td></tr>
+              </tbody></table>
+            </div>
+            <div class="mk-card">
+              <div class="mk-file"><span class="nm">dm.csv</span><span class="mk-tag opt">participants</span><span class="meta">200 rows · 6 columns · read by R as a .csv file</span><span class="meta" style="margin-left:auto">1 of 1 columns said</span></div>
+              <div class="mk-rows"><span class="k">Participant</span><span class="mk-sel"><span class="v">USUBJID</span><span class="c">▾</span></span><span class="mk-tag same">same name</span></div>
+              <p style="margin:10px 0 0;font-size:12px;color:#6b5d52">Its other columns become the groups and filters: ARM, SEX, AGE, RESPONSE, COUNTRY.</p>
+            </div>
+            <div class="mk-card">
+              <div class="mk-file"><span class="nm">notes.xlsx</span><span class="mk-tag opt">outcomes</span><span class="mk-btn" style="margin-left:auto">Choose another file</span></div>
+              <div class="mk-bad">The app reads .csv, .xpt, .sas7bdat files, and notes.xlsx is none of them.</div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="mk-btn pri">Draw the charts on these files</span><span class="mk-bad" style="flex:1">Say which column of lb.xpt is each of these, and the charts can be drawn: participant, biomarker.</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption class="cap">The two unsaid columns are amber in the card and counted in the rail; the sentence R could not read a file sits in that file's card; the refusal after the button sits beside the button, which is where the eye is. The viewer folds to one line while files are being chosen, so the cards start higher.</figcaption>
+  </figure>
+
+  <h4>A's Data page: applied on the reader's files, with no outcomes table</h4>
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="a-shell" style="position:relative">
+        <div class="a-head">
+          <div class="a-logo"><span class="a-hex"></span>Biomarker charts <span class="m">GSM.BIO 0.4.0</span></div>
+          <div class="a-pills"><span class="a-pill data on"><span class="d"></span>Data <span class="m">2 TABLES</span></span><span class="a-pill"><span class="d"></span>Group comparison</span><span class="a-pill"><span class="d"></span>Association scatter</span><span class="a-pill"><span class="d"></span>Correlation matrix</span><span class="a-pill"><span class="d"></span>Biomarker screen</span><span class="a-pill"><span class="d"></span>Cross-tabulation</span><span class="a-pill" style="opacity:.55"><span class="d"></span>Stratified survival</span></div>
+          <span class="mk-chip a-study"><span class="d"></span>lb.xpt, dm.csv <span class="m">THIS SESSION</span></span>
+        </div>
+        <div class="a-data">
+          <div class="a-rail">
+            <p class="mk-h">Workflow</p>
+            <div class="a-step"><span class="n">✓</span><div><div class="t">Choose files</div><div class="s">lb.xpt, dm.csv</div><span class="mk-btn" style="margin-top:6px">Choose other files</span></div></div>
+            <div class="a-step"><span class="n">✓</span><div><div class="t">Say which column is which</div><div class="s">6 of 6 columns said</div></div></div>
+            <div class="a-step"><span class="n">✓</span><div><div class="t">Draw the charts</div><div class="s">5 of 6 charts ready</div><p>Stratified survival needs an outcomes table; its place holds a sentence saying so.</p><span class="mk-btn">Open group comparison</span></div></div>
+            <div class="a-loaded">
+              <p class="mk-h">Drawn on</p>
+              <div><span class="d"></span><span class="nm">Results</span>lb.xpt · 11,472 rows</div>
+              <div><span class="d"></span><span class="nm">Participants</span>dm.csv · 200 rows</div>
+              <div><span class="d" style="background:#cfc6b9"></span><span class="nm" style="color:#8a7d70">Outcomes</span>none</div>
+              <p style="margin:10px 0 0;font-size:11.5px;color:#6b5d52;line-height:1.5">Held in this session's memory only. A reader who comes back chooses the files again.</p>
+            </div>
+          </div>
+          <div>
+            <div class="mk-ok">The charts are drawn on lb.xpt, dm.csv, loaded in this session. Choose a chart from the list.</div>
+            <div class="mk-card" style="margin-top:14px">
+              <div class="mk-file"><span class="nm">The tables the charts are drawn on</span><span class="meta">lb.xpt, dm.csv, loaded in this session</span></div>
+              <div class="mk-tabs"><span class="on">Results · 11,472 rows</span><span>Participants · 200 rows</span></div>
+              <p style="margin:0 0 8px;font-size:12px;color:#6b5d52">Two columns were renamed to gsm.bio's names: USUBJID was SUBJID, TEST was LBTEST.</p>
+              <table class="mk-tbl"><thead><tr><th>Row</th><th>USUBJID</th><th>VISIT</th><th>VISITNUM</th><th>TEST</th><th>STRESU</th><th>STRESN</th></tr></thead><tbody>
+                <tr><td class="r">1</td><td>BIO-001</td><td>Baseline</td><td>0</td><td>IL-6</td><td>pg/mL</td><td>6.927</td></tr>
+                <tr><td class="r">2</td><td>BIO-001</td><td>Week 2</td><td>2</td><td>IL-6</td><td>pg/mL</td><td>5.473</td></tr>
+                <tr><td class="r">3</td><td>BIO-001</td><td>Week 4</td><td>4</td><td>IL-6</td><td>pg/mL</td><td>5.9</td></tr>
+                <tr><td class="r">4</td><td>BIO-001</td><td>Week 8</td><td>8</td><td>IL-6</td><td>pg/mL</td><td>6.379</td></tr>
+                <tr><td class="r">5</td><td>BIO-001</td><td>Week 12</td><td>12</td><td>IL-6</td><td>pg/mL</td><td>5.879</td></tr>
+              </tbody></table>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:#6b5d52"><span class="mk-btn">Previous rows</span><span class="mk-btn">Next rows</span><span>Rows 1 to 10 of 11,472 · page 1 of 1,148 (five shown here)</span></div>
+            </div>
+            <div class="mk-card" style="padding:10px 16px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#6b5d52"><span>Files: lb.xpt (results, 6 of 6 columns said) · dm.csv (participants) · no outcomes file</span><span class="mk-btn">Choose other files</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption class="cap">Applied. The study chip in the header changes to the file names, the survival pill dims, and the rail's third step says which chart is missing and why. The confirmation sentence is the existing one.</figcaption>
+  </figure>
+
+  <div class="strip">
+    <div><p class="lbl">Better than the others</p><ul>
+      <li>Reads as the same product as the safety.viz demo app, and a reader who knows one knows the other.</li>
+      <li>The chart gets the full width at every size; nothing competes with its own Controls panel.</li>
+      <li>The Data page's grammar (rail, cards, tags) is already proven on the demo app and already matches the tables this app loads.</li>
+      <li>The cheapest to build and the one that keeps every test id.</li>
+    </ul></div>
+    <div><p class="lbl">Worse than the others</p><ul>
+      <li>Seven pills in one row is the most the header will take; a seventh chart would need a second row or a grouped pill.</li>
+      <li>The charts have no descriptions on the way in; a first-time reader learns what "Cross-tabulation" draws by opening it (B carries a line per chart).</li>
+      <li>Less distinctive than B; it is deliberately not a brand of its own.</li>
+    </ul></div>
+    <div><p class="lbl">What it costs</p><ul>
+      <li>Shiny: a tab set of type pills in place of the stacked list; a header div with the source output inside a link; the existing file inputs and selects, restyled; about 200 lines of CSS in the page's style block, with the family's tokens copied from the site stylesheet.</li>
+      <li>New packages: none.</li>
+      <li>Tests: every id stays, including the tab links the tests click, the source output, the viewer, the file inputs, the column selects and the Draw button. Tests that read the layout of the stacked list, if any, would change.</li>
+      <li>Effort: the shell in a day; the Data page in two.</li>
+    </ul></div>
+  </div>
+
+  <!-- ================= OPTION B ================= -->
+  <h3 id="b">Option B · A workbench with bio.viz's espresso rail</h3>
+  <p class="what">The chart list stays on the left, but becomes the product's spine: a dark band in the colour of bio.viz's own site header, holding the name, a card for the study that is loaded, the six charts grouped by the question each answers with a line of description under each, and the two standing facts at the bottom. Data is not a seventh item in the list; it is the study card, which opens the study page.</p>
+
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="b-shell">
+        <div class="b-rail">
+          <div class="b-name">Biomarker charts<small>GSM.BIO 0.4.0</small></div>
+          <div class="b-study"><div class="k">Study</div>The synthetic study that ships with gsm.bio<br>200 participants · 12 biomarkers · 5 visits · 3 tables<br><a>Change data →</a></div>
+          <div>
+            <div class="b-grp">Compare</div>
+            <div class="b-item on">Group comparison<small>one biomarker between groups, over the visits</small></div>
+            <div class="b-item">Cross-tabulation<small>two categories, with a cut on a biomarker</small></div>
+            <div class="b-grp">Relate</div>
+            <div class="b-item">Association scatter<small>two variables, one point per participant</small></div>
+            <div class="b-item">Correlation matrix<small>every pair of biomarkers at one visit</small></div>
+            <div class="b-grp">Screen</div>
+            <div class="b-item">Biomarker screen<small>every biomarker on one comparison</small></div>
+            <div class="b-grp">Outcomes</div>
+            <div class="b-item">Stratified survival<small>high against low, with a Kaplan–Meier curve</small></div>
+          </div>
+          <div class="b-rline">Statistics by R 4.3.3 with gsm.bio 0.4.0 on this server.<br>Files you load stay in this session's memory and nowhere else.</div>
+        </div>
+        <div class="b-main">
+          <div class="b-title"><h5>Group comparison</h5><span>IL-6 over time · drawn on the synthetic study</span></div>
+          <div class="b-chart"><img src="media/chart-time.jpg" alt="The group comparison chart opened on IL-6 over time, with boxes per visit and a test under each" width="1600" height="2192"></div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption class="cap">B at 1280px, with the group comparison opened on IL-6 over time. The rail is 264px; the chart card is 970px, 30px more than today. The title row above the chart is the shell's, not the chart's; the chart's own title and footnotes stay inside the card.</figcaption>
+  </figure>
+
+  <div class="pair">
+    <figure>
+      <div class="fit" data-w="390"><div class="fit-in"><div class="ph">
+        <div class="b-top"><div class="b-name">Biomarker charts</div><span class="mk-sel"><span class="v">Group comparison</span><span class="c">▾</span></span></div>
+        <div class="b-sub"><span>Synthetic study · 3 tables</span><a>Change data</a></div>
+        <div style="padding:10px"><div class="b-chart" style="padding:4px"><img src="media/chart-phone.jpg" alt="The group comparison chart at phone width with its Controls collapsed to a bar" width="780" height="1800"></div></div>
+      </div></div></div>
+      <figcaption class="cap">B at 390px. The rail folds into a top band with the name and the chart list as a drop-down, and a one-line study strip under it. The chart starts 90px from the top.</figcaption>
+    </figure>
+    <div>
+      <h4>What the shell is made of</h4>
+      <ul class="list" style="margin-top:8px">
+        <li>The existing stacked list, kept as it is and restyled: the grouping labels and descriptions are added to the tab titles as tags, the band is CSS. The tab links stay anchors with their data-value.</li>
+        <li>The study card is the existing source output with the counts added, inside a link to the Data tab; the Data tab's own link is hidden from the list and reached through the card.</li>
+        <li>The phone drop-down is a select that drives the tab set, which is a Shiny input, but an input of the shell, not of a chart. It is the one piece of this option that has to be written in R rather than CSS.</li>
+        <li>No new package.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h4>B's Data page: the study page, as it opens</h4>
+  <p class="what">Under B the Data page is where the study card leads: three table cards saying what is loaded, a stepped flow for loading a study of your own, one step shown at a time, and a peek at the rows of each table.</p>
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="b-shell">
+        <div class="b-rail">
+          <div class="b-name">Biomarker charts<small>GSM.BIO 0.4.0</small></div>
+          <div class="b-study on"><div class="k">Study</div>The synthetic study that ships with gsm.bio<br>200 participants · 12 biomarkers · 5 visits · 3 tables</div>
+          <div>
+            <div class="b-grp">Compare</div><div class="b-item">Group comparison<small>one biomarker between groups, over the visits</small></div><div class="b-item">Cross-tabulation<small>two categories, with a cut on a biomarker</small></div>
+            <div class="b-grp">Relate</div><div class="b-item">Association scatter<small>two variables, one point per participant</small></div><div class="b-item">Correlation matrix<small>every pair of biomarkers at one visit</small></div>
+            <div class="b-grp">Screen</div><div class="b-item">Biomarker screen<small>every biomarker on one comparison</small></div>
+            <div class="b-grp">Outcomes</div><div class="b-item">Stratified survival<small>high against low, with a Kaplan–Meier curve</small></div>
+          </div>
+          <div class="b-rline">Statistics by R 4.3.3 with gsm.bio 0.4.0 on this server.<br>Files you load stay in this session's memory and nowhere else.</div>
+        </div>
+        <div class="b-data">
+          <div class="b-title"><h5>Study</h5><span>the synthetic study that ships with gsm.bio</span></div>
+          <div class="b-cols">
+            <div class="b-tcard"><div class="nm">Results</div><div class="n">11,472 rows</div>6 columns · one row per participant, biomarker and visit</div>
+            <div class="b-tcard"><div class="nm">Participants</div><div class="n">200 rows</div>6 columns · groups and filters: ARM, SEX, AGE, RESPONSE, COUNTRY</div>
+            <div class="b-tcard"><div class="nm">Outcomes</div><div class="n">200 rows</div>5 columns · one endpoint, for the survival chart</div>
+          </div>
+          <div class="mk-card">
+            <div class="mk-file"><span class="nm">A study of your own</span><span class="meta">read by R on this server, held in this session's memory only</span></div>
+            <div class="mk-steps"><div class="on"><span class="n">1</span>Choose files</div><div><span class="n">2</span>Say which column is which</div><div><span class="n">3</span>Review and draw</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+              <div class="mk-drop"><div class="t">Results</div>needed · .csv, .xpt or .sas7bdat</div>
+              <div class="mk-drop"><div class="t">Participants</div>optional</div>
+              <div class="mk-drop"><div class="t">Outcomes</div>optional</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><span class="mk-btn pri" style="opacity:.5">Next: say which column is which</span><span style="font-size:12px;color:#6b5d52">Or keep the synthetic study and open a chart from the rail.</span></div>
+          </div>
+          <div class="mk-card" style="margin-top:14px">
+            <div class="mk-tabs"><span class="on">Results · 11,472 rows</span><span>Participants · 200 rows</span><span>Outcomes · 200 rows</span></div>
+            <table class="mk-tbl"><thead><tr><th>Row</th><th>USUBJID</th><th>VISIT</th><th>VISITNUM</th><th>TEST</th><th>STRESU</th><th>STRESN</th></tr></thead><tbody>
+              <tr><td class="r">1</td><td>BIO-001</td><td>Baseline</td><td>0</td><td>IL-6</td><td>pg/mL</td><td>6.927</td></tr>
+              <tr><td class="r">2</td><td>BIO-001</td><td>Week 2</td><td>2</td><td>IL-6</td><td>pg/mL</td><td>5.473</td></tr>
+              <tr><td class="r">3</td><td>BIO-001</td><td>Week 4</td><td>4</td><td>IL-6</td><td>pg/mL</td><td>5.9</td></tr>
+              <tr><td class="r">4</td><td>BIO-001</td><td>Week 8</td><td>8</td><td>IL-6</td><td>pg/mL</td><td>6.379</td></tr>
+              <tr><td class="r">5</td><td>BIO-001</td><td>Week 12</td><td>12</td><td>IL-6</td><td>pg/mL</td><td>5.879</td></tr>
+            </tbody></table>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:#6b5d52"><span class="mk-btn">Previous rows</span><span class="mk-btn">Next rows</span><span>Rows 1 to 5 of 11,472 · five rows a page here, with the table folded under the loading flow</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption class="cap">B's study page as it opens. The three table cards are new; the stepped flow is new; the viewer underneath is the existing one with five rows a page instead of ten, so the flow stays above the fold.</figcaption>
+  </figure>
+
+  <h4>B's Data page: step 2, two columns to say, one file not read, the Review step pressed once</h4>
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="b-shell">
+        <div class="b-rail">
+          <div class="b-name">Biomarker charts<small>GSM.BIO 0.4.0</small></div>
+          <div class="b-study on"><div class="k">Study</div>The synthetic study that ships with gsm.bio<br>200 participants · 12 biomarkers · 5 visits · 3 tables<br><span style="color:#fdba74;font-size:11.5px">Loading lb.xpt, dm.csv · step 2 of 3</span></div>
+          <div>
+            <div class="b-grp">Compare</div><div class="b-item">Group comparison<small>one biomarker between groups, over the visits</small></div><div class="b-item">Cross-tabulation<small>two categories, with a cut on a biomarker</small></div>
+            <div class="b-grp">Relate</div><div class="b-item">Association scatter<small>two variables, one point per participant</small></div><div class="b-item">Correlation matrix<small>every pair of biomarkers at one visit</small></div>
+            <div class="b-grp">Screen</div><div class="b-item">Biomarker screen<small>every biomarker on one comparison</small></div>
+            <div class="b-grp">Outcomes</div><div class="b-item">Stratified survival<small>high against low, with a Kaplan–Meier curve</small></div>
+          </div>
+          <div class="b-rline">Statistics by R 4.3.3 with gsm.bio 0.4.0 on this server.<br>Files you load stay in this session's memory and nowhere else.</div>
+        </div>
+        <div class="b-data">
+          <div class="b-title"><h5>Study</h5><span>still the synthetic study, until step 3</span></div>
+          <div class="mk-card">
+            <div class="mk-file"><span class="nm">A study of your own</span><span class="meta">lb.xpt, dm.csv chosen · notes.xlsx not read</span></div>
+            <div class="mk-steps"><div class="done"><span class="n">✓</span>Choose files</div><div class="on"><span class="n">2</span>Say which column is which</div><div><span class="n">3</span>Review and draw</div></div>
+            <div class="mk-bad" style="margin-bottom:12px">The app reads .csv, .xpt, .sas7bdat files, and notes.xlsx is none of them. Go back to step 1 to choose another outcomes file, or go on without one: the survival chart will say it has no outcomes table.</div>
+            <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px">
+              <div>
+                <div class="mk-file"><span class="nm">lb.xpt</span><span class="mk-tag need">results</span><span class="meta">11,472 rows · 6 columns</span></div>
+                <div class="mk-rows">
+                  <span class="k">Participant</span><span class="mk-sel unsaid"><span class="v">Not said yet</span><span class="c">▾</span></span><span class="mk-tag need">say which</span>
+                  <span class="k">Biomarker</span><span class="mk-sel unsaid"><span class="v">Not said yet</span><span class="c">▾</span></span><span class="mk-tag need">say which</span>
+                  <span class="k">Result, a number</span><span class="mk-sel"><span class="v">STRESN</span><span class="c">▾</span></span><span class="mk-tag same">same name</span>
+                  <span class="k">Visit</span><span class="mk-sel"><span class="v">VISIT</span><span class="c">▾</span></span><span class="mk-tag same">same name</span>
+                  <span class="k">Visit order, a number</span><span class="mk-sel"><span class="v">VISITNUM</span><span class="c">▾</span></span><span class="mk-tag same">same name</span>
+                </div>
+                <p class="mk-h" style="margin:14px 0 6px">The first 5 rows of lb.xpt, as R read them</p>
+                <table class="mk-tbl"><thead><tr><th>Row</th><th>SUBJID</th><th>VISIT</th><th>VISITNUM</th><th>LBTEST</th><th>STRESU</th><th>STRESN</th></tr></thead><tbody>
+                  <tr><td class="r">1</td><td>BIO-001</td><td>Baseline</td><td>0</td><td>IL-6</td><td>pg/mL</td><td>6.927</td></tr>
+                  <tr><td class="r">2</td><td>BIO-001</td><td>Week 2</td><td>2</td><td>IL-6</td><td>pg/mL</td><td>5.473</td></tr>
+                  <tr><td class="r">3</td><td>BIO-001</td><td>Week 4</td><td>4</td><td>IL-6</td><td>pg/mL</td><td>5.9</td></tr>
+                </tbody></table>
+              </div>
+              <div>
+                <div class="mk-file"><span class="nm">dm.csv</span><span class="mk-tag opt">participants</span><span class="meta">200 rows · 6 columns</span></div>
+                <div class="mk-rows" style="grid-template-columns:110px 1fr 90px"><span class="k">Participant</span><span class="mk-sel"><span class="v">USUBJID</span><span class="c">▾</span></span><span class="mk-tag same">same name</span></div>
+                <p style="margin:10px 0 0;font-size:12px;color:#6b5d52">Its other columns become the groups and filters: ARM, SEX, AGE, RESPONSE, COUNTRY.</p>
+                <p class="mk-h" style="margin:14px 0 6px">The first 3 rows of dm.csv</p>
+                <table class="mk-tbl"><thead><tr><th>Row</th><th>USUBJID</th><th>ARM</th><th>SEX</th><th>AGE</th><th>RESPONSE</th></tr></thead><tbody>
+                  <tr><td class="r">1</td><td>BIO-001</td><td>Placebo</td><td>F</td><td>54</td><td>Responder</td></tr>
+                  <tr><td class="r">2</td><td>BIO-002</td><td>Treatment</td><td>M</td><td>61</td><td>Non-responder</td></tr>
+                  <tr><td class="r">3</td><td>BIO-003</td><td>Treatment</td><td>F</td><td>47</td><td>Responder</td></tr>
+                </tbody></table>
+              </div>
+            </div>
+            <div style="display:flex;gap:14px;align-items:center;margin-top:14px;flex-wrap:wrap"><span class="mk-btn">← Choose files</span><span class="mk-btn pri">Next: review and draw</span><span class="mk-bad" style="flex:1">Say which column of lb.xpt is each of these, and the charts can be drawn: participant, biomarker.</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption class="cap">Step 2 under B. The unreadable file is reported at the top of the step because it belongs to step 1; the two unsaid columns are amber; pressing Next with them unsaid produces the refusal beside the button, the same sentence the app says today. The charts stay on the synthetic study and the rail says so.</figcaption>
+  </figure>
+
+  <h4>B's Data page: applied, no outcomes table</h4>
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="b-shell">
+        <div class="b-rail">
+          <div class="b-name">Biomarker charts<small>GSM.BIO 0.4.0</small></div>
+          <div class="b-study on"><div class="k">Study</div>lb.xpt, dm.csv, loaded in this session<br>200 participants · 12 biomarkers · 5 visits · 2 tables</div>
+          <div>
+            <div class="b-grp">Compare</div><div class="b-item">Group comparison<small>one biomarker between groups, over the visits</small></div><div class="b-item">Cross-tabulation<small>two categories, with a cut on a biomarker</small></div>
+            <div class="b-grp">Relate</div><div class="b-item">Association scatter<small>two variables, one point per participant</small></div><div class="b-item">Correlation matrix<small>every pair of biomarkers at one visit</small></div>
+            <div class="b-grp">Screen</div><div class="b-item">Biomarker screen<small>every biomarker on one comparison</small></div>
+            <div class="b-grp">Outcomes</div><div class="b-item dim">Stratified survival<small>needs an outcomes table; none is loaded</small></div>
+          </div>
+          <div class="b-rline">Statistics by R 4.3.3 with gsm.bio 0.4.0 on this server.<br>Files you load stay in this session's memory and nowhere else.</div>
+        </div>
+        <div class="b-data">
+          <div class="b-title"><h5>Study</h5><span>lb.xpt, dm.csv, loaded in this session</span></div>
+          <div class="mk-ok" style="margin-bottom:14px">The charts are drawn on lb.xpt, dm.csv, loaded in this session. Choose a chart from the rail.</div>
+          <div class="b-cols">
+            <div class="b-tcard"><div class="nm">Results · lb.xpt</div><div class="n">11,472 rows</div>6 columns · USUBJID was SUBJID, TEST was LBTEST</div>
+            <div class="b-tcard"><div class="nm">Participants · dm.csv</div><div class="n">200 rows</div>6 columns · groups and filters: ARM, SEX, AGE, RESPONSE, COUNTRY</div>
+            <div class="b-tcard none"><div class="nm">Outcomes</div><div class="n">none</div>The stratified survival chart's place holds a sentence saying it reads an outcomes table and this app has none.</div>
+          </div>
+          <div class="mk-card">
+            <div class="mk-file"><span class="nm">A study of your own</span><span class="meta">done · 6 of 6 columns said</span><span class="mk-btn" style="margin-left:auto">Load other files</span></div>
+            <div class="mk-steps"><div class="done"><span class="n">✓</span>Choose files</div><div class="done"><span class="n">✓</span>Say which column is which</div><div class="done"><span class="n">✓</span>Review and draw</div></div>
+          </div>
+          <div class="mk-card" style="margin-top:14px">
+            <div class="mk-tabs"><span class="on">Results · 11,472 rows</span><span>Participants · 200 rows</span></div>
+            <table class="mk-tbl"><thead><tr><th>Row</th><th>USUBJID</th><th>VISIT</th><th>VISITNUM</th><th>TEST</th><th>STRESU</th><th>STRESN</th></tr></thead><tbody>
+              <tr><td class="r">1</td><td>BIO-001</td><td>Baseline</td><td>0</td><td>IL-6</td><td>pg/mL</td><td>6.927</td></tr>
+              <tr><td class="r">2</td><td>BIO-001</td><td>Week 2</td><td>2</td><td>IL-6</td><td>pg/mL</td><td>5.473</td></tr>
+              <tr><td class="r">3</td><td>BIO-001</td><td>Week 4</td><td>4</td><td>IL-6</td><td>pg/mL</td><td>5.9</td></tr>
+            </tbody></table>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:#6b5d52"><span class="mk-btn">Previous rows</span><span class="mk-btn">Next rows</span><span>Rows 1 to 5 of 11,472 (three shown here)</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption class="cap">Applied under B. The study card in the rail now names the files, the survival item dims with its reason, and the missing outcomes table is a dashed card that carries the sentence the chart's place will show.</figcaption>
+  </figure>
+
+  <div class="strip">
+    <div><p class="lbl">Better than the others</p><ul>
+      <li>The most distinctive of the three and the closest to bio.viz's own site, so the app and the chart gallery read as one thing.</li>
+      <li>The rail teaches: a line under each chart says what it draws, and the grouping (compare, relate, screen, outcomes) is the mental model of the six.</li>
+      <li>The study card makes the data a first-class object, not a tab among charts, and it is where a reader's eye goes when something is missing.</li>
+      <li>The stepped flow cannot be pressed out of order: there is no refusal to read if the reader follows the steps.</li>
+    </ul></div>
+    <div><p class="lbl">Worse than the others</p><ul>
+      <li>The chart loses 264px at desktop width to a rail that is mostly navigation; on a 1280px laptop the chart gets 970px, just under what it wants.</li>
+      <li>Two dark panels at once: the rail and the chart's own grey Controls panel sit side by side again, as today, and the rail has to be clearly the darker and the quieter of the two.</li>
+      <li>The phone band needs a select that drives the tab set, which is R code, not CSS; and a stepped flow has state to keep in R where today's one page has none.</li>
+      <li>Three steps for what is, on most files, one press.</li>
+    </ul></div>
+    <div><p class="lbl">What it costs</p><ul>
+      <li>Shiny: the stacked list kept and restyled, with the group labels and descriptions as tags in the tab titles; the study card as the source output with counts; a select in the phone band that updates the tab set; the stepped flow as a conditional panel per step with a step value held in the session; about 300 lines of CSS.</li>
+      <li>New packages: none.</li>
+      <li>Tests: the tab links, the source output, the viewer, the file inputs, the column selects and the Draw button keep their ids. Tests that choose files and press Draw in one go would have to step through the flow first, and a test of the Data tab link would reach it through the study card.</li>
+      <li>Effort: the shell in two days; the study page and its flow in three.</li>
+    </ul></div>
+  </div>
+
+  <!-- ================= OPTION C ================= -->
+  <h3 id="c">Option C · Chart first, Data as a drawer</h3>
+  <p class="what">No list. A thin white bar holds the name, a segmented switcher for the six charts and, on the right, a study chip that says what is loaded. The chart gets everything under the bar. Data is not a page: the chip opens a drawer over the chart, with a three-step flow inside it, and the chart is still there, dimmed, when the drawer closes.</p>
+
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="c-stage" style="background:#faf6f1">
+        <div class="c-bar">
+          <div class="c-name">Biomarker charts<small>GSM.BIO 0.4.0</small></div>
+          <div class="c-seg"><span>Group comparison</span><span>Association scatter</span><span>Correlation matrix</span><span>Biomarker screen</span><span>Cross-tabulation</span><span class="on">Stratified survival</span></div>
+          <div class="c-right"><span class="mk-chip"><span class="d" style="background:#6c3270"></span>Synthetic study <span class="m">3 TABLES</span></span><span class="mk-btn" style="padding:5px 11px">Data</span></div>
+        </div>
+        <div class="c-main"><div class="c-chart"><img src="media/chart-survival.jpg" alt="The stratified survival chart with its experimental banner, Kaplan–Meier curves, the number at risk and R's statistics" width="1600" height="1845"></div></div>
+        <div class="mk-foot">Every statistic is computed on request by R 4.3.3 with gsm.bio 0.4.0 on this server. Files you load are held in this session's memory and nowhere else.</div>
+      </div>
+    </div></div>
+    <figcaption class="cap">C at 1280px, with the stratified survival chart open. The chart's own experimental banner is inside the card, untouched; the shell adds nothing above it but the bar. The chart card is 1240px wide.</figcaption>
+  </figure>
+
+  <div class="pair">
+    <figure>
+      <div class="fit" data-w="390"><div class="fit-in"><div class="ph">
+        <div class="c-phone">
+          <div class="c-bar">
+            <div class="c-name">Biomarker charts</div>
+            <div class="c-right"><span class="mk-sel" style="flex:1"><span class="v">Group comparison</span><span class="c">▾</span></span><span class="mk-chip"><span class="d" style="background:#6c3270"></span>Data <span class="m">3</span></span></div>
+          </div>
+          <div class="c-main"><div class="c-chart"><img src="media/chart-phone.jpg" alt="The group comparison chart at phone width with its Controls collapsed to a bar" width="780" height="1800"></div></div>
+        </div>
+      </div></div></div>
+      <figcaption class="cap">C at 390px. The segmented switcher becomes a select; the study chip becomes the Data button. The chart starts 100px from the top.</figcaption>
+    </figure>
+    <div>
+      <h4>What the shell is made of</h4>
+      <ul class="list" style="margin-top:8px">
+        <li>A tab set of type hidden holds the six charts; the segmented switcher is a radio group styled as segments on desktop and a select on a phone, each a Shiny input of the shell that updates the tab set.</li>
+        <li>The drawer is a div that a few lines of JavaScript show and hide; the existing Data view sits inside it unchanged. Shiny draws an output only when it is visible, so opening the drawer draws the viewer then, which is what today's tab does.</li>
+        <li>The source output becomes the chip's text.</li>
+        <li>No new package, but the most JavaScript of the three: about forty lines for the drawer, the escape key and focus.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h4>C's drawer: as it opens on the synthetic study</h4>
+  <figure>
+    <div class="fit" data-w="1280"><div class="fit-in">
+      <div class="c-stage" style="background:#faf6f1">
+        <div class="c-bar">
+          <div class="c-name">Biomarker charts<small>GSM.BIO 0.4.0</small></div>
+          <div class="c-seg"><span class="on">Group comparison</span><span>Association scatter</span><span>Correlation matrix</span><span>Biomarker screen</span><span>Cross-tabulation</span><span>Stratified survival</span></div>
+          <div class="c-right"><span class="mk-chip"><span class="d" style="background:#6c3270"></span>Synthetic study <span class="m">3 TABLES</span></span><span class="mk-btn pri" style="padding:5px 11px">Data</span></div>
+        </div>
+        <div class="c-main"><div class="c-chart"><img src="media/chart-wide.jpg" alt="The group comparison chart, dimmed under the drawer" width="2022" height="1501"></div></div>
+        <div class="c-dim"></div>
+        <div class="c-drawer">
+          <div class="c-dhead"><span class="t">Data</span><span class="x">×</span></div>
+          <div class="mk-card">
+            <p class="mk-h">Drawn on now</p>
+            <div class="mk-tabs"><span class="on">Results · 11,472 rows</span><span>Participants · 200</span><span>Outcomes · 200</span></div>
+            <table class="mk-tbl"><thead><tr><th>Row</th><th>USUBJID</th><th>VISIT</th><th>VISITNUM</th><th>TEST</th><th>STRESN</th></tr></thead><tbody>
+              <tr><td class="r">1</td><td>BIO-001</td><td>Baseline</td><td>0</td><td>IL-6</td><td>6.927</td></tr>
+              <tr><td class="r">2</td><td>BIO-001</td><td>Week 2</td><td>2</td><td>IL-6</td><td>5.473</td></tr>
+              <tr><td class="r">3</td><td>BIO-001</td><td>Week 4</td><td>4</td><td>IL-6</td><td>5.9</td></tr>
+              <tr><td class="r">4</td><td>BIO-001</td><td>Week 8</td><td>8</td><td>IL-6</td><td>6.379</td></tr>
+              <tr><td class="r">5</td><td>BIO-001</td><td>Week 12</td><td>12</td><td>IL-6</td><td>5.879</td></tr>
+            </tbody></table>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:11.5px;color:#6b5d52"><span class="mk-btn">Previous</span><span class="mk-btn">Next</span><span>Rows 1 to 5 of 11,472 · the synthetic study that ships with gsm.bio</span></div>
+          </div>
+          <div class="mk-card" style="margin-top:12px">
+            <p class="mk-h">A study of your own</p>
+            <div class="mk-steps"><div class="on"><span class="n">1</span>Choose files</div><div><span class="n">2</span>Say columns</div><div><span class="n">3</span>Draw</div></div>
+            <div class="mk-drop" style="margin-bottom:8px"><div class="t">Results</div>needed · .csv, .xpt or .sas7bdat</div>
+            <div style="display:flex;gap:8px"><span class="mk-btn ghost" style="flex:1;text-align:center">Participants, optional</span><span class="mk-btn ghost" style="flex:1;text-align:center">Outcomes, optional</span></div>
+            <p style="margin:10px 0 0;font-size:11.5px;color:#6b5d52;line-height:1.5">Read by R on this server and held in this session's memory only.</p>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption class="cap">C's drawer as it opens: what is drawn now at the top, five rows a page because the drawer is 560px wide, and the three-step flow under it. The chart stays visible to the left.</figcaption>
+  </figure>
+
+  <h4>C's drawer: step 2 on a phone, two columns to say, one file not read, Draw pressed once</h4>
+  <div class="pair">
+    <figure>
+      <div class="fit" data-w="390"><div class="fit-in"><div class="ph">
+        <div class="c-phone c-stage" style="height:760px">
+          <div class="c-bar"><div class="c-name">Biomarker charts</div></div>
+          <div class="c-drawer" style="top:0;padding:14px 12px">
+            <div class="c-dhead"><span class="t">Data</span><span class="x">×</span></div>
+            <div class="mk-steps" style="margin-bottom:10px"><div class="done"><span class="n">✓</span>Files</div><div class="on"><span class="n">2</span>Columns</div><div><span class="n">3</span>Draw</div></div>
+            <div class="mk-bad" style="margin-bottom:10px">The app reads .csv, .xpt, .sas7bdat files, and notes.xlsx is none of them.</div>
+            <div class="mk-card" style="padding:12px">
+              <div class="mk-file" style="margin-bottom:8px"><span class="nm">lb.xpt</span><span class="meta">11,472 rows · 6 columns</span></div>
+              <div class="mk-rows" style="grid-template-columns:1fr;gap:4px">
+                <span class="k">Participant <span class="mk-tag need" style="margin-left:6px">say which</span></span><span class="mk-sel unsaid"><span class="v">Not said yet</span><span class="c">▾</span></span>
+                <span class="k" style="margin-top:6px">Biomarker <span class="mk-tag need" style="margin-left:6px">say which</span></span><span class="mk-sel unsaid"><span class="v">Not said yet</span><span class="c">▾</span></span>
+                <span class="k" style="margin-top:6px">Result, a number <span class="mk-tag same" style="margin-left:6px">same name</span></span><span class="mk-sel"><span class="v">STRESN</span><span class="c">▾</span></span>
+                <span class="k" style="margin-top:6px">Visit <span class="mk-tag same" style="margin-left:6px">same name</span></span><span class="mk-sel"><span class="v">VISIT</span><span class="c">▾</span></span>
+                <span class="k" style="margin-top:6px">Visit order, a number <span class="mk-tag same" style="margin-left:6px">same name</span></span><span class="mk-sel"><span class="v">VISITNUM</span><span class="c">▾</span></span>
+              </div>
+            </div>
+            <div class="mk-card" style="padding:12px;margin-top:10px"><div class="mk-file" style="margin:0"><span class="nm">dm.csv</span><span class="meta">200 rows · Participant: USUBJID</span><span class="mk-tag same">same name</span></div></div>
+            <div style="margin-top:10px"><span class="mk-btn pri" style="display:block;text-align:center">Draw the charts on these files</span></div>
+            <div class="mk-bad" style="margin-top:8px">Say which column of lb.xpt is each of these, and the charts can be drawn: participant, biomarker.</div>
+          </div>
+        </div>
+      </div></div></div>
+      <figcaption class="cap">On a phone the drawer is the whole screen. The unreadable file is reported at the top of the step; the two unsaid columns are amber; the refusal sits under the button.</figcaption>
+    </figure>
+    <figure>
+      <div class="fit" data-w="390"><div class="fit-in"><div class="ph">
+        <div class="c-phone c-stage" style="height:760px">
+          <div class="c-bar"><div class="c-name">Biomarker charts</div></div>
+          <div class="c-drawer" style="top:0;padding:14px 12px">
+            <div class="c-dhead"><span class="t">Data</span><span class="x">×</span></div>
+            <div class="mk-ok" style="margin-bottom:10px">The charts are drawn on lb.xpt, dm.csv, loaded in this session.</div>
+            <div class="mk-steps" style="margin-bottom:10px"><div class="done"><span class="n">✓</span>Files</div><div class="done"><span class="n">✓</span>Columns</div><div class="done"><span class="n">✓</span>Draw</div></div>
+            <div class="mk-card" style="padding:12px">
+              <p class="mk-h">Drawn on now</p>
+              <div class="mk-tabs"><span class="on">Results · 11,472</span><span>Participants · 200</span></div>
+              <table class="mk-tbl"><thead><tr><th>Row</th><th>USUBJID</th><th>VISIT</th><th>TEST</th><th>STRESN</th></tr></thead><tbody>
+                <tr><td class="r">1</td><td>BIO-001</td><td>Baseline</td><td>IL-6</td><td>6.927</td></tr>
+                <tr><td class="r">2</td><td>BIO-001</td><td>Week 2</td><td>IL-6</td><td>5.473</td></tr>
+                <tr><td class="r">3</td><td>BIO-001</td><td>Week 4</td><td>IL-6</td><td>5.9</td></tr>
+              </tbody></table>
+              <p style="margin:8px 0 0;font-size:11.5px;color:#6b5d52">No outcomes table: the stratified survival chart's place holds a sentence saying so.</p>
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px"><span class="mk-btn pri" style="flex:1;text-align:center">Close and open a chart</span><span class="mk-btn">Load other files</span></div>
+          </div>
+        </div>
+      </div></div></div>
+      <figcaption class="cap">Applied, on a phone. The chip in the bar now reads lb.xpt, dm.csv; the drawer offers to close.</figcaption>
+    </figure>
+  </div>
+
+  <div class="strip">
+    <div><p class="lbl">Better than the others</p><ul>
+      <li>The chart gets the most room of the three at every width, and nothing on screen competes with its own Controls panel.</li>
+      <li>Loading data does not take the reader away from the chart they were looking at; when the drawer closes the same chart is drawn on the new tables.</li>
+      <li>The thinnest chrome, and the easiest to keep thin when charts are added: the switcher grows, nothing else does.</li>
+    </ul></div>
+    <div><p class="lbl">Worse than the others</p><ul>
+      <li>Six chart names in a segmented control is already tight at 1280px; the names would have to shorten or the control would have to scroll.</li>
+      <li>A drawer is the wrong shape for a table viewer: five rows, five columns, and a reader who wants to browse 11,472 rows is in a 560px strip.</li>
+      <li>The drawer and the switcher are both Shiny inputs and JavaScript that this app does not have today; it is the option with the most new moving parts and the least precedent in the program.</li>
+      <li>The Data tab link the tests click goes away; a button takes its place.</li>
+    </ul></div>
+    <div><p class="lbl">What it costs</p><ul>
+      <li>Shiny: a tab set of type hidden, a radio group and a select that update it, a drawer div toggled by about forty lines of JavaScript with a resize signal so Shiny draws the viewer when it appears, the stepped flow as under B; about 250 lines of CSS.</li>
+      <li>New packages: none.</li>
+      <li>Tests: the source output, the viewer, the file inputs, the column selects and the Draw button keep their ids; the Data tab link becomes a button with a new id, the chart tab links become radio values, and every test that opens Data or a chart changes how it does so.</li>
+      <li>Effort: the shell in two days; the drawer and its flow in three; the test changes a day on top.</li>
+    </ul></div>
+  </div>
+</section>
+
+<div class="cut"><span>4 · DECISIONS INSIDE THE OPTIONS</span></div>
+<section id="decisions">
+  <h2>Eight calls that can be made separately</h2>
+  <p class="what">Each option bundles answers to these. They can be unbundled: pick a shell, then override any of these.</p>
+  <div class="dec">
+    <div><div class="n">D1 · THE NAME IN THE HEADER</div><div class="q">What is the app called?</div><ul><li>"gsm.bio", the package name, as bio.viz's site does.</li><li>"Biomarker charts", what the page is called today and what Connect's listing will show.</li><li>Both: "Biomarker charts" as the name, "gsm.bio 0.4.0" as the small mark beside it.</li></ul><div class="p">Pick: both. A reader names the thing, a maintainer names the package; the version beside the name is the family's habit and it is the version a bug report needs.</div></div>
+    <div><div class="n">D2 · THE SOURCE LINE</div><div class="q">Is "drawn on …" a persistent header element or a line on the Data page?</div><ul><li>Persistent: a chip in the header that every chart shows, which also opens Data.</li><li>On the Data page only, as today's sentence under the title.</li></ul><div class="p">Pick: persistent. The one question a reader asks of any chart is "on what data", and after a load the chip is the proof the load took.</div></div>
+    <div><div class="n">D3 · DATA: PAGE OR DRAWER</div><div class="q">Is Data a page among the charts or a drawer over them?</div><ul><li>A page (A and B): room for the viewer, keeps the tab link, nothing new to script.</li><li>A drawer (C): the chart stays in view; narrow; new JavaScript; the tests change.</li></ul><div class="p">Pick: a page. The viewer needs the width, and the app's one piece of JavaScript today is the charts'. A drawer can be added later if readers switch studies often, which nothing so far suggests.</div></div>
+    <div><div class="n">D4 · THE LOADING FLOW</div><div class="q">Steps the reader walks, or one page with a numbered rail?</div><ul><li>Stepped (B, C): one step on screen at a time, Next buttons, state kept in R.</li><li>One page with a rail (A): the steps are labels that count what is left; everything is on screen; the button refuses with a sentence when something is unsaid, as today.</li></ul><div class="p">Pick: one page with a rail. On most files the names match and the whole job is one press; a wizard makes that three. The rail gives the orientation a wizard gives without hiding anything.</div></div>
+    <div><div class="n">D5 · WHERE A REFUSAL GOES</div><div class="q">When the button is pressed with a column unsaid, where does the sentence go?</div><ul><li>Beside the button, as a tinted block.</li><li>A banner at the top of the page.</li><li>Only the amber marks on the selects, no sentence.</li></ul><div class="p">Pick: beside the button and amber on the selects. The eye is on the button when it refuses; the amber says which rows to go back to; the rail's count says how many. The sentence stays the one R says today, so the tests that read it still read it.</div></div>
+    <div><div class="n">D6 · WHERE A FILE R COULD NOT READ IS REPORTED</div><div class="q">In the file's own card, or at the top of the page?</div><ul><li>In the card of the slot it was chosen for, with a button to choose another.</li><li>At the top of the page or step, as a banner.</li></ul><div class="p">Pick: in the card. The reader chose it there; the fix is there. The rail's first step repeats the count so it is not missed when the page is long.</div></div>
+    <div><div class="n">D7 · THE TWO STANDING FACTS</div><div class="q">Where do "computed by R …" and "held for this session only" live?</div><ul><li>A one-line footer under every page, both facts in one sentence each.</li><li>In the header, as hover text on the version mark.</li><li>On the Data page only.</li></ul><div class="p">Pick: the footer, on every page, in one line; the chart's own statistics line already names the R under each chart, and the Data page repeats the session fact next to the file slots where it matters most.</div></div>
+    <div><div class="n">D8 · FONTS</div><div class="q">The family's web fonts, or the system's?</div><ul><li>Ask for Instrument Sans and Instrument Serif from Google Fonts as both sites do, with system fonts as the fallback.</li><li>System fonts only.</li></ul><div class="p">Pick: ask for the family's fonts with the fallback. A Connect server behind a firewall may not reach Google, in which case the page falls back and still holds together; the mockups on this page are the fallback, so they are the worst case.</div></div>
+  </div>
+</section>
+
+<div class="cut"><span>5 · RECOMMENDATION</span></div>
+<section id="rec">
+  <h2>Build A, with two things from B</h2>
+  <div class="note pick">
+    <p class="lbl">Why A</p>
+    <ul>
+      <li>The program already has a professional web app with a chart list, a data page and a header, and this app is its sibling in every other way: same chart kit, same stylesheet, same R behind the statistics. Making it look like one is the shortest route to "not an ad hoc Shiny app", and the look is already reviewed.</li>
+      <li>It gives the chart the full width, which is the thing the chart wants most, and it costs no new package, no new JavaScript to speak of, and no change to the ids the browser tests use.</li>
+      <li>Its Data page grammar (a counting rail, a card per file, same name / say which / optional tags) already fits the three tables and the three states this app has, and it is the one of the three that keeps loading to a single press when the names match.</li>
+    </ul>
+  </div>
+  <div class="close">
+    <div>
+      <h3>Carried in from B</h3>
+      <ul>
+        <li>The one-line description of each chart, as the hover text on its pill and as the line under the chart's name on the Data page's "which charts are ready" list.</li>
+        <li>The dimmed pill with a reason when a chart cannot be drawn on the loaded tables, so the survival chart's missing outcomes table is visible before it is opened.</li>
+      </ul>
+      <h3 style="margin-top:28px">Left out, deliberately</h3>
+      <ul>
+        <li>A stepped flow (B, C): one page with a rail does the same orientation without the state.</li>
+        <li>A drawer (C): nothing yet says readers switch studies often enough to need the chart in view while they do.</li>
+        <li>A new package: bslib would give the header and pills for less CSS, at the price of a Suggests entry and a larger Connect manifest; the CSS is about 200 lines and the family's tokens already exist.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>If yes, in this order</h3>
+      <ul>
+        <li>The shell: header band, pills, study chip, footer line, phone behaviour. One pull request, the browser tests unchanged, a before-and-after still at 1280px and 390px in its body.</li>
+        <li>The Data page: the rail, the viewer card, the file cards with their tags, the refusal and unreadable-file placements. A second pull request, with the three states captured.</li>
+        <li>Then the carried-in pieces: pill descriptions and the dimmed pill with a reason.</li>
+        <li>Each step is checked at 390px with no sideways scroll and by keyboard before it is opened, the way every page of the family is.</li>
+      </ul>
+      <h3 style="margin-top:28px">What this page did not do</h3>
+      <ul>
+        <li>Nothing was built or changed in gsm.bio, bio.viz or safety.viz. Every screen above is HTML and CSS of this page around a still of the real chart.</li>
+        <li>The desktop chart stills were captured from the chart element alone, from the app running on this machine, and are scaled to the width each shell gives them; a chart given more width would reflow its tiles rather than grow. The phone chart still is a crop of a full-page capture at 390px.</li>
+        <li>The mockups use system fonts; the real shell would ask for the family's web fonts first.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</div>
+<footer><div class="wrap">This page was drafted by Claude Code using Fable 5.1.</div></footer>
+<script>
+(function(){
+  function fit(){
+    document.querySelectorAll('.fit').forEach(function(f){
+      var w=+f.getAttribute('data-w'), inner=f.querySelector('.fit-in'); if(!inner||!w) return;
+      inner.style.width=w+'px';
+      if(f.classList.contains('full')){ f.style.height='auto'; return; }
+      var avail=f.clientWidth, s=Math.min(1,avail/w);
+      inner.style.transform='scale('+s+')';
+      f.style.height=Math.round(inner.offsetHeight*s)+'px';
+    });
+  }
+  document.querySelectorAll('.fit[data-w="1280"]').forEach(function(f){
+    var b=document.createElement('button'); b.type='button'; b.className='fit-toggle'; b.textContent='Full size, scrolls sideways';
+    b.addEventListener('click',function(){ var on=f.classList.toggle('full'); b.textContent=on?'Fit to the page':'Full size, scrolls sideways'; fit(); });
+    f.insertAdjacentElement('afterend',b);
+  });
+  window.addEventListener('load',fit); window.addEventListener('resize',fit);
+  document.querySelectorAll('.fit img').forEach(function(i){ i.addEventListener('load',fit); });
+  fit(); setTimeout(fit,50); setTimeout(fit,400);
+})();
+</script>
+</body></html>

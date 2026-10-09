@@ -117,6 +117,7 @@ The full rule, with the sweep that established it, is in
 | [Framework options v3](autonomous-agent-framework-options-v3-2026-06-07/) | 2026-06-07 | Superseded by v4 |
 | [Framework options v2](autonomous-agent-framework-options-v2-2026-06-06/) | 2026-06-06 | Superseded by v3 |
 | [Framework options v1](autonomous-agent-framework-options-2026-06-06/) | 2026-06-06 | Superseded by v2 |
+| [The biomarker app: three shells and a Data page](gsm-bio-app-design-2026-10-08/) | 2026-10-08 | Proposal, waiting on @jwildfire's pick — three ways to turn gsm.bio's biomarker app from a default Shiny page into a web app, each mocked up at desktop and phone width around stills of the real charts, with the Data page in three states, what each costs to build, eight smaller decisions and a recommendation; for the requirement to give the app a designed header, navigation and Data page ([#400](https://github.com/jwildfire/obot.roadmap/issues/400)). Nothing on it is built. |
 
 Superseded versions are retained deliberately (design decision D3) — the memory
 philosophy favors preserving the decision trail.
