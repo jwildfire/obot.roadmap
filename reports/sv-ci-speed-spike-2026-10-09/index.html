@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz CI speed: why the check takes 22 minutes, and the measured way to 6</title>
+<meta name="description" content="Why safety.viz's required check takes 22 minutes, five other layouts timed on GitHub's runners, the one that takes about 6 with every test kept, and what a security assessment of that layout found.">
+<style>
+@font-face{font-family:"Instrument Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(https://jwildfire.github.io/safety.viz/demo/fonts/instrument-sans-latin-wght-normal.woff2) format("woff2")}
+@font-face{font-family:"Instrument Serif";font-style:normal;font-weight:400;font-display:swap;src:url(https://jwildfire.github.io/safety.viz/demo/fonts/instrument-serif-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;src:url(https://jwildfire.github.io/safety.viz/demo/fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:500;font-display:swap;src:url(https://jwildfire.github.io/safety.viz/demo/fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2")}
+body{margin:0}
+  /* Layout: one reading column; every chart is a horizontal bar drawn on the
+     same minutes scale, so lengths compare across the whole page. */
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --ink: #16202e;
+    --muted: #5b6878;
+    --line: #d9dfe7;
+    --rail: #e6eaf0;
+    --browser: #2553c9;   /* the browser suite */
+    --unit: #1b8a7a;      /* unit tests */
+    --setup: #8492a6;     /* setup and static checks */
+    --repeat: #c2620c;    /* the same work done a second time */
+    --real-r: #7a3fb8;    /* tests that start real R */
+    --good: #17794a;
+    --bad: #b3261e;
+    --note-bg: #eef3fd;
+    --note-line: #b9cbf3;
+    --display: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10161f; --surface: #18202c; --ink: #e6ebf2; --muted: #9aa7b8;
+      --line: #2b3646; --rail: #232d3b; --browser: #6f97f5; --unit: #4cc0ae;
+      --setup: #7b899d; --repeat: #ee9242; --real-r: #b48af0; --good: #55c48d;
+      --bad: #f2867f; --note-bg: #17233a; --note-line: #2f477a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10161f; --surface: #18202c; --ink: #e6ebf2; --muted: #9aa7b8;
+    --line: #2b3646; --rail: #232d3b; --browser: #6f97f5; --unit: #4cc0ae;
+    --setup: #7b899d; --repeat: #ee9242; --real-r: #b48af0; --good: #55c48d;
+    --bad: #f2867f; --note-bg: #17233a; --note-line: #2f477a;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .page {
+    max-width: 46rem;
+    margin-inline: auto;
+    padding-inline: 20px;
+    padding-block: 40px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+  }
+  header { display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.08;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .lead { font-size: 1.1rem; color: var(--muted); margin: 0; max-width: 38rem; }
+  section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  h2 {
+    font-family: var(--body);
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 1.25;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h3 { font-size: 1rem; font-weight: 600; margin: 0; }
+  p { margin: 0; }
+  ul, ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; }
+  li { padding-left: 2px; }
+  a { color: var(--browser); text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--browser); outline-offset: 2px; }
+  code, .num { font-family: var(--mono); font-size: 0.9em; }
+  .num { font-variant-numeric: tabular-nums; }
+  .cite { font-size: 0.85rem; color: var(--muted); }
+
+  /* The answer, up top. The only filled card on the page. */
+  .answer {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .ladder { display: flex; flex-direction: column; gap: 12px; }
+  .rung { display: grid; grid-template-columns: 5.2rem 1fr; gap: 4px 14px; align-items: center; }
+  .rung .big { font-family: var(--mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1; }
+  .rung .big small { font-size: 0.75rem; color: var(--muted); }
+  .rung .what { font-size: 0.95rem; }
+  .rung .track { grid-column: 1 / -1; }
+
+  /* Bars. One scale per chart, set with --max on the chart. */
+  .track { display: flex; height: 18px; background: var(--rail); border-radius: 2px; overflow: hidden; }
+  .track.tall { height: 30px; }
+  .seg { height: 100%; flex: none; }
+  .seg + .seg { box-shadow: -1px 0 0 var(--surface); }
+  .setup { background: var(--setup); }
+  .unit { background: var(--unit); }
+  .browser { background: var(--browser); }
+  .real-r { background: var(--real-r); }
+  .good { background: var(--good); }
+  .repeat {
+    background-color: var(--repeat);
+    background-image: repeating-linear-gradient(135deg, transparent 0 5px, rgb(255 255 255 / 0.28) 5px 8px);
+  }
+  .legend { list-style: none; padding: 0; gap: 6px; }
+  .legend li { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: baseline; padding: 0; }
+  .legend .sw { width: 12px; height: 12px; border-radius: 2px; align-self: center; }
+  .legend .num { color: var(--muted); white-space: nowrap; }
+
+  .chart { display: flex; flex-direction: column; gap: 10px; }
+  .row { display: grid; grid-template-columns: 11.5rem 1fr 4.6rem; gap: 4px 12px; align-items: center; }
+  .row .label { font-size: 0.92rem; min-width: 0; }
+  .row .label small { display: block; color: var(--muted); font-size: 0.8rem; }
+  .row .val { font-family: var(--mono); font-size: 0.9rem; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .axis { display: grid; grid-template-columns: 11.5rem 1fr 4.6rem; gap: 12px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .axis .ticks { display: flex; justify-content: space-between; }
+  @media (max-width: 560px) {
+    .row { grid-template-columns: 1fr 4.6rem; }
+    .row .label { grid-column: 1 / -1; }
+    .axis { grid-template-columns: 1fr 4.6rem; }
+    .axis .pad { display: none; }
+  }
+
+  .note {
+    background: var(--note-bg);
+    border: 1px solid var(--note-line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .note h3 { font-size: 0.8rem; font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; color: var(--muted); }
+
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  .pass { color: var(--good); }
+  .fail { color: var(--bad); }
+
+  .steps { list-style: none; padding: 0; gap: 0; counter-reset: step; }
+  .steps > li { counter-increment: step; display: grid; grid-template-columns: 2.2rem 1fr; gap: 0 10px; padding: 16px 0; border-top: 1px solid var(--line); }
+  .steps > li::before { content: counter(step); font-family: var(--display); font-size: 1.9rem; line-height: 1; color: var(--muted); }
+  .steps > li > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .steps .gain { font-family: var(--mono); font-size: 0.85rem; color: var(--muted); }
+  footer { border-top: 1px solid var(--line); padding-top: 18px; font-size: 0.85rem; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+<header>
+  <div class="eyebrow">Design spike · safety.viz · 9 October 2026</div>
+  <h1>The 22-minute check can run in about 6</h1>
+  <p class="lead">Every pull request to safety.viz waits on one check, “Build, format, and test”. On 9 October it took a median of 22.6 minutes. I timed five other ways of running the same tests on the same runners. Nothing is merged yet.</p>
+</header>
+
+<section class="note" aria-label="Decisions">
+  <h3>Decisions</h3>
+  <ul>
+    <li>9 October 2026, in the session, after reading this page: “Sounds good! Build out the objective. Run a security assessment in parallel and fold in any concerns from that before we start the build.” This settles the question at the end of the page: both steps are built, and the evidence refresh run is in the same objective.</li>
+    <li>9 October 2026, in the session’s prompt, asked whether the work should wait for release 1.12: “Now, in v1.11.0”. The change lands on <code>dev</code> beside the release 1.11 work and ships in that release.</li>
+    <li>Follow-through: filed on the hub as the objective <a href="https://github.com/jwildfire/obot.roadmap/issues/412">a fast check</a>, with two requirements, <a href="https://github.com/jwildfire/obot.roadmap/issues/410">the check itself</a> and <a href="https://github.com/jwildfire/obot.roadmap/issues/411">the evidence refresh run</a>, and four tasks, three in safety.viz and one on the hub. No session builds until you sign the tree off in a comment on the objective.</li>
+  </ul>
+</section>
+
+
+<section class="answer" aria-label="The answer">
+  <div class="ladder">
+    <div class="rung">
+      <div class="big">22.6<small> min</small></div>
+      <div class="what">Today. The check runs both test suites, then the evidence guard runs both again.</div>
+      <div class="track"><span class="seg repeat" style="width:100%"></span></div>
+    </div>
+    <div class="rung">
+      <div class="big">12.1<small> min</small></div>
+      <div class="what">Run the suites once and let the evidence guard read their results. No test changes.</div>
+      <div class="track"><span class="seg browser" style="width:53.5%"></span></div>
+    </div>
+    <div class="rung">
+      <div class="big">6.3<small> min</small></div>
+      <div class="what">Also run the browser suite on two runners at once, with the eight real-R tests on their own. No test changes.</div>
+      <div class="track"><span class="seg good" style="width:27.9%"></span></div>
+    </div>
+  </div>
+  <ul>
+    <li>All three figures are measured on GitHub’s runners, not estimated. The lower two come from a scratch branch that ran the full suite: 2,392 unit tests and 406 browser tests, all passing, and the evidence guard matching all 14 evidence files.</li>
+    <li>My recommendation is the third line, built as one pull request to <code>dev</code>. It keeps every test, every screenshot comparison and the evidence guard, and it keeps the check’s name, so the ruleset on <code>dev</code> does not change.</li>
+    <li>You decided the same day: build it now, in release 1.11. The record is in Decisions, above.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Where the 22 minutes go</h2>
+  <p>One recent run on <code>dev</code>, 22 minutes 57 seconds, drawn to scale. The hatched part is work the same run had already done.</p>
+  <div class="track tall" role="img" aria-label="Setup 4 percent, unit tests 5 percent, browser tests 43 percent, then unit tests again 5 percent and browser tests again 43 percent">
+    <span class="seg setup" style="width:3.9%"></span>
+    <span class="seg unit" style="width:5.4%"></span>
+    <span class="seg browser" style="width:42.6%"></span>
+    <span class="seg repeat" style="width:48.1%"></span>
+  </div>
+  <ul class="legend">
+    <li><span class="sw setup"></span><span>Setup and static checks: install, formatting, build, six vendored-source checks, docs site, browser install</span><span class="num">0.9 min</span></li>
+    <li><span class="sw unit"></span><span>Unit tests, 2,392 of them</span><span class="num">1.2 min</span></li>
+    <li><span class="sw browser"></span><span>Browser tests, 406 of them</span><span class="num">9.8 min</span></li>
+    <li><span class="sw repeat"></span><span>Evidence freshness guard: starts the unit tests and the browser tests again from scratch, then compares the outcome with the committed evidence files</span><span class="num">11.0 min</span></li>
+  </ul>
+  <ul>
+    <li>The guard’s own work, comparing test names and pass or fail against the 14 evidence files, takes under a second. The other 11 minutes are the repeat.</li>
+    <li>The repeat is by construction: <code>npm run evidence:check</code> always runs both suites itself, and the workflow calls it after it has already run them as its own steps.</li>
+    <li>Everything that is not a test adds up to under a minute. There is nothing to gain from caching installs or trimming the static checks.</li>
+  </ul>
+  <p class="cite">Source: <a href="https://github.com/jwildfire/safety.viz/actions/runs/37882151006">CI run on dev, 9 October 04:04 UTC</a>; <a href="https://github.com/jwildfire/safety.viz/blob/dev/.github/workflows/ci.yml">ci.yml</a>; <a href="https://github.com/jwildfire/safety.viz/blob/dev/scripts/evidence.mjs">scripts/evidence.mjs</a>.</p>
+</section>
+
+<section>
+  <h2>Why it doubled in two days</h2>
+  <p>Median length of a successful check, by day, over the last 100 successful runs.</p>
+  <div class="chart" role="img" aria-label="Median check length by day: 11.7 minutes on 3 October rising to 22.6 minutes on 9 October">
+    <div class="row"><div class="label">3 Oct <small>36 runs</small></div><div class="track"><span class="seg setup" style="width:50.9%"></span></div><div class="val">11.7 min</div></div>
+    <div class="row"><div class="label">4 Oct <small>9 runs</small></div><div class="track"><span class="seg setup" style="width:55.7%"></span></div><div class="val">12.8 min</div></div>
+    <div class="row"><div class="label">6 Oct <small>2 runs</small></div><div class="track"><span class="seg setup" style="width:49.1%"></span></div><div class="val">11.3 min</div></div>
+    <div class="row"><div class="label">7 Oct <small>26 runs</small></div><div class="track"><span class="seg setup" style="width:48.7%"></span></div><div class="val">11.2 min</div></div>
+    <div class="row"><div class="label">8 Oct <small>18 runs</small></div><div class="track"><span class="seg real-r" style="width:70%"></span></div><div class="val">16.1 min</div></div>
+    <div class="row"><div class="label">9 Oct <small>9 runs</small></div><div class="track"><span class="seg real-r" style="width:98.3%"></span></div><div class="val">22.6 min</div></div>
+  </div>
+  <ul>
+    <li>The RBQM tab arrived on 7 and 8 October with tests that start real R in the browser, install gsm’s packages and run the pipeline. There are eight of them now.</li>
+    <li>Each one pays about 7 seconds to start R and about 41 seconds to attach some forty packages before it tests anything. That figure is from the measurements the tests themselves commit.</li>
+    <li>Together the eight take 8.4 minutes of test time. Because the check runs the suite twice, each minute added to the suite adds two to the check.</li>
+    <li>These tests are doing their job: they hold R in the browser to desktop R to eight decimal places. This spike does not propose dropping or weakening any of them.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Inside the browser suite</h2>
+  <p>Test time by spec file, from the same run. Purple is the eight real-R tests; blue is the other 398.</p>
+  <div class="chart" role="img" aria-label="Test time by spec file. The demo app spec takes 9.6 minutes, of which 5.5 are real-R tests. All other files together take 6.1 minutes.">
+    <div class="row"><div class="label">Demo app spec <small>89 tests, 6 with real R</small></div><div class="track"><span class="seg real-r" style="width:57.9%"></span><span class="seg browser" style="width:42.1%"></span></div><div class="val">9.6 min</div></div>
+    <div class="row"><div class="label">RBQM pipeline spec <small>1 test, real R</small></div><div class="track"><span class="seg real-r" style="width:19.9%"></span></div><div class="val">1.9 min</div></div>
+    <div class="row"><div class="label">Docs site spec <small>35 tests, 1 with real R</small></div><div class="track"><span class="seg real-r" style="width:10%"></span><span class="seg browser" style="width:6.2%"></span></div><div class="val">1.6 min</div></div>
+    <div class="row"><div class="label">Hep explorer spec <small>46 tests</small></div><div class="track"><span class="seg browser" style="width:6.4%"></span></div><div class="val">0.6 min</div></div>
+    <div class="row"><div class="label">The other 16 spec files <small>235 tests</small></div><div class="track"><span class="seg browser" style="width:21.7%"></span></div><div class="val">2.1 min</div></div>
+  </div>
+  <ul>
+    <li>The suite holds 15.7 minutes of test time and runs on two workers, so it could in principle finish in about 8. It takes 9.7.</li>
+    <li>The reason is the demo app’s spec file. Playwright runs the tests inside one file one after another, and that file alone is 9.6 minutes. The second worker finishes every other file in about 6 minutes and then waits.</li>
+    <li>So the suite cannot finish sooner than its longest file, however many workers it has. I checked this on the runner: four workers instead of two took 10.8 minutes against 10.4.</li>
+    <li>Eight tests out of 406 are 53% of the test time. Taking them out of the queue the other 398 stand in is what the recommendation does.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>What I measured</h2>
+  <p>A temporary workflow on a scratch branch ran each layout on the same kind of runner the check uses, on the same commit of <code>dev</code>. Times are from the first job starting to the last job finishing.</p>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Layout</th><th class="num">Wall clock</th><th>Result</th><th>What it showed</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Today: one job, suites run twice</td><td class="num">22.6 min</td><td class="pass">passes</td><td>Median of the 9 successful checks on 9 October.</td></tr>
+        <tr><td>One job, suites run once, guard reads the results</td><td class="num">12.1 min</td><td class="pass">passes</td><td>Three runs: 12.0 and 12.1 minutes, and 22.0 when the browser install stalled for 9.5 minutes (see the note further down). The guard itself took under a second.</td></tr>
+        <tr><td>The same, with four browser workers</td><td class="num">13.1 min</td><td class="pass">passes</td><td>No gain. The browser step took 10.8 minutes, held by the one long file.</td></tr>
+        <tr><td>The same, four workers, tests inside a file side by side</td><td class="num">10.6 min</td><td class="fail">1 test fails</td><td>The local demo spec starts a server; two workers each start one on the same port and one test cannot connect. Would need test changes.</td></tr>
+        <tr><td>Four shards, tests inside a file side by side, then a gate</td><td class="num">8.4 min</td><td class="pass">passes</td><td>Shards are cut by test count, and the first one gets the whole demo app spec: 7.3 minutes against 0.5 for the second.</td></tr>
+        <tr><td>Two browser jobs split by real R, a static job, then a gate</td><td class="num">6.3 min</td><td class="pass">passes</td><td>Three runs: 5.3, 6.3 and 6.5 minutes. The spread is the real-R job, whose start-up time varies from run to run.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul>
+    <li>In the last layout the real-R job is the longest: 5.0 to 6.2 minutes for its 8 tests, against 4.2 to 5.3 for the job with the other 398. Static checks and unit tests ran beside them in 2 minutes. The gate took 20 seconds.</li>
+    <li>The gate merges the two browser reports and hands them, with the unit results, to the evidence guard. The guard reported all 14 evidence files fresh, with the same record counts as the guard in today’s check.</li>
+    <li>I also ran the failure: given a browser report holding 6 of the 406 tests, the guard exits with an error and names every missing test in all 14 files. This is not the whole story: the <a href="#security">security assessment</a> below found failures the guard alone does not catch.</li>
+    <li>A side test: the larger browser job passed, screenshot comparisons included, with the browser installed without its system packages. The install took 8 seconds instead of 22 and never touches the package mirror. One run only.</li>
+  </ul>
+  <p class="cite">Sources: <a href="https://github.com/jwildfire/safety.viz/actions/runs/37941542874">round 1</a>, <a href="https://github.com/jwildfire/safety.viz/actions/runs/37944608902">round 2</a>, <a href="https://github.com/jwildfire/safety.viz/blob/spike/ci-speed/.github/workflows/spike-ci-speed.yml">the temporary workflow</a>, <a href="https://github.com/jwildfire/safety.viz/compare/dev...spike/ci-speed">everything the scratch branch changes</a>.</p>
+</section>
+
+<section>
+  <h2>Recommendation</h2>
+  <ol class="steps">
+    <li><div>
+      <h3>Run the suites once</h3>
+      <div class="gain">22.6 → about 12 minutes</div>
+      <ul>
+        <li>The unit and browser steps each write a results file; the evidence guard reads the two files and no longer starts the suites itself.</li>
+        <li>About 30 lines in the evidence script and three changed lines in the workflow. The script change is written and exercised on the scratch branch.</li>
+        <li>Run on its own machine, <code>npm run evidence:check</code> behaves as it does today.</li>
+        <li>No test changes, no new jobs, same check name.</li>
+      </ul>
+    </div></li>
+    <li><div>
+      <h3>Give the browser suite two runners and a gate</h3>
+      <div class="gain">about 12 → about 6 minutes</div>
+      <ul>
+        <li>Four jobs in place of one: static checks with unit tests; browser tests without real R; the eight real-R tests; and a gate that merges the reports and runs the evidence guard.</li>
+        <li>The gate takes the name “Build, format, and test”, so the required check on <code>dev</code> is unchanged and no ruleset edit is needed.</li>
+        <li>The real-R tests are picked by a tag written on each test, so a new one joins its job by carrying the tag. The two browser jobs use one pattern, one of them inverted, so every test runs in exactly one job.</li>
+        <li>The public repository’s runners are free, and the four jobs use about 13 runner-minutes against today’s 22.</li>
+      </ul>
+    </div></li>
+    <li><div>
+      <h3>Give the evidence refresh run the same split, later</h3>
+      <div class="gain">7 to 11 minutes today; not measured</div>
+      <ul>
+        <li>The run that rewrites screenshots and evidence files before a check is a single pass over both suites, so it has no repeat to remove. It ran 52 times in the first nine days of October.</li>
+        <li>Splitting it means collecting rewritten screenshots from two runners before the commit. That is more work than the check’s split and I did not try it.</li>
+        <li>With steps 1 and 2 done, a change that needs new screenshots waits about 16 minutes in all, refresh then check, against about 33 today.</li>
+      </ul>
+    </div></li>
+  </ol>
+  <div class="note">
+    <h3>Three things the build has to get right</h3>
+    <ul>
+      <li>GitHub counts a required job that was skipped as passed. The gate has to run even when a job before it fails, and fail unless all three succeeded. The scratch branch’s gate always ran but did not check the three results; see the <a href="#security">security assessment</a>.</li>
+      <li>The evidence files key on each test’s name, so the tag must not change it. I checked on a throwaway test: a tagged test reports the same name, and the two patterns pick it up or leave it out as intended. The scratch branch itself still picks the eight by their requirement IDs.</li>
+      <li>Today’s check uploads one browser report for debugging a failure. The gate should upload the merged one.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="security">
+  <h2>Security assessment of the new layout</h2>
+  <p>Added later on 9 October. A second agent, given the scratch branch and the plan but not this page’s conclusions, looked for ways the new check could say green when it should not. It ran the evidence guard against hand-edited results from a real run of the 2,392 unit tests and the real list of 406 browser tests. It pushed nothing, so what it says about GitHub’s own behaviour is read from documentation, not run.</p>
+  <div class="note">
+    <h3>A correction to this page</h3>
+    <ul>
+      <li>Above, I wrote that a job that drops out cannot pass silently. That holds for a missing test and no further. The gate on the scratch branch ran whenever the jobs before it finished and let the guard alone decide, and the guard looks only at test names and pass or fail.</li>
+      <li>The assessment showed the guard exits clean on a test that failed and then passed on a retry, on unit results marked unsuccessful because a test file failed to load, and on a browser report that carries errors. In today’s single job the test steps’ own exit codes catch all of these.</li>
+      <li>The spike’s timings stand. Its gate was not safe to require as written, and the requirements now say what makes it safe.</li>
+    </ul>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Finding</th><th>Severity</th><th>From this change?</th><th>What closes it</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>The gate can report success while a job before it failed</td><td>High</td><td>Yes</td><td>The gate’s first step fails unless each of the three jobs ended in success. Nothing in the workflow may continue on error.</td></tr>
+        <tr><td>GitHub counts a skipped required job as passed</td><td>High</td><td>Yes, as a hazard; the spike had this part right</td><td>The gate always runs. A unit test reads the workflow file and fails if the gate’s shape changes.</td></tr>
+        <tr><td>The guard trusts the results files more than exit codes did</td><td>Medium</td><td>Made worse</td><td>Handed files, the guard also fails on a run marked unsuccessful, on errors, on unexpected or flaky results, and on a test name that appears twice. One test for each.</td></tr>
+        <tr><td>The ruleset accepts a check of this name from any source</td><td>Medium</td><td>No, it was already so</td><td>A ruleset edit that ties the check to GitHub Actions, which is yours alone. It also means changing the program’s ruleset standard, so it is raised with the sign-off and left out of the build.</td></tr>
+        <tr><td>Picking tests by tag: a pattern that matches nothing, or a typo</td><td>Low</td><td>Yes</td><td>One variable feeds both browser jobs. The guard already names any test that ran in neither.</td></tr>
+        <tr><td>Installing the browser without its system packages could shift fonts inside the 2% screenshot limit</td><td>Low</td><td>Only if adopted</td><td>Not adopted here. Both workflows keep the packages and name the runner image.</td></tr>
+        <tr><td>Artifacts downloaded into the checkout could pick up a committed file</td><td>Low</td><td>Yes</td><td>Download to the runner’s temporary directory, fixed names, and an error when an upload finds no file.</td></tr>
+        <tr><td>Pull requests from forks</td><td>For information</td><td>No new exposure</td><td>The check stays on the read-only pull request trigger and never gains write permission.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul>
+    <li>Found sound, each by running it: the guard fails on a test that is absent, failed, skipped, timed out or never run; on an empty, missing or cut-off results file; and the flags are refused outside the check. Merging reports fails on an empty folder and on a damaged file, and rejects a path that climbs out of its folder.</li>
+    <li>Not verified by anyone: what the gate sees when only a failed job is re-run. It is in the list of deliberately broken runs the build has to show.</li>
+  </ul>
+</section>
+
+
+<section>
+  <h2>Looked at and set aside</h2>
+  <ul>
+    <li>Skipping the browser suite when only documents change. 10 of the last 60 merged pull requests touched no code, tests, scripts or site files. A skip needs a second path through a required check, which is where a silent pass comes from. At five minutes a check it is not worth that.</li>
+    <li>Running the real-R tests only when R-related files change, or only on <code>dev</code>. After the split their job is the longest of the three by about a minute, so leaving it out would save about a minute and take the comparison with desktop R out of the check.</li>
+    <li>Letting tests inside a file run side by side. It is the way to get well under five minutes, but the specs build the app and start servers in shared places, and the one attempt failed. It means changing tests, with the evidence files following.</li>
+    <li>Caching what R downloads. Not tried. The real-R tests check exactly which requests leave the browser, so a cache between the page and R’s hosts would sit inside the thing they test. I also did not measure how much of each test’s 48 seconds of start-up is download.</li>
+    <li>Speeding up the unit tests. They take 75 seconds, and after the split they run beside the browser jobs, off the slow path.</li>
+  </ul>
+  <div class="note">
+    <h3>One thing I saw and did not chase</h3>
+    <ul>
+      <li>The step that installs the browser also installs system fonts through the runner’s package mirror. It normally takes 21 to 25 seconds. In one of my runs the mirror slowed to 39 kB a second and the step took 9.5 minutes; one of the last 70 real checks shows the same thing at 3.3 minutes.</li>
+      <li>It is rare and it clears on a re-run. The side test above suggests the install can skip the mirror altogether. It is not adopted in this work; the security assessment below says why, and it is kept as a follow-up.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="decision">
+  <h2>The decision</h2>
+  <p>Decided on 9 October; see Decisions at the top. As first put:</p>
+  <ul>
+    <li>Build steps 1 and 2 together. This was the recommendation, and what was chosen, with step 3 added as a second requirement. They land as two pull requests, the single pass first.</li>
+    <li>Build step 1 alone. The smallest change, one file and three workflow lines, for about 12 minutes.</li>
+    <li>Leave the check as it is.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>What this spike left behind</h2>
+  <ul>
+    <li>A branch on GitHub, <code>spike/ci-speed</code>, two commits ahead of <code>dev</code>: the temporary workflow and the evidence script change. No pull request. The workflow runs only on pushes to that branch.</li>
+    <li>Two workflow runs under “Spike - CI speed (temporary)” in the Actions tab.</li>
+    <li>A local worktree for the branch, inside the safety.viz clone.</li>
+    <li>Nothing on <code>dev</code> or <code>main</code> changed. Removing the branch and the worktree is yours to approve.</li>
+  </ul>
+</section>
+
+<footer>
+  <div>Limits of the evidence: every timing is from 9 October 2026, with three runs of the recommended layout and three of the single pass, one of them hit by a stalled download of the single pass. Runner speed varies by a minute or so between runs.</div>
+  <div>Drafted by Claude Code using Opus 5.5. The security assessment was made by a second agent of the same session.</div>
+</footer>
+
+</div>
+
+</body>
+</html>
