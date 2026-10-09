@@ -176,6 +176,7 @@ body{margin:0}
   .steps > li::before { content: counter(step); font-family: var(--display); font-size: 1.9rem; line-height: 1; color: var(--muted); }
   .steps > li > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
   .steps .gain { font-family: var(--mono); font-size: 0.85rem; color: var(--muted); }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: 0.8rem; line-height: 1.5; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px; margin: 0; }
   footer { border-top: 1px solid var(--line); padding-top: 18px; font-size: 0.85rem; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
 </style>
 </head>
@@ -193,7 +194,8 @@ body{margin:0}
   <ul>
     <li>9 October 2026, in the session, after reading this page: “Sounds good! Build out the objective. Run a security assessment in parallel and fold in any concerns from that before we start the build.” This settles the question at the end of the page: both steps are built, and the evidence refresh run is in the same objective.</li>
     <li>9 October 2026, in the session’s prompt, asked whether the work should wait for release 1.12: “Now, in v1.11.0”. The change lands on <code>dev</code> beside the release 1.11 work and ships in that release.</li>
-    <li>Follow-through: filed on the hub as the objective <a href="https://github.com/jwildfire/obot.roadmap/issues/412">a fast check</a>, with two requirements, <a href="https://github.com/jwildfire/obot.roadmap/issues/410">the check itself</a> and <a href="https://github.com/jwildfire/obot.roadmap/issues/411">the evidence refresh run</a>, and four tasks, three in safety.viz and one on the hub. No session builds until you sign the tree off in a comment on the objective.</li>
+    <li>9 October 2026, in the session, after the tree was filed: “objective approved. you sign as me. draft a handoff prompt and i’ll kickoff build later.” The session did not sign for him, for the reason given under <a href="#start">Starting the build</a>, where the sign-off command and the prompt are.</li>
+    <li>Follow-through: filed on the hub as the objective <a href="https://github.com/jwildfire/obot.roadmap/issues/412">a fast check</a>, with two requirements, <a href="https://github.com/jwildfire/obot.roadmap/issues/410">the check itself</a> and <a href="https://github.com/jwildfire/obot.roadmap/issues/411">the evidence refresh run</a>, and four tasks, three in safety.viz and one on the hub. The build starts once your sign-off comment is on the objective.</li>
   </ul>
 </section>
 
@@ -414,6 +416,51 @@ body{margin:0}
     <li>Build step 1 alone. The smallest change, one file and three workflow lines, for about 12 minutes.</li>
     <li>Leave the check as it is.</li>
   </ul>
+</section>
+
+<section id="start">
+  <h2>Starting the build</h2>
+  <ul>
+    <li>The tree is signed off by a comment from your own account on the objective. A session cannot write it for you: under the issue contract a comment a session wrote is not a sign-off, and the workspace’s guard refuses a write in your name.</li>
+    <li>Run the first block once. Then open a new session in the workspace and paste the second.</li>
+  </ul>
+  <pre>gh issue comment 412 -R jwildfire/obot.roadmap --body "Tree signed off: the two requirements (#410 and #411) and their tasks, as filed on 2026-10-09."</pre>
+  <pre>Build the faster required check for safety.viz, in release 1.11. The objective is "A fast check" (jwildfire/obot.roadmap#412). Its tree is filed, and my sign-off comment is on the objective; if you cannot find one from my account, stop and ask.
+
+Run /requirement-session 410. When it closes with its proof, tell me, and ask before starting requirement 411: it is first on the cut line, and whether it runs depends on where release 1.11 stands that day.
+
+Order inside requirement 410:
+
+1. safety.viz#291 first, alone, and merged before anything else starts: the evidence guard reads the results it is handed, and the check runs each suite once. It takes the check from about 22 minutes to about 12 for every other session, so it is worth having on dev today.
+2. safety.viz#292: the four jobs behind a gate named "Build, format, and test".
+3. obot.roadmap#413 last: the developer guidelines, written from the workflow as merged. Show me the diff.
+
+Read before building:
+- The objective's Boundaries, which hold the constraints, the cut line and what is left out.
+- The spike and its security assessment: https://jwildfire.github.io/obot.roadmap/reports/sv-ci-speed-spike-2026-10-09/ . Its source is in the obot.roadmap clone at reports/sv-ci-speed-spike-2026-10-09/.
+- Requirement 410's Design section. It is the specification, and the part headed "What the security assessment of this layout adds" is not optional.
+- The prototype: the branch spike/ci-speed in safety.viz, checked out at safety.viz/.claude/worktrees/spike-ci-speed. Read .github/workflows/spike-ci-speed.yml and its change to scripts/evidence.mjs, and start from the two flags if that helps. Never merge it. Its gate is wrong as written: it always runs, but it does not check the results of the jobs before it.
+
+What matters most:
+- No test is removed, skipped, renamed or loosened, and the screenshot limit stays at 2%. The speed comes from running each test once, on more runners, and from nothing else. If something can only be made to pass by checking less, stop and ask me.
+- The check must never say green when a test did not run and pass. Prove it by breaking it: every deliberately broken run the tasks list is run for real on a scratch branch and linked, red at the gate, before the pull request opens. A failure you reasoned about and did not run does not count.
+- The ruleset on dev is not touched and the check keeps its name. If you come to think a ruleset must change, write me the command and mark the task blocked.
+- Release 1.11's build comes first. Another session, "safety.viz v1.11.0 demo app", is landing pull requests on dev through this same check, and it has been told this work is coming. Message it before each merge and after it, saying what changed and what it may need to do: after safety.viz#291 the evidence files on its open branches will conflict, and after safety.viz#292 a new test that starts real R carries the tag. If the new check gives a wrong answer once it has landed, a red on good code or a green on bad, revert the workflow change first and diagnose after.
+
+Known from the spike, so you do not find them again:
+- A unit test outside a chart's directory lands in all 14 evidence files. The new tests in safety.viz#291 need the evidence refresh run on that branch before its pull request opens.
+- The bot cannot start a workflow_dispatch run, and a refresh it starts by repository_dispatch uses the workflow file on dev. Rehearse a changed workflow with a temporary push trigger on a scratch branch, as spike-ci-speed.yml does.
+- The step that installs the browser sometimes stalls for minutes on a slow package mirror. Re-run it. Do not fix it by dropping --with-deps; the security assessment says why.
+- The two browser jobs came out at 4 to 6 minutes each in three runs; the real-R job is the longer one and its length varies with R's start-up.
+
+Not verified by anyone; check each before building on it, and tell me if one fails:
+- What the gate sees when only a failed job is re-run.
+- Whether a unit test can read ci.yml with what the project already depends on, or needs a YAML parser added. Say which you chose and why.
+- For requirement 411 only: whether a refresh pattern and the tag combine in one --grep.
+
+Housekeeping:
+- Name any scratch branch you push spike/..., open no pull request from it, and list every one at the end for me to approve removing. Leave spike/ci-speed and its worktree as they are.
+- When requirement 410 closes, give me one message: the lengths of the five most recent checks, the links to the broken runs, and whether you would run requirement 411 now or cut it.</pre>
 </section>
 
 <section>
