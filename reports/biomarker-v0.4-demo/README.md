@@ -15,7 +15,7 @@ Requirements it walks:
 
 ## Where the captures are from
 
-- gsm.bio: `dev` at [`d2e018a`](https://github.com/jwildfire/gsm.bio/commit/d2e018a09c3c13395a9429ea89e383a18b435341), the head of its release candidate, version 0.4.0, in a worktree of the repository, loaded with `devtools::load_all()`. `capture-numbers.json` records the commit. Its `inst/htmlwidgets/lib/SOURCE.json` records bio.viz `066bbec`.
+- gsm.bio: `dev` at [`4543f9e`](https://github.com/jwildfire/gsm.bio/commit/4543f9eccb2df78d279ac28601034373f849e1f3), the head of its release candidate, version 0.4.0, in a worktree of the repository, loaded with `devtools::load_all()`. `capture-numbers.json` records the commit. Its `inst/htmlwidgets/lib/SOURCE.json` records bio.viz `066bbec`.
 - bio.viz: the bundle gsm.bio carries, version 0.4.0, from bio.viz `dev` at [`066bbec`](https://github.com/jwildfire/bio.viz/commit/066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d), the head of its release candidate. Every chart footnote in the stills reads "bio.viz 0.4.0".
 - R 4.3.3 on macOS, an Apple laptop. The line under each chart names that R, because it is the one that answered.
 - The mockups in section 04 (`media/mock-a-*.jpg`): stills of option A's five mockups on the published options page, taken with Playwright in a 1360-pixel window at twice its pixels. They are of the page as published on 2026-10-08, and nothing in them was redrawn.

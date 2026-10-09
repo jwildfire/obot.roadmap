@@ -281,9 +281,14 @@ lNumbers$own_file$rail_refused <- Said(lPage, "#gsm_bio_rail")
 lPage$Picture("data-refused.jpg")
 
 # A third file, which R cannot read: its own card says so, and the page names
-# it among the files the button would draw. Then it is taken away.
+# it among the files the button would draw, and the button pressed draws
+# nothing. Then it is taken away.
 ChooseUnreadable(lPage)
+Wait(lPage, "document.querySelector('#gsm_bio_data_said').textContent.trim().length === 0", "R's refusal cleared by the new file")
+lPage$Evaluate("document.querySelector('#gsm_bio_apply').click()")
+Wait(lPage, "document.querySelector('#gsm_bio_data_said').textContent.trim().length > 0", "what the Data page says with a file not read and columns unsaid")
 lNumbers$own_file$unread <- list(
+  said = Said(lPage, "#gsm_bio_data_said"),
   card = Said(lPage, "#gsm_bio_columns_outcomes"),
   will_draw = Said(lPage, "#gsm_bio_data_files"),
   rail = Said(lPage, "#gsm_bio_rail")
