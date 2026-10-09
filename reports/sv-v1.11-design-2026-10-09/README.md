@@ -11,6 +11,10 @@ The page was updated in place after @jwildfire read round two ("Sooooo much bett
 - Checked by the subagent at 1,280 and 390 pixels in every mockup state, with real clicks on every switch; by the lead at both widths, with the RBQM options and the label styles read at full size.
 - Not verified in this round: how the three RBQM rows behave at phone width; that per-metric addresses extend cleanly from the app's address handling; how dashed and dotted outlines look on a projector.
 
+## Settled (end of 2026-10-09)
+
+@jwildfire picked both recommendations and approved the design in the session: on the RBQM tab the metrics are the chart-name row (option A), and a status label is the word alone, its outline telling the rung. The page was updated in place a last time to read as settled: the Decisions section lists every decision with his answer, the mockups default to what was chosen, and what was not chosen stays behind its switch, marked. The round-three version is in git history at commit `68fc9c0`.
+
 ## His feedback, and where it went
 
 - The R control was "a little heavy": it is now one slim control that shrinks to a chip once R is ready (mockup 3).
@@ -26,9 +30,9 @@ The page was updated in place after @jwildfire read round two ("Sooooo much bett
 - The tab-colour rule, the status icons, and what moving raw-file loading to the Data tab involves in the code, with its risks.
 - The change list for release 1.11 in six groups, each sized to become one requirement, with what is left out and why.
 
-## The drafts page
+## The tree page
 
-`requirements.html` in this folder holds the draft objective and six draft requirements for release 1.11, written by the session's lead from the change list and @jwildfire's feedback under the hub's issue contract. They are drafts: nothing on that page is filed on GitHub, and he has not approved them. Once filed, the issues are the record and that page is history.
+`requirements.html` in this folder shows the objective, the six requirements and their tasks as filed on 2026-10-09 (the objective is obot.roadmap#401, the requirements #402 to #407, the tasks safety.viz#268 to #287 with #261 and #162 moved in), with the session order, the cut line, the sign-off command and the prompt that starts the build. The issues are the record; that page is a view of them on the day they were filed.
 
 ## How it was made
 
