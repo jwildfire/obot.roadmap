@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz demo app v1.10.0: design review and proposal</title>
+<meta name="description" content="A design review of the released safety.viz demo app: one way to start R, one Experimental label that opens on a tap, polish for the RBQM tab and smaller fixes such as the black hexes, with mockups, eight decisions to make and every proposed change sized.">
+<style>
+@font-face{font-family:"Instrument Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(https://jwildfire.github.io/safety.viz/demo/fonts/instrument-sans-latin-wght-normal.woff2) format("woff2")}
+@font-face{font-family:"Instrument Serif";font-style:normal;font-weight:400;font-display:swap;src:url(https://jwildfire.github.io/safety.viz/demo/fonts/instrument-serif-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;src:url(https://jwildfire.github.io/safety.viz/demo/fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:500;font-display:swap;src:url(https://jwildfire.github.io/safety.viz/demo/fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2")}
+
+:root{
+  --bg:#fafaf8;--rail:#f3f4f1;--ink:#1f2328;--soft:#5b6470;--faint:#98a0aa;--accent:#6c3270;--accent-soft:rgba(108,50,112,.1);
+  --card:#fff;--rule:#e4e6e3;--line:#cfd3cf;--alarm:#a2423a;
+  --s0:#d87972;--s1:#c78a3b;--s2:#77a95b;--s3:#00afa9;--s4:#519fdd;--s5:#988bdd;--s6:#c67bb6;--lib:#4a525c;
+  --spec:linear-gradient(90deg,var(--s0),var(--s1),var(--s2),var(--s3),var(--s4),var(--s5),var(--s6));
+  --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --hexclip:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:.18em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:var(--mono);font-size:.82em;background:var(--rail);border:1px solid var(--rule);border-radius:5px;padding:.05em .3em;overflow-wrap:anywhere}
+
+.top{position:relative;background:var(--rail);border-bottom:1px solid var(--rule);padding:calc(9px + 1.6rem) 16px 1.5rem}
+.top::before{content:"";position:absolute;left:0;right:0;top:0;height:9px;background:var(--spec)}
+.wrap{max-width:62rem;margin:0 auto}
+.top h1{font-family:var(--serif);font-weight:400;font-size:clamp(1.9rem,5.2vw,3rem);line-height:1.08;letter-spacing:-.01em;margin:0 0 .7rem;max-width:22ch}
+.top p{margin:0;max-width:60ch;color:var(--soft)}
+.facts{list-style:none;margin:1.1rem 0 0;padding:0;display:flex;flex-wrap:wrap;gap:.35rem 1.4rem;font-family:var(--mono);font-size:.74rem;color:var(--soft)}
+.toc{margin:1.2rem 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:.4rem}
+.toc a{display:inline-flex;align-items:center;gap:.45rem;padding:.36rem .7rem;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);text-decoration:none;font-size:.88rem}
+.toc a:hover{border-color:var(--accent);color:var(--accent)}
+.hex{display:inline-block;flex:none;width:.74em;height:.84em;background:var(--hue,var(--faint));clip-path:var(--hexclip)}
+
+main{padding:0 16px 3rem}
+section{padding-top:2.6rem}
+h2{font-family:var(--serif);font-weight:400;font-size:clamp(1.6rem,4.2vw,2.2rem);line-height:1.12;margin:0 0 .3rem}
+h2 .n{display:inline-grid;place-items:center;width:1.5em;height:1.7em;margin-right:.35em;vertical-align:-.12em;background:var(--ink);color:#fff;clip-path:var(--hexclip);font:500 .5em/1 var(--mono)}
+.ask{margin:0 0 1.2rem;color:var(--soft);max-width:64ch}
+h3{font-family:var(--serif);font-weight:400;font-size:1.4rem;line-height:1.2;margin:2rem 0 .5rem}
+h4{font:600 .98rem/1.3 var(--sans);margin:1.3rem 0 .35rem}
+ul{margin:.3rem 0 .9rem;padding-left:1.15rem;max-width:72ch}
+li{margin:.28rem 0}
+li ul{margin:.2rem 0 .3rem}
+p{max-width:72ch}
+.where{font-size:.86rem;color:var(--soft)}
+.where code{font-size:.78rem}
+
+.callout{margin:1rem 0;padding:.85rem 1rem;max-width:72ch;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--accent);border-radius:10px}
+.callout.warn{border-left-color:var(--s1)}
+.callout.bad{border-left-color:var(--s0)}
+.callout p{margin:0}
+.callout p+p,.callout p+ul{margin-top:.45rem}
+.callout .t{font-weight:600}
+
+.decisions{counter-reset:d;list-style:none;margin:1rem 0 0;padding:0;display:grid;gap:.7rem;max-width:none}
+.decisions>li{counter-increment:d;margin:0;padding:.9rem 1rem .9rem 3.1rem;position:relative;background:var(--card);border:1px solid var(--rule);border-radius:10px}
+.decisions>li::before{content:counter(d);position:absolute;left:.9rem;top:.95rem;display:grid;place-items:center;width:1.5rem;height:1.7rem;background:var(--accent);color:#fff;clip-path:var(--hexclip);font:500 .72rem/1 var(--mono)}
+.decisions .q{margin:0 0 .35rem;font-weight:600}
+.decisions dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:.2rem .7rem;font-size:.93rem}
+.decisions dt{font-family:var(--mono);font-size:.7rem;letter-spacing:.03em;color:var(--soft);padding-top:.22rem;white-space:nowrap}
+.decisions dd{margin:0}
+.decisions dt.rec{color:var(--accent)}
+
+figure{margin:1rem 0 1.2rem}
+figure img{display:block;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
+figure.phone img{width:min(100%,340px)}
+figcaption{margin-top:.4rem;font-family:var(--mono);font-size:.72rem;line-height:1.5;color:var(--soft);max-width:70ch}
+.shots{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));align-items:start;margin:1rem 0}
+.shots figure{margin:0}
+.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:.5rem;margin:1rem 0}
+.stack figure{margin:0}
+.stack>*,.shots>*{min-width:0}
+
+.tbl{overflow-x:auto;margin:.8rem 0 1.2rem;border:1px solid var(--rule);border-radius:10px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;vertical-align:top;padding:.5rem .75rem;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+th{font:500 .68rem/1.3 var(--mono);letter-spacing:.04em;color:var(--soft);background:var(--bg);white-space:nowrap}
+td code{font-size:.76rem}
+
+.ba{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));margin:1rem 0}
+.ba>div{min-width:0}
+.lab{display:inline-block;margin:0 0 .45rem;font:500 .7rem/1 var(--mono);letter-spacing:.04em;color:var(--soft);border:1px solid var(--line);border-radius:999px;padding:.28rem .55rem;background:var(--card)}
+.lab.new{color:var(--accent);border-color:var(--accent)}
+
+/* ---- mock: shared pieces drawn in the app's own language ---- */
+.mock{border:1px solid var(--line);border-radius:12px;background:var(--bg);overflow:hidden;margin:.6rem 0 0}
+.mock-ctl{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;margin:1rem 0 0;font-size:.86rem}
+.mock-ctl fieldset{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center}
+.mock-ctl legend{float:left;margin-right:.5rem;padding:0;font:500 .7rem/2 var(--mono);color:var(--soft)}
+.seg{appearance:none;font:inherit;font-size:.84rem;padding:.3rem .7rem;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);cursor:pointer}
+.seg[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card));color:var(--accent);font-weight:600}
+.m-header{position:relative;background:var(--rail);border-bottom:1px solid var(--rule);padding-top:6px}
+.m-header::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--spec)}
+.m-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem .6rem;padding:.45rem .8rem}
+.m-brand{font-family:var(--serif);font-size:1.3rem;line-height:1;margin-right:.3rem}
+.m-kicker{font:400 .56rem/1 var(--mono);letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+.m-tabs,.m-chips{display:flex;flex-wrap:nowrap;align-items:center;gap:.15rem;overflow-x:auto;scrollbar-width:none;min-width:0;max-width:100%}
+.m-tabs::-webkit-scrollbar,.m-chips::-webkit-scrollbar{display:none}
+.m-chips{border-top:1px solid var(--rule);background:var(--bg);padding:.22rem .8rem}
+.m-tab,.m-chip{flex:none;display:inline-flex;align-items:center;gap:.4rem;border:1px solid transparent;border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:.8rem;line-height:1.2;white-space:nowrap;padding:.3rem .55rem}
+.m-tab.on{background:var(--card);border-color:var(--hue,var(--accent))}
+.m-chip.on{font-weight:600;background:color-mix(in srgb,var(--hue,var(--accent)) 14%,var(--card));box-shadow:inset 0 0 0 1px var(--hue,var(--accent))}
+.m-count{font:500 .58rem/1 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--soft)}
+.m-main{padding:.8rem;min-width:0}
+.m-chart{border:1px solid var(--rule);border-radius:10px;background:var(--card);padding:.8rem;min-height:5.5rem;display:grid;gap:.5rem;align-content:start}
+.m-bars{display:flex;align-items:flex-end;gap:3px;height:3.4rem}
+.m-bars i{flex:1;background:color-mix(in srgb,var(--hue,var(--s4)) 70%,#fff);border-radius:2px 2px 0 0}
+.m-fake{height:.55rem;border-radius:3px;background:var(--rule)}
+
+/* the single status label */
+.status{appearance:none;display:inline-flex;align-items:center;gap:.4rem;font:500 .62rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);background:var(--card);border:1px solid var(--accent);border-radius:999px;padding:.42rem .6rem;cursor:pointer;white-space:nowrap;flex:none}
+.status::after{content:"";width:.42em;height:.42em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-22%) rotate(45deg);transition:transform 140ms ease}
+.status[aria-expanded=true]{background:var(--accent);color:#fff}
+.status[aria-expanded=true]::after{transform:translateY(18%) rotate(225deg)}
+.status.proto{border-style:dashed;color:var(--soft);border-color:var(--soft)}
+.status-line{display:flex;align-items:center;gap:.6rem;margin:0 0 .6rem}
+.status-panel{margin:0 0 .7rem;padding:.85rem 1rem;background:var(--card);border:1px solid var(--accent);border-radius:10px;font-size:.9rem;max-width:44rem}
+.m-header .status-panel{margin:.1rem .8rem .6rem}
+.status-panel h5{margin:0 0 .3rem;font:400 1.15rem/1.2 var(--serif)}
+.status-panel p{margin:.25rem 0}
+.status-panel dl{margin:.5rem 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:.25rem .8rem}
+.status-panel dt{font:500 .64rem/1.9 var(--mono);letter-spacing:.04em;color:var(--soft);white-space:nowrap}
+.status-panel dd{margin:0}
+.status-panel .todo{color:var(--soft);font-style:italic}
+.status-panel .links{margin-top:.6rem;display:flex;flex-wrap:wrap;gap:.3rem 1rem;font-family:var(--mono);font-size:.72rem}
+.status-panel .x{float:right;appearance:none;border:0;background:none;color:var(--soft);font:inherit;font-size:1.1rem;line-height:1;cursor:pointer;padding:.1rem .3rem;margin:-.2rem -.3rem 0 .5rem}
+[hidden]{display:none!important}
+
+/* the standard R strip */
+.rstrip{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.5rem .9rem;align-items:start;padding:.75rem .9rem;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--accent);border-radius:10px;font-size:.9rem}
+.rstrip[data-state=failed]{border-left-color:var(--s0)}
+.rstrip[data-state=ready]{border-left-color:var(--s2)}
+.rbtn{appearance:none;font:500 .68rem/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--card);border:1px solid var(--accent);border-radius:999px;padding:.5rem .8rem;cursor:pointer;white-space:nowrap}
+.rbtn:disabled{color:var(--soft);border-color:var(--line);cursor:default}
+.rstrip>.rbtn{justify-self:start}
+.rstrip p{margin:0;max-width:none}
+.rstrip .head{font-weight:600}
+.rstrip .sub{color:var(--soft);font-size:.86rem;margin-top:.15rem}
+.rsteps{list-style:none;margin:.5rem 0 0;padding:0;display:flex;flex-wrap:wrap;gap:.3rem 1.1rem;max-width:none;font-size:.84rem}
+.rsteps li{display:inline-flex;align-items:center;gap:.4rem;margin:0;color:var(--soft)}
+.rsteps li::before{content:"";width:.74em;height:.84em;clip-path:var(--hexclip);background:var(--line)}
+.rsteps li[data-s=done]{color:var(--ink)}
+.rsteps li[data-s=done]::before{background:var(--s2)}
+.rsteps li[data-s=now]{color:var(--ink);font-weight:600}
+.rsteps li[data-s=now]::before{background:var(--accent);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.rsteps li[data-s=now]::before{animation:none}.status::after{transition:none}}
+.rmeta{display:flex;flex-wrap:wrap;gap:.1rem .9rem;margin-top:.35rem;font-family:var(--mono);font-size:.68rem;color:var(--soft)}
+.rstrip details{margin-top:.4rem;font-size:.82rem;color:var(--soft)}
+.rstrip details code{display:block;margin-top:.3rem;white-space:normal}
+@media (max-width:520px){.rstrip{grid-template-columns:minmax(0,1fr)}.rsteps{flex-direction:column;gap:.25rem}}
+
+/* RBQM after mock */
+.m-lede{margin:0 0 .7rem;color:var(--soft);font-size:.9rem;max-width:60ch}
+.m-files{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.3rem 1rem;align-items:baseline;margin:.7rem 0;padding:.6rem .9rem;background:var(--card);border:1px solid var(--rule);border-radius:10px;font-size:.88rem}
+.m-files span:last-child{font:500 .66rem/1 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+.m-sec{margin:.7rem 0 0;padding:.8rem;background:var(--card);border:1px solid var(--rule);border-radius:10px;min-width:0}
+.m-sec h5{margin:0 0 .5rem;font:400 1.2rem/1.2 var(--serif);display:flex;flex-wrap:wrap;gap:.2rem .7rem;align-items:baseline}
+.m-sec h5 small{font:400 .68rem/1 var(--mono);color:var(--soft)}
+.m-tbl{border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.m-tbl table{font-size:.8rem}
+.m-tbl th{font-size:.58rem;text-align:right;padding:.4rem .5rem}
+.m-tbl td{text-align:right;padding:.3rem .5rem;font-variant-numeric:tabular-nums}
+.m-tbl th:first-child,.m-tbl td:first-child{text-align:left}
+.m-tbl th.f,.m-tbl td.f{text-align:center}
+.m-more{margin:0;padding:.35rem .6rem;border-top:1px solid var(--rule);background:var(--bg);font:400 .66rem/1.4 var(--mono);color:var(--soft)}
+.ok{color:#3d9a1f}.am{color:#d58a00}.rd{color:#d8453f}
+.m-hint{margin:.45rem 0 0;font-size:.78rem;color:var(--soft)}
+.m-metrics{display:flex;flex-wrap:wrap;gap:.2rem}
+.m-metrics .m-chip.miss .hex{background:var(--s0)}
+.m-metrics .m-chip.miss .m-count{color:var(--alarm)}
+.sw{display:inline-flex;align-items:center;gap:.4rem;font:400 .72rem/1 var(--mono);color:var(--soft);margin:.2rem 1rem .2rem 0}
+.sw .hex{font-size:1.3rem}
+
+/* final table as cards on a phone */
+@media (max-width:700px){
+  .cards table,.cards tbody,.cards tr,.cards td{display:block;width:100%}
+  .cards thead{display:none}
+  .cards tr{border-bottom:1px solid var(--rule);padding:.6rem .75rem}
+  .cards tr:last-child{border-bottom:0}
+  .cards td{border:0;padding:.12rem 0}
+  .cards td:first-child{font-weight:600}
+  .cards td[data-l]::before{content:attr(data-l);display:block;font:500 .64rem/1.7 var(--mono);color:var(--soft);margin-top:.2rem}
+  .plan td[data-l]::before{display:inline;margin-right:.4rem}
+}
+.pan{overflow-x:auto}
+.pan img{min-width:720px}
+.pan.hdr img{min-width:1100px}
+figure a{display:block}
+.size{font:500 .66rem/1 var(--mono);letter-spacing:.04em;border:1px solid var(--line);border-radius:999px;padding:.2rem .5rem;white-space:nowrap}
+.size.s{color:#2f6b1c;border-color:#b9d4ab}.size.m{color:#7a5412;border-color:#e2c88f}.size.l{color:var(--alarm);border-color:#e3b3ae}
+hr{border:0;border-top:1px solid var(--line);margin:3rem 0 1rem}
+.attr{font-family:var(--mono);font-size:.74rem;color:var(--soft)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>safety.viz demo app, v1.10.0: design review and proposal</h1>
+    <p>A review of the released demo app against four asks, with a proposal for each. Nothing here has been built or changed; every item is yours to accept, change or drop.</p>
+    <ul class="facts">
+      <li>Reviewed 8 and 9 October 2026</li>
+      <li>Live site confirmed as v1.10.0 (header and app footer both say so)</li>
+      <li>Code read at the v1.10.0 tag</li>
+      <li>Checked at 1280, 1440 and 390 pixels wide</li>
+    </ul>
+    <ul class="toc">
+      <li><a href="#decisions"><span class="hex" style="--hue:var(--accent)"></span>Decisions</a></li>
+      <li><a href="#r"><span class="hex" style="--hue:var(--s3)"></span>1. R in the app</a></li>
+      <li><a href="#experimental"><span class="hex" style="--hue:var(--s1)"></span>2. One Experimental label</a></li>
+      <li><a href="#rbqm"><span class="hex" style="--hue:var(--s6)"></span>3. RBQM polish</a></li>
+      <li><a href="#other"><span class="hex" style="--hue:var(--s4)"></span>4. Other details</a></li>
+      <li><a href="#plan"><span class="hex" style="--hue:var(--s2)"></span>Every change, in order</a></li>
+    </ul>
+  </div>
+</header>
+
+<main><div class="wrap">
+
+<!-- ====================================================== DECISIONS -->
+<section id="decisions">
+  <h2>Decisions</h2>
+  <p class="ask">The calls that are yours. Each has my recommendation first and the alternative after it. The sections below hold the evidence.</p>
+  <ol class="decisions">
+    <li>
+      <p class="q">Where does the single Experimental label sit in the app?</p>
+      <dl>
+        <dt class="rec">Recommend</dt><dd>At the top left of the open view, above the chart. It is the same place for a chart and for the RBQM tab, it is the easiest thing to tap on a phone, and its detail opens in the page instead of floating over it.</dd>
+        <dt>Or</dt><dd>Beside the open chart's name in the header. It costs no height, but it is a small target, it scrolls sideways with the chart names on a phone, and it lands in two different rows depending on the view.</dd>
+      </dl>
+    </li>
+    <li>
+      <p class="q">What happens to the amber banner that a chart draws inside itself?</p>
+      <dl>
+        <dt class="rec">Recommend</dt><dd>The page that hosts a chart shows the label once, and the chart stays quiet. A chart with no host around it, such as an R widget, shows the same small label itself. Today only one of the five experimental charts draws the banner at all.</dd>
+        <dt>Or</dt><dd>Keep the banner in every experimental chart and drop the label from the app and the docs pages.</dd>
+      </dl>
+    </li>
+    <li>
+      <p class="q">Should each experimental chart say why it is experimental?</p>
+      <dl>
+        <dt class="rec">Recommend</dt><dd>Yes, one sentence each, kept beside the status in the site's settings file. Only the Time-to-Event Explorer has a written reason today. The Hepatic ALT Waterfall, Nephrotoxicity Explorer, Participant Profile, QT Safety Explorer and the RBQM tab need a sentence from you.</dd>
+        <dt>Or</dt><dd>Show only the general meaning of the word and add reasons later.</dd>
+      </dl>
+    </li>
+    <li>
+      <p class="q">One R for the whole app now, or one presentation first?</p>
+      <dl>
+        <dt class="rec">Recommend</dt><dd>One presentation and one wording first, on the two copies of R the app starts today. That is a change to safety.viz alone. Then move to a single shared R as a second step: it needs a small bio.viz release and one real run to prove both workloads fit in one R.</dd>
+        <dt>Or</dt><dd>Wait and ship both together, so the reader never sees Start R twice.</dd>
+      </dl>
+    </li>
+    <li>
+      <p class="q">Where does the Start R control live?</p>
+      <dl>
+        <dt class="rec">Recommend</dt><dd>At the top of any view that uses R, as the same strip in both places. For the biomarker charts that means it leaves the row of chart names.</dd>
+        <dt>Or</dt><dd>One control in the app header, visible from every tab. It makes most sense once there is a single shared R.</dd>
+      </dl>
+    </li>
+    <li>
+      <p class="q">What colour are the hexes for Biomarkers and RBQM?</p>
+      <dl>
+        <dt class="rec">Recommend</dt><dd>Reuse two colours the app already has: amber for Biomarkers and pink for RBQM. No new colours, and the rainbow strip stays as it is. The costs: amber also marks a guessed column on the Data tab, and pink is the colour kept for charts outside the standard domains, which has no tab today.</dd>
+        <dt>Or</dt><dd>Add two new colours to the palette, or give Biomarkers the blue of the labs file it reads.</dd>
+      </dl>
+    </li>
+    <li>
+      <p class="q">Should the RBQM file box stay closed by default?</p>
+      <dl>
+        <dt class="rec">Recommend</dt><dd>Yes, but say on its closed face that this is where your own files go, and keep it open after a drop so the reader sees what was recognised.</dd>
+        <dt>Or</dt><dd>Always show the drop area, at the cost of pushing the results down.</dd>
+      </dl>
+    </li>
+    <li>
+      <p class="q">Two wider consistency items: worth their own piece of work?</p>
+      <dl>
+        <dt class="rec">Recommend</dt><dd>Yes to both, outside this polish pass. First, the same three treatment arms are drawn in three different colour sets across the app. Second, safety.viz chart names use capitals on every word and bio.viz names do not.</dd>
+        <dt>Or</dt><dd>Leave both; neither is new in this release.</dd>
+      </dl>
+    </li>
+  </ol>
+</section>
+
+<!-- ====================================================== 1. R -->
+<section id="r">
+  <h2><span class="n">1</span>Standardise how R is loaded and run</h2>
+  <p class="ask">The ask: map every place the app loads or runs R, then propose one pattern for the whole app.</p>
+
+  <h3>What is there today</h3>
+  <p>R runs in two places. They were built one release apart and share almost nothing the reader can see.</p>
+  <div class="tbl cards">
+    <table>
+      <thead><tr><th></th><th>Biomarkers tab (five bio.viz charts)</th><th>RBQM tab</th></tr></thead>
+      <tbody>
+        <tr><td>What R does</td><td data-l="Biomarkers tab">Works out the statistics line under a chart. Four of the five charts ask as soon as they draw; Group comparison asks once a biomarker is opened.</td><td data-l="RBQM tab">Runs gsm's workflows on the loaded study and returns the tables the charts draw.</td></tr>
+        <tr><td>Trigger</td><td data-l="Biomarkers tab">A Start R pill at the front of the row of chart names.</td><td data-l="RBQM tab">A Start R button in a box at the top of the tab.</td></tr>
+        <tr><td>What it downloads</td><td data-l="Biomarkers tab">R alone, about 13 MB, from webr.r-wasm.org. No packages.</td><td data-l="RBQM tab">R again, then 35 packages (about 40 MB) from repo.r-wasm.org, then gsm's four packages (about 2 MB) from the page.</td></tr>
+        <tr><td>Which R</td><td data-l="Biomarkers tab">bio.viz's own copy.</td><td data-l="RBQM tab">The app's own copy. A second, separate R.</td></tr>
+        <tr><td>Before the press</td><td data-l="Biomarkers tab">Pill plus "About 13 MB, once". The full sentence is in the chart's statistics line, below the chart.</td><td data-l="RBQM tab">One long sentence beside the button.</td></tr>
+        <tr><td>While it loads</td><td data-l="Biomarkers tab">Pill greys to "Starting R…". The statistics line says "waiting for R…". No steps, no clock.</td><td data-l="RBQM tab">Button greys to "Starting R…", then "Running…". A sentence names each of six steps with seconds so far. The tab says "starting", then "running".</td></tr>
+        <tr><td>Once ready</td><td data-l="Biomarkers tab">A greyed "R started" pill stays in the row for good.</td><td data-l="RBQM tab">Button becomes "Run again"; the box reports the run.</td></tr>
+        <tr><td>If it fails</td><td data-l="Biomarkers tab">"Try R again" pill. The reason is in the statistics line, in plain ink, far from the pill.</td><td data-l="RBQM tab">"Try R again" button. The reason is beside it, in red. The tab says "no R".</td></tr>
+        <tr><td>Measured</td><td data-l="Biomarkers tab">1.7 to 4.6 seconds to "R started"; first statistic at about 4.5 seconds.</td><td data-l="RBQM tab">21 to 43 seconds to first results on the pilot study, 30 on the RBQM study. Up to 28 of those seconds sit in one step.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stack">
+    <figure class="pan hdr"><img src="img/hdr-biomarkers.png" alt="The app header on the Biomarkers tab, with a Start R pill at the front of the chart names"><figcaption>Biomarkers: the control is in the row of chart names.</figcaption></figure>
+    <figure><img src="img/rbqm-run-need.png" alt="The RBQM tab's box with a Start R button and a long sentence"><figcaption>RBQM: the control is in a box in the tab.</figcaption></figure>
+  </div>
+  <div class="shots">
+    <figure class="phone"><img src="img/phone-bio-top.png" alt="The app header on a phone on the Biomarkers tab: the Start R pill and its hint fill half the row of chart names"><figcaption>Biomarkers on a phone: the pill and its hint take half the row of chart names.</figcaption></figure>
+    <figure><img src="img/rbqm-run-attaching.png" alt="The RBQM run box during the step that loads gsm's packages"><figcaption>RBQM during its slowest step, up to 28 seconds with only the count changing.</figcaption></figure>
+  </div>
+  <div class="shots">
+    <figure><img src="img/pane-bio-starting.jpg" alt="A biomarker chart while R starts: a grey Starting R pill and a waiting line under the chart"><figcaption>Biomarkers while R starts. The only signs are the grey pill and one line under the chart.</figcaption></figure>
+    <figure><img src="img/pane-rbqm-starting.jpg" alt="The RBQM tab while R starts: a sentence naming the step and the seconds so far"><figcaption>RBQM while R starts. A sentence names the step and counts seconds.</figcaption></figure>
+  </div>
+
+  <h3>What is inconsistent or wrong</h3>
+  <ul>
+    <li>Two copies of R. Starting R for a biomarker chart does not start it for RBQM: one place says "R started" while the other still says "Start R". On one load the page made two R workers and asked for the 12.3 MB R file twice.
+      <div class="where">Where: bio.viz starts its own, <code>site/vendor/bio.viz/bio.viz.js:255-284</code>; the app starts another, <code>src/app/r-browser.js:159-174</code>, made in <code>src/app/rbqm-view.js:286-295</code>.</div></li>
+    <li>Two homes for the control. One is in the header's row of chart names, the other inside the view. On a phone the biomarker pill and its hint take about half of that row.
+      <div class="where">Where: <code>src/app/page.js:414-421</code> and <code>477-497</code>; <code>src/app/rbqm-view.js:656-662</code>.</div></li>
+    <li>Two button styles for the same action, close but not the same size.
+      <div class="where">Where: <code>src/app/styles.js:82-85</code> against <code>90</code> and <code>106-107</code>.</div></li>
+    <li>Two wordings for the same promise. One says "the study's data stays in this browser", the other "The files stay in this browser, and R runs here."
+      <div class="where">Where: <code>src/app/r-on-request.js:43-46</code>; <code>src/app/rbqm.js:69-75</code>.</div></li>
+    <li>Progress is shown in one place and not the other. Neither shows a list of steps, so a reader cannot see how far along it is.
+      <div class="where">Where: <code>src/app/r-on-request.js:96-105</code>; <code>src/app/rbqm.js:92-106</code>.</div></li>
+    <li>Two steps each claim to be the slowest. One sentence ends "This is the longest step." and a later one says "takes the longest". In my runs the later one was the slow one.
+      <div class="where">Where: <code>src/app/rbqm.js:98</code> and <code>102</code>.</div></li>
+    <li>Failures read differently and both leak the browser's own error text. The biomarker one also stacks two prefixes: "R did not start: Statistics are unavailable: R could not be started (Failed to fetch dynamically imported module: …)".
+      <div class="where">Where: <code>src/app/r-on-request.js:47-51</code> wraps bio.viz's sentence from <code>bio.viz.js:429-431</code>; <code>src/app/rbqm.js:114-119</code>; red text only in <code>src/app/styles.js:109</code>.</div></li>
+    <li>The ready state is a dead control in one place. "R started" is a disabled pill that never leaves the row of chart names.
+      <div class="where">Where: <code>src/app/r-on-request.js:99-104</code>.</div></li>
+    <li>The release notes say starting R for RBQM "takes a minute or two". I measured 21 to 43 seconds. Worth restating once it is measured on a slow connection.</li>
+  </ul>
+  <div class="stack">
+    <figure><img src="img/err-bio-desk.jpg" alt="A biomarker chart after R failed to start: a long sentence in ordinary text under the chart"><figcaption>Biomarkers after a failed start (R's host blocked on purpose). Plain ink, two prefixes, the raw browser error, and the retry control is out of sight at the top.</figcaption></figure>
+    <figure><img src="img/err-rbqm-desk.jpg" alt="The RBQM tab after R failed to start: red sentence beside a Try R again button"><figcaption>RBQM after the same failure. Red text, retry beside it, but the box keeps its plum edge and the raw error is still there.</figcaption></figure>
+  </div>
+
+  <h3>The proposed pattern</h3>
+  <ul>
+    <li>One trigger model: R on request, as now. Nothing downloads until the reader presses Start R.</li>
+    <li>One component, the R strip, at the top of any view that uses R. Same button, same layout, same four states.</li>
+    <li>One wording, built from one template:
+      <ul>
+        <li>Off: "R runs in this browser. Starting it downloads about N MB once, from (hosts). Your data stays here."</li>
+        <li>Starting: a short list of steps that tick off, with seconds so far. No progress bar, because the app does not know the bytes.</li>
+        <li>Ready: "R is ready", with R's version. In RBQM the button becomes Run again and the result follows.</li>
+        <li>Failed: "R did not start", a plain reason, Try again beside it, and the browser's own words behind a "What the browser said" line.</li>
+      </ul></li>
+    <li>The statistics line under a biomarker chart shortens to "Statistics need R. Start R at the top of this chart." The app already writes that sentence, so bio.viz does not change.</li>
+    <li>Tabs keep saying their state in a word or two, in both places or neither. I suggest neither for Biomarkers, since its tab counts charts.</li>
+    <li>One shared R, as the second step:
+      <ul>
+        <li>It looks feasible from the code. bio.viz's connection already accepts an R engine handed to it.</li>
+        <li>It is not free. bio.viz keeps the small piece of R it needs private, so bio.viz has to offer an engine that takes an R already running. That is a bio.viz release and a fresh copy here.</li>
+        <li>It is unproven. Nobody has run the statistics file and gsm's packages in one R in a browser. Check memory, and check that their function names do not collide.</li>
+        <li>Once shared, Start R anywhere means R is ready everywhere, and RBQM's first run only adds its packages.</li>
+      </ul>
+      <div class="where">Where: the engine hand-over is at <code>bio.viz.js:326</code> and <code>344-352</code>; the private R helper is at <code>bio.viz.js:164</code> and <code>277</code>.</div></li>
+  </ul>
+
+  <h3>Mockup: the standard R strip</h3>
+  <p>Press Start R. Timings are shortened for the mock; the step names and megabytes are the real ones.</p>
+  <div class="mock-ctl">
+    <fieldset><legend>Where</legend>
+      <button class="seg" type="button" data-rctx="bio" aria-pressed="true">A biomarker chart</button>
+      <button class="seg" type="button" data-rctx="rbqm" aria-pressed="false">The RBQM tab</button>
+    </fieldset>
+    <fieldset><legend>Try</legend>
+      <button class="seg" type="button" id="r-fail" aria-pressed="false">Make the next start fail</button>
+      <button class="seg" type="button" id="r-reset">Reset</button>
+    </fieldset>
+  </div>
+  <div class="mock"><div class="m-main">
+    <div class="rstrip" id="rstrip" data-state="off" role="status" aria-live="polite">
+      <button class="rbtn" type="button" id="rbtn">Start R</button>
+      <div id="rbody"></div>
+    </div>
+    <div class="m-chart" style="margin-top:.7rem"><div class="m-bars" id="rbars"><i style="height:35%"></i><i style="height:70%"></i><i style="height:100%"></i><i style="height:60%"></i><i style="height:40%"></i><i style="height:22%"></i><i style="height:10%"></i></div><p id="rstat" style="margin:0;font-size:.84rem;color:var(--soft)"></p></div>
+  </div></div>
+</section>
+
+<!-- ====================================================== 2. EXPERIMENTAL -->
+<section id="experimental">
+  <h2><span class="n">2</span>One Experimental label for the whole app</h2>
+  <p class="ask">The ask: one label, with the details on hover and on click. The tiers themselves are not in question: Prototype stays out of the app and uncounted, Experimental ships with a label, and both are set in the site's settings file.</p>
+
+  <h3>What is there today</h3>
+  <p>Four looks, three wordings, and no way to read the detail on a phone.</p>
+  <div class="tbl cards">
+    <table>
+      <thead><tr><th>Form</th><th>Where it appears</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Orange pill in a page title</td><td data-l="Where it appears">Docs site: gallery cards, and the demo, evidence, API and guide page of each experimental chart. Once more in a row of the kit page.</td><td data-l="Detail">Hover only.</td></tr>
+        <tr><td>Tan pill, "Prototype"</td><td data-l="Where it appears">Docs site: the Patient Journey Explorer's card and pages.</td><td data-l="Detail">Hover only.</td></tr>
+        <tr><td>Amber banner inside the chart</td><td data-l="Where it appears">Hepatic ALT Waterfall, everywhere it draws, including the app. One view of the Hepatic Explorer, with its own sentence.</td><td data-l="Detail">Always-visible sentence.</td></tr>
+        <tr><td>Plum outline pill on a tab</td><td data-l="Where it appears">App: the RBQM tab. Hidden between 761 and 1339 pixels wide.</td><td data-l="Detail">Hover only.</td></tr>
+        <tr><td>Plum outline pill in a sentence</td><td data-l="Where it appears">App: the end of the RBQM tab's opening line.</td><td data-l="Detail">Hover only.</td></tr>
+        <tr><td>Nothing</td><td data-l="Where it appears">App: Nephrotoxicity Explorer, Participant Profile, Time-to-Event Explorer and QT Safety Explorer. All four are experimental in the settings file and carry no mark in the app.</td><td data-l="Detail">None.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="stack">
+    <figure><img src="img/exp-docs-waterfall.jpg" alt="The docs page for the Hepatic ALT Waterfall: an orange Experimental pill by the title and an amber Experimental banner in the chart"><figcaption>Docs site, one page: an orange pill by the title and an amber banner in the chart, with different words.</figcaption></figure>
+    <figure><img src="img/exp-app-waterfall.jpg" alt="The Hepatic ALT Waterfall in the demo app, with the amber banner inside the chart"><figcaption>Demo app, same chart: only the amber banner.</figcaption></figure>
+    <figure><img src="img/exp-migration-banner.png" alt="The amber banner inside one view of the Hepatic Explorer, with its own sentence"><figcaption>Demo app, one view of the Hepatic Explorer: the banner again, with a third sentence.</figcaption></figure>
+    <figure class="pan hdr"><img src="img/hdr-rbqm-1440.png" alt="The app header at 1440 pixels wide with an Experimental pill inside the RBQM tab"><figcaption>Demo app at 1440 wide: a plum pill inside the RBQM tab.</figcaption></figure>
+    <figure class="pan hdr"><img src="img/hdr-rbqm-1280.png" alt="The app header at 1280 pixels wide with no Experimental pill on the RBQM tab"><figcaption>Same header at 1280 wide: the pill is gone.</figcaption></figure>
+    <figure><img src="img/exp-rbqm-lede.png" alt="The RBQM tab's opening sentence ending in an Experimental pill"><figcaption>RBQM tab: the pill again, at the end of a sentence.</figcaption></figure>
+  </div>
+  <div class="shots">
+    <figure><img src="img/exp-gallery-card.png" alt="A gallery card with an orange Experimental pill after the chart's name"><figcaption>Gallery card, Experimental.</figcaption></figure>
+    <figure><img src="img/exp-gallery-prototype.png" alt="A gallery card with a tan Prototype pill after the chart's name"><figcaption>Gallery card, Prototype.</figcaption></figure>
+    <figure><img src="img/desk-tte.jpg" alt="The Time-to-Event Explorer in the demo app with no experimental mark anywhere"><figcaption>Time-to-Event Explorer in the app: experimental, and nothing says so.</figcaption></figure>
+  </div>
+
+  <h3>What is inconsistent or wrong</h3>
+  <ul>
+    <li>In the app, four of the six experimental things carry no label. The standing rule is that Experimental ships with one.
+      <div class="where">Where: a chart's name in the header is built with no status at <code>src/app/page.js:348-361</code>; the settings are at <code>site/config.json:76</code>, <code>91</code>, <code>106</code>, <code>121</code> and <code>170</code>.</div></li>
+    <li>The in-chart banner is called by one chart and one view. The other four experimental charts never call it.
+      <div class="where">Where: <code>src/hep-waterfall.js:232</code>; <code>src/hep-explorer/views/migration.js:867-870</code>; the banner is <code>src/shell.js:47-56</code>, styled at <code>241-243</code>.</div></li>
+    <li>Three wordings for one meaning.
+      <ul>
+        <li>Pills: "Still being worked on, and fine to use: its behaviour and settings may change."</li>
+        <li>Banner: "This chart is experimental: it is tested and documented, but its behaviour and settings may change."</li>
+        <li>The Hepatic Explorer's view has a third sentence of its own.</li>
+      </ul>
+      <div class="where">Where: <code>scripts/app-libraries.mjs:120-121</code>; <code>src/shell.js:52-53</code>; <code>src/hep-explorer/views/migration.js:868-869</code>.</div></li>
+    <li>Every pill explains itself through a hover tooltip. A phone has no hover, so on a phone the word is all there is.
+      <div class="where">Where: <code>scripts/site-lib.mjs:1523-1530</code>; <code>src/app/page.js:432-439</code>; <code>src/app/rbqm-view.js:651-655</code>.</div></li>
+    <li>The RBQM tab's pill disappears at common laptop widths.
+      <div class="where">Where: <code>src/app/styles.js:216-218</code>.</div></li>
+    <li>Why a chart is experimental is written down for one chart only, and only on the kit page.
+      <div class="where">Where: <code>scripts/site-lib.mjs:1296-1301</code>.</div></li>
+    <li>Small things: the orange pill takes the serif face inside a title and the sans face elsewhere; a Prototype banner exists in the code and nothing calls it.
+      <div class="where">Where: <code>site/site.css:107-123</code> sets no font; <code>src/shell.js:63-71</code>.</div></li>
+  </ul>
+
+  <h3>The proposed single label</h3>
+  <ul>
+    <li>What it is: one small button that says "Experimental", with a caret to show it opens.</li>
+    <li>What it does:
+      <ul>
+        <li>Hover opens the detail on a desktop.</li>
+        <li>A click or tap opens it and keeps it open, on any device.</li>
+        <li>Escape, the close button or a second tap closes it. It is reachable by keyboard.</li>
+      </ul></li>
+    <li>Where it sits in the app: top left of the open view, above the chart, for charts and for the RBQM tab alike. Stable charts show nothing, so they lose no height.</li>
+    <li>Where it sits on the docs site: after the chart's name, where the orange pill is now, on cards and page titles.</li>
+    <li>What the detail holds, always in this order:
+      <ul>
+        <li>The name: "Hepatic ALT Waterfall is experimental".</li>
+        <li>The one meaning, in the pill's existing words.</li>
+        <li>Why this one: a sentence written for the chart, from a new optional line beside its status in the settings file.</li>
+        <li>Links to its clinical guide and test evidence, the same ones the footnote under the chart already has.</li>
+      </ul></li>
+    <li>A chart with one experimental view, such as the Hepatic Explorer, shows the same label beside that view's heading, inside the chart. The detail's "why" names the view.</li>
+    <li>How Prototype relates: same label, same detail, different word and a dashed outline. It never appears in the app, because prototypes are not in the app. On the docs site its detail says "Not ready for production: on the docs site only, and not in the demo app."</li>
+    <li>What goes away: the amber banner as a separate look, the pill inside the RBQM tab, the pill inside the RBQM sentence, the width rule that hides it, and every hover-only tooltip.</li>
+  </ul>
+  <div class="callout warn">
+    <p class="t">One thing to know before saying yes</p>
+    <p>The label has to live in the charts' shared shell so that a chart on its own can show it. A change there touches every chart's test evidence, so plan one evidence refresh for the piece.</p>
+  </div>
+
+  <h3>Mockup: the label and its detail</h3>
+  <p>Tap the label. Switch the view to see how each chart's own reason fits the same detail, and switch the placement to compare the two options in decision 1.</p>
+  <div class="mock-ctl">
+    <fieldset><legend>View</legend>
+      <button class="seg" type="button" data-view="waterfall" aria-pressed="true">Hepatic ALT Waterfall</button>
+      <button class="seg" type="button" data-view="tte" aria-pressed="false">Time-to-Event</button>
+      <button class="seg" type="button" data-view="rbqm" aria-pressed="false">RBQM</button>
+      <button class="seg" type="button" data-view="histogram" aria-pressed="false">Histogram (stable)</button>
+    </fieldset>
+    <fieldset><legend>Placement</legend>
+      <button class="seg" type="button" data-place="view" aria-pressed="true">Top of the view</button>
+      <button class="seg" type="button" data-place="name" aria-pressed="false">Beside the name</button>
+    </fieldset>
+  </div>
+  <div class="ba">
+    <div>
+      <span class="lab new">Proposed</span>
+      <div class="mock" id="xmock">
+        <div class="m-header">
+          <div class="m-bar"><span class="m-brand">safety.viz</span><span class="m-kicker">Demo app</span></div>
+          <div class="m-bar" style="padding-top:0"><div class="m-tabs" id="xtabs"></div></div>
+          <div class="m-chips" id="xchips"></div>
+          <div id="xpanel-head"></div>
+        </div>
+        <div class="m-main">
+          <div id="xline"></div>
+          <div id="xpanel-view"></div>
+          <div class="m-chart" id="xchart"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <span class="lab">The same label on the docs site</span>
+      <div class="mock"><div class="m-main" style="background:#faf6f1">
+        <p style="margin:.2rem 0 .6rem;font:400 1.5rem/1.15 var(--serif)">Patient Journey Explorer</p>
+        <div class="status-line"><button class="status proto" type="button" id="pbtn" aria-expanded="false" aria-controls="ppanel">Prototype</button></div>
+        <div class="status-panel" id="ppanel" hidden style="border-color:var(--soft)">
+          <button class="x" type="button" aria-label="Close" data-close="pbtn">×</button>
+          <h5>Patient Journey Explorer is a prototype</h5>
+          <p>Not ready for production: on the docs site only, and not in the demo app.</p>
+          <dl><dt>Why this one</dt><dd class="todo">A sentence from you. None is written down today.</dd></dl>
+          <div class="links"><a href="https://jwildfire.github.io/safety.viz/patient-journey-explorer/guide.html">Clinical guide</a><a href="https://jwildfire.github.io/safety.viz/patient-journey-explorer/evidence.html">Test evidence</a></div>
+        </div>
+        <p style="margin:.2rem 0 0;font-size:.84rem;color:#6b5d52">Same shape, same detail, a different word and a dashed edge. The docs site keeps its own colours.</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== 3. RBQM -->
+<section id="rbqm">
+  <h2><span class="n">3</span>Polish for the RBQM tab</h2>
+  <p class="ask">The ask: he is happy with what it does, so no change to behaviour. Layout, spacing, hierarchy, type, tables, states, the upload path, wording and fit with the rest of the app.</p>
+
+  <h3>What is there today</h3>
+  <div class="stack">
+    <figure><img src="img/rbqm-done-desk.jpg" alt="The RBQM tab after a run on the pilot study, at desktop width"><figcaption>After a run on the pilot study, 1280 wide. Three of eight metrics run.</figcaption></figure>
+  </div>
+  <div class="shots">
+    <figure class="phone"><img src="img/rbqm-done-phone-top.jpg" alt="The RBQM tab after a run, at phone width"><figcaption>The same at 390 wide. Nothing overflows.</figcaption></figure>
+    <figure class="phone"><img src="img/rbqmstudy-before-phone.jpg" alt="The RBQM tab's file box open on the RBQM demo study, at phone width"><figcaption>The file box open, on the RBQM demo study.</figcaption></figure>
+    <figure class="phone"><img src="img/rbqm-upload-after-phone.jpg" alt="The RBQM tab after dropping three files while R is running, at phone width"><figcaption>After dropping three files of my own with R already running.</figcaption></figure>
+  </div>
+  <p>It works, it holds at 390 pixels, and it already uses the app's cards, type and pills. The items below are finish, in rough order of how much they show.</p>
+
+  <h3>What needs a tweak, and the proposed change</h3>
+
+  <h4>Layout and alignment</h4>
+  <ul>
+    <li>Two right edges. The opening line, the run box and the file box stop at a reading width while the two result cards run the full width, so the page has a step in it.
+      <ul><li>Proposed: let the run box and the file box take the cards' width. Keep the reading width for the opening sentence only.</li></ul>
+      <div class="where">Where: <code>src/app/styles.js:104</code>, <code>105</code> and <code>110</code> against <code>123</code>.</div></li>
+    <li>Notes land in two places. Notes about a load sit above everything; notes from R sit between the file box and the results.
+      <ul><li>Proposed: one place for both, directly under the run box.</li></ul>
+      <div class="where">Where: <code>src/app/page.js:546</code>; <code>src/app/rbqm-view.js:409-413</code>.</div></li>
+    <li>The scatter plot has a caption and the bar chart has none, so the two charts sit at different heights.
+      <ul><li>Proposed: move the caption under the pair.</li></ul>
+      <div class="where">Where: <code>src/app/rbqm-view.js:353-362</code>.</div></li>
+  </ul>
+  <figure><img src="img/rbqm-top-widths.png" alt="The top of the RBQM tab showing narrower boxes above a full-width card"><figcaption>The step between the top boxes and the cards below.</figcaption></figure>
+
+  <h4>The run box</h4>
+  <ul>
+    <li>One paragraph carries the result, two timings, a date, five R versions and two more versions. The result is the part the reader wants and it is not set apart.
+      <ul>
+        <li>Proposed: a headline, "3 of 8 metrics ran on adsl.csv and adae.csv".</li>
+        <li>Under it, a small line in the app's label face for the timing, the snapshot date and the versions.</li>
+      </ul>
+      <div class="where">Where: the sentence is <code>src/app/rbqm.js:223-247</code>; it is placed at <code>src/app/rbqm-view.js:656-667</code>.</div></li>
+    <li>A failure turns the words red and leaves the box's edge plum. Everywhere else in the app a problem box has a red edge.
+      <ul><li>Proposed: the box follows the app's problem style. The R strip in section 1 covers it.</li></ul>
+      <div class="where">Where: <code>src/app/styles.js:95</code> against <code>105</code> and <code>109</code>.</div></li>
+    <li>Two steps say they are the longest.
+      <ul><li>Proposed: keep the claim on the step that loads gsm's packages, which is the slow one.</li></ul>
+      <div class="where">Where: <code>src/app/rbqm.js:98</code> and <code>102</code>.</div></li>
+  </ul>
+
+  <figure><img src="img/rbqm-run-done.png" alt="The RBQM run box after a run: one paragraph holding the result, timings, a date and seven versions"><figcaption>The run box after a run: the result is the opening clause of one long paragraph.</figcaption></figure>
+
+  <h4>The site overview table</h4>
+  <ul>
+    <li>The table is cut through the middle of a row, with no count and no sign that it scrolls. On the 150-site study it shows about 14 rows.
+      <ul>
+        <li>Proposed: size the window to whole rows.</li>
+        <li>Say how many sites there are beside the heading.</li>
+        <li>Add a quiet line at the foot, "136 more, scroll the table".</li>
+        <li>With 20 sites or fewer, show them all.</li>
+      </ul>
+      <div class="where">Where: <code>src/app/styles.js:125</code>; the heading is <code>src/app/rbqm-view.js:417</code>.</div></li>
+    <li>On a desktop the number columns are centred and spread across the whole card, so a site's row is hard to follow across.
+      <ul><li>Proposed: right-align the numbers and let the table take only the width it needs.</li></ul>
+      <div class="where">Where: <code>src/app/styles.js:126-129</code>.</div></li>
+    <li>On a phone the column headings are 8 pixels tall.
+      <ul><li>Proposed: a floor of about 10 pixels, with "Red" and "Amber" for the two flag counts at that width.</li></ul>
+      <div class="where">Where: <code>src/app/styles.js:219-224</code>.</div></li>
+    <li>Choosing a cell opens that metric below, and nothing says so.
+      <ul><li>Proposed: one line under the table, "Select a cell to open that metric below."</li></ul>
+      <div class="where">Where: <code>src/app/rbqm-view.js:433-438</code>.</div></li>
+    <li>Not confirmed: the first column is headed "Group" where a reader would expect "Site", and a cell's numbers show only on hover. Both come from gsm.viz. I did not check whether gsm.viz lets the app change either.</li>
+  </ul>
+  <figure><img src="img/rbqmstudy-done-desk.jpg" alt="The RBQM tab on the 150-site demo study: the table shows fourteen rows and gives no count"><figcaption>The 150-site study: fourteen rows show, and nothing says there are 136 more.</figcaption></figure>
+  <div class="shots">
+    <figure><img src="img/rbqm-overview.png" alt="The site overview table cut through its last visible row"><figcaption>The cut row at the foot of the table.</figcaption></figure>
+    <figure class="phone"><img src="img/rbqmstudy-table-phone.jpg" alt="The site overview table on a phone with very small column headings"><figcaption>Phone: headings at 8 pixels.</figcaption></figure>
+  </div>
+
+  <h4>The metric buttons and charts</h4>
+  <ul>
+    <li>The hex on a metric that ran is grey. Everywhere else in the app a ready thing wears its tab's colour, and grey means nothing to read.
+      <ul><li>Proposed: the RBQM colour from decision 6, once the tab has one.</li></ul>
+      <div class="where">Where: <code>src/app/rbqm-view.js:459</code>; the grey is the fallback in <code>src/app/styles.js:59</code>.</div></li>
+    <li>The two charts use gsm.viz's own type and its brighter flag colours. They read as a guest, which they are.
+      <ul><li>Proposed: leave them. Not confirmed: whether gsm.viz would take the app's typeface if asked.</li></ul></li>
+  </ul>
+  <figure><img src="img/rbqm-chooser.png" alt="The row of metric buttons with grey hexes on the metrics that ran"><figcaption>Grey hexes on metrics that ran, red on those that did not.</figcaption></figure>
+
+  <h4>The file box and the upload path</h4>
+  <ul>
+    <li>The way to use your own files is hidden. The closed box reads as a status sentence; nothing on it says files go here.
+      <ul><li>Proposed: keep the sentence and add "Use your own gsm files" at its right, in the app's action style.</li></ul>
+      <div class="where">Where: <code>src/app/rbqm-view.js:498-505</code>; <code>src/app/styles.js:110-112</code>.</div></li>
+    <li>After a drop with R already running, the box closes. The line that says a file was not recognised, or lacks columns, is then out of sight.
+      <ul><li>Proposed: keep the box open after a drop until the reader closes it.</li></ul>
+      <div class="where">Where: <code>src/app/rbqm-view.js:502</code>.</div></li>
+    <li>The lists are wordy. Nine lines read "Raw_SUBJ.csv is Raw_SUBJ, by its name." and eight end "the files and columns it needs are loaded."
+      <ul>
+        <li>Proposed: two short columns for files, the file and the domain it was placed in.</li>
+        <li>For metrics, the short name, the full name, and either a tick or what is missing.</li>
+        <li>Keep the full sentence for the rows that have a problem.</li>
+      </ul>
+      <div class="where">Where: <code>src/app/rbqm-view.js:556-596</code>; the sentences are in <code>src/app/rbqm-files.js</code>.</div></li>
+    <li>The drop area matches the Data tab's. Good; no change.</li>
+  </ul>
+
+  <figure><img src="img/rbqm-files-open-desk.jpg" alt="The RBQM tab with its file box open at desktop width"><figcaption>The file box open on the pilot study. Closed, only its first line shows.</figcaption></figure>
+
+  <h4>Empty, loading and error states</h4>
+  <ul>
+    <li>Nothing loaded: a clear sentence, a disabled button, the file box open. Good; no change.</li>
+    <li>Loading: covered by the R strip in section 1.</li>
+    <li>No metric ran: "No metric ran, so there is no overview to draw." Good; no change.</li>
+    <li>A metric that did not run: its own sentence in a red-edged box. Good; that box should also take the card's width.</li>
+  </ul>
+
+  <h3>Mockup: the top of the tab after these changes</h3>
+  <div class="ba">
+    <div>
+      <span class="lab">Today</span>
+      <figure style="margin:0"><img src="img/rbqm-top-widths.png" alt="The top of the RBQM tab today"></figure>
+    </div>
+    <div>
+      <span class="lab new">Proposed</span>
+      <div class="mock"><div class="m-main" style="--hue:var(--s6)">
+        <div class="status-line"><span class="status" style="cursor:default">Experimental</span></div>
+        <p class="m-lede">Risk-based quality monitoring: gsm's site metrics, worked out by R in this browser on the loaded study and drawn with gsm.viz.</p>
+        <div class="rstrip" data-state="ready">
+          <button class="rbtn" type="button">Run again</button>
+          <div>
+            <p class="head">3 of 8 metrics ran on adsl.csv and adae.csv</p>
+            <div class="rmeta"><span>4.4 seconds</span><span>snapshot 2026-10-09</span><span>R 4.6.0</span><span>gsm.core 1.3.1</span><span>gsm.mapping 1.1.6</span><span>gsm.reporting 1.1.7</span><span>workr 1.1.0</span><span>workflows gsm.kri 1.7.0</span><span>charts gsm.viz 2.4.1</span></div>
+          </div>
+        </div>
+        <div class="m-files"><span>The loaded study supports 3 of 8 metrics.</span><span>Use your own gsm files</span></div>
+        <div class="m-sec">
+          <h5>Site overview <small>17 sites</small></h5>
+          <div class="m-tbl">
+            <table>
+              <thead><tr><th>Site</th><th>Enrolled</th><th>Red</th><th>Amber</th><th class="f">AE</th><th class="f">SAE</th><th class="f">SDSC</th></tr></thead>
+              <tbody>
+                <tr><td>705</td><td>16</td><td>1</td><td>0</td><td class="f rd">▼▼</td><td class="f ok">✓</td><td class="f ok">✓</td></tr>
+                <tr><td>718</td><td>13</td><td>1</td><td>0</td><td class="f ok">✓</td><td class="f rd">▲▲</td><td class="f ok">✓</td></tr>
+                <tr><td>715</td><td>8</td><td>0</td><td>1</td><td class="f am">▼</td><td class="f ok">✓</td><td class="f ok">✓</td></tr>
+                <tr><td>716</td><td>24</td><td>0</td><td>1</td><td class="f am">▼</td><td class="f ok">✓</td><td class="f ok">✓</td></tr>
+                <tr><td>701</td><td>41</td><td>0</td><td>0</td><td class="f ok">✓</td><td class="f ok">✓</td><td class="f ok">✓</td></tr>
+              </tbody>
+            </table>
+            <p class="m-more">12 more, scroll the table</p>
+          </div>
+          <p class="m-hint">Select a cell to open that metric below.</p>
+        </div>
+        <div class="m-sec">
+          <div class="m-metrics">
+            <span class="m-chip on"><span class="hex"></span>AE <span class="m-count">ran</span></span>
+            <span class="m-chip"><span class="hex"></span>SAE <span class="m-count">ran</span></span>
+            <span class="m-chip miss"><span class="hex"></span>PD <span class="m-count">did not run</span></span>
+            <span class="m-chip"><span class="hex"></span>SDSC <span class="m-count">ran</span></span>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== 4. OTHER -->
+<section id="other">
+  <h2><span class="n">4</span>Other formatting, layout and navigation details</h2>
+  <p class="ask">The ask: anything else across the demo page that needs a tweak, starting with the black hexes, and others of the same kind.</p>
+
+  <h3>The black hexes</h3>
+  <ul>
+    <li>What you see: the Biomarkers and RBQM tabs, and all five biomarker chart names, have a near-black hex. Every other tab has a colour.</li>
+    <li>The cause: it is written that way. Any tab that comes from a second chart library is given one fixed colour, graphite, the centre hex of the logo. Biomarkers and RBQM are the only two such tabs, so both are graphite.
+      <div class="where">Where: the graphite is <code>--lib:#4a525c</code> at <code>src/app/styles.js:47</code>; it is applied to every such tab at <code>src/app/styles.js:56</code>; the rule that picks it is <code>hueClass</code> at <code>src/app/libraries.js:323-325</code>; the RBQM tab is given the same class at <code>src/app/page.js:427</code>.</div></li>
+    <li>The fix:
+      <ul>
+        <li>Let each added tab name its own colour, and fall back to graphite only when it names none.</li>
+        <li>Set the two colours where the app lists its added libraries, so bio.viz does not change.</li>
+        <li>Put the same colour on the RBQM view, which also fixes the grey hexes on its metric buttons.</li>
+      </ul>
+      <div class="where">Touches: <code>src/app/libraries.js</code>, <code>src/app/styles.js</code>, <code>src/app/page.js</code>, <code>scripts/app-libraries.mjs</code>. Small.</div></li>
+  </ul>
+  <div class="stack">
+    <div>
+      <span class="lab">Today</span>
+      <figure class="pan hdr" style="margin:0"><img src="img/hdr-biomarkers.png" alt="The app header with near-black hexes on Biomarkers, RBQM and the five biomarker charts"></figure>
+    </div>
+    <div style="margin-top:.6rem">
+      <span class="lab new">Proposed, with the recommended colours</span>
+      <div class="mock"><div class="m-header">
+        <div class="m-bar"><div class="m-tabs">
+          <span class="m-tab"><span class="hex" style="--hue:var(--s4)"></span>Labs and vitals <span class="m-count">9 of 9</span></span>
+          <span class="m-tab"><span class="hex" style="--hue:var(--s5)"></span>ECG <span class="m-count">1 of 1</span></span>
+          <span class="m-tab"><span class="hex" style="--hue:var(--s3)"></span>Adverse events <span class="m-count">3 of 3</span></span>
+          <span class="m-tab on" style="--hue:var(--s1)"><span class="hex"></span>Biomarkers <span class="m-count">5 of 5</span></span>
+          <span class="m-tab"><span class="hex" style="--hue:var(--s6)"></span>RBQM <span class="m-count">not run</span></span>
+        </div></div>
+        <div class="m-chips" style="--hue:var(--s1)">
+          <span class="m-chip on"><span class="hex"></span>Group comparison</span>
+          <span class="m-chip"><span class="hex"></span>Association scatter</span>
+          <span class="m-chip"><span class="hex"></span>Correlation matrix</span>
+        </div>
+      </div></div>
+      <p style="margin:.6rem 0 0">
+        <span class="sw"><span class="hex" style="--hue:var(--lib)"></span>today, both</span>
+        <span class="sw"><span class="hex" style="--hue:var(--s1)"></span>Biomarkers, amber</span>
+        <span class="sw"><span class="hex" style="--hue:var(--s6)"></span>RBQM, pink</span>
+      </p>
+    </div>
+  </div>
+
+  <h3>Others of the same kind: things the newer tabs did not pick up</h3>
+  <ul>
+    <li>No place on the docs site. The gallery, its menu and its count cover safety.viz's own charts only. A reader of the docs cannot tell that the app also has five biomarker charts and an RBQM tab.
+      <ul><li>Proposed: a short "Also in the demo app" strip on the gallery page, one line each, linking into the app.</li></ul>
+      <div class="where">Where: the RBQM tab's title and one-line description sit unused at <code>site/config.json:6-13</code>; only its status is read, at <code>scripts/app-libraries.mjs:133-137</code>.</div></li>
+    <li>No footnote under RBQM. Every chart ends with links to its guide and evidence; the RBQM tab ends with nothing.
+      <ul><li>Proposed: the same footnote line, linking to gsm's own documentation and to the tab's test evidence.</li></ul>
+      <div class="where">Where: charts get it at <code>src/app/page.js:572-573</code>; a tab's view at <code>543-562</code> does not.</div></li>
+    <li>Chart names in two styles. "Outlier Explorer" and "Results Over Time" beside "Group comparison" and "Cross-tabulation".
+      <ul><li>Decision 8. The names come from each library's own chart list.</li></ul></li>
+    <li>Treatment arms in three colour sets. The same three arms are blue, red and green in the QT Explorer; blue, red and orange in the Time-to-Event Explorer; and blue, green and orange in the biomarker charts.
+      <ul><li>Decision 8. Each chart carries its own list of colours; there is no shared one.</li></ul>
+      <div class="where">Where: <code>src/qt-explorer/getPlugins.js:15</code>; <code>src/time-to-event/getPlugins.js:19</code>; <code>site/vendor/bio.viz/bio.viz.js:3562</code>.</div></li>
+  </ul>
+  <div class="stack">
+    <figure class="pan"><img src="img/legend-qt.png" alt="QT Explorer legend: placebo blue, high dose red, low dose green"><figcaption>QT Explorer: blue, red, green.</figcaption></figure>
+    <figure class="pan"><img src="img/legend-tte.png" alt="Time-to-Event Explorer legend: placebo blue, high dose red, low dose orange"><figcaption>Time-to-Event Explorer: blue, red, orange.</figcaption></figure>
+    <figure class="pan"><img src="img/legend-bio.png" alt="Biomarker chart legend: placebo blue, high dose green, low dose orange"><figcaption>Biomarker charts: blue, green, orange.</figcaption></figure>
+  </div>
+
+  <h3>Navigation</h3>
+  <ul>
+    <li>On a phone the open tab can be off screen. The tabs scroll sideways, and a link straight to RBQM opens with the strip at its start, so no tab looks open. The same holds for a chart far along its row.
+      <ul>
+        <li>Proposed: after each draw, bring the open tab and the open chart name into view.</li>
+        <li>Add a soft fade at the right edge of both rows so it is clear there is more.</li>
+      </ul>
+      <div class="where">Where: the tabs are rebuilt with no scroll step at <code>src/app/page.js:366-443</code>; the rows scroll from <code>src/app/styles.js:79</code> and <code>226-227</code>.</div></li>
+    <li>Tap targets are 30 pixels tall on a phone, for tabs and chart names alike.
+      <ul><li>Proposed: 40 pixels at phone width.</li></ul>
+      <div class="where">Where: <code>src/app/styles.js:72</code> and <code>81</code>.</div></li>
+    <li>The browser tab always reads "safety.viz demo", whichever view is open.
+      <ul><li>Proposed: put the view's name first, such as "RBQM · safety.viz demo".</li></ul>
+      <div class="where">Where: <code>scripts/site-lib.mjs:1667</code>; the view changes in <code>select</code> at <code>src/app/page.js:1031-1037</code>.</div></li>
+    <li>The only way from the app to the docs is a link in the footer. The docs header has a clear way in to the app.
+      <ul><li>Proposed: make the wordmark a link to the docs home.</li></ul>
+      <div class="where">Where: <code>src/app/page.js:272-279</code>.</div></li>
+    <li>Two favicons: orange bars on the docs site, the seven-hex mark on the app.
+      <ul><li>Proposed: the hex mark on both.</li></ul>
+      <div class="where">Where: <code>site/shell.html:8-11</code>; <code>scripts/site-lib.mjs:1650</code> and <code>1668</code>.</div></li>
+  </ul>
+  <figure class="phone"><img src="img/phone-rbqm-deeplink.png" alt="The app on a phone, opened straight at the RBQM tab: the tab strip shows Data, Labs and vitals and part of ECG, none marked open"><figcaption>Opened straight at RBQM on a phone. RBQM is the open tab and it is off to the right.</figcaption></figure>
+
+  <h3>Holding at 390 pixels</h3>
+  <ul>
+    <li>Demo app: every view holds except one. In the QT Explorer the table under the chart is 529 pixels wide in a 340 pixel space, and the whole page scrolls sideways.
+      <ul><li>Proposed: let that table scroll inside its own box.</li></ul>
+      <div class="where">Where: the table is made at <code>src/qt-explorer.js:829</code> inside a box with no scroll, styled at <code>src/qt-explorer.js:96</code>.</div></li>
+    <li>Docs site: three pages run wider than the screen. The site hides sideways overflow, so the extra is cut off and cannot be reached.
+      <ul>
+        <li>Any chart's API page: the "On this page" card.</li>
+        <li>The QT Explorer's demo page: the same table.</li>
+        <li>The Hepatic Explorer's demo page.</li>
+      </ul>
+      <div class="where">Where: the cut-off is <code>site/site.css:72</code>; the card is <code>site/site.css:889</code>.</div></li>
+  </ul>
+  <div class="shots">
+    <figure class="phone"><img src="img/phone-qt-table.jpg" alt="The QT Explorer's table on a phone, running off the right edge"><figcaption>QT Explorer in the app: the table runs off the right.</figcaption></figure>
+    <figure class="phone"><img src="img/site-api-phone.jpg" alt="A docs API page on a phone, with its contents card cut off at the right edge"><figcaption>Docs API page: the card is cut at the right.</figcaption></figure>
+  </div>
+
+  <h3>Small things</h3>
+  <ul>
+    <li>The docs home page still describes itself to search engines as "Nine classic clinical-safety graphics". There are fourteen.
+      <div class="where">Where: <code>scripts/site.mjs:78</code>.</div></li>
+    <li>Focus rings are plum on the app's own controls and blue inside the charts. Both are visible. No change proposed.</li>
+    <li>Neither the app nor the docs site has a dark theme. That is consistent. No change proposed.</li>
+    <li>The app and the docs site are two skins: paper, graphite and plum against espresso and orange. That reads as deliberate. No change proposed beyond the favicon.</li>
+  </ul>
+
+  <div class="callout bad" id="defects">
+    <p class="t">Defects in the released app, as opposed to design</p>
+    <ul>
+      <li>Hepatic ALT Waterfall on the pilot study: the two arm titles above the chart print on top of each other, and the right-hand panel's title is squeezed until it cannot be read. The active arm's name is every non-placebo arm joined together, which is too long for the space.
+        <div class="where">Where: the title is set at <code>src/hep-waterfall.js:853</code>.</div></li>
+      <li>QT Explorer at phone width: the sideways page scroll described above.</li>
+      <li>Docs site at phone width: content cut off on the three pages described above.</li>
+      <li>Console: starting R logs one error, "Refused to get unsafe header Content-Encoding", once per copy of R, and one warning about its message channel. Both come from the R runtime, not from the app, and nothing breaks. Not confirmed: the exact line in the runtime.</li>
+      <li>No other console errors and no failed requests on any view, at either width.</li>
+    </ul>
+  </div>
+  <figure class="pan hdr"><img src="img/defect-waterfall-titles.png" alt="The top of the Hepatic ALT Waterfall chart with two titles overlapping and a third squeezed to an unreadable size"><figcaption>Hepatic ALT Waterfall, pilot study, 1280 wide.</figcaption></figure>
+</section>
+
+<!-- ====================================================== PLAN -->
+<section id="plan">
+  <h2>Every proposed change, quick wins first</h2>
+  <p class="ask">One row each. Small is an hour or two with its tests; medium is a day or so; large is several days or reaches into another repository.</p>
+  <div class="tbl cards plan">
+    <table>
+      <thead><tr><th>Change</th><th>Files it touches</th><th>Size</th></tr></thead>
+      <tbody>
+        <tr><td>Give Biomarkers and RBQM their own hex colour, and colour the RBQM metric buttons to match</td><td data-l="Files"><code>src/app/libraries.js</code> <code>src/app/styles.js</code> <code>src/app/page.js</code> <code>scripts/app-libraries.mjs</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>Bring the open tab and chart name into view on a phone; fade the row's right edge</td><td data-l="Files"><code>src/app/page.js</code> <code>src/app/styles.js</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>Correct the docs home page's "Nine classic" description</td><td data-l="Files"><code>scripts/site.mjs</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>Only one RBQM step says it is the longest</td><td data-l="Files"><code>src/app/rbqm.js</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>Let the QT Explorer's table scroll in its own box</td><td data-l="Files"><code>src/qt-explorer.js</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>Stop the docs API card and the Hepatic Explorer demo page being cut off at phone width</td><td data-l="Files"><code>site/site.css</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>RBQM: one right edge for the boxes and cards; caption under both charts</td><td data-l="Files"><code>src/app/styles.js</code> <code>src/app/rbqm-view.js</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>RBQM table: whole rows, a site count, a "more" line, right-aligned numbers, larger phone headings, a hint that cells open a metric</td><td data-l="Files"><code>src/app/styles.js</code> <code>src/app/rbqm-view.js</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>RBQM run box: a headline for the result and a small line for timing and versions</td><td data-l="Files"><code>src/app/rbqm.js</code> <code>src/app/rbqm-view.js</code> <code>src/app/styles.js</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>RBQM notes in one place, under the run box</td><td data-l="Files"><code>src/app/page.js</code> <code>src/app/rbqm-view.js</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>View name in the browser tab; wordmark links to the docs; taller tap targets on a phone</td><td data-l="Files"><code>src/app/page.js</code> <code>src/app/styles.js</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>One favicon for the docs site and the app</td><td data-l="Files"><code>site/shell.html</code></td><td><span class="size s">small</span></td></tr>
+        <tr><td>Hepatic ALT Waterfall: titles that fit when the active arm's name is long</td><td data-l="Files"><code>src/hep-waterfall.js</code>, and that chart's evidence</td><td><span class="size s">small</span></td></tr>
+        <tr><td>RBQM file box: say that own files go here, stay open after a drop, shorter lists</td><td data-l="Files"><code>src/app/rbqm-view.js</code> <code>src/app/rbqm-files.js</code> <code>src/app/styles.js</code></td><td><span class="size m">medium</span></td></tr>
+        <tr><td>A footnote under RBQM, and an "Also in the demo app" strip on the gallery page</td><td data-l="Files"><code>src/app/page.js</code> <code>scripts/app-libraries.mjs</code> <code>scripts/site-lib.mjs</code> <code>site/config.json</code> <code>site/site.css</code></td><td><span class="size m">medium</span></td></tr>
+        <tr><td>The standard R strip: one control, one wording, steps, a plain failure with the browser's words behind a line. Still two copies of R behind it</td><td data-l="Files"><code>src/app/r-on-request.js</code> <code>src/app/page.js</code> <code>src/app/rbqm-view.js</code> <code>src/app/rbqm.js</code> <code>src/app/styles.js</code> <code>scripts/app-libraries.mjs</code></td><td><span class="size m">medium</span></td></tr>
+        <tr><td>The single Experimental label: the component, its place in the app and on the docs pages, a reason per chart, and the old forms retired</td><td data-l="Files"><code>src/shell.js</code> <code>src/hep-waterfall.js</code> <code>src/hep-explorer/views/migration.js</code> <code>src/app/page.js</code> <code>src/app/rbqm-view.js</code> <code>src/app/styles.js</code> <code>scripts/app-libraries.mjs</code> <code>scripts/site-lib.mjs</code> <code>site/site.css</code> <code>site/shell.html</code> <code>site/config.json</code>, and every chart's evidence</td><td><span class="size l">large</span></td></tr>
+        <tr><td>One shared R for the whole app</td><td data-l="Files"><code>src/app/r-browser.js</code> <code>src/app/r-on-request.js</code> <code>src/app/rbqm-view.js</code> <code>scripts/app-libraries.mjs</code>, a bio.viz release, and a fresh copy of bio.viz here</td><td><span class="size l">large</span></td></tr>
+        <tr><td>One set of treatment-arm colours across every chart</td><td data-l="Files">Each safety.viz chart's colour list, bio.viz, and every chart's evidence</td><td><span class="size l">large</span></td></tr>
+        <tr><td>One style for chart names</td><td data-l="Files">bio.viz's chart list, or <code>src/app/page.js</code> where the names are shortened</td><td><span class="size s">small</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>What I could not verify</h3>
+  <ul>
+    <li>The single-file download of the app. I read its two "cannot start R" sentences in the code and did not download and open the file.</li>
+    <li>R on a slow connection or on a real phone. Timings are from this Mac, in the built-in browser and in a headless browser, at phone size.</li>
+    <li>Whether one R can hold both workloads. It is a reading of the code, not a run.</li>
+    <li>Whether gsm.viz lets the app rename the table's first column, show a cell's numbers on tap, or change the charts' typeface.</li>
+    <li>The Time-to-Event Explorer's arm colours are read from a screenshot; the other two sets are measured from the page.</li>
+    <li>The R widgets in gsm.safety. The proposal for a chart with no host is from the shell's code, not from a widget.</li>
+  </ul>
+</section>
+
+<hr>
+<p class="attr">This review was drafted by Claude Code using Opus 5.5 and reviewed by @jwildfire</p>
+
+</div></main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+
+  /* ---------- R strip mock ---------- */
+  var R = {
+    bio: {
+      mb: 13, hosts: 'webr.r-wasm.org',
+      steps: [['Download R, 13 MB', 1400], ['Read the statistics file', 700]],
+      ready: 'R 4.6.0 is running in this browser.',
+      stat: ["Statistics need R. Start R at the top of this chart.", "Statistics: waiting for R…", "Pearson's r: 0.1003, 95% confidence interval -0.0294 to 0.2268. Computed by R in this browser."]
+    },
+    rbqm: {
+      mb: 55, hosts: 'webr.r-wasm.org, repo.r-wasm.org and this page',
+      steps: [['Download R, 13 MB', 1200], ['Install packages, 42 MB', 2200], ['Load gsm', 2600], ['Run the metrics', 1500]],
+      ready: '3 of 8 metrics ran on adsl.csv and adae.csv',
+      stat: ['', '', '']
+    }
+  };
+  var rs = { ctx: 'bio', state: 'off', step: 0, t0: 0, fail: false, timer: null, tick: null };
+  function rClear() { clearTimeout(rs.timer); clearInterval(rs.tick); }
+  function rDraw() {
+    var c = R[rs.ctx], strip = $('rstrip'), btn = $('rbtn'), body = $('rbody');
+    strip.dataset.state = rs.state;
+    $('rbars').parentElement.style.display = rs.ctx === 'bio' ? '' : 'none';
+    if (rs.state === 'off') {
+      btn.textContent = 'Start R'; btn.disabled = false;
+      body.innerHTML = '<p class="head">R runs in this browser.</p><p class="sub">Starting it downloads about ' + c.mb + ' MB once, from ' + c.hosts + '. Your data stays here.</p>';
+      $('rstat').textContent = c.stat[0];
+    } else if (rs.state === 'starting') {
+      btn.textContent = 'Starting R…'; btn.disabled = true;
+      var secs = Math.round((Date.now() - rs.t0) / 1000);
+      body.innerHTML = '<p class="head">Starting R <span style="font-weight:400;color:var(--soft)">' + secs + (secs === 1 ? ' second' : ' seconds') + ' so far</span></p><ol class="rsteps">' +
+        c.steps.map(function (s, i) { return '<li data-s="' + (i < rs.step ? 'done' : i === rs.step ? 'now' : 'todo') + '">' + s[0] + '</li>'; }).join('') + '</ol>';
+      $('rstat').textContent = c.stat[1];
+    } else if (rs.state === 'ready') {
+      btn.textContent = rs.ctx === 'rbqm' ? 'Run again' : 'R is ready'; btn.disabled = rs.ctx !== 'rbqm';
+      body.innerHTML = rs.ctx === 'rbqm'
+        ? '<p class="head">' + c.ready + '</p><div class="rmeta"><span>4.4 seconds</span><span>snapshot 2026-10-09</span><span>R 4.6.0</span><span>gsm.core 1.3.1</span><span>workflows gsm.kri 1.7.0</span><span>charts gsm.viz 2.4.1</span></div>'
+        : '<p class="head">R is ready</p><p class="sub">' + c.ready + '</p>';
+      $('rstat').textContent = c.stat[2];
+    } else {
+      btn.textContent = 'Try again'; btn.disabled = false;
+      body.innerHTML = '<p class="head">R did not start</p><p class="sub">The download from webr.r-wasm.org did not complete. Check the connection and try again; if it fails again, reload the page.</p>' +
+        '<details><summary>What the browser said</summary><code>Failed to fetch dynamically imported module: https://webr.r-wasm.org/v0.6.0/webr.mjs</code></details>';
+      $('rstat').textContent = c.stat[0];
+    }
+  }
+  function rNext() {
+    var c = R[rs.ctx];
+    if (rs.fail && rs.step === 0) {
+      rs.timer = setTimeout(function () { rClear(); rs.state = 'failed'; rs.fail = false; $('r-fail').setAttribute('aria-pressed', 'false'); rDraw(); }, 1200);
+      return;
+    }
+    if (rs.step >= c.steps.length) { rClear(); rs.state = 'ready'; rDraw(); return; }
+    rs.timer = setTimeout(function () { rs.step += 1; rDraw(); rNext(); }, c.steps[rs.step][1]);
+  }
+  $('rbtn').onclick = function () {
+    rClear(); rs.state = 'starting'; rs.step = 0; rs.t0 = Date.now(); rDraw();
+    rs.tick = setInterval(rDraw, 1000); rNext();
+  };
+  $('r-fail').onclick = function () { rs.fail = !rs.fail; this.setAttribute('aria-pressed', String(rs.fail)); };
+  $('r-reset').onclick = function () { rClear(); rs.state = 'off'; rs.step = 0; rDraw(); };
+  document.querySelectorAll('[data-rctx]').forEach(function (b) {
+    b.onclick = function () {
+      rClear(); rs.ctx = b.dataset.rctx; rs.state = 'off'; rs.step = 0;
+      document.querySelectorAll('[data-rctx]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+      rDraw();
+    };
+  });
+  rDraw();
+
+  /* ---------- Experimental label mock ---------- */
+  var TABS = [
+    ['Labs and vitals', 'var(--s4)'], ['ECG', 'var(--s5)'], ['Adverse events', 'var(--s3)'], ['Biomarkers', 'var(--s1)'], ['RBQM', 'var(--s6)']
+  ];
+  var V = {
+    waterfall: { tab: 0, chips: ['Histogram', 'Hepatic Explorer', 'Hepatic ALT Waterfall', 'Nephrotoxicity Explorer'], on: 2, name: 'Hepatic ALT Waterfall', exp: true,
+      why: null, links: [['Clinical guide', 'https://jwildfire.github.io/safety.viz/hep-waterfall/guide.html'], ['Test evidence', 'https://jwildfire.github.io/safety.viz/hep-waterfall/evidence.html']] },
+    tte: { tab: 2, chips: ['Adverse Event Explorer', 'Adverse Event Timelines', 'Time-to-Event Explorer'], on: 2, name: 'Time-to-Event Explorer', exp: true,
+      why: 'It holds this status until an external clinical review confirms its Kaplan–Meier implementation. Its estimates, intervals and at-risk counts may change after that review.',
+      links: [['Clinical guide', 'https://jwildfire.github.io/safety.viz/time-to-event/guide.html'], ['Test evidence', 'https://jwildfire.github.io/safety.viz/time-to-event/evidence.html']] },
+    rbqm: { tab: 4, chips: null, name: 'The RBQM tab', exp: true,
+      why: 'Draft, from the release notes: three of the eight metrics run on a standard study. Query, data entry and data change metrics, country-level metrics, the time series chart and the report are not in yet.',
+      links: [] },
+    histogram: { tab: 0, chips: ['Histogram', 'Hepatic Explorer', 'Hepatic ALT Waterfall', 'Nephrotoxicity Explorer'], on: 0, name: 'Histogram', exp: false }
+  };
+  var xs = { view: 'waterfall', place: 'view', open: false, pinned: false };
+  function pill() {
+    return '<button class="status" type="button" id="xbtn" aria-expanded="' + xs.open + '" aria-controls="xpanel">Experimental</button>';
+  }
+  function panel(v) {
+    return '<div class="status-panel" id="xpanel" role="region" aria-label="About this status">' +
+      '<button class="x" type="button" aria-label="Close" id="xclose">×</button>' +
+      '<h5>' + v.name + ' is experimental</h5>' +
+      '<p>Still being worked on, and fine to use: its behaviour and settings may change.</p>' +
+      '<dl><dt>Why this one</dt><dd' + (v.why ? '' : ' class="todo"') + '>' + (v.why || 'A sentence from you. None is written down today.') + '</dd></dl>' +
+      (v.links.length ? '<div class="links">' + v.links.map(function (l) { return '<a href="' + l[1] + '">' + l[0] + '</a>'; }).join('') + '</div>' : '') +
+      '</div>';
+  }
+  function xDraw() {
+    var v = V[xs.view], hue = TABS[v.tab][1], atName = xs.place === 'name';
+    $('xmock').style.setProperty('--hue', hue);
+    $('xtabs').innerHTML = TABS.map(function (t, i) {
+      return '<span class="m-tab' + (i === v.tab ? ' on' : '') + '" style="--hue:' + t[1] + '"><span class="hex"></span>' + t[0] + '</span>' +
+        (i === v.tab && !v.chips && v.exp && atName ? pill() : '');
+    }).join('');
+    $('xchips').hidden = !v.chips;
+    $('xchips').innerHTML = v.chips ? v.chips.map(function (c, i) {
+      return '<span class="m-chip' + (i === v.on ? ' on' : '') + '"><span class="hex"></span>' + c + '</span>' + (i === v.on && v.exp && atName ? pill() : '');
+    }).join('') : '';
+    $('xline').innerHTML = v.exp && !atName ? '<div class="status-line">' + pill() + '</div>' : '';
+    $('xpanel-head').innerHTML = v.exp && atName && xs.open ? panel(v) : '';
+    $('xpanel-view').innerHTML = v.exp && !atName && xs.open ? panel(v) : '';
+    $('xchart').innerHTML = v.chips
+      ? '<div class="m-bars"><i style="height:30%"></i><i style="height:55%"></i><i style="height:100%"></i><i style="height:75%"></i><i style="height:45%"></i><i style="height:25%"></i><i style="height:12%"></i><i style="height:6%"></i></div><div class="m-fake" style="width:60%"></div>'
+      : '<div class="m-fake" style="width:85%"></div><div class="m-fake" style="width:70%"></div><div class="m-fake" style="width:78%"></div>';
+    var active = $('xtabs').querySelector('.on'); if (active && active.scrollIntoView) { $('xtabs').scrollLeft = Math.max(0, active.offsetLeft - 40); }
+    var chip = $('xchips').querySelector('.on'); if (chip) { $('xchips').scrollLeft = Math.max(0, chip.offsetLeft - 40); }
+    var btn = $('xbtn');
+    if (btn) {
+      btn.onclick = function () { if (xs.open && xs.pinned) { xs.open = false; xs.pinned = false; } else { xs.open = true; xs.pinned = true; } xDraw(); var b = $('xbtn'); if (b) b.focus(); };
+      if (canHover) {
+        btn.onmouseenter = function () { if (!xs.open) { xs.open = true; xs.pinned = false; xDraw(); } };
+        btn.onmouseleave = function (e) { var p = $('xpanel'); if (!xs.pinned && !(p && e.relatedTarget && p.contains(e.relatedTarget))) { xs.open = false; xDraw(); } };
+      }
+    }
+    var p = $('xpanel');
+    if (p && canHover) p.onmouseleave = function () { if (!xs.pinned) { xs.open = false; xDraw(); } };
+    var x = $('xclose'); if (x) x.onclick = function () { xs.open = false; xs.pinned = false; xDraw(); var b = $('xbtn'); if (b) b.focus(); };
+  }
+  document.querySelectorAll('[data-view]').forEach(function (b) {
+    b.onclick = function () { xs.view = b.dataset.view; xs.open = false; xs.pinned = false; document.querySelectorAll('[data-view]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); }); xDraw(); };
+  });
+  document.querySelectorAll('[data-place]').forEach(function (b) {
+    b.onclick = function () { xs.place = b.dataset.place; document.querySelectorAll('[data-place]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); }); xDraw(); };
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (xs.open) { xs.open = false; xs.pinned = false; xDraw(); }
+    if (!$('ppanel').hidden) { $('ppanel').hidden = true; $('pbtn').setAttribute('aria-expanded', 'false'); }
+  });
+  xDraw();
+
+  /* ---------- every screenshot opens at full size ---------- */
+  document.querySelectorAll('figure img').forEach(function (img) {
+    var a = document.createElement('a'); a.href = img.getAttribute('src'); a.target = '_blank'; a.rel = 'noopener';
+    img.parentNode.insertBefore(a, img); a.appendChild(img);
+  });
+
+  /* ---------- Prototype label on the docs mock ---------- */
+  $('pbtn').onclick = function () { var open = $('ppanel').hidden; $('ppanel').hidden = !open; this.setAttribute('aria-expanded', String(open)); };
+  document.querySelector('[data-close=pbtn]').onclick = function () { $('ppanel').hidden = true; $('pbtn').setAttribute('aria-expanded', 'false'); $('pbtn').focus(); };
+})();
+</script>
+</body>
+</html>
