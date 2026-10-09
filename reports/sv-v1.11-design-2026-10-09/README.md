@@ -2,6 +2,15 @@
 
 Round two of the design for the safety.viz demo app, redone from @jwildfire's feedback on the review of release 1.10 (`reports/sv-demo-design-review-2026-10-09/`). The aim he set for the release: ready to be shown live at the R/Pharma keynote on 21 October 2026, and good enough for people to play with afterwards. It is a design: nothing was built, and no file in safety.viz, bio.viz or gsm.safety was changed.
 
+## Round three (later on 2026-10-09)
+
+The page was updated in place after @jwildfire read round two ("Sooooo much better. Layout of the document is A+"). The earlier version is in this folder's git history at commit `daee527`.
+
+- He asked for options on two things, and the page now shows them: three ways to give the RBQM tab a chart-name row like the other tabs, each starting R with the Biomarkers tab's control in the same place (mockups 4 and 5), and six ways to mark the rung on a status label in place of the four bars, which he said "looks like my wifi is bad" (the Status ladder section, with a switch that changes every label on the page).
+- His answers to round two's decisions are folded in: a label only on a chart or tab below Exploratory; Biomarkers pink and RBQM amber by the rule; the stricter raw-file rule as an interim path ("I'm hoping to move to RAW -> SDTM -> ADaM for everything. Not in this releases though"); the drafted disclaimer and reasons ship and he corrects them at the release candidate.
+- Checked by the subagent at 1,280 and 390 pixels in every mockup state, with real clicks on every switch; by the lead at both widths, with the RBQM options and the label styles read at full size.
+- Not verified in this round: how the three RBQM rows behave at phone width; that per-metric addresses extend cleanly from the app's address handling; how dashed and dotted outlines look on a projector.
+
 ## His feedback, and where it went
 
 - The R control was "a little heavy": it is now one slim control that shrinks to a chip once R is ready (mockup 3).
