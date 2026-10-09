@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz 1.11: draft objective and requirements</title>
+<meta name="description" content="Drafts, not yet filed: one objective and six requirements for safety.viz release 1.11, the demo app made ready for the keynote, each with its definition of done, plus the session order, the cut line and the decisions to make before filing.">
+<style>
+:root{
+  --ground:#faf7f0; --surface:#fffdf9; --surface-2:#f3eee4;
+  --ink:#17191c; --muted:#4f555d; --faint:#7b8089;
+  --border:#e2dccf; --hairline:#ece7dc;
+  --accent:#2f6fa8; --plum:#6c3270; --plum-tint:#f1e6f2;
+  --warn:#9a3412; --good:#2b7a4b;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#121417; --surface:#1a1d22; --surface-2:#22262c;
+    --ink:#e8e6e1; --muted:#b4b0a8; --faint:#7f8590;
+    --border:#2e333a; --hairline:#272b31;
+    --accent:#7fb0e0; --plum:#c79acb; --plum-tint:#2d2130;
+    --warn:#f0a070; --good:#7fcf9c;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121417; --surface:#1a1d22; --surface-2:#22262c;
+  --ink:#e8e6e1; --muted:#b4b0a8; --faint:#7f8590;
+  --border:#2e333a; --hairline:#272b31;
+  --accent:#7fb0e0; --plum:#c79acb; --plum-tint:#2d2130;
+  --warn:#f0a070; --good:#7fcf9c;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+a:hover{border-bottom-color:var(--accent)}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+h1,h2,h3,h4{font-family:var(--display);font-weight:700;letter-spacing:-.015em;line-height:1.2;margin:0}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding:.08em .35em;border-radius:4px}
+.eyebrow{font:600 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);padding-top:44px}
+h1{font-size:clamp(26px,5vw,40px);margin-top:12px;text-wrap:balance}
+.lede{margin:12px 0 0;font-size:17px;color:var(--muted);max-width:68ch}
+h2{font-size:22px;margin:44px 0 12px}
+.lbl{font:600 10.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);display:block;margin:0 0 6px}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:5px 0}
+.note{margin:18px 0 0;padding:14px 18px;border:1px solid var(--border);border-left:3px solid var(--plum);border-radius:6px;background:var(--surface)}
+.note.warn{border-left-color:var(--warn)}
+.note p{margin:0}
+.note ul,.note ol{margin:6px 0 0}
+.tree{list-style:none;padding:0;margin:10px 0 0;border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+.tree li{margin:0;padding:11px 16px;border-top:1px solid var(--hairline)}
+.tree li:first-child{border-top:0;background:var(--plum-tint)}
+.tbl{width:100%;border-collapse:collapse;margin:10px 0 0;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:15px}
+.tblwrap{overflow-x:auto}
+.tbl th,.tbl td{text-align:left;vertical-align:top;padding:9px 12px;border-top:1px solid var(--hairline)}
+.tbl th{font:600 10.5px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border-top:0}
+.draft{margin:14px 0 0;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+.draft summary{cursor:pointer;padding:14px 16px;display:grid;gap:3px;list-style:none}
+.draft summary::-webkit-details-marker{display:none}
+.draft summary .k{font:600 10.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+.draft summary .k::after{content:"  ▸";letter-spacing:0}
+.draft[open] summary .k::after{content:"  ▾"}
+.draft summary .t{font:700 18px/1.3 var(--display)}
+.draft summary .s{color:var(--muted);font-size:15px}
+.draft .meta{padding:12px 16px;border-top:1px solid var(--hairline);background:var(--surface-2)}
+.draft .meta .full{margin:0 0 8px;font-size:14px;color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font:500 11.5px/1.5 var(--mono);padding:1px 8px;border:1px solid var(--border);border-radius:99px;background:var(--surface);color:var(--muted)}
+.tag.ms{border-style:dashed}
+.draft .body{padding:4px 16px 16px}
+.draft .body h4{font-size:15px;margin:22px 0 6px;padding-top:14px;border-top:1px solid var(--hairline)}
+.draft .body p{margin:8px 0}
+.draft .body hr{border:0;border-top:1px solid var(--hairline);margin:18px 0 10px}
+.draft .body hr + p{font-size:13.5px;color:var(--faint)}
+.hid code{color:var(--faint)}
+.tbd{font:500 11.5px/1.5 var(--mono);padding:0 6px;border:1px dashed var(--border);border-radius:4px;color:var(--faint);white-space:nowrap}
+.foot{margin-top:44px;padding-top:14px;border-top:1px solid var(--border);font-size:13.5px;color:var(--faint)}
+</style>
+</head>
+<body><div class="wrap">
+
+<div class="eyebrow">safety.viz · release 1.11 · drafts, not yet filed · 9 October 2026</div>
+<h1>Draft objective and requirements for release 1.11</h1>
+<p class="lede">One objective and six requirements that turn the <a href="./">design for release 1.11</a> into work a session can run. Nothing here is filed on GitHub yet: these are the words that would be filed, for you to change first.</p>
+
+<div class="note">
+<span class="lbl">In three lines</span>
+<ul>
+<li>One new objective, in your words: ready for the demo at the keynote and good enough for people to play with.</li>
+<li>Six requirements under it, one session each, all shipping in safety.viz v1.11.0, with a release candidate in front of you by Thursday 15 October.</li>
+<li>No chart and no metric is added. Nothing the app computes changes.</li>
+</ul>
+</div>
+
+<h2>Decisions before filing</h2>
+<ul>
+<li>A new objective, or an existing one. I recommend a new one. The portfolio view objective was written before the demo app existed and its definition of done names an address that serves nothing today; the RBQM objective was scoped to release 1.10. Neither can honestly hold this work.</li>
+<li>Six requirements, or fewer. Each is sized to one session. The two that could merge are the RBQM tab and the Data tab; I kept them apart so that the Data tab can be cut without holding the RBQM polish.</li>
+<li>The date. A release candidate by Thursday 15 October leaves the weekend and two working days before the talk on Wednesday 21 October.</li>
+<li>The five design decisions on the <a href="./#decisions">design page</a>. The recommended answer to each is already written into these drafts, so answering "as recommended" changes nothing below.</li>
+<li>Two things I pulled in from the backlog because they fit: giving up on an R that stops answering, into the R control requirement, and the chart API pages at phone width, into the defects requirement.</li>
+<li>Three things I left on the backlog and would file as follow-ups: one R shared by both tabs, one set of treatment-arm colours across charts, and the status label in the R widgets.</li>
+</ul>
+
+<h2>The tree, in session order</h2>
+<ol class="tree">
+<li><a href="#d0">Objective: A demo app ready to show</a></li>
+<li><a href="#d1">Requirement 1: Every tab has a colour, and the first screen says where you are</a></li>
+<li><a href="#d2">Requirement 2: One status ladder</a></li>
+<li><a href="#d3">Requirement 3: One R control</a></li>
+<li><a href="#d4">Requirement 4: The RBQM tab reads at a glance</a></li>
+<li><a href="#d5">Requirement 5: All files come in on the Data tab</a></li>
+<li><a href="#d6">Requirement 6: Nothing looks broken</a></li>
+</ol>
+
+<div class="tblwrap"><table class="tbl">
+<tr><th>Requirement</th><th>Your feedback it answers</th><th>Mockup</th><th>If the calendar slips</th></tr>
+<tr><td>1. Tabs and the first screen</td><td>A module brings its own hex colour; otherwise the app picks an open one</td><td><a href="./#m1h">1</a></td><td>Its welcome line and phone-width items go second</td></tr>
+<tr><td>2. The status ladder</td><td>Everything is exploratory; nothing is qualified; one label</td><td><a href="./#m2h">1, 2</a></td><td>Not cut</td></tr>
+<tr><td>3. The R control</td><td>Streamline, and minimise once loaded</td><td><a href="./#m3h">3</a></td><td>The details behind the chip go third</td></tr>
+<tr><td>4. The RBQM tab</td><td>Icons, capped columns, the log folded</td><td><a href="./#m4h">4, 5</a></td><td>Not cut</td></tr>
+<tr><td>5. Files on the Data tab</td><td>Remove data loading from the RBQM tab</td><td><a href="./#m6h">6</a></td><td>Goes first; the file box then stays where it is</td></tr>
+<tr><td>6. Nothing looks broken</td><td>The defects from the review, and a test that walks the demo path</td><td>Review</td><td>Not cut</td></tr>
+</table></div>
+
+<div class="note warn">
+<span class="lbl">Worth knowing before you approve</span>
+<ul>
+<li>Requirements 1 to 5 all change the same two files of the app, so their sessions run one after another. Requirement 6 can run alongside.</li>
+<li>The status label lives in the code every chart shares, so every chart's test evidence is refreshed once.</li>
+<li>The 100-pixel column rule was measured on the mockup, not on the live table that the gsm.viz library draws. The RBQM requirement checks it on the live table first.</li>
+<li>Tasks are not drafted yet. They are filed in safety.viz, with the v1.11.0 milestone, once you agree the tree.</li>
+</ul>
+</div>
+
+<h2>The drafts</h2>
+<p>Each opens to the full text as it would be filed. A dashed "number on filing" stands where an issue number goes once the issues exist.</p>
+<details class="draft" id="d0" open>
+<summary><span class="k">Objective</span><span class="t">A demo app ready to show</span><span class="s">the safety.viz demo app, clear to a first-time visitor and ready for the keynote</span></summary>
+<div class="meta"><span class="lbl">Title as filed</span><p class="full">Objective: A demo app ready to show — the safety.viz demo app, clear to a first-time visitor and ready for the keynote</p><div class="tags"><span class="tag">objective</span><span class="tag ms">milestone 2026-10-talk</span><span class="tag ms">990 words</span></div></div>
+<div class="body"><p class="hid"><code>&lt;!-- objective-slug: demo-ready --&gt;</code></p>
+<h4>Intent</h4>
+<p>@jwildfire, 2026-10-09, after reading the design review of release 1.10: "Goal is to have this next version ready for demo at keynote and good enough for people to play with, so need extreme focus on UX and usability."</p>
+<p>Release 1.10 put everything in the app: eighteen charts, the biomarker statistics and the RBQM tab, the last two run by R in the browser. This objective adds no chart and no metric. It makes what is there read clearly to someone who has never seen it, on a shared screen at the R/Pharma keynote on Wednesday 21 October 2026 and on a stranger's laptop afterwards. The design is one published page of six desktop mockups with every change numbered (<a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/">design for release 1.11</a>), drawn from his four pieces of feedback:</p>
+<ul>
+<li>The R control is one slim control, the same wherever R runs, and shrinks to a chip once R is ready.</li>
+<li>"All of this is 'exploratory' - nothing is qualified. All results should be confirmed." The status ladder is Qualified, Exploratory, Experimental, Prototype. Nothing is Qualified. The app carries one Exploratory label.</li>
+<li>The RBQM tab uses icons for metric status, a table whose columns fit their numbers, and a log that stays folded until asked for. Files are loaded on the Data tab and nowhere else.</li>
+<li>Every tab has a colour. A module names its own; one that names none is given an open one, never grey.</li>
+</ul>
+<h4>Definition of done</h4>
+<p>End state: on the released demo app (<code>https://jwildfire.github.io/safety.viz/demo/</code>) at 1,280 pixels wide, the header carries one Exploratory label that opens the disclaimer and the four-rung ladder on a click; each of the five Experimental charts and the RBQM tab carries the same label with its own reason; no tab's hex is graphite; R is started from the same control on the Biomarkers tab and the RBQM tab, and that control is a chip once R is ready; the RBQM tab has no file box, shows metric status as icons, draws the site overview with number columns no more than 100 pixels wide, and shows its log as one line until opened; gsm raw files dropped on the Data tab are recognised there and the RBQM tab runs on them; and the four defects found in the review of release 1.10 are gone.</p>
+<p>Proof: a browser test in safety.viz's CI walks the keynote's demo path on the deployed dev demo at 1,280 by 720 pixels with no console error, and its screenshots are in the evidence set; every metric's Results rows still match desktop R's on the RBQM demo study; the network tests still show the study's rows are sent nowhere; every requirement below is closed with its proof comment; safety.viz v1.11.0 is tagged and its demo page is on the hub.</p>
+<p>Ships in: safety.viz v1.11.0, milestone <code>2026-10-talk</code>.</p>
+<h4>Requirements</h4>
+<p>In session order:</p>
+<ol>
+<li>Every tab has a colour, and the first screen says where you are (<span class="tbd">number on filing</span>).</li>
+<li>One status ladder, with one label for the app and one for anything below it (<span class="tbd">number on filing</span>).</li>
+<li>One R control, slim, the same wherever R runs, and a chip once R is ready (<span class="tbd">number on filing</span>).</li>
+<li>The RBQM tab reads at a glance: one run line, status icons, a table that fits its numbers, the log folded away (<span class="tbd">number on filing</span>).</li>
+<li>All files come in on the Data tab: gsm raw files recognised there, and the file box gone from the RBQM tab (<span class="tbd">number on filing</span>).</li>
+<li>Nothing looks broken: the defects found in the review, and the keynote's demo path walked by a test (<span class="tbd">number on filing</span>).</li>
+</ol>
+<h4>Boundaries</h4>
+<ul>
+<li>The design page is the reference. A session builds what its mockup shows; where the mockup cannot be built as drawn, the session says so on its requirement and asks, and does not redesign.</li>
+<li>No chart and no metric is added, and nothing the app computes changes. R computes every number, as now. Files never leave the browser, and the footer's sentence stays true.</li>
+<li>Nothing is labelled Qualified. The build refuses the word until there is a qualification record to point at.</li>
+<li>Requirements 1 to 5 all change the app's page and style files (<code>src/app/page.js</code>, <code>src/app/styles.js</code>), so their sessions run one at a time, in order. Requirement 6 changes chart files and the docs site's styles and can run alongside any of them.</li>
+<li>The file box leaves the RBQM tab in the same pull request that makes the Data tab take raw files, never before, so that a reader's own raw files work at every commit.</li>
+<li>The release candidate is opened by the session of the last requirement to close, with release notes through the release-notes skill and a demo page on the hub. The target is a release candidate in front of @jwildfire by Thursday 15 October, the hub milestone's date.</li>
+<li>The cut line if the calendar slips, first to go first: raw files on the Data tab (requirement 5, leaving the file box where it is); the welcome line and the phone-width navigation items of requirement 1; the details behind the R chip in requirement 3. The status label, the RBQM tab and the defects are not cut.</li>
+<li>Left out, each filed as a follow-up on the <code>backlog</code> milestone when its requirement closes: one R shared by the Biomarkers and RBQM tabs (unproven, and it needs a release of the biomarker library); one set of treatment-arm colours across the QT, time-to-event and biomarker charts; one casing for chart names; a picker to read a file as raw or standard; the status label in gsm.safety's R widgets, which arrives when that package next copies the chart library.</li>
+<li>The RBQM follow-ups already on the backlog (more metrics, country level, the time series chart, the report, mapping non-standard column names) are not part of this objective.</li>
+</ul>
+<hr>
+<p>This issue was drafted by Claude Code using Opus 5.5 from @jwildfire's feedback of 2026-10-09. The tree is signed off only by his comment here.</p></div>
+</details>
+<details class="draft" id="d1">
+<summary><span class="k">Requirement 1</span><span class="t">Every tab has a colour, and the first screen says where you are</span><span class="s">tab colours, counts, a welcome line and the way back to the docs</span></summary>
+<div class="meta"><span class="lbl">Title as filed</span><p class="full">Requirement: every tab has a colour, and the first screen says where you are — tab colours, counts, a welcome line and the way back to the docs</p><div class="tags"><span class="tag">requirement</span><span class="tag">safety</span><span class="tag">status: backlog</span><span class="tag ms">milestone 2026-10-talk</span><span class="tag ms">847 words</span></div></div>
+<div class="body"><h4>Objective</h4>
+<p><span class="tbd">number on filing</span></p>
+<h4>Business Requirement</h4>
+<p>Someone opening the demo app for the first time should know within a few seconds whose data they are looking at, how much is here, and where to go. Today two of the six tabs have a near-black hex and read as switched off, a tab's "9 of 9" has to be worked out, nothing names the study on screen, and the only way back to the docs is a link in the footer. On a shared screen at the keynote the header is what the audience reads first.</p>
+<h4>Overview</h4>
+<p>Give every tab a colour by rule: a module that names a colour for its tab gets it, and one that names none is given the first open colour from a fixed list, so no tab is ever grey (@jwildfire, 2026-10-09: "I like modules bringing their own hex color… If they don't provide one, the app should pick an open one (not default to gray)"). Then make the header and first screen say where the reader is: the Data tab names the loaded study, a tab shows one number when every chart draws, a one-line welcome on first open says whose data this is and where to load your own, the wordmark links to the docs, and the browser tab's title follows the open view. Mockup 1 of the design shows all of it (<a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m1h">design for release 1.11, the first screen</a>).</p>
+<p>Repositories: safety.viz</p>
+<h4>Data Requirement</h4>
+<p><em>Not applicable: no data is involved.</em></p>
+<h4>Design</h4>
+<p>Summary, from the design page's "Tab colours and navigation" group:</p>
+<ul>
+<li>The colour rule. A module's entry in the app's list of libraries may name a tab colour. A module that names none gets the first open colour from a fixed list (pink, then amber, then green), where open means no tab in the header uses it. Modules are taken in the order the app's build lists them, so the same module has the same colour on every load and a module added later moves nobody. Red is never given out: it means "missing" and "did not draw" everywhere in the app. When the list runs out the app goes round again with each colour mixed 40 percent toward ink. Under the rule today, Biomarkers is pink (<code>#c67bb6</code>) and RBQM is amber (<code>#c78a3b</code>); naming a colour for either is one line (<code>src/app/libraries.js</code>, <code>src/app/page.js</code>, <code>src/app/styles.js</code>, <code>scripts/app-libraries.mjs</code>).</li>
+<li>The module's colour is used for its tab, its chart names and its file cards, and by the RBQM tab's own icons.</li>
+<li>A tab's count reads "9" when every chart draws, "5 of 9" when some cannot, and "0" beside a hollow hex when none can. The Data tab names the loaded study ("Pilot study", "Your 3 files").</li>
+<li>A one-line welcome on first open: whose data, how much, and where to load your own. It closes with a cross and nothing is stored.</li>
+<li>The wordmark links to the docs home. The browser tab's title follows the open view ("RBQM · safety.viz demo"). The docs site and the app use one favicon, the hex mark.</li>
+<li>The RBQM tab ends with the same footnote line of links every chart has.</li>
+<li>Phone width: a direct link to a tab scrolls that tab into view, and tabs and chart names are at least 44 pixels tall.</li>
+</ul>
+<p>Open decision for @jwildfire (design page, decision 3): let the rule choose the colours of Biomarkers and RBQM, or name one for either. The recommended answer, the rule, is written into this draft.</p>
+<h4>Definition of done</h4>
+<p>End state: on <code>https://jwildfire.github.io/safety.viz/dev/demo/</code> at 1,280 pixels wide no tab's hex is graphite (<code>#4a525c</code>); Biomarkers and RBQM carry the colours the rule gives them, and the biomarker chart names and the RBQM metric icons use the same colour; a tab shows "9", "5 of 9" or "0" with a hollow hex as described; the Data tab names the loaded study; the first open shows the one-line welcome, which closes and does not come back in that visit; the wordmark is a link to the docs home; the browser tab's title names the open view; the app and the docs site show the same favicon; the RBQM tab ends with its footnote links. At 390 pixels wide a direct link to the RBQM tab opens with that tab in view, and every tab and chart name is at least 44 pixels tall.</p>
+<p>Proof: unit tests of the colour rule pass, covering a named colour kept, the first open colour given, the same answer on a second build, a module added at the end moving nobody, and the list running out without grey; the browser tests in <code>tests/e2e/basic-app.spec.js</code> cover each sentence of the end state; the demo app's requirement matrix (<code>requirements/demo-app.md</code>) has a row for each behaviour, with evidence refreshed by the evidence-update dispatch; a screenshot of the first screen at 1,280 pixels is in <code>docs/evidence/basic-app/</code>.</p>
+<p>Ships in: safety.viz v1.11.0. Each pull request adds its line to the release notes through the release-notes skill and its checker.</p>
+<h4>Tasks</h4>
+<p><em>Filed by the requirement-tasks step once the objective's tree is agreed.</em></p>
+<hr>
+<p>This issue was drafted by Claude Code using Opus 5.5.</p></div>
+</details>
+<details class="draft" id="d2">
+<summary><span class="k">Requirement 2</span><span class="t">One status ladder</span><span class="s">Qualified, Exploratory, Experimental, Prototype — with one label for the app and one for anything below it</span></summary>
+<div class="meta"><span class="lbl">Title as filed</span><p class="full">Requirement: one status ladder — Qualified, Exploratory, Experimental, Prototype — with one label for the app and one for anything below it</p><div class="tags"><span class="tag">requirement</span><span class="tag">safety</span><span class="tag">status: backlog</span><span class="tag ms">milestone 2026-10-talk</span><span class="tag ms">1076 words</span></div></div>
+<div class="body"><h4>Objective</h4>
+<p><span class="tbd">number on filing</span></p>
+<h4>Business Requirement</h4>
+<p>Anyone who opens the app, or is shown it, should be told plainly how far to trust it, in one place and one form. @jwildfire, 2026-10-09: "All of this is 'exploratory' - nothing is qualified. All results should be confirmed. That is the overall app-level disclaimer… Maybe we should add that label to charts as well. So Qualified &gt; Exploratory &gt; Experimental &gt; Prototype. Nothing in this project is qualified right now." Today status shows in four looks with three wordings, four of the six Experimental things carry no mark in the app at all, and every explanation is a hover tooltip, which a phone does not have.</p>
+<h4>Overview</h4>
+<p>Replace the three tiers (unmarked, Experimental, Prototype) with a four-rung ladder and draw it with one component everywhere. The app's header carries one label, Exploratory, which gives a one-line disclaimer on hover and the full disclaimer with the four rungs on a click. A chart or tab below the app's rung carries the same label on the corner of its card, with a one-sentence reason. The docs site uses the same four words and the same component. The banners and pills that say status today are retired. Mockups 1 and 2 of the design show the label closed and open (<a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m2h">design for release 1.11, the labels</a>).</p>
+<p>Repositories: safety.viz</p>
+<h4>Data Requirement</h4>
+<p><em>Not applicable: no data is involved.</em></p>
+<h4>Design</h4>
+<p>Summary, from the design page's "Status ladder and labels" group:</p>
+<ul>
+<li>Storage. In <code>site/config.json</code> each chart and each app tab takes one field, <code>tier</code>, with one of <code>qualified</code>, <code>exploratory</code>, <code>experimental</code>, <code>prototype</code>, and an optional <code>tierNote</code> holding the one-sentence reason. The default when <code>tier</code> is absent is <code>exploratory</code>, so the thirteen unmarked charts need no edit; the five Experimental charts, the RBQM tab and the one Prototype change a flag into the field. <code>status</code> stays as it is: it says whether a chart exists yet. A chart from another library is Exploratory unless that library's own list says otherwise by the same field.</li>
+<li>The build stops with a sentence if any entry says <code>qualified</code>.</li>
+<li>The app does not know a chart's rung today; only the docs site reads the flags. The app build hands each chart's rung and note to the page.</li>
+<li>The component. A small label, ink on white, with a four-bar glyph filled up to the rung so that it does not read as a tab colour. Hover shows one line. A click or tap opens a panel and keeps it open; Escape, the cross or a second click closes it; it is reachable by keyboard. The panel holds the reason (for a chart), then the four rungs with the current one marked.</li>
+<li>Placement. One label in the app header. One more, at most, on the open view: on the corner of the card of a chart or tab below Exploratory. Where the header has no room for the word the label shrinks to its bars and keeps its name for a screen reader.</li>
+<li>The docs site. Gallery cards and the title of each chart's pages use the same component and words: Exploratory, Experimental or Prototype.</li>
+<li>Retired: the amber banner drawn inside the Hepatic ALT Waterfall and one view of the Hepatic Explorer, the pill inside the RBQM tab and the one in its opening sentence, the width rule that hides it, and every hover-only tooltip.</li>
+<li>A chart drawn with no page around it, as the R widgets in gsm.safety draw it, must still say when it is below Exploratory. The chart draws the label itself unless its host says it is showing one.</li>
+<li>The label lives in the charts' shared shell (<code>src/shell.js</code>), so every chart's evidence changes: plan one refresh through the evidence-update dispatch, and open the pull request after its commit.</li>
+<li>Prototype is unchanged as a rule: on the docs site only, not in the app, not counted.</li>
+</ul>
+<p>Open decisions for @jwildfire, each with the recommended answer written into this draft:</p>
+<ul>
+<li>Which charts carry their own label (design page, decision 1): only those below the app's rung, or every chart.</li>
+<li>The words of the disclaimer (decision 2). Proposed hover line: "Nothing in this app is qualified. Confirm every result." Proposed panel: "Nothing here is qualified. The charts, statistics and site metrics are tested and documented, but none has been through qualification. Confirm every result in a qualified system before you rely on it."</li>
+<li>The reason shown for each Experimental label (decision 5). One sentence is from the docs site; five are drafts on the design page for him to correct.</li>
+</ul>
+<p>The hub requirement to remove the Experimental marking from the Time-to-Event Explorer after its external clinical review (#182) is unchanged in substance: under the ladder that chart moves up to Exploratory.</p>
+<h4>Definition of done</h4>
+<p>End state: on <code>https://jwildfire.github.io/safety.viz/dev/demo/</code> the header shows one label reading Exploratory. Hovering it shows the one-line disclaimer; clicking it opens a panel with the disclaimer and the four rungs, the app's rung marked; Escape closes it; it can be reached and opened from the keyboard. Opening each of the five Experimental charts, and the RBQM tab, shows the same label on the card with that chart's reason; opening an Exploratory chart shows no second label. No chart draws a status banner inside itself in the app, and the RBQM tab carries no pill. On the docs site every gallery card and chart page title shows its rung with the same component, and its detail opens on a click. <code>site/config.json</code> holds <code>tier</code> and no <code>experimental</code> or <code>prototype</code> flag, and the build fails with a sentence when an entry says <code>qualified</code>. A chart below Exploratory drawn alone, with no host, still shows its label. The label and its panel hold at a 390-pixel viewport.</p>
+<p>Proof: unit tests pass for the default rung, the refused <code>qualified</code>, and the component's open, close and keyboard behaviour; browser tests in <code>tests/e2e/basic-app.spec.js</code> and <code>tests/e2e/site.spec.js</code> cover the app label, each of the six labels below it with its reason, an Exploratory chart with none, and the docs pages; <code>npm run evidence:check</code> passes after the evidence-update dispatch has refreshed every chart; the demo app's requirement matrix has a row for each behaviour. The closing comment quotes the disclaimer and the six reasons as shipped.</p>
+<p>Ships in: safety.viz v1.11.0. Each pull request adds its line to the release notes through the release-notes skill and its checker.</p>
+<h4>Tasks</h4>
+<p><em>Filed by the requirement-tasks step once the objective's tree is agreed.</em></p>
+<hr>
+<p>This issue was drafted by Claude Code using Opus 5.5.</p></div>
+</details>
+<details class="draft" id="d3">
+<summary><span class="k">Requirement 3</span><span class="t">One R control</span><span class="s">slim, the same wherever R runs, and a chip once R is ready</span></summary>
+<div class="meta"><span class="lbl">Title as filed</span><p class="full">Requirement: one R control — slim, the same wherever R runs, and a chip once R is ready</p><div class="tags"><span class="tag">requirement</span><span class="tag">safety</span><span class="tag">status: backlog</span><span class="tag ms">milestone 2026-10-talk</span><span class="tag ms">940 words</span></div></div>
+<div class="body"><h4>Objective</h4>
+<p><span class="tbd">number on filing</span></p>
+<h4>Business Requirement</h4>
+<p>Starting R should look and read the same wherever the app does it, take almost no room, and get out of the way once R is running. Today R is started in two places that were built one release apart: a pill in the row of chart names on the Biomarkers tab and a button in a box on the RBQM tab, with two wordings, two button styles, two ways of reporting a failure, and a greyed "R started" pill that never leaves. @jwildfire on the first proposal, 2026-10-09: "The R strip is a little heavy. Streamline. Minimize once it's loaded. The approach is ok though."</p>
+<h4>Overview</h4>
+<p>Build one R control with four states (off, starting, ready, did not start) and one set of sentences, and use it in both places. On the Biomarkers tab it sits at the right end of the chart-name row; on the RBQM tab it is the button of that tab's run line, which the RBQM requirement draws. Once R is ready the control shrinks to a quiet chip that opens the details on a click. R still starts only when the reader asks, and the app still starts two separate copies of R: one shared copy is left out of this release. Mockup 3 of the design shows the five states (<a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m3h">design for release 1.11, the R control</a>).</p>
+<p>Repositories: safety.viz</p>
+<h4>Data Requirement</h4>
+<p><em>Not applicable: no data is involved.</em></p>
+<h4>Design</h4>
+<p>Summary, from the design page's "R presentation" group:</p>
+<ul>
+<li>One module for the control, replacing the pill built in <code>src/app/page.js</code> and the states in <code>src/app/r-on-request.js</code>, with the two button styles in <code>src/app/styles.js</code> made one.</li>
+<li>Off: a few words for why, the cost in megabytes, one button. The whole sentence is on hover. On a phone the control stays first in the row so that it shows without scrolling.</li>
+<li>Starting, on the Biomarkers tab: a spinner and a count of seconds, with no list of steps, because R there was ready in 1.5 to 4.6 seconds in every run measured. The RBQM tab's longer start shows its steps in that tab's run line.</li>
+<li>Ready: a chip. A click opens R's version, the size of the download and where R runs.</li>
+<li>Did not start: the words, in the app's alarm colour, with Try again beside them and the browser's own message one click away. The same sentence on both tabs, with one prefix and no raw error in the first line.</li>
+<li>One set of sentences for both tabs (<code>src/app/r-on-request.js</code>, <code>src/app/rbqm.js</code>). The sentence inside a biomarker chart, where the statistics will go, is cut to one short line that points at the control; the app owns that sentence, so the biomarker library does not change.</li>
+<li>An R that stops answering. The open task to give up on an R that stops answering (safety.viz#261) is done here: after a stated limit the control says R stopped answering, closes that R and offers to try again.</li>
+<li>The message logged in the console on each R start ("Refused to get unsafe header Content-Encoding") is looked at here: removed if the app causes it, and recorded on the task if it is the R runtime's own.</li>
+<li>The footer's sentence about where R is downloaded from, and the two network tests behind it, do not change.</li>
+<li>Left out, and filed as a follow-up when this closes: one R shared by both tabs. It looks possible from the code, but nobody has run the biomarker statistics and gsm's packages in one R in a browser, and it needs a release of the biomarker library.</li>
+</ul>
+<p>Not verified in the design: whether the biomarker library's R can be asked for its version without a release of that library. If it cannot, the chip's details on that tab say so in the release notes and show what they can.</p>
+<h4>Definition of done</h4>
+<p>End state: on <code>https://jwildfire.github.io/safety.viz/dev/demo/</code>, a biomarker chart shows the R control at the right end of the chart-name row. Before a press it reads its short reason, its cost and Start R. Pressing it shows a spinner and seconds, then a chip that says R is ready; clicking the chip opens R's version, download size and where it runs. No disabled "R started" pill is left in the row, and the line inside the chart is one short sentence pointing at the control. With R's host blocked, both tabs show the same "R did not start" sentence with Try again beside it and the browser's message behind a disclosure. The RBQM tab's button is the same component with the same sentences. An R that does not answer within the stated limit leaves the tab saying so, with a control that starts R again. The control holds at a 390-pixel viewport.</p>
+<p>Proof: unit tests pass for the four states and for the one set of sentences; browser tests in <code>tests/e2e/basic-app.spec.js</code> cover a start on each tab, the chip and its details, a blocked host on each tab, and an R that stops answering; the network tests pass unchanged; the demo app's requirement matrix has a row for each behaviour, with evidence refreshed by the evidence-update dispatch. The closing comment names the follow-up filed for one shared R and says what was found about the console message.</p>
+<p>Ships in: safety.viz v1.11.0. Each pull request adds its line to the release notes through the release-notes skill and its checker.</p>
+<h4>Tasks</h4>
+<p><em>Filed by the requirement-tasks step once the objective's tree is agreed. The open task to give up on an R that stops answering (safety.viz#261) is linked here and moved to the v1.11.0 milestone.</em></p>
+<hr>
+<p>This issue was drafted by Claude Code using Opus 5.5.</p></div>
+</details>
+<details class="draft" id="d4">
+<summary><span class="k">Requirement 4</span><span class="t">The RBQM tab reads at a glance</span><span class="s">one run line, status icons, a table that fits its numbers, and the log folded away</span></summary>
+<div class="meta"><span class="lbl">Title as filed</span><p class="full">Requirement: the RBQM tab reads at a glance — one run line, status icons, a table that fits its numbers, and the log folded away</p><div class="tags"><span class="tag">requirement</span><span class="tag">safety</span><span class="tag">status: backlog</span><span class="tag ms">milestone 2026-10-talk</span><span class="tag ms">1090 words</span></div></div>
+<div class="body"><h4>Objective</h4>
+<p><span class="tbd">number on filing</span></p>
+<h4>Business Requirement</h4>
+<p>The RBQM tab is the centre of the keynote's demonstration, and what it does is right. How it reads is not yet: it opens on a paragraph and an empty page, its run box holds a paragraph of timings and versions that outweighs the results, the site overview spreads three columns of numbers across the whole card, and each metric's state is a word in capitals. @jwildfire, 2026-10-09: "Use icons for the Metric status… Give max widths to the chart columns… the logging component is way over-emphasized. minimize unless user wants to expand it." Someone watching a shared screen should see the result first and the machinery only when they ask.</p>
+<h4>Overview</h4>
+<p>Polish the tab without changing what it computes or draws. The run box becomes one run line: before a run, the button with how many metrics the loaded study supports; while running, the step named with six segments filling and seconds counting; after, one sentence saying what ran and how long it took, with Run again and Run details. Run details holds everything the box shows today and stays closed until opened. Metric status becomes an icon with the words on hover and in the accessible name. The site overview's number and flag columns are capped at 100 pixels so the table takes only the width it needs, with a count of sites, a key to the flags, and a height that ends on a whole row. Mockups 4 and 5 of the design show the tab before, during and after a run (<a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m4h">design for release 1.11, the RBQM tab</a>).</p>
+<p>Repositories: safety.viz</p>
+<h4>Data Requirement</h4>
+<p><em>Not applicable: the tab runs on the same files as in release 1.10, and its data loading is the subject of the Data tab requirement.</em></p>
+<h4>Design</h4>
+<p>Summary, from the design page's "RBQM tab" group:</p>
+<ul>
+<li>The run line (<code>src/app/rbqm-view.js</code>, <code>src/app/rbqm.js</code>, <code>src/app/styles.js</code>). Its button is the R control from the R control requirement, which closes first. Before: the button, how many metrics the loaded study supports, and the cost in megabytes at the right. Running: the step's name and number, six segments, seconds. Only one step is called the long one. After: "R ran 3 of 8 metrics in 3.1 seconds", then Run again and Run details.</li>
+<li>Run details, behind a disclosure, closed by default: the steps, what R was handed, why any metric did not run, the versions of R and the gsm packages, and R's warnings. Notes about a load and notes from R, which sit in two places today, both go here or directly under the run line.</li>
+<li>Metric status icons: a filled green hex with a tick for ran; a grey outlined hex with a bar for did not run, grey because missing data is not an error; a turning ring for running, still when the reader asks for reduced motion; a dashed outlined hex for not started. The button's accessible name carries the metric and its state in words, and hovering a metric that did not run shows R's own sentence. A short key under the buttons lists only the states on screen.</li>
+<li>Before a run the metrics are listed with their icons, and a placeholder says what will appear and roughly how long it takes.</li>
+<li>The site overview. Every number and flag column is at most 100 pixels wide and the table fits its content, so with three metrics adjacent numbers sit 100 pixels apart; with eight metrics the columns shrink evenly and the table fills the card with no sideways scroll. The heading counts the sites ("17 sites, 12 shown here"). The table's height is a whole number of rows. A key to the flags sits beside the table when there is room and under it when not, with one line saying a cell opens its metric below.</li>
+<li>Layout: the run line and the cards share one right edge; the chart caption sits under the pair of charts; column headings at phone width are at least 10 pixels.</li>
+<li>The opening sentence is one line, with the tab's status label at its right end once the status ladder requirement has landed.</li>
+<li>Left out: a time for each step in Run details.</li>
+</ul>
+<p>Not verified in the design: the 100-pixel rule was measured on the mockup's own table with the app's styles, not on the live table that the gsm.viz library draws. Its cells carry no widths of their own, so the rule should hold; the first task checks it on the live table before anything else is built on it.</p>
+<h4>Definition of done</h4>
+<p>End state: on <code>https://jwildfire.github.io/safety.viz/dev/demo/</code> at 1,280 pixels wide, the RBQM tab on the pilot study opens with one run line, the eight metrics listed with status icons, and a placeholder where results will be. While R runs the line names the step, fills six segments and counts seconds. After the run the line reads what ran and how long it took, with Run again and Run details; Run details is closed, and opening it shows the steps, what R was handed, why each of the five other metrics did not run, the versions and any warnings. Each metric button shows an icon and has an accessible name of the form "Adverse Event Rate: ran". In the site overview no number or flag column is wider than 100 pixels, the table is narrower than its card with three metrics, and on the RBQM demo study with eight metrics the table fits the card with no sideways scroll; the heading counts the sites; the last visible row is whole; the key to the flags is shown. The tab holds at a 390-pixel viewport with column headings at least 10 pixels tall.</p>
+<p>Proof: the browser test that holds every metric's Results rows to desktop R's on the RBQM demo study passes unchanged, which is the proof that nothing computed has changed; browser tests in <code>tests/e2e/basic-app.spec.js</code> measure the column widths and the table's width on both studies and cover the run line's three states, Run details closed and open, and the icons with their accessible names; unit tests pass; the demo app's requirement matrix has a row for each behaviour, with evidence refreshed by the evidence-update dispatch; screenshots of the tab before, during and after a run at 1,280 pixels are in <code>docs/evidence/basic-app/</code>.</p>
+<p>Ships in: safety.viz v1.11.0. Each pull request adds its line to the release notes through the release-notes skill and its checker.</p>
+<h4>Tasks</h4>
+<p><em>Filed by the requirement-tasks step once the objective's tree is agreed.</em></p>
+<hr>
+<p>This issue was drafted by Claude Code using Opus 5.5.</p></div>
+</details>
+<details class="draft" id="d5">
+<summary><span class="k">Requirement 5</span><span class="t">All files come in on the Data tab</span><span class="s">gsm raw files recognised there, and the file box gone from the RBQM tab</span></summary>
+<div class="meta"><span class="lbl">Title as filed</span><p class="full">Requirement: all files come in on the Data tab — gsm raw files recognised there, and the file box gone from the RBQM tab</p><div class="tags"><span class="tag">requirement</span><span class="tag">safety</span><span class="tag">status: backlog</span><span class="tag ms">milestone 2026-10-talk</span><span class="tag ms">1161 words</span></div></div>
+<div class="body"><h4>Objective</h4>
+<p><span class="tbd">number on filing</span></p>
+<h4>Business Requirement</h4>
+<p>There should be one place in the app to load files. Today there are two: the Data tab for a study's standard files, and a file box on the RBQM tab for gsm's raw files. A reader who drops raw files where every other file goes gets the wrong answer: on release 1.10, <code>Raw_SUBJ.csv</code> dropped on the Data tab is read as the subject-level file, <code>Raw_AE.csv</code> as the adverse events file, <code>Raw_PD.csv</code> is not placed, and the RBQM tab then reads "0 of 8". @jwildfire, 2026-10-09: "Just remove the data loading from that component. People should load data in the data tab."</p>
+<h4>Overview</h4>
+<p>Make the Data tab recognise gsm raw files and keep them as they are, show there which RBQM metrics the loaded data supports, and take the file box off the RBQM tab, which keeps one line and a link. Almost everything needed is already shared: the app, not the RBQM tab, holds the raw files; the Data tab already draws a card for each; the RBQM demo study already arrives through the Data tab's study menu; and everything that decides what a file is lives in one module with no page code in it. The one real change in behaviour is routing: the Data tab's drop zone has to ask whether a file is raw before it reads it as a standard file. Mockup 6 of the design shows the Data tab in three states (<a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m6h">design for release 1.11, the Data tab</a>).</p>
+<p>Repositories: safety.viz</p>
+<h4>Data Requirement</h4>
+<p>Required domains: gsm's nine raw domains as in release 1.10, none of them required for the tab to open: <code>Raw_SUBJ</code>, <code>Raw_AE</code>, <code>Raw_PD</code>, <code>Raw_LB</code>, <code>Raw_STUDCOMP</code> and <code>Raw_SDRGCOMP</code> for the metrics; <code>Raw_SITE</code>, <code>Raw_STUDY</code> and <code>Raw_ENROLL</code> for the Groups table.</p>
+<p>Required columns: what each mapping workflow's <code>spec</code> names, read from the copied workflow files as now and not written into the app.</p>
+<p>Telling a raw file from a standard one: a file is a gsm raw file only when its name starts with <code>Raw_</code> or its columns match exactly one raw domain. The RBQM tab's rule today places a file by its name alone, which is safe on a tab where every file is raw and wrong on a shared drop zone: it would turn the <code>ae.csv</code> of the "Renamed columns" demo study into <code>Raw_AE</code> (confirmed in the design by running the placing function on that file). Raw files are CSV; the Data tab also takes JSON, so the CSV-only rule and its sentence move with the routing.</p>
+<p>Availability: Confirmed. The RBQM demo study and the pilot study ship with the app; a set of three raw files for the tests is cut from the RBQM demo study.</p>
+<h4>Design</h4>
+<p>Summary, from the design page's "Data loading for RBQM on the Data tab" group:</p>
+<ul>
+<li>Routing (<code>src/app/page.js</code>, <code>src/app/rbqm-files.js</code>). The Data tab's drop zone asks first whether a file is raw, by the rule above, and sends it to the loader that keeps a file as it is. A mixed drop clears a loaded demo study once and says so once. A raw file still wins over the table R would make from a standard file.</li>
+<li>The seam (<code>src/app/libraries.js</code>, <code>src/app/rbqm-view.js</code>). A tab may say "these files are mine, and here is what the loaded data supports", so the Data tab asks the RBQM tab and holds no RBQM knowledge of its own.</li>
+<li>The Data tab (<code>src/app/data-panel.js</code>). One card for RBQM says how many metrics the loaded data supports, with the same status icons as the tab and the reasons in R's own words, and a button that opens the tab. One table lists the raw files: the file, the raw domain it was read as, how that was told, its rows and columns. For a study of standard files the card says which raw tables R makes from which file. Step three of the workflow reads "Open the RBQM tab" when raw files are loaded and no chart is ready. The drop zone says it takes both kinds of file.</li>
+<li>The RBQM tab. The drop zone, the file box and its three lists are removed; one line stays, saying how many metrics the loaded study supports with a link to the Data tab.</li>
+<li>The sentences that say why a metric cannot run are held word for word to desktop R by a unit test. They are drawn in a new place and not reworded.</li>
+<li>Tests are the larger half of the work: the RBQM tab's unit tests mention the file box on 32 lines, and the browser tests that cover a reader's own files on that tab are rewritten for the Data tab along with the requirement rows they prove.</li>
+<li>Left out: a picker to read a file the other way, as raw or as standard. It is added only if a real file trips the rule.</li>
+</ul>
+<p>Open decision for @jwildfire (design page, decision 4): the stricter rule above, or the RBQM tab's name-first rule of today. The recommended answer, the stricter rule, is written into this draft.</p>
+<h4>Definition of done</h4>
+<p>End state: on <code>https://jwildfire.github.io/safety.viz/dev/demo/</code>, dropping <code>Raw_SUBJ.csv</code>, <code>Raw_AE.csv</code> and <code>Raw_PD.csv</code> on the Data tab lists the three under gsm raw files with the raw domain each was read as and how that was told; the RBQM card reads "This data supports 4 of 8 metrics" with a status icon for each metric and R's sentence for each that cannot run; step three reads "Open the RBQM tab"; and pressing the run button on the RBQM tab runs those four metrics. Choosing the RBQM demo study shows nine raw files and 8 of 8; choosing the pilot study shows 3 of 8 and which raw tables R makes from which file. The "Renamed columns" demo study's <code>ae.csv</code> is still read as a standard file and its charts still draw. A raw file that is not CSV is refused with a sentence. The RBQM tab has no drop zone and no file box, and carries one line with a link to the Data tab. Nothing in the tab's results has changed.</p>
+<p>Proof: a browser test drops the three raw files on the Data tab, runs the RBQM tab and holds each metric's Results rows to desktop R's on the same three files; browser tests cover the three Data tab states, the "Renamed columns" study and a mixed drop; the unit test that holds the sentences to desktop R passes unchanged; the network tests still show no row of the study is sent anywhere; the demo app's requirement matrix carries the moved rows, with evidence refreshed by the evidence-update dispatch. The closing comment says what the Data tab of release 1.10 did with the same three files, beside what it does now.</p>
+<p>Ships in: safety.viz v1.11.0. Each pull request adds its line to the release notes through the release-notes skill and its checker.</p>
+<h4>Tasks</h4>
+<p><em>Filed by the requirement-tasks step once the objective's tree is agreed.</em></p>
+<hr>
+<p>This issue was drafted by Claude Code using Opus 5.5.</p></div>
+</details>
+<details class="draft" id="d6">
+<summary><span class="k">Requirement 6</span><span class="t">Nothing looks broken</span><span class="s">the defects found in the review of release 1.10, and the keynote&#x27;s demo path walked by a test</span></summary>
+<div class="meta"><span class="lbl">Title as filed</span><p class="full">Requirement: nothing looks broken — the defects found in the review of release 1.10, and the keynote&#x27;s demo path walked by a test</p><div class="tags"><span class="tag">requirement</span><span class="tag">safety</span><span class="tag">status: backlog</span><span class="tag ms">milestone 2026-10-talk</span><span class="tag ms">787 words</span></div></div>
+<div class="body"><h4>Objective</h4>
+<p><span class="tbd">number on filing</span></p>
+<h4>Business Requirement</h4>
+<p>Nothing in a live demonstration should look broken, and nothing a stranger opens afterwards should either. The design review of release 1.10 found four things that are defects and not matters of taste: on the pilot study the Hepatic ALT Waterfall's two arm titles print on top of each other; at phone width the QT Explorer's table pushes the whole page sideways; at phone width three kinds of page on the docs site have content cut off where it cannot be reached; and the docs home page still describes itself as nine charts. Separately, nothing today checks that the path the keynote will walk works from end to end on the deployed site.</p>
+<h4>Overview</h4>
+<p>Fix the four defects, each in the chart or the site file that causes it, and add one browser test that walks the keynote's demo path on the deployed dev demo at the size of a shared screen. None of this touches the app's shell, so the session can run alongside the other requirements of the objective. The findings and their causes are in the review (<a href="https://jwildfire.github.io/obot.roadmap/reports/sv-demo-design-review-2026-10-09/">design review of release 1.10, defects</a>).</p>
+<p>Repositories: safety.viz</p>
+<h4>Data Requirement</h4>
+<p><em>Not applicable: the fixes run on the demo studies that ship with the app.</em></p>
+<h4>Design</h4>
+<p>Summary, from the design page's "Defects and phone-width fixes" group:</p>
+<ul>
+<li>Hepatic ALT Waterfall (<code>src/hep-waterfall.js</code>, where the panel titles are set). On the pilot study the active arm's title is every non-placebo arm joined together, too long for its panel. The titles are made to fit: shortened, wrapped or moved, with the full text still available. The chart's evidence is refreshed.</li>
+<li>QT Explorer (<code>src/qt-explorer.js</code>). The table under the chart is 529 pixels wide in a 340-pixel space at phone width. It scrolls inside its own box.</li>
+<li>The docs site at phone width (<code>site/site.css</code>). The site hides sideways overflow, so content wider than the screen is cut off. The open task to hold the chart API reference pages at a 390-pixel viewport (safety.viz#162) is done here, with the same fix for the QT Explorer's and the Hepatic Explorer's demo pages.</li>
+<li>The docs home page's description (<code>scripts/site.mjs</code>) says "Nine classic clinical-safety graphics". The count is taken from the site's configuration and not typed.</li>
+<li>The demo path test. One browser test, run against the deployed dev demo at 1,280 by 720 pixels, in the order the talk will use: the app opens on the pilot study; a chart is opened; the app's status label is opened and closed; an Experimental chart's label is opened; a biomarker chart starts R and shows a statistic; the RBQM tab runs on the pilot study; the RBQM demo study is chosen on the Data tab and the RBQM tab runs its eight metrics. It fails on any console error or failed request and keeps a screenshot of each step. The steps that depend on the other requirements are added as those land; the order of the path is @jwildfire's to change.</li>
+<li>Two smaller items from the same list, the RBQM table's 8-pixel headings on a phone and the two steps that each claim to be the longest, are done by the RBQM tab requirement, which rewrites those lines.</li>
+</ul>
+<h4>Definition of done</h4>
+<p>End state: on <code>https://jwildfire.github.io/safety.viz/dev/demo/</code> at 1,280 pixels wide, on the pilot study, the Hepatic ALT Waterfall's two panel titles do not overlap and each can be read. At a 390-pixel viewport the QT Explorer in the app, and on its docs page, lays out 390 pixels wide with its table scrolling inside its own box; a chart's API reference page and the Hepatic Explorer's demo page show all their content with none cut off. The docs home page's description names the number of charts the site's configuration lists. The demo path test exists and passes on the deployed dev demo.</p>
+<p>Proof: a browser test measures the two waterfall titles' boxes on the pilot study and finds them apart; browser tests at 390 pixels hold the QT Explorer, one API reference page and the Hepatic Explorer's demo page to the viewport's width with their content reachable; a unit test holds the home page's description to the configuration's count; <code>npm run evidence:check</code> passes after the evidence-update dispatch; the demo path test's run on the deployed dev demo is linked in the closing comment, with its screenshots in <code>docs/evidence/basic-app/demo-path/</code>.</p>
+<p>Ships in: safety.viz v1.11.0. Each pull request adds its line to the release notes through the release-notes skill and its checker.</p>
+<h4>Tasks</h4>
+<p><em>Filed by the requirement-tasks step once the objective's tree is agreed. The open task to hold the chart API reference pages at a 390-pixel viewport (safety.viz#162) is linked here and moved to the v1.11.0 milestone.</em></p>
+<hr>
+<p>This issue was drafted by Claude Code using Opus 5.5.</p></div>
+</details>
+
+<p class="foot">These drafts were written by Claude Code using Opus 5.5 from @jwildfire's feedback of 9 October 2026. They are not filed and he has not approved them.</p>
+</div></body></html>

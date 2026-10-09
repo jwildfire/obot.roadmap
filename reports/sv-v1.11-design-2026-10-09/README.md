@@ -17,6 +17,10 @@ Round two of the design for the safety.viz demo app, redone from @jwildfire's fe
 - The tab-colour rule, the status icons, and what moving raw-file loading to the Data tab involves in the code, with its risks.
 - The change list for release 1.11 in six groups, each sized to become one requirement, with what is left out and why.
 
+## The drafts page
+
+`requirements.html` in this folder holds the draft objective and six draft requirements for release 1.11, written by the session's lead from the change list and @jwildfire's feedback under the hub's issue contract. They are drafts: nothing on that page is filed on GitHub, and he has not approved them. Once filed, the issues are the record and that page is history.
+
 ## How it was made
 
 - A design subagent of the session did the work, continuing from its review of release 1.10; the session's lead read the page, looked at each mockup at full size, and published it.
