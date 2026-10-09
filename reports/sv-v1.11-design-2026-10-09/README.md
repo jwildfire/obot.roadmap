@@ -32,7 +32,7 @@ The page was updated in place after @jwildfire read round two ("Sooooo much bett
 
 ## The tree page
 
-`requirements.html` in this folder shows the objective, the six requirements and their tasks as filed on 2026-10-09 (the objective is obot.roadmap#401, the requirements #402 to #407, the tasks safety.viz#268 to #287 with #261 and #162 moved in), with the session order, the cut line, the sign-off command and the prompt that starts the build. The issues are the record; that page is a view of them on the day they were filed.
+`requirements.html` in this folder shows the objective, the seven requirements and their tasks as filed on 2026-10-09 (the objective is obot.roadmap#401, the requirements #402 to #408, the tasks safety.viz#268 to #288 with #261 and #162 moved in, obot.roadmap#409 and obot.agent#361), with the session order, the cut line, the sign-off command and the prompt that starts the build. The issues are the record; that page is a view of them on the day they were filed.
 
 ## How it was made
 
