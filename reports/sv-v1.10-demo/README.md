@@ -1,6 +1,6 @@
 # safety.viz v1.10.0 — annotated demo
 
-Walkthrough of what v1.10.0 adds, built as the review surface for the safety.viz v1.10.0 release candidate. v1.10.0 is everything on safety.viz `dev` after release prep (safety.viz [#256](https://github.com/jwildfire/safety.viz/pull/256), for [#255](https://github.com/jwildfire/safety.viz/issues/255)). The page names the commit it was captured from.
+Walkthrough of what v1.10.0 adds. It was built as the review surface for the safety.viz v1.10.0 release candidate (safety.viz [#257](https://github.com/jwildfire/safety.viz/pull/257)) and reworded when [v1.10.0 was released](https://github.com/jwildfire/safety.viz/releases/tag/v1.10.0). The pictures are from the dev site at 8ecd7ff, the commit the release was made from: release prep (safety.viz [#256](https://github.com/jwildfire/safety.viz/pull/256)) and the fixes for what the release review found (safety.viz [#264](https://github.com/jwildfire/safety.viz/pull/264)). After the release, `capture.mjs` was run with `BASE=https://jwildfire.github.io/safety.viz/` against the released site and all 23 checks held there; those stills were not kept.
 
 The sections cover:
 
