@@ -404,8 +404,8 @@ if (ONLY.includes('5')) {
   check('histogram: neither setting is kept', numbers.histogram.settings, [false, false]);
   check('histogram: no p-value is drawn', [numbers.histogram.annotations, numbers.histogram.p], [0, false]);
   check('histogram: the console says so, once each', numbers.histogram_warnings, [
-    'safety.viz histogram: `test_normality` was removed in v1.10.0 and is ignored. safety.viz computes no statistical test in JavaScript: run the test in R.',
-    'safety.viz histogram: `compare_distributions` was removed in v1.10.0 and is ignored. safety.viz computes no statistical test in JavaScript: run the test in R.'
+    'safety.viz histogram: `test_normality` was removed in v1.10.0 and is ignored. The histogram draws no p-value: run the test in R.',
+    'safety.viz histogram: `compare_distributions` was removed in v1.10.0 and is ignored. The histogram draws no p-value: run the test in R.'
   ]);
   check('histogram: a panel a treatment group', numbers.histogram.panels > 1, true);
   await scrollTo(page, '#container', 12);

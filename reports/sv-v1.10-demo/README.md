@@ -5,11 +5,11 @@ Walkthrough of what v1.10.0 adds, built as the review surface for the safety.viz
 The sections cover:
 
 - the RBQM tab on the study the app opens with (hub [#398](https://github.com/jwildfire/obot.roadmap/issues/398); safety.viz [#253](https://github.com/jwildfire/safety.viz/issues/253));
-- all eight metrics on gsm's raw files, the RBQM study or a reader's own (hub [#374](https://github.com/jwildfire/obot.roadmap/issues/374); safety.viz [#233](https://github.com/jwildfire/safety.viz/issues/233) to [#236](https://github.com/jwildfire/safety.viz/issues/236));
+- all eight metrics on raw files in gsm's format, the RBQM study or a reader's own (hub [#374](https://github.com/jwildfire/obot.roadmap/issues/374); safety.viz [#233](https://github.com/jwildfire/safety.viz/issues/233) to [#236](https://github.com/jwildfire/safety.viz/issues/236));
 - whose code runs in R, what starting R downloads and what stays in the browser (hub [#373](https://github.com/jwildfire/obot.roadmap/issues/373));
 - the footnote under each chart (safety.viz [#246](https://github.com/jwildfire/safety.viz/issues/246)) and the histogram's two removed settings (safety.viz [#188](https://github.com/jwildfire/safety.viz/issues/188)).
 
-Data: the app's pilot demo study, `site/data/` in safety.viz, is 254 participants from the public CDISC pilot study. The RBQM study, `site/data/rbqm/`, is gsm's synthetic demo study, copied from the forkable demo-301 study. No real participant appears.
+Data: the app's pilot demo study, `site/data/` in safety.viz, is 254 participants from the public CDISC pilot study. The RBQM study, `site/data/rbqm/`, is nine raw files in gsm's format for one synthetic study of 765 enrolled participants and 150 sites, copied from the forkable demo-301 study; safety.viz's `docs/DATA_SOURCES.md` records the commit and each file's checksum. No real participant appears.
 
 ## How it was made
 
@@ -45,7 +45,7 @@ Numbers the page states that the capture does not read are safety.viz's own test
 
 - 1,186 site rows on the RBQM study and 51 on the pilot study equal desktop R's to eight decimal places: safety.viz browser tests APP-RBQM-021 and APP-RBQM-047.
 - 1,122 adverse events, 3 serious, 144 of 254 participants who left early: safety.viz unit test APP-RBQM-044.
-- 765 enrolled participants at 150 sites in the RBQM study: safety.viz unit test APP-RBQM-005.
+- 765 enrolled participants and 150 sites in the RBQM study: safety.viz unit test APP-RBQM-005.
 - Every request held to a read at three addresses: safety.viz browser tests APP-RBQM-030, APP-RBQM-039 and APP-RBQM-047.
 
 ## Stills

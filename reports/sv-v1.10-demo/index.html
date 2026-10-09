@@ -158,9 +158,9 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   <p class="lede">The demo app gains an RBQM tab. It scores a study’s sites with gsm’s own site metrics, worked out by R in your browser and drawn with gsm.viz’s own charts, on the study the other tabs are already drawing. The tab is Experimental. The histogram loses two deprecated settings, and no other chart changes.</p>
   <p class="facts">
     <span><b>3</b> of <b>8</b> metrics on the study the app opens with, at <b>17</b> sites</span>
-    <span><b>8</b> of <b>8</b> on gsm’s raw files, at <b>150</b> sites</span>
+    <span><b>8</b> of <b>8</b> on raw files in gsm’s format, at <b>150</b> sites</span>
     <span>starting R: about <b>55.2 MB</b>, once</span>
-    <span>safety.viz <b>dev</b> at <a href="https://github.com/jwildfire/safety.viz/commit/0308b53034fd25507a1dbaf93dff2ed45ba00e53">0308b53</a></span>
+    <span>safety.viz <b>dev</b> at <a href="https://github.com/jwildfire/safety.viz/commit/8ecd7ff8cd73ea8b9b5e597e991701465ae6ecbe">8ecd7ff</a></span>
   </p>
 
   <div class="note">
@@ -177,9 +177,9 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
     <p class="lbl">Where it stands</p>
     <ul>
       <li>This is the review page for a release candidate. Nothing here is released until the owner approves it (<a href="https://github.com/jwildfire/safety.viz/pull/257">the release candidate</a>).</li>
-      <li>Every picture was taken on 2026-10-08 from the dev site, which is built from the commit above, with real R running in the browser.</li>
+      <li>Every picture was taken on 2026-10-09 from the dev site, which is built from the commit above, with real R running in the browser.</li>
       <li>A script beside this page holds 23 things the page says to the live page that shows them, and all 23 held (<a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/sv-v1.10-demo/capture-numbers.json">the numbers it read</a>).</li>
-      <li>The data is public or synthetic: the app’s pilot study is the public CDISC pilot study, and the RBQM study is gsm’s synthetic demo study.</li>
+      <li>The data is public or synthetic: the app’s pilot study is the public CDISC pilot study, and the RBQM study is synthetic, copied from the demo-301 study, which is built from the sample study that ships with gsm.core.</li>
     </ul>
   </div>
 </header>
@@ -214,7 +214,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 
   <figure>
     <div class="frame"><img src="media/rbqm-pilot.jpg" alt="The RBQM tab after R has run. A sentence says R ran 3 of 8 metrics on the loaded study’s adsl.csv and adae.csv. The site overview table has 17 rows, with columns for enrolled participants, red flags, amber flags and the three metrics. Beneath it, a row of eight metric buttons, three marked ran, and the adverse event rate’s scatter plot and bar chart." loading="lazy" width="1920" height="2175"></div>
-    <p class="cap">After the press: “R ran 3 of 8 metrics on the loaded study’s adsl.csv and adae.csv in 2.7 seconds, 115 seconds after Start R was pressed.” The overview has a row for each of the 17 sites, and site 705 leads it with a red flag for adverse events. Each tick, arrow and number is the row R returned.</p>
+    <p class="cap">After the press: “R ran 3 of 8 metrics on the loaded study’s adsl.csv and adae.csv in 3.3 seconds, 28 seconds after Start R was pressed.” The overview has a row for each of the 17 sites, and site 705 leads it with a red flag for adverse events. Each tick and arrow is the flag R returned for that site and metric; the red and amber counts are gsm.viz’s count of them.</p>
   </figure>
 
   <div class="strip">
@@ -280,7 +280,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 
   <figure>
     <div class="frame"><img src="media/rbqm-study.jpg" alt="The RBQM tab on the RBQM study: R ran 8 of 8 metrics on the 9 loaded files. The site overview has eight metric columns and its first rows are sites named with their investigators." loading="lazy" width="1920" height="1200"></div>
-    <p class="cap">The RBQM study: gsm’s nine raw files for 765 enrolled participants at 150 sites. “R ran 8 of 8 metrics on the 9 loaded files in 4.1 seconds, 106 seconds after Start R was pressed.” Here a site is labelled with its investigator’s name, because these files have one.</p>
+    <p class="cap">The RBQM study: nine raw files in gsm’s format, for a synthetic study of 150 sites and 765 enrolled participants. “R ran 8 of 8 metrics on the 9 loaded files in 5 seconds, 30 seconds after Start R was pressed.” Here a site is labelled with its investigator’s name, because these files have one.</p>
   </figure>
 
   <figure>
@@ -313,7 +313,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 <!-- ============================================================ 03 -->
 <div class="cut"><span>03 <em>· what R does</em></span></div><section id="how">
   <div class="hd"><h2>What R does, and what stays in the browser</h2></div>
-  <p class="what">R computes every number the tab shows. The app’s JavaScript decides when R is asked, hands R’s tables to gsm.viz and writes the sentences. It computes no rate, score or flag.</p>
+  <p class="what">R computes every rate, score and flag the tab shows. The app’s JavaScript decides when R is asked, hands R’s tables to gsm.viz and writes the sentences. It computes no rate, score or flag. gsm.viz, gsm’s own chart code, counts each site’s red and amber flags for the overview’s two count columns and orders the rows by them.</p>
 
   <h3>Whose code runs</h3>
   <div class="scroll">
@@ -332,7 +332,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   <ul class="list">
     <li>gsm.kri is not in the tab’s list of R’s versions because R cannot report a package it has not installed. The tab now names it in the sentence after that list.</li>
     <li>The steps gsm.kri’s workflows name (input, transform, analyze, flag, summarize) are gsm.core’s functions. Installing gsm.kri would also bring the packages it uses for tables and reports, which the tab does not need.</li>
-    <li>Every copy is held to its release tag by a check that runs on every change.</li>
+    <li>Every copy is held to its release tag by a check that runs on every change. The four packages are built from their tags; a build cannot be compared with its source, so each is held to the checksum recorded when it was built.</li>
   </ul>
 
   <h3>How the loaded study becomes gsm’s tables</h3>
@@ -349,18 +349,28 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   <h3>What it downloads, and what leaves</h3>
   <ul class="list">
     <li>On this capture, starting R downloaded 55.2 MB: 13.0 MB of R from webr.r-wasm.org, 40.0 MB of packages from repo.r-wasm.org, and 2.2 MB of gsm’s packages from the page’s own address. The tab says about 55 MB.</li>
-    <li>The first result came 115 seconds after the press on this capture, over a home connection. On the test runner, which has a faster one, it takes 30 to 50 seconds. A later run takes a few seconds, because R is already up.</li>
+    <li>The first result came 29 seconds after the press on this capture, over a home connection. On the test runner, which has a faster one, it takes 30 to 50 seconds. A later run takes a few seconds, because R is already up.</li>
     <li>Before the press, nothing is asked of R’s addresses.</li>
     <li>Your files are never sent. A test watches every request the tab makes on the pilot study and holds each to a read with no body, to three addresses: the page’s own, webr.r-wasm.org and repo.r-wasm.org. No address carries a participant’s ID.</li>
     <li>The single-file build of the app cannot start R, and its RBQM tab says so.</li>
   </ul>
 
+  <h3>What R tells you when a study is not clean</h3>
+  <ul class="list">
+    <li>R’s warnings are listed under the sentence. A participant with no site is left out of every metric, and the tab says so in R’s words: “R warned: 26 cases of NA's in GroupID, cases are removed in output.”</li>
+    <li>A file with none of its columns mapped does not stop the run: each metric names the columns it needs.</li>
+    <li>When gsm’s reporting stops, as it does when no participant has a site, each metric that ran says so with R’s message.</li>
+    <li>A cell that reads NA is a missing value, as R writes one.</li>
+    <li>A participant listed twice is counted twice, and nothing says so yet (<a href="https://github.com/jwildfire/safety.viz/issues/260">the task for it</a>).</li>
+  </ul>
+  <p class="what">These came from the release review, which ran R on studies the tests had not tried. The first three were fixed before this page was put in front of the owner.</p>
+
   <h3>How the numbers are checked</h3>
   <ul class="list">
     <li>R in the browser is held to R on a desktop: all 1,186 site rows of the eight metrics on the RBQM study, and the 51 rows of three metrics on the pilot study, agree to eight decimal places.</li>
-    <li>Every number in the overview table is read back against the row R returned.</li>
+    <li>Every flag in the overview table is read back against the row R returned, and each count of flags against R’s flags counted.</li>
     <li>On the pilot study, R’s totals are counted another way from the files: 1,122 adverse events, 3 of them serious, and 144 of 254 participants who left the study early.</li>
-    <li>The tests and their pictures are on <a href="https://jwildfire.github.io/safety.viz/dev/">the dev site’s evidence pages</a>.</li>
+    <li>The tab’s tests run in CI on every change, and their pictures are in the repository (<a href="https://github.com/jwildfire/safety.viz/tree/dev/docs/evidence/basic-app">the demo app’s evidence folder</a>). The demo app has no evidence page on the site yet, as each chart has (<a href="https://github.com/jwildfire/safety.viz/issues/262">the task for one</a>).</li>
   </ul>
 </section>
 
@@ -376,7 +386,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
   </figure>
 
   <h3>The histogram’s two p-value settings are removed</h3>
-  <p class="what">The v1.9.1 release notes said v1.10.0 would remove <code>test_normality</code> and <code>compare_distributions</code>, and it does. Each put a p-value on the chart that safety.viz worked out in JavaScript with a shortcut. safety.viz now computes no statistical test in JavaScript; a test belongs in R.</p>
+  <p class="what">The v1.9.1 release notes said v1.10.0 would remove <code>test_normality</code> and <code>compare_distributions</code>, and it does. Each put a p-value on the chart that safety.viz worked out in JavaScript with a shortcut. The histogram now draws no p-value; a test belongs in R. Three older charts still make a statistical call in JavaScript, which is not new in this release and waits for a ruling (<a href="https://github.com/jwildfire/safety.viz/issues/259">the interval in the adverse events explorer, the threshold mark in the QT explorer and the band on the time-to-event chart</a>).</p>
   <figure>
     <div class="frame"><img src="media/histogram-no-p.jpg" alt="The safety histogram of alanine aminotransferase with a panel for each treatment group beneath it. No p-value or note about a test appears on the main chart or on any panel." loading="lazy" width="1920" height="1200"></div>
     <p class="cap">The histogram given both removed settings. It draws as it would without them: no p-value on the main chart or on a panel.</p>
@@ -387,7 +397,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
       <ul>
         <li>Take both settings out of your histogram settings. Nothing in safety.viz replaces them.</li>
         <li>A chart still given one draws as before, without the p-value.</li>
-        <li>The console says so once for each: “safety.viz histogram: `test_normality` was removed in v1.10.0 and is ignored. safety.viz computes no statistical test in JavaScript: run the test in R.”</li>
+        <li>The console says so once for each: “safety.viz histogram: `test_normality` was removed in v1.10.0 and is ignored. The histogram draws no p-value: run the test in R.”</li>
         <li>A chart that never set them is unchanged.</li>
       </ul>
     </div>
@@ -427,7 +437,7 @@ footer a{color:var(--mute);border-bottom-color:var(--rule2)}
 </section>
 
 <footer>
-  <p>Captures taken 2026-10-08 with Playwright in headless Chromium against the live dev deploy of safety.viz at 0308b53, running real R in the browser. Stills are 1280 by 800 at 1.5 times, and 390 by 844 for the phone. The pilot study is 254 participants from the public CDISC pilot study; the RBQM study is gsm’s synthetic demo study. No real participant appears. How each picture and number was made is in <a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/sv-v1.10-demo/README.md">the README beside this page</a>.</p>
+  <p>Captures taken 2026-10-09 with Playwright in headless Chromium against the live dev deploy of safety.viz at 8ecd7ff, running real R in the browser. Stills are 1280 by 800 at 1.5 times, and 390 by 844 for the phone. The pilot study is 254 participants from the public CDISC pilot study; the RBQM study is synthetic, copied from the demo-301 study. No real participant appears. How each picture and number was made is in <a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/sv-v1.10-demo/README.md">the README beside this page</a>.</p>
   <p style="margin-top:12px">This page was drafted by Claude Code using Opus 5.5.</p>
 </footer>
 
