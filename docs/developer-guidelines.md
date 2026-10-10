@@ -33,6 +33,12 @@ scaffold." Two sections are new, Designing and checking what people look at and 
 ladder, and the definition of done for a chart gains a sixth line. Nothing else is
 reworded.
 
+Amended 2026-10-10 under the objective A fast check
+([#412](https://github.com/jwildfire/obot.roadmap/issues/412)), whose tree @jwildfire
+signed off on the issue ("Tree signed off: the two requirements (#410 and #411) and their
+tasks, as filed on 2026-10-09"). One section is new, A required check split across jobs.
+Nothing else is reworded.
+
 ## Repositories and branches
 
 | Repository | Kind | Integration branch — merges on green checks | Release branch — @jwildfire's review |
@@ -230,6 +236,40 @@ The integration-branch ruleset is the same with `required_approving_review_count
 branch. obot.agent has no CI since v0.5.0; its `main` ruleset requires the pull request
 only. A repository with no ruleset is not on the lane; ask on the blocked issue before
 merging anything there. Never work around a ruleset.
+
+## A required check split across jobs
+
+A ruleset requires a check by its name. When the check is more than one job, the name
+must not be able to go green unless every test ran and passed. safety.viz's check is the
+model: four jobs in its
+[`.github/workflows/ci.yml`](https://github.com/jwildfire/safety.viz/blob/dev/.github/workflows/ci.yml),
+described in its `CONTRIBUTING.md` under "How the check is laid out".
+
+- One gate job carries the required name. It always runs (`if: always()`), it needs every
+  other job, and its first step fails unless each of them ended in success. GitHub counts
+  a required job that was skipped as passed, so a gate that can be skipped, or that leaves
+  a job out of its `needs`, goes green on tests that never ran.
+- Results handed from one job to another are refused unless they are a clean run of every
+  test. A guard that compares results is not a substitute for a test step's exit code: it
+  must also fail on a run marked unsuccessful, on a report carrying errors, on a test that
+  passed only on a retry, and on a test name that appears twice.
+- A check runs each test once. Jobs that share a suite take their tests from one pattern,
+  one of them inverted, and the gate compares the merged results with the committed record
+  of every test, so a test that ran in no job is named.
+- Artifacts come from the run's own jobs, under fixed names, with an error when a file is
+  missing, and are downloaded outside the checkout.
+- The check runs on `pull_request` and `push`, with a read-only token. It never moves to
+  `pull_request_target` or `workflow_run`, no job gains write permission, and nothing in
+  it continues on error.
+- Every job has a time limit and names its runner image.
+- A test in the repository reads the workflow file and holds it to this shape, so a change
+  that weakens the gate fails the check before it merges.
+
+Before such a check is relied on, break it on purpose on a scratch branch and keep the
+links: a failing test in each job, a job cancelled part-way, a missing artifact, a test
+left out of every job, and a failed job re-run alone. Each must be red at the gate, and
+the re-run green only once the job has passed. Only @jwildfire can start a re-run; the
+bot is refused.
 
 ## Testing
 
