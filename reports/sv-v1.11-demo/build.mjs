@@ -353,7 +353,7 @@ const masthead = `
   <p class="eyebrow">safety.viz <span class="dot"></span> release candidate review <span class="dot"></span> ${day(captured)}</p>
   <h1>What <span class="v">v1.11.0</span> changes, annotated</h1>
   <p class="lede">Release 1.11 makes the demo app ready to show at the keynote on 21 October 2026: a first screen that says where you are, one label for how far to trust it, one control that starts R, an RBQM tab that reads like the other tabs, and one place to load files. It adds no chart and no metric, and nothing the app computes changes.</p>
-  <p class="rc"><!-- RC-LINK --><a href="https://github.com/jwildfire/safety.viz/pull/306">Release candidate: the pull request to review, safety.viz #306</a></p>
+  <p class="rc"><!-- RC-LINK --><a href="https://github.com/jwildfire/safety.viz/releases/tag/v1.11.0">Released as safety.viz v1.11.0 on 10 October 2026</a>. This page is the review of its release candidate (<a href="https://github.com/jwildfire/safety.viz/pull/306">safety.viz #306</a>), as captured before the release: where it says “the released site” it means release 1.10, and “the dev site” is what became release 1.11.</p>
   <p class="facts">
     <span><b>${held}</b> of <b>${checks.length}</b> things this page says, held to the live site by a script</span>
     <span>captured <b>${day(captured)}</b> from the dev site</span>
