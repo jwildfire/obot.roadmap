@@ -142,7 +142,10 @@ const welcomeCount = first.welcome.match(/(\d+) participants/)[1];
 const synthetic = data.study_note.match(/carries (\d+) synthetic liver and kidney participants/)[1];
 const activeArm = defects.waterfall.at(-1).hover.replace(/ \(n=\d+\)$/, '');
 // Until the capture has a picture of the footnote, the page says why it has none.
-const footnoteStill = n.footnote
+const foot = n.footnote && n.footnote.after_run ? n.footnote : null;
+if (foot && (foot.after_run.text !== footnoteWords.replace(/^"|"$/g, '') || foot.after_run.href !== footnoteLink))
+  throw new Error('The footnote on the live app is not the one its task says was built');
+const footnoteStill = foot
   ? ''
   : ' It merges in the last pull request before the release candidate, so the dev site this page was captured from does not show it yet.';
 const closed = [402, 403, 404, 405, 406, 407, 408].filter((number) => github.issues[`obot.roadmap#${number}`].state === 'closed');
@@ -350,7 +353,7 @@ const masthead = `
   <p class="eyebrow">safety.viz <span class="dot"></span> release candidate review <span class="dot"></span> ${day(captured)}</p>
   <h1>What <span class="v">v1.11.0</span> changes, annotated</h1>
   <p class="lede">Release 1.11 makes the demo app ready to show at the keynote on 21 October 2026: a first screen that says where you are, one label for how far to trust it, one control that starts R, an RBQM tab that reads like the other tabs, and one place to load files. It adds no chart and no metric, and nothing the app computes changes.</p>
-  <p class="rc"><!-- RC-LINK -->Release candidate: link to follow</p>
+  <p class="rc"><!-- RC-LINK --><a href="https://github.com/jwildfire/safety.viz/pull/306">Release candidate: the pull request to review, safety.viz #306</a></p>
   <p class="facts">
     <span><b>${held}</b> of <b>${checks.length}</b> things this page says, held to the live site by a script</span>
     <span>captured <b>${day(captured)}</b> from the dev site</span>
@@ -498,6 +501,18 @@ ${swap({
     `What it is: the RBQM tab ends with ${q(footnoteWords.replace(/^"|"$/g, ''))}, a link to ${a(footnoteLink, 'gsm.kri’s documentation site')} that opens in a new tab, in the same line a chart’s footnote uses.${footnoteStill}`,
     `A page on the docs site for the RBQM tab, the third choice, is filed as a follow-up (${a(hub(415), 'the requirement, obot.roadmap #415')}).`
   ])}
+${
+  foot
+    ? fig({
+        name: 'rbqm-footnote',
+        alt: 'The foot of the RBQM tab after a run on the pilot study: the last rows of the site overview, then one line reading RBQM: gsm.kri documentation, then the app’s footer with its version.',
+        cap: `The foot of the RBQM tab, after a run on the pilot study. The app’s footer under it reads ${q(foot.app_version)}.`,
+        legend: [
+          `The footnote: ${q(foot.after_run.text)}, ${foot.after_run.links === 1 ? 'one link' : `${foot.after_run.links} links`}, to ${esc(foot.after_run.href.replace('https://', ''))}, opening in a new tab. It sits under the tab’s page before R is started, after a run and on a metric’s page, and at 390 pixels it is on the page with nothing scrolling sideways.`
+        ]
+      })
+    : ''
+}
 </section>`;
 
 // ---------------------------------------------------------------- 02

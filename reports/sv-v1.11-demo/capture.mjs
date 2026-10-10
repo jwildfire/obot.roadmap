@@ -181,6 +181,25 @@ const tabsOf = (page) =>
 const sideways = (page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 const laidOut = (page) => page.evaluate(() => document.documentElement.scrollWidth);
 const rbqmTab = (page) => page.locator('.sva-tab[data-tab="rbqm"]');
+// The RBQM tab's footnote: what it says, where its link goes, and whether it sits under the tab's page.
+const footnoteOf = (page) =>
+  page.evaluate(() => {
+    const line = document.querySelector('.sva-content > .sva-chart-links');
+    if (!line) return { shown: false };
+    const link = line.querySelector('a[data-link="docs"]');
+    const box = line.getBoundingClientRect();
+    const view = line.previousElementSibling;
+    return {
+      shown: box.width > 0 && box.height > 0 && getComputedStyle(line).visibility !== 'hidden',
+      text: line.textContent.replace(/\s+/g, ' ').trim(),
+      link: link ? link.textContent.trim() : null,
+      href: link ? link.href : null,
+      target: link ? link.target : null,
+      links: line.querySelectorAll('a').length,
+      under_page: Boolean(view && view.classList.contains('sva-view') && box.top >= view.getBoundingClientRect().bottom - 1),
+      inside_screen: box.left >= 0 && box.right <= window.innerWidth
+    };
+  });
 const control = '.sva-charts > .sva-r';
 const controlSays = (page) =>
   page.locator(control).evaluate((node) => ({
@@ -323,6 +342,7 @@ if (ONLY.includes('1')) {
     ],
     histogram_line: (await page.locator('.sv-notes span', { hasText: 'participants shown' }).first().textContent()).trim()
   });
+  check('version: the app’s footer reads 1.11.0', first.version, 'safety.viz 1.11.0');
   // Seen while capturing, and put to the reviewer: the welcome line counts the study's participants,
   // and the histogram under it counts the labs file's, which carries synthetic ones as well.
   check('first screen: what the histogram under the welcome line counts', first.histogram_line, '364 of 364 participants shown (100.0%).');
@@ -903,6 +923,7 @@ if (ONLY.includes('4')) {
   check('RBQM tab: the body’s one line', rbqm.need, 'Site metrics need R. Start R, at the top right.');
   check('RBQM tab: what the study supports, with a link to the Data tab', rbqm.supports, 'The loaded study supports 3 of 8 metrics. Change the data on the Data tab.');
   check('RBQM tab: no file box and no buttons to choose a metric', [rbqm.file_boxes, rbqm.choice_buttons], [0, 0]);
+  const foot = (numbers.footnote = { before_r: await footnoteOf(page) });
   await shot(page, 'rbqm-off', {
     clip: offClip,
     mark: [
@@ -1021,6 +1042,21 @@ if (ONLY.includes('4')) {
       [6, '.sva-rbqm-key p', 'b']
     ]
   });
+  // The tab's foot, after the run: the footnote under the tab's page, and the app's footer under it.
+  foot.after_run = await footnoteOf(page);
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+  await settle(page, 400);
+  {
+    const line = await page.locator('.sva-content > .sva-chart-links').boundingBox();
+    const from = Math.max(0, Math.round(line.y) - 330);
+    await shot(page, 'rbqm-footnote', {
+      clip: { x: 0, y: from, width: 1280, height: 800 - from },
+      mark: [[1, '.sva-content > .sva-chart-links a[data-link="docs"]', 'r']]
+    });
+  }
+  foot.app_version = await text(page, '.sva-version');
+  await top(page);
+  await settle(page, 300);
   // Run details, behind the chip.
   await page.locator('.sva-rbqm-status .sva-rbqm-details').click();
   await settle(page, 500);
@@ -1090,6 +1126,22 @@ if (ONLY.includes('4')) {
       [2, '.sva-rbqm-headrow', 'l']
     ]
   });
+  foot.metric = await footnoteOf(page);
+  check('footnote: its words', foot.after_run.text, 'RBQM: gsm.kri documentation');
+  check(
+    'footnote: one link, to gsm.kri’s documentation, opening in a new tab',
+    [foot.after_run.links, foot.after_run.link, foot.after_run.href, foot.after_run.target],
+    [1, 'gsm.kri documentation', 'https://gilead-public.github.io/gsm.kri/', '_blank']
+  );
+  check(
+    'footnote: under the tab’s page before R, after a run and on a metric’s page',
+    [foot.before_r, foot.after_run, foot.metric].map((one) => [one.shown, one.under_page, one.text === foot.after_run.text]),
+    [
+      [true, true, true],
+      [true, true, true],
+      [true, true, true]
+    ]
+  );
   await page.locator('.sva-view-item[data-item="kri0012"]').click();
   await settle(page, 900);
   rbqm.cannot = {
@@ -1188,6 +1240,18 @@ if (ONLY.includes('4')) {
     [true, true, true]
   );
   check('phone: the table’s headings are at least 10 pixels', numbers.rbqm_phone.smallest_heading >= 10, true);
+  numbers.footnote.phone = { ...(await footnoteOf(phonePage)), sideways: await sideways(phonePage) };
+  check(
+    'footnote: at 390 pixels it is on the page, inside the screen, with no sideways scroll',
+    [
+      numbers.footnote.phone.shown,
+      numbers.footnote.phone.under_page,
+      numbers.footnote.phone.inside_screen,
+      numbers.footnote.phone.text,
+      numbers.footnote.phone.sideways <= 0
+    ],
+    [true, true, true, 'RBQM: gsm.kri documentation', true]
+  );
   await top(phonePage);
   await shot(phonePage, 'phone-rbqm');
   await phonePage.locator('.sva-rbqm-table tbody tr:first-child td:nth-child(5)').click();
@@ -1441,8 +1505,10 @@ if (ONLY.includes('6')) {
   await page.goto(BASE);
   const defects = (numbers.defects = {
     home_description: await page.locator('meta[name="description"]').getAttribute('content'),
-    gallery_cards: await page.locator('.card-body').count()
+    gallery_cards: await page.locator('.card-body').count(),
+    docs_version: await text(page, '.site-version')
   });
+  check('version: the docs site’s badge reads v1.11.0', defects.docs_version, 'v1.11.0');
   await page.goto(BEFORE);
   defects.home_description_before = await page.locator('meta[name="description"]').getAttribute('content');
   check(

@@ -56,6 +56,8 @@ Data: the app's pilot study is 254 participants from the public CDISC pilot stud
 | The docs home page's count of charts | `defects.home_description`, `defects.home_description_before` |
 | The three status questions, and each issue's state | `github.comments.status`, `github.issues` |
 | The footnote: what was asked, what was chosen, what was built | `github.comments.footnote`, `github.comments.answer`, `github.answer` |
+| The footnote on the live app: its words, its link, where it sits, and at 390 pixels | `footnote` |
+| The version: the app's footer and the docs site's badge | `first.version`, `footnote.app_version`, `defects.docs_version` |
 | The keynote's demo path: its eight steps, its command, its run, its nine screenshots | `github.demo_path` |
 | Seen while capturing: the two counts on the first screen, the Qualified rung's meaning, the RBQM tab's reason, the active arm's name | `first.welcome`, `first.histogram_line`, `data.study_note`, `status.rungs`, `status.labels`, `defects.waterfall` |
 | The requirement row that has a chart draw its own label on its docs demo page | `github.requirement_rows` |
@@ -76,7 +78,7 @@ Things the page states that the capture does not read:
 - The dev site carries no commit of its own on the page. The footer of the demo page names the commit the `dev` branch stood at when the capture ran, read from GitHub; a deploy that was still under way would make the two differ.
 - The "before" of each pair is the released site on the day of capture, which was release 1.10.
 - The release candidate's link is a placeholder near the top of the page, `<!-- RC-LINK -->`, in `build.mjs`.
-- The RBQM tab's footnote was answered and built on 10 October 2026, and merges in the last pull request before the release candidate. Until the dev site serves it the page has no picture of it and says so; `build.mjs` drops that sentence when `capture-numbers.json` has a `footnote` entry.
+- The RBQM tab's footnote was answered and built on 10 October 2026 and merged in the last pull request before the release candidate. `build.mjs` shows its still when `capture-numbers.json` has a `footnote` entry, and stops if the footnote on the live app is not the one its task says was built.
 - The status words the page prints are the app's drafts, which @jwildfire said he would correct at the release candidate. After a correction, run the capture and the build again: the checks name the old words and will fail until their expected text is changed.
 - Seconds and megabytes are one run's, over a home connection.
 
@@ -96,6 +98,7 @@ Things the page states that the capture does not read:
 | `rbqm-off-110.jpg`, `rbqm-off.jpg` | The RBQM tab before R is started |
 | `rbqm-running.jpg` | The tab while R starts |
 | `rbqm-done-110.jpg`, `rbqm-done.jpg` | The tab after the run, on the pilot study |
+| `rbqm-footnote.jpg` | The foot of the tab after the run: the footnote, and the app's footer with its version |
 | `rbqm-details.jpg`, `rbqm-metric.jpg`, `rbqm-cannot.jpg` | Run details, a metric's page, and a metric that did not run |
 | `rbqm-study.jpg` | All eight metrics on the RBQM study |
 | `phone-rbqm.jpg`, `phone-rbqm-metric.jpg` | The tab at 390 pixels |
