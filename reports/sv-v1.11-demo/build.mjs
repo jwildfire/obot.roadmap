@@ -985,7 +985,12 @@ const s8 = `
   ${list([
     'No chart is added and no metric is added. The app still has 18 charts on five tabs and eight site metrics.',
     `Nothing computed changes. safety.viz has a browser test that holds every row R returns for the eight metrics on the RBQM study to the rows desktop R returns, to eight decimal places. It is in the check every pull request must pass before it merges, and it passed at each merge of this release with desktop R’s rows untouched (${a(`${hub(404)}#issuecomment-6098177054`, 'the R control’s closing comment says so for its merge')}).`,
-    `What that test rests on is release 1.10’s. Of the ${github.since_110.files} files changed since the release 1.10 tag, one is among desktop R’s stored rows, the R that runs the metrics and gsm’s copied workflow files: the tab’s file of expected rows gained ${github.since_110.r_files[0].added} lines, the case for the three files dropped on the Data tab, and lost ${github.since_110.r_files[0].removed === 0 ? 'none' : github.since_110.r_files[0].removed}.`,
+    ...(github.required_check
+      ? [
+          `That check still runs every test. During this release it was split into ${esc(github.required_check.jobs)} jobs, and it now answers in about ${esc(github.required_check.minutes[0])} minutes where it took ${esc(github.required_check.minutes[1])} (${a(github.comments.check_split.url, 'the task that split it, safety.viz #292')}; ${a(task(291), 'safety.viz #291')}; ${a(task(316), 'safety.viz #316')}).`
+        ]
+      : []),
+    `What that test rests on is release 1.10’s. Of the ${github.since_110.files} files added, changed or removed since the release 1.10 tag, one is among desktop R’s stored rows, the R that runs the metrics and gsm’s copied workflow files: the tab’s file of expected rows gained ${github.since_110.r_files[0].added} lines, the case for the three files dropped on the Data tab, and lost ${github.since_110.r_files[0].removed === 0 ? 'none' : github.since_110.r_files[0].removed}.`,
     `The versions are the same on both sites: ${versions.map(([term, said]) => `${esc(term === 'R' ? 'R' : term.toLowerCase() === 'gsm' ? 'gsm’s packages' : term.toLowerCase())}: ${esc(said)}`).join('; ')}. Release 1.10’s run box named the same ones.`,
     `The pilot study gives the same answer on both sites: ${rbqm.table.rows} sites, with site ${rbqm.table.first[0][0]} first at ${rbqm.table.first[0][1]} enrolled and ${rbqm.table.first[0][2]} red flag.`,
     `Starting R for the RBQM tab still downloads about 55 MB, once: ${rbqm.megabytes.total} MB on this capture, of which ${rbqm.megabytes['webr.r-wasm.org']} MB is R, ${rbqm.megabytes['repo.r-wasm.org']} MB its packages and ${rbqm.megabytes.page} MB gsm’s packages from the page’s own address.`,

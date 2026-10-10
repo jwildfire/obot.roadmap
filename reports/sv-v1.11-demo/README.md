@@ -63,7 +63,8 @@ Data: the app's pilot study is 254 participants from the public CDISC pilot stud
 | The requirement row that has a chart draw its own label on its docs demo page | `github.requirement_rows` |
 | What the docs home page read before the count was fixed again, and the pull requests called merged | `github.count_fix`, `github.pulls` |
 | The contributing guide's section "Demo app conventions" | `github.contributing` |
-| That the files R's answers are held to are release 1.10's | `github.since_110` |
+| The check every pull request must pass: its jobs, and how long it takes | `github.required_check` |
+| That the files R's answers are held to are release 1.10's: the two commits' trees compared whole, since GitHub's own comparison lists 300 files at most | `github.since_110` |
 
 Things the page states that the capture does not read:
 

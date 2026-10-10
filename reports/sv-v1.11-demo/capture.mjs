@@ -1641,11 +1641,11 @@ if (ONLY.includes('7')) {
     return response.json();
   };
   // A run of this section alone starts its own checks again, so that one that was renamed does not stay behind.
-  for (const name of Object.keys(checks)) if (/^(questions|footnote|demo path|standards|follow-up|nothing computed|defects: what the docs|status: the requirement row)/.test(name)) delete checks[name];
+  for (const name of Object.keys(checks)) if (/^(questions|footnote|demo path|standards|follow-up|nothing computed|defects: what the docs|status: the requirement row|the required check)/.test(name)) delete checks[name];
   const github = (numbers.github = { issues: {}, comments: {} });
   const issues = [
     ...[401, 402, 403, 404, 405, 406, 407, 408, 414, 415].map((n) => `obot.roadmap/issues/${n}`),
-    ...[271, 287, 288].map((n) => `safety.viz/issues/${n}`)
+    ...[271, 287, 288, 291, 292, 316].map((n) => `safety.viz/issues/${n}`)
   ];
   for (const address of issues) {
     const issue = await api(address);
@@ -1659,6 +1659,7 @@ if (ONLY.includes('7')) {
     ['footnote', 'safety.viz/issues/comments/6082538559'],
     ['answer', 'safety.viz/issues/comments/6098691387'],
     ['demo_path', 'safety.viz/issues/comments/6098514645'],
+    ['check_split', 'safety.viz/issues/comments/6100279834'],
     ['status', 'obot.roadmap/issues/comments/6083229199']
   ]) {
     const comment = await api(address);
@@ -1690,6 +1691,12 @@ if (ONLY.includes('7')) {
       .map((start) => github.comments.status.body.replace(/'/g, '’').includes(start)),
     [true, true, true]
   );
+  // The check every pull request must pass: the task that split it says how many jobs it is and how long it takes.
+  github.required_check = {
+    jobs: (github.issues['safety.viz#292'].title.match(/Split the check into (\w+) jobs/) || [])[1] || null,
+    minutes: (github.comments.check_split.body.match(/have its check answer in about (\w+) minutes, where it took \d+ this morning and (\d+) yesterday/) || []).slice(1)
+  };
+  check('the required check: four jobs, about seven minutes where it took 22', [github.required_check.jobs, ...github.required_check.minutes], ['four', 'seven', '22']);
   // The keynote's demo path: its steps in the task's own words, the run that walked it, and its screenshots.
   const walk = (github.comments.demo_path.body.match(/^- The path it walks, in order, which is yours to change: (.+)\.\r?$/m) || [])[1] || '';
   const run = await api('safety.viz/actions/runs/38058471721');
@@ -1732,14 +1739,27 @@ if (ONLY.includes('7')) {
   check('standards: the contributing guide has the section “Demo app conventions”', github.contributing.headings.includes('Demo app conventions'), true);
   // What changed since release 1.10 in the files R's answers are held to: the
   // rows desktop R returned, the R that runs the metrics, and gsm's copied workflows.
-  const since = await api('safety.viz/compare/v1.10.0...dev');
-  github.since_110 = {
-    files: since.files.length,
-    r_files: since.files
-      .filter((file) => /^tests\/fixtures\/rbqm\/|^site\/rbqm\//.test(file.filename))
-      .map((file) => ({ file: file.filename, added: file.additions, removed: file.deletions }))
+  // GitHub's comparison of two commits lists 300 files at most, and this one has reached that. So the
+  // two trees are read whole and compared file by file, and each protected file that differs is read
+  // at both commits: a line is lost when release 1.10's lines are not all still there, in order.
+  const treeOf = async (ref) => {
+    const tree = await api(`safety.viz/git/trees/${ref}?recursive=1`);
+    return { truncated: tree.truncated, files: new Map(tree.tree.filter((one) => one.type === 'blob').map((one) => [one.path, one.sha])) };
   };
-  check('nothing computed: the list of changed files is whole', github.since_110.files < 300, true);
+  const linesOf = async (sha) => Buffer.from((await api(`safety.viz/git/blobs/${sha}`)).content, 'base64').toString('utf8').split('\n');
+  const [was, now] = [await treeOf('v1.10.0'), await treeOf(dev.sha)];
+  const differs = [...new Set([...was.files.keys(), ...now.files.keys()])].filter((file) => was.files.get(file) !== now.files.get(file)).sort();
+  const guarded = [];
+  for (const file of differs.filter((name) => /^tests\/fixtures\/rbqm\/|^site\/rbqm\//.test(name))) {
+    const before = was.files.has(file) ? await linesOf(was.files.get(file)) : [];
+    const after = now.files.has(file) ? await linesOf(now.files.get(file)) : [];
+    // How many of release 1.10's lines are still there, in order: the longest run of them the new file keeps.
+    let kept = 0;
+    for (const line of after) if (kept < before.length && line === before[kept]) kept += 1;
+    guarded.push({ file, added: after.length - kept, removed: before.length - kept });
+  }
+  github.since_110 = { files: differs.length, whole: [was.truncated, now.truncated].every((cut) => cut === false), r_files: guarded };
+  check('nothing computed: the list of changed files is whole', github.since_110.whole, true);
   check(
     'nothing computed: desktop R’s rows, the R that runs the metrics and gsm’s workflows lost no line since release 1.10',
     github.since_110.r_files.map((one) => `${one.file}: ${one.removed} removed`),
