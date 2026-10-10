@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz v1.11.0 — annotated demo</title>
+<meta name="description" content="What safety.viz v1.11.0 changes in the demo app, shown on the live site beside release 1.10: the first screen, one status label, one control that starts R, the RBQM tab and the Data tab, with steps to try and what is yours to rule on at the review.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#737882;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;        /* interactive: links, steps */
+  --bronze:#6c3270;      /* accent: the demo app's plum */
+  --ask:#a8640c; --askbg:#fff6e6;
+  --bad:#a23b3b; --badbg:#fff3f0;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32);overflow-wrap:anywhere}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono);font-size:.92em}
+code{overflow-wrap:anywhere}
+p{margin:0}
+
+/* ---------- masthead ---------- */
+.mast{padding:52px 0 26px}
+.eyebrow{font:600 11px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--rule2);vertical-align:middle}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:66ch;margin:14px 0 0;font-size:17.5px;color:var(--ink2)}
+.rc{display:inline-block;margin:18px 0 0;padding:9px 14px;border:1px dashed var(--rule2);border-radius:5px;background:var(--panel);font:600 13px/1.4 var(--mono);color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:18px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.facts b{color:var(--ink2);font-weight:600}
+
+/* ---------- callouts ---------- */
+.note{margin:22px 0 0;padding:16px 20px 18px;border:1px solid var(--rule);border-left:3px solid var(--bronze);border-radius:5px;background:var(--panel);font-size:15px;color:var(--ink2)}
+.note>.lbl{margin-bottom:10px}
+.note ol,.note ul{margin:0;padding-left:20px}
+.note li+li{margin-top:7px}
+.note p+p,.note p+ul,.note ul+p,.note ol+p,.note p+ol{margin-top:9px}
+.ask{border-left-color:var(--ask);background:var(--askbg);border-color:#ecd9b4;border-left-color:var(--ask)}
+.ask h3{font-size:17px;margin:20px 0 0;color:var(--ink)}
+.ask h3:first-of-type{margin-top:16px}
+.ask .cite{font-size:13.5px;color:var(--mute);margin:4px 0 10px}
+.ask .said{padding:12px 16px;border:1px solid #ecd9b4;border-radius:5px;background:var(--panel)}
+.ask dl{margin:10px 0 0;display:grid;grid-template-columns:minmax(120px,210px) 1fr;gap:8px 18px}
+.ask dt{font:600 12px/1.5 var(--mono);letter-spacing:.03em;color:var(--ink2);padding-top:2px}
+.ask dd{margin:0;color:var(--ink)}
+.bad{border-color:#ecc7c0;border-left-color:var(--bad);background:var(--badbg)}
+.bad code{font-size:12.5px}
+.lbl{font:600 10.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+.ask>.lbl{color:var(--ask)}
+.bad>.lbl{color:var(--bad)}
+.list{margin:14px 0 0;padding-left:20px;max-width:76ch;font-size:15.5px;color:var(--ink2)}
+.list li+li{margin-top:7px}
+
+/* ---------- steps to try ---------- */
+.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:12px}
+.steps li{counter-increment:s;position:relative;padding-left:34px}
+.steps li+li{margin-top:0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;border:1px solid var(--blue);color:var(--blue);display:grid;place-items:center;font:600 11.5px/1 var(--mono)}
+.steps .do{display:block;color:var(--ink)}
+.steps .see{display:block;color:var(--ink2);font-size:14.5px}
+
+/* ---------- contents ---------- */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:14px 16px 16px;border:0;border-left:1px solid var(--rule);border-top:1px solid var(--rule)}
+.toc a:nth-child(-n+4){border-top:0}
+.toc a:nth-child(4n+1){border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+/* ---------- sections ---------- */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+.src{margin:10px 0 0;font-size:13.5px;color:var(--mute);max-width:86ch}
+.src .dot{margin:0 6px}
+h3{font-size:19px;margin:42px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+/* ---------- figures ---------- */
+figure{margin:20px 0 0;position:relative}
+a.frame{position:relative;display:block;border:1px solid var(--rule);border-radius:5px;overflow:hidden;background:var(--panel);line-height:0}
+a.frame:hover{border-color:var(--rule2)}
+.frame img{display:block;width:100%;height:auto}
+.mk{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--bronze);color:#fff;font:700 12px/22px var(--mono);text-align:center;box-shadow:0 0 0 2px #fff,0 1px 5px rgba(0,0,0,.4)}
+.mk.sm{width:16px;height:16px;font-size:9.5px;line-height:16px;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.4)}
+.cap{margin:12px 0 0;font-size:14.5px;color:var(--ink2);max-width:80ch}
+.legend{list-style:none;counter-reset:l;margin:12px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;font-size:14.5px;color:var(--ink2)}
+.legend li{counter-increment:l;position:relative;padding-left:30px}
+.legend li::before{content:counter(l);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--bronze);color:#fff;font:700 11px/20px var(--mono);text-align:center}
+.swap>input{position:absolute;opacity:0;pointer-events:none}
+.switch{display:inline-flex;border:1px solid var(--rule2);border-radius:999px;overflow:hidden;margin:0 0 10px;background:var(--panel)}
+.switch label{padding:8px 15px;font:600 12px/1 var(--mono);letter-spacing:.04em;color:var(--mute);cursor:pointer;user-select:none}
+.swap>input:nth-of-type(1):checked~.switch label:nth-of-type(1),
+.swap>input:nth-of-type(2):checked~.switch label:nth-of-type(2){background:var(--bronze);color:#fff}
+.swap>input:focus-visible~.switch{outline:2px solid var(--blue);outline-offset:2px}
+.swap>input:nth-of-type(1):checked~.frames .after,
+.swap>input:nth-of-type(2):checked~.frames .before,
+.swap>input:nth-of-type(2):checked~figcaption .was,
+.swap>input:nth-of-type(1):checked~figcaption .legend,
+.swap>input:nth-of-type(1):checked~figcaption .cap:not(.was){display:none}
+.was{color:var(--ink2)}
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,300px));gap:24px;margin-top:20px;align-items:start}
+.phones figure{margin:0}
+.states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px;margin-top:20px;align-items:start}
+.states figure{margin:0}
+.states .cap{margin-top:8px}
+.states .lbl{margin:0 0 6px}
+.states .legend,.phones .legend{grid-template-columns:1fr}
+.seen li+li{margin-top:6px}
+.said ol{margin:0;padding-left:20px}
+.said ol li+li{margin-top:3px}
+.said details{margin-top:9px}
+.said summary{cursor:pointer;color:var(--blue);font-size:14px}
+.said details ul{margin-top:8px}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto;margin:16px 0 0;max-width:100%}
+table{border-collapse:collapse;font-size:14.5px;color:var(--ink2);min-width:100%}
+th,td{text-align:left;padding:8px 14px 8px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font:600 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+td.n{font-family:var(--mono);white-space:nowrap}
+td.k{white-space:nowrap;color:var(--ink)}
+
+/* ---------- closing ---------- */
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+footer hr{border:0;border-top:1px solid var(--rule);margin:18px 0 14px}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(-n+4){border-top:1px solid var(--rule)}
+  .toc a:nth-child(-n+2){border-top:0}
+  .toc a:nth-child(4n+1){border-left:1px solid var(--rule)}
+  .toc a:nth-child(2n+1){border-left:0}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .mast{padding-top:34px}
+  .toc{grid-template-columns:1fr}
+  .toc a,.toc a:nth-child(-n+4),.toc a:nth-child(4n+1){border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .legend{grid-template-columns:1fr}
+  .states{grid-template-columns:1fr}
+  .ask dl{grid-template-columns:1fr;gap:2px 0}
+  .ask dd{margin-bottom:10px}
+  .mk{width:16px;height:16px;font-size:9.5px;line-height:16px;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.4)}
+  .note{padding:14px 15px 16px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+
+<header class="mast">
+  <p class="eyebrow">safety.viz <span class="dot"></span> release candidate review <span class="dot"></span> 10 October 2026</p>
+  <h1>What <span class="v">v1.11.0</span> changes, annotated</h1>
+  <p class="lede">Release 1.11 makes the demo app ready to show at the keynote on 21 October 2026: a first screen that says where you are, one label for how far to trust it, one control that starts R, an RBQM tab that reads like the other tabs, and one place to load files. It adds no chart and no metric, and nothing the app computes changes.</p>
+  <p class="rc"><!-- RC-LINK -->Release candidate: link to follow</p>
+  <p class="facts">
+    <span><b>115</b> of <b>115</b> things this page says, held to the live site by a script</span>
+    <span>captured <b>10 October 2026</b> from the dev site</span>
+    <span>public pilot study: <b>254</b> participants <span class="dot"></span> synthetic RBQM study: <b>765</b> enrolled, <b>150</b> sites</span>
+  </p>
+
+
+  <div class="note ask" id="rule">
+    <p class="lbl">Yours to rule on at this review</p>
+    <p>Three things from the build, and five seen while this page was captured. None holds the release. The words in the white boxes are the comments’ own.</p>
+
+    <h3>1. The status words are drafts</h3>
+    <p>You said the drafted words would ship and that you would correct them here. The disclaimer, the four rungs and the six reasons are printed in full in <a href="#words">section 02</a>.</p>
+
+    <h3>2. Three questions about status</h3>
+    <p class="cite">From the requirement for the status ladder (<a href="https://github.com/jwildfire/obot.roadmap/issues/403#issuecomment-6083229199">the three questions, obot.roadmap #403</a>).</p>
+    <div class="said">
+        <ul><li>The Hepatic Explorer's migration view loses its mark. The design retires the banner drawn inside that view, and the chart as a whole is Exploratory, so in the app and on the docs site nothing now says the view is still moving. Its clinical guide still calls the view Experimental. If you want it marked: the Hepatic Explorer can show the status label, Experimental, while that view is open. That would be a seventh thing below Exploratory.</li><li>The Time-to-Event Explorer's reason is one sentence, from the design's table: &quot;Experimental until an external clinical review confirms its Kaplan–Meier estimates.&quot; The mockup's panel shows a second sentence, &quot;Its curves, intervals and at-risk counts may change after that review.&quot; I shipped the table's, since the requirement names the table. Say if you want the second sentence back.</li><li>The Participant Profile carries its label on its own page in the app, but not when it opens in the rail beside another chart, where the open chart's card is Exploratory and shows none. That is unchanged from today, when the profile carried no mark anywhere in the app. If you want it marked there, the rail's heading can carry the label.</li></ul>
+        <p>One wording change of mine: a Prototype's panel is headed &quot;Patient Journey Explorer is a prototype&quot;, not &quot;is prototype&quot;.</p>
+    </div>
+
+    <h3>3. The order of the keynote’s demo path</h3>
+    <p class="cite">A new test walks these eight steps on the deployed demo, in this order, which is yours to change (<a href="https://github.com/jwildfire/safety.viz/issues/287#issuecomment-6098514645">the test’s task, safety.viz #287</a>; <a href="https://github.com/jwildfire/safety.viz/actions/runs/38058471721">its passing run</a>).</p>
+    <div class="said">
+        <ol><li>the app opens on the pilot study</li><li>the Adverse Event Explorer is opened</li><li>the app's status label is opened and closed</li><li>the Hepatic ALT Waterfall's Experimental label is opened</li><li>the Cross-tabulation starts R and shows a statistic</li><li>the RBQM tab runs 3 of 8 metrics on the pilot study</li><li>the RBQM demo study is chosen on the Data tab, whose card reads &quot;This data supports 8 of 8 metrics.&quot;</li><li>the RBQM tab runs its eight metrics with no second press, and one metric's page is opened</li></ol>
+    </div>
+
+    <h3>4. Seen while capturing, yours to rule on</h3>
+    <ul class="seen">
+      <li>The first screen gives two counts: the welcome line says “254 participants” and the histogram under it “364 of 364 participants shown (100.0%).” The labs file carries 110 synthetic liver and kidney participants, which the Data tab says and the first screen does not (<a href="media/first.jpg">the picture</a>).</li>
+      <li>The Qualified rung’s meaning uses the word “Validated”: “Validated for regulated use. Nothing in safety.viz is, yet.” (<a href="media/status-panel.jpg">the picture</a>).</li>
+      <li>The RBQM tab’s reason still says “new in 1.10”: “Experimental: new in 1.10. R runs in the browser, and what the tab shows may still change.” (<a href="media/status-tab.jpg">the picture</a>).</li>
+      <li>A chart below Exploratory shows its label twice on its docs demo page, at the title and on the chart. That is as built: the chart still draws its own label there, as it would embedded elsewhere (<a href="https://github.com/jwildfire/safety.viz/blob/dev/requirements/demo-app.md">requirement row APP-TIER-025</a>; <a href="media/docs-title.jpg">the picture</a>).</li>
+      <li>The Hepatic ALT Waterfall’s active arm on the pilot study is named “CLD: Study Drug, CLD: Placebo, Xanomeline Low Dose, Xanomeline High Dose”. The name is the pilot data’s, and it will show on a shared screen (<a href="media/status-chart.jpg">the picture</a>).</li>
+    </ul>
+  </div>
+
+  <div class="note" id="try">
+    <p class="lbl">Try it: seven steps, each under a minute</p>
+    <ol class="steps">
+      <li><span class="do"><a href="https://jwildfire.github.io/safety.viz/dev/demo/">Open the demo app</a> and read the first screen.</span><span class="see">A welcome line names the study, no tab is grey, and the Data tab reads “Pilot study”.</span></li>
+      <li><span class="do">Hover the label at the top right, then click it.</span><span class="see">On hover: “Nothing in this app is qualified. Confirm every result.” On a click: a panel headed “This app is exploratory”, with the four rungs.</span></li>
+      <li><span class="do"><a href="https://jwildfire.github.io/safety.viz/dev/demo/#hep-waterfall">Open the Hepatic ALT Waterfall</a> and click the label on the corner of its card.</span><span class="see">Its reason, and titles over the chart that no longer print on each other.</span></li>
+      <li><span class="do"><a href="https://jwildfire.github.io/safety.viz/dev/demo/#cross-tab">Open the Cross-tabulation</a> and press Start R, at the right end of the chart names.</span><span class="see">In a few seconds the control is a chip, “R ready”, and under the chart R’s test reads “Pearson's Chi-squared test: p &lt; 0.001 (n = 254).”</span></li>
+      <li><span class="do"><a href="https://jwildfire.github.io/safety.viz/dev/demo/#rbqm">Open the RBQM tab</a> and press Start R, once.</span><span class="see">The control counts six steps. About half a minute later: “R ran 3 of 8 metrics on the Pilot study in a few seconds.” Click a cell to open that metric.</span></li>
+      <li><span class="do"><a href="https://jwildfire.github.io/safety.viz/dev/demo/#data">Open the Data tab</a>, choose “RBQM study” from the menu, then press “Open RBQM”.</span><span class="see">The card reads “This data supports 8 of 8 metrics.” With R running from step 5, all eight run with no second press, at 150 sites.</span></li>
+      <li><span class="do">On a phone, <a href="https://jwildfire.github.io/safety.viz/dev/demo/#rbqm">open the link to the RBQM tab</a>.</span><span class="see">The RBQM tab is in view in the row of tabs, and nothing scrolls sideways.</span></li>
+    </ol>
+  </div>
+
+  <div class="note">
+    <p class="lbl">How to read this page</p>
+    <ul>
+      <li>Where the app changed its look, a switch above the picture swaps release 1.10 and release 1.11 in place. Release 1.10 is the released site; release 1.11 is the dev site.</li>
+      <li>A numbered marker on a picture is explained by the same number under it. Tap a picture to open it at full size.</li>
+      <li>Every sentence quoted from the app, and every number, was read from the live page by the script beside this page (<a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/sv-v1.11-demo/capture-numbers.json">what it read</a>).</li>
+    </ul>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#first"><span class="ref">01</span><span class="t">The first screen</span><span class="s">Tab colours, the study’s name, a welcome line</span></a>
+  <a href="#status"><span class="ref">02</span><span class="t">The status ladder</span><span class="s">One Exploratory label, and six below it</span></a>
+  <a href="#r"><span class="ref">03</span><span class="t">The R control</span><span class="s">One control, then a chip</span></a>
+  <a href="#rbqm"><span class="ref">04</span><span class="t">The RBQM tab</span><span class="s">A row of metrics, one press, the result first</span></a>
+  <a href="#data"><span class="ref">05</span><span class="t">Files on the Data tab</span><span class="s">gsm raw files recognised where every file goes</span></a>
+  <a href="#broken"><span class="ref">06</span><span class="t">Nothing looks broken</span><span class="s">Defects from the review of release 1.10</span></a>
+  <a href="#standards"><span class="ref">07</span><span class="t">The standards written down</span><span class="s">Where the next session will read them</span></a>
+  <a href="#same"><span class="ref">08</span><span class="t">What did not change</span><span class="s">No chart, no metric, nothing computed</span></a>
+</nav>
+
+
+<!-- ============================================================ 01 -->
+<div class="cut"><span>01 <em>· the first screen</em></span></div><section id="first">
+  <div class="hd"><h2>The first screen says where you are</h2></div>
+  <p class="what">Someone opening the app for the first time is told whose data this is, how much is here and where to go. In release 1.10 two of the tabs were grey and read as switched off, and nothing on screen named the study.</p>
+  <p class="src">Requirement: every tab has a colour, and the first screen says where you are (<a href="https://github.com/jwildfire/obot.roadmap/issues/402">obot.roadmap #402</a>) <span class="dot"></span> Pull request: tab colours, the first screen, wordmark and title (<a href="https://github.com/jwildfire/safety.viz/pull/290">safety.viz #290</a>) <span class="dot"></span> As drawn in <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m1h">mockup 1</a></p>
+
+  <figure class="swap">
+      <input type="radio" name="swap-first" id="swap-first-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-first" id="swap-first-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-first-before">Release 1.10</label>
+        <label for="swap-first-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/first-110.jpg" title="Open this picture at full size">
+        <img src="media/first-110.jpg" alt="Release 1.10: the demo app as it opens. The Data tab reads 4 files, each tab reads a count such as 9 of 9, and the Biomarkers and RBQM tabs have grey hexes." loading="lazy" width="1920" height="1200">
+      </a>
+      <a class="frame after" href="media/first.jpg" title="Open this picture at full size">
+        <img src="media/first.jpg" alt="Release 1.11: the demo app as it opens. The Data tab reads Pilot study, each tab reads one number, Biomarkers is pink and RBQM amber, a welcome line sits above the chart, and a label at the top right reads Exploratory." loading="lazy" width="1920" height="1200"><span class="mk sm" style="left:26%;top:6.6%" aria-hidden="true">1</span><span class="mk sm" style="left:40.2%;top:6.6%" aria-hidden="true">2</span><span class="mk sm" style="left:61.7%;top:6.6%" aria-hidden="true">3</span><span class="mk sm" style="left:71.7%;top:6.6%" aria-hidden="true">4</span><span class="mk" style="left:2%;top:16.3%" aria-hidden="true">5</span><span class="mk sm" style="left:8.5%;top:6.6%" aria-hidden="true">6</span><span class="mk sm" style="left:88.5%;top:4%" aria-hidden="true">7</span>
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">The app as it opens, on the pilot study.</p>
+      <p class="cap was">Release 1.10. The Data tab reads “4 files”, a tab reads “9 of 9”, and Biomarkers and RBQM share one grey. There is no welcome line and no label, and the wordmark is not a link.</p>
+      <ol class="legend">
+        <li>The Data tab names the loaded study: “Pilot study”, where it read “4 files”.</li>
+        <li>A tab shows one number when every chart draws: “9”, where it read “9 of 9”.</li>
+        <li>Biomarkers has a colour of its own, pink, and its chart names take it.</li>
+        <li>RBQM is amber. Both were grey, and read as switched off.</li>
+        <li>The welcome line, on first open: “You are looking at the CDISC pilot study, a public demo: 254 participants, 18 charts on five tabs. To use your own files, open Data. They are read in this browser and never leave it.” The cross closes it, and it stays closed for the visit.</li>
+        <li>The wordmark is a link back to the docs site (“safety.viz: docs and chart gallery”).</li>
+        <li>The app’s status label, the subject of <a href="#status">section 02</a>.</li>
+      </ol>
+      </figcaption>
+  </figure>
+  <ul class="list">
+      <li>The browser tab names the open view: “Histogram · safety.viz demo”, then “Adverse Event Explorer · safety.viz demo”, then “RBQM · safety.viz demo”. Release 1.10 read “safety.viz demo” on every view.</li>
+      <li>The app and the docs site share one favicon, the hex mark.</li>
+      <li>The colours come from a rule, not a list of tabs. A module names its own colour or is given the first open one of pink, amber and green; none is ever grey, and red is never given out because it means missing. Biomarkers and RBQM name none, so the rule gave them #c67bb6 and #c78a3b.</li>
+    </ul>
+
+  <h3>On a phone</h3>
+  <p class="what">A link to a tab now opens with that tab in view, and every tab and chart name is tall enough to press.</p>
+  <div class="phones">
+
+  <figure class="swap" style="max-width:300px">
+      <input type="radio" name="swap-phone-link" id="swap-phone-link-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-phone-link" id="swap-phone-link-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-phone-link-before">Release 1.10</label>
+        <label for="swap-phone-link-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/phone-link-110.jpg" title="Open this picture at full size">
+        <img src="media/phone-link-110.jpg" alt="Release 1.10 at phone width, opened from a link to the RBQM tab. The row of tabs shows Data, Labs and vitals and ECG; the RBQM tab is off the screen." loading="lazy" width="585" height="1266">
+      </a>
+      <a class="frame after" href="media/phone-link.jpg" title="Open this picture at full size">
+        <img src="media/phone-link.jpg" alt="Release 1.11 at phone width, opened from the same link. The row of tabs has moved so that the RBQM tab is in view." loading="lazy" width="585" height="1266"><span class="mk" style="left:79.1%;top:14%" aria-hidden="true">1</span>
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">A link to the RBQM tab, opened at 390 pixels wide.</p>
+      <p class="cap was">Release 1.10. The RBQM tab sits 792 pixels from the left of a 390-pixel screen, out of sight, and the shortest name is 30 pixels tall.</p>
+      <ol class="legend">
+        <li>The RBQM tab is in view, and every tab and name is at least 44 pixels tall.</li>
+      </ol>
+      </figcaption>
+  </figure>
+  </div>
+  <h3 id="footnote">The RBQM tab’s footnote</h3>
+  <ul class="list">
+      <li>Asked during the build: “what should the two links of the RBQM tab's footnote open?” (<a href="https://github.com/jwildfire/safety.viz/issues/271#issuecomment-6082538559">the question, with its four choices, safety.viz #271</a>).</li>
+      <li>You chose, in the session on 10 October 2026: “One link, gsm.kri docs” (<a href="https://github.com/jwildfire/safety.viz/issues/271#issuecomment-6098691387">the answer, on the same task</a>).</li>
+      <li>What it is: the RBQM tab ends with “RBQM: gsm.kri documentation”, a link to <a href="https://gilead-public.github.io/gsm.kri/">gsm.kri’s documentation site</a> that opens in a new tab, in the same line a chart’s footnote uses. It merges in the last pull request before the release candidate, so the dev site this page was captured from does not show it yet.</li>
+      <li>A page on the docs site for the RBQM tab, the third choice, is filed as a follow-up (<a href="https://github.com/jwildfire/obot.roadmap/issues/415">the requirement, obot.roadmap #415</a>).</li>
+    </ul>
+</section>
+
+<!-- ============================================================ 02 -->
+<div class="cut"><span>02 <em>· the status ladder</em></span></div><section id="status">
+  <div class="hd"><h2>One label says how far to trust it</h2></div>
+  <p class="what">The ladder has four rungs: Qualified, Exploratory, Experimental and Prototype. Nothing is Qualified. The app carries one label, Exploratory, and a chart or tab carries its own only when it is below that rung.</p>
+  <p class="src">Requirement: one status ladder, with one label for the app and one for anything below it (<a href="https://github.com/jwildfire/obot.roadmap/issues/403">obot.roadmap #403</a>) <span class="dot"></span> Pull request: the status ladder (<a href="https://github.com/jwildfire/safety.viz/pull/296">safety.viz #296</a>) <span class="dot"></span> As drawn in <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m1h">mockup 1</a> and <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m2h">mockup 2</a></p>
+  <div class="states">
+
+  <figure>
+      <a class="frame " href="media/status-hover.jpg" title="Open this picture at full size">
+        <img src="media/status-hover.jpg" alt="The top right of the app with the pointer on the Exploratory label. A dark line under it reads: Nothing in this app is qualified. Confirm every result." loading="lazy" width="780" height="225"><span class="mk" style="left:71.7%;top:21.5%" aria-hidden="true">1</span>
+      </a>
+      <figcaption>
+      <p class="cap">On hover, one line: “Nothing in this app is qualified. Confirm every result.”</p>
+      <ol class="legend">
+        <li>The label is a button: it takes focus from the keyboard, opens on Enter and closes on Escape.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <figure style="max-width:300px">
+      <a class="frame " href="media/phone-status.jpg" title="Open this picture at full size">
+        <img src="media/phone-status.jpg" alt="The app at phone width with the Exploratory label’s panel open. The panel fits inside the screen." loading="lazy" width="585" height="1266">
+      </a>
+      <figcaption>
+      <p class="cap">On a phone the same panel opens on a tap, inside the screen: it sits 8 pixels in from each edge of a 390-pixel screen.</p>
+      
+      </figcaption>
+  </figure>
+  </div>
+
+  <figure>
+      <a class="frame " href="media/status-panel.jpg" title="Open this picture at full size">
+        <img src="media/status-panel.jpg" alt="The app with the Exploratory label’s panel open. It is headed This app is exploratory, gives the disclaimer and a count of charts on each rung, and lists the four rungs with Exploratory marked This app." loading="lazy" width="1920" height="1200"><span class="mk sm" style="left:88.5%;top:4%" aria-hidden="true">1</span><span class="mk" style="left:68%;top:17.3%" aria-hidden="true">2</span><span class="mk" style="left:68%;top:25.7%" aria-hidden="true">3</span><span class="mk" style="left:68%;top:41.1%" aria-hidden="true">4</span>
+      </a>
+      <figcaption>
+      <p class="cap">On a click, a panel headed “This app is exploratory”.</p>
+      <ol class="legend">
+        <li>The one label in the header.</li>
+        <li>The disclaimer: “Nothing here is qualified. The charts, statistics and site metrics are tested and documented, but none has been through qualification. Confirm every result in a qualified system before you rely on it.”</li>
+        <li>What is on each rung: “13 charts are Exploratory. 5 charts and the RBQM tab are Experimental, and say so when you open them.”</li>
+        <li>The four rungs, with the app’s marked. A link under them leads to what each rung means, in the hub’s developer guidelines.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <h3>A chart below Exploratory says so on its card</h3>
+  <p class="what">Five charts and the RBQM tab are Experimental. Each carries the label on the corner of its card, with its reason one click away. The other 13 charts carry no second label.</p>
+
+  <figure class="swap">
+      <input type="radio" name="swap-banner" id="swap-banner-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-banner" id="swap-banner-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-banner-before">Release 1.10</label>
+        <label for="swap-banner-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/waterfall-110.jpg" title="Open this picture at full size">
+        <img src="media/waterfall-110.jpg" alt="Release 1.10: the Hepatic ALT Waterfall with an amber banner drawn inside the chart reading This chart is experimental." loading="lazy" width="1920" height="1200">
+      </a>
+      <a class="frame after" href="media/status-chart.jpg" title="Open this picture at full size">
+        <img src="media/status-chart.jpg" alt="Release 1.11: the Hepatic ALT Waterfall with an Experimental label on the corner of its card and its panel open, giving the reason and the four rungs." loading="lazy" width="1920" height="1200"><span class="mk" style="left:86.7%;top:21.3%" aria-hidden="true">1</span><span class="mk" style="left:66.8%;top:32.2%" aria-hidden="true">2</span><span class="mk" style="left:66.8%;top:56.6%" aria-hidden="true">3</span>
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">The Hepatic ALT Waterfall, with its label open.</p>
+      <p class="cap was">Release 1.10. An amber banner inside the chart said “This chart is experimental: it is tested and documented, but its behaviour and settings may change.” The header carried no label at all.</p>
+      <ol class="legend">
+        <li>The label sits on the corner of the card, outside the chart. The banner inside the chart is gone.</li>
+        <li>The chart’s own reason: “Experimental: a new chart, drawn from a 2025 paper; its layout and settings may still change.”</li>
+        <li>The same four rungs, with this chart’s marked and the app’s beside it.</li>
+      </ol>
+      </figcaption>
+  </figure>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Experimental</th><th>The reason on its label, as shipped</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Hepatic ALT Waterfall</td><td>“Experimental: a new chart, drawn from a 2025 paper; its layout and settings may still change.”</td></tr>
+      <tr><td class="k">Nephrotoxicity Explorer</td><td>“Experimental until its kidney-injury staging has had a clinical review.”</td></tr>
+      <tr><td class="k">Participant Profile</td><td>“Experimental: what it lists for a participant, and how, may still change.”</td></tr>
+      <tr><td class="k">QT Safety Explorer</td><td>“Experimental: its settings and its table may still change.”</td></tr>
+      <tr><td class="k">Time-to-Event Explorer</td><td>“Experimental until an external clinical review confirms its Kaplan–Meier estimates.”</td></tr>
+      <tr><td class="k">The RBQM tab</td><td>“Experimental: new in 1.10. R runs in the browser, and what the tab shows may still change.”</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure style="max-width:640px">
+      <a class="frame " href="media/status-tab.jpg" title="Open this picture at full size">
+        <img src="media/status-tab.jpg" alt="The RBQM tab with the Experimental label on the corner of its card open: The RBQM tab is experimental, with its reason and the four rungs, Experimental marked This tab." loading="lazy" width="960" height="720"><span class="mk" style="left:73.4%;top:15.6%" aria-hidden="true">1</span>
+      </a>
+      <figcaption>
+      <p class="cap">A tab carries the same label as a chart: “The RBQM tab is experimental”.</p>
+      <ol class="legend">
+        <li>The tab’s reason: “Experimental: new in 1.10. R runs in the browser, and what the tab shows may still change.”</li>
+      </ol>
+      </figcaption>
+  </figure>
+  <ul class="list">
+      <li>No chart draws a status banner inside itself any more: the script opened all 18 charts and found 0.</li>
+      <li>The RBQM tab’s pill, and the one in its opening sentence, are gone. The tab carries the same label as a chart.</li>
+      <li>A build stops with a sentence if any chart is marked Qualified. That is held by a unit test, not by this page (<a href="https://github.com/jwildfire/obot.roadmap/issues/403#issuecomment-6098149252">the requirement’s closing comment</a>).</li>
+    </ul>
+
+  <div class="note ask" id="words">
+    <p class="lbl">The status words, in full, for you to correct</p>
+    <p>These are drafts. You said they would ship and that you would correct them at the release candidate. All of them, as the live app prints them:</p>
+    <dl>
+      <dt>The label’s line on hover</dt><dd>“Nothing in this app is qualified. Confirm every result.”</dd>
+      <dt>The disclaimer, in the panel</dt><dd>“Nothing here is qualified. The charts, statistics and site metrics are tested and documented, but none has been through qualification. Confirm every result in a qualified system before you rely on it.”</dd>
+      <dt>The count under it</dt><dd>“13 charts are Exploratory. 5 charts and the RBQM tab are Experimental, and say so when you open them.”</dd>
+      <dt>Qualified</dt><dd>“Validated for regulated use. Nothing in safety.viz is, yet.”</dd>
+      <dt>Exploratory</dt><dd>“Tested and documented. Confirm every result.”</dd>
+      <dt>Experimental</dt><dd>“Tested and documented, but what it shows or how it behaves may still change.”</dd>
+      <dt>Prototype</dt><dd>“An early look, on the docs site only. Not in this app.”</dd>
+      <dt>Hepatic ALT Waterfall</dt><dd>“Experimental: a new chart, drawn from a 2025 paper; its layout and settings may still change.”</dd>
+      <dt>Nephrotoxicity Explorer</dt><dd>“Experimental until its kidney-injury staging has had a clinical review.”</dd>
+      <dt>Participant Profile</dt><dd>“Experimental: what it lists for a participant, and how, may still change.”</dd>
+      <dt>QT Safety Explorer</dt><dd>“Experimental: its settings and its table may still change.”</dd>
+      <dt>Time-to-Event Explorer</dt><dd>“Experimental until an external clinical review confirms its Kaplan–Meier estimates.”</dd>
+      <dt>The RBQM tab</dt><dd>“Experimental: new in 1.10. R runs in the browser, and what the tab shows may still change.”</dd>
+    </dl>
+    <p style="margin-top:12px">Two things to notice as you read. The Qualified rung is described with the word “validated”, a word the standards keep for nothing here; the sentence does go on to say nothing is. The RBQM tab’s reason says “new in 1.10”, which now reads one release old.</p>
+  </div>
+
+  <h3>The same label on the docs site</h3>
+  <p class="what">Every gallery card and every chart page’s title says its rung with the same component: 8 Exploratory, 5 Experimental and 1 Prototype. A Prototype is shown on the docs site only.</p>
+
+  <figure>
+      <a class="frame " href="media/docs-gallery.jpg" title="Open this picture at full size">
+        <img src="media/docs-gallery.jpg" alt="The docs site’s gallery. The QT Safety Explorer’s card has an Experimental label with its panel open; the Patient Journey Explorer’s card has a Prototype label." loading="lazy" width="1920" height="1200">
+      </a>
+      <figcaption>
+      <p class="cap">The gallery, with one card’s label open: “QT Safety Explorer is experimental”, “Experimental: its settings and its table may still change.”</p>
+      
+      </figcaption>
+  </figure>
+
+  <figure>
+      <a class="frame " href="media/docs-title.jpg" title="Open this picture at full size">
+        <img src="media/docs-title.jpg" alt="The Time-to-Event Explorer’s page on the docs site. An Experimental label sits beside the page title, and a second one at the top right of the chart." loading="lazy" width="1920" height="630"><span class="mk" style="left:34.3%;top:13.4%" aria-hidden="true">1</span>
+      </a>
+      <figcaption>
+      <p class="cap">A chart’s page: “Time-to-Event Explorer”, with “Experimental” beside the title.</p>
+      <ol class="legend">
+        <li>The label beside the title. The page shows 2 labels: the chart beneath draws its own as well, at its top right.</li>
+      </ol>
+      </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ 03 -->
+<div class="cut"><span>03 <em>· the R control</em></span></div><section id="r">
+  <div class="hd"><h2>One control starts R, then gets out of the way</h2></div>
+  <p class="what">R is started from one control at the right end of the chart names, the same on the Biomarkers tab and the RBQM tab. Once R is running the control is a small chip that opens R’s details. R still starts only when you ask.</p>
+  <p class="src">Requirement: one R control, in the same place on both tabs that use R (<a href="https://github.com/jwildfire/obot.roadmap/issues/404">obot.roadmap #404</a>) <span class="dot"></span> Pull request: one R control, one set of sentences, and a limit on waiting for R (<a href="https://github.com/jwildfire/safety.viz/pull/297">safety.viz #297</a>) <span class="dot"></span> As drawn in <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m3h">mockup 3</a></p>
+
+  <figure class="swap">
+      <input type="radio" name="swap-r" id="swap-r-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-r" id="swap-r-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-r-before">Release 1.10</label>
+        <label for="swap-r-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/r-110.jpg" title="Open this picture at full size">
+        <img src="media/r-110.jpg" alt="Release 1.10: the Cross-tabulation chart. A Start R pill sits at the front of the row of chart names, which are grey." loading="lazy" width="1920" height="1200">
+      </a>
+      <a class="frame after" href="media/r-off.jpg" title="Open this picture at full size">
+        <img src="media/r-off.jpg" alt="Release 1.11: the Cross-tabulation chart. The chart names are pink and come first; at the right end of the row a control reads Statistics need R, 13 MB, once, Start R." loading="lazy" width="1920" height="1200"><span class="mk" style="left:86.8%;top:13.2%" aria-hidden="true">1</span><span class="mk" style="left:8.2%;top:13.2%" aria-hidden="true">2</span>
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">A biomarker chart before R is started.</p>
+      <p class="cap was">Release 1.10. The Start R pill is at the front of the row, ahead of the chart names, and the line inside the chart is a long sentence: “Statistics need R. Start R to compute them: it downloads about 13 MB, once, from webr.r-wasm.org, and the study’s data stays in this browser.”</p>
+      <ol class="legend">
+        <li>The control, at the right end of the row and outside the list of names that scrolls: “Statistics need R · 13 MB, once · Start R”. Its whole sentence is on hover: “Statistics need R. Start R to compute them: about 13 MB, downloaded once from webr.r-wasm.org. The study’s data stays in this browser.”</li>
+        <li>The chart names come first, in their tab’s colour.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <h3>Its four states</h3>
+  <div class="states">
+    <figure>
+      <p class="lbl">Before a press</p>
+      <a class="frame " href="media/r-state-off.jpg" title="Open this picture at full size">
+        <img src="media/r-state-off.jpg" alt="The control before a press: Statistics need R, 13 MB, once, and a Start R button." loading="lazy" width="840" height="66">
+      </a>
+      <p class="cap">“Statistics need R · 13 MB, once” and one button. Until it is pressed the page asks nothing of R’s addresses (0 requests).</p>
+    </figure>
+    <figure>
+      <p class="lbl">Starting</p>
+      <a class="frame " href="media/r-state-starting.jpg" title="Open this picture at full size">
+        <img src="media/r-state-starting.jpg" alt="The control while R starts: a spinner, Starting R, and 13 MB with a count of seconds." loading="lazy" width="840" height="66">
+      </a>
+      <p class="cap">“Starting R”, with the seconds counting. On this capture R’s test was on the chart 1.9 seconds after the press.</p>
+    </figure>
+    <figure>
+      <p class="lbl">Ready</p>
+      <a class="frame " href="media/r-state-ready.jpg" title="Open this picture at full size">
+        <img src="media/r-state-ready.jpg" alt="The control as a chip reading R ready, with its panel open: R is running in this browser, with version, started, downloaded and your data." loading="lazy" width="840" height="315">
+      </a>
+      <p class="cap">A chip, “R ready”. A click opens “R is running in this browser”: version, “R 4.6.0, on webR 0.6.0”; started, “in 1.7 seconds”; downloaded, “13 MB, once, from webr.r-wasm.org”; your data, “stays in this browser; R runs here”.</p>
+    </figure>
+    <figure>
+      <p class="lbl">Did not start</p>
+      <a class="frame " href="media/r-state-failed.jpg" title="Open this picture at full size">
+        <img src="media/r-state-failed.jpg" alt="The control when R did not start: the words R did not start in red, a Try again button and a Why chip, with a panel giving the reason." loading="lazy" width="840" height="390">
+      </a>
+      <p class="cap">With R’s addresses blocked: “R did not start”, “Try again” beside it, and the reason one click away. The browser’s own message is folded under “What the browser said”.</p>
+    </figure>
+  </div>
+
+  <figure>
+      <a class="frame " href="media/r-statistic.jpg" title="Open this picture at full size">
+        <img src="media/r-statistic.jpg" alt="The Cross-tabulation chart after R has started. Under the bar chart a line gives Pearson’s Chi-squared test with its p-value." loading="lazy" width="1920" height="1200"><span class="mk" style="left:23.4%;top:63.3%" aria-hidden="true">1</span>
+      </a>
+      <figcaption>
+      <p class="cap">After the press, R’s test appears under the chart with nothing drawn again.</p>
+      <ol class="legend">
+        <li>“Pearson's Chi-squared test: p &lt; 0.001 (n = 254). Exploratory, unadjusted.” Before the press the same line read “Statistics need R. Start R, at the top right.”</li>
+      </ol>
+      </figcaption>
+  </figure>
+  <ul class="list">
+      <li>Both tabs say the same thing when R cannot start. On the Biomarkers tab the chart’s line reads “R did not start, so there is no test. Try again, at the top right.” On the RBQM tab the body reads “R did not start, so no metric was run. Try again, at the top right.”</li>
+      <li>The reason is in plain words: “The browser could not download R from webr.r-wasm.org. Check the connection, or whether this network blocks that address, and try again. The charts still draw; only the statistics are missing.”</li>
+      <li>Starting R on the Biomarkers tab downloaded 12.6 MB on this capture; the control says 13 MB.</li>
+      <li>The RBQM tab now gives up on an R that stops answering: after ten minutes to start, three to load gsm’s packages or five to run, it says R stopped answering, closes that R and offers Try again. That is held by unit tests, since a browser test would have to wait a limit out (<a href="https://github.com/jwildfire/obot.roadmap/issues/404#issuecomment-6098177054">the requirement’s closing comment</a>).</li>
+      <li>Not in this release: one R shared by both tabs. Each tab still starts its own, so a visitor who uses both downloads R twice (<a href="https://github.com/jwildfire/obot.roadmap/issues/414">the follow-up requirement, obot.roadmap #414</a>).</li>
+    </ul>
+  <div class="phones">
+
+  <figure style="max-width:300px">
+      <a class="frame " href="media/phone-r.jpg" title="Open this picture at full size">
+        <img src="media/phone-r.jpg" alt="The Cross-tabulation chart at phone width. The Start R control is first in the row of chart names, in view without scrolling." loading="lazy" width="585" height="1266"><span class="mk" style="left:34%;top:19.5%" aria-hidden="true">1</span>
+      </a>
+      <figcaption>
+      <p class="cap">At 390 pixels the control is first in the row, in view without scrolling, and the chart’s line reads “Statistics need R. Start R, above.”</p>
+      <ol class="legend">
+        <li>Start R, in view.</li>
+      </ol>
+      </figcaption>
+  </figure>
+  </div>
+</section>
+
+<!-- ============================================================ 04 -->
+<div class="cut"><span>04 <em>· the RBQM tab</em></span></div><section id="rbqm">
+  <div class="hd"><h2>The RBQM tab reads like the other tabs</h2></div>
+  <p class="what">The tab has the same row of names every other tab has, with Overview first and then the eight site metrics, each marked with its state. One press of the R control runs everything. The result comes first, and the run’s details are folded behind the chip.</p>
+  <p class="src">Requirement: the RBQM tab reads at a glance (<a href="https://github.com/jwildfire/obot.roadmap/issues/405">obot.roadmap #405</a>) <span class="dot"></span> Pull request: a row of metrics, the app’s R control, one page at a time (<a href="https://github.com/jwildfire/safety.viz/pull/298">safety.viz #298</a>) <span class="dot"></span> As drawn in <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m4h">mockup 4</a> and <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m5h">mockup 5</a></p>
+
+  <figure class="swap">
+      <input type="radio" name="swap-rbqm-off" id="swap-rbqm-off-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-rbqm-off" id="swap-rbqm-off-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-rbqm-off-before">Release 1.10</label>
+        <label for="swap-rbqm-off-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/rbqm-off-110.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-off-110.jpg" alt="Release 1.10: the RBQM tab before R is started. A paragraph, a box with a Start R button and three sentences, and a line about the files. There is no row of names under the header." loading="lazy" width="1920" height="630">
+      </a>
+      <a class="frame after" href="media/rbqm-off.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-off.jpg" alt="Release 1.11: the RBQM tab before R is started. A row under the header reads Overview and eight metrics, with the R control at its right end. The body says Site metrics need R. Start R, at the top right." loading="lazy" width="1920" height="630"><span class="mk" style="left:38.7%;top:25.1%" aria-hidden="true">1</span><span class="mk" style="left:73.4%;top:17.3%" aria-hidden="true">2</span><span class="mk" style="left:2.3%;top:32.7%" aria-hidden="true">3</span><span class="mk" style="left:86.7%;top:25.5%" aria-hidden="true">4</span>
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">The RBQM tab on the pilot study, before R is started.</p>
+      <p class="cap was">Release 1.10. The tab has no row of names, so it looks like a different kind of page. It opens on a paragraph and a box: “Start R to run gsm’s workflows on the loaded study’s adsl.csv and adae.csv. It downloads about 55 MB, once: R itself from webr.r-wasm.org (about 13 MB), its packages from repo.r-wasm.org (about 40 MB) and gsm’s packages from this page (about 2 MB). The files stay in this browser, and R runs here.”</p>
+      <ol class="legend">
+        <li>The row: Overview, then the eight metrics. A dashed hex is not started; a grey hex with a bar cannot run, because the study has no data for it. Each item’s name for a screen reader carries the state in words, such as “Adverse Event Rate: not started”.</li>
+        <li>The same control as on the Biomarkers tab: “Site metrics need R · 55 MB, once · Start R”.</li>
+        <li>One line in the body, “Site metrics need R. Start R, at the top right.”, and what the study supports: “The loaded study supports 3 of 8 metrics. Change the data on the Data tab.”</li>
+        <li>The tab’s status label, on the corner of its card.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <figure>
+      <a class="frame " href="media/rbqm-running.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-running.jpg" alt="The RBQM tab while R starts. The control reads a step number and name with six segments filling and a count of seconds. The body lists six steps, the first ticked." loading="lazy" width="1920" height="705"><span class="mk" style="left:80.8%;top:22.5%" aria-hidden="true">1</span><span class="mk" style="left:37.9%;top:54.5%" aria-hidden="true">2</span><span class="mk" style="left:33.3%;top:22.5%" aria-hidden="true">3</span>
+      </a>
+      <figcaption>
+      <p class="cap">After one press: “R is starting. The metrics run by themselves when it is ready.”</p>
+      <ol class="legend">
+        <li>The control names the step and counts it: “3 of 6 · Fetching gsm’s workflow files”, with six segments and the seconds.</li>
+        <li>The body ticks six steps off: Downloading R; Installing R packages; Fetching gsm’s workflow files; Loading gsm’s packages, the long one; Reading the study; Running the workflows. Only one is called the long one.</li>
+        <li>Each metric that will run turns in the row.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <figure class="swap">
+      <input type="radio" name="swap-rbqm-done" id="swap-rbqm-done-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-rbqm-done" id="swap-rbqm-done-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-rbqm-done-before">Release 1.10</label>
+        <label for="swap-rbqm-done-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/rbqm-done-110.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-done-110.jpg" alt="Release 1.10: the RBQM tab after the run. A box holds a paragraph of timings and versions; the site overview table spreads three metric columns across the whole card and its last row is cut through." loading="lazy" width="1920" height="1200">
+      </a>
+      <a class="frame after" href="media/rbqm-done.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-done.jpg" alt="Release 1.11: the RBQM tab after the run. The row shows three metrics ticked, the control is an R ready chip, one line says what ran, and the site overview is a narrow table with a key beside it." loading="lazy" width="1920" height="1200"><span class="mk" style="left:45.8%;top:13.2%" aria-hidden="true">1</span><span class="mk" style="left:88.5%;top:9.1%" aria-hidden="true">2</span><span class="mk" style="left:2.3%;top:21.4%" aria-hidden="true">3</span><span class="mk" style="left:25.6%;top:17.5%" aria-hidden="true">4</span><span class="mk" style="left:63.1%;top:26.3%" aria-hidden="true">5</span><span class="mk" style="left:80.3%;top:41.9%" aria-hidden="true">6</span>
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">After the run, on the pilot study.</p>
+      <p class="cap was">Release 1.10. The run box outweighs the result: “R ran 3 of 8 metrics on the loaded study’s adsl.csv and adae.csv in 2.9 seconds, 27 seconds after Start R was pressed. The snapshot is dated 2026-10-10. R 4.6.0, gsm.core 1.3.1, gsm.mapping 1.1.6, gsm.reporting 1.1.7 and workr 1.1.0. The metric workflows are gsm.kri 1.7.0’s and the charts gsm.viz 2.4.1’s.” The table is 1180 pixels wide, with a column as wide as 274 pixels, and its last row is cut through.</p>
+      <ol class="legend">
+        <li>Three metrics ran, each with a green tick; five did not, each with a grey bar. Grey, because missing data is not an error.</li>
+        <li>The control is now a chip, “R ready”.</li>
+        <li>One line says what ran: “R ran 3 of 8 metrics on the Pilot study in 2.9 seconds. The other 5 need data it does not have: change the data on the Data tab.” It ends with a link to Run details.</li>
+        <li>The heading counts the sites: “17 sites, 12 shown here”. The last row in view is whole.</li>
+        <li>No number or flag column is wider than 100 pixels, so the table is 744 pixels wide in a card of 1216.</li>
+        <li>A key to the flags: within limits; amber flag: high, or low when it points down; red flag: high, or low when it points down; no score, so no flag. “Hover a cell for its numbers. Click one to open that metric.”</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <figure>
+      <a class="frame " href="media/rbqm-details.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-details.jpg" alt="Run details, open under the R ready chip: the steps with their sizes, what R was handed, which metrics did not run and why, the versions of R and gsm’s packages, R’s warnings and a Run again button." loading="lazy" width="1920" height="1200"><span class="mk" style="left:88.5%;top:9.1%" aria-hidden="true">1</span>
+      </a>
+      <figcaption>
+      <p class="cap">Run details, behind the chip and closed until asked for: “It ran 3 of 8 metrics on the Pilot study. About 55 MB was downloaded, once; the study’s data stays here.” “27 seconds from the press to the charts.”</p>
+      <ol class="legend">
+        <li>The panel’s headings are “Steps”, “What R was handed”, “Did not run”, “Versions”, “Warnings from R”. “Run again” sits at its foot.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <h3>One page at a time</h3>
+  <p class="what">The body shows the site overview or one metric’s two charts, never both. A metric opens from the row or from a cell of the overview, and has an address of its own.</p>
+
+  <figure>
+      <a class="frame " href="media/rbqm-metric.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-metric.jpg" alt="The Study Discontinuation Rate’s page on the RBQM tab: a scatter plot and a bar chart, with its item marked in the row." loading="lazy" width="1920" height="1200"><span class="mk" style="left:36.6%;top:13.2%" aria-hidden="true">1</span><span class="mk" style="left:2.3%;top:17.2%" aria-hidden="true">2</span>
+      </a>
+      <figcaption>
+      <p class="cap">A click on a cell of the SDSC column opened “Study Discontinuation Rate” at the address “#rbqm/kri0006”: 2 charts and no table.</p>
+      <ol class="legend">
+        <li>The metric’s item is marked in the row.</li>
+        <li>Its name and state: “SDSC, ran”.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <figure>
+      <a class="frame " href="media/rbqm-cannot.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-cannot.jpg" alt="The Screen Failure Rate’s page: in place of charts, a sentence saying it needs Raw_ENROLL.csv, which is not loaded, and a link to change the data on the Data tab." loading="lazy" width="1920" height="495"><span class="mk" style="left:47.9%;top:32%" aria-hidden="true">1</span><span class="mk" style="left:2.3%;top:56.4%" aria-hidden="true">2</span>
+      </a>
+      <figcaption>
+      <p class="cap">A metric that did not run has a page too (“SF, did not run”).</p>
+      <ol class="legend">
+        <li>Its item carries the grey bar.</li>
+        <li>R’s own sentence, and where to go: “Screen Failure Rate needs Raw_ENROLL.csv, which is not loaded.” “Change the data on the Data tab.”</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <h3>All eight metrics, at 150 sites</h3>
+  <p class="what">With the RBQM study chosen on the Data tab and R already running, the tab ran by itself: “R ran 8 of 8 metrics on the 9 loaded files in 4.3 seconds. To use other files, change the data on the Data tab.”</p>
+
+  <figure>
+      <a class="frame " href="media/rbqm-study.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-study.jpg" alt="The RBQM tab on the RBQM study: all eight metrics ticked in the row, and a site overview with eight metric columns that fills the card with no sideways scroll." loading="lazy" width="1920" height="1200"><span class="mk" style="left:45.8%;top:13.2%" aria-hidden="true">1</span><span class="mk" style="left:26.1%;top:17.5%" aria-hidden="true">2</span><span class="mk sm" style="left:25.7%;top:6.6%" aria-hidden="true">3</span>
+      </a>
+      <figcaption>
+      <p class="cap">The RBQM study: nine raw files in gsm’s format, for a synthetic study of 765 enrolled participants.</p>
+      <ol class="legend">
+        <li>All eight ran, and the row still fits beside the control.</li>
+        <li>“150 sites, 12 shown here”. With eight metrics the columns share the card evenly, the widest 98 pixels, and nothing scrolls sideways.</li>
+        <li>The Data tab names the study: “RBQM study”.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <h3>On a phone</h3>
+  <div class="phones">
+
+  <figure style="max-width:300px">
+      <a class="frame " href="media/phone-rbqm.jpg" title="Open this picture at full size">
+        <img src="media/phone-rbqm.jpg" alt="The RBQM tab at phone width after the run: the outcome line and the site overview table fitted to the screen." loading="lazy" width="585" height="1266">
+      </a>
+      <figcaption>
+      <p class="cap">The overview at 390 pixels wide. Nothing scrolls sideways, and the table’s headings are 10 pixels.</p>
+      
+      </figcaption>
+  </figure>
+
+  <figure style="max-width:300px">
+      <a class="frame " href="media/phone-rbqm-metric.jpg" title="Open this picture at full size">
+        <img src="media/phone-rbqm-metric.jpg" alt="A metric’s page at phone width: its name and the top of its scatter plot." loading="lazy" width="585" height="1266">
+      </a>
+      <figcaption>
+      <p class="cap">A metric’s page, opened from a cell.</p>
+      
+      </figcaption>
+  </figure>
+  </div>
+</section>
+
+<!-- ============================================================ 05 -->
+<div class="cut"><span>05 <em>· files on the Data tab</em></span></div><section id="data">
+  <div class="hd"><h2>All files come in on the Data tab</h2></div>
+  <p class="what">There is now one place to load files. The Data tab recognises raw files in gsm’s format and keeps them as they are, one card says how many RBQM metrics the loaded data supports, and the RBQM tab’s own file box is gone.</p>
+  <p class="src">Requirement: all files come in on the Data tab (<a href="https://github.com/jwildfire/obot.roadmap/issues/406">obot.roadmap #406</a>) <span class="dot"></span> Pull request: gsm raw files recognised there, one RBQM card, the file box gone (<a href="https://github.com/jwildfire/safety.viz/pull/299">safety.viz #299</a>) <span class="dot"></span> As drawn in <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/#m6h">mockup 6</a></p>
+
+  <figure class="swap">
+      <input type="radio" name="swap-data" id="swap-data-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-data" id="swap-data-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-data-before">Release 1.10</label>
+        <label for="swap-data-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/data-raw-110.jpg" title="Open this picture at full size">
+        <img src="media/data-raw-110.jpg" alt="Release 1.10: the Data tab after three gsm raw files were dropped. Raw_SUBJ.csv is read as the subject-level file with columns to map, Raw_AE.csv as the adverse events file, and Raw_PD.csv is not placed." loading="lazy" width="1920" height="1200">
+      </a>
+      <a class="frame after" href="media/data-raw.jpg" title="Open this picture at full size">
+        <img src="media/data-raw.jpg" alt="Release 1.11: the Data tab after the same three files were dropped. An RBQM card says This data supports 4 of 8 metrics, with an icon for each metric and the reasons for the four that cannot run; each file has a card naming its raw domain." loading="lazy" width="1920" height="1200"><span class="mk sm" style="left:26.3%;top:6.6%" aria-hidden="true">1</span><span class="mk" style="left:81.6%;top:12%" aria-hidden="true">2</span><span class="mk" style="left:25.4%;top:35%" aria-hidden="true">3</span><span class="mk" style="left:25.4%;top:39.6%" aria-hidden="true">4</span><span class="mk" style="left:25.4%;top:55.8%" aria-hidden="true">5</span><span class="mk" style="left:24%;top:49.8%" aria-hidden="true">6</span><span class="mk" style="left:72%;top:75.7%" aria-hidden="true">7</span>
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">Three raw files dropped on the Data tab: Raw_SUBJ.csv, Raw_AE.csv and Raw_PD.csv.</p>
+      <p class="cap was">Release 1.10, with the same three files. They are taken for a study’s standard files: “Raw_SUBJ.csv: Subject-level, 1,005 rows”, “Raw_AE.csv: Adverse events, 2,583 rows”, “Raw_PD.csv: Not placed, 3,000 rows”. The RBQM tab then said “The loaded study supports 0 of 8 metrics. R makes gsm’s raw tables from its Raw_SUBJ.csv and Raw_AE.csv.”</p>
+      <ol class="legend">
+        <li>The Data tab names what is loaded: “Your 3 files”.</li>
+        <li>Said once: “The demo study (Pilot study) was cleared to load your files.”</li>
+        <li>The RBQM card: “This data supports 4 of 8 metrics.” Its button, “Open RBQM”, opens the tab.</li>
+        <li>An icon for each metric, the same icons as the tab’s row.</li>
+        <li>“Why 4 cannot run”, in R’s own words: “Grade 3+ Lab Abnormality Rate needs Raw_LB.csv, which is not loaded.” “Study Discontinuation Rate needs Raw_STUDCOMP.csv, which is not loaded.” “Treatment Discontinuation Rate needs Raw_SDRGCOMP.csv, which is not loaded.” “Screen Failure Rate needs Raw_ENROLL.csv, which is not loaded.” “The Groups table needs Raw_STUDY.csv and Raw_SITE.csv, which are not loaded.”</li>
+        <li>Step three now reads “Open the RBQM tab” (“4 of 8 metrics supported · 0 of 18 charts ready”), and step two says “Nothing to map: gsm’s raw files are kept as they are”.</li>
+        <li>Each raw file keeps a card of its own, with the raw domain it was read as: “gsm raw file: Raw_SUBJ, by its name”.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <figure>
+      <a class="frame " href="media/rbqm-own.jpg" title="Open this picture at full size">
+        <img src="media/rbqm-own.jpg" alt="The RBQM tab after running on the three dropped files: four metrics ticked in the row and a site overview with four metric columns. There is no file box on the tab." loading="lazy" width="1920" height="1200"><span class="mk" style="left:2.3%;top:21.4%" aria-hidden="true">1</span><span class="mk" style="left:45.8%;top:13.2%" aria-hidden="true">2</span>
+      </a>
+      <figcaption>
+      <p class="cap">The card’s button opens the RBQM tab, and one press runs the four metrics the files support.</p>
+      <ol class="legend">
+        <li>“R ran 4 of 8 metrics on the 3 loaded files in 1.9 seconds. The other 4 need data it does not have: change the data on the Data tab.”</li>
+        <li>The four that ran are ticked. The tab has no drop zone and no file box (0 found); its line links to the Data tab.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <figure>
+      <a class="frame " href="media/data-pilot.jpg" title="Open this picture at full size">
+        <img src="media/data-pilot.jpg" alt="The Data tab on the pilot study. The RBQM card says This data supports 3 of 8 metrics, lists why five cannot run, and says which raw tables R makes from adsl.csv and adae.csv." loading="lazy" width="1920" height="1200"><span class="mk" style="left:25.4%;top:18.3%" aria-hidden="true">1</span><span class="mk" style="left:87.3%;top:18.3%" aria-hidden="true">2</span>
+      </a>
+      <figcaption>
+      <p class="cap">On a study of standard files, the same card says which of gsm’s raw tables R makes from which file.</p>
+      <ol class="legend">
+        <li>“This data supports 3 of 8 metrics.” “adsl.csv, the Subject-level file, gives Raw_SITE, Raw_STUDCOMP, Raw_STUDY and Raw_SUBJ.” “adae.csv, the Adverse events file, gives Raw_AE.”</li>
+        <li>“Open RBQM” opens the tab.</li>
+      </ol>
+      </figcaption>
+  </figure>
+
+  <figure>
+      <a class="frame " href="media/data-study.jpg" title="Open this picture at full size">
+        <img src="media/data-study.jpg" alt="The Data tab with the RBQM study chosen: the RBQM card says This data supports 8 of 8 metrics, above nine raw file cards." loading="lazy" width="1920" height="1200"><span class="mk" style="left:25.4%;top:27.6%" aria-hidden="true">1</span>
+      </a>
+      <figcaption>
+      <p class="cap">The RBQM study, chosen from the study menu: 9 raw file cards.</p>
+      <ol class="legend">
+        <li>“This data supports 8 of 8 metrics.”</li>
+      </ol>
+      </figcaption>
+  </figure>
+  <ul class="list">
+      <li>A file is taken for a gsm raw file only when its name starts with “Raw_” or its columns match exactly one raw domain. Everything else is read as a study file, as before.</li>
+      <li>The “Renamed columns” demo study has a file called ae.csv. It is still read as the adverse events file, and that study’s tabs count what they counted in release 1.10: Labs and vitals 6 of 9, ECG 0, Adverse events 1 of 3, Biomarkers 5, RBQM not run.</li>
+      <li>A raw file that is not CSV is refused with a sentence: “Raw_AE.json is not a CSV file: the RBQM tab reads gsm’s raw files as CSV.”</li>
+      <li>The drop zone says it takes both: “Study files or gsm raw files. They are read in this browser and sent nowhere.”</li>
+      <li>Reading gsm raw files in the app is an interim path, so this is the least that moving the loading needed. Your words on 9 October 2026: “I’m hoping to move to RAW -> SDTM -> ADaM for everything. Not in this releases though”.</li>
+    </ul>
+  <div class="phones">
+
+  <figure style="max-width:300px">
+      <a class="frame " href="media/phone-data.jpg" title="Open this picture at full size">
+        <img src="media/phone-data.jpg" alt="The Data tab’s RBQM card at phone width, fitted to the screen." loading="lazy" width="585" height="1266">
+      </a>
+      <figcaption>
+      <p class="cap">The RBQM card at 390 pixels wide. Nothing scrolls sideways.</p>
+      
+      </figcaption>
+  </figure>
+  </div>
+</section>
+
+<!-- ============================================================ 06 -->
+<div class="cut"><span>06 <em>· nothing looks broken</em></span></div><section id="broken">
+  <div class="hd"><h2>Nothing looks broken</h2></div>
+  <p class="what">The review of release 1.10 found defects that were not matters of taste. Each is fixed in the chart or the site file that caused it, and a new browser test walks the path the keynote will take.</p>
+  <p class="src">Requirement: nothing looks broken (<a href="https://github.com/jwildfire/obot.roadmap/issues/407">obot.roadmap #407</a>) <span class="dot"></span> Pull requests: the docs home page’s count (<a href="https://github.com/jwildfire/safety.viz/pull/289">safety.viz #289</a>), the waterfall’s titles and three phone-width defects (<a href="https://github.com/jwildfire/safety.viz/pull/294">safety.viz #294</a>), the demo path’s test (<a href="https://github.com/jwildfire/safety.viz/pull/301">safety.viz #301</a>), and the count again (<a href="https://github.com/jwildfire/safety.viz/pull/303">safety.viz #303</a>) <span class="dot"></span> Found in <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-demo-design-review-2026-10-09/">the design review of release 1.10</a></p>
+  <h3>The Hepatic ALT Waterfall’s titles fit a long arm name</h3>
+
+  <figure class="swap">
+      <input type="radio" name="swap-titles" id="swap-titles-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-titles" id="swap-titles-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-titles-before">Release 1.10</label>
+        <label for="swap-titles-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/waterfall-titles-110.jpg" title="Open this picture at full size">
+        <img src="media/waterfall-titles-110.jpg" alt="Release 1.10: the strip of titles over the waterfall. The active arm’s long title prints across the placebo arm’s, and the title of the right-hand panel is squeezed too small to read." loading="lazy" width="1380" height="120">
+      </a>
+      <a class="frame after" href="media/waterfall-titles.jpg" title="Open this picture at full size">
+        <img src="media/waterfall-titles.jpg" alt="Release 1.11: the same strip. The long arm name is cut short with three dots, its count is kept whole, and no title touches another." loading="lazy" width="1380" height="120">
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">The titles over the chart, on the pilot study. The long name is cut short with its count kept whole, and hovering shows all of it: “CLD: Study Drug, CLD: Placebo, Xanomeline Low Dose, Xanomeline High Dose (n=151)”</p>
+      <p class="cap was">Release 1.10. The active arm’s title is every arm that is not placebo, joined together. It prints across the placebo title, and at the right it is squeezed too small to read.</p>
+      
+      </figcaption>
+  </figure>
+
+  <h3>On a phone, a wide table scrolls inside its own box</h3>
+  <p class="what">In release 1.10 a table wider than the screen pushed the whole page sideways, or was cut off where it could not be reached. Each page now lays out at the screen’s width.</p>
+  <div class="phones">
+
+  <figure class="swap" style="max-width:300px">
+      <input type="radio" name="swap-phone-qt" id="swap-phone-qt-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-phone-qt" id="swap-phone-qt-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-phone-qt-before">Release 1.10</label>
+        <label for="swap-phone-qt-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/phone-qt-110.jpg" title="Open this picture at full size">
+        <img src="media/phone-qt-110.jpg" alt="Release 1.10: the QT Explorer in the demo app at phone width. The whole page is laid out wider than the screen, so everything is shrunk." loading="lazy" width="585" height="1266">
+      </a>
+      <a class="frame after" href="media/phone-qt.jpg" title="Open this picture at full size">
+        <img src="media/phone-qt.jpg" alt="Release 1.11: the QT Explorer in the demo app at phone width. The page fits the screen and the table scrolls inside its own box." loading="lazy" width="585" height="1266">
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">The QT Explorer’s table, in the demo app.</p>
+      <p class="cap was">Release 1.10. The page is laid out 554 pixels wide on a 390-pixel screen.</p>
+      
+      </figcaption>
+  </figure>
+
+  <figure class="swap" style="max-width:300px">
+      <input type="radio" name="swap-phone-api" id="swap-phone-api-before" aria-label="Show release 1.10">
+      <input type="radio" name="swap-phone-api" id="swap-phone-api-after" aria-label="Show release 1.11" checked>
+      <div class="switch">
+        <label for="swap-phone-api-before">Release 1.10</label>
+        <label for="swap-phone-api-after">Release 1.11</label>
+      </div>
+      <div class="frames">
+      <a class="frame before" href="media/phone-api-110.jpg" title="Open this picture at full size">
+        <img src="media/phone-api-110.jpg" alt="Release 1.10: a chart’s API reference page at phone width, laid out far wider than the screen." loading="lazy" width="585" height="1266">
+      </a>
+      <a class="frame after" href="media/phone-api.jpg" title="Open this picture at full size">
+        <img src="media/phone-api.jpg" alt="Release 1.11: the same page at phone width. It fits the screen and each table scrolls inside its own box." loading="lazy" width="585" height="1266">
+      </a>
+      </div>
+      <figcaption>
+      <p class="cap">A chart’s API reference page, on the docs site.</p>
+      <p class="cap was">Release 1.10. The page is laid out 669 pixels wide on a 390-pixel screen.</p>
+      
+      </figcaption>
+  </figure>
+  </div>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Page, at 390 pixels wide</th><th>Laid out, 1.10</th><th>Laid out, 1.11</th><th>Its widest table</th><th>The box it scrolls in</th></tr></thead>
+    <tbody>
+      <tr><td>The QT Explorer, in the demo app</td><td class="n">554 px</td><td class="n">390 px</td><td class="n">529 px</td><td class="n">340 px</td></tr>
+      <tr><td>The QT Explorer’s page on the docs site</td><td class="n">555 px</td><td class="n">390 px</td><td class="n">531 px</td><td class="n">342 px</td></tr>
+      <tr><td>The Hepatic Explorer’s page on the docs site</td><td class="n">544 px</td><td class="n">390 px</td><td class="n">520 px</td><td class="n">342 px</td></tr>
+      <tr><td>A chart’s API reference page</td><td class="n">669 px</td><td class="n">390 px</td><td class="n">645 px</td><td class="n">342 px</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>The docs home page’s count</h3>
+  <ul class="list">
+      <li>The docs home page’s description counts the site’s charts from its configuration. It begins “Thirteen classic clinical-safety graphics”, where release 1.10’s began “Nine classic clinical-safety graphics”. A Prototype is not counted.</li>
+      <li>The capture for this page found the count wrong again: the dev site read “Fourteen classic clinical-safety graphics”, with the Prototype counted. It was fixed the same day, 10 October 2026 (<a href="https://github.com/jwildfire/safety.viz/pull/303">the fix, safety.viz #303</a>), and the script now holds the page to “Thirteen”.</li>
+    </ul>
+
+  <h3>A test walks the keynote’s demo path</h3>
+  <ul class="list">
+      <li>A browser test now walks the path the keynote will take, on the deployed dev site at the size of a shared screen, with real R. It fails on any console error or failed request. Its task is closed (<a href="https://github.com/jwildfire/safety.viz/issues/287">safety.viz #287</a>; <a href="https://github.com/jwildfire/safety.viz/pull/301">its pull request, safety.viz #301</a>).</li>
+      <li>It is run with <code>npm run demo-path</code>. Its run on GitHub passed (<a href="https://github.com/jwildfire/safety.viz/actions/runs/38058471721">the run</a>), and its nine screenshots are kept with the app’s evidence (<a href="https://github.com/jwildfire/safety.viz/tree/dev/docs/evidence/basic-app/demo-path">the screenshots</a>).</li>
+      <li>The eight steps it walks, and their order, are yours to change: they are listed in <a href="#rule">the box at the top</a>.</li>
+    </ul>
+</section>
+
+<!-- ============================================================ 07 -->
+<div class="cut"><span>07 <em>· the standards written down</em></span></div><section id="standards">
+  <div class="hd"><h2>The standards this release set are written down</h2></div>
+  <p class="what">What the release decided about how an app should look and read is now written where the next session will read it, so that the next chart or tab is built the same way. Documents and one skill; nothing in the app.</p>
+  <p class="src">Requirement: the standards are written into the scaffold (<a href="https://github.com/jwildfire/obot.roadmap/issues/408">obot.roadmap #408</a>)</p>
+  <ul class="list">
+      <li>The hub’s developer guidelines carry the status ladder and how anything a person looks at is designed and checked (<a href="https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md#status-ladder">the status ladder</a>; <a href="https://github.com/jwildfire/obot.roadmap/blob/main/docs/developer-guidelines.md#designing-and-checking-what-people-look-at">designing and checking what people look at</a>). The label’s panel in the app links the first.</li>
+      <li>safety.viz’s contributing guide has a new section, “Demo app conventions”, and its porting skill carries the same (<a href="https://github.com/jwildfire/safety.viz/blob/dev/CONTRIBUTING.md#demo-app-conventions">the section</a>; <a href="https://github.com/jwildfire/safety.viz/pull/301">merged in safety.viz #301</a>; <a href="https://github.com/jwildfire/safety.viz/issues/288">the task, safety.viz #288</a>).</li>
+      <li>The session skill tells a session to build a visible change from its mockup and look at it in a browser before the task closes (<a href="https://github.com/jwildfire/obot.agent/issues/361">the task, obot.agent #361</a>).</li>
+      <li>Six of the seven requirements are closed. The first, the first screen (<a href="https://github.com/jwildfire/obot.roadmap/issues/402">obot.roadmap #402</a>), closes when the footnote merges (<a href="#close">the table at the foot of this page</a>).</li>
+    </ul>
+</section>
+
+<div class="cut"><span>08 <em>· what did not change</em></span></div><section id="same">
+  <div class="hd"><h2>What did not change</h2></div>
+  <p class="what">Release 1.11 changes how the app reads. It does not change what the app works out.</p>
+  <ul class="list">
+      <li>No chart is added and no metric is added. The app still has 18 charts on five tabs and eight site metrics.</li>
+      <li>Nothing computed changes. safety.viz has a browser test that holds every row R returns for the eight metrics on the RBQM study to the rows desktop R returns, to eight decimal places. It is in the check every pull request must pass before it merges, and it passed at each merge of this release with desktop R’s rows untouched (<a href="https://github.com/jwildfire/obot.roadmap/issues/404#issuecomment-6098177054">the R control’s closing comment says so for its merge</a>).</li>
+      <li>What that test rests on is release 1.10’s. Of the 225 files changed since the release 1.10 tag, one is among desktop R’s stored rows, the R that runs the metrics and gsm’s copied workflow files: the tab’s file of expected rows gained 154 lines, the case for the three files dropped on the Data tab, and lost none.</li>
+      <li>The versions are the same on both sites: R: 4.6.0, on webR 0.6.0; gsm’s packages: gsm.core 1.3.1, gsm.mapping 1.1.6, gsm.reporting 1.1.7, workr 1.1.0; metric workflows: gsm.kri 1.7.0; charts: gsm.viz 2.4.1. Release 1.10’s run box named the same ones.</li>
+      <li>The pilot study gives the same answer on both sites: 17 sites, with site 705 first at 16 enrolled and 1 red flag.</li>
+      <li>Starting R for the RBQM tab still downloads about 55 MB, once: 55.2 MB on this capture, of which 13 MB is R, 40 MB its packages and 2.2 MB gsm’s packages from the page’s own address.</li>
+      <li>Files still never leave the browser, and the footer’s sentence is word for word release 1.10’s: “Files you load are read in this browser and never uploaded. Starting R downloads R from webr.r-wasm.org and, for the RBQM tab, its packages from repo.r-wasm.org; your data stays in the browser, and R runs here.”</li>
+    </ul>
+</section>
+
+<div class="cut"><span>before you approve</span></div><section id="close">
+  <h3 style="margin-top:0">Where the seven requirements stand</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Requirement</th><th>On this page</th><th>On the hub, as captured</th></tr></thead>
+    <tbody>
+      <tr><td>The first screen (<a href="https://github.com/jwildfire/obot.roadmap/issues/402">obot.roadmap #402</a>)</td><td><a href="#first">section 01</a></td><td>open: it closes when the footnote merges</td></tr>
+      <tr><td>The status ladder (<a href="https://github.com/jwildfire/obot.roadmap/issues/403">obot.roadmap #403</a>)</td><td><a href="#status">section 02</a></td><td>closed</td></tr>
+      <tr><td>The R control (<a href="https://github.com/jwildfire/obot.roadmap/issues/404">obot.roadmap #404</a>)</td><td><a href="#r">section 03</a></td><td>closed</td></tr>
+      <tr><td>The RBQM tab (<a href="https://github.com/jwildfire/obot.roadmap/issues/405">obot.roadmap #405</a>)</td><td><a href="#rbqm">section 04</a></td><td>closed</td></tr>
+      <tr><td>Files on the Data tab (<a href="https://github.com/jwildfire/obot.roadmap/issues/406">obot.roadmap #406</a>)</td><td><a href="#data">section 05</a></td><td>closed</td></tr>
+      <tr><td>Nothing looks broken (<a href="https://github.com/jwildfire/obot.roadmap/issues/407">obot.roadmap #407</a>)</td><td><a href="#broken">section 06</a></td><td>closed</td></tr>
+      <tr><td>The standards written down (<a href="https://github.com/jwildfire/obot.roadmap/issues/408">obot.roadmap #408</a>)</td><td><a href="#standards">section 07</a></td><td>closed</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="close" style="margin-top:40px">
+    <div>
+      <h3>What is not in this release</h3>
+      <ul>
+        <li>One R shared by the Biomarkers tab and the RBQM tab (<a href="https://github.com/jwildfire/obot.roadmap/issues/414">the follow-up requirement, obot.roadmap #414</a>).</li>
+        <li>A page on the docs site for the RBQM tab, which its footnote would then link (<a href="https://github.com/jwildfire/obot.roadmap/issues/415">the follow-up requirement, obot.roadmap #415</a>).</li>
+        <li>More RBQM metrics, country-level metrics, the time series chart and the report: on the backlog, and no part of this objective.</li>
+        <li>One set of treatment-arm colours across charts, and one casing for chart names: left out by the objective.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Where to look further</h3>
+      <ul>
+        <li><a href="https://jwildfire.github.io/safety.viz/dev/demo/">The demo app on the dev site</a>, and <a href="https://jwildfire.github.io/safety.viz/dev/">the docs site</a>.</li>
+        <li><a href="https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md">The release notes</a>, which are short; this page carries the detail.</li>
+        <li><a href="https://github.com/jwildfire/obot.roadmap/issues/401">The objective: a demo app ready to show</a>, with its seven requirements.</li>
+        <li><a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.11-design-2026-10-09/">The design the release was built to</a>: six mockups, approved on 9 October 2026.</li>
+        <li><a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.10-demo/">The demo page of release 1.10</a>, for what the RBQM tab computes and whose code runs in R.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Pictures taken 10 October 2026 with Playwright in headless Chromium, running real R in the browser. Release 1.11 is the dev site, <a href="https://jwildfire.github.io/safety.viz/dev/">jwildfire.github.io/safety.viz/dev/</a>, whose branch stood at <a href="https://github.com/jwildfire/safety.viz/commit/06a1c0b57ef3456b357d24b5e4fd33c2d8aab5aa">06a1c0b</a> when captured; release 1.10 is the released site, <a href="https://jwildfire.github.io/safety.viz/">jwildfire.github.io/safety.viz/</a>. Stills are 1,280 by 800 pixels at 1.5 times, and 390 by 844 for a phone. The pilot study is 254 participants from the public CDISC pilot study; the RBQM study is synthetic, 765 enrolled participants at 150 sites. No real participant appears. How each picture and number was made is in <a href="https://github.com/jwildfire/obot.roadmap/blob/main/reports/sv-v1.11-demo/README.md">the README beside this page</a>.</p>
+  <hr>
+  <p>This page was drafted by Claude Code using Opus 5.5.</p>
+</footer>
+
+</div>
+</body>
+</html>
