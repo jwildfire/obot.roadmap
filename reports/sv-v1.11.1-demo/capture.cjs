@@ -12,18 +12,23 @@
 // Then `node build.cjs` writes index.html from capture.json.
 //
 //   BASE=<the site under review>   default: the dev site
-//   FALLBACK=<a second site>       default: the preview of pull request 325
-//   WAIT_MINUTES=<n>               how long to wait for BASE to show the note
-//                                  before using FALLBACK (default 20)
+//   WAIT_MINUTES=<n>               how long to wait for BASE to show the release
+//                                  under review before stopping (default 20)
+//   FALLBACK=<a second site>       used when BASE never shows it; none by default
 //   BEFORE=<the site before it>    default: the released site
 //   ONLY=first,blue,...            some sections; the others' reads are kept
 //
 // Sections: first, blue, amber, views, starting, failed, ready, closed, rbqm,
-// rbqm-starting, rbqm-failed, rbqm-done, profile, cannot, phone.
+// rbqm-starting, rbqm-failed, rbqm-done, rbqm-states, profile, cannot, phone.
+//
+// A run of some sections stops if the site has moved since the run of every
+// section: the page quotes one version and one commit, and they are that run's.
 //
 // Once release 1.11.1 is on the released site there is no "before" left to
 // capture: the script sees the note there, says so, and keeps the stills and
-// reads of release 1.11.0 it already has.
+// reads of release 1.11.0 it already has. To show the released site as
+// "after" then, run every section with
+//   BASE=https://jwildfire.github.io/safety.viz/demo/
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -33,7 +38,7 @@ const { chromium } = require(
 
 const DEV = 'https://jwildfire.github.io/safety.viz/dev/demo/';
 const BASE_ASKED = process.env.BASE || DEV;
-const FALLBACK = process.env.FALLBACK || 'https://jwildfire.github.io/safety.viz/pr/325/demo/';
+const FALLBACK = process.env.FALLBACK || null;
 const WAIT_MINUTES = Number(process.env.WAIT_MINUTES ?? 20);
 const BEFORE = process.env.BEFORE || 'https://jwildfire.github.io/safety.viz/demo/';
 const out = process.argv[2] || __dirname;
@@ -52,6 +57,7 @@ const ALL = [
   'rbqm-starting',
   'rbqm-failed',
   'rbqm-done',
+  'rbqm-states',
   'profile',
   'cannot',
   'phone'
@@ -104,6 +110,15 @@ const SAID = {
     'The site metrics cannot be worked out without R. Start R to run them: about 55 MB, downloaded once. The study’s data stays in this browser.',
   rbqmStarting: 'R is starting. The metrics run by themselves when it is ready. Step 1 of 6',
   rbqmFailed: 'R did not start, so no metric was run. Try again The reason is behind Why, at the top right.',
+  rbqmReady: 'R is ready. Run the metrics on what is loaded now.',
+  rbqmReadyBefore: 'R is ready. Run the metrics from the R chip, at the top right.',
+  noFiles:
+    'Nothing the metrics can run on is loaded. Load a study on the Data tab: the metrics run on its subject-level and adverse events files. Or load gsm raw files there.',
+  nonePlaced:
+    'None of the loaded files is a subject-level or adverse events file, or a gsm raw file, so there is nothing for R to run.',
+  supports: 'The loaded study supports 3 of 8 metrics. Change the data on the Data tab.',
+  singleFile:
+    'The RBQM tab needs R, and this file loads nothing, so it cannot start R. The hosted demo app can start R in your browser.',
   profile: /^The participant profile opens beside a chart when you select a participant in it\. /,
   noFile: 'No file loaded for: Adverse events.',
   notMapped: 'Not mapped yet: Result.'
@@ -270,6 +285,28 @@ const versionOf = async (page) => {
   const found = foot.match(/safety\.viz (\d+\.\d+\.\d+)/);
   return found ? `safety.viz ${found[1]}` : null;
 };
+/** The RBQM tab's line under its note, as it says and looks: its words, its size and its colour. */
+const supportsAt = (page) =>
+  page.evaluate(() => {
+    const line = document.querySelector('.sva-rbqm-supports');
+    if (!line) return null;
+    const style = getComputedStyle(line);
+    return { says: line.textContent.replace(/\s+/g, ' ').trim(), size: style.fontSize, colour: style.color };
+  });
+/**
+ * Whether a site shows the release under review: the note on a biomarker
+ * chart, and the RBQM tab's line under its note small again, which the fix of
+ * the release candidate's review put right. Answers with the app's version line.
+ */
+const isReady = async (base) => {
+  const { page, context } = await open(`${base}?t=${Date.now()}`, 'cross-tab');
+  const note = (await page.locator(NOTE).count()) > 0;
+  await go(page, 'rbqm');
+  const line = await supportsAt(page);
+  const version = await versionOf(page);
+  await context.close();
+  return note && line && line.size === '14.72px' ? { version } : false;
+};
 const hasNote = async (base) => {
   const { page, context } = await open(`${base}?t=${Date.now()}`, 'cross-tab');
   const there = (await page.locator(NOTE).count()) > 0;
@@ -280,49 +317,65 @@ const hasNote = async (base) => {
 (async () => {
   browser = await chromium.launch();
 
-  // Which site is "after": the one asked for once it shows the note, or the second one.
+  // Which site is "after": the one asked for, once it shows the release under review.
   let BASE = BASE_ASKED;
   const until = Date.now() + WAIT_MINUTES * 60000;
-  let shows = await hasNote(BASE).catch(() => false);
+  let shows = await isReady(BASE).catch(() => false);
   while (!shows && Date.now() < until) {
-    console.log(`${BASE} does not show the note yet; looking again in a minute.`);
+    console.log(`${new Date().toISOString()} ${BASE} does not show the release under review yet; looking again in a minute.`);
     await new Promise((resolve) => setTimeout(resolve, 60000));
-    shows = await hasNote(BASE).catch(() => false);
+    shows = await isReady(BASE).catch(() => false);
   }
-  if (!shows) {
-    console.log(`${BASE} did not show the note in ${WAIT_MINUTES} minutes: using ${FALLBACK}.`);
+  if (!shows && FALLBACK) {
+    console.log(`${BASE} did not show it in ${WAIT_MINUTES} minutes: using ${FALLBACK}.`);
     BASE = FALLBACK;
-    if (!(await hasNote(BASE))) throw new Error(`Neither ${BASE_ASKED} nor ${FALLBACK} shows the note.`);
+    shows = await isReady(BASE).catch(() => false);
   }
-  if (read.site && read.site.after !== BASE && process.env.ONLY)
-    throw new Error(`capture.json was read from ${read.site.after}; run every section to change site.`);
-  // The commit the dev branch stood at, read from GitHub's public API with no token. It writes nothing.
-  let commit = null;
-  if (BASE === DEV) {
+  if (!shows) throw new Error(`${BASE} did not show the release under review in ${WAIT_MINUTES} minutes.`);
+  // What GitHub says, read from its public API with no token. It writes nothing.
+  const github = async (address) => {
     try {
-      const answer = await fetch('https://api.github.com/repos/jwildfire/safety.viz/commits/dev', {
+      const answer = await fetch(`https://api.github.com/repos/jwildfire/safety.viz/${address}`, {
         headers: { accept: 'application/vnd.github+json' }
       });
-      if (answer.ok) commit = (await answer.json()).sha;
+      return answer.ok ? await answer.json() : null;
     } catch {
-      commit = null;
+      return null;
     }
-  }
-  const kept = process.env.ONLY && read.site ? read.site : {};
-  read.site = {
+  };
+  // The commit the site's branch stood at: dev for the dev site, main for the released site.
+  const branch = BASE === DEV ? 'dev' : BASE === BEFORE ? 'main' : null;
+  const tip = branch ? await github(`commits/${branch}`) : null;
+  const commit = tip ? tip.sha : null;
+  // The pull request of the fixes the release candidate's review asked for, if there is one.
+  const pulls = await github('pulls?head=jwildfire:328-rc1-review-fixes&state=all');
+  if (Array.isArray(pulls))
+    read.github = { fix_pull: pulls.length ? { number: pulls[0].number, url: pulls[0].html_url, title: pulls[0].title } : null };
+  const site = {
     after: BASE,
     after_is:
-      BASE === DEV
-        ? 'the dev site'
-        : /\/pr\/\d+\//.test(BASE)
-          ? 'the pull request’s preview'
-          : BASE === BEFORE
-            ? 'the released site'
+      BASE === BEFORE
+        ? 'the released site'
+        : BASE === DEV
+          ? 'the dev site'
+          : /\/pr\/\d+\//.test(BASE)
+            ? 'the pull request’s preview'
             : BASE,
     before: BEFORE,
-    captured: kept.captured || new Date().toISOString(),
-    commit: kept.commit || commit
+    captured: new Date().toISOString(),
+    branch,
+    commit,
+    version: shows.version
   };
+  if (process.env.ONLY) {
+    // The page quotes one site, one version and one commit: those of the run of every section.
+    const was = read.site || {};
+    for (const key of ['after', 'version', 'commit'])
+      if (was[key] !== site[key])
+        throw new Error(`The site has moved since every section was run (${key}: ${was[key]} then, ${site[key]} now). Run every section.`);
+  } else {
+    read.site = site;
+  }
   // The released site, while it is still release 1.11.0: it has no note at the top of a biomarker chart.
   const beforeIs1110 = !(await hasNote(BEFORE));
   if (!beforeIs1110)
@@ -353,6 +406,7 @@ const hasNote = async (base) => {
     };
     check('no line on first open', read.first.welcome, 0);
     check('the app’s footer names its version', read.first.version, /^safety\.viz \d+\.\d+\.\d+$/);
+    check('the version is the one read when the capture began', read.first.version, read.site.version);
     await shot(page, 'first');
     await page.click('.sva-appstatus');
     await settle(page, 400);
@@ -673,8 +727,11 @@ const hasNote = async (base) => {
       await go(page, view);
       const note = await noteAt(page, NOTE);
       read.closed.others[view] = note && { kind: note.kind, says: note.says };
+      (read.closed.lines ||= {})[view] = await wordsAt(page, LINE);
     }
     check('closed on one, closed on all three', [read.closed.others['cross-tab'], read.closed.others['group-comparison']], [null, null]);
+    check('closed: the Cross-tabulation’s line points at the control too', read.closed.lines['cross-tab'], SAID.lineControl);
+    check('closed: a chart that needs R still points at its own note', [read.closed.lines['correlation-matrix'], read.closed.lines['biomarker-screen']], [SAID.lineNote, SAID.lineNote]);
     check('closing the blue note leaves the amber one', [read.closed.others['correlation-matrix'], read.closed.others['biomarker-screen']].map((n) => n && n.kind), ['warning', 'warning']);
     // Another tab and back, in the same visit.
     await go(page, 'histogram');
@@ -687,15 +744,46 @@ const hasNote = async (base) => {
     await settle(page, 1200);
     const again = await noteAt(page, NOTE);
     read.closed.after_reload = again && again.says;
-    // Closed, then R started from the control and refused: the note is back, to say so.
+    // Closed again, then R started from the control: its addresses are held, and then refused.
     await page.click(`${NOTE} .sva-close`);
-    await page.route(R_HOSTS, (route) => route.abort());
+    let refuse;
+    const held = new Promise((resolve) => {
+      refuse = resolve;
+    });
+    await page.route(R_HOSTS, async (route) => {
+      await held;
+      route.abort().catch(() => {});
+    });
     await page.click(`${CONTROL} button.sva-action`);
+    await settle(page, 2500);
+    const five = ['association-scatter', 'cross-tab', 'group-comparison', 'correlation-matrix', 'biomarker-screen'];
+    read.closed.while_starting = { control: await controlSaid(page), line: await wordsAt(page, LINE), notes: {} };
+    await shot(page, 'closed-starting', {
+      mark: [
+        [1, CONTROL, 'b'],
+        [2, LINE, 'l']
+      ]
+    });
+    for (const view of five) {
+      await go(page, view);
+      const note = await noteAt(page, NOTE);
+      read.closed.while_starting.notes[view] = note && note.says;
+    }
+    check('closed stays closed while R starts, on all three', five.slice(0, 3).map((view) => read.closed.while_starting.notes[view]), [null, null, null]);
+    check('closed: a chart that needs R still says R is starting', five.slice(3).map((view) => read.closed.while_starting.notes[view]), [SAID.amberStarting, SAID.amberStarting]);
+    check('closed, while R starts: the control counts', read.closed.while_starting.control, /^Starting R · 13 MB · \d+ s$/);
+    refuse();
     await page.waitForSelector('.sva-r[data-phase=failed]', { timeout: 90000 });
     await settle(page);
-    const back = await noteAt(page, NOTE);
-    read.closed.then_failed = back && back.says;
+    read.closed.then_failed_on = {};
+    for (const view of five) {
+      await go(page, view);
+      const note = await noteAt(page, NOTE);
+      read.closed.then_failed_on[view] = note && note.says;
+    }
+    read.closed.then_failed = read.closed.then_failed_on['association-scatter'];
     check('closed, then R did not start: the note is back', read.closed.then_failed, SAID.blueFailed);
+    check('R did not start is said on all five charts', five.map((view) => read.closed.then_failed_on[view]), [SAID.blueFailed, SAID.blueFailed, SAID.blueFailed, SAID.amberFailed, SAID.amberFailed]);
     await context.close();
     save();
   }
@@ -707,6 +795,7 @@ const hasNote = async (base) => {
       read.rbqm_before = {
         body: await wordsAt(page, '.sva-rbqm .sva-rbqm-need'),
         is_note: await page.locator('.sva-rbqm .sva-rbqm-need.sva-callout').count(),
+        supports: await supportsAt(page),
         control: await controlSaid(page)
       };
       check('release 1.11.0: the RBQM tab’s line is not a note', read.rbqm_before.is_note, 0);
@@ -720,7 +809,11 @@ const hasNote = async (base) => {
     }
     const { page, context } = await open(BASE, 'rbqm');
     const note = await noteAt(page, RBQM_NOTE);
-    read.rbqm = { note, control: await controlSaid(page), asked_of_r: page.askedOfR() };
+    read.rbqm = { note, control: await controlSaid(page), asked_of_r: page.askedOfR(), supports: await supportsAt(page) };
+    check('RBQM: the line under the note', read.rbqm.supports && read.rbqm.supports.says, SAID.supports);
+    check('RBQM: the line under the note is small and soft grey', read.rbqm.supports && [read.rbqm.supports.size, read.rbqm.supports.colour], ['14.72px', 'rgb(91, 100, 112)']);
+    if (read.rbqm_before && read.rbqm_before.supports)
+      check('RBQM: the line under the note is drawn as release 1.11.0 drew it', read.rbqm.supports, read.rbqm_before.supports);
     check('RBQM: the note’s sentence', note && note.says, SAID.rbqmOff);
     check('RBQM: a warning with Start R and no cross', note && [note.kind, hue(note.edge), note.button, note.cross], ['warning', 'amber', 'Start R', false]);
     check('RBQM: the control at the top right is as it was', read.rbqm.control, (read.rbqm_before || {}).control || read.rbqm.control);
@@ -774,7 +867,7 @@ const hasNote = async (base) => {
       await shot(before.page, 'rbqm-failed-1110', {
         mark: [
           [1, '.sva-rbqm .sva-rbqm-need', 'l'],
-          [2, `${CONTROL} .sva-r-why`, 'b']
+          [2, CONTROL, 'l']
         ]
       });
       await before.context.close();
@@ -791,7 +884,7 @@ const hasNote = async (base) => {
       mark: [
         [1, RBQM_NOTE, 'in'],
         [2, `${RBQM_NOTE} .sva-note-start`, 't'],
-        [3, `${CONTROL} .sva-r-why`, 'b']
+        [3, CONTROL, 'l']
       ]
     });
     await context.close();
@@ -828,7 +921,7 @@ const hasNote = async (base) => {
     check('RBQM, while R runs the metrics: the note says so', read.rbqm_done.on_the_way.find((line) => /^R is running/.test(line)), 'R is running the metrics. They appear here when it is done. Step 6 of 6');
     await shot(page, 'rbqm-done', {
       mark: [
-        [1, `${CONTROL} .sva-r-ready`, 'b'],
+        [1, CONTROL, 'l'],
         [2, '.sva-rbqm-outcome', 'l']
       ]
     });
@@ -850,6 +943,102 @@ const hasNote = async (base) => {
       check('the RBQM outcome line is release 1.11.0’s, but for its seconds', plain(read.rbqm_done.outcome), plain(read.rbqm_done_before.outcome));
       check('the first row of the site overview is release 1.11.0’s', read.rbqm_done.first_row, read.rbqm_done_before.first_row);
     }
+    save();
+  }
+
+  // ------------------------------------------------------------ the RBQM tab's other states
+  if (want('rbqm-states')) {
+    const strip = { x: 0, y: 0, width: 1280, height: 268 };
+    read.rbqm_states = {};
+    // No file gsm reads: a demo study of one labs file.
+    const { page, context } = await open(BASE, 'data');
+    await page.selectOption('select.sva-study', 'liver');
+    await settle(page, 2500);
+    await go(page, 'rbqm');
+    let note = await noteAt(page, RBQM_NOTE);
+    read.rbqm_states.none_placed = note;
+    check('RBQM, no file gsm reads: the note’s sentence', note && note.says, SAID.nonePlaced);
+    check('RBQM, no file gsm reads: amber, no button', note && [note.kind, hue(note.edge), note.button], ['warning', 'amber', null]);
+    await shot(page, 'rbqm-noneplaced', { clip: strip });
+    // Nothing loaded: Reset, on the Data tab.
+    await go(page, 'data');
+    await page.click('.sva-content button.sva-button:has-text("Reset")');
+    await settle(page, 1500);
+    await go(page, 'rbqm');
+    note = await noteAt(page, RBQM_NOTE);
+    read.rbqm_states.no_files = note;
+    check('RBQM, nothing loaded: the note’s sentence', note && note.says, SAID.noFiles);
+    check('RBQM, nothing loaded: amber, no button', note && [note.kind, hue(note.edge), note.button], ['warning', 'amber', null]);
+    await shot(page, 'rbqm-nofiles', { clip: strip });
+    await context.close();
+    // A page that cannot start R: the app as one file, which the app's footer offers as a download. It is opened from the site.
+    const single = await browser.newContext(desktop);
+    const file = await single.newPage();
+    let elsewhere = 0;
+    file.on('request', (request) => {
+      if (!request.url().startsWith(`${BASE}safety.viz-app.html`)) elsewhere += 1;
+    });
+    await file.goto(`${BASE}safety.viz-app.html`, { waitUntil: 'networkidle' });
+    await settle(file, 1500);
+    await file.click('.sva-tab[data-tab="rbqm"]');
+    await settle(file, 1200);
+    note = await noteAt(file, RBQM_NOTE);
+    read.rbqm_states.single_file = { note, control: await file.locator(CONTROL).count(), asked_elsewhere: elsewhere, tab: squash(await wordsAt(file, '.sva-tab[data-tab="rbqm"]')) };
+    check('the app as one file, RBQM: the note’s sentence', note && note.says, SAID.singleFile);
+    check('the app as one file, RBQM: amber, no button, no control, nothing loaded from anywhere', note && [note.kind, hue(note.edge), note.button, read.rbqm_states.single_file.control, elsewhere], ['warning', 'amber', null, 0, 0]);
+    await shot(file, 'rbqm-singlefile', { clip: strip });
+    await single.close();
+    // R up and nothing yet run on what is loaded: R is started, the study is
+    // cleared while it starts, and the study is chosen again once R is up.
+    const upWithNothingRun = async (base, start) => {
+      const opened = base === BEFORE ? await openBefore('rbqm') : await open(base, 'rbqm');
+      await opened.page.click(start);
+      await settle(opened.page, 1200);
+      await go(opened.page, 'data');
+      await opened.page.click('.sva-content button.sva-button:has-text("Reset")');
+      await settle(opened.page, 500);
+      await go(opened.page, 'rbqm');
+      await opened.page.waitForSelector('.sva-r[data-phase=ready]', { timeout: 300000 });
+      await go(opened.page, 'data');
+      await opened.page.selectOption('select.sva-study', 'pilot');
+      await settle(opened.page, 2500);
+      await go(opened.page, 'rbqm');
+      await settle(opened.page, 1500);
+      return opened;
+    };
+    if (beforeIs1110) {
+      const before = await upWithNothingRun(BEFORE, `${CONTROL} button.sva-action`);
+      read.rbqm_ready_before = {
+        says: await wordsAt(before.page, '.sva-rbqm .sva-rbqm-need'),
+        is_note: await before.page.locator('.sva-rbqm .sva-rbqm-need.sva-callout').count()
+      };
+      check('release 1.11.0, R up and nothing run: a line that points at the chip', read.rbqm_ready_before, { says: SAID.rbqmReadyBefore, is_note: 0 });
+      await shot(before.page, 'rbqm-ready-1110', {
+        mark: [
+          [1, '.sva-rbqm .sva-rbqm-need', 'l'],
+          [2, CONTROL, 'l']
+        ]
+      });
+      await before.context.close();
+    }
+    const after = await upWithNothingRun(BASE, `${RBQM_NOTE} .sva-note-start`);
+    note = await noteAt(after.page, RBQM_NOTE);
+    read.rbqm_states.ready = note;
+    check('RBQM, R up and nothing run: the note’s sentence', note && note.says, SAID.rbqmReady);
+    check('RBQM, R up and nothing run: blue, with its button and no cross', note && [note.kind, hue(note.edge), note.button, note.cross], ['info', 'blue', 'Run the metrics', false]);
+    await shot(after.page, 'rbqm-ready', {
+      mark: [
+        [1, RBQM_NOTE, 'in'],
+        [2, `${RBQM_NOTE} .sva-note-start`, 't'],
+        [3, CONTROL, 'l']
+      ]
+    });
+    await after.page.click(`${RBQM_NOTE} .sva-note-start`);
+    await after.page.waitForSelector('.sva-rbqm-outcome', { state: 'attached', timeout: 120000 });
+    await settle(after.page, 1500);
+    read.rbqm_states.ready_then = { outcome: squash(await wordsAt(after.page, '.sva-rbqm-outcome')), note: await noteAt(after.page, RBQM_NOTE) };
+    check('RBQM, Run the metrics in the note runs them, and the note goes', [/^R ran 3 of 8 metrics on the Pilot study in /.test(read.rbqm_states.ready_then.outcome), read.rbqm_states.ready_then.note], [true, null]);
+    await after.context.close();
     save();
   }
 

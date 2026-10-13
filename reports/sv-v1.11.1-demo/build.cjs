@@ -32,6 +32,21 @@ const PR_R = `${SV}/pull/325`;
 const ROWS = `${SV}/blob/dev/requirements/demo-app.md`;
 const NEWS = `${SV}/blob/dev/NEWS.md`;
 const HERE = `${HUB}/blob/main/reports/sv-v1.11.1-demo`;
+const T_FIX = `${SV}/issues/328`;
+const GUIDE = `${HUB}/blob/main/docs/developer-guidelines.md#designing-and-checking-what-people-look-at`;
+const CONTRIBUTING = `${SV}/blob/dev/CONTRIBUTING.md`;
+
+// Two sentences of the RBQM tab's note that no picture on this page shows:
+// R has to stop answering, or stop mid-run, for a reader to meet them. They
+// are quoted from the code, safety.viz src/app/rbqm.js (RBQM_NOTE.silent and
+// RBQM_NOTE.stopped) with the button's words and the shared last sentence of
+// src/app/r-words.js, as they stand at the commit the capture names, and are held there by
+// unit tests (requirement row APP-RBQM-083). Nothing else quoted from the app
+// is typed here.
+const FROM_CODE = {
+  silent: ['R stopped answering, so no metric was run. ', 'Try again', ' The reason is behind Why, at the top right.'],
+  stopped: ['R stopped, so there are no results. ', 'Run again', ' The reason is behind Why, at the top right.']
+};
 
 // ---------------------------------------------------------------- words
 const esc = (text) =>
@@ -56,7 +71,12 @@ const sayWith = (text, button) => `“${esc(must(text, `a sentence with ${button
 const swatch = (rgb) => `<span class="sw" style="background:${esc(rgb)}" aria-hidden="true"></span>`;
 const date = new Date(c.site.captured).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/New_York' });
 const siteName = c.site.after_is;
-const version = must(c.first.version, 'the app’s version');
+// The version and the commit are those read when the run of every section began.
+const version = must(c.site.version, 'the app’s version, read when the capture began');
+if (c.first.version !== version) throw new Error(`The first screen read ${c.first.version} and the capture began on ${version}: run every section.`);
+// Once the release is out, "after" is the released site too, and "before" is what that site was.
+const released = c.site.after === c.site.before;
+const beforeName = released ? 'the released site as it stood before this release' : 'the released site';
 const list = (names) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
 
 // ---------------------------------------------------------------- figures
@@ -144,7 +164,7 @@ const runningSaid = must(
 );
 const versionLine =
   version === 'safety.viz 1.11.1'
-    ? `The app’s footer reads ${q(version)}.`
+    ? `The app’s footer on ${siteName} reads ${q(version)}.`
     : `The app’s footer on ${siteName} still read ${q(version)} when this was captured. The number moves to 1.11.1 with the release preparation (${a(T_PREP, 'safety.viz #323')}).`;
 
 const REQ_SRC = `Requirement: a standard note where R can be started (${a(REQ, 'obot.roadmap #420')})`;
@@ -378,7 +398,11 @@ const s02 = section(
       ['While R starts', `${swatch(c.rbqm_starting.note.edge)}${said(c.rbqm_starting.note, 'RBQM, starting')} Small print: ${q(rbqmSmall)}.`],
       ['While R runs the metrics', `${swatch(c.rbqm_starting.note.edge)}${q(runningSaid)} Small print: “Step 6 of 6”.`],
       ['R did not start', `${swatch(c.rbqm_failed.note.edge)}${said(c.rbqm_failed.note, 'RBQM, failed')}`],
-      ['After the run', 'No note.']
+      ['After the run', 'No note.'],
+      ['R is up and nothing has run on what is loaded', `${swatch(c.rbqm_states.ready.edge)}${said(c.rbqm_states.ready, 'RBQM, R up and nothing run')}`],
+      ['Nothing is loaded', `${swatch(c.rbqm_states.no_files.edge)}${said(c.rbqm_states.no_files, 'RBQM, nothing loaded')}`],
+      ['No loaded file is one the metrics read', `${swatch(c.rbqm_states.none_placed.edge)}${said(c.rbqm_states.none_placed, 'RBQM, no file gsm reads')}`],
+      ['The app as one file, which cannot start R', `${swatch(c.rbqm_states.single_file.note.edge)}${said(c.rbqm_states.single_file.note, 'RBQM, the single file')}`]
     ])}
     ${words('The line inside a biomarker chart', [
       ['Before R is started', q(c.blue.line)],
@@ -387,6 +411,18 @@ const s02 = section(
       ['R did not start', q(c.failed.line)]
     ])}
   </div>
+
+  <h3 id="unpictured">Sentences this page does not picture</h3>
+  <p class="what">Two sentences of the RBQM tab’s note are met only when R goes wrong part way, which the capture cannot make happen on the live site. They are quoted from the code, not read from the site, and are held there by unit tests (${a(ROWS, 'requirement rows APP-RBQM-082 and APP-RBQM-083')}).</p>
+  <div class="note said">
+    <dl class="words">
+      <dt>R stopped answering</dt><dd>${swatch(amber.edge)}“${esc(FROM_CODE.silent[0])}<span class="key">${esc(FROM_CODE.silent[1])}</span>${esc(FROM_CODE.silent[2])}” A reader meets it when R gives no answer for longer than the tab waits while R starts, loads gsm’s packages or runs; the tab then closes that R.</dd>
+      <dt>R stopped</dt><dd>${swatch(amber.edge)}“${esc(FROM_CODE.stopped[0])}<span class="key">${esc(FROM_CODE.stopped[1])}</span>${esc(FROM_CODE.stopped[2])}” A reader meets it when R stops during the run of the metrics; R is kept, and the button runs them again without starting R again.</dd>
+    </dl>
+  </div>
+  ${bullets([
+    `Every other sentence of the RBQM tab’s note is pictured and read live: with R up and nothing run, with nothing loaded, with no file the metrics read, and in the app as one file (${a('#rbqm-states', 'section 04')}).`
+  ])}
   ${tryIt([
     [
       `${a(`${TRY}#association-scatter`, 'Open the Association scatter')} and press Start R in the note.`,
@@ -419,15 +455,27 @@ const s03 = section(
     legend: [`The control is unchanged, and still starts R: ${q(c.closed.control)}.`, `The chart’s own line points at the control again: ${q(c.closed.line)}`]
   })}
   ${bullets([
-    `Closed on one chart, it is closed on all three: neither the ${esc(c.blue.charts['cross-tab'].name)} nor the ${esc(c.blue.charts['group-comparison'].name)} showed a note afterwards.`,
+    `Closed on one chart, it is closed on all three: neither the ${esc(c.blue.charts['cross-tab'].name)} nor the ${esc(c.blue.charts['group-comparison'].name)} showed a note afterwards, and the ${esc(c.blue.charts['cross-tab'].name)}’s line read ${q(c.closed.lines['cross-tab'])}`,
     'It stays closed through a visit to another tab and back.',
-    `The amber note has no cross, and closing the blue one leaves it standing on the ${list(amberNames)}.`,
-    c.closed.after_reload ? 'A reload is a new visit: the note is back.' : 'It was still closed after a reload.',
-    `If R is then started from the control and does not start, the note comes back to say so: ${sayWith(c.closed.then_failed, 'Try again')}`
+    `The amber note has no cross, and closing the blue one leaves it standing on the ${list(amberNames)}. Under their amber note those two charts keep pointing at it: ${q(c.closed.lines['correlation-matrix'])}`,
+    c.closed.after_reload ? 'A reload is a new visit: the note is back.' : 'It was still closed after a reload.'
+  ])}
+
+  <h3>Closed stays closed while R starts</h3>
+  ${figure({
+    name: 'closed-starting',
+    alt: 'The Association scatter with the blue note closed, while R starts. There is no note on the card. The control at the right end of the chart names reads Starting R with a count of seconds, and the line under the chart says R is starting.',
+    cap: 'The Association scatter with the note closed, a few seconds after Start R was pressed on the control. R’s addresses were held back for the picture.',
+    legend: [`The control says R is starting, and counts: ${q(c.closed.while_starting.control)}.`, `So does the chart’s own line: ${q(c.closed.while_starting.line)} There is no note.`]
+  })}
+  ${bullets([
+    `None of the three blue charts showed a note while R started. The two that cannot be drawn without R still did: ${q(c.closed.while_starting.notes['correlation-matrix'].replace(/ \d+ MB$/, ''))}`,
+    `That R did not start is always said. With R’s addresses then refused, the note was on all five charts: ${sayWith(c.closed.then_failed_on['association-scatter'], 'Try again')} on the three blue ones, the closed note back to say so, and ${sayWith(c.closed.then_failed_on['correlation-matrix'], 'Try again')} on the other two.`
   ])}
   ${tryIt([
     [`${a(`${TRY}#cross-tab`, 'Open the Cross-tabulation')} and click the cross at the right end of the note.`, `The note is gone, and the line under the chart reads ${q(c.closed.line)}`],
     [`Open the ${esc(c.blue.charts['association-scatter'].name)}, then the ${esc(c.amber.charts['correlation-matrix'].name)}.`, 'No note on the first. The amber note is still on the second.'],
+    ['Go back to the Cross-tabulation and press Start R, at the right end of the chart names.', `No note comes back while R starts. A few seconds later R’s test is under the chart: ${q(c.ready.others['cross-tab'].line)}`],
     ['Reload the page.', 'The blue note is back.']
   ])}`
 );
@@ -459,6 +507,9 @@ const s04 = section(
       ]
     }
   })}
+  ${bullets([
+    `Under the note, the line that says what the loaded study supports is as release 1.11.0 drew it, small and soft grey: ${q(c.rbqm.supports.says)}`
+  ])}
   ${figure({
     name: 'rbqm-starting',
     alt: 'The RBQM tab while R starts. The note is blue with a turning ring and reads R is starting, with Step 1 of 6 in small print. Under it the six steps are listed, the first under way. The control at the top right names the step and counts the seconds.',
@@ -507,6 +558,52 @@ const s04 = section(
     ${viewTile('rbqm-metric', 'The top of a metric’s page on the RBQM tab, Adverse Event Rate: the same amber note with Start R inside its sentence.')}
     ${viewTile('rbqm-cannot', 'The top of a metric’s page for a metric the pilot study cannot support: an amber note says which file it needs.')}
   </div>
+
+  <h3 id="rbqm-states">With R up and nothing yet run</h3>
+  <p class="what">If the study is cleared while R starts, R comes up with nothing to run. When a study is chosen again, a blue note offers the run. This is the fourth thing to rule on (${a('#ruling', 'at the foot of this page')}).</p>
+  ${swap({
+    id: 'rbqm-ready',
+    cap: 'The RBQM tab with R running and the pilot study chosen again after it was cleared.',
+    before: {
+      name: 'rbqm-ready-1110',
+      alt: 'Release 1.11.0: the RBQM tab with R ready and nothing run. One line of plain text sends the reader to the R chip at the top right.',
+      legend: [`One line of plain text, pointing at the chip: ${q(c.rbqm_ready_before.says)}`, 'The chip, whose panel holds the button that runs the metrics.']
+    },
+    after: {
+      name: 'rbqm-ready',
+      alt: 'Release 1.11.1: the same state. A blue note with the information mark reads R is ready, with a Run the metrics button inside its sentence.',
+      legend: [
+        `A blue note, with the information mark and no cross: ${said(c.rbqm_states.ready, 'the RBQM note with R up and nothing run')}`,
+        'Run the metrics is a button inside the sentence. Pressed, it ran the three metrics the pilot study supports, and the note went.',
+        'The chip is where it was.'
+      ]
+    }
+  })}
+
+  <h3>With nothing the metrics can run on</h3>
+  <p class="what">Three amber notes with no button, because starting R would not help.</p>
+  <div class="views">
+    ${figure({
+      name: 'rbqm-nofiles',
+      alt: 'The top of the RBQM tab with nothing loaded: an amber note says nothing the metrics can run on is loaded.',
+      label: 'Nothing loaded',
+      cap: `${swatch(c.rbqm_states.no_files.edge)}After Reset on the Data tab. ${said(c.rbqm_states.no_files, 'RBQM, nothing loaded')}`
+    })}
+    ${figure({
+      name: 'rbqm-noneplaced',
+      alt: 'The top of the RBQM tab with one labs file loaded: an amber note says none of the loaded files is one the metrics read.',
+      label: 'No file the metrics read',
+      cap: `${swatch(c.rbqm_states.none_placed.edge)}With the demo study ${q(c.liver.name)}, one labs file. ${said(c.rbqm_states.none_placed, 'RBQM, no file gsm reads')}`
+    })}
+    ${figure({
+      name: 'rbqm-singlefile',
+      alt: 'The top of the RBQM tab in the app as one file: an amber note says the file cannot start R, and there is no control at the right end of the row.',
+      label: 'The app as one file',
+      cap: `${swatch(c.rbqm_states.single_file.note.edge)}The file the app’s footer offers as a download, opened from the site. It loads nothing from anywhere (${c.rbqm_states.single_file.asked_elsewhere} requests), so it has no control that starts R. ${said(c.rbqm_states.single_file.note, 'RBQM, the single file')}`
+    })}
+  </div>
+
+  <h3>On a phone</h3>
   <div class="phones">
     ${figure({
       name: 'phone-rbqm',
@@ -660,11 +757,11 @@ const ruling = `
 <div class="cut"><span>08 <em>· before you approve</em></span></div><section id="ruling">
   <div class="hd"><h2>For your ruling at review</h2></div>
   <div class="note ask">
-    <p class="lbl">Four things, none of which holds the release</p>
+    <p class="lbl">Six things, none of which holds the release</p>
     <ol class="rulings">
       <li>
         <h3>The sentences in the notes are drafts</h3>
-        <p>They ship as drafted and are yours to correct. Every one is printed under ${a('#words', 'every sentence the note says')}.</p>
+        <p>They ship as drafted and are yours to correct. Every one is printed under ${a('#words', 'every sentence the note says')}, and the two this page cannot picture under ${a('#unpictured', 'sentences this page does not picture')}.</p>
       </li>
       <li>
         <h3>No seconds in the note while R starts</h3>
@@ -676,11 +773,31 @@ const ruling = `
         </ul>
       </li>
       <li>
-        <h3>Two cases moved from a red card to an amber note</h3>
+        <h3>Three cases moved from red to amber</h3>
         <ul>
-          <li>A chart with no file loaded: ${q(c.cannot.nofile.says)} (${a('media/nofile.jpg', 'the picture')}).</li>
-          <li>A chart with a column not mapped: ${q(c.cannot.notmapped.says)} (${a('media/notmapped.jpg', 'the picture')}).</li>
+          <li>A chart with no file loaded, which was a red card: ${q(c.cannot.nofile.says)} (${a('media/nofile.jpg', 'the picture')}).</li>
+          <li>A chart with a column not mapped, which was a red card: ${q(c.cannot.notmapped.says)} (${a('media/notmapped.jpg', 'the picture')}).</li>
+          <li>The RBQM tab’s line when R did not start, stopped answering or stopped, which was ${esc(c.rbqm_failed_before.colour)} text: ${said(c.rbqm_failed.note, 'the RBQM note when R did not start')} (${a('media/rbqm-failed.jpg', 'the picture')}).</li>
           <li>Red is kept for a chart that was ready and failed, and for the control’s ${q(c.failed.control)}.</li>
+          <li>One more move, not from red: a metric the loaded study cannot support said why in a box with a ${esc(c.views_before.colour)} edge, and now says it in an amber note (${a('media/view-rbqm-cannot.jpg', 'the picture')}).</li>
+        </ul>
+      </li>
+      <li>
+        <h3>The RBQM tab has one note while R is ready</h3>
+        <ul>
+          <li>The design said that once R is ready there is no note.</li>
+          <li>The build has one, in one state: R is up and nothing has yet run on what is loaded. A blue note reads ${said(c.rbqm_states.ready, 'the RBQM note with R up and nothing run')} (${a('media/rbqm-ready.jpg', 'the picture')}).</li>
+          <li>In release 1.11.0 this state was a line of text: ${q(c.rbqm_ready_before.says)}</li>
+          <li>Say if you want it otherwise.</li>
+        </ul>
+      </li>
+      <li>
+        <h3>The hub’s line on one control that starts R</h3>
+        <ul>
+          <li>The hub’s developer guidelines say: “One way to do a thing across an app: one control that starts R, in one place” (${a(GUIDE, 'the guidelines, designing and checking what people look at')}).</li>
+          <li>The approved design adds a second place to press, the note. Its button calls the control’s own press.</li>
+          <li>safety.viz’s contributing guide was reworded to say so. The hub’s line was not (${a(CONTRIBUTING, 'the contributing guide’s demo app conventions')}).</li>
+          <li>Proposed wording for the hub’s line, yours to accept: “one control that starts R, in one place; a note may repeat its press inside a sentence, and it is the same press”.</li>
         </ul>
       </li>
       <li>
@@ -717,7 +834,7 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>safety.viz v1.11.1 — annotated demo</title>
-<meta name="description" content="What safety.viz v1.11.1 changes in the demo app, shown beside release 1.11.0: a note at the top of each card where R can be started, blue or amber, in every state, with steps to try and four things that are yours to rule on at the review.">
+<meta name="description" content="What safety.viz v1.11.1 changes in the demo app, shown beside release 1.11.0: a note at the top of each card where R can be started, blue or amber, in every state, with steps to try and six things that are yours to rule on at the review.">
 <style>
 ${css}</style>
 </head>
@@ -739,7 +856,7 @@ ${css}</style>
   <div class="note" id="links">
     <p class="lbl">Where everything is</p>
     <ul>
-      <li>The demo app, on the dev site (${a(DEV, 'jwildfire.github.io/safety.viz/dev/demo')}).</li>
+      <li>The demo app, on ${esc(siteName)} (${a(TRY, esc(TRY.replace('https://', '').replace(/\/$/, '')))}).</li>
       <li>The design this was built from: annotated mockups of the note (${a(DESIGN, 'the design page')}).</li>
       <li>The requirement: a standard note where R can be started (${a(REQ, 'obot.roadmap #420')}).</li>
       <li>Task one: add the app’s standard note, use it for every note, and remove the line on first open (${a(T_NOTE, 'safety.viz #321')}).</li>
@@ -749,18 +866,31 @@ ${css}</style>
       <li>Pull request two: the note where R can be started, with Start R inside its sentence (${a(PR_R, 'safety.viz #325')}).</li>
       <li>Pull request three: release preparation, the version, the bundle and the notes (${a(`${SV}/pull/326`, 'safety.viz #326')}).</li>
       <li>The release candidate: safety.viz v1.11.1-RC1 (${a(`${SV}/pull/327`, 'safety.viz #327')}).</li>
+      <li>Task four: fix what the review of the release candidate found (${a(T_FIX, 'safety.viz #328')}).</li>${
+        c.github && c.github.fix_pull
+          ? `\n      <li>Pull request four: the fixes from that review (${a(c.github.fix_pull.url, `safety.viz #${c.github.fix_pull.number}`)}).</li>`
+          : ''
+      }
     </ul>
   </div>
 
   <div class="note ask">
     <p class="lbl">Yours to rule on at this review</p>
-    <p>Four things, none of which holds the release: the notes’ sentences, the seconds while R starts, two cases that moved from red to amber, and a link on the hub. They are set out at ${a('#ruling', 'the foot of this page')}.</p>
+    <p>Six things, set out at ${a('#ruling', 'the foot of this page')}:</p>
+    <ul>
+      <li>the notes’ sentences, which are drafts;</li>
+      <li>no seconds in the note while R starts;</li>
+      <li>three cases that moved from red to amber;</li>
+      <li>a note on the RBQM tab while R is ready and nothing has run;</li>
+      <li>the hub’s line on one control that starts R;</li>
+      <li>a link on the hub, from the objective to this requirement.</li>
+    </ul>
   </div>
 
   <div class="note">
     <p class="lbl">How to read this page</p>
     <ul>
-      <li>Where the app changed its look, a switch above the picture swaps release 1.11.0 and release 1.11.1 in place. Release 1.11.0 is the released site; release 1.11.1 is ${esc(siteName)}.</li>
+      <li>Where the app changed its look, a switch above the picture swaps release 1.11.0 and release 1.11.1 in place. Release 1.11.0 is ${beforeName}; release 1.11.1 is ${esc(siteName)}.</li>
       <li>A numbered marker on a picture is explained by the same number under it. Tap a picture to open it at full size.</li>
       <li>Every sentence quoted from the app was read from the live page by the script beside this page, which stops when one differs from what is expected (${a(`${HERE}/capture.json`, 'what it read')}).</li>
       <li>A word drawn like <span class="key">Start R</span> inside a quoted sentence is a button in the app.</li>
@@ -777,7 +907,7 @@ ${css}</style>
   <a href="#colours"><span class="ref">05</span><span class="t">One note, two colours</span><span class="s">Blue for information, amber for cannot run</span></a>
   <a href="#first"><span class="ref">06</span><span class="t">The first screen</span><span class="s">The line on first open is gone</span></a>
   <a href="#same"><span class="ref">07</span><span class="t">What did not change</span><span class="s">No chart, no metric, nothing computed</span></a>
-  <a href="#ruling"><span class="ref">08</span><span class="t">For your ruling</span><span class="s">Four things, at the review</span></a>
+  <a href="#ruling"><span class="ref">08</span><span class="t">For your ruling</span><span class="s">Six things, at the review</span></a>
 </nav>
 ${s01}
 ${s02}
@@ -789,7 +919,7 @@ ${s07}
 ${ruling}
 
 <footer>
-  <p>Pictures taken ${date} with Playwright in headless Chromium, running real R in the browser where a picture shows R ready. Release 1.11.1 is ${esc(siteName)}, ${a(c.site.after, esc(c.site.after.replace('https://', '')))}${c.site.commit ? `, whose branch stood at ${a(`${SV}/commit/${c.site.commit}`, c.site.commit.slice(0, 7))} when captured` : ''}; release 1.11.0 is the released site, ${a(c.site.before, esc(c.site.before.replace('https://', '')))}. Stills are 1,280 by 800 pixels at 1.5 times, and 390 by 844 for a phone.</p>
+  <p>Pictures taken ${date} with Playwright in headless Chromium, running real R in the browser where a picture shows R ready. Release 1.11.1 is ${esc(siteName)}, ${a(c.site.after, esc(c.site.after.replace('https://', '')))}. When the capture began its footer read ${q(version)}${c.site.commit ? ` and its branch, ${esc(c.site.branch)}, stood at ${a(`${SV}/commit/${c.site.commit}`, c.site.commit.slice(0, 7))}` : ''}; every picture of release 1.11.1 is from that one run. Release 1.11.0 is ${beforeName}, ${a(c.site.before, esc(c.site.before.replace('https://', '')))}. Stills are 1,280 by 800 pixels at 1.5 times, and 390 by 844 for a phone.</p>
   <p style="margin-top:10px">Data: the pilot study is 254 participants from the public CDISC pilot study; its labs file also carries 110 synthetic liver and kidney participants, as the app’s Data tab says. The demo study ${q(c.liver.name)} is synthetic. No real participant appears.</p>
   <hr>
   <p>This page was drafted by Claude Code using Opus 5.5.</p>
