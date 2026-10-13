@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>safety.viz demo app: a standard note where R can be started</title>
+<meta name="description" content="Mockups for a small release of the safety.viz demo app: one standard note, with Start R inside its sentence, on every chart that can start R. Amber where nothing draws without R, blue where R adds p-values, and blue for information everywhere.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:"Instrument Sans";src:url(https://jwildfire.github.io/safety.viz/demo/fonts/instrument-sans-latin-wght-normal.woff2) format("woff2");font-weight:400 700;font-display:swap}
+@font-face{font-family:"Instrument Serif";src:url(https://jwildfire.github.io/safety.viz/demo/fonts/instrument-serif-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(https://jwildfire.github.io/safety.viz/demo/fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(https://jwildfire.github.io/safety.viz/demo/fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+:root{--bg:#fafaf8;--rail:#f3f4f1;--ink:#1f2328;--soft:#5b6470;--faint:#98a0aa;--accent:#6c3270;--accent-deep:#522456;--accent-soft:rgba(108,50,112,.1);--card:#fff;--rule:#e4e6e3;--line:#cfd3cf;--alarm:#a2423a;--s0:#d87972;--s1:#c78a3b;--s2:#77a95b;--s4:#519fdd;
+--info:#519fdd;--info-deep:#1f5f99;--info-soft:rgba(81,159,221,.1);--info-line:rgba(81,159,221,.45);--warn:#c78a3b;--warn-deep:#7a5211;--warn-soft:rgba(199,138,59,.13);--warn-line:rgba(199,138,59,.55);
+--sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--serif:"Instrument Serif",Georgia,"Times New Roman",serif;--mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:1rem;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-wrap:break-word}
+.wrap{max-width:1312px;margin:0 auto;padding:0 16px}
+.prose{max-width:46rem}
+.top{padding:2.6rem 0 1.2rem;border-bottom:1px solid var(--rule)}
+.eyebrow{margin:0 0 .5rem;font:500 .68rem/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--info-deep)}
+h1{margin:0 0 1rem;font-family:var(--serif);font-weight:400;font-size:clamp(2rem,5vw,3rem);line-height:1.08;letter-spacing:-.01em}
+h2{margin:3.2rem 0 .8rem;font-family:var(--serif);font-weight:400;font-size:clamp(1.6rem,3.6vw,2.1rem);line-height:1.15}
+h3{margin:2.2rem 0 .5rem;font-size:1.08rem;font-weight:600;line-height:1.3}
+h3 .num{font:500 .7rem/1 var(--mono);letter-spacing:.08em;color:var(--info-deep);margin-right:.6rem;vertical-align:.12em}
+p{margin:0 0 .8rem}
+ul,ol{margin:0 0 .9rem;padding-left:1.2rem}
+li{margin:0 0 .35rem}
+a{color:var(--info-deep);text-underline-offset:.2em}
+code{font-family:var(--mono);font-size:.84em;background:var(--rail);border:1px solid var(--rule);border-radius:4px;padding:.05em .3em;overflow-wrap:anywhere}
+.three{list-style:none;margin:0;padding:0;font-size:1.08rem}
+.three li{padding:.5rem 0;border-top:1px solid var(--rule)}
+.toc{display:flex;flex-wrap:wrap;gap:.35rem .5rem;margin:1.2rem 0 0;padding:0;list-style:none}
+.toc a{display:inline-block;font:500 .68rem/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:.45rem .7rem}
+.toc a:hover{border-color:var(--info-deep);color:var(--info-deep)}
+.decisions{list-style:none;margin:0;padding:0;counter-reset:d;display:grid;gap:.8rem;max-width:60rem}
+.decisions>li{counter-increment:d;margin:0;padding:.9rem 1rem .8rem 3.2rem;position:relative;background:var(--card);border:1px solid var(--rule);border-radius:10px}
+.decisions>li::before{content:counter(d);position:absolute;left:1rem;top:.9rem;width:1.5rem;height:1.7rem;display:grid;place-items:center;background:var(--ink);color:#fff;font:600 .72rem/1 var(--mono);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.decisions h3{margin:0 0 .35rem;font-size:1rem}
+.decisions ul{margin:0;padding-left:1.1rem}
+.tagrec,.tagalt{display:inline-block;margin-right:.45rem;font:500 .58rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:.2rem .42rem;vertical-align:.1em}
+.tagrec{color:#fff;background:var(--ink)}.tagalt{color:var(--soft);border:1px solid var(--line)}
+.mkintro{max-width:46rem;color:var(--soft)}
+/* a mockup */
+.mk{margin:1rem 0 2.6rem}
+.mk-bar{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;align-items:center;margin:0 0 .6rem}
+.mk-group{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem}
+.mk-size{margin-left:auto}
+.mk-lab{margin-right:.3rem;font:500 .6rem/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+.mk-bar button{appearance:none;font:500 .66rem/1 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:.44rem .7rem;cursor:pointer}
+.mk-bar button:hover{border-color:var(--ink)}
+.mk-bar button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.mk-bar button[hidden]{display:none}
+.mk-cap{margin:0 0 .6rem;min-height:1.5rem;font-size:.92rem;color:var(--soft);max-width:60rem}
+.mk-view{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--bg);box-shadow:0 1px 0 var(--rule),0 14px 34px rgba(31,35,40,.07)}
+.mk[data-size=full] .mk-view{overflow:auto;max-height:86vh}
+.mk-canvas{position:relative;width:1280px;height:820px;transform-origin:0 0;transform:scale(var(--k,1))}
+.mk-canvas img{display:block;width:1280px;height:820px}
+.mk-n{position:absolute;z-index:4;width:24px;height:24px;border-radius:50%;background:#1f2328;color:#fff;font:600 12px/24px var(--mono);text-align:center;box-shadow:0 0 0 2.5px #fff,0 2px 6px rgba(0,0,0,.3);pointer-events:none}
+.mk-hot{position:absolute;z-index:5;border:0;padding:0;background:transparent;border-radius:999px;cursor:pointer}
+.mk-hot:hover,.mk-hot:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.mk-legend{margin:.9rem 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:.5rem 1.6rem;font-size:.92rem}
+.mk-legend li{position:relative;margin:0;padding-left:2.1rem}
+.mk-legend li::before{content:attr(value);position:absolute;left:0;top:.05rem;width:1.5rem;height:1.5rem;border-radius:50%;background:#1f2328;color:#fff;font:600 .72rem/1.5rem var(--mono);text-align:center}
+.trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:1.2rem}
+.trio .mk{margin:0 0 1rem}
+.trio h3{margin-top:.6rem}
+/* tables */
+.scroll{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:.9rem;background:var(--card);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+table.t th{text-align:left;font:500 .62rem/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--soft);background:var(--rail);padding:.55rem .8rem;border-bottom:1px solid var(--rule);vertical-align:bottom}
+table.t td{padding:.55rem .8rem;border-bottom:1px solid var(--rule);vertical-align:top}
+table.t tr:last-child td{border-bottom:0}
+.kind{display:inline-flex;align-items:center;gap:.35rem;font:500 .62rem/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:.26rem .5rem;white-space:nowrap;border:1px solid var(--info-line);background:var(--info-soft);color:var(--info-deep)}
+.kind.w{border-color:var(--warn-line);background:var(--warn-soft);color:var(--warn-deep)}
+.kind.p{border-color:rgba(216,121,114,.55);background:rgba(216,121,114,.12);color:var(--alarm)}
+.kind.o{border-color:var(--line);background:none;color:var(--soft)}
+.files{font-family:var(--mono);font-size:.74rem;color:var(--soft);overflow-wrap:anywhere}
+.attr{margin:2.4rem 0 3rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.86rem;color:var(--soft)}
+/* the note itself, as it would be in the app (note.css in this folder) */
+.live{display:grid;gap:1.1rem;max-width:62rem}
+.live figure{margin:0}
+.live figcaption{margin:0 0 .35rem;font:500 .62rem/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
+.sva-callout{display:flex;align-items:flex-start;gap:.6rem;margin:0;padding:.6rem .6rem .6rem .8rem;border:1px solid var(--info-line);border-left:3px solid var(--info);border-radius:10px;background:linear-gradient(var(--info-soft),var(--info-soft)) var(--card);font-size:.92rem;line-height:1.55;color:var(--ink)}
+.sva-callout.sva-warning{border-color:var(--warn-line);border-left-color:var(--warn);background:linear-gradient(var(--warn-soft),var(--warn-soft)) var(--card)}
+.sva-callout-mark{flex:none;width:1.15rem;height:1.15rem;margin-top:.14rem;color:var(--info-deep)}
+.sva-callout.sva-warning .sva-callout-mark{color:var(--warn-deep)}
+.sva-callout p{margin:0;flex:1;min-width:0}
+.sva-callout a{color:var(--info-deep)}
+.sva-callout-meta{font-family:var(--mono);font-size:.72rem;letter-spacing:.03em;color:var(--soft);white-space:nowrap}
+.sva-action{font-family:var(--mono);font-size:.66rem;font-weight:500;line-height:1;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--card);border:1px solid var(--accent);border-radius:999px;padding:.36rem .7rem;margin:0 .2rem;cursor:pointer;white-space:nowrap;vertical-align:.08em}
+.sva-action:hover{background:var(--accent-soft)}
+.sva-close{flex:none;width:1.7rem;height:1.7rem;margin:-.15rem 0;padding:0;border:0;border-radius:50%;background:none;color:var(--soft);font-family:inherit;font-size:1.15rem;line-height:1;cursor:pointer}
+.sva-spin{flex:none;width:.85rem;height:.85rem;margin-top:.28rem;border:2px solid var(--line);border-top-color:var(--info-deep);border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.sva-spin{animation:none}}
+.old{display:block;padding:.45rem .7rem;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--accent);border-radius:8px;font-size:.84rem}
+.old.amber{border-left-color:var(--s1)}.old.red{border-left-color:var(--s0)}.old.plain{border:0;padding:0;background:none;font-size:.95rem}
+.mini{display:flex;align-items:flex-start;gap:.45rem;padding:.45rem .7rem;border:1px solid var(--info-line);border-left:3px solid var(--info);border-radius:8px;background:var(--info-soft);font-size:.84rem}
+.mini.w{border-color:var(--warn-line);border-left-color:var(--warn);background:var(--warn-soft)}
+.mini.r{border-color:var(--rule);border-left-color:var(--s0);background:var(--card)}
+@media (max-width:720px){
+  table.t,table.t tbody,table.t tr,table.t td{display:block;width:100%}
+  table.t thead{display:none}
+  table.t tr{border-bottom:1px solid var(--line);padding:.4rem 0}
+  table.t td{border:0;padding:.25rem .8rem}
+  table.t td[data-h]::before{content:attr(data-h);display:block;font:500 .58rem/1.4 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--soft)}
+  .mk-size{margin-left:0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">safety.viz demo app · design for release 1.11.1 · 13 October 2026</p>
+  <h1>A standard note where R can be started</h1>
+  <ul class="three prose">
+    <li>Every chart and tab that can start R carries one note at the top of its card, and Start R is a button inside the note's sentence.</li>
+    <li>The note is an amber warning where nothing draws without R, and a blue information note where the chart draws and R adds its p-values.</li>
+    <li>Blue becomes the colour of information everywhere in the app: the line on first open, and the other information lines, lose their purple edge.</li>
+  </ul>
+  <ul class="toc">
+    <li><a href="#decisions">Decisions</a></li>
+    <li><a href="#m1">1 · Chart that draws</a></li>
+    <li><a href="#m2">2 · Chart that cannot</a></li>
+    <li><a href="#m3">3 · RBQM tab</a></li>
+    <li><a href="#m4">4 · Blue for information</a></li>
+    <li><a href="#others">The other three charts</a></li>
+    <li><a href="#note">The note</a></li>
+    <li><a href="#all">Every note in the app</a></li>
+    <li><a href="#build">What the release holds</a></li>
+  </ul>
+</header>
+
+<section id="decisions">
+  <h2>Decisions for you</h2>
+  <p class="mkintro">Five, each with the recommended answer first. The mockups below show the recommended answers; the first mockup has a switch for each alternative that changes the page.</p>
+  <ol class="decisions">
+    <li>
+      <h3>Where the note sits on a chart that draws without R</h3>
+      <ul>
+        <li><span class="tagrec">Recommended</span>At the top of the chart's card: the same place on every chart and on the RBQM tab, seen without scrolling, and built in safety.viz alone.</li>
+        <li><span class="tagalt">Alternative</span>In place of the line under the chart, where the p-value will be printed. That line is drawn by bio.viz, so it needs a bio.viz release too, and on a tall chart it is below the first screen. Mockup 1, "Note under the chart".</li>
+      </ul>
+    </li>
+    <li>
+      <h3>The control at the top right, before R is started</h3>
+      <ul>
+        <li><span class="tagrec">Recommended</span>Kept as it is. A reader can then close a blue note and still start R later, and the control stays the one place for progress, the R chip and Why.</li>
+        <li><span class="tagalt">Alternative</span>Hidden until R is started, so there is one Start R on screen. The blue note then has no cross. Mockup 1, "No control until R starts".</li>
+      </ul>
+    </li>
+    <li>
+      <h3>Which charts get the warning</h3>
+      <ul>
+        <li><span class="tagrec">Recommended</span>The RBQM tab, the Biomarker screen and the Correlation matrix: none of them draws a result without R. Group comparison, Association scatter and Cross-tabulation get the blue note.</li>
+        <li><span class="tagalt">Alternative</span>The warning on the RBQM tab only, and the blue note on all five biomarker charts.</li>
+      </ul>
+    </li>
+    <li>
+      <h3>The app's other notes</h3>
+      <ul>
+        <li><span class="tagrec">Recommended</span>One rule for every note: blue is information, amber is something that cannot run until the reader acts, red is something that failed. So a chart that needs more data, and an RBQM metric the loaded data cannot support, become amber; the rest become blue. The table under "Every note in the app" lists each one.</li>
+        <li><span class="tagalt">Alternative</span>Swap purple for blue and change nothing else.</li>
+      </ul>
+    </li>
+    <li>
+      <h3>When R does not start</h3>
+      <ul>
+        <li><span class="tagrec">Recommended</span>The note turns amber, with Try again in its sentence. The chart still stands, and the reader can act.</li>
+        <li><span class="tagalt">Alternative</span>Red, as the app's "Did not draw" lines are.</li>
+      </ul>
+    </li>
+  </ol>
+  <p class="mkintro" style="margin-top:1rem">The sentences in the notes are drafts for you to correct. Buttons and links outside a note keep the app's purple: it is the colour of things to press, and only notes change.</p>
+</section>
+
+<section id="mockups">
+  <h2>Mockups</h2>
+  <p class="mkintro">Each is the released app's own page at 1,280 pixels wide, captured on 13 October 2026, with the proposed note and colours applied to the live page. Today swaps in the same page as released in 1.11.0. Start R and Try again can be clicked in the mockup.</p>
+
+  <h3 id="m1"><span class="num">1</span>A chart that draws without R: the blue note</h3>
+  <div class="mk" data-mk="scatter"></div>
+  <ol class="mk-legend">
+    <li value="1">The note, at the top of the chart's card. Blue, with the information mark: the chart is drawn, and R adds its p-values. It says what starting R costs and that the data stays in the browser.</li>
+    <li value="2">Start R is a button in the sentence. A press does what the control at the top right does. When R did not start, the button reads Try again.</li>
+    <li value="3">A cross closes a blue note for the visit. The control at the top right is still there.</li>
+    <li value="4">The line on first open is the same blue note: no purple edge, and its link is blue.</li>
+    <li value="5">The chart's own line no longer points to the top right. It reads "Start R, in the note above", and once R is ready it prints the test as it does today.</li>
+    <li value="6">The control at the top right is unchanged in every state.</li>
+  </ol>
+
+  <h3 id="m2"><span class="num">2</span>A chart that cannot be drawn without R: the amber warning</h3>
+  <div class="mk" data-mk="screen"></div>
+  <ol class="mk-legend">
+    <li value="1">The same note in the same place, as a warning: amber, with the warning mark. The Biomarker screen has nothing to draw until R has run its tests.</li>
+    <li value="2">Start R in the sentence, as on every note.</li>
+    <li value="3">No cross. A warning stays until R is started.</li>
+    <li value="4">The chart's own line points at the note.</li>
+  </ol>
+
+  <h3 id="m3"><span class="num">3</span>The RBQM tab: the amber warning</h3>
+  <div class="mk" data-mk="rbqm"></div>
+  <ol class="mk-legend">
+    <li value="1">The tab's first line becomes the note. It replaces "Site metrics need R. Start R, at the top right." The same note opens each metric's page before a run.</li>
+    <li value="2">Start R in the sentence. One press runs everything, as the control does today.</li>
+    <li value="3">While R starts the note is blue, with a spinner and the step it is on; the list of steps under it is today's.</li>
+    <li value="4">The line on first open, in blue.</li>
+    <li value="5">The control at the top right is unchanged. After a run there is no note: the results are there, and the R chip.</li>
+  </ol>
+
+  <h3 id="m4"><span class="num">4</span>Blue for information, on a chart with no R</h3>
+  <div class="mk" data-mk="profile"></div>
+  <ol class="mk-legend">
+    <li value="1">The line on first open, in blue, on every tab.</li>
+    <li value="2">A sentence that tells the reader how a chart works is the same blue note. Here, the Participant Profile saying how it is opened.</li>
+  </ol>
+</section>
+
+<section id="others">
+  <h2>The other three charts</h2>
+  <p class="mkintro">The same note, with no change to its place or its words. Two more charts that draw without R, and one that does not.</p>
+  <div class="trio">
+    <div><h3>Group comparison <span class="kind">Info</span></h3><div class="mk" data-mk="group"></div></div>
+    <div><h3>Cross-tabulation <span class="kind">Info</span></h3><div class="mk" data-mk="crosstab"></div></div>
+    <div><h3>Correlation matrix <span class="kind w">Warning</span></h3><div class="mk" data-mk="matrix"></div></div>
+  </div>
+  <div class="scroll">
+  <table class="t" style="max-width:62rem">
+    <thead><tr><th>Chart or tab</th><th>Without R</th><th>What R adds</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td data-h="Chart or tab">Group comparison</td><td data-h="Without R">The tiles, and an open biomarker's chart, are drawn</td><td data-h="What R adds">A test under each visit of an open biomarker</td><td data-h="Note"><span class="kind">Info</span></td></tr>
+      <tr><td data-h="Chart or tab">Association scatter</td><td data-h="Without R">The scatter is drawn</td><td data-h="What R adds">The correlation test and its p-value</td><td data-h="Note"><span class="kind">Info</span></td></tr>
+      <tr><td data-h="Chart or tab">Cross-tabulation</td><td data-h="Without R">The table and the bars are drawn</td><td data-h="What R adds">The test of the table and its p-value</td><td data-h="Note"><span class="kind">Info</span></td></tr>
+      <tr><td data-h="Chart or tab">Correlation matrix</td><td data-h="Without R">An empty grid</td><td data-h="What R adds">Every coefficient in the grid</td><td data-h="Note"><span class="kind w">Warning</span></td></tr>
+      <tr><td data-h="Chart or tab">Biomarker screen</td><td data-h="Without R">The list of biomarkers to screen, and no chart</td><td data-h="What R adds">Every estimate and p-value</td><td data-h="Note"><span class="kind w">Warning</span></td></tr>
+      <tr><td data-h="Chart or tab">RBQM tab: the overview and each metric's page</td><td data-h="Without R">Nothing</td><td data-h="What R adds">Every metric</td><td data-h="Note"><span class="kind w">Warning</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="note">
+  <h2>The note</h2>
+  <p class="mkintro">One component, drawn here by the page itself in the proposed styles, so the text is live. It has two formats, and the same shape in both: a mark, one sentence with at most one button in it, and a cross only where closing it loses nothing.</p>
+  <div class="live">
+    <figure><figcaption>Information · R adds p-values · before R is started</figcaption>
+      <div class="sva-callout"><svg class="sva-callout-mark" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.3v3.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="4.9" r="1" fill="currentColor"/></svg><p>This chart’s p-values need R. <button class="sva-action" type="button">Start R</button> to add them: about 13 MB, downloaded once. The study’s data stays in this browser.</p><button class="sva-close" type="button" aria-label="Dismiss">×</button></div>
+    </figure>
+    <figure><figcaption>Warning · the chart cannot be drawn without R</figcaption>
+      <div class="sva-callout sva-warning"><svg class="sva-callout-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2l6.4 11.2H1.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.4v3.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".95" fill="currentColor"/></svg><p>This chart cannot be drawn without R. <button class="sva-action" type="button">Start R</button> to draw it: about 13 MB, downloaded once. The study’s data stays in this browser.</p></div>
+    </figure>
+    <figure><figcaption>Warning · the RBQM tab</figcaption>
+      <div class="sva-callout sva-warning"><svg class="sva-callout-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2l6.4 11.2H1.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.4v3.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".95" fill="currentColor"/></svg><p>The site metrics cannot be worked out without R. <button class="sva-action" type="button">Start R</button> to run them: about 55 MB, downloaded once. The study’s data stays in this browser.</p></div>
+    </figure>
+    <figure><figcaption>While R starts · blue on every chart and tab</figcaption>
+      <div class="sva-callout"><span class="sva-spin" aria-hidden="true"></span><p>R is starting. The p-values appear under the chart when it is ready. <span class="sva-callout-meta">13 MB · 4 s</span></p></div>
+    </figure>
+    <figure><figcaption>R did not start · amber on every chart and tab</figcaption>
+      <div class="sva-callout sva-warning"><svg class="sva-callout-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2l6.4 11.2H1.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.4v3.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".95" fill="currentColor"/></svg><p>R did not start, so this chart has no p-values. <button class="sva-action" type="button">Try again</button> The reason is behind Why, at the top right.</p></div>
+    </figure>
+    <figure><figcaption>The line on first open · the same blue note</figcaption>
+      <div class="sva-callout" style="align-items:center;font-size:.86rem"><svg class="sva-callout-mark" style="margin-top:0" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.3v3.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="4.9" r="1" fill="currentColor"/></svg><p>You are looking at the CDISC pilot study, a public demo: 254 participants, 18 charts on five tabs. To use your own files, open <a href="#note">Data</a>. They are read in this browser and never leave it.</p><button class="sva-close" type="button" aria-label="Dismiss">×</button></div>
+    </figure>
+  </div>
+  <ul class="prose" style="margin-top:1.2rem">
+    <li>Once R is ready there is no note. The R chip at the top right says R is running, as today.</li>
+    <li>The mark's shape differs between the formats, so the two can be told apart without colour.</li>
+    <li>Blue is the palette's own blue, and amber its own amber: no colour is added to the app.</li>
+    <li>On a phone the sentence wraps under the mark and the button stays inside it. Phone width is not mocked here; it is tested in the build.</li>
+  </ul>
+</section>
+
+<section id="all">
+  <h2>Every note in the app</h2>
+  <p class="mkintro">What each note looks like in release 1.11.0, and what it becomes under the recommended rule: blue is information, amber is something that cannot run until the reader acts, red is something that failed.</p>
+  <div class="scroll">
+  <table class="t">
+    <thead><tr><th>Note</th><th>Today</th><th>Proposed</th><th>Format</th></tr></thead>
+    <tbody>
+      <tr><td data-h="Note">The line on first open</td><td data-h="Today"><span class="old">You are looking at the CDISC pilot study…</span></td><td data-h="Proposed"><span class="mini">You are looking at the CDISC pilot study…</span></td><td data-h="Format"><span class="kind">Info</span></td></tr>
+      <tr><td data-h="Note">A chart that can start R and draws without it</td><td data-h="Today"><span class="old plain">Statistics need R. Start R, at the top right.</span></td><td data-h="Proposed"><span class="mini">This chart’s p-values need R. Start R to add them…</span></td><td data-h="Format"><span class="kind">Info</span></td></tr>
+      <tr><td data-h="Note">A chart or tab that cannot run without R</td><td data-h="Today"><span class="old plain">Site metrics need R. Start R, at the top right.</span></td><td data-h="Proposed"><span class="mini w">The site metrics cannot be worked out without R. Start R…</span></td><td data-h="Format"><span class="kind w">Warning</span></td></tr>
+      <tr><td data-h="Note">R did not start</td><td data-h="Today"><span class="old plain" style="color:var(--alarm)">R did not start, so no metric was run. Try again, at the top right.</span></td><td data-h="Proposed"><span class="mini w">R did not start, so no metric was run. Try again…</span></td><td data-h="Format"><span class="kind w">Warning</span></td></tr>
+      <tr><td data-h="Note">A sentence saying how a chart works, or that a file is being read</td><td data-h="Today"><span class="old">The participant profile opens beside a chart when…</span></td><td data-h="Proposed"><span class="mini">The participant profile opens beside a chart when…</span></td><td data-h="Format"><span class="kind">Info</span></td></tr>
+      <tr><td data-h="Note">A chart the loaded data cannot draw</td><td data-h="Today"><span class="old">This chart needs ECG data. Load it on the Data tab.</span></td><td data-h="Proposed"><span class="mini w">This chart needs ECG data. Load it on the Data tab.</span></td><td data-h="Format"><span class="kind w">Warning</span></td></tr>
+      <tr><td data-h="Note">An RBQM metric the loaded data cannot support</td><td data-h="Today"><span class="old">This metric needs the protocol deviations file…</span></td><td data-h="Proposed"><span class="mini w">This metric needs the protocol deviations file…</span></td><td data-h="Format"><span class="kind w">Warning</span></td></tr>
+      <tr><td data-h="Note">A note from loading a file, and a chart library that did not load</td><td data-h="Today"><span class="old amber">The bio.viz charts are not shown: the file did not load…</span></td><td data-h="Proposed"><span class="mini w">The bio.viz charts are not shown: the file did not load…</span></td><td data-h="Format"><span class="kind w">Warning</span></td></tr>
+      <tr><td data-h="Note">Something that failed to draw</td><td data-h="Today"><span class="old red">Did not draw. The file has no rows.</span></td><td data-h="Proposed"><span class="mini r">Did not draw. The file has no rows.</span></td><td data-h="Format"><span class="kind p">Problem</span> unchanged</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="mkintro" style="margin-top:.8rem">The example sentences in the last four rows are shortened stand-ins; the app's own words do not change there. The docs site, the chart gallery and the charts' own controls are not touched.</p>
+</section>
+
+<section id="build">
+  <h2>What the release holds</h2>
+  <p class="mkintro">One requirement, a patch release cut from the current development branch, which holds nothing else since 1.11.0. Nothing R computes changes, and no file of R's changes.</p>
+  <div class="scroll">
+  <table class="t">
+    <thead><tr><th>Task</th><th>What changes</th><th>Files</th></tr></thead>
+    <tbody>
+      <tr><td data-h="Task">The note and the colours</td><td data-h="What changes">One note component with two formats. The line on first open, the information sentences and the cannot-run boxes use it. Blue and amber named once in the styles.</td><td data-h="Files" class="files">src/app/styles.js · a new src/app/note.js · src/app/page.js · src/app/rbqm-view.js</td></tr>
+      <tr><td data-h="Task">The note on the five biomarker charts</td><td data-h="What changes">The page draws the note at the top of the card of a chart whose library can start R, with the format the chart is listed under. The button calls the same press as the control. The sentence handed to the chart's own line says "in the note above".</td><td data-h="Files" class="files">src/app/page.js · src/app/r-on-request.js · src/app/r-words.js · scripts/app-libraries.mjs</td></tr>
+      <tr><td data-h="Task">The note on the RBQM tab</td><td data-h="What changes">The tab's first line, on the overview and on each metric's page, becomes the note in each of its states.</td><td data-h="Files" class="files">src/app/rbqm-view.js · src/app/rbqm.js</td></tr>
+      <tr><td data-h="Task">Tests, evidence and the release</td><td data-h="What changes">Unit and browser tests for each state on each kind of chart, at desktop and phone width; the demo-path test presses Start R in the note; evidence refreshed for every chart, since the styles are shared; notes and version 1.11.1.</td><td data-h="Files" class="files">tests/ · NEWS.md · package.json</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>How the app knows which format a chart gets</h3>
+  <ul class="prose">
+    <li>For this release, the page's list of libraries names the two biomarker charts that cannot be drawn without R; every other chart of a library that can start R gets the blue note.</li>
+    <li>The better home is each chart's own entry in bio.viz's chart list. That needs a bio.viz release, so it is left as a follow-up.</li>
+    <li>The RBQM tab is the app's own, and says it itself.</li>
+  </ul>
+  <h3>Left out</h3>
+  <ul class="prose">
+    <li>The note inside bio.viz's own line under the chart, unless you choose the alternative in decision 1.</li>
+    <li>A note on a chart outside the demo app: the docs site's gallery pages and the gsm.safety widgets start no R.</li>
+    <li>Any change to the control at the top right, unless you choose the alternative in decision 2.</li>
+  </ul>
+  <h3>Not verified in these mockups</h3>
+  <ul class="prose">
+    <li>Phone width. The mockups are desktop only.</li>
+    <li>The Group comparison with one biomarker open, where the tests are printed. The mockup shows its first view, the tiles.</li>
+    <li>That the copy of bio.viz in the app redraws its own line when the sentence handed to it changes. It prints the sentence the app hands it today, so no bio.viz change is expected.</li>
+  </ul>
+</section>
+
+<p class="attr">Captured from <a href="https://jwildfire.github.io/safety.viz/demo/">the released demo app</a>, safety.viz 1.11.0, on 13 October 2026. The note's proposed styles are in <code>note.css</code> beside this page, and the script that made the captures is <code>capture.cjs</code>.<br>This report was drafted by Claude Code using Opus 5.5 and reviewed by @jwildfire</p>
+
+</div>
+<script>
+(function () {
+  var W = 1280, H = 820;
+  var STATE_LABEL = { before: 'Before R', starting: 'R starting', ready: 'R ready', done: 'After the run', failed: 'R did not start' };
+  var VERSION_LABEL = { 'new': 'Proposed', optb: 'No control until R starts', optc: 'Note under the chart', today: 'Today' };
+  var TODAY = 'Today: the page as released in 1.11.0.';
+  var MK = {
+    scatter: {
+      states: ['before', 'starting', 'ready', 'failed'],
+      versions: { before: ['new', 'optb', 'optc', 'today'] },
+      marks: {
+        'new-before': [[1, 37, 169], [2, 352, 174], [3, 1213, 171], [4, 20, 96], [5, 291, 770], [6, 947, 61]],
+        'new-starting': [[1, 37, 169], [4, 20, 96], [5, 291, 769], [6, 1044, 61]],
+        'new-ready': [[4, 20, 96], [5, 291, 709], [6, 1111, 61]],
+        'new-failed': [[1, 37, 169], [2, 470, 174], [4, 20, 96], [5, 291, 770], [6, 966, 61]],
+        'optb-before': [[1, 37, 169], [2, 352, 174], [4, 20, 96], [5, 291, 770], [6, 1224, 61]],
+        'optc-before': [[1, 307, 699], [2, 629, 703], [4, 20, 96], [6, 947, 61]]
+      },
+      hot: {
+        'new-before': [289, 192, 73, 24, ['starting', 'ready']],
+        'optb-before': [289, 192, 73, 24, ['starting', 'ready']],
+        'optc-before': [566, 721, 73, 24, ['starting', 'ready']],
+        'new-failed': [393, 192, 87, 24, ['starting', 'ready']]
+      },
+      cap: {
+        'new-before': 'Before R is started: a blue note at the top of the card. Click Start R in the mockup to play it through.',
+        'new-starting': 'While R starts: the same note, with a spinner in place of the mark and no button.',
+        'new-ready': 'R is ready: the note is gone. The p-value is under the chart and the R chip is at the top right, as today.',
+        'new-failed': 'R did not start: the note turns amber and Try again is in the sentence.',
+        'optb-before': 'Alternative to decision 2: the control at the top right is hidden until R is started. The note would then have no cross, since it is the only way to start R.',
+        'optc-before': 'Alternative to decision 1: the note takes the place of the line under the chart, where the p-value will be printed. bio.viz draws that line, so this needs a bio.viz release too.'
+      }
+    },
+    screen: {
+      states: ['before'],
+      marks: { 'new-before': [[1, 37, 169], [2, 415, 174], [3, 1213, 171], [4, 291, 465]] },
+      cap: { 'new-before': 'Before R is started: an amber warning. The states after a press are those of mockup 1.' }
+    },
+    rbqm: {
+      states: ['before', 'starting', 'done', 'failed'],
+      marks: {
+        'new-before': [[1, 37, 169], [2, 490, 174], [4, 20, 96], [5, 931, 61]],
+        'new-starting': [[3, 37, 169], [4, 20, 96], [5, 875, 61]],
+        'new-done': [[4, 20, 96], [5, 1111, 61]],
+        'new-failed': [[1, 37, 169], [2, 418, 174], [4, 20, 96], [5, 966, 61]]
+      },
+      hot: {
+        'new-before': [427, 192, 73, 24, ['starting', 'done']],
+        'new-failed': [341, 192, 87, 24, ['starting', 'done']]
+      },
+      cap: {
+        'new-before': 'Before R is started: an amber warning in place of the tab’s first line. Click Start R in the mockup to play it through.',
+        'new-starting': 'While R starts: a blue note with a spinner, above today’s list of steps.',
+        'new-done': 'After the run: no note. The results and the R chip are as today.',
+        'new-failed': 'R did not start: amber, with Try again in the sentence.'
+      }
+    },
+    profile: {
+      states: [''],
+      marks: { 'new': [[1, 20, 96], [2, 20, 152]] },
+      cap: { 'new': 'The Participant Profile, which starts no R: its sentence and the line on first open, in blue.' }
+    },
+    group: { states: ['before'], small: true },
+    crosstab: { states: ['before'], small: true },
+    matrix: { states: ['before'], small: true }
+  };
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  document.querySelectorAll('.mk[data-mk]').forEach(function (root) {
+    var id = root.dataset.mk, spec = MK[id];
+    var state = spec.states[0], version = 'new', timer = null;
+    var bar = el('div', 'mk-bar'), cap = el('p', 'mk-cap');
+    var view = el('div', 'mk-view'), canvas = el('div', 'mk-canvas'), img = el('img');
+    img.alt = ''; img.loading = 'lazy'; img.width = W; img.height = H;
+    canvas.append(img); view.append(canvas);
+    var stateGroup = el('div', 'mk-group'), versionGroup = el('div', 'mk-group'), sizeGroup = el('div', 'mk-group mk-size');
+    if (spec.states.length > 1) {
+      stateGroup.append(el('span', 'mk-lab', 'State'));
+      spec.states.forEach(function (s) { var b = el('button', null, STATE_LABEL[s]); b.type = 'button'; b.dataset.state = s; b.onclick = function () { stop(); state = s; draw(); }; stateGroup.append(b); });
+      bar.append(stateGroup);
+    }
+    versionGroup.append(el('span', 'mk-lab', 'Show'));
+    ['new', 'optb', 'optc', 'today'].forEach(function (v) { var b = el('button', null, VERSION_LABEL[v]); b.type = 'button'; b.dataset.version = v; b.onclick = function () { stop(); version = v; draw(); }; versionGroup.append(b); });
+    bar.append(versionGroup);
+    var full = el('button', null, 'Full size'); full.type = 'button';
+    full.onclick = function () { root.dataset.size = root.dataset.size === 'full' ? 'fit' : 'full'; full.setAttribute('aria-pressed', String(root.dataset.size === 'full')); fit(); };
+    full.setAttribute('aria-pressed', 'false');
+    if (!spec.small) { sizeGroup.append(full); bar.append(sizeGroup); }
+    root.append(bar);
+    if (!spec.small) root.append(cap);
+    root.append(view);
+
+    function stop() { if (timer) clearTimeout(timer); timer = null; }
+    function versionsOf(s) { return (spec.versions && spec.versions[s]) || ['new', 'today']; }
+    function fit() {
+      var k = root.dataset.size === 'full' ? 1 : Math.min(1, view.clientWidth / W);
+      canvas.style.setProperty('--k', k);
+      view.style.height = root.dataset.size === 'full' ? '' : Math.round(H * k) + 'px';
+      canvas.style.marginBottom = root.dataset.size === 'full' ? '0' : '';
+    }
+    function draw() {
+      if (versionsOf(state).indexOf(version) < 0) version = 'new';
+      var key = version + (state ? '-' + state : '');
+      img.src = 'img/' + version + '-' + id + (state ? '-' + state : '') + '.jpg';
+      img.alt = (version === 'today' ? 'The released page' : 'The proposed page') + ': ' + id + (state ? ', ' + STATE_LABEL[state] : '');
+      stateGroup.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.state === state)); });
+      versionGroup.querySelectorAll('button').forEach(function (b) { b.hidden = versionsOf(state).indexOf(b.dataset.version) < 0; b.setAttribute('aria-pressed', String(b.dataset.version === version)); });
+      canvas.querySelectorAll('.mk-n,.mk-hot').forEach(function (n) { n.remove(); });
+      ((spec.marks && spec.marks[key]) || []).forEach(function (m) { var n = el('span', 'mk-n', String(m[0])); n.style.left = m[1] + 'px'; n.style.top = m[2] + 'px'; canvas.append(n); });
+      var hot = spec.hot && spec.hot[key];
+      if (hot) {
+        var h = el('button', 'mk-hot'); h.type = 'button'; h.setAttribute('aria-label', 'Press the button in the mockup');
+        h.style.left = hot[0] + 'px'; h.style.top = hot[1] + 'px'; h.style.width = hot[2] + 'px'; h.style.height = hot[3] + 'px';
+        h.onclick = function () { stop(); version = 'new'; state = hot[4][0]; draw(); timer = setTimeout(function () { state = hot[4][1]; draw(); }, 2400); };
+        canvas.append(h);
+      }
+      cap.textContent = version === 'today' ? TODAY : ((spec.cap && spec.cap[key]) || '');
+    }
+    draw(); fit();
+    window.addEventListener('resize', fit);
+  });
+})();
+</script>
+</body>
+</html>
