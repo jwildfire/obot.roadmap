@@ -23,8 +23,9 @@ window.__mk = (() => {
   return {
     css(text) { const s = document.createElement('style'); s.textContent = text; document.head.append(s); },
     blue() {
+      // The line on first open is removed (his word, 2026-10-13).
       const w = document.querySelector('.sva-welcome');
-      if (w && !w.hidden && !w.querySelector('.sva-callout-mark')) { w.classList.add('sva-callout', 'sva-info'); w.style.alignItems = 'center'; w.style.fontSize = '.86rem'; w.style.padding = '.5rem .5rem .5rem .8rem'; w.insertAdjacentHTML('afterbegin', I); w.querySelector('.sva-callout-mark').style.marginTop = '0'; }
+      if (w) w.remove();
       for (const m of document.querySelectorAll('p.sva-message:not(.sva-problem):not(.sva-busy)')) {
         const d = note('info', m.innerHTML); d.style.maxWidth = '62rem'; d.dataset.mk = 'message'; m.replaceWith(d);
       }
