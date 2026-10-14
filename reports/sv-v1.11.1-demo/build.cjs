@@ -71,6 +71,9 @@ const sayWith = (text, button) => `“${esc(must(text, `a sentence with ${button
 const swatch = (rgb) => `<span class="sw" style="background:${esc(rgb)}" aria-hidden="true"></span>`;
 const date = new Date(c.site.captured).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/New_York' });
 const siteName = c.site.after_is;
+// Once the page is captured from the released site, the release is out and the
+// rulings are no longer asked "at this review".
+const RELEASED = siteName === 'the released site';
 // The version and the commit are those read when the run of every section began.
 const version = must(c.site.version, 'the app’s version, read when the capture began');
 if (c.first.version !== version) throw new Error(`The first screen read ${c.first.version} and the capture began on ${version}: run every section.`);
@@ -755,9 +758,9 @@ const s07 = section(
 // ================================================================ for your ruling
 const ruling = `
 <div class="cut"><span>08 <em>· before you approve</em></span></div><section id="ruling">
-  <div class="hd"><h2>For your ruling at review</h2></div>
+  <div class="hd"><h2>${RELEASED ? 'For your ruling' : 'For your ruling at review'}</h2></div>
   <div class="note ask">
-    <p class="lbl">Six things, none of which holds the release</p>
+    <p class="lbl">${RELEASED ? 'Six things, none of which held the release' : 'Six things, none of which holds the release'}</p>
     <ol class="rulings">
       <li>
         <h3>The sentences in the notes are drafts</h3>
@@ -843,7 +846,7 @@ ${css}</style>
 <div class="wrap">
 
 <header class="mast">
-  <p class="eyebrow">safety.viz <span class="dot"></span> release candidate review <span class="dot"></span> ${date}</p>
+  <p class="eyebrow">safety.viz <span class="dot"></span> ${RELEASED ? 'release 1.11.1' : 'release candidate review'} <span class="dot"></span> ${date}</p>
   <h1>What <span class="v">v1.11.1</span> changes, annotated</h1>
   <p class="lede">Release 1.11.1 is a patch to the demo app. Wherever R can be started, a note at the top of the card now says why R is wanted and what starting it costs, with Start R inside the sentence. Every note in the app is now blue for information or amber for something that cannot run, and the line on first open is removed. No chart and no metric is added, and nothing the app computes changes.</p>
   <!-- RC-LINK -->
@@ -867,6 +870,10 @@ ${css}</style>
       <li>Pull request three: release preparation, the version, the bundle and the notes (${a(`${SV}/pull/326`, 'safety.viz #326')}).</li>
       <li>The release candidate: safety.viz v1.11.1-RC1 (${a(`${SV}/pull/327`, 'safety.viz #327')}).</li>
       <li>Task four: fix what the review of the release candidate found (${a(T_FIX, 'safety.viz #328')}).</li>${
+        RELEASED
+          ? `\n      <li>The release: safety.viz v1.11.1, approved and published on 13 October 2026 (${a(`${SV}/releases/tag/v1.11.1`, 'the release')}).</li>`
+          : ''
+      }${
         c.github && c.github.fix_pull
           ? `\n      <li>Pull request four: the fixes from that review (${a(c.github.fix_pull.url, `safety.viz #${c.github.fix_pull.number}`)}).</li>`
           : ''
@@ -875,7 +882,7 @@ ${css}</style>
   </div>
 
   <div class="note ask">
-    <p class="lbl">Yours to rule on at this review</p>
+    <p class="lbl">${RELEASED ? 'Still yours to rule on' : 'Yours to rule on at this review'}</p>
     <p>Six things, set out at ${a('#ruling', 'the foot of this page')}:</p>
     <ul>
       <li>the notes’ sentences, which are drafts;</li>
@@ -907,7 +914,7 @@ ${css}</style>
   <a href="#colours"><span class="ref">05</span><span class="t">One note, two colours</span><span class="s">Blue for information, amber for cannot run</span></a>
   <a href="#first"><span class="ref">06</span><span class="t">The first screen</span><span class="s">The line on first open is gone</span></a>
   <a href="#same"><span class="ref">07</span><span class="t">What did not change</span><span class="s">No chart, no metric, nothing computed</span></a>
-  <a href="#ruling"><span class="ref">08</span><span class="t">For your ruling</span><span class="s">Six things, at the review</span></a>
+  <a href="#ruling"><span class="ref">08</span><span class="t">For your ruling</span><span class="s">${RELEASED ? 'Six things, still open' : 'Six things, at the review'}</span></a>
 </nav>
 ${s01}
 ${s02}

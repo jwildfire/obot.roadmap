@@ -52,6 +52,8 @@ The requirement's proof asks for a capture of each of the six views on the relea
 - the script sees that the released site is no longer release 1.11.0 and keeps the release 1.11.0 stills and reads it has, so do not remove `capture.json` or `media/` first;
 - the page then calls release 1.11.1 "the released site", names the commit `main` stood at, and its try-it links open the released app.
 
+This was done on 14 October 2026 at 00:15 UTC, after release 1.11.1 was published: 111 of 111 checks held on the released site, with `main` at `b704a954`. The page as it stands is that capture. The last capture of the dev site, at `b6a1ceb2` with 120 checks, is the commit before this one in the hub's history.
+
 ## What on the page came from where
 
 | On the page | Read from (`capture.json`) |
