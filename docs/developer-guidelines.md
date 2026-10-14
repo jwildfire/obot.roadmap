@@ -331,8 +331,9 @@ design page is in the hub's
   at the design's width before it closes, and the screenshot goes in the pull request's
   evidence. Where the mockup cannot be built as drawn, the session asks on the
   requirement; it does not redesign.
-- One way to do a thing across an app: one control that starts R, in one place; one place
-  where files come in; one status label.
+- One way to do a thing across an app: one control that starts R, in one place; a note may
+  repeat its press inside a sentence, and it is the same press; one place where files come
+  in; one status label.
 - Every module looks like the others: a tab with a colour of its own, never grey, and a
   row of names under the header.
 - The result first, the machinery folded: a log, a list of versions or a run's steps
