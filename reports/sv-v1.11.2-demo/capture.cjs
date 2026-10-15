@@ -252,7 +252,7 @@ async function main() {
   // ---------------------------------------------------------------- the released site, before
   const before = await open(browser, BEFORE);
   const beforeOptions = await pointSize(before.page).locator('option').allTextContents();
-  if (beforeOptions.includes('nrRatio') && BEFORE !== BASE) {
+  if (beforeOptions.includes('nrRatio')) {
     console.log('The released site already offers nrRatio: keeping the release 1.11.1 reads and stills.');
     capture.before = previous.before;
     if (!capture.before) throw new Error('No release 1.11.1 reads are kept, and the released site is no longer release 1.11.1.');

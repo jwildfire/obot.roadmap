@@ -178,7 +178,7 @@ ${css}
 
 <footer>
   <p>Data: the demo's lab file is the public, de-identified CDISC Pilot 01 study (pharmaverseadam), with two synthetic groups added: participants with chronic liver disease and with acute kidney injury. The largest point under rRatio is one of the synthetic liver disease participants.</p>
-  <p>Captured with Playwright, headless Chromium, from ${a(c.site.after, esc(c.site.after_is))} and, for release 1.11.1, from ${a(c.before.site, 'the released site')}. Every quoted sentence and number on this page was read from those pages, and ${held} checks held them. The bands' cut-offs, 5 and 2, come from the clinical guide. How it was made: ${a(HERE, 'this page’s folder')}.</p>
+  <p>Captured with Playwright, headless Chromium, from ${a(c.site.after, esc(c.site.after_is))} and, for release 1.11.1, from ${a(c.before.site, 'the released site')}${RELEASED ? ' before this release, on 15 October 2026' : ''}. Every quoted sentence and number on this page was read from those pages, and ${held} checks held them. The bands' cut-offs, 5 and 2, come from the clinical guide. How it was made: ${a(HERE, 'this page’s folder')}.</p>
   <hr>
   <p>This page was drafted by Claude Code using Opus 5.5.</p>
 </footer>

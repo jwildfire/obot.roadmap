@@ -26,6 +26,8 @@ The review page for the safety.viz v1.11.2 release candidate. It shows the one c
 
 Once release 1.11.2 is on the released site, run `BASE=https://jwildfire.github.io/safety.viz/ node <path>/capture.cjs`, then `node <path>/build.cjs`. The script sees that the released site already offers nrRatio, keeps the release 1.11.1 reads it has, and the page then calls release 1.11.2 "the released site". Do not remove `capture.json` first.
 
+This was done on 15 October 2026, after release 1.11.2 was published: 9 of 9 checks held on the released site, with `main` at `4ffccf9f`. The release 1.11.1 reads and their two checks are those of the dev-site capture, which is the commit before this one in the hub's history.
+
 ## Things the page states that the capture does not read
 
 - How nR is defined, that either aminotransferase alone is enough, and that it is always computed against the upper limit of normal. These come from safety.viz `src/hep-core/rows.js` (`computeNRRatio`) and requirement row HEP-DISPLAY-008. The capture checks the consequence it can see: no participant's nR is below their R.
