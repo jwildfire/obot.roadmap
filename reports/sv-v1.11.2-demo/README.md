@@ -32,7 +32,7 @@ Once release 1.11.2 is on the released site, run `BASE=https://jwildfire.github.
 - That the original Hep Explorer took the ratio at each visit: SafetyGraphics/hep-explorer `src/callbacks/onInit/cleanData/makeRRatio.js`.
 - The bands (above 5, 2 to 5, below 2): the safety.viz clinical guide for Hep Explorer.
 - That the R filter, the participant profile and the gsm.safety widget are unchanged: pull request #335's diff.
-- The data's provenance: safety.viz `docs/DATA_SOURCES.md`. The largest point under rRatio being a synthetic `CLD-*` participant is checked by `build.cjs`.
+- The data's provenance: safety.viz `docs/DATA_SOURCES.md`. Wording corrected after the release candidate's review (safety.viz #338): the pilot study is public and de-identified, and the page names one largest point under rRatio, not several. The largest point under rRatio being a synthetic `CLD-*` participant is checked by `build.cjs`.
 
 ---
 This page was drafted by Claude Code using Opus 5.5.

@@ -122,10 +122,10 @@ ${css}
     <div class="switch" role="group" aria-label="Point Size"><label for="size-nr">nrRatio</label><label for="size-r">rRatio</label></div>
     <div class="frames">
       <div class="before">${figure(c.by_nr, `The eDISH scatter of the demo data with Point Size set to nrRatio. The legend note explains nR, and participant ${ex.id}'s point, below the bilirubin cut-line, is drawn largest.`, [`The note: ${q(c.note_nr)}`, `The largest point: participant ${esc(c.by_nr.largest)}, with the highest nR on the demo data.`], '')}</div>
-      <div class="after">${figure(c.by_r, 'The same scatter with Point Size set to rRatio. The largest points sit among the synthetic chronic liver disease participants on the right.', [`The largest point under rRatio: participant ${esc(c.by_r.largest)}, with the highest R.`], `The note under rRatio: ${q(c.note_r)}`)}</div>
+      <div class="after">${figure(c.by_r, 'The same scatter with Point Size set to rRatio. The largest point is one of the synthetic chronic liver disease participants on the right.', [`The largest point under rRatio: participant ${esc(c.by_r.largest)}, with the highest R.`], `The note under rRatio: ${q(c.note_r)}`)}</div>
     </div>
   </figure>
-  <p class="cap">Switch between the two settings. Under nrRatio, participant ${esc(ex.id)}'s point (marker 2) is the largest on the chart, because its AST is higher than its ALT. Under rRatio the largest points are in the synthetic chronic liver disease groups.</p>
+  <p class="cap">Switch between the two settings. Under nrRatio, participant ${esc(ex.id)}'s point (marker 2) is the largest on the chart, because its AST is higher than its ALT. Under rRatio the largest point is a participant in the synthetic chronic liver disease groups.</p>
 </section>
 
 <div class="cut"><span>03 <em>/ tooltip</em></span></div>
@@ -147,7 +147,7 @@ ${css}
       <li><span class="do">Open the ${a(TRY, 'Hep Explorer demo')} and choose <span class="key">eDISH / mDISH scatter</span> under View.</span><span class="see">The scatter of peak ALT against peak bilirubin.</span></li>
       <li><span class="do">Under Settings, set Point Size to <span class="key">nrRatio</span>.</span><span class="see">The note above the chart explains nR. One point below the bilirubin cut-line, left of the ALT cut-line, becomes the largest: participant ${esc(ex.id)}.</span></li>
       <li><span class="do">Hover that point.</span><span class="see">The tooltip shows R ${r2(ex.r)} and, under it, nR ${r2(ex.nr)}.</span></li>
-      <li><span class="do">Set Point Size to <span class="key">rRatio</span>, then back.</span><span class="see">The largest points move to the synthetic chronic liver disease groups.</span></li>
+      <li><span class="do">Set Point Size to <span class="key">rRatio</span>, then back.</span><span class="see">The largest point is now a participant in the synthetic chronic liver disease groups.</span></li>
     </ol>
   </div>
 </section>
@@ -177,8 +177,8 @@ ${css}
 </section>
 
 <footer>
-  <p>Data: the demo's lab file is the public CDISC Pilot 01 study (pharmaverseadam), with two synthetic groups added: participants with chronic liver disease and with acute kidney injury. No real participant appears. The largest points under rRatio belong to the synthetic liver disease groups.</p>
-  <p>Captured with Playwright, headless Chromium, from ${a(c.site.after, esc(c.site.after_is))} and, for release 1.11.1, from ${a(c.before.site, 'the released site')}. Every quoted sentence and number on this page was read from those pages, and ${held} checks held them. How it was made: ${a(HERE, 'this page’s folder')}.</p>
+  <p>Data: the demo's lab file is the public, de-identified CDISC Pilot 01 study (pharmaverseadam), with two synthetic groups added: participants with chronic liver disease and with acute kidney injury. The largest point under rRatio is one of the synthetic liver disease participants.</p>
+  <p>Captured with Playwright, headless Chromium, from ${a(c.site.after, esc(c.site.after_is))} and, for release 1.11.1, from ${a(c.before.site, 'the released site')}. Every quoted sentence and number on this page was read from those pages, and ${held} checks held them. The bands' cut-offs, 5 and 2, come from the clinical guide. How it was made: ${a(HERE, 'this page’s folder')}.</p>
   <hr>
   <p>This page was drafted by Claude Code using Opus 5.5.</p>
 </footer>
