@@ -105,3 +105,7 @@ From July to September 2026 a second, fully autonomous prototype ran from
 [`obot.agent`](https://github.com/jwildfire/obot.agent); it was retired on 2026-09-10 in
 favour of the requirement-session model above, for the reasons recorded in
 [ways of working](docs/ways-of-working.md#what-was-retired-and-why).
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).
