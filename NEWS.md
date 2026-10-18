@@ -9,6 +9,10 @@ release is cut; the GitHub release publishes from the section verbatim.
 
 So far: @jwildfire approves a release candidate on GitHub or in the session's approval prompt, and the session then merges, tags and publishes it as obotclaw[bot]. The developer guidelines were amended on 2026-10-07.
 
+## What's new
+
+- **obot.roadmap is licensed under the Apache License 2.0,** the licence the other obot repositories carry. The repository has a LICENSE file and the README says so.
+
 # obot.roadmap v0.5 — local sessions and the tracker
 
 **See it move:** the [annotated v0.5 demo](https://jwildfire.github.io/obot.roadmap/reports/oa-v0.6-hub-v0.5-demo/) has screenshots, captures and the detail behind everything below.
