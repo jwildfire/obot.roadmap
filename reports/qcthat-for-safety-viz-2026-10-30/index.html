@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>qcthat for safety.viz</title>
+<meta name="description" content="Recommends a thin adapter that sends safety.viz test results to the R qcthat package, shows it working on all 2,982 current tests, surveys the JavaScript alternatives and lists what must be cleaned up first.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; a verdict first, then proof, then the evidence behind it. Palette and display faces come from qcthat's own pkgdown site. */
+:root {
+  --bg: #fbfafd; --surface: #f1eef7; --ink: #211c2e; --muted: #5e5870; --line: #d9d3e6;
+  --accent: #59488f; --accent-soft: #e8e3f3;
+  --good: #1f6b45; --good-soft: #dff1e7; --warn: #8a5a00; --warn-soft: #f8ecd2; --no: #7a2e3a; --no-soft: #f6e1e4;
+  --display: "Montserrat", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #17141f; --surface: #221d2e; --ink: #ece8f4; --muted: #a69fb8; --line: #3a3349;
+  --accent: #b9a8ef; --accent-soft: #2f2845;
+  --good: #7fd6a8; --good-soft: #1b3a2b; --warn: #eec069; --warn-soft: #3d3016; --no: #f0a3af; --no-soft: #43232a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #17141f; --surface: #221d2e; --ink: #ece8f4; --muted: #a69fb8; --line: #3a3349;
+  --accent: #b9a8ef; --accent-soft: #2f2845;
+  --good: #7fd6a8; --good-soft: #1b3a2b; --warn: #eec069; --warn-soft: #3d3016; --no: #f0a3af; --no-soft: #43232a; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 400 17px/1.55 var(--body); margin: 0 }
+.page { max-width: 760px; margin: 0 auto; padding-block: 40px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px }
+.page > * { min-width: 0 }
+section { display: grid; gap: 14px; min-width: 0 }
+section > * { min-width: 0 }
+header { display: grid; gap: 10px }
+.eyebrow { font: 600 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 }
+h1 { font: 700 clamp(32px, 7vw, 44px)/1.1 var(--display); margin: 0; text-wrap: balance }
+h2 { font: 700 22px/1.25 var(--display); margin: 0; text-wrap: balance }
+h3 { font: 600 16px/1.3 var(--display); margin: 0 }
+p { margin: 0 }
+ul, ol { margin: 0; padding-left: 20px; display: grid; gap: 7px }
+a { color: var(--accent); text-underline-offset: 2px }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+code { font: 400 .86em var(--mono); background: var(--surface); padding: 1px 4px; border-radius: 3px; overflow-wrap: anywhere }
+.lede { display: grid; gap: 8px; padding-left: 20px; margin: 0 }
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line) }
+.facts div { background: var(--bg); padding: 12px; display: grid; gap: 2px; align-content: start }
+.facts b { font: 600 22px/1.1 var(--mono); font-variant-numeric: tabular-nums }
+.facts span { font-size: 14px; line-height: 1.3; color: var(--muted) }
+.callout { background: var(--accent-soft); border: 1px solid var(--accent); padding: 14px 16px; display: grid; gap: 6px }
+.decision { display: grid; gap: 6px; padding-block: 14px; border-top: 1px solid var(--line) }
+.decision:last-child { border-bottom: 1px solid var(--line) }
+.decision p { color: var(--ink) }
+.label { font-weight: 600 }
+pre { font: 400 12.5px/1.55 var(--mono); background: var(--surface); border: 1px solid var(--line); padding: 14px; margin: 0; overflow-x: auto; max-width: 100% }
+.flow { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; counter-reset: s }
+.flow li { background: var(--surface); padding: 12px; display: grid; gap: 4px; align-content: start; counter-increment: s; min-width: 0 }
+.flow li::before { content: counter(s); font: 600 13px var(--mono); color: var(--accent) }
+.flow span { font-size: 15px; line-height: 1.35; color: var(--muted) }
+.row { display: grid; grid-template-columns: 170px minmax(0, 1fr) auto; gap: 4px 14px; padding-block: 12px; border-top: 1px solid var(--line); align-items: start }
+.row > * { min-width: 0 }
+.row .name { font-weight: 600 }
+.row .meta { font: 400 12.5px/1.4 var(--mono); color: var(--muted); grid-column: 1; overflow-wrap: anywhere }
+.row .why { grid-column: 2; grid-row: 1 / span 2 }
+.chip { font: 600 12px/1 var(--mono); padding: 5px 7px; white-space: nowrap; grid-column: 3; grid-row: 1 }
+.chip.good { background: var(--good-soft); color: var(--good) }
+.chip.warn { background: var(--warn-soft); color: var(--warn) }
+.chip.no { background: var(--no-soft); color: var(--no) }
+.gap { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 2px 14px; padding-block: 12px; border-top: 1px solid var(--line) }
+.gap b { font: 600 22px/1.2 var(--mono); font-variant-numeric: tabular-nums; color: var(--accent); grid-row: 1 / span 2 }
+.gap > * { min-width: 0 }
+.steps { display: grid; gap: 12px; padding-left: 24px }
+.size { font: 400 12.5px var(--mono); color: var(--muted) }
+.foot { font-size: 15px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 6px }
+.note { font-size: 15px; color: var(--muted) }
+@media (max-width: 640px) {
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .flow { grid-template-columns: minmax(0, 1fr) }
+  .row { grid-template-columns: minmax(0, 1fr) auto }
+  .row .why { grid-column: 1 / -1; grid-row: auto }
+  .row .meta { grid-column: 1 / -1 }
+  .chip { grid-column: 2 }
+}
+</style>
+</head>
+<body>
+
+<main class="page">
+<header>
+  <p class="eyebrow">Recommendation · 30 October 2026</p>
+  <h1>qcthat for safety.viz</h1>
+  <ul class="lede">
+    <li>Build a thin adapter, not a JavaScript port. safety.viz hands its test results to the R package, and qcthat builds the same matrix it builds for gsm.safety.</li>
+    <li>This already works. All 2,982 current safety.viz tests went through unmodified qcthat and came back as a matrix of milestone, issue and test.</li>
+    <li>No existing JavaScript tool does this job, so the gap is real, but it is a small one. Most of the work is cleaning the links between tests and issues.</li>
+  </ul>
+</header>
+
+<div class="facts" aria-label="Current state of safety.viz test links">
+  <div><b>2,982</b><span>tests on the dev branch, all passing</span></div>
+  <div><b>84%</b><span>name a GitHub issue qcthat can read</span></div>
+  <div><b>72%</b><span>reach a hub requirement through that issue</span></div>
+  <div><b>0</b><span>changes needed to qcthat for the first version</span></div>
+</div>
+
+<section>
+  <h2>Decisions for you</h2>
+  <div>
+    <div class="decision">
+      <h3>Adapter, or a JavaScript port of qcthat?</h3>
+      <p><span class="label">Recommendation:</span> adapter. qcthat is about 8,000 lines of R covering GitHub fetching, reports and user acceptance. A port would rebuild that and then drift from the R version. The adapter only has to write one results file, and most of that code already exists in safety.viz.</p>
+      <p><span class="label">What it costs:</span> R has to run in one new CI job. Neither the main check nor the site build installs R today.</p>
+    </div>
+    <div class="decision">
+      <h3>What counts as the requirement?</h3>
+      <p><span class="label">Recommendation:</span> GitHub issues are the backbone, as you described, and the matrix rows stay as finer detail inside them. The chain becomes hub requirement, safety.viz issue, test, with row IDs such as <code>HEP-CTRL-007</code> kept in the test names. There are 189 issues and 1,442 rows for what is already built, so turning rows into issues would bury the tracker.</p>
+      <p><span class="label">What it forecloses:</span> nothing. The evidence pages keep their row-by-row view.</p>
+    </div>
+    <div class="decision">
+      <h3>Where does the code live?</h3>
+      <p><span class="label">Recommendation:</span> in safety.viz first, then a separate <code>qcthat-js</code> repository when bio.viz adopts it. bio.viz has the same evidence pipeline, so it is the natural second user, and two users are what tell us the right shape. Both <code>qcthat</code> and <code>qcthat-js</code> are unclaimed on npm today.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The proof</h2>
+  <p>I took the test results committed on safety.viz dev and passed them straight to qcthat's public <code>CompileIssueTestMatrix()</code>, alongside the repository's real issues. This is its report for release 1.11.2, with long test names shortened:</p>
+<pre>└─█─Milestone: v1.11.2 (4 issues, 6 tests)
+  ├─[x]─Issue 339: Fix what the review of the v1.11.2 release candidate found
+  │ └─(no tests)
+  ├─[x]─Issue 336: Prepare release 1.11.2
+  │ └─(no tests)
+  ├─[x]─Issue 334: Hep Explorer: add the new R ratio (nR) to Point Size and the tooltip
+  │ ├─[v]─HEP-DISPLAY-008/HEP-CTRL-007/…: Point Size can scale points by the nR ratio…
+  │ ├─[v]─hep-explorer configure HEP-CTRL-007: Point Size offers Uniform, rRatio and…
+  │ ├─[v]─hep-explorer quadrant and legend polish (#54) HEP-CHART-004: pointTooltip…
+  │ ├─[v]─hep-explorer quadrant and legend polish (#54) HEP-CTRL-014: the nrRatio…
+  │ ├─[v]─hep-explorer structureData HEP-DISPLAY-008: buildPoints carries each…
+  │ └─[v]─hep-explorer structureData HEP-DISPLAY-008: computeNRRatio is the higher…
+  └─[x]─Issue 332: Release notes: promote v1.11.1 and open the v1.12.0 section
+    └─(no tests)
+# Issue state: [o] = open, [x] = closed (completed), [-] = closed (won't fix)
+# Test disposition: [v] = passed, [!] = failed, [S] = skipped
+
+[v] All tests passed
+[ ] 3 issues lack tests</pre>
+  <ul>
+    <li>The full matrix has 3,208 rows, and it saved to JSON and read back intact with qcthat's own functions.</li>
+    <li>The report already catches what a reviewer would ask about: three issues in that release have no test. Two are release chores, which a label can excuse. The third is the fix list from the release review, which a person should look at.</li>
+    <li>It also shows the cross-repository link you need. qcthat reads each issue's parent, including parents in the hub: 110 safety.viz issues roll up to 39 hub requirements, and 32 of those requirements have tests.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>How it would work</h2>
+  <ol class="flow">
+    <li><h3>Run tests</h3><span>Vitest and Playwright run exactly as they do now.</span></li>
+    <li><h3>Write results</h3><span>safety.viz writes one file in CTRF, an open test report format.</span></li>
+    <li><h3>Build matrix</h3><span>qcthat joins that file to the GitHub issues.</span></li>
+    <li><h3>Publish</h3><span>The matrix goes on the evidence pages and on each release.</span></li>
+  </ol>
+  <ul>
+    <li>Test names do not change. The <code>(#N)</code> convention is already qcthat's own.</li>
+    <li>The matrix step needs its own workflow. The main check runs with a read-only token, and <code>tests/unit/ci-workflow.test.js</code> holds it that way.</li>
+    <li>The matrix stays out of the evidence freshness guard, because it depends on the state of GitHub and the guard compares only test results.</li>
+    <li>qcthat's ready-made GitHub Action cannot be used directly, because it runs testthat. The first version is a short R script around the same functions.</li>
+    <li>CTRF is a deliberate choice over a private format. If qcthat later learns to read it, every language with a CTRF reporter gets qcthat, with no JavaScript in the R package.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>What has to be cleaned up</h2>
+  <p>These came from running the matrix on the real data. The first is a bug in safety.viz today, whatever you decide about qcthat.</p>
+  <div>
+    <div class="gap"><b>168</b><p>Tests whose issue numbers are missing or incomplete in <code>evidence.json</code>. The parser reads <code>(#182)</code> but not <code>(#182, #212)</code>, so 157 of them show no issue at all. It is a one-line fix to match qcthat's rule. <a href="https://github.com/jwildfire/safety.viz/blob/dev/scripts/evidence-lib.mjs#L15">evidence-lib.mjs</a></p></div>
+    <div class="gap"><b>472</b><p>Tests that name no issue, all of them unit tests: 290 participant profile, 102 Hep Explorer, 53 QT Explorer and 27 with no requirement ID either. For 202 of them, another test on the same requirement ID points to exactly one issue, so that link can be proposed automatically and reviewed. The rest need a person or an agent to look.</p></div>
+    <div class="gap"><b>36</b><p>Closed issues with no test. 18 are release preparation or release review. Of the other 18, six already carry your <code>orphan-accepted</code> label, which qcthat can be told to ignore. That leaves 12 for you to rule on, for example the demo data migration (#37) and the check's workflow test (#316).</p></div>
+    <div class="gap"><b>24</b><p>Tests that cite a pull request where they should cite an issue, across four pull requests. qcthat cannot place them in a milestone until they point at the issue behind each one.</p></div>
+    <div class="gap"><b>79</b><p>Issues with no hub parent. Tests under them never reach a hub requirement. Some will be fine as standalone fixes, so this one is a report to read and not a target to hit.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Existing JavaScript tools</h2>
+  <p>Nothing I found links GitHub issues, tests and milestones into a matrix for a JavaScript project. Downloads are npm's figures for the last seven days.</p>
+  <div>
+    <div class="row"><p class="name"><a href="https://github.com/ctrf-io/ctrf">CTRF</a></p><p class="meta">MIT · reporter 413k/wk</p><p class="why">An open JSON format for test results, with reporters for many languages. It has no notion of requirements. Use it as the file between safety.viz and qcthat, written from results safety.viz already parses, because its Vitest reporter was last published in September 2025.</p><span class="chip good">Use</span></div>
+    <div class="row"><p class="name"><a href="https://allurereport.org/docs/vitest-reference/">Allure Report</a></p><p class="meta">Apache-2.0 · 1.6M/wk</p><p class="why">The strongest general test report, and it can attach an issue link to a test. But the link is a call inside each test, and reporters have <a href="https://qameta.io/blog/automated-requirement-coverage">no direct access to requirements</a>. It would add a second report without giving you the matrix.</p><span class="chip no">Skip</span></div>
+    <div class="row"><p class="name"><a href="https://www.npmjs.com/package/spec-trace">spec-trace</a></p><p class="meta">MIT · 5/wk · May 2025</p><p class="why">The closest in spirit: it links Markdown requirements to Vitest and Playwright tests and measures coverage. It looks dormant, its README shows no GitHub issues support, and links run from the requirement to the test, the opposite of your convention.</p><span class="chip no">Skip</span></div>
+    <div class="row"><p class="name">Qase, Testomat.io, Xray</p><p class="meta">Reporters 86k–170k/wk</p><p class="why">Reporters for hosted test management products. Xray keeps requirements in Jira. The record of what was required would move out of GitHub, which removes the point. I did not evaluate their GitHub integrations.</p><span class="chip no">Skip</span></div>
+    <div class="row"><p class="name"><a href="https://github.com/itsallcode/openfasttrace">OpenFastTrace</a>, <a href="https://github.com/bmw-software-engineering/lobster">LOBSTER</a>, <a href="https://reqstool.github.io/reqstool/index.html">reqstool</a>, <a href="https://github.com/strictdoc-project/strictdoc">StrictDoc</a>, <a href="https://github.com/doorstop-dev/doorstop">Doorstop</a></p><p class="meta">Java and Python</p><p class="why">Serious traceability tools, some built for safety standards. They keep requirements in their own files, and none is a JavaScript tool. Adopting one would replace qcthat on this half of the stack, so the R and JavaScript sides would stop matching. OpenFastTrace is GPL and LOBSTER is AGPL.</p><span class="chip no">Skip</span></div>
+    <div class="row"><p class="name"><a href="https://github.com/cucumber/cucumber-js">Cucumber</a>, <a href="https://www.npmjs.com/package/playwright-bdd">playwright-bdd</a></p><p class="meta">MIT · 889k–2.1M/wk</p><p class="why">Requirements written as Gherkin scenarios. That would mean rewriting 2,982 tests.</p><span class="chip no">Skip</span></div>
+    <div class="row"><p class="name"><a href="https://playwright.dev/docs/test-annotations">Playwright annotations</a>, <a href="https://vitest.dev/guide/test-tags">Vitest tags</a></p><p class="meta">Built in</p><p class="why">Structured places to put an issue number. They are cleaner than parsing names, but evidence files are keyed on test names, qcthat parses names, and the convention is already in place. Keep this in mind only if names become a problem.</p><span class="chip warn">Not now</span></div>
+  </div>
+  <p class="note">One search of pharma validation sources found R tools only, and nothing for JavaScript. That was a single search, so read it as a lack of evidence and not as proof that nothing exists.</p>
+</section>
+
+<section>
+  <h2>What this does not do</h2>
+  <div class="callout">
+    <p><span class="label">The matrix does not qualify a chart.</span> Every chart keeps its current tier. The matrix shows that a test exists and passed for an issue, and it cannot say whether the chart is clinically right.</p>
+  </div>
+  <ul>
+    <li>A single passing test turns an issue green, so issue coverage is a weaker claim than row coverage. Today 1,215 of 1,442 rows have a test that names them. Keep that figure on the evidence pages beside the matrix.</li>
+    <li>Screenshots stay on the evidence pages. qcthat has no place for them, so each test in the matrix should link to its evidence page.</li>
+    <li>qcthat's <code>ExpectUserAccepts()</code> user acceptance flow is tied to testthat. It is out of scope here.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Next steps</h2>
+  <ol class="steps">
+    <li>You make the three decisions above. I then write the design into the existing hub requirement and give it a milestone. v1.12.0 is open and would suit. <a href="https://github.com/jwildfire/obot.roadmap/issues/15">Hub requirement</a> <span class="size">small</span></li>
+    <li>Fix the issue-number parser so it follows qcthat's rule, with a test. <span class="size">small</span></li>
+    <li>Clean the links: propose the 202 automatic ones, review the other 270, repoint the 24 pull request citations, label the chores and put the 12 rulings to you. <span class="size">medium</span></li>
+    <li>Add a check that fails when a new test names no issue, as gsm.safety already does. <span class="size">small</span></li>
+    <li>Write the results file, add the R script as its own workflow and attach the matrix to every release. <span class="size">medium</span></li>
+    <li>Add a by-issue view to the evidence pages, with a roll-up to hub requirements. <span class="size">medium</span></li>
+    <li>Repeat for bio.viz, then move the shared code into <code>qcthat-js</code>. <span class="size">medium</span></li>
+    <li>Ask upstream for three things, none of them blocking. I will draft the issue and you post it, since qcthat sits outside your own account. They are a reader for CTRF, the <a href="https://github.com/Gilead-Public/qcthat/issues/285">"something like <code>QCRepo()</code>"</a> helper a maintainer has already floated for repositories that are not R packages, and <a href="https://github.com/Gilead-Public/qcthat/issues/38">nesting issues under their parents</a>. <span class="size">small</span></li>
+  </ol>
+</section>
+
+<section>
+  <h2>How far to trust this</h2>
+  <ul>
+    <li>The proof used the test results committed on safety.viz dev at <code>14c5847</code> (18 October), not a fresh test run. Every record there passed, so failures and skips have not been exercised. safety.viz records a skipped test as a failure today, and the adapter will need to keep them apart.</li>
+    <li>It ran on qcthat 1.1.3, the version installed here. Installing the latest release, 1.2.0, was blocked in this session. I compared the two instead: eight R files changed, all in the user acceptance and GitHub Action code, and the matrix code did not change.</li>
+    <li>The 202 automatic links are an estimate of what can be proposed. Each needs review, because a shared requirement ID does not prove that the same issue covers both tests.</li>
+    <li>Row counts match IDs exactly, so a test naming a base ID does not count toward split rows such as <code>SH-FUNC-012A</code>. The true row coverage may be somewhat higher. Another 77 IDs in tests match no row.</li>
+    <li>The full matrix file is 9.9 MB, and 1.7 MB without issue bodies. The site should load the smaller one.</li>
+    <li>The step sizes are my judgement, not measurements.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p><span class="label">Sources.</span> <a href="https://github.com/Gilead-Public/qcthat">qcthat</a> source at dev and the v1.2.0 release; <a href="https://github.com/jwildfire/safety.viz/blob/dev/CONTRIBUTING.md">safety.viz contributing guide</a>, evidence scripts, <code>requirements/</code> and <code>docs/evidence/</code>; <a href="https://github.com/jwildfire/obot.roadmap/issues/15">the hub requirement</a>; npm registry and download figures read on 30 October 2026; GitHub repository records; the vendor and project documentation linked above.</p>
+  <hr>
+  <p>This page was drafted by Claude Code using Opus 5.5 for review by @jwildfire. It is AI-generated and has not yet been reviewed.</p>
+</footer>
+</main>
+</body>
+</html>
