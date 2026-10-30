@@ -2,7 +2,11 @@
 
 Recommendation asked for by @jwildfire on 30 October 2026: consider a JavaScript adapter for qcthat (something like `qcthat-js`), adopt it in safety.viz, and research whether similar JavaScript tools already exist. The core idea is that safety.viz evidence uses qcthat traceability matrices, with GitHub issues as the requirements and the current tests as the evidence.
 
-Status: awaiting his three decisions. Private copy: https://claude.ai/artifact/EH5rr1gzXDHgUjcMJw8JiB
+Status: adapter decided; its shape is open in [qcthat evidence extensions](../qcthat-evidence-extensions-2026-10-30/). Private copy: https://claude.ai/artifact/EH5rr1gzXDHgUjcMJw8JiB
+
+## Decisions
+
+- 30 October 2026, in the working session. @jwildfire: "Agree with the approach, but I want to hear a bit more about the adapter. If possible, I'd like to make this a formal qcthat extension that adds to the framework." This settles the adapter over a JavaScript port and reopens what the adapter should be.
 
 ## What the page holds
 

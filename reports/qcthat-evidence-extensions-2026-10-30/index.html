@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>qcthat evidence extensions</title>
+<meta name="description" content="Four ways to turn the safety.viz adapter into a formal qcthat extension that supports many kinds of requirements and evidence, each with a report mockup, what it costs and a recommendation.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; the choice first, then what each option would look like, then the contract under it. Palette and display faces come from qcthat's own pkgdown site. */
+:root {
+  --bg: #fbfafd; --surface: #f1eef7; --ink: #211c2e; --muted: #5e5870; --line: #d9d3e6;
+  --accent: #59488f; --accent-soft: #e8e3f3;
+  --good: #1f6b45; --good-soft: #dff1e7; --warn: #8a5a00; --warn-soft: #f8ecd2;
+  --display: "Montserrat", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #17141f; --surface: #221d2e; --ink: #ece8f4; --muted: #a69fb8; --line: #3a3349;
+  --accent: #b9a8ef; --accent-soft: #2f2845;
+  --good: #7fd6a8; --good-soft: #1b3a2b; --warn: #eec069; --warn-soft: #3d3016; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #17141f; --surface: #221d2e; --ink: #ece8f4; --muted: #a69fb8; --line: #3a3349;
+  --accent: #b9a8ef; --accent-soft: #2f2845;
+  --good: #7fd6a8; --good-soft: #1b3a2b; --warn: #eec069; --warn-soft: #3d3016; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 400 17px/1.55 var(--body); margin: 0 }
+.page { max-width: 760px; margin: 0 auto; padding-block: 40px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px }
+.page > * { min-width: 0 }
+section { display: grid; gap: 14px; min-width: 0 }
+section > * { min-width: 0 }
+header { display: grid; gap: 10px }
+.eyebrow { font: 600 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 }
+h1 { font: 700 clamp(32px, 7vw, 44px)/1.1 var(--display); margin: 0; text-wrap: balance }
+h2 { font: 700 22px/1.25 var(--display); margin: 0; text-wrap: balance }
+h3 { font: 600 16px/1.3 var(--display); margin: 0 }
+p { margin: 0 }
+ul, ol { margin: 0; padding-left: 20px; display: grid; gap: 7px }
+a { color: var(--accent); text-underline-offset: 2px }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+code { font: 400 .86em var(--mono); background: var(--surface); padding: 1px 4px; border-radius: 3px; overflow-wrap: anywhere }
+.lede { display: grid; gap: 8px; padding-left: 20px; margin: 0 }
+.callout { background: var(--accent-soft); border: 1px solid var(--accent); padding: 14px 16px; display: grid; gap: 6px }
+.label { font-weight: 600 }
+.decision { display: grid; gap: 6px; padding-block: 14px; border-top: 1px solid var(--line) }
+.decision:last-child { border-bottom: 1px solid var(--line) }
+pre { font: 400 12.5px/1.55 var(--mono); background: var(--surface); border: 1px solid var(--line); padding: 14px; margin: 0; overflow-x: auto; max-width: 100% }
+.opt { display: grid; gap: 10px; padding-block: 18px; border-top: 1px solid var(--line) }
+.opt:last-child { border-bottom: 1px solid var(--line) }
+.opt-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; justify-content: space-between }
+.opt-head h3 { font-size: 18px; min-width: 0 }
+.chip { font: 600 12px/1 var(--mono); padding: 5px 7px; white-space: nowrap }
+.chip.good { background: var(--good-soft); color: var(--good) }
+.chip.warn { background: var(--warn-soft); color: var(--warn) }
+dl { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 4px 14px; margin: 0 }
+dt { font-weight: 600 }
+dd { margin: 0; min-width: 0 }
+.scroll { overflow-x: auto; max-width: 100% }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 15.5px; line-height: 1.4 }
+th { text-align: left; font-weight: 600; padding: 7px 10px 7px 0; border-bottom: 2px solid var(--line); vertical-align: bottom }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top }
+.steps { display: grid; gap: 12px; padding-left: 24px }
+.size { font: 400 12.5px var(--mono); color: var(--muted) }
+.note { font-size: 15px; color: var(--muted) }
+.foot { font-size: 15px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 6px }
+@media (max-width: 520px) { dl { grid-template-columns: minmax(0, 1fr) } dd { margin-bottom: 6px } }
+</style>
+</head>
+<body>
+
+<main class="page">
+<header>
+  <p class="eyebrow">Options · 30 October 2026</p>
+  <h1>qcthat evidence extensions</h1>
+  <ul class="lede">
+    <li>I recommend Option B, an evidence framework inside qcthat. Every piece of proof gets a kind, and test results from any language become one kind among several.</li>
+    <li>Build it with requirement references as text. That leaves the door open to other kinds of requirement later, without a second rebuild.</li>
+    <li>qcthat already leans this way. Its issue templates ask for double programming, unit tests and user tests, but its matrix can only see testthat results.</li>
+  </ul>
+</header>
+
+<section>
+  <h2>Where qcthat stands today</h2>
+  <ul>
+    <li>There is one way in. <code>CompileTestResults()</code> accepts only a testthat result, and it is a plain function, so another package cannot add a method to it.</li>
+    <li>There is one kind of requirement. 36 of qcthat's 58 R files call GitHub, and the matrix joins on an issue number.</li>
+    <li>Human acceptance already works as evidence, but only by posing as a test. <code>ExpectUserAccepts()</code> opens a sub-issue and passes or fails inside a testthat test.</li>
+    <li>Reviews as evidence are already wanted. An <a href="https://github.com/Gilead-Public/qcthat/issues/296">open requirement</a> asks for it and says the team is not yet sure how it should work.</li>
+    <li>A maintainer has already suggested making the core functions <a href="https://github.com/Gilead-Public/qcthat/issues/285">"less package-specific"</a>.</li>
+  </ul>
+  <div class="callout">
+    <p><span class="label">I tried it.</span> I added a <code>Kind</code> column and three non-test rows to the real safety.viz results. Unmodified qcthat carried them through the matrix and a JSON round trip, so the plumbing is open. The meaning is not: the report called all of them tests, and an issue whose only evidence was a screenshot printed "All issues have at least one test". Any option past A has to fix that.</p>
+  </div>
+</section>
+
+<section>
+  <h2>The options</h2>
+  <p>The mockups are drawn by hand from real safety.viz records for the nR ratio work in release 1.11.2. None of these has been built.</p>
+  <div>
+    <div class="opt">
+      <div class="opt-head"><h3>A. A new door for tests</h3><span class="chip warn">Too narrow</span></div>
+      <p>qcthat learns to read test results from any language. <code>CompileTestResults()</code> becomes a generic with a new method for CTRF files. The report stays as it is, and <code>qcthat-js</code> only writes the file.</p>
+      <dl>
+        <dt>Adds</dt><dd>Vitest, Playwright and any other tool with a CTRF reporter</dd>
+        <dt>Leaves out</dt><dd>Everything that is not a test, which is the part you asked about</dd>
+        <dt>Cost</dt><dd>Small: a few functions in qcthat, nothing breaks</dd>
+      </dl>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><h3>B. An evidence framework</h3><span class="chip good">Recommended</span></div>
+      <p>qcthat gains an evidence record: which requirement, what kind, what result, who, when and a link. Test results become one kind. Readers exist for each kind, the report groups by kind, and coverage counts only the kinds a project says should count.</p>
+<pre>└─█─Milestone: v1.11.2 (1 issue: 6 tests, 1 screenshot, 1 change, 1 acceptance)
+  └─[x]─Issue 334: Hep Explorer: add the new R ratio (nR) to Point Size…
+    ├─Tests
+    │ ├─[v]─hep-explorer configure HEP-CTRL-007: Point Size offers Uniform…
+    │ └─[v]─… 5 more
+    ├─Screenshots
+    │ └─[v]─HEP-DISPLAY-008-nr-ratio-point-size.png
+    ├─Changes
+    │ └─[i]─Pull request 335: merged by obotclaw[bot] on 6 checks, no human review
+    └─Acceptance
+      └─[v]─Release candidate 1.11.2: approved by @jwildfire, 15 October</pre>
+      <dl>
+        <dt>Adds</dt><dd>Tests in any language, screenshots, reference comparisons, change reviews, human acceptance and AI review, with room for more</dd>
+        <dt>Leaves out</dt><dd>Requirements stay GitHub issues for now, with matrix rows carried as detail on the evidence</dd>
+        <dt>Cost</dt><dd>Medium: new columns and readers in qcthat, and a report rewrite for grouping. <code>Test</code> and <code>Disposition</code> stay, so today's reports and matrix files keep working</dd>
+      </dl>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><h3>C. A full traceability framework</h3><span class="chip warn">Later, if needed</span></div>
+      <p>Requirements become pluggable too. GitHub issues are one source, and matrix rows, hub requirements and other trackers could be others. Requirements form a tree, and each level can show its own coverage.</p>
+<pre>└─█─Milestone: v1.11.2
+  └─[x]─Issue 334: Hep Explorer: add the new R ratio (nR) to Point Size…
+    ├─[v]─Row HEP-CTRL-007: A Point Size select offers Uniform, rRatio and nrRatio…
+    │ └─[v]─hep-explorer configure HEP-CTRL-007: Point Size offers Uniform…
+    ├─[v]─Row HEP-DISPLAY-008: The participant nR-Ratio is the higher of the peak…
+    │ ├─[v]─hep-explorer structureData HEP-DISPLAY-008: computeNRRatio is the…
+    │ └─[v]─HEP-DISPLAY-008-nr-ratio-point-size.png
+    └─[v]─Row HEP-CTRL-014: When Point Size is set to R Ratio or nR Ratio…</pre>
+      <dl>
+        <dt>Adds</dt><dd>Everything in B, plus row-level coverage in the same report and support for teams not on GitHub Issues</dd>
+        <dt>Leaves out</dt><dd>Nothing in principle, but qcthat stops being the lightweight package its description promises</dd>
+        <dt>Cost</dt><dd>Large: a 2.0. The issue number runs through 15 R files, GitHub through 36, and matrix files attached to releases would change shape</dd>
+      </dl>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><h3>D. A companion package</h3><span class="chip warn">Fallback</span></div>
+      <p>A new package, say <code>qcthat.evidence</code>, adds the same features as B from outside and leaves qcthat alone.</p>
+      <dl>
+        <dt>Adds</dt><dd>The same as B, with no need to wait for anyone</dd>
+        <dt>Leaves out</dt><dd>Being part of the framework. The meaning of evidence would live in a second package that R users of qcthat never see</dd>
+        <dt>Cost</dt><dd>Medium, and it stays. qcthat's report functions are not exported, so changing the report from outside meant reaching into its namespace in my test. That breaks when qcthat changes</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>What could count as evidence</h2>
+  <p>All of these exist in the safety stack today. The last column is my proposed default for whether a kind satisfies "this issue has evidence".</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Kind</th><th>Real example</th><th>Counts by default?</th></tr></thead>
+    <tbody>
+      <tr><td>Automated test</td><td>2,528 unit and 454 browser tests in safety.viz, testthat in gsm.safety</td><td>Yes</td></tr>
+      <tr><td>Reference comparison</td><td><code>scripts/rbqm-reference.R</code>, and the double programming box in qcthat's issue templates</td><td>Yes, when a test runs it</td></tr>
+      <tr><td>Visual baseline</td><td>228 screenshots in the safety.viz evidence folders</td><td>No, it supports a test</td></tr>
+      <tr><td>Change review</td><td>Pull requests. Increment pull requests here merge on green checks with no human review</td><td>No, shown as a fact</td></tr>
+      <tr><td>Human acceptance</td><td><code>ExpectUserAccepts()</code>, and your approving review of each release candidate</td><td>Only where a project requires it</td></tr>
+      <tr><td>AI review</td><td>The matrices' AI Review column and the release review passes</td><td>No, and never as human acceptance</td></tr>
+    </tbody>
+  </table></div>
+  <p>Requirements come in fewer kinds: GitHub issues (189 in safety.viz), hub requirements in another repository (39 with safety.viz tasks) and matrix rows (1,442). Trackers such as Jira are not used here, though other teams adopting qcthat may ask.</p>
+</section>
+
+<section>
+  <h2>How an extension plugs in</h2>
+  <p>This is a separate choice from the scope. There are two ways, and they can coexist.</p>
+  <ul>
+    <li><span class="label">A file.</span> An extension is anything that writes evidence records in an agreed format, and qcthat reads a folder of them. JavaScript, Python, a GitHub Action or a small script all qualify, and none needs R.</li>
+    <li><span class="label">An R package.</span> An extension registers a method on a qcthat generic. This suits R users, but a JavaScript author would have to write R to contribute.</li>
+  </ul>
+  <p>Here is a proposed record. It borrows its shape from <a href="https://github.com/in-toto/attestation/blob/main/spec/predicates/README.md">in-toto attestations</a>, where each statement names a subject and a typed payload, and new types are allowed.</p>
+<pre>{
+  "requirement": "jwildfire/safety.viz#334",
+  "details": ["HEP-CTRL-007"],
+  "kind": "acceptance",
+  "label": "Release candidate 1.11.2 approved",
+  "result": "pass",
+  "by": "jwildfire",
+  "at": "2026-10-15",
+  "url": "https://github.com/jwildfire/safety.viz/pull/338",
+  "source": "github-review"
+}</pre>
+  <ul>
+    <li>The requirement is text, with the repository in it. That fixes cross-repository references, and it means a matrix row or tracker item can fill the same field if Option C ever happens.</li>
+    <li><code>details</code> carries the matrix row IDs under Option B, so they are not lost.</li>
+    <li><code>qcthat-js</code> becomes the first formal extension: an npm package that writes these records from Vitest and Playwright results and from the screenshot folders.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Decisions for you</h2>
+  <div>
+    <div class="decision">
+      <h3>How far should the extension go?</h3>
+      <p><span class="label">Recommendation:</span> Option B, shaped so Option C stays possible. It delivers "lots of kinds of evidence" now. The only second requirement source you have today is matrix rows, and B carries those as detail, so a full requirement framework would be built for one user.</p>
+    </div>
+    <div class="decision">
+      <h3>How do extensions plug in?</h3>
+      <p><span class="label">Recommendation:</span> the file, with a generic underneath it. The point of the work is reaching beyond R, so the extension point should not require R.</p>
+    </div>
+    <div class="decision">
+      <h3>What counts as evidence for an issue?</h3>
+      <p><span class="label">Recommendation:</span> tests count by default, every other kind is shown, and a project can require more on a given issue. Otherwise one screenshot could turn an issue green, as my test showed.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Next steps</h2>
+  <ol class="steps">
+    <li>You make the three decisions above.</li>
+    <li>I draft the proposal for the qcthat maintainers, and you post it, since qcthat sits outside your own account. You are its listed maintainer, but most recent work is by others, so I would treat this as a proposal to them. <span class="size">small</span></li>
+    <li>The safety.viz cleanup goes ahead whichever option you pick: the parser fix, the link cleanup and the check for new tests. <span class="size">medium</span></li>
+    <li>safety.viz writes evidence records for tests and screenshots, read by a short R script. This tests the format on real data before asking anyone to change qcthat. <span class="size">medium</span></li>
+    <li>If the maintainers agree, the qcthat changes land in order: the generic, the file reader, the new columns, the coverage rule, then report grouping. <span class="size">medium</span></li>
+    <li>The shared code moves to <code>qcthat-js</code>, and bio.viz becomes its second user. <span class="size">medium</span></li>
+    <li>Readers follow for change reviews and acceptance, and <code>ExpectUserAccepts()</code> moves onto the same records. <span class="size">medium</span></li>
+    <li>Option C gets a fresh look only if a real second source of requirements appears.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>How far to trust this</h2>
+  <ul>
+    <li>Only the plumbing was tested: three made-up rows on unmodified qcthat 1.1.3, against the real issues and tests. The file reader, report grouping and coverage rule do not exist yet.</li>
+    <li>The sizes are my judgement. The file counts come from a text search of qcthat's <code>dev</code> branch, so they show how widely a concept spreads and not how many lines would change.</li>
+    <li>The record format is a first draft, and the maintainers may well change it.</li>
+    <li>I looked at ReqIF too. It moves requirements between tools and does not replace a matrix, so it does not help here. The sources for it were mostly vendor pages.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p><span class="label">Related.</span> <a href="https://jwildfire.github.io/obot.roadmap/reports/qcthat-for-safety-viz-2026-10-30/">qcthat for safety.viz</a>, the recommendation this follows; <a href="https://github.com/jwildfire/obot.roadmap/issues/15">the hub requirement</a>.</p>
+  <p><span class="label">Sources.</span> <a href="https://github.com/Gilead-Public/qcthat">qcthat</a> source and open issues; safety.viz <code>docs/evidence/</code>, <code>requirements/hep-explorer.md</code> and pull requests 335 and 338; the <a href="https://github.com/in-toto/attestation/blob/main/spec/predicates/test-result.md">in-toto test result predicate</a>.</p>
+  <hr>
+  <p>This page was drafted by Claude Code using Opus 5.5 for review by @jwildfire. It is AI-generated and has not yet been reviewed.</p>
+</footer>
+</main>
+</body>
+</html>
