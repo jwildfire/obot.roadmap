@@ -49,7 +49,7 @@ const date = new Date(c.site.captured).toLocaleDateString('en-GB', { day: 'numer
 const commit = c.site.commit ? c.site.commit.slice(0, 8) : 'unknown';
 const L = A.listing;
 const visits = [...new Set(L.visits)];
-const RELNOW = RELEASED ? 'Release 1.11.3' : 'Release 1.11.3 (dev site)';
+const RELNOW = RELEASED ? 'release 1.11.3' : 'release 1.11.3 (dev site)';
 
 /** A still with its numbered markers. */
 function shot(st, alt) {
@@ -157,7 +157,7 @@ ${css}
     { still: AB.listing.still, alt: 'The demo app’s bar listing in release 1.11.2, with no visit column.' },
     { still: AA.listing.still, alt: 'The demo app’s bar listing in release 1.11.3, with a Visit column after the participant ID.' },
     [],
-    'The tallest bar, clicked. The listing’s first rows.'
+    `The tallest bar, clicked: the app offers no participant filter, so these are all ${n(AA.listing.bar)} records in that bar. At a 1,280-pixel window the wider listing now runs past the card on the right; that is filed for the backlog (${a(`${SV}/issues/355`, 'safety.viz #355')}).`
   )}
   <div class="states">
     <div><div class="lbl">Columns before</div>${columns(AB.listing.headers)}</div>
@@ -188,7 +188,7 @@ ${css}
     <div>
       <h3>What did not change</h3>
       <ul>
-        <li>Bins, ticks, counts and the footnote. The capture compared them in both releases.</li>
+        <li>Bins, tick labels and counts. The capture compared them in both releases.</li>
         <li>A listing given its own columns (the ${'<span class="key">details</span>'} setting) is used as given.</li>
         <li>The participant profile, every time axis, the demo data, and every other chart.</li>
         <li>The gsm.safety widget gets both changes when it next copies in the bundle.</li>

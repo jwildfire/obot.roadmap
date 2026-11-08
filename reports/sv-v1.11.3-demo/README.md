@@ -35,6 +35,10 @@ Once release 1.11.3 is on the released site, run `BASE=https://jwildfire.github.
 - That on the demo data the study-day column holds visit numbers: the gallery demo passes `VISITNUM` as `studyday_col` (safety.viz `site/demo/histogram.js`), and #348 keeps the study day out of this release.
 - That a caller's own listing columns are used as given, and that the participant profile, the time axes, the demo data and the gsm.safety widget are unchanged: pull requests #349 and #350.
 - The Apache License 2.0: safety.viz pull request #346.
+- That the demo app's listing runs past its card at 1,280 pixels: read once by hand during the release candidate's review (the table 948 pixels wide in a 912-pixel column), and filed as safety.viz #355. The app's stills show the cut-off Unit column.
+- That the demo app offers no participant filter: safety.viz `src/app/charts.js`, whose filters are the site, sex, race and treatment group.
+
+Wording corrected after the release candidate's review: the page no longer says the capture compared the footnote, which it does not read.
 
 ---
 This page was drafted by Claude Code using Opus 5.5.
