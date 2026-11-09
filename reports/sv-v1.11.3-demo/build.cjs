@@ -33,6 +33,9 @@ const OBJECTIVE = `${HUB}/issues/429`;
 const REQ = `${HUB}/issues/430`;
 const TITLES = `${SV}/issues/347`;
 const TITLES_PR = `${SV}/pull/349`;
+const HOVER = `${SV}/issues/359`;
+const HOVER_PR = `${SV}/pull/360`;
+const OPTIONS = 'https://jwildfire.github.io/obot.roadmap/reports/sv-overview-count-options-2026-11-08/';
 const VISIT = `${SV}/issues/348`;
 const VISIT_PR = `${SV}/pull/350`;
 const PREP = `${SV}/issues/351`;
@@ -49,7 +52,7 @@ const date = new Date(c.site.captured).toLocaleDateString('en-GB', { day: 'numer
 const commit = c.site.commit ? c.site.commit.slice(0, 8) : 'unknown';
 const L = A.listing;
 const visits = [...new Set(L.visits)];
-const RELNOW = RELEASED ? 'release 1.11.3' : 'release 1.11.3 (dev site)';
+const RELNOW = RELEASED ? 'release 1.11.3' : c.site.after_is === 'the dev site' ? 'release 1.11.3 (dev site)' : 'release 1.11.3 (release candidate)';
 
 /** A still with its numbered markers. */
 function shot(st, alt) {
@@ -76,7 +79,7 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>safety.viz v1.11.3 — annotated demo</title>
-<meta name="description" content="What safety.viz v1.11.3 changes in the Safety Histogram, before and after: titled axes in every view, and the visit in the bar listing with the participant ID listed once, on the gallery page and in the demo app, with steps to try.">
+<meta name="description" content="What safety.viz v1.11.3 changes in the Safety Histogram, before and after: titled axes on the single-measure chart, the count on hover on the small panels, and the visit in the bar listing with the participant ID listed once, on the gallery page and in the demo app, with steps to try.">
 <style>
 ${css}
 </style>
@@ -86,13 +89,13 @@ ${css}
 <header class="mast">
   <div class="eyebrow"><span>safety.viz</span><span class="dot"></span><span>${RELEASED ? 'Released' : 'Release candidate'}</span><span class="dot"></span><span>Annotated demo</span></div>
   <h1>safety.viz <span class="v">v1.11.3</span>: the Safety Histogram, labelled</h1>
-  <p class="lede">A patch with two display changes to the Safety Histogram. Its axes now say what they show. Clicking a bar lists the visit of each record. No value, bin or count changes.</p>
+  <p class="lede">A patch with two display changes to the Safety Histogram. Its charts now say what their axes and bars show. Clicking a bar lists the visit of each record. No value, bin or count changes.</p>
   <div class="facts"><span>Captured ${esc(date)}</span><span>after: ${esc(c.site.after_is)}, ${esc(c.site.branch)} at ${esc(commit)}</span><span>before: release 1.11.2</span><span>${held} of ${held} checks held</span></div>
 </header>
 
 <div class="note">
   <div class="lbl">In one paragraph</div>
-  <p>A member of the Interactive Safety Graphics working group reviewed the histogram on 3 November 2026. The axes had no titles, and with one participant selected nothing said when each record was taken. This release titles the axes in every view, as the original safety-histogram did, and adds a Visit column to the bar listing. Each pair below is the same view in release 1.11.2 and in this release.</p>
+  <p>A member of the Interactive Safety Graphics working group reviewed the histogram on 3 November 2026. The axes had no titles, and with one participant selected nothing said when each record was taken. This release titles the single-measure chart's axes, as the original safety-histogram did, gives each bar's count on hover on the small panels, and adds a Visit column to the bar listing. Each pair below is the same view in release 1.11.2 and in this release.</p>
 </div>
 
 <div class="cut"><span>01 <em>/ one measure</em></span></div>
@@ -109,25 +112,25 @@ ${css}
 
 <div class="cut"><span>02 <em>/ all measures</em></span></div>
 <section>
-  <div class="hd"><h2>Every overview panel titles its count</h2></div>
-  <p class="what">The histogram opens on one panel for each measure. Each panel's title already names the measure.</p>
+  <div class="hd"><h2>The overview says what the bars count</h2></div>
+  <p class="what">The histogram opens on one panel for each measure. The line above the panels now says what each bar counts, and pointing at a bar shows its range and its count. The panels carry no axis title.</p>
   ${pair(
-    { still: B.overview.still, alt: 'The first six panels of the all-measures overview in release 1.11.2, with no axis titles.' },
-    { still: A.overview.still, alt: `The same panels in release 1.11.3, each with its y-axis titled ${A.single.y}.` },
-    [`${q(A.single.y)} on every panel.`],
-    `The first six of ${n(A.overview.panels)} panels. The counts are the same in both.`
+    { still: B.overview.still, alt: 'The first six panels of the all-measures overview in release 1.11.2, under the line Click a chart to view that measure.' },
+    { still: A.overview.still, alt: `The same panels in release 1.11.3, under the line ${A.overview.hint} One bar is pointed at, and its tooltip reads ${A.overview.hover.title[0]}, ${A.overview.hover.lines[0]}.` },
+    [`The line: ${q(A.overview.hint)}`, `Pointing at a bar: ${q(A.overview.hover.title[0])}, ${q(A.overview.hover.lines[0])}.`],
+    `The first six of ${n(A.overview.panels)} panels. The counts are the same in both. Click a panel, or press Enter on it, to open its measure, as before. A phone shows no tooltip.`
   )}
 </section>
 
 <div class="cut"><span>03 <em>/ grouped</em></span></div>
 <section>
-  <div class="hd"><h2>Every grouped panel titles its count</h2></div>
-  <p class="what">Grouping by treatment group draws a panel for each group under the titled chart.</p>
+  <div class="hd"><h2>Grouped panels give the count on hover</h2></div>
+  <p class="what">Grouping by treatment group draws a panel for each group under the titled chart. Pointing at a bar shows its range and count, as on the overview.</p>
   ${pair(
-    { still: B.grouped.still, alt: 'The first row of grouped panels in release 1.11.2, with no axis titles.' },
-    { still: A.grouped.still, alt: `The same panels in release 1.11.3, each with its y-axis titled ${A.single.y}.` },
-    [`${q(A.single.y)} on every panel.`],
-    `${esc(A.single.x)}, grouped by treatment group: the first row of ${n(A.grouped.panels)} panels.`
+    { still: B.grouped.still, alt: 'The first row of grouped panels in release 1.11.2.' },
+    { still: A.grouped.still, alt: `The same panels in release 1.11.3, one bar pointed at, its tooltip reading ${A.grouped.hover.title[0]}, ${A.grouped.hover.lines[0]}.` },
+    [`Pointing at a bar: ${q(A.grouped.hover.title[0])}, ${q(A.grouped.hover.lines[0])}.`],
+    `${esc(A.single.x)}, grouped by treatment group: the first row of ${n(A.grouped.panels)} panels. The chart above them keeps both axis titles.`
   )}
 </section>
 
@@ -170,7 +173,7 @@ ${css}
   <div class="note try">
     <div class="lbl">Try it on ${esc(c.site.after_is)}</div>
     <ol class="steps">
-      <li><span class="do">Open the ${a(TRY, 'histogram demo')}.</span><span class="see">Each panel reads ${q(A.single.y)}.</span></li>
+      <li><span class="do">Open the ${a(TRY, 'histogram demo')} and point at a bar.</span><span class="see">Its range and its count of results.</span></li>
       <li><span class="do">Set Measure to <span class="key">${esc(A.single.x)}</span>, Group charts by to <span class="key">None</span>.</span><span class="see">Both axes are titled.</span></li>
       <li><span class="do">Set Participant ID to <span class="key">${esc(c.participant)}</span>, click the tallest bar.</span><span class="see">The listing shows Participant ID, then Visit.</span></li>
       <li><span class="do">Open the ${a(APP, 'demo app')}.</span><span class="see">The same titles and the same Visit column.</span></li>
@@ -199,7 +202,7 @@ ${css}
       <ul>
         <li>The ${a(EVIDENCE, 'histogram evidence page')}.</li>
         <li>The requirement: ${a(REQ, 'the Safety Histogram’s quick wins (obot.roadmap #430)')}.</li>
-        <li>The tasks: ${a(TITLES, 'axis titles (#347)')}, pull request ${a(TITLES_PR, '#349')}; ${a(VISIT, 'the visit in the listing (#348)')}, pull request ${a(VISIT_PR, '#350')}.</li>
+        <li>The tasks: ${a(TITLES, 'axis titles (#347)')}, pull request ${a(TITLES_PR, '#349')}; ${a(HOVER, 'the count on hover (#359)')}, pull request ${a(HOVER_PR, '#360')}, chosen from ${a(OPTIONS, 'the options page')}; ${a(VISIT, 'the visit in the listing (#348)')}, pull request ${a(VISIT_PR, '#350')}.</li>
         <li>The ${a(MATRIX, 'requirement matrix')}, the ${a(NEWS, 'release notes')}, the ${a(PREP, 'release preparation (#351)')}.</li>
       </ul>
     </div>

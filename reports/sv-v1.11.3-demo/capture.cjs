@@ -40,6 +40,7 @@ const previous = fs.existsSync(jsonPath) ? JSON.parse(fs.readFileSync(jsonPath, 
 const MEASURE = 'Alanine Aminotransferase (U/L)';
 const COUNT = 'Number of results';
 const GROUP = 'ARM';
+const HINT = 'Each bar counts results in its range of values. Click a chart to view that measure.';
 
 const capture = { checks: {}, site: {} };
 const check = (name, pass, detail) => {
@@ -55,7 +56,27 @@ const bundle = (page) =>
   });
 
 /** A still of a page region, with marker positions as percentages of the still. */
+/**
+ * Wait until every bar chart on the page has grown its bars to their counts,
+ * so no still or hover is taken mid-animation (safety.viz #361).
+ */
+async function settled(page) {
+  await page.waitForFunction(() => {
+    const C = window.SafetyViz && window.SafetyViz.kit && window.SafetyViz.kit.Chart;
+    if (!C) return true;
+    return [...document.querySelectorAll('canvas')].every((canvas) => {
+      const chart = C.getChart(canvas);
+      if (!chart || chart.config.type !== 'bar' || !chart.scales.y) return true;
+      return chart.data.datasets.every((set, d) => {
+        const meta = chart.getDatasetMeta(d);
+        return set.data.every((v, i) => !meta.data[i] || typeof v !== 'number' || Math.abs(meta.data[i].y - chart.scales.y.getPixelForValue(v)) < 0.5);
+      });
+    });
+  }, null, { timeout: 10000 });
+}
+
 async function still(page, name, box, markers = []) {
+  await settled(page);
   const clip = {
     x: Math.max(0, Math.floor(box.x)),
     y: Math.max(0, Math.floor(box.y)),
@@ -138,6 +159,39 @@ async function clickTallest(page) {
   return { headers, rows, bar: at.count };
 }
 
+/**
+ * Point at the tallest bar of a small multiple and read its tooltip (after
+ * only; release 1.11.2 has none on the overview). Returns where the bar and
+ * the tooltip are, in page pixels.
+ */
+async function hoverPanel(page, panel) {
+  await settled(page);
+  const bar = await panel.evaluate((el) => {
+    const chart = window.SafetyViz.kit.Chart.getChart(el.querySelector('canvas'));
+    const counts = chart.data.datasets[0].data;
+    const index = counts.indexOf(Math.max(...counts));
+    const point = chart.getDatasetMeta(0).data[index];
+    const rect = chart.canvas.getBoundingClientRect();
+    return { x: rect.left + point.x, y: rect.top + (point.y + point.base) / 2, count: counts[index] };
+  });
+  await page.mouse.move(bar.x, bar.y);
+  await page.waitForTimeout(700);
+  const tip = await panel.evaluate((el) => {
+    const chart = window.SafetyViz.kit.Chart.getChart(el.querySelector('canvas'));
+    const t = chart.tooltip;
+    const rect = chart.canvas.getBoundingClientRect();
+    return {
+      opacity: t.opacity,
+      title: t.title || [],
+      lines: (t.body || []).flatMap((b) => b.lines),
+      at: { x: rect.left + t.x + t.width - 6, y: rect.top + t.y + 6 }
+    };
+  });
+  return { bar, tip };
+}
+
+const footnote = (page) => page.locator('.sv-footnote').first().textContent();
+
 async function newPage(browser) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 1000 }, deviceScaleFactor: 1.5 });
   const page = await context.newPage();
@@ -160,19 +214,26 @@ async function gallery(browser, base, tag, participant) {
   await page.waitForTimeout(500);
   const r = { site: `${base}histogram/`, version: await bundle(page) };
 
-  // The all-measures overview, which the page opens on: the first two rows.
-  r.overview = { charts: await charts(page) };
+  // The all-measures overview, which the page opens on: the line above it and the first two rows.
+  r.overview = { charts: await charts(page), hint: (await footnote(page))?.trim() };
   {
     const first = page.locator('.sv-overview-panel').first();
-    await toTop(first);
+    await toTop(page.locator('.sv-footnote').first());
+    const note = await page.locator('.sv-footnote').first().boundingBox();
     const p = await first.boundingBox();
     const grid = await first.evaluate((el) => {
       const b = el.parentElement.getBoundingClientRect();
       return { x: b.left, width: b.width };
     });
-    const canvas = await first.locator('canvas').boundingBox();
-    r.overview.still = await still(page, `overview-${tag}.jpg`, pad({ x: grid.x, y: p.y, width: grid.width, height: p.height * 2 + 24 }, 6),
-      marks ? [{ x: canvas.x + 7, y: canvas.y + canvas.height / 2 }] : []);
+    const markers = [];
+    if (marks) {
+      const hover = await hoverPanel(page, first);
+      r.overview.hover = { title: hover.tip.title, lines: hover.tip.lines, count: hover.bar.count, opacity: hover.tip.opacity };
+      markers.push({ x: note.x + 10, y: note.y + note.height / 2 }, hover.tip.at);
+    }
+    const top = Math.min(note.y, p.y);
+    r.overview.still = await still(page, `overview-${tag}.jpg`, pad({ x: grid.x, y: top, width: grid.width, height: p.y + p.height * 2 + 24 - top }, 6), markers);
+    await page.mouse.move(1, 1);
   }
 
   // The single-measure chart, ungrouped.
@@ -189,7 +250,7 @@ async function gallery(browser, base, tag, participant) {
   // Grouped by treatment group: the main chart, then a panel a group; the first row of panels.
   await pick(page, 'Group charts by', GROUP);
   const grouped = await charts(page);
-  r.grouped = { main: grouped[0], panels: grouped.slice(1) };
+  r.grouped = { main: grouped[0], panels: grouped.slice(1), hint: (await footnote(page))?.trim() };
   {
     const first = page.locator('.sv-multiple').first();
     await toTop(first);
@@ -198,9 +259,14 @@ async function gallery(browser, base, tag, participant) {
       const b = el.parentElement.getBoundingClientRect();
       return { x: b.left, width: b.width };
     });
-    const canvas = await first.locator('canvas').boundingBox();
-    r.grouped.still = await still(page, `grouped-${tag}.jpg`, pad({ x: wrap.x, y: p.y, width: wrap.width, height: p.height }, 6),
-      marks ? [{ x: canvas.x + 7, y: canvas.y + canvas.height / 2 }] : []);
+    const markers = [];
+    if (marks) {
+      const hover = await hoverPanel(page, first);
+      r.grouped.hover = { title: hover.tip.title, lines: hover.tip.lines, count: hover.bar.count, opacity: hover.tip.opacity };
+      markers.push(hover.tip.at);
+    }
+    r.grouped.still = await still(page, `grouped-${tag}.jpg`, pad({ x: wrap.x, y: p.y, width: wrap.width, height: p.height }, 6), markers);
+    await page.mouse.move(1, 1);
   }
 
   // One participant selected, the tallest bar clicked.
@@ -259,7 +325,7 @@ async function main() {
 
   // ---------------------------------------------------------------- the release under review
   capture.site.after = `${BASE}histogram/`;
-  capture.site.after_is = BASE === RELEASED ? 'the released site' : BASE === DEV ? 'the dev site' : BASE;
+  capture.site.after_is = BASE === RELEASED ? 'the released site' : BASE === DEV ? 'the dev site' : /\/pr\/\d+\/$/.test(BASE) ? 'the release candidate’s preview' : BASE;
   capture.site.captured = new Date().toISOString();
   const branch = BASE === RELEASED ? 'main' : 'dev';
   capture.site.branch = branch;
@@ -293,11 +359,16 @@ async function main() {
   capture.after = after;
   capture.site.version = after.version;
   const ov = after.overview.charts;
-  check('every overview panel titles its y-axis “Number of results”, and none its x-axis', ov.length > 0 && ov.every((c) => c.y === COUNT && c.x === null), ov.length);
+  check('no overview panel titles either axis', ov.length > 0 && ov.every((c) => c.y === null && c.x === null), ov.length);
+  check('the line above the overview says what the bars count', after.overview.hint === HINT, after.overview.hint);
+  const tipOK = (h, unit) => h && h.opacity > 0 && new RegExp(`^[\\d.]+–[\\d.]+ ${unit.replace(/[/()]/g, '\\$&')}$`).test(h.title[0] || '') && h.lines.length === 1 && h.lines[0] === `${h.count} ${h.count === 1 ? 'result' : 'results'}`;
+  check('pointing at an overview bar shows its range with the unit, and its count of results', tipOK(after.overview.hover, 'U/L'), after.overview.hover);
   check('the single-measure x-axis is titled with the measure and its unit', after.single.x === MEASURE, after.single.x);
   check('the single-measure y-axis is titled “Number of results”', after.single.y === COUNT, after.single.y);
   check('the grouped view keeps the titled chart above its panels', after.grouped.main.x === MEASURE && after.grouped.main.y === COUNT);
-  check('every grouped panel titles its y-axis “Number of results”', after.grouped.panels.length > 1 && after.grouped.panels.every((c) => c.y === COUNT && c.x === null), after.grouped.panels.length);
+  check('no grouped panel titles either axis', after.grouped.panels.length > 1 && after.grouped.panels.every((c) => c.y === null && c.x === null), after.grouped.panels.length);
+  check('pointing at a grouped bar shows its range with the unit, and its count of results', tipOK(after.grouped.hover, 'U/L'), after.grouped.hover);
+  check('the grouped view keeps its own line', after.grouped.hint === 'Hover over or click a bar for details.', after.grouped.hint);
   const L = after.listing;
   check('the listing opens with Participant ID, then Visit', same(L.headers.slice(0, 2), ['Participant ID', 'Visit']), L.headers);
   check('the listing has one Participant ID column', L.headers.filter((h) => h === 'Participant ID').length === 1);
@@ -308,7 +379,7 @@ async function main() {
 
   const appAfter = await app(browser, BASE, 'after');
   capture.app_after = appAfter;
-  check('the demo app’s overview panels title their y-axes', appAfter.overview.length > 0 && appAfter.overview.every((c) => c.y === COUNT), appAfter.overview.length);
+  check('the demo app’s overview panels title neither axis', appAfter.overview.length > 0 && appAfter.overview.every((c) => c.y === null && c.x === null), appAfter.overview.length);
   check('the demo app’s single-measure chart titles both axes', /^Alanine Aminotransferase/.test(appAfter.single.x) && appAfter.single.y === COUNT, { x: appAfter.single.x, y: appAfter.single.y });
   check('the demo app’s listing has Participant ID once, then Visit', same(appAfter.listing.headers.slice(0, 2), ['Participant ID', 'Visit']) && appAfter.listing.headers.filter((h) => h === 'Participant ID').length === 1, appAfter.listing.headers);
   check('the demo app logs no error', appAfter.errors.length === 0, appAfter.errors);
@@ -317,7 +388,7 @@ async function main() {
   const probe = await newPage(browser);
   await probe.page.goto(`${BEFORE}histogram/`, { waitUntil: 'networkidle' });
   await probe.page.waitForFunction(() => window.__safetyHistogramInstance && window.__safetyHistogramInstance.charts?.length);
-  const releasedTitled = (await charts(probe.page)).some((c) => c.y === COUNT);
+  const releasedTitled = ((await footnote(probe.page)) || '').trim() === HINT;
   await probe.context.close();
   if (releasedTitled) {
     console.log('The released site already titles the axes: keeping the release 1.11.2 reads and stills.');
@@ -341,7 +412,7 @@ async function main() {
   // Charts' raw counts and ticks are not needed on the page.
   const slim = (r) => {
     if (!r) return;
-    r.overview = Array.isArray(r.overview) ? { panels: r.overview.length } : { panels: r.overview.charts.length, still: r.overview.still };
+    r.overview = Array.isArray(r.overview) ? { panels: r.overview.length } : { panels: r.overview.charts.length, still: r.overview.still, hint: r.overview.hint, hover: r.overview.hover };
     for (const c of [r.single, r.grouped?.main, ...(r.grouped?.panels || [])]) if (c) { c.bars = c.counts?.length; c.results = c.counts?.reduce((s, n) => s + n, 0); delete c.counts; delete c.ticks; }
     if (r.grouped) r.grouped.panels = r.grouped.panels.length;
   };

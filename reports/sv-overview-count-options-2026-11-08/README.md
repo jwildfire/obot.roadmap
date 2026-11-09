@@ -8,6 +8,8 @@ Five options for the count axis of the Safety Histogram's all-measures overview.
 - D, one line above the grid
 - E, B and C together, which is recommended
 
+Decided on 2026-11-08: @jwildfire chose "One line + Hover. No #." and, for the grouped panels, "Yes, same" (D's line with C's hover). The page records it at the top; it is built in safety.viz #359.
+
 Each is drawn on the live dev overview at 1280px and 390px, with numbered markers. The page leaves him two calls: which option, and whether the grouped panels follow. Requirement: the Safety Histogram's quick wins ([#430](https://github.com/jwildfire/obot.roadmap/issues/430)).
 
 ## The parts

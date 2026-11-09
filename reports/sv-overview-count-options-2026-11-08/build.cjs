@@ -153,11 +153,17 @@ ${switchCss}
 <body>
 <div class="wrap">
 <header class="mast">
-  <p class="eyebrow">safety.viz <span class="dot"></span> Safety Histogram <span class="dot"></span> 8 November 2026 <span class="dot"></span> options</p>
+  <p class="eyebrow">safety.viz <span class="dot"></span> Safety Histogram <span class="dot"></span> 8 November 2026 <span class="dot"></span> options <span class="dot"></span> decided</p>
   <h1>What the overview’s count axis should say</h1>
   <p class="lede">You don’t like “Number of results” turned on its side beside every panel of the all-measures overview. Here are five options, each drawn on the live dev overview, with the one I recommend open first.</p>
   <p class="facts"><span>Release candidate: <a href="${PR}">safety.viz v1.11.3-RC1</a></span><span>Before and after: <a href="${DEMO}">the v1.11.3 demo page</a></span><span>Live: <a href="${SITE}">the dev overview</a></span></p>
 </header>
+
+<div class="note decided">
+  <p class="lbl">Decided, 8 November 2026</p>
+  <p>@jwildfire: “One line + Hover. No #.” And for the grouped panels: “Yes, same”.</p>
+  <p>So the overview’s panels carry no count title and no “#”; the line above them says what the bars count (option D’s line), and pointing at a bar gives its range and count (option C’s hover). The grouped panels drop their title and take the same hover; the grouped view has no line of its own, so the titled chart above them is the context. Built in <a href="https://github.com/jwildfire/safety.viz/issues/359">the count on hover (safety.viz #359)</a>, pull request <a href="https://github.com/jwildfire/safety.viz/pull/360">#360</a>, for release 1.11.3. The options below are kept as they were put to him.</p>
+</div>
 
 <div class="note ask">
   <p class="lbl">Recommendation</p>
