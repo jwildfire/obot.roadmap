@@ -79,7 +79,7 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>safety.viz v1.11.3 — annotated demo</title>
-<meta name="description" content="What safety.viz v1.11.3 changes in the Safety Histogram, before and after: titled axes on the single-measure chart, the count on hover on the small panels, and the visit in the bar listing with the participant ID listed once, on the gallery page and in the demo app, with steps to try.">
+<meta name="description" content="What safety.viz v1.11.3 changes in the Safety Histogram, before and after: titled axes on the single-measure chart, the count on hover on the small panels, and the visit in the bar listing with the participant ID once, in the gallery and the demo app.">
 <style>
 ${css}
 </style>
