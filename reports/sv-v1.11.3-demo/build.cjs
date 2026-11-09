@@ -95,7 +95,7 @@ ${css}
 
 <div class="note">
   <div class="lbl">In one paragraph</div>
-  <p>A member of the Interactive Safety Graphics working group reviewed the histogram on 3 November 2026. The axes had no titles, and with one participant selected nothing said when each record was taken. This release titles the single-measure chart's axes, as the original safety-histogram did, gives each bar's count on hover on the small panels, and adds a Visit column to the bar listing. Each pair below is the same view in release 1.11.2 and in this release.</p>
+  <p>Before this release the histogram's axes had no titles, and with one participant selected nothing said when each record was taken. This release titles the single-measure chart's axes, as the original safety-histogram did, gives each bar's count on hover on the small panels, and adds a Visit column to the bar listing. Each pair below is the same view in release 1.11.2 and in this release.</p>
 </div>
 
 <div class="cut"><span>01 <em>/ one measure</em></span></div>

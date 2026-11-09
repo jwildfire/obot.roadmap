@@ -32,7 +32,7 @@ Once release 1.11.3 is on the released site, run `BASE=https://jwildfire.github.
 
 ## Things the page states that the capture does not read
 
-- That the working group raised both points on 3 November 2026: hub requirement #430.
+- The requirement both changes answer: hub requirement #430.
 - That the original safety-histogram titled its axes: its `getCurrentMeasure.js` and `webchartsSettings.js`, cited in safety.viz #347.
 - That on the demo data the study-day column holds visit numbers: the gallery demo passes `VISITNUM` as `studyday_col` (safety.viz `site/demo/histogram.js`), and #348 keeps the study day out of this release.
 - That a caller's own listing columns are used as given, and that the participant profile, the time axes, the demo data and the gsm.safety widget are unchanged: pull requests #349 and #350.
