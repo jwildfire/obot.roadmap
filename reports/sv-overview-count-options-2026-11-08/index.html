@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Overview count label · safety.viz options</title>
+<meta name="description" content="Five ways to say what the bars count in the Safety Histogram's all-measures overview, each drawn on the live dev overview at desktop and phone width. Recommends a small # over each count axis plus the count on hover.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#737882;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8; --bronze:#6c3270;
+  --ask:#a8640c; --askbg:#fff6e6;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 40px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32);overflow-wrap:anywhere}
+a:hover{border-bottom-color:var(--blue)}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0;text-wrap:balance}
+h2{font-size:clamp(21px,3vw,27px)}
+code{font-family:var(--mono);font-size:.9em}
+p{margin:0}
+.mast{padding:48px 0 8px}
+.eyebrow{font:600 11px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--rule2)}
+h1{font-size:clamp(28px,5vw,42px);margin:14px 0 0}
+.lede{max-width:66ch;margin:14px 0 0;font-size:17px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:16px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+.lbl{font:600 10.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:0 0 8px}
+.lbl.rec{color:var(--bronze)}
+.note{margin:24px 0 0;padding:16px 20px 18px;border:1px solid #ecd9b4;border-left:3px solid var(--ask);border-radius:5px;background:var(--askbg);font-size:15px;color:var(--ink2)}
+.note>.lbl{color:var(--ask)}
+.note h3{font-size:16px;margin:14px 0 6px;color:var(--ink)}
+.note ol{margin:0;padding-left:20px}
+.note li+li{margin-top:6px}
+section{padding-top:34px}
+section>h2{margin-bottom:12px}
+
+/* switch */
+.switch>input{position:absolute;opacity:0;pointer-events:none}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.tab{flex:none;cursor:pointer;padding:7px 13px;border:1px solid var(--rule2);border-radius:999px;background:var(--panel);font:600 13px/1.2 var(--body);color:var(--ink2);white-space:nowrap}
+.tab.rec{border-color:var(--bronze);color:var(--bronze)}
+.switch>input:focus-visible+input,.switch>input:focus-visible~.tabs{outline:none}
+.pane{display:none;margin-top:18px}
+.pane-head .say{margin:8px 0 0;max-width:70ch;color:var(--ink2)}
+.views{display:grid;grid-template-columns:minmax(0,2.6fr) minmax(0,1fr);gap:22px;margin-top:18px;align-items:start}
+.views figure{margin:0;min-width:0}
+.shot{position:relative;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:#fff}
+.shot img{display:block;width:100%;height:auto}
+.mk{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--bronze);color:#fff;font:700 12px/22px var(--mono);text-align:center;box-shadow:0 0 0 2px #fff,0 1px 5px rgba(0,0,0,.4)}
+.legend{list-style:none;counter-reset:l;margin:10px 0 0;padding:0;display:grid;gap:6px;font-size:14px;color:var(--ink2)}
+.legend li{counter-increment:l;position:relative;padding-left:28px}
+.legend li::before{content:counter(l);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--bronze);color:#fff;font:700 11px/20px var(--mono);text-align:center}
+.pnote{margin-top:10px;font-size:14px;color:var(--ink2);border-left:3px solid var(--rule2);padding-left:10px}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;padding:14px 18px;border:1px solid var(--rule);border-radius:6px;background:var(--panel);font-size:14.5px;color:var(--ink2)}
+.pc ul{margin:0;padding-left:18px}
+.pc li+li{margin-top:5px}
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+thead th:last-child,tbody td:last-child{background:#f6eef7}
+tbody th{font-weight:600;color:var(--ink)}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+.plain{margin:0;padding-left:20px;color:var(--ink2);max-width:72ch}
+.plain li+li{margin-top:6px}
+.small{font-size:14px;color:var(--ink2);max-width:76ch}
+.foot{margin-top:40px;font-size:13px;color:var(--mute)}
+.foot hr{border:0;border-top:1px solid var(--rule);margin:0 0 10px}
+@media (max-width:760px){
+  .views{grid-template-columns:1fr}
+  .views .phone{max-width:360px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px 32px}
+  .mast{padding-top:32px}
+  .pc{grid-template-columns:1fr}
+  .mk{width:16px;height:16px;font-size:9.5px;line-height:16px;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.4)}
+}
+
+#opt-a:checked~.panes #pane-a{display:block}#opt-a:checked~.tabs label[for=opt-a]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+#opt-b:checked~.panes #pane-b{display:block}#opt-b:checked~.tabs label[for=opt-b]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+#opt-c:checked~.panes #pane-c{display:block}#opt-c:checked~.tabs label[for=opt-c]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+#opt-d:checked~.panes #pane-d{display:block}#opt-d:checked~.tabs label[for=opt-d]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+#opt-e:checked~.panes #pane-e{display:block}#opt-e:checked~.tabs label[for=opt-e]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="mast">
+  <p class="eyebrow">safety.viz <span class="dot"></span> Safety Histogram <span class="dot"></span> 8 November 2026 <span class="dot"></span> options</p>
+  <h1>What the overview’s count axis should say</h1>
+  <p class="lede">You don’t like “Number of results” turned on its side beside every panel of the all-measures overview. Here are five options, each drawn on the live dev overview, with the one I recommend open first.</p>
+  <p class="facts"><span>Release candidate: <a href="https://github.com/jwildfire/safety.viz/pull/358">safety.viz v1.11.3-RC1</a></span><span>Before and after: <a href="../sv-v1.11.3-demo/">the v1.11.3 demo page</a></span><span>Live: <a href="https://jwildfire.github.io/safety.viz/dev/histogram/">the dev overview</a></span></p>
+</header>
+
+<div class="note ask">
+  <p class="lbl">Recommendation</p>
+  <p>Option E: a small “#” at the top of every panel’s count axis, and a bar’s range and count when you point at it. Every panel still says it shows counts, on a phone too, and the bars get their width back. The single-measure chart keeps its two full titles either way.</p>
+  <h3>Your two calls</h3>
+  <ol>
+    <li>Which option. Recommended: E.</li>
+    <li>Whether the grouped panels follow. They share the overview’s axis code and already show a count on hover. Recommended: yes, the same “#”, so the small multiples read alike.</li>
+  </ol>
+</div>
+
+<section class="switch">
+  <input type="radio" name="opt" id="opt-a"><input type="radio" name="opt" id="opt-b"><input type="radio" name="opt" id="opt-c"><input type="radio" name="opt" id="opt-d"><input type="radio" name="opt" id="opt-e" checked>
+  <div class="tabs" role="tablist" aria-label="Options"><label for="opt-a" class="tab">A · Today</label><label for="opt-b" class="tab">B · # on top</label><label for="opt-c" class="tab">C · Hover only</label><label for="opt-d" class="tab">D · One line</label><label for="opt-e" class="tab rec">E · # and hover</label></div>
+  <div class="panes">
+<div class="pane" id="pane-a">
+  <div class="pane-head">
+    <p class="lbl">Option A</p>
+    <h2>Today: the title beside every panel</h2>
+    <p class="say">“Number of results”, turned on its side, beside the count axis of every panel. This is release candidate 1, as it stands.</p>
+  </div>
+  <div class="views">
+    <figure class="desk">
+      <p class="lbl">Desktop, 1280px wide · the first two rows</p>
+      <div class="shot"><img src="media/a-desk.jpg" width="978" height="572" alt="Option A on the overview at desktop width" loading="lazy"><span class="mk" style="left:3.1%;top:15.8%">1</span></div>
+      <ol class="legend"><li>The axis title, repeated on all 29 panels of the overview and on every grouped panel.</li></ol>
+    </figure>
+    <figure class="phone">
+      <p class="lbl">Phone, 390px wide · the first panel</p>
+      <div class="shot"><img src="media/a-phone.jpg" width="358" height="307" alt="Option A on the overview at phone width" loading="lazy"><span class="mk" style="left:8.5%;top:29.4%">1</span></div>
+      <ol class="legend"><li>On a phone the title takes about a tenth of the panel’s width.</li></ol>
+    </figure>
+  </div>
+  <div class="pc">
+    <div><p class="lbl">For it</p><ul><li>The axis is named the same way as on the single-measure chart.</li><li>Nothing to learn: the title says what the bars count.</li></ul></div>
+    <div><p class="lbl">Against it</p><ul><li>The same words 29 times in a view that is for scanning shapes.</li><li>Each panel loses width to the title, so the bars are narrower.</li></ul></div>
+  </div>
+</div>
+
+<div class="pane" id="pane-b">
+  <div class="pane-head">
+    <p class="lbl">Option B</p>
+    <h2>A “#” at the top of the count axis</h2>
+    <p class="say">No title beside the axis. A small “#” sits above the top tick on every panel, where the unit of an axis often goes.</p>
+  </div>
+  <div class="views">
+    <figure class="desk">
+      <p class="lbl">Desktop, 1280px wide · the first two rows</p>
+      <div class="shot"><img src="media/b-desk.jpg" width="978" height="572" alt="Option B on the overview at desktop width" loading="lazy"><span class="mk" style="left:7.6%;top:15.9%">1</span></div>
+      <ol class="legend"><li>The “#” over the tick column. Pointing at it says “Number of results in each bar”.</li></ol>
+    </figure>
+    <figure class="phone">
+      <p class="lbl">Phone, 390px wide · the first panel</p>
+      <div class="shot"><img src="media/b-phone.jpg" width="358" height="307" alt="Option B on the overview at phone width" loading="lazy"><span class="mk" style="left:20.8%;top:29.7%">1</span></div>
+      <ol class="legend"><li>The same “#” on a phone. The bars get their width back.</li></ol>
+    </figure>
+  </div>
+  <div class="pc">
+    <div><p class="lbl">For it</p><ul><li>Still says “these are counts” on every panel, phone included.</li><li>Takes no width: the bars are as wide as in release 1.11.2.</li></ul></div>
+    <div><p class="lbl">Against it</p><ul><li>“#” is shorthand. A reader meets the full words only in the hint line, the panel title’s “(1914 results)” and the single-measure chart.</li></ul></div>
+  </div>
+</div>
+
+<div class="pane" id="pane-c">
+  <div class="pane-head">
+    <p class="lbl">Option C</p>
+    <h2>Nothing on the axis; the count on hover</h2>
+    <p class="say">No title and no mark. Pointing at a bar shows its range of values and how many results fall in it.</p>
+  </div>
+  <div class="views">
+    <figure class="desk">
+      <p class="lbl">Desktop, 1280px wide · the first two rows</p>
+      <div class="shot"><img src="media/c-desk.jpg" width="978" height="572" alt="Option C on the overview at desktop width" loading="lazy"><span class="mk" style="left:16.2%;top:21.4%">1</span></div>
+      <ol class="legend"><li>Hovering a bar: “13–23 U/L”, then “878 results”. Today the overview shows no tooltip at all.</li></ol>
+    </figure>
+    <figure class="phone">
+      <p class="lbl">Phone, 390px wide · the first panel</p>
+      <div class="shot"><img src="media/c-phone.jpg" width="358" height="307" alt="Option C on the overview at phone width" loading="lazy"></div>
+      <p class="pnote">On a phone there is no hover: a tap opens the measure. The phone shows a bare count axis with nothing to say what it counts.</p>
+    </figure>
+  </div>
+  <div class="pc">
+    <div><p class="lbl">For it</p><ul><li>The cleanest panels of the five.</li><li>Exact counts and the bar’s range, which no option gives today.</li></ul></div>
+    <div><p class="lbl">Against it</p><ul><li>Nothing at all on a phone or in a screenshot.</li><li>The panels are buttons that open the measure, so the hover has to share the panel with the click.</li></ul></div>
+  </div>
+</div>
+
+<div class="pane" id="pane-d">
+  <div class="pane-head">
+    <p class="lbl">Option D</p>
+    <h2>One line above the grid</h2>
+    <p class="say">No title on the panels. The hint line above the grid, which today says only how to open a measure, also says what the bars count.</p>
+  </div>
+  <div class="views">
+    <figure class="desk">
+      <p class="lbl">Desktop, 1280px wide · the first two rows</p>
+      <div class="shot"><img src="media/d-desk.jpg" width="978" height="572" alt="Option D on the overview at desktop width" loading="lazy"><span class="mk" style="left:50%;top:3.3%">1</span></div>
+      <ol class="legend"><li>“Each bar counts results in its range of values. Click a chart to view that measure.”</li></ol>
+    </figure>
+    <figure class="phone">
+      <p class="lbl">Phone, 390px wide · the first panel</p>
+      <div class="shot"><img src="media/d-phone.jpg" width="358" height="329" alt="Option D on the overview at phone width" loading="lazy"><span class="mk" style="left:50%;top:9%">1</span></div>
+      <ol class="legend"><li>The same line on a phone, above the first panel.</li></ol>
+    </figure>
+  </div>
+  <div class="pc">
+    <div><p class="lbl">For it</p><ul><li>Said once, in words, for the whole grid.</li><li>Panels as clean as option C.</li></ul></div>
+    <div><p class="lbl">Against it</p><ul><li>Easy to read past, and it scrolls away: from the third row down nothing on screen says what the axis is.</li><li>A panel copied or captured on its own carries no label.</li></ul></div>
+  </div>
+</div>
+
+<div class="pane" id="pane-e">
+  <div class="pane-head">
+    <p class="lbl rec">Option E · recommended</p>
+    <h2>Recommended: the “#” and the count on hover</h2>
+    <p class="say">Option B and option C together: the “#” on every panel, and a bar’s range and count when you point at it.</p>
+  </div>
+  <div class="views">
+    <figure class="desk">
+      <p class="lbl">Desktop, 1280px wide · the first two rows</p>
+      <div class="shot"><img src="media/e-desk.jpg" width="978" height="572" alt="Option E on the overview at desktop width" loading="lazy"><span class="mk" style="left:7.6%;top:15.9%">1</span><span class="mk" style="left:16.2%;top:22.4%">2</span></div>
+      <ol class="legend"><li>The “#” over the tick column, on every panel.</li><li>Hovering a bar shows its range and its count.</li></ol>
+    </figure>
+    <figure class="phone">
+      <p class="lbl">Phone, 390px wide · the first panel</p>
+      <div class="shot"><img src="media/e-phone.jpg" width="358" height="307" alt="Option E on the overview at phone width" loading="lazy"><span class="mk" style="left:20.8%;top:29.7%">1</span></div>
+      <ol class="legend"><li>On a phone the “#” is what remains. A tap still opens the measure.</li></ol>
+    </figure>
+  </div>
+  <div class="pc">
+    <div><p class="lbl">For it</p><ul><li>Every panel says it shows counts, on a phone too, at almost no cost in width.</li><li>The exact count is one point away on a desktop.</li></ul></div>
+    <div><p class="lbl">Against it</p><ul><li>The most work of the five, though still small: a few lines for the mark and a tooltip, with their tests.</li></ul></div>
+  </div>
+</div>
+  </div>
+</section>
+
+<section>
+  <h2>Side by side</h2>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>A · Today</th><th>B · #</th><th>C · Hover</th><th>D · One line</th><th>E · # and hover</th></tr></thead>
+    <tbody>
+      <tr><th>Says “counts” on every panel</th><td>Yes, in words</td><td>Yes, as “#”</td><td>No</td><td>No, once above</td><td>Yes, as “#”</td></tr>
+      <tr><th>On a phone</th><td>Yes</td><td>Yes</td><td>Nothing</td><td>The line</td><td>The “#”</td></tr>
+      <tr><th>Exact count of a bar</th><td>No</td><td>No</td><td>On hover</td><td>No</td><td>On hover</td></tr>
+      <tr><th>Width the bars lose</th><td>About 16px a panel</td><td>None</td><td>None</td><td>None</td><td>None</td></tr>
+      <tr><th>Work</th><td>Done</td><td>Small</td><td>Small</td><td>Smallest</td><td>Small</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>What any change does to the release</h2>
+  <ul class="plain">
+    <li>It is display only. No count, bar or range changes.</li>
+    <li>It lands on dev as one more small pull request, with its tests, the requirement rows for the overview’s axis (SH-AXIS-006) reworded, and the screenshot baselines refreshed. That refresh needs one more pair of runs approved by you.</li>
+    <li>The release candidate then becomes RC2 on the same pull request, with the demo page’s overview stills retaken. Barbara’s email waits for the release either way.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>How these were made</h2>
+  <p class="small">Each still is the live dev overview (<a href="https://jwildfire.github.io/safety.viz/dev/histogram/">safety.viz dev</a>, the v1.11.3 release candidate) in headless Chromium, with the running charts changed in the page to show the option: nothing here is built into safety.viz yet. Option A is the page as it is. The hover in options C and E is set on the tallest bar of the first panel. The tooltip in the build would round its range with the same digits as the chart’s ticks. <code>capture.cjs</code> takes the stills; <code>build.cjs</code> writes this page.</p>
+</section>
+
+<footer class="foot">
+  <hr>
+  <p>This page was drafted by Claude Code using Opus 5.5.</p>
+</footer>
+</div>
+</body>
+</html>

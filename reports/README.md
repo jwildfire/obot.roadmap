@@ -70,6 +70,7 @@ The full rule, with the sweep that established it, is in
 
 | Report | Date | Status |
 |---|---|---|
+| [safety.viz: what the overview's count axis should say](sv-overview-count-options-2026-11-08/) | 2026-11-08 | Awaiting @jwildfire's two calls — five options for the count axis of the Safety Histogram's all-measures overview in place of the turned title on every panel, drawn on the live dev overview at desktop and phone width; recommends a small "#" over each count axis with the count on hover |
 | [qcthat evidence extensions: four ways to make the adapter part of the framework](qcthat-evidence-extensions-2026-10-30/) | 2026-10-30 | Awaiting @jwildfire's three decisions — recommends an evidence framework inside qcthat, with test results as one kind of evidence among several |
 | [qcthat for safety.viz: a thin adapter, proved on all 2,982 tests](qcthat-for-safety-viz-2026-10-30/) | 2026-10-30 | Decided — adapter over a port, @jwildfire 2026-10-30; what the adapter becomes is open in the extensions page |
 | [safety.viz CI speed: why the check takes 22 minutes, and the measured way to 6](sv-ci-speed-spike-2026-10-09/) | 2026-10-09 | Decided — a spike on safety.viz's required check: the check runs every test twice, five other layouts were timed on GitHub's runners, and the one with the browser suite on two runners behind a gate takes about 6 minutes with every test kept. Carries the security assessment of that layout and @jwildfire's decision to build it in release 1.11. |
