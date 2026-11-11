@@ -22,7 +22,7 @@
 // show what the gallery cannot: data with no visit and no study day, data with
 // no study day, and charts given no time setting.
 //
-//   harness.html?bundle=dev|released&case=neither|noday|defaults
+//   harness.html?bundle=dev|released&case=neither|noday|panels|defaults
 //
 // bundle=dev       the dev site's bundle (what v1.12.0 will release)
 // bundle=released  the released site's bundle (v1.11.3)
@@ -37,10 +37,11 @@
   var SRC = null;
   var DATA = SITE + 'dev/hep-explorer/adbds.csv';
   var LIVER = { ALT: 'Alanine Aminotransferase', AST: 'Aspartate Aminotransferase', TB: 'Bilirubin', ALP: 'Alkaline Phosphatase' };
-  var DROP = { neither: ['VISIT', 'VISITNUM', 'DY'], noday: ['DY'], defaults: [] }[kase] || [];
+  var DROP = { neither: ['VISIT', 'VISITNUM', 'DY'], noday: ['DY'], panels: ['DY'], defaults: [] }[kase] || [];
   var WHAT = {
     neither: 'The gallery demo data with its VISIT, VISITNUM and DY columns taken out: no visit and no study day.',
     noday: 'The gallery demo data with its DY column taken out: visits, but no study day.',
+    panels: 'The gallery demo data with its DY column taken out, in a histogram and a shift plot given no time setting.',
     defaults: 'The gallery demo data as it is, with each chart given no time setting at all.'
   }[kase];
   document.getElementById('title').textContent = 'Harness: ' + kase + ', ' + bundle + ' bundle';
@@ -91,6 +92,11 @@
           view: 'scatter', visit_col: 'VISIT', visitn_col: 'VISITNUM', baseline_col: 'ABLFL', measure_values: LIVER, profile: false
         });
         H.hep.init(rows);
+      } else if (kase === 'panels') {
+        H.histogram = SafetyViz.histogram(mount('sh', 'Histogram, given no time setting, no study day'), { measure_values: LIVER });
+        H.histogram.init(rows);
+        H.shift = SafetyViz.shiftPlot(mount('ssp', 'Shift plot, given no time setting, no study day'), { measure_values: LIVER });
+        H.shift.init(rows);
       } else {
         H.outlier = SafetyViz.outlierExplorer(mount('oe', 'Outlier explorer, given no time setting'), {});
         H.outlier.init(rows);

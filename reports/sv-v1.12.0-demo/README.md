@@ -31,15 +31,16 @@ Requirements: both visit and study day in the demo data ([obot.roadmap#435](http
 - hep-explorer's hollow count is read from the points as drawn (a transparent fill and a circle), and checked against the timing each point carries. On the dev site it was 131 of 318. It is not typed into the page or the script.
 - The demo app keeps no chart on `window`; it is driven by its own buttons, and a participant is selected by clicking a point.
 - The commit is read from GitHub's public API with no token. The script writes nothing to GitHub.
+- GitHub Pages caches each file for ten minutes, so the capture holds the bundle the site serves to the one committed at the branch head (from raw.githubusercontent.com) and fails when they differ. Recaptured on 11 November after the review fixes (safety.viz #384, pull request #387) merged to `dev` at bb8f52c5: the outlier explorer now defaults its visit columns and opens on Visit given no time setting, side panels draw by visit with no study day, and the shift-plot listing drops its Study day column with no study day.
 
 ## The harness
 
 The gallery's data has both a visit and a study day, so three things cannot be shown on the gallery pages: data with neither, data with no study day, and a chart given no time setting. safety.viz's own browser fixtures (`tests/e2e/fixtures/`) are not deployed to the site, so the capture uses `harness.html` instead.
 
-- `harness.html?bundle=dev|released&case=neither|noday|defaults`.
+- `harness.html?bundle=dev|released&case=neither|noday|panels|defaults`.
 - `bundle=dev` loads the bundle the dev site's hep-explorer page loads, `bundle=released` the released site's. The harness reads the path from that page, so it follows a renamed bundle; on this capture they were `dev/dist/safety.viz-1.12.0/` and `dist/safety.viz-1.11.3/`. The first capture hard-coded the old dev path and stopped when the release preparation renamed it.
-- Both read the dev site's `hep-explorer/adbds.csv`, the gallery's demo data, keep the four liver measures, and drop columns: `neither` drops `VISIT`, `VISITNUM` and `DY`; `noday` drops `DY`; `defaults` drops nothing.
-- `neither` mounts an outlier explorer with no settings and a participant profile for 01-701-1028. `noday` mounts hep-explorer on its scatter with the visit columns and no study day. `defaults` mounts the histogram, outlier explorer, shift plot and delta-delta with no time setting and reads each one's `studyday_col`.
+- Both read the dev site's `hep-explorer/adbds.csv`, the gallery's demo data, keep the four liver measures, and drop columns: `neither` drops `VISIT`, `VISITNUM` and `DY`; `noday` and `panels` drop `DY`; `defaults` drops nothing.
+- `neither` mounts an outlier explorer with no settings and a participant profile for 01-701-1028. `noday` mounts hep-explorer on its scatter with the visit columns and no study day. `panels` mounts a histogram and a shift plot with no time setting, to read the histogram's side panel and the shift-plot listing on data with no study day. `defaults` mounts the histogram, outlier explorer, shift plot and delta-delta with no time setting and reads each one's `studyday_col`.
 - The capture opens it from this folder as a `file:` page; GitHub Pages answers the bundle and the data with `Access-Control-Allow-Origin: *`. Published beside the page, it works the same from the hub.
 
 ## Things the page states that the capture does not read
@@ -49,13 +50,15 @@ The gallery's data has both a visit and a study day, so three things cannot be s
 - That the design was approved on 11 November, and the plain-English summary of each task: the design page and the task titles.
 - That the change was raised by a member of the working group: the design page.
 - That a page with a DY column it does not mean as a study day should set `studyday_col` to none: the four charts' `configure.js`.
+- That visits sharing a name are kept apart, named with the number, when the demo data has no such visits: pull request #387 and its unit test SOE-XAX-006. The capture reads the outlier explorer's ticks and the page names the case from the data when it occurs.
+- The two items split out of the release, the AE panels' toggle (#385) and `baseline_col` in four side panels (#386): the issues.
 - That the hep-explorer and hep-waterfall listings gained Visit and Study day columns (#377), and that the gsm.safety widgets follow in their own release (hub #438): named on the page as not captured.
 
 ## What the capture found that the pull requests do not say
 
 - Release 1.11.3's participant profile page plotted a day worked out from the visit name (Week 26 = day 183), not the visit number. The data pull request's "not 13" holds for the side panels (the histogram's panel plotted 13), not for that page. The page states it this way.
-- With no study day, hep-explorer's tooltip still reads "@ day NA" for each peak, above "Timing not evaluated (no study day)".
-- Switching the outlier explorer's main axis clears the selected participant and closes its side panel.
+- Switching the outlier explorer's main axis clears the selected participant and closes its side panel (read again on each capture; the page drops the line when it stops holding).
+- The first capture, before the review fixes, also found hep-explorer's tooltip reading "@ day NA" with no study day. Pull request #387 removed it, and the capture now checks that it is gone.
 - The demo's ECG data has no participant with two visits on one study day, so the design's "several ECGs on one day separate in Visit view" case cannot be shown on it.
 
 ---

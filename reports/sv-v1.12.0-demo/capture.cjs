@@ -289,6 +289,8 @@ async function outlierPage(browser, base, tag) {
     return pad({ x: side.x, y: chartBox.y, width: chartBox.x + chartBox.width - side.x, height: bottom - chartBox.y }, 8);
   };
   r.first = { chart: await lineChart(page, '.sv-main'), controls: await controls(page, '.sv-sidebar') };
+  // Visits that share a name but not a number are kept apart, named with the number.
+  r.first.numberedTicks = r.first.chart.ticks.filter((t) => /\(\d+(\.\d+)?\)$/.test(t));
   const f = await frame();
   const markers = [];
   if (tag === 'after') {
@@ -332,6 +334,13 @@ async function outlierPage(browser, base, tag) {
       railTitle: (await lineChart(page, '.sv-rail'))?.title,
       mainAfterRailSwitch: (await lineChart(page, '.sv-main')).title
     };
+    // Does switching the main axis keep the selected participant and the side panel?
+    await click(page, '.sv-sidebar .sv-xaxis-option[data-key=visit]');
+    r.mainSwitch = await page.evaluate((g) => ({
+      selected: window[g].state.selectedId,
+      panelOpen: Boolean(document.querySelector('.sv-rail .sv-profile-root')),
+      listing: document.querySelectorAll('.sv-listing tbody tr').length
+    }), g);
   }
   r.errors = errors;
   await context.close();
@@ -554,6 +563,28 @@ async function noStudyDay(browser, which, tag) {
   return r;
 }
 
+async function panels(browser, which) {
+  const { context, page, errors, meta } = await harness(browser, which, 'panels');
+  const r = { harness: meta };
+  await page.evaluate((id) => window.__harness.histogram.root.dispatchEvent(new CustomEvent('participantsSelected', { detail: { data: [id] } })), PID);
+  await page.waitForTimeout(1200);
+  r.histogramPanel = {
+    chart: await lineChart(page, '#sh .sv-rail'),
+    message: await page.evaluate(() => document.querySelector('#sh .sv-rail .sv-no-time-axis')?.textContent.trim() || null),
+    controls: await controls(page, '#sh .sv-rail')
+  };
+  await page.evaluate((id) => {
+    const I = window.__harness.shift;
+    const pair = I.chartPairs.find((p) => String(p[I.settings.id_col]) === id);
+    I.brushValues(pair.x - 0.01, pair.x + 0.01, pair.y - 0.01, pair.y + 0.01);
+  }, PID);
+  await page.waitForTimeout(800);
+  r.shiftListing = await page.evaluate(() => [...document.querySelectorAll('#ssp .sv-listing th')].map((h) => h.textContent.replace(/[▲▼]/g, '').trim()));
+  r.errors = errors;
+  await context.close();
+  return r;
+}
+
 async function defaults(browser, which) {
   const { context, page, errors, meta } = await harness(browser, which, 'defaults');
   const r = { harness: meta };
@@ -562,6 +593,8 @@ async function defaults(browser, which) {
     return { histogram: H.histogram.settings.studyday_col, outlier: H.outlier.settings.studyday_col, shift: H.shift.settings.studyday_col, delta: H.delta.settings.studyday_col };
   });
   r.outlier = await lineChart(page, '#oe');
+  r.outlierControls = await controls(page, '#oe');
+  r.outlierVisitCols = await page.evaluate(() => ({ visit_col: window.__harness.outlier.settings.visit_col ?? null, visitn_col: window.__harness.outlier.settings.visitn_col ?? null }));
   r.errors = errors;
   await context.close();
   return r;
@@ -688,6 +721,15 @@ async function main() {
   const ppB = await profilePage(browser, BEFORE, 'before');
   capture.profile = { after: ppA, before: ppB };
   capture.site.bundle = ppA.bundle;
+  // Pages caches for ten minutes: hold the bundle the site serves to the one committed at the branch head.
+  if (capture.site.commit && ppA.bundle) {
+    const rel = ppA.bundle.replace(BASE, '');
+    const [served, committed] = await Promise.all([
+      fetch(`${ppA.bundle}?nocache=${Date.now()}`).then((res) => res.text()),
+      fetch(`https://raw.githubusercontent.com/jwildfire/safety.viz/${capture.site.commit}/${rel}`).then((res) => (res.ok ? res.text() : null))
+    ]);
+    check(`the site serves the bundle committed at ${branch} ${capture.site.commit.slice(0, 8)}`, committed !== null && served === committed, { bundle: rel, served: served.length, committed: committed && committed.length });
+  }
   check('the profile has an X-axis control: Visit | Study day, opening on Visit',
     ppA.first.controls.length === 1 && ppA.first.controls[0].label === 'X-axis' && same(ppA.first.controls[0].options.map((o) => o.title), ['Visit', 'Study day']) && visitPressed(ppA.first.controls) === 'visit', ppA.first.controls);
   const vTicks = ppA.first.chart.ticks;
@@ -765,6 +807,15 @@ async function main() {
   check('the timing-window input is disabled', nA.windowInput && nA.windowInput.disabled === true, nA.windowInput);
   check('Step by: Study day is greyed and says why', nA.controls.length === 1 && nA.controls[0].options.some((o) => o.key === 'day' && o.disabled && o.reason === NO_DAY), nA.controls);
   check('a point’s tooltip says timing was not evaluated', ndA.tip.lines.some((l) => /Timing not evaluated/.test(l)), ndA.tip.lines);
+  check('with no study day the tooltip gives no “@ day NA”', ndA.tip.lines.length > 0 && !ndA.tip.lines.some((l) => /@ day NA|day NA/.test(l)), ndA.tip.lines);
+
+  // Side panels and the shift-plot listing on data with no study day.
+  const pnA = await panels(browser, 'dev');
+  const pnB = await panels(browser, 'released');
+  capture.panels = { after: pnA, before: pnB };
+  check('with no study day, the histogram’s side panel still draws by Visit, Study day greyed', pnA.histogramPanel.chart && pnA.histogramPanel.chart.title === 'Visit' && !pnA.histogramPanel.message && pnA.histogramPanel.controls.length === 1 && pnA.histogramPanel.controls[0].options.some((o) => o.key === 'day' && o.disabled && o.reason === NO_DAY), pnA.histogramPanel);
+  check('with no study day, the shift-plot listing leaves out the Study day column', pnA.shiftListing.length > 0 && !pnA.shiftListing.includes('Study day') && pnA.shiftListing.includes('Visit'), pnA.shiftListing);
+  check('the harness panels pages log no error', pnA.errors.length === 0, pnA.errors);
   check('before: release 1.11.3 with no study day drew every point filled', ndB.scatter.withinWindow === ndB.scatter.points && ndB.scatter.crosses === 0 && ndB.scatter.hollow === 0, { filled: ndB.scatter.filled, of: ndB.scatter.points });
 
   // 8. The demo app.
@@ -783,7 +834,8 @@ async function main() {
   capture.defaults = { after: dfA, before: dfB };
   check('the histogram, outlier explorer, shift plot and delta-delta read DY by default', Object.values(dfA.studyday_col).every((v) => v === 'DY'), dfA.studyday_col);
   check('before: none of the four had a study-day default', Object.values(dfB.studyday_col).every((v) => v === null || v === undefined), dfB.studyday_col);
-  check('an outlier explorer given no time setting plots by study day', dfA.outlier && dfA.outlier.title === 'Study day', dfA.outlier?.title);
+  check('an outlier explorer given no time setting offers Visit and Study day and opens on Visit', dfA.outlier && dfA.outlier.title === 'Visit' && dfA.outlierControls.length === 1 && same(dfA.outlierControls[0].options.map((o) => [o.key, o.disabled]), [['visit', false], ['day', false]]) && visitPressed(dfA.outlierControls) === 'visit', { title: dfA.outlier?.title, controls: dfA.outlierControls });
+  check('the outlier explorer reads VISIT and VISITNUM by default', dfA.outlierVisitCols.visit_col === 'VISIT' && dfA.outlierVisitCols.visitn_col === 'VISITNUM', dfA.outlierVisitCols);
   check('before: an outlier explorer given no time setting plotted a “Measurement” sequence', dfB.outlier && dfB.outlier.title === 'Measurement', dfB.outlier?.title);
   const shA = await shiftListing(browser, BASE, 'after');
   const shB = await shiftListing(browser, BEFORE, 'before');

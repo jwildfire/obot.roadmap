@@ -101,7 +101,10 @@ const ddVisit = DD.after.lines.find((l) => /^Visit:/.test(l));
 const shDay = SH.after.listing.headers.indexOf('Study day');
 const shVisit = SH.after.listing.headers.indexOf('Visit');
 const ndTipNE = ND.after.tip.lines.find((l) => /Timing not evaluated/.test(l));
-const ndTipNA = ND.after.tip.lines.filter((l) => /@ day NA/.test(l));
+const PN = c.panels;
+const numbered = O.after.first.numberedTicks || [];
+const MS = O.after.mainSwitch;
+const dfCtl = DF.after.outlierControls[0].options.map((o) => o.title).join(' | ');
 const stepEnds = H.after.visit.slider.ends;
 
 const css = fs.readFileSync(path.join(dir, 'page.css'), 'utf8');
@@ -179,7 +182,8 @@ ${css}
   )}
   ${ul([
     `In the outlier explorer, set to Study day, the panel opened on ${O.after.independent.railOpenedOn[0] === 'day' ? 'Study day' : 'Visit'}. Switching the panel to Visit left the main chart on ${esc(O.after.independent.mainAfterRailSwitch)}.`,
-    `The same toggle is in the side panel of the histogram, outlier explorer, shift plot, delta-delta, hep-explorer and QT explorer. The AE explorer and AE timelines panels have none: see "Decided in the build".`
+    `The same toggle is in the side panel of the histogram, outlier explorer, shift plot, delta-delta, hep-explorer and QT explorer. The AE explorer and AE timelines panels have none: see "Decided in the build".`,
+    `On data with no study day the panel still draws by visit, from the profile's own visit columns, with Study day greyed: read in the histogram, given no time setting, on the gallery data without its DY column (${a(harnessUrl('dev', 'panels'), 'harness')}). The panel's axis was titled ${q(PN.after.histogramPanel.chart.title)}${PN.before.histogramPanel.chart && PN.before.histogramPanel.chart.xs.every((x) => x == null) ? `; release 1.11.3's panel on the same data drew an empty axis titled ${q(PN.before.histogramPanel.chart.title)}` : ''}.${cite(pr(387), 'safety.viz pull request #387')}`
   ])}
   ${steps([
     [`Open the ${a(`${SITE}histogram/`, 'histogram demo')}, set Participant ID to ${key(PID)} and click a bar, then a row of the listing.`, 'The side panel opens on Visit, with its own X-axis control.'],
@@ -202,6 +206,11 @@ ${css}
     <figure><div class="lbl now">The listing</div>${shot(O.after.day.listing.still, `The listing for participant ${PID}: a Time column reading ${oeTimes.slice(0, 2).join(', ')} and so on.`)}${legendList(O.after.day.listing.still, [`The ${q('Time')} column names both: ${oeTimes.slice(0, 3).map(q).join(', ')} …`])}</figure>
   </div>
   <p class="cap">The listing's ${n(oeTimes.length)} records for ${esc(PID)} each name a visit and a study day, whichever view is on.</p>
+  ${ul([
+    numbered.length
+      ? `Visits that share a name but not a number stay apart in Visit view, each named with its number: ${numbered.slice(0, 4).map(q).join(', ')}.${cite(pr(387), 'safety.viz pull request #387')}`
+      : `Visits that share a name but not a number stay apart in Visit view, named with the number, such as “UNSCHEDULED (2.1)”. The demo data gives each unscheduled visit its own name, so it does not show here; the unit test SOE-XAX-006 covers it.${cite(pr(387), 'safety.viz pull request #387')}`
+  ])}
   ${steps([
     [`Open the ${a(`${SITE}outlier-explorer/`, 'outlier explorer demo')}.`, 'The axis is titled Visit.'],
     [`Press ${key('Study day')}, then click a line.`, 'The axis is in days; the listing below names the visit and the day of each record.']
@@ -287,17 +296,18 @@ ${css}
 <div class="cut"><span>09 <em>/ changed defaults</em></span></div>
 <section>
   <div class="hd"><h2>Four charts read the study day from DY by default</h2></div>
-  <p class="what">The histogram, outlier explorer, shift plot and delta-delta now look for the study day in a column called DY when they are not told otherwise. A page that names its own study-day column is unaffected; a page whose data has a DY column it did not mean as a study day should set it to none. The release notes say so.</p>
+  <p class="what">The histogram, outlier explorer, shift plot and delta-delta now look for the study day in a column called DY when they are not told otherwise. The outlier explorer also looks for the visit in VISIT and VISITNUM, so given no time setting it offers both views and opens on Visit. A page that names its own study-day column is unaffected; a page whose data has a DY column it did not mean as a study day should set it to none. The release notes say so.</p>
   <table class="reads">
     <thead><tr><th>What</th><th>${esc(THEN)}</th><th>${esc(NOW)}</th></tr></thead>
     <tbody>
       <tr><td>Study-day column, given no setting</td><td data-h="Before">${Object.entries(DF.before.studyday_col).map(([k, v]) => `${esc(k)}: ${v == null ? 'none' : esc(v)}`).join(', ')}</td><td data-h="After">${Object.entries(DF.after.studyday_col).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(', ')}</td></tr>
-      <tr><td>An outlier explorer given no time setting plots by</td><td data-h="Before">${q(DF.before.outlier.title)}, a sequence</td><td data-h="After">${q(DF.after.outlier.title)}</td></tr>
+      <tr><td>An outlier explorer given no time setting</td><td data-h="Before">plots a ${q(DF.before.outlier.title)} sequence</td><td data-h="After">offers ${esc(dfCtl)}, reading ${esc(DF.after.outlierVisitCols.visitn_col)} and ${esc(DF.after.outlierVisitCols.visit_col)} for the visit, and opens on ${q(DF.after.outlier.title)}</td></tr>
       <tr><td>Shift-plot listing columns</td><td data-h="Before">${SH.before.listing.headers.map(esc).join(', ')}</td><td data-h="After">${SH.after.listing.headers.map(esc).join(', ')}</td></tr>
+      <tr><td>Shift-plot listing, data with no study day</td><td data-h="Before">not read</td><td data-h="After">${PN.after.shiftListing.map(esc).join(', ')}: no Study day column</td></tr>
       <tr><td>Delta-delta tooltip, participant ${esc(PID)}</td><td data-h="Before">${DD.before.lines.map(esc).join('<br>')}</td><td data-h="After">${DD.after.lines.map(esc).join('<br>')}</td></tr>
     </tbody>
   </table>
-  <p class="cap">The first two rows were read in the harness, each chart mounted with no settings beyond its measures ${a(harnessUrl('dev', 'defaults'), 'release 1.12.0')}, ${a(harnessUrl('released', 'defaults'), 'release 1.11.3')}. The last two were read on the gallery pages.</p>
+  <p class="cap">The first two rows were read in the harness, each chart mounted with no settings beyond its measures (${a(harnessUrl('dev', 'defaults'), 'release 1.12.0')}, ${a(harnessUrl('released', 'defaults'), 'release 1.11.3')}); the fourth on the gallery data without its DY column (${a(harnessUrl('dev', 'panels'), 'harness')}). The others were read on the gallery pages.</p>
   ${pair(
     { still: SH.before.listing.still, alt: `The shift-plot listing for ${PID} in release 1.11.3, with no Study day column.` },
     { still: SH.after.listing.still, alt: `The shift-plot listing in release 1.12.0, with Visit reading ${SH.after.listing.rows[0][shVisit]} and Study day reading ${SH.after.listing.rows[0][shDay]}.` },
@@ -309,9 +319,10 @@ ${css}
 <div class="cut"><span>10 <em>/ decided in the build</em></span></div>
 <section>
   <div class="note decided">
-    <div class="lbl">Two calls made while building, for the reviewer</div>
+    <div class="lbl">Calls made while building, for the reviewer</div>
     <ul>
-      <li>The AE explorer and AE timelines side panels have no X-axis toggle. They show adverse events only, which are drawn in days, so they open on Study day. A Visit option there would have nothing to draw. The requirement's definition of done asked for an X-axis control in all eight hosts; six have one.${cite(pr(379), 'safety.viz pull request #379')}</li>
+      <li>The AE explorer and AE timelines side panels have no X-axis toggle. They show adverse events only, which are drawn in days, so they open on Study day. A Visit option there would have nothing to draw. The requirement's definition of done asked for an X-axis control in all eight hosts; six have one. Whether they should take one is split out for later.${cite(pr(379), 'safety.viz pull request #379')}${cite(iss(385), 'the AE panels’ toggle, safety.viz #385')}</li>
+      <li>The baseline flag (<code>baseline_col</code>) is not forwarded to the side panels of the histogram, outlier explorer, shift plot and delta-delta in this release; it is split out for later.${cite(iss(386), 'safety.viz #386')}</li>
       <li>hep-explorer's control is labelled "Step by", not "X-axis": the scatter's own axes are ALT and bilirubin, and the control changes only what the slider steps through. Points whose timing was not evaluated are drawn as crosses, and the timing-window input is disabled.${cite(pr(381), 'safety.viz pull request #381')}</li>
     </ul>
   </div>
@@ -319,8 +330,7 @@ ${css}
     <div class="lbl">Noticed while capturing</div>
     <ul>
       <li>The data pull request says participant ${esc(PID)}'s last ALT on the profile demo moved from 13 to 180. On the gallery's participant profile page, release 1.11.3 put it at ${last(P.before.first.chart.xs)}, a day worked out from the visit name. The 13, a visit number, is what the side panels plotted.${cite(pr(378), 'safety.viz pull request #378')}</li>
-      <li>With no study day, hep-explorer's tooltip still gives each peak "@ day NA" (${ndTipNA.map(q).join(', ')}), above the line saying timing was not evaluated.</li>
-      <li>Switching the outlier explorer's main axis clears the selected participant and closes the side panel.</li>
+      ${MS && MS.selected == null && !MS.panelOpen ? `<li>Switching the outlier explorer's main axis clears the selected participant and closes the side panel.</li>` : ''}
       <li>Not captured here: the Visit and Study day columns added to the hep-explorer and hep-waterfall listings${cite(iss(377), 'safety.viz #377')}, and the gsm.safety widgets, which follow in their own release${cite(hub(438), 'hub #438')}.</li>
     </ul>
   </div>
@@ -345,7 +355,7 @@ ${css}
         <li>Demo data: the visit, study day and baseline flag${cite(iss(365), '#365')}; the synthetic cohorts' days and one visit numbering${cite(iss(366), '#366')}; the baseline rule reads the flag${cite(iss(367), '#367')}. Pull request${cite(pr(378), '#378')}.</li>
         <li>The toggle: one setting and control${cite(iss(368), '#368')}; the profile${cite(iss(369), '#369')}; the side panels${cite(iss(370), '#370')}; the outlier explorer${cite(iss(371), '#371')}; the QT drill-down${cite(iss(372), '#372')}; the demo app${cite(iss(373), '#373')}; axis names on the charts without it${cite(iss(374), '#374')}. Pull request${cite(pr(379), '#379')}.</li>
         <li>hep-explorer: the slider${cite(iss(375), '#375')}; timing on study days only${cite(iss(376), '#376')}; both columns in the liver listings${cite(iss(377), '#377')}. Pull request${cite(pr(381), '#381')}.</li>
-        <li>Release preparation${cite(iss(380), '#380')}, pull request${cite(pr(382), '#382')}; the ${a(NEWS, 'release notes')}; the release candidate${cite(pr(383), 'pull request #383')}.</li>
+        <li>Release preparation${cite(iss(380), '#380')}, pull request${cite(pr(382), '#382')}; the ${a(NEWS, 'release notes')}; the release candidate${cite(pr(383), 'pull request #383')}; what its review found${cite(iss(384), '#384')}, fixed in pull request${cite(pr(387), '#387')}.</li>
       </ul>
     </div>
   </div>
@@ -353,7 +363,7 @@ ${css}
 
 <footer>
   <p>Data: the gallery's demo data is the public, de-identified CDISC Pilot 01 study (pharmaverseadam), with synthetic groups added for liver and kidney injury.</p>
-  <p>Captured with Playwright, headless Chromium: after from ${a(c.site.after, esc(c.site.after_is))}, before from ${a(c.site.before, 'the released site')}, ${esc(THEN)}. Sections 6, 7 and the first two rows of section 9 come from ${a(`${HERE_URL}harness.html`, 'a harness page')} beside this one, which loads each release's bundle from the safety.viz site and the gallery's data with columns taken out. The harness used ${a(NT.after.harness.src, esc(NT.after.harness.src.replace(/^https:\/\/jwildfire\.github\.io\//, '')))} and ${a(NT.before.harness.src, esc(NT.before.harness.src.replace(/^https:\/\/jwildfire\.github\.io\//, '')))}. Every title, count, column and tooltip line on this page was read from those pages, and ${held} checks held them. How it was made: ${a(HERE, 'this page’s folder')}.</p>
+  <p>Captured with Playwright, headless Chromium: after from ${a(c.site.after, esc(c.site.after_is))}, before from ${a(c.site.before, 'the released site')}, ${esc(THEN)}. Sections 6 and 7, the no-study-day panel in section 2 and the harness rows of section 9 come from ${a(`${HERE_URL}harness.html`, 'a harness page')} beside this one, which loads each release's bundle from the safety.viz site and the gallery's data with columns taken out. The harness used ${a(NT.after.harness.src, esc(NT.after.harness.src.replace(/^https:\/\/jwildfire\.github\.io\//, '')))} and ${a(NT.before.harness.src, esc(NT.before.harness.src.replace(/^https:\/\/jwildfire\.github\.io\//, '')))}. Every title, count, column and tooltip line on this page was read from those pages, and ${held} checks held them. How it was made: ${a(HERE, 'this page’s folder')}.</p>
   <hr>
   <p>This page was drafted by Claude Code using Opus 5.5.</p>
 </footer>
