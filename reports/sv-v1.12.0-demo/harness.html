@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz time-axis harness</title>
+<meta name="description" content="A test page for the safety.viz v1.12.0 demo: loads a safety.viz release's charts on the gallery's demo data with the visit or study-day columns taken out, to show what each release does without them.">
+<style>@media (max-width:640px){body{padding:12px 16px 40px}}</style>
+<style>
+  body{margin:0;padding:16px 24px 48px;background:#fff;color:#17191c;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  h1{font-size:18px;margin:0 0 4px} p.how{margin:0 0 18px;color:#555;max-width:90ch}
+  h2{font-size:15px;margin:28px 0 8px}
+  .mount{min-height:40px}
+</style>
+</head><body>
+<h1 id="title">safety.viz time-axis harness</h1>
+<p class="how" id="how"></p>
+<div id="mounts"></div>
+<script>
+// A harness for the safety.viz v1.12.0 demo page (obot.roadmap reports/sv-v1.12.0-demo).
+// It loads a safety.viz bundle from the safety.viz site and mounts charts on the
+// gallery's own demo data (the dev site's adbds.csv) with columns taken out, to
+// show what the gallery cannot: data with no visit and no study day, data with
+// no study day, and charts given no time setting.
+//
+//   harness.html?bundle=dev|released&case=neither|noday|defaults
+//
+// bundle=dev       the dev site's bundle (what v1.12.0 will release)
+// bundle=released  the released site's bundle (v1.11.3)
+(function () {
+  var q = new URLSearchParams(location.search);
+  var bundle = q.get('bundle') === 'released' ? 'released' : 'dev';
+  var kase = q.get('case') || 'neither';
+  var SITE = 'https://jwildfire.github.io/safety.viz/';
+  // The bundle each site's own gallery page loads, read from that page, so the
+  // harness follows the site when a release renames its bundle.
+  var BASE = bundle === 'dev' ? SITE + 'dev/' : SITE;
+  var SRC = null;
+  var DATA = SITE + 'dev/hep-explorer/adbds.csv';
+  var LIVER = { ALT: 'Alanine Aminotransferase', AST: 'Aspartate Aminotransferase', TB: 'Bilirubin', ALP: 'Alkaline Phosphatase' };
+  var DROP = { neither: ['VISIT', 'VISITNUM', 'DY'], noday: ['DY'], defaults: [] }[kase] || [];
+  var WHAT = {
+    neither: 'The gallery demo data with its VISIT, VISITNUM and DY columns taken out: no visit and no study day.',
+    noday: 'The gallery demo data with its DY column taken out: visits, but no study day.',
+    defaults: 'The gallery demo data as it is, with each chart given no time setting at all.'
+  }[kase];
+  document.getElementById('title').textContent = 'Harness: ' + kase + ', ' + bundle + ' bundle';
+  window.__harness = { bundle: bundle, case: kase, src: null, data: DATA, dropped: DROP, ready: false };
+
+  function parseCsv(text) {
+    var rows = [], row = [], field = '', inQ = false;
+    for (var i = 0; i < text.length; i += 1) {
+      var c = text[i];
+      if (inQ) { if (c === '"' && text[i + 1] === '"') { field += '"'; i += 1; } else if (c === '"') inQ = false; else field += c; }
+      else if (c === '"') inQ = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i += 1; row.push(field); rows.push(row); row = []; field = ''; }
+      else field += c;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    rows = rows.filter(function (r) { return r.length > 1 || (r[0] || '').trim() !== ''; });
+    var header = rows.shift();
+    return rows.map(function (cells) { var o = {}; header.forEach(function (h, j) { o[h] = cells[j] == null ? '' : cells[j]; }); return o; });
+  }
+  function mount(id, heading) {
+    var h = document.createElement('h2'); h.textContent = heading;
+    var d = document.createElement('div'); d.id = id; d.className = 'mount';
+    document.getElementById('mounts').append(h, d);
+    return '#' + id;
+  }
+  function load() {
+  var s = document.createElement('script');
+  s.src = SRC;
+  s.onerror = function () { window.__harness.error = 'could not load ' + SRC; };
+  s.onload = function () {
+    fetch(DATA).then(function (r) { return r.text(); }).then(function (text) {
+      var all = parseCsv(text);
+      var keep = Object.values(LIVER);
+      var rows = all.filter(function (r) { return keep.indexOf(r.TEST) >= 0; }).map(function (r) {
+        var o = Object.assign({}, r); DROP.forEach(function (c) { delete o[c]; }); return o;
+      });
+      window.__harness.rows = rows.length;
+      window.__harness.columns = Object.keys(rows[0] || {});
+      var H = window.__harness;
+      if (kase === 'neither') {
+        H.outlier = SafetyViz.outlierExplorer(mount('oe', 'Outlier explorer, given no time setting'), {});
+        H.outlier.init(rows);
+        H.profile = SafetyViz.participantProfile(mount('pp', 'Participant profile, participant 01-701-1028'), rows, { measure_values: LIVER });
+        H.profile.setSelected(['01-701-1028']);
+      } else if (kase === 'noday') {
+        H.hep = SafetyViz.hepExplorer(mount('hep', 'hep-explorer, eDISH scatter, no study day'), {
+          view: 'scatter', visit_col: 'VISIT', visitn_col: 'VISITNUM', baseline_col: 'ABLFL', measure_values: LIVER, profile: false
+        });
+        H.hep.init(rows);
+      } else {
+        H.outlier = SafetyViz.outlierExplorer(mount('oe', 'Outlier explorer, given no time setting'), {});
+        H.outlier.init(rows);
+        H.histogram = SafetyViz.histogram(mount('sh', 'Histogram, given no time setting'), {});
+        H.histogram.init(rows);
+        H.shift = SafetyViz.shiftPlot(mount('ssp', 'Shift plot, given no time setting'), {});
+        H.shift.init(rows);
+        H.delta = SafetyViz.deltaDelta(mount('dd', 'Delta-delta, given no time setting'), { measure_x: LIVER.ALT, measure_y: LIVER.AST });
+        H.delta.init(rows);
+      }
+      setTimeout(function () { H.ready = true; }, 300);
+    }).catch(function (e) { window.__harness.error = String(e); document.getElementById('mounts').textContent = 'Failed: ' + e; });
+  };
+  document.head.append(s);
+  }
+  fetch(BASE + 'hep-explorer/').then(function (r) { return r.text(); }).then(function (page) {
+    var m = page.match(/dist\/safety\.viz-[\d.]+\/safety\.viz\.js/);
+    if (!m) throw new Error('no bundle named on ' + BASE + 'hep-explorer/');
+    SRC = BASE + m[0];
+    window.__harness.src = SRC;
+    document.getElementById('how').textContent = WHAT + ' Bundle: ' + SRC + '. Data: ' + DATA + '.';
+    load();
+  }).catch(function (e) { window.__harness.error = String(e); document.getElementById('mounts').textContent = 'Failed: ' + e; });
+})();
+</script>
+</body></html>

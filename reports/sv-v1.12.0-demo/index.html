@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz v1.12.0 — annotated demo</title>
+<meta name="description" content="What safety.viz v1.12.0 changes, before and after: a Visit or Study day switch on the participant profile, its side panels, the outlier explorer and the QT drill-down, real study days in the demo data, and hep-explorer timing in days.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#737882;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;        /* interactive: links, steps */
+  --bronze:#6c3270;      /* accent: the demo app's plum */
+  --ask:#a8640c; --askbg:#fff6e6;
+  --bad:#a23b3b; --badbg:#fff3f0;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32);overflow-wrap:anywhere}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono);font-size:.92em}
+code{overflow-wrap:anywhere}
+p{margin:0}
+
+/* ---------- masthead ---------- */
+.mast{padding:52px 0 26px}
+.eyebrow{font:600 11px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--rule2);vertical-align:middle}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:66ch;margin:14px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:18px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+
+/* ---------- callouts ---------- */
+.note{margin:22px 0 0;padding:16px 20px 18px;border:1px solid var(--rule);border-left:3px solid var(--bronze);border-radius:5px;background:var(--panel);font-size:15px;color:var(--ink2)}
+.note>.lbl{margin-bottom:10px}
+.note ol,.note ul{margin:0;padding-left:20px}
+.note li+li{margin-top:7px}
+.note p+p,.note p+ul,.note ul+p,.note ol+p,.note p+ol{margin-top:9px}
+.ask{border-left-color:var(--ask);background:var(--askbg);border-color:#ecd9b4;border-left-color:var(--ask)}
+.ask h3{font-size:17px;margin:20px 0 0;color:var(--ink)}
+.ask h3:first-of-type{margin-top:16px}
+.lbl{font:600 10.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+.ask>.lbl{color:var(--ask)}
+.list{margin:14px 0 0;padding-left:20px;max-width:76ch;font-size:15.5px;color:var(--ink2)}
+.list li+li{margin-top:7px}
+
+/* ---------- steps to try ---------- */
+.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:12px}
+.steps li{counter-increment:s;position:relative;padding-left:34px}
+.steps li+li{margin-top:0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;border:1px solid var(--blue);color:var(--blue);display:grid;place-items:center;font:600 11.5px/1 var(--mono)}
+.steps .do{display:block;color:var(--ink)}
+.steps .see{display:block;color:var(--ink2);font-size:14.5px}
+
+/* ---------- contents ---------- */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:14px 16px 16px;border:0;border-left:1px solid var(--rule);border-top:1px solid var(--rule)}
+.toc a:nth-child(-n+4){border-top:0}
+.toc a:nth-child(4n+1){border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+/* ---------- sections ---------- */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+.src{margin:10px 0 0;font-size:13.5px;color:var(--mute);max-width:86ch}
+.src .dot{margin:0 6px}
+h3{font-size:19px;margin:42px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+/* ---------- figures ---------- */
+figure{margin:20px 0 0;position:relative}
+a.frame{position:relative;display:block;border:1px solid var(--rule);border-radius:5px;overflow:hidden;background:var(--panel);line-height:0}
+a.frame:hover{border-color:var(--rule2)}
+.frame img{display:block;width:100%;height:auto}
+.mk{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--bronze);color:#fff;font:700 12px/22px var(--mono);text-align:center;box-shadow:0 0 0 2px #fff,0 1px 5px rgba(0,0,0,.4)}
+.mk.sm{width:16px;height:16px;font-size:9.5px;line-height:16px;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.4)}
+.cap{margin:12px 0 0;font-size:14.5px;color:var(--ink2);max-width:80ch}
+.legend{list-style:none;counter-reset:l;margin:12px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;font-size:14.5px;color:var(--ink2)}
+.legend li{counter-increment:l;position:relative;padding-left:30px}
+.legend li::before{content:counter(l);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--bronze);color:#fff;font:700 11px/20px var(--mono);text-align:center}
+.swap>input{position:absolute;opacity:0;pointer-events:none}
+.switch{display:inline-flex;border:1px solid var(--rule2);border-radius:999px;overflow:hidden;margin:0 0 10px;background:var(--panel)}
+.switch label{padding:8px 15px;font:600 12px/1 var(--mono);letter-spacing:.04em;color:var(--mute);cursor:pointer;user-select:none}
+.swap>input:nth-of-type(1):checked~.switch label:nth-of-type(1),
+.swap>input:nth-of-type(2):checked~.switch label:nth-of-type(2){background:var(--bronze);color:#fff}
+.swap>input:focus-visible~.switch{outline:2px solid var(--blue);outline-offset:2px}
+.swap>input:nth-of-type(1):checked~.frames .after,
+.swap>input:nth-of-type(2):checked~.frames .before,
+.swap>input:nth-of-type(1):checked~figcaption .is-after,
+.swap>input:nth-of-type(2):checked~figcaption .is-before{display:none}
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,300px));gap:24px;margin-top:20px;align-items:start}
+.phones figure{margin:0}
+.states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px;margin-top:20px;align-items:start}
+.states figure{margin:0}
+.states .cap{margin-top:8px}
+.states .lbl{margin:0 0 6px}
+.states .legend,.phones .legend{grid-template-columns:1fr}
+.views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 24px;margin-top:20px;align-items:start}
+.views figure{margin:0}
+.views .cap{margin-top:8px;font-size:13.5px}
+.views .lbl{margin:0 0 6px}
+.phones .lbl{margin:0 0 6px}
+.phones .legend{grid-template-columns:1fr}
+/* a button of the app's, inside a quoted sentence */
+.key{display:inline-block;padding:0 7px;margin:0 1px;border:1px solid var(--rule2);border-radius:999px;background:var(--panel);font:600 10.5px/1.7 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink2);white-space:nowrap;vertical-align:.08em}
+/* a colour read from the app */
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;vertical-align:-.02em;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+h4{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:20px 0 0}
+h4:first-child{margin-top:0}
+.words{margin:8px 0 0;display:grid;grid-template-columns:minmax(120px,170px) 1fr;gap:7px 18px}
+.words dt{font-size:13.5px;color:var(--mute);padding-top:1px}
+.words dd{margin:0;color:var(--ink)}
+.try{border-left-color:var(--blue)}
+.key3 ul{list-style:none;padding-left:0}
+.rulings{margin:0;padding:0;list-style:none;counter-reset:r}
+.rulings>li{counter-increment:r;position:relative;padding-left:38px}
+.rulings>li+li{margin-top:20px}
+.rulings>li::before{content:counter(r);position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:var(--ask);color:#fff;display:grid;place-items:center;font:700 12px/1 var(--mono)}
+.rulings h3,.ask .rulings h3:first-of-type{font-size:17px;margin:0 0 6px;color:var(--ink)}
+.rulings ul{margin:0;padding-left:18px}
+
+/* ---------- closing ---------- */
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+footer hr{border:0;border-top:1px solid var(--rule);margin:18px 0 14px}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(-n+4){border-top:1px solid var(--rule)}
+  .toc a:nth-child(-n+2){border-top:0}
+  .toc a:nth-child(4n+1){border-left:1px solid var(--rule)}
+  .toc a:nth-child(2n+1){border-left:0}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .mast{padding-top:34px}
+  .toc{grid-template-columns:1fr}
+  .toc a,.toc a:nth-child(-n+4),.toc a:nth-child(4n+1){border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .legend{grid-template-columns:1fr}
+  .states{grid-template-columns:1fr}
+  .views{grid-template-columns:1fr}
+  .words{grid-template-columns:1fr;gap:2px 0}
+  .words dd{margin-bottom:10px}
+  .rulings>li{padding-left:32px}
+  .mk{width:16px;height:16px;font-size:9.5px;line-height:16px;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.4)}
+  .note{padding:14px 15px 16px}
+}
+
+
+/* ---------- v1.11.3: the listing's columns ---------- */
+.cols{margin:0;padding:12px 14px 12px 34px;border:1px solid var(--rule);border-radius:5px;background:var(--panel);font-size:14px;color:var(--ink)}
+.cols li+li{margin-top:2px}
+.narrow{max-width:760px}
+
+/* ---------- v1.11.3: before and after, side by side; stacked on a phone ---------- */
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px;margin-top:20px;align-items:start}
+.pair figure{margin:0}
+.pair .lbl{margin:0 0 6px}
+.pair .lbl.now{color:var(--bronze)}
+.pair .legend{grid-template-columns:1fr}
+.pair+.cap{margin-top:10px}
+.pair~.pair{margin-top:28px}
+@media (max-width:640px){
+  .pair{grid-template-columns:1fr}
+}
+/* a long chip in a step wraps rather than widening the page at 390px */
+.steps .key{white-space:normal}
+.lbl{overflow-wrap:anywhere}
+
+/* ---------- v1.12.0: a single still, a decided-in-the-build callout, a reads table ---------- */
+.solo{max-width:760px;margin-top:22px}
+.solo .lbl{margin:0 0 6px}
+.solo .lbl.now{color:var(--bronze)}
+.solo .legend{grid-template-columns:1fr}
+.decided{border-left-color:var(--ask);background:var(--askbg);border-color:#ecd9b4;border-left-color:var(--ask)}
+.decided>.lbl{color:var(--ask)}
+.found{border-left-color:var(--bad);background:var(--badbg);border-color:#efd0c8;border-left-color:var(--bad)}
+.found>.lbl{color:var(--bad)}
+.reads{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px;color:var(--ink2)}
+.reads th,.reads td{text-align:left;vertical-align:top;padding:8px 10px;border-top:1px solid var(--rule)}
+.reads th{font:600 10.5px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);border-top:0}
+.reads td:first-child{color:var(--ink)}
+.reads td{overflow-wrap:anywhere}
+.list.cites{font-size:14px}
+@media (max-width:640px){
+  .reads,.reads tbody,.reads tr,.reads td{display:block;width:100%}
+  .reads thead{display:none}
+  .reads tr{border-top:1px solid var(--rule);padding:8px 0}
+  .reads td{border:0;padding:2px 0}
+  .reads td[data-h]::before{content:attr(data-h) ": ";font:600 10.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+}
+
+</style>
+</head><body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>safety.viz</span><span class="dot"></span><span>Release candidate</span><span class="dot"></span><span>Annotated demo</span></div>
+  <h1>safety.viz <span class="v">v1.12.0</span>: Visit or Study day</h1>
+  <p class="lede">Every chart that shows change over time can now be read by visit or by study day, with one switch that works the same way everywhere. The demo data now carries real study days, and hep-explorer's 30-day timing test is measured in days.</p>
+  <div class="facts"><span>Captured 11 November 2026</span><span>after: the dev site, dev at 9713018e</span><span>before: release 1.11.3, the released site</span><span>53 of 53 checks held</span></div>
+</header>
+
+<div class="note">
+  <div class="lbl">In short</div>
+  <ul>
+    <li>Before this release, several charts drew a time axis titled "Study Day" over numbers that were not study days: visit numbers in the side panels, the QT drill-down and hep-explorer's slider, and a day worked out from the visit name on the participant profile page.</li>
+    <li>Now each of those charts has an X-axis control, Visit or Study day. The axis title always names what is plotted, and tooltips name both.</li>
+    <li>A chart with neither a visit nor a study day says so instead of drawing.</li>
+    <li>hep-explorer's slider steps by visit or by study day, and its 30-day timing test always uses study days. On the demo data that draws 131 of 318 participants hollow; release 1.11.3 drew none.</li>
+    <li>The change was raised by a member of the working group, from a review of the Safety Histogram.</li>
+  </ul>
+</div>
+
+<div class="cut"><span>01 <em>/ the participant profile</em></span></div>
+<section>
+  <div class="hd"><h2>The profile has an X-axis control: Visit or Study day</h2></div>
+  <p class="what">The gallery's participant profile page, participant 01-701-1028. It opens on Visit.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.11.3</div><a class="frame" href="media/profile-before.jpg"><img src="media/profile-before.jpg" width="1248" height="736" alt="The participant profile for 01-701-1028 in release 1.11.3: one time axis titled Study Day, running from 1 to 183, with no X-axis control." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.12.0 (dev site)</div><a class="frame" href="media/profile-visit.jpg"><img src="media/profile-visit.jpg" width="1248" height="706" alt="The same profile in release 1.12.0 in Visit view: the X-axis control with Visit pressed, one evenly spaced tick per visit from Baseline to Week 26, and the adverse events listed under the chart." loading="lazy"><span class="mk" style="left:18.64%;top:23.2%" aria-hidden="true">1</span><span class="mk" style="left:59.1%;top:52.8%" aria-hidden="true">2</span><span class="mk" style="left:23.08%;top:90.37%" aria-hidden="true">3</span></a><ol class="legend"><li>The X-axis control: Visit | Study day.</li><li>Visit view: the visits evenly spaced, each tick a visit name (Baseline, Week 2, Week 4 … Week 26).</li><li>The adverse events are listed, with their study days, not drawn: a visit axis has no days to draw them on.</li></ol></figure>
+</div>
+<p class="cap">Before: the axis was titled “Study Day”, but on this page it plotted a day worked out from the visit name (Baseline day 1, Week N day 7N + 1), so the last ALT sat at 183. The real study day is 180.</p>
+  <figure class="solo"><div class="lbl now">After · Study day view</div><a class="frame" href="media/profile-day.jpg"><img src="media/profile-day.jpg" width="1248" height="736" alt="The same profile in Study day view: the axis titled Study day from -8 to 180, a dotted line at day 1, the Week 8 point's tooltip reading Week 8 · Day 54, and the adverse-event track under the chart." loading="lazy"><span class="mk" style="left:31.21%;top:27.58%" aria-hidden="true">1</span><span class="mk" style="left:60.72%;top:35.8%" aria-hidden="true">2</span><span class="mk" style="left:23.4%;top:90.02%" aria-hidden="true">3</span></a><ol class="legend"><li>A dotted line marks day 1, the first dose. Records before it have negative days.</li><li>The tooltip names both: “Week 8 · Day 54”.</li><li>The adverse-event track shows only in this view, on the same day axis as the labs.</li></ol></figure>
+<p class="cap">The last ALT now sits at study day 180, Week 26. The adverse events listed in Visit view: application site erythema: from study day 3, no end date recorded; application site pruritus: from study day 21, no end date recorded.</p>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Open the <a href="https://jwildfire.github.io/safety.viz/dev/participant-profile/">participant profile demo</a> and click a point in the chart at the top.</span><span class="see">The profile below opens on Visit, with the X-axis control in its controls.</span></li><li><span class="do">Press <span class="key">Study day</span>.</span><span class="see">The axis turns into days, a line marks day 1, and the adverse-event track appears.</span></li><li><span class="do">Point at a dot on the ALT line.</span><span class="see">The tooltip reads like “Week 8 · Day 54”.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>02 <em>/ the side panel</em></span></div>
+<section>
+  <div class="hd"><h2>The profile as a side panel has its own toggle</h2></div>
+  <p class="what">Selecting a participant in a host chart opens the profile beside it. It opens on the host's view, or on Visit where the host has no toggle, and keeps its own choice after that.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.11.3</div><a class="frame" href="media/histogram-rail-before.jpg"><img src="media/histogram-rail-before.jpg" width="532" height="680" alt="The histogram's side panel for 01-701-1028 in release 1.11.3: the axis titled Study Day, running 0 to 13." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.12.0 (dev site)</div><a class="frame" href="media/histogram-rail-after.jpg"><img src="media/histogram-rail-after.jpg" width="532" height="680" alt="The same side panel in release 1.12.0: the X-axis control with Visit pressed, and visit names on the axis." loading="lazy"><span class="mk" style="left:55.99%;top:38.99%" aria-hidden="true">1</span></a><ol class="legend"><li>The side panel's own X-axis control, opening on Visit.</li></ol></figure>
+</div>
+<p class="cap">The histogram, participant 01-701-1028. Before, the panel plotted the visit number under the title “Study Day”: the last ALT at 13. In Study day view it now sits at day 180.</p>
+  <ul class="list"><li>In the outlier explorer, set to Study day, the panel opened on Study day. Switching the panel to Visit left the main chart on Study day.</li><li>The same toggle is in the side panel of the histogram, outlier explorer, shift plot, delta-delta, hep-explorer and QT explorer. The AE explorer and AE timelines panels have none: see "Decided in the build".</li></ul>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Open the <a href="https://jwildfire.github.io/safety.viz/dev/histogram/">histogram demo</a>, set Participant ID to <span class="key">01-701-1028</span> and click a bar, then a row of the listing.</span><span class="see">The side panel opens on Visit, with its own X-axis control.</span></li><li><span class="do">Press <span class="key">Study day</span> in the panel.</span><span class="see">The panel's axis turns into days; the histogram does not change.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>03 <em>/ the outlier explorer</em></span></div>
+<section>
+  <div class="hd"><h2>The outlier explorer plots by visit or by study day</h2></div>
+  <p class="what">Release 1.11.3 plotted each participant's results in the order they came, under the title "Measurement". The main axis now takes the same X-axis control, opening on Visit.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.11.3</div><a class="frame" href="media/outlier-before.jpg"><img src="media/outlier-before.jpg" width="1248" height="476" alt="The outlier explorer in release 1.11.3: ALT for every participant over an axis titled Measurement, numbered 1, 2, 3 and so on." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.12.0 (dev site)</div><a class="frame" href="media/outlier-after.jpg"><img src="media/outlier-after.jpg" width="1248" height="476" alt="The outlier explorer in release 1.12.0: the X-axis control with Visit pressed, and one evenly spaced tick per visit, unscheduled visits included." loading="lazy"><span class="mk" style="left:18.64%;top:88.24%" aria-hidden="true">1</span><span class="mk" style="left:65.32%;top:93.27%" aria-hidden="true">2</span></a><ol class="legend"><li>The X-axis control, in the controls on the left.</li><li>The axis title: “Visit”, with 19 visits, unscheduled ones after the visit they follow.</li></ol></figure>
+</div>
+<p class="cap">Alanine Aminotransferase, every participant.</p>
+  <div class="pair">
+    <figure><div class="lbl now">Study day view, 01-701-1028 selected</div><a class="frame" href="media/outlier-day.jpg"><img src="media/outlier-day.jpg" width="708" height="476" alt="The outlier explorer in Study day view with participant 01-701-1028 selected; a point's tooltip reads Week 8 · Day 54." loading="lazy"><span class="mk" style="left:82.99%;top:66.94%" aria-hidden="true">1</span></a><ol class="legend"><li>The tooltip names both: “Week 8 · Day 54”.</li></ol></figure>
+    <figure><div class="lbl now">The listing</div><a class="frame" href="media/outlier-listing.jpg"><img src="media/outlier-listing.jpg" width="434" height="342" alt="The listing for participant 01-701-1028: a Time column reading Baseline · Day -8, Week 2 · Day 14 and so on." loading="lazy"><span class="mk" style="left:15.2%;top:40.15%" aria-hidden="true">1</span></a><ol class="legend"><li>The “Time” column names both: “Baseline · Day -8”, “Week 2 · Day 14”, “Week 4 · Day 27” …</li></ol></figure>
+  </div>
+  <p class="cap">The listing's 10 records for 01-701-1028 each name a visit and a study day, whichever view is on.</p>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Open the <a href="https://jwildfire.github.io/safety.viz/dev/outlier-explorer/">outlier explorer demo</a>.</span><span class="see">The axis is titled Visit.</span></li><li><span class="do">Press <span class="key">Study day</span>, then click a line.</span><span class="see">The axis is in days; the listing below names the visit and the day of each record.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>04 <em>/ the QT drill-down</em></span></div>
+<section>
+  <div class="hd"><h2>The QT drill-down by visit or by study day</h2></div>
+  <p class="what">Selecting a participant in the QT explorer opens their ECGs in the side panel. Release 1.11.3 passed the visit number there as the study day.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.11.3</div><a class="frame" href="media/qt-before.jpg"><img src="media/qt-before.jpg" width="532" height="663" alt="The QT drill-down for 01-701-1028 in release 1.11.3: an axis titled Study Day running 0 to 26." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.12.0 (dev site)</div><a class="frame" href="media/qt-after.jpg"><img src="media/qt-after.jpg" width="532" height="663" alt="The QT drill-down in release 1.12.0, Visit view: the X-axis control and visit names on the axis." loading="lazy"><span class="mk" style="left:52.8%;top:37.46%" aria-hidden="true">1</span></a><ol class="legend"><li>The X-axis control, opening on Visit.</li></ol></figure>
+</div>
+<p class="cap">Before: “Study Day” over the visit numbers 0, 2, 4, 6, 8, 12, 16, 20, 24, 26. After, in Study day view, the same ECGs fall on days 1, 14, 27, 42, 54, 83, 111, 139, 172, 180.</p>
+  <figure class="solo"><div class="lbl now">After · Study day view</div><a class="frame" href="media/qt-day.jpg"><img src="media/qt-day.jpg" width="532" height="663" alt="The QT drill-down in Study day view, the last ECG at day 180." loading="lazy"></a></figure>
+<p class="cap">On the demo's ECG data no participant has two visits on one study day, so the two views differ here only in spacing. The design's case of several ECGs on one day, apart by visit and stacked by day, is not in this data.</p>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Open the <a href="https://jwildfire.github.io/safety.viz/dev/qt-explorer/">QT explorer demo</a> and click a point.</span><span class="see">The side panel opens on Visit.</span></li><li><span class="do">Press <span class="key">Study day</span> in the panel.</span><span class="see">The ECGs move to their study days.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>05 <em>/ hep-explorer</em></span></div>
+<section>
+  <div class="hd"><h2>hep-explorer: step by visit or by study day, and timing in days</h2></div>
+  <p class="what">The eDISH scatter. The slider under it now steps by visit or by study day, chosen with a control labelled "Step by". The 30-day timing test always measures study days.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.11.3</div><a class="frame" href="media/hep-before.jpg"><img src="media/hep-before.jpg" width="978" height="563" alt="hep-explorer's scatter in release 1.11.3: every point filled, and a slider from 0 to 13." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.12.0 (dev site)</div><a class="frame" href="media/hep-after.jpg"><img src="media/hep-after.jpg" width="978" height="624" alt="hep-explorer's scatter in release 1.12.0: 131 of 318 points hollow, the slider in study days, and the Step by control with Study day pressed." loading="lazy"><span class="mk" style="left:73.43%;top:29%" aria-hidden="true">1</span><span class="mk" style="left:1.64%;top:77.82%" aria-hidden="true">2</span><span class="mk" style="left:1.64%;top:94.71%" aria-hidden="true">3</span></a><ol class="legend"><li>A hollow point: this participant's peak ALT and peak bilirubin are more than 30 days apart.</li><li>The footnote says what filled means.</li><li>The Step by control: Visit | Study day, opening on Study day.</li></ol></figure>
+</div>
+<p class="cap">On the demo data 131 of 318 participants are hollow, read from the points as drawn. Before: 0 of 318, because the test measured visit numbers, which are never 30 apart. The old slider ran from 0 to 13, visit numbers, under the name "Study day".</p>
+  <figure class="solo"><div class="lbl now">After · Step by Visit</div><a class="frame" href="media/hep-stepby-visit.jpg"><img src="media/hep-stepby-visit.jpg" width="982" height="109" alt="The playback bar stepping by visit, from Baseline to Week 26." loading="lazy"></a></figure>
+<p class="cap">Step by Visit: the slider runs from Baseline to Week 26. By study day it runs from day -38 to day 200.</p>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Open the <a href="https://jwildfire.github.io/safety.viz/dev/hep-explorer/">hep-explorer demo</a> and choose <span class="key">eDISH / mDISH scatter</span>.</span><span class="see">Some points are hollow; the footnote says why.</span></li><li><span class="do">Under the chart, press <span class="key">Visit</span> beside "Step by", then play.</span><span class="see">The points step through the visits by name.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>06 <em>/ no time axis</em></span></div>
+<section>
+  <div class="hd"><h2>With neither a visit nor a study day, a message</h2></div>
+  <p class="what">The gallery's data has both, so this is shown in a small harness page: the gallery's own demo data with its visit and study-day columns taken out, loaded into the dev site's bundle and into release 1.11.3's.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.11.3, harness</div><a class="frame" href="media/notime-before.jpg"><img src="media/notime-before.jpg" width="1244" height="594" alt="The outlier explorer in release 1.11.3 on data with no visit and no study day: lines drawn over an axis titled Measurement." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.12.0 (dev site), harness</div><a class="frame" href="media/notime-after.jpg"><img src="media/notime-after.jpg" width="1244" height="546" alt="The outlier explorer in release 1.12.0 on the same data: in place of the chart, the message This data has no visit or study day, so there is no time axis to plot." loading="lazy"><span class="mk" style="left:25.46%;top:15.35%" aria-hidden="true">1</span></a><ol class="legend"><li>In place of the chart: “This data has no visit or study day, so there is no time axis to plot.”</li></ol></figure>
+</div>
+<p class="cap">The outlier explorer. The participant profile shows the same message (read, not shown). Before, the profile drew an empty axis titled “Study Day”. Open the harness: <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.12.0-demo/harness.html?bundle=dev&case=neither">release 1.12.0</a>, <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.12.0-demo/harness.html?bundle=released&case=neither">release 1.11.3</a>.</p>
+</section>
+
+<div class="cut"><span>07 <em>/ hep-explorer, no study day</em></span></div>
+<section>
+  <div class="hd"><h2>hep-explorer with no study day: crosses, and a footnote</h2></div>
+  <p class="what">With visits but no study day, the timing test cannot be run. Every point is drawn as a cross, neither filled nor hollow, and the chart says why. Shown in the harness: the gallery's demo data with its study-day column taken out.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.11.3, harness</div><a class="frame" href="media/noday-before.jpg"><img src="media/noday-before.jpg" width="948" height="561" alt="hep-explorer in release 1.11.3 on data with no study day: all 318 points filled." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.12.0 (dev site), harness</div><a class="frame" href="media/noday-after.jpg"><img src="media/noday-after.jpg" width="948" height="652" alt="hep-explorer in release 1.12.0 on the same data: every point a cross, a tooltip reading Timing not evaluated (no study day), the footnote saying timing was not evaluated, and Study day greyed beside Step by." loading="lazy"><span class="mk" style="left:53%;top:54.22%" aria-hidden="true">1</span><span class="mk" style="left:1.77%;top:79.81%" aria-hidden="true">2</span><span class="mk" style="left:19.53%;top:95.03%" aria-hidden="true">3</span></a><ol class="legend"><li>A point's tooltip: “Timing not evaluated (no study day)”.</li><li>The footnote: “Timing was not evaluated: the data has no study day, so each point is drawn as a cross, neither filled (peak ALT and peak TB within 30 days of each other) nor hollow.”</li><li>Step by: Study day greyed, titled “No study day in this data”.</li></ol></figure>
+</div>
+<p class="cap">All 318 points are crosses, and the timing-window input (Highlight Points Based on Timing) is disabled. Before, release 1.11.3 drew all 318 filled, as if each had passed a test it never ran. Open the harness: <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.12.0-demo/harness.html?bundle=dev&case=noday">release 1.12.0</a>, <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.12.0-demo/harness.html?bundle=released&case=noday">release 1.11.3</a>.</p>
+</section>
+
+<div class="cut"><span>08 <em>/ the demo app</em></span></div>
+<section>
+  <div class="hd"><h2>The demo app passes the toggle and remembers the view</h2></div>
+  <p class="what">The demo app's charts are given the same X-axis setting, built from the columns mapped on the Data tab. Each chart remembers the view you last chose while the page is open; a new page opens on each chart's own default.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.11.3</div><a class="frame" href="media/app-before.jpg"><img src="media/app-before.jpg" width="1224" height="708" alt="The demo app's outlier explorer in release 1.11.3: no X-axis control, an axis titled Measurement." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.12.0 (dev site)</div><a class="frame" href="media/app-after.jpg"><img src="media/app-after.jpg" width="1224" height="708" alt="The demo app's outlier explorer in release 1.12.0, after Study day was chosen, the Histogram opened, and the Outlier Explorer opened again: Study day is still pressed." loading="lazy"><span class="mk" style="left:20.07%;top:66.93%" aria-hidden="true">1</span></a><ol class="legend"><li>Study day, still chosen after leaving the chart and coming back.</li></ol></figure>
+</div>
+<p class="cap">The Outlier Explorer opens on Visit. The capture pressed Study day, opened the Histogram, and came back: the chart was still on Study day. Clicking a participant then opened the side panel on Study day, with its own toggle.</p>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Open the <a href="https://jwildfire.github.io/safety.viz/dev/demo/">demo app</a>, choose Outlier Explorer and press <span class="key">Study day</span>.</span><span class="see">The axis is in days.</span></li><li><span class="do">Choose Histogram, then Outlier Explorer again.</span><span class="see">Study day is still chosen. Reload the page, and it opens on Visit.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>09 <em>/ changed defaults</em></span></div>
+<section>
+  <div class="hd"><h2>Four charts read the study day from DY by default</h2></div>
+  <p class="what">The histogram, outlier explorer, shift plot and delta-delta now look for the study day in a column called DY when they are not told otherwise. A page that names its own study-day column is unaffected; a page whose data has a DY column it did not mean as a study day should set it to none. The release notes say so.</p>
+  <table class="reads">
+    <thead><tr><th>What</th><th>release 1.11.3</th><th>release 1.12.0 (dev site)</th></tr></thead>
+    <tbody>
+      <tr><td>Study-day column, given no setting</td><td data-h="Before">histogram: none, outlier: none, shift: none, delta: none</td><td data-h="After">histogram: DY, outlier: DY, shift: DY, delta: DY</td></tr>
+      <tr><td>An outlier explorer given no time setting plots by</td><td data-h="Before">“Measurement”, a sequence</td><td data-h="After">“Study day”</td></tr>
+      <tr><td>Shift-plot listing columns</td><td data-h="Before">Participant ID, Baseline, Comparison, Change, Percent Change</td><td data-h="After">Participant ID, Visit, Study day, Baseline, Comparison, Change, Percent Change</td></tr>
+      <tr><td>Delta-delta tooltip, participant 01-701-1028</td><td data-h="Before">Participant: 01-701-1028<br>Change in Alanine Aminotransferase: +0.00<br>Change in Aspartate Aminotransferase: +0.00</td><td data-h="After">Participant: 01-701-1028<br>Change in Alanine Aminotransferase: +0.00<br>Change in Aspartate Aminotransferase: +0.00<br>Visit: Baseline → Week 26<br>Study day: -8 → 180</td></tr>
+    </tbody>
+  </table>
+  <p class="cap">The first two rows were read in the harness, each chart mounted with no settings beyond its measures <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.12.0-demo/harness.html?bundle=dev&case=defaults">release 1.12.0</a>, <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.12.0-demo/harness.html?bundle=released&case=defaults">release 1.11.3</a>. The last two were read on the gallery pages.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.11.3</div><a class="frame" href="media/shift-listing-before.jpg"><img src="media/shift-listing-before.jpg" width="434" height="211" alt="The shift-plot listing for 01-701-1028 in release 1.11.3, with no Study day column." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.12.0 (dev site)</div><a class="frame" href="media/shift-listing-after.jpg"><img src="media/shift-listing-after.jpg" width="434" height="252" alt="The shift-plot listing in release 1.12.0, with Visit reading Baseline → Week 26 and Study day reading -8 → 180." loading="lazy"><span class="mk" style="left:63.84%;top:54.58%" aria-hidden="true">1</span></a><ol class="legend"><li>Study day: “-8 → 180”, beside Visit: “Baseline → Week 26”.</li></ol></figure>
+</div>
+<p class="cap">The shift plot, Baseline against Week 26, participant 01-701-1028 selected. Delta-delta's tooltip now adds “Study day: -8 → 180” under “Visit: Baseline → Week 26”.</p>
+</section>
+
+<div class="cut"><span>10 <em>/ decided in the build</em></span></div>
+<section>
+  <div class="note decided">
+    <div class="lbl">Two calls made while building, for the reviewer</div>
+    <ul>
+      <li>The AE explorer and AE timelines side panels have no X-axis toggle. They show adverse events only, which are drawn in days, so they open on Study day. A Visit option there would have nothing to draw. The requirement's definition of done asked for an X-axis control in all eight hosts; six have one. (<a href="https://github.com/jwildfire/safety.viz/pull/379">safety.viz pull request #379</a>)</li>
+      <li>hep-explorer's control is labelled "Step by", not "X-axis": the scatter's own axes are ALT and bilirubin, and the control changes only what the slider steps through. Points whose timing was not evaluated are drawn as crosses, and the timing-window input is disabled. (<a href="https://github.com/jwildfire/safety.viz/pull/381">safety.viz pull request #381</a>)</li>
+    </ul>
+  </div>
+  <div class="note found">
+    <div class="lbl">Noticed while capturing</div>
+    <ul>
+      <li>The data pull request says participant 01-701-1028's last ALT on the profile demo moved from 13 to 180. On the gallery's participant profile page, release 1.11.3 put it at 183, a day worked out from the visit name. The 13, a visit number, is what the side panels plotted. (<a href="https://github.com/jwildfire/safety.viz/pull/378">safety.viz pull request #378</a>)</li>
+      <li>With no study day, hep-explorer's tooltip still gives each peak "@ day NA" (“Alanine Aminotransferase: 1.21 @ day NA”, “Bilirubin: 0.49 @ day NA”), above the line saying timing was not evaluated.</li>
+      <li>Switching the outlier explorer's main axis clears the selected participant and closes the side panel.</li>
+      <li>Not captured here: the Visit and Study day columns added to the hep-explorer and hep-waterfall listings (<a href="https://github.com/jwildfire/safety.viz/issues/377">safety.viz #377</a>), and the gsm.safety widgets, which follow in their own release (<a href="https://github.com/jwildfire/obot.roadmap/issues/438">hub #438</a>).</li>
+    </ul>
+  </div>
+</section>
+
+<div class="cut"><span>11 <em>/ where to check it</em></span></div>
+<section>
+  <div class="close">
+    <div>
+      <h3>The requirements</h3>
+      <ul>
+        <li>The objective: firm up the tools for the ISG relaunch (<a href="https://github.com/jwildfire/obot.roadmap/issues/429">hub #429</a>).</li>
+        <li>Both visit and study day in the demo data (<a href="https://github.com/jwildfire/obot.roadmap/issues/435">hub #435</a>).</li>
+        <li>One x-axis toggle between Visit and Study day (<a href="https://github.com/jwildfire/obot.roadmap/issues/436">hub #436</a>).</li>
+        <li>hep-explorer's slider and 30-day timing in study days (<a href="https://github.com/jwildfire/obot.roadmap/issues/437">hub #437</a>).</li>
+        <li>The design, approved 11 November (<a href="https://jwildfire.github.io/obot.roadmap/requirements/design/436_design.html">the x-axis toggle design</a>).</li>
+      </ul>
+    </div>
+    <div>
+      <h3>The tasks and pull requests</h3>
+      <ul>
+        <li>Demo data: the visit, study day and baseline flag (<a href="https://github.com/jwildfire/safety.viz/issues/365">#365</a>); the synthetic cohorts' days and one visit numbering (<a href="https://github.com/jwildfire/safety.viz/issues/366">#366</a>); the baseline rule reads the flag (<a href="https://github.com/jwildfire/safety.viz/issues/367">#367</a>). Pull request (<a href="https://github.com/jwildfire/safety.viz/pull/378">#378</a>).</li>
+        <li>The toggle: one setting and control (<a href="https://github.com/jwildfire/safety.viz/issues/368">#368</a>); the profile (<a href="https://github.com/jwildfire/safety.viz/issues/369">#369</a>); the side panels (<a href="https://github.com/jwildfire/safety.viz/issues/370">#370</a>); the outlier explorer (<a href="https://github.com/jwildfire/safety.viz/issues/371">#371</a>); the QT drill-down (<a href="https://github.com/jwildfire/safety.viz/issues/372">#372</a>); the demo app (<a href="https://github.com/jwildfire/safety.viz/issues/373">#373</a>); axis names on the charts without it (<a href="https://github.com/jwildfire/safety.viz/issues/374">#374</a>). Pull request (<a href="https://github.com/jwildfire/safety.viz/pull/379">#379</a>).</li>
+        <li>hep-explorer: the slider (<a href="https://github.com/jwildfire/safety.viz/issues/375">#375</a>); timing on study days only (<a href="https://github.com/jwildfire/safety.viz/issues/376">#376</a>); both columns in the liver listings (<a href="https://github.com/jwildfire/safety.viz/issues/377">#377</a>). Pull request (<a href="https://github.com/jwildfire/safety.viz/pull/381">#381</a>).</li>
+        <li>Release preparation (<a href="https://github.com/jwildfire/safety.viz/issues/380">#380</a>), pull request (<a href="https://github.com/jwildfire/safety.viz/pull/382">#382</a>); the <a href="https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md">release notes</a>; the release candidate (<a href="https://github.com/jwildfire/safety.viz/pull/383">pull request #383</a>).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Data: the gallery's demo data is the public, de-identified CDISC Pilot 01 study (pharmaverseadam), with synthetic groups added for liver and kidney injury.</p>
+  <p>Captured with Playwright, headless Chromium: after from <a href="https://jwildfire.github.io/safety.viz/dev/">the dev site</a>, before from <a href="https://jwildfire.github.io/safety.viz/">the released site</a>, release 1.11.3. Sections 6, 7 and the first two rows of section 9 come from <a href="https://jwildfire.github.io/obot.roadmap/reports/sv-v1.12.0-demo/harness.html">a harness page</a> beside this one, which loads each release's bundle from the safety.viz site and the gallery's data with columns taken out. The harness used <a href="https://jwildfire.github.io/safety.viz/dev/dist/safety.viz-1.12.0/safety.viz.js">safety.viz/dev/dist/safety.viz-1.12.0/safety.viz.js</a> and <a href="https://jwildfire.github.io/safety.viz/dist/safety.viz-1.11.3/safety.viz.js">safety.viz/dist/safety.viz-1.11.3/safety.viz.js</a>. Every title, count, column and tooltip line on this page was read from those pages, and 53 checks held them. How it was made: <a href="https://github.com/jwildfire/obot.roadmap/tree/main/reports/sv-v1.12.0-demo">this page’s folder</a>.</p>
+  <hr>
+  <p>This page was drafted by Claude Code using Opus 5.5.</p>
+</footer>
+
+</div>
+</body></html>
