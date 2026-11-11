@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design — an x-axis toggle between Visit and Study day across the safety charts</title>
+<meta name="description" content="How the safety charts carry both visit and study day, switch between them with one X-axis control, label the axis honestly, and run hep-explorer's 30-day timing test on real days: a live mockup, chart-by-chart defaults, the data model and the change list.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+/* Layout: one reading column; a live chart up top, then a placement table, behaviour rules, data model, questions. */
+:root {
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --fg: #1c2328;
+  --muted: #5d6a73;
+  --line: #d9dfe3;
+  --accent: #0f766e;
+  --visit: #4f46e5;
+  --day: #b45309;
+  --ae: #be123c;
+  --chip-bg: #eef2f4;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171a; --surface: #1a2125; --fg: #e4e9ec; --muted: #9aa8b1; --line: #2e383e;
+    --accent: #2dd4bf; --visit: #a5b4fc; --day: #fbbf24; --ae: #fb7185; --chip-bg: #232c31;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171a; --surface: #1a2125; --fg: #e4e9ec; --muted: #9aa8b1; --line: #2e383e;
+  --accent: #2dd4bf; --visit: #a5b4fc; --day: #fbbf24; --ae: #fb7185; --chip-bg: #232c31;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px; }
+h1, h2 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: .01em; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 20px; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+header { display: grid; gap: 10px; }
+.lede { font-size: 16px; color: var(--fg); }
+.bottom { display: grid; gap: 6px; padding: 14px 16px; border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 6px 6px 0; }
+.bottom ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+section { display: grid; gap: 12px; }
+
+/* the live chart */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.fake-select { font: 13px var(--font-body); color: var(--fg); border: 1px solid var(--line); border-radius: 5px; padding: 4px 26px 4px 8px; background: var(--bg); position: relative; }
+.fake-select::after { content: "▾"; position: absolute; right: 8px; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 13px var(--font-body); border: 0; background: var(--bg); color: var(--fg); padding: 5px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg button:disabled { color: var(--muted); cursor: not-allowed; text-decoration: line-through; }
+.callout-num { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--fg); color: var(--surface); font: 600 11px var(--font-mono); }
+.chartbox { overflow-x: auto; }
+svg { display: block; width: 100%; min-width: 560px; height: auto; }
+svg text { font-family: var(--font-body); fill: var(--muted); font-size: 11px; }
+svg .title { fill: var(--fg); font-weight: 600; font-size: 12px; }
+.ae-list { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+.ae-list strong { color: var(--fg); font-weight: 500; }
+.tip { font: 12px var(--font-mono); color: var(--fg); min-height: 1.5em; }
+.legend { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+.legend li { display: flex; gap: 8px; align-items: baseline; }
+.legend ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.illus { font-size: 12px; color: var(--muted); }
+
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 13.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font: 500 12px var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--chip-bg); }
+tr:last-child td { border-bottom: 0; }
+.pill { display: inline-block; font: 500 12px var(--font-mono); padding: 2px 8px; border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; }
+.p-yes { color: var(--accent); }
+.p-visit { color: var(--visit); }
+.p-day { color: var(--day); }
+.p-no { color: var(--muted); }
+.group-q { font-size: 12px; color: var(--muted); display: block; margin-top: 2px; }
+
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.rule { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.rule h3 { margin: 0; font: 600 14px var(--font-body); }
+.rule p { font-size: 13.5px; color: var(--muted); }
+code { font: 12.5px var(--font-mono); background: var(--chip-bg); padding: 1px 5px; border-radius: 4px; }
+pre { margin: 0; font: 12.5px/1.55 var(--font-mono); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; }
+
+.qs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.qs .rule ol, .qs .rule ul { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--muted); display: grid; gap: 4px; }
+.gone { text-decoration: line-through; }
+footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.msg { padding: 28px 16px; text-align: center; color: var(--fg); border: 1px dashed var(--line); border-radius: 8px; }
+.reqs { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">safety.viz · gsm.safety · design · approved 11 November 2026</div>
+    <h1>One x-axis toggle: Visit or Study day</h1>
+    <p class="lede">The demo data and the charts will carry both visit and study day. Every chart that shows change over time gets the same control to switch between them, as the original safetyGraphics outlier explorer did. Clinicians then only need to choose which view each chart opens on.</p>
+    <div class="bottom">
+      <div class="eyebrow">Bottom line</div>
+      <ul>
+        <li>Data model: every lab, vital-sign and ECG record carries its visit (name and number) and its study day, plus the baseline flag.</li>
+        <li>Seven charts get the toggle: the participant profile (on its own and as the side panel in eight charts), the outlier explorer, hep-explorer's time slider and the profile drill-downs in the QT and nep explorers. The rest are visit-only or day-only by design, and say so.</li>
+        <li>The axis title and tooltips always name what is plotted. A missing column greys out its option and says why.</li>
+        <li>A study with neither a visit nor a study day: the participant profile and the outlier explorer show a message instead of a chart.</li>
+        <li>The six questions for the group become one table of defaults, plus two small questions. The charts are built with the defaults below; the group's answers can change any default without new code.</li>
+      </ul>
+    </div>
+    <div class="bottom">
+      <div class="eyebrow">The four requirements this design covers</div>
+      <ol class="reqs">
+        <li><a href="https://github.com/jwildfire/obot.roadmap/issues/435">Both visit and study day in the demo data</a>, with the baseline flag and one visit numbering (safety.viz v1.12.0)</li>
+        <li><a href="https://github.com/jwildfire/obot.roadmap/issues/436">One x-axis toggle between Visit and Study day</a> (safety.viz v1.12.0)</li>
+        <li><a href="https://github.com/jwildfire/obot.roadmap/issues/437">hep-explorer's time slider takes the toggle, and its 30-day timing test uses study days</a> (safety.viz v1.12.0)</li>
+        <li><a href="https://github.com/jwildfire/obot.roadmap/issues/438">gsm.safety's widgets take the toggle</a> (gsm.safety v1.3.0, after safety.viz v1.12.0)</li>
+      </ol>
+    </div>
+  </header>
+
+  <section aria-labelledby="demo-h">
+    <h2 id="demo-h">How it works: one participant's ALT</h2>
+    <div class="panel">
+      <div class="controls">
+        <div class="ctl"><span class="callout-num">1</span> Measure <span class="fake-select">ALT (×ULN)</span></div>
+        <div class="ctl"><span class="callout-num">2</span> X-axis
+          <span class="seg" role="group" aria-label="X-axis">
+            <button type="button" id="btn-visit" aria-pressed="true">Visit</button>
+            <button type="button" id="btn-day" aria-pressed="false">Study day</button>
+          </span>
+        </div>
+        <label class="ctl" for="sel-data">Data <select id="sel-data"><option value="both">Both columns</option><option value="noday">No study day</option><option value="neither">Neither column</option></select></label>
+      </div>
+      <div class="msg" id="msg" hidden>This data has no visit or study day, so there is no time axis to plot.</div>
+      <div class="chartbox" id="chartbox"><svg id="chart" viewBox="0 0 860 300" role="img" aria-label="ALT over time for one participant"></svg></div>
+      <div class="tip" id="tip" aria-live="polite">Hover or tap a point.</div>
+      <div class="ae-list" id="ae-list"></div>
+      <div class="illus">Illustrative values for one made-up participant, not study data.</div>
+    </div>
+    <div class="legend">
+      <ol>
+        <li><span class="callout-num">1</span><span>The chart's existing controls stay where they are.</span></li>
+        <li><span class="callout-num">2</span><span>The toggle sits beside them, labelled "X-axis". The default comes from the chart's settings, so clinicians choose it per chart.</span></li>
+        <li><span class="callout-num">3</span><span>The axis title changes with the toggle. Visit view spaces visits evenly in visit order; Study day view puts each record at its real day.</span></li>
+        <li><span class="callout-num">4</span><span>The unscheduled visit sits right after Week 8 in Visit view, and at its actual day (66) in Study day view.</span></li>
+        <li><span class="callout-num">5</span><span>Adverse events are drawn as a track only on the Study day axis. In Visit view they are listed under the chart with their own study days.</span></li>
+        <li><span class="callout-num">6</span><span>Switch Data to "No study day": the Study day option greys out and says why. Switch to "Neither column": the participant profile and the outlier explorer show a message instead of a chart (decided 11 November).</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section aria-labelledby="where-h">
+    <h2 id="where-h">Where the toggle goes</h2>
+    <p>The proposed default is our starting point. The clinicians' one question is whether each default is right.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Chart</th><th>Toggle</th><th>Proposed default</th><th>What switches</th></tr></thead>
+        <tbody>
+          <tr><td>Participant profile, on its own</td><td><span class="pill p-yes">Yes</span></td><td><span class="pill p-visit">Visit</span></td><td>The labs, vitals and ECG lines, the axis title and the tooltips. The adverse-event track shows only in Study day view.</td></tr>
+          <tr><td>Participant profile as the side panel, in the histogram, outlier explorer, shift plot, delta-delta, hep-explorer, QT explorer, AE explorer and AE timelines</td><td><span class="pill p-yes">Yes</span></td><td>Opens on the host chart's current view. For hosts with no toggle, <span class="pill p-visit">Visit</span>, except <span class="pill p-day">Study day</span> beside the AE explorer and AE timelines, whose panels show adverse events only</td><td>As above. The panel has its own toggle, so switching it doesn't change the host chart.</td></tr>
+          <tr><td>Outlier explorer</td><td><span class="pill p-yes">Yes</span></td><td><span class="pill p-visit">Visit</span></td><td>The main x-axis. The toggle is already built (<code>time_cols</code>, as in the original chart); the gallery and demo app don't turn it on yet, so it shows a measurement sequence today. That sequence axis goes: with neither column the chart shows a message.</td></tr>
+          <tr><td>hep-explorer</td><td><span class="pill p-yes">Yes</span></td><td><span class="pill p-day">Study day</span></td><td>The time slider and animation step by visit or by day. The listing shows both columns. The 30-day timing test always uses study days and says "not evaluated" when there are none.</td></tr>
+          <tr><td>QT explorer (its profile drill-down)</td><td><span class="pill p-yes">Yes</span></td><td><span class="pill p-visit">Visit</span></td><td>Several ECGs on one day separate in Visit view and stack in Study day view.</td></tr>
+          <tr><td>nep-explorer (the Phase 2 profile drill-down)</td><td><span class="pill p-yes">Later</span></td><td><span class="pill p-visit">Visit</span></td><td>The drill-down isn't built yet; it takes the toggle when it is. The scatter's tooltip shows both now.</td></tr>
+          <tr><td>Results over time</td><td><span class="pill p-no">Visit only</span></td><td>–</td><td>Box plots need groups, so it stays by visit. Its tooltip gains the median study day for each visit.</td></tr>
+          <tr><td>Shift plot, delta-delta</td><td><span class="pill p-no">Visit only</span></td><td>–</td><td>No time axis: they compare two chosen visits. Their listings show both columns.</td></tr>
+          <tr><td>hep-waterfall, histogram</td><td><span class="pill p-no">None</span></td><td>–</td><td>No time axis. The waterfall listing shows both columns; the histogram reaches time only through its side panel.</td></tr>
+          <tr><td>AE timelines, time to event, Patient Journey</td><td><span class="pill p-no">Study day only</span></td><td>–</td><td>Adverse events and time to event have no visits. The Patient Journey lines everything up on one day axis, and its lab tooltips show the visit.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="rules-h">
+    <h2 id="rules-h">How the toggle behaves everywhere</h2>
+    <div class="rules">
+      <div class="rule"><h3>Visit view</h3><p>Visits are evenly spaced in visit-number order, with tick labels from the visit name. Unscheduled visits sit right after the visit they follow.</p></div>
+      <div class="rule"><h3>Study day view</h3><p>A linear axis in days. Pre-dose records have negative days, day 1 is the first dose, and there is no day 0 (CDISC). Baseline records are marked.</p></div>
+      <div class="rule"><h3>Honest labels</h3><p>The axis title is "Visit" or "Study day", never one over the other's data. Tooltips show both: <code>Week 8 · Day 57</code>.</p></div>
+      <div class="rule"><h3>Missing columns</h3><p>With no study day, the Study day option greys out and says "No study day in this data". With no visit, the Visit option does the same. With neither, the participant profile and the outlier explorer show a message instead of a chart.</p></div>
+      <div class="rule"><h3>Side panels</h3><p>The profile opens on the host chart's current view and keeps its own toggle after that.</p></div>
+      <div class="rule"><h3>Day-based tests</h3><p>Checks measured in days, like hep-explorer's 30-day timing, always use study days, whatever the view. Without study days they say "not evaluated" and why.</p></div>
+      <div class="rule"><h3>Remembered choice</h3><p>In the demo app, each chart remembers the last view while the page is open. In R, the widget takes the same default.</p></div>
+      <div class="rule"><h3>One setting shape</h3><p>Every chart takes the same settings, so the gsm.safety widgets and the demo app pass the same thing. The host names each column and gives its label beside it.</p></div>
+    </div>
+<pre>x_axis: {
+  options: [
+    { key: "visit", col: "VISITNUM", label_col: "VISIT", type: "ordinal", title: "Visit" },
+    { key: "day",   col: "DY",                           type: "linear",  title: "Study day" }
+  ],
+  default: "visit"   // per chart; the one thing clinicians choose
+}</pre>
+  </section>
+
+  <section aria-labelledby="data-h">
+    <h2 id="data-h">What the data model needs</h2>
+    <div class="rules">
+      <div class="rule"><h3>Both, on every record</h3><p>Labs, vitals and ECGs carry <code>VISIT</code>, <code>VISITNUM</code> and <code>DY</code> (from <code>ADY</code>), plus <code>ABLFL</code>. Adverse events keep <code>ASTDY</code> and <code>AENDY</code>.</p></div>
+      <div class="rule"><h3>One visit numbering</h3><p>Today labs number Week 26 as 13 while vitals use 26, and Screening sorts after Baseline. The demo data, the synthetic cohorts and gsm.safety's bundled data move to one numbering.</p></div>
+      <div class="rule"><h3>Where it comes from</h3><p>The source ADaM data already has <code>ADY</code>, and the Patient Journey extract already maps it. The demo build keeps it for every domain.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="q-h">
+    <h2 id="q-h">What this does to the questions for the clinicians</h2>
+    <div class="qs">
+      <div class="rule"><h3>Before: six questions</h3>
+        <ol>
+          <li class="gone">Visits evenly spaced, or at planned days?</li>
+          <li class="gone">hep-explorer's 30-day check without study days?</li>
+          <li>Show pre-dose records, and mark day 1?</li>
+          <li>Baseline flag, or last value before first dose?</li>
+          <li class="gone">Where do unscheduled visits go?</li>
+          <li class="gone">QT profile by visit or by day?</li>
+        </ol>
+      </div>
+      <div class="rule"><h3>After: one table and two questions</h3>
+        <ul>
+          <li>Is each chart's default view right? (The table above.)</li>
+          <li>In Study day view, show pre-dose records and mark day 1?</li>
+          <li>For baseline, use the dataset's flag, or the last value before the first dose?</li>
+        </ul>
+        <p>Questions 1, 5 and 6 are answered by having both views. Question 2 is a rule: day-based checks need days.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="dec-h">
+    <h2 id="dec-h">Decided, 8 to 11 November</h2>
+    <div class="rules">
+      <div class="rule"><h3>Four requirements</h3><p>The data, the toggle, hep-explorer's timing, gsm.safety. The toggle stays one requirement, about five days of work.</p></div>
+      <div class="rule"><h3>Both in the data model</h3><p>Visit and study day on every record, and a toggle between them on charts that show change over time.</p></div>
+      <div class="rule"><h3>Neither column</h3><p>The participant profile and the outlier explorer show a message instead of a chart. No "Measurement" axis.</p></div>
+      <div class="rule"><h3>Baseline</h3><p>The shared baseline rule reads the dataset's baseline flag, as a third task in the data requirement.</p></div>
+      <div class="rule"><h3>Today's settings</h3><p><code>studyday_col</code>, <code>visit_col</code>, <code>visitn_col</code> and <code>time_cols</code> keep working as shorthand when <code>x_axis</code> is not given.</p></div>
+      <div class="rule"><h3>Host defaults</h3><p>The histogram, outlier explorer, shift plot and delta-delta default the day option to <code>DY</code>; noted in the release notes.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="fit-h">
+    <h2 id="fit-h">How the pieces fit</h2>
+    <div class="rules">
+      <div class="rule"><h3>Data (safety.viz build scripts)</h3><p><code>scripts/build-demo-data.mjs</code> keeps <code>ADY</code> as <code>DY</code> and <code>ABLFL</code> on labs, vital signs and ECGs; the three synthetic cohorts get <code>DY</code> from their schedule; one visit numbering (Baseline 0, Week N = N, Screening negative, unscheduled 0.1 after the visit it follows); <code>pje-lb.csv</code> gains the visit. <code>deriveBaseline</code> in <code>src/hep-core/rows.js</code> reads <code>baseline_col</code>.</p></div>
+      <div class="rule"><h3>Shared</h3><p><code>src/x-axis.js</code>, beside <code>src/axis-limits.js</code>: normalises <code>x_axis</code>, resolves each option against the data, gives an unavailable option its reason, picks the default, and builds <code>x_axis</code> from the old settings. The control renders through the shell's controls, labelled "X-axis".</p></div>
+      <div class="rule"><h3>Participant profile</h3><p><code>structureData.js</code> gives each point an x for each view; <code>spaghetti.js</code>, <code>inset.js</code> and <code>measureTable.js</code> read the active view; <code>aeTracks.js</code> draws the track in Study day view only and lists the events otherwise; a day-1 line in Study day view.</p></div>
+      <div class="rule"><h3>Hosts</h3><p>The eight hosts forward <code>x_axis</code> and their current view through <code>profileSettings()</code>. The QT drill-down stops passing the visit number as a study day. The outlier explorer's "Plot by" control becomes the shared control.</p></div>
+      <div class="rule"><h3>hep-explorer</h3><p><code>animation.js</code> and <code>views/scatter.js</code> step the slider by visit or by day; <code>structureData.js</code> runs the timing test on study days only and marks it not evaluated otherwise.</p></div>
+      <div class="rule"><h3>Demo app and gsm.safety</h3><p>The app's chart recipes pass <code>x_axis</code> and drop the "visit order" fallback. The gsm.safety widgets pass <code>lSettings</code> through unchanged, so <code>x_axis</code> needs no R code; examples, report workflows and tests follow the vendored v1.12.0.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="order-h">
+    <h2 id="order-h">Order and change list</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Order</th><th>Requirement</th><th>Files</th><th>Size</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Both visit and study day in the demo data</td><td><code>scripts/build-demo-data.mjs</code>, <code>scripts/demo-data-lib.mjs</code>, the three cohort scripts, <code>site/demo/*.js</code>, <code>site/data/*.csv</code>, <code>scripts/check-demo-data.mjs</code>, <code>src/hep-core/rows.js</code></td><td>2 to 3 days</td></tr>
+          <tr><td>2</td><td>One x-axis toggle</td><td><code>src/x-axis.js</code> (new), <code>src/participant-profile/*</code>, <code>src/profile-host.js</code>, the eight hosts and their <code>configure.js</code> and schemas, <code>src/outlier-explorer/*</code>, <code>src/qt-explorer.js</code>, <code>src/results-over-time/getPlugins.js</code>, <code>src/app/charts.js</code>, <code>requirements/*.md</code></td><td>about 5 days</td></tr>
+          <tr><td>3</td><td>hep-explorer's slider and timing</td><td><code>src/hep-explorer/{animation,structureData,getPlugins}.js</code>, <code>views/scatter.js</code>, <code>src/hep-explorer.js</code>, <code>src/hep-waterfall.js</code></td><td>2 days</td></tr>
+          <tr><td>4</td><td>gsm.safety takes the toggle</td><td>the vendored bundle and <code>inst/extdata/</code>, <code>R/Widget_*.R</code> docs and examples, five <code>4_modules/*.yaml</code>, their tests</td><td>1 day</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Raised by a member of the working group, from a review of the Safety Histogram on 3 November 2026. Approved by @jwildfire on 11 November 2026. This design was drafted by Claude Code using Opus 5.5.</footer>
+</div>
+
+<script>
+(function () {
+  var pts = [
+    { v: "Screening", vn: -1,  d: -14, y: 0.8 },
+    { v: "Baseline",  vn: 0,   d: 1,   y: 0.9, bl: true },
+    { v: "Week 2",    vn: 4,   d: 15,  y: 1.1 },
+    { v: "Week 4",    vn: 5,   d: 29,  y: 1.6 },
+    { v: "Week 8",    vn: 7,   d: 57,  y: 2.9 },
+    { v: "Unscheduled", vn: 7.1, d: 66, y: 4.2, un: true },
+    { v: "Week 12",   vn: 9,   d: 85,  y: 2.1 },
+    { v: "Week 16",   vn: 10,  d: 113, y: 1.2 },
+    { v: "Week 26",   vn: 13,  d: 183, y: 0.9 }
+  ];
+  var aes = [ { t: "Nausea", s: 50, e: 70 }, { t: "ALT increased", s: 60, e: 92 } ];
+  var W = 860, H = 300, L = 56, R = 24, T = 20, B = 92;
+  var svg = document.getElementById("chart"), tip = document.getElementById("tip"), list = document.getElementById("ae-list");
+  var bV = document.getElementById("btn-visit"), bD = document.getElementById("btn-day"), sel = document.getElementById("sel-data"), msg = document.getElementById("msg"), box = document.getElementById("chartbox");
+  var NS = "http://www.w3.org/2000/svg", mode = "visit", cur = null, raf = null;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function el(n, a, txt) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; }
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  var yMax = 5, plotH = H - T - B;
+  function yS(y) { return T + plotH - (y / yMax) * plotH; }
+  function xVisit(i) { return L + (i + 0.5) * ((W - L - R) / pts.length); }
+  var dMin = -20, dMax = 190;
+  function xDay(d) { return L + (d - dMin) / (dMax - dMin) * (W - L - R); }
+  function target(m) { return pts.map(function (p, i) { return m === "visit" ? xVisit(i) : xDay(p.d); }); }
+  function draw(xs, m) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var fg = css("--fg"), muted = css("--muted"), line = css("--line"), acc = css("--accent"), ae = css("--ae"), dayC = css("--day"), visC = css("--visit");
+    [0, 1, 2, 3, 4, 5].forEach(function (g) {
+      svg.appendChild(el("line", { x1: L, x2: W - R, y1: yS(g), y2: yS(g), stroke: line, "stroke-width": 1 }));
+      svg.appendChild(el("text", { x: L - 8, y: yS(g) + 4, "text-anchor": "end" }, g + "×"));
+    });
+    svg.appendChild(el("line", { x1: L, x2: W - R, y1: yS(3), y2: yS(3), stroke: ae, "stroke-dasharray": "4 4", "stroke-width": 1 }));
+    svg.appendChild(el("text", { x: W - R, y: yS(3) - 5, "text-anchor": "end", fill: ae }, "3×ULN"));
+    var axisY = T + plotH;
+    if (m === "visit") {
+      pts.forEach(function (p, i) {
+        var t = el("text", { x: xVisit(i), y: axisY + 16, "text-anchor": "middle", fill: p.un ? visC : muted }, p.un ? "Unsch." : p.v.replace("Screening", "Screen."));
+        svg.appendChild(t);
+      });
+    } else {
+      [-14, 1, 29, 57, 85, 113, 141, 169].forEach(function (d) {
+        svg.appendChild(el("line", { x1: xDay(d), x2: xDay(d), y1: axisY, y2: axisY + 4, stroke: muted }));
+        svg.appendChild(el("text", { x: xDay(d), y: axisY + 16, "text-anchor": "middle" }, d));
+      });
+      svg.appendChild(el("line", { x1: xDay(1), x2: xDay(1), y1: T, y2: axisY, stroke: dayC, "stroke-dasharray": "2 3" }));
+      svg.appendChild(el("text", { x: xDay(1) + 4, y: T + 10, fill: dayC }, "Day 1 · first dose"));
+      aes.forEach(function (a, k) {
+        var y = axisY + 34 + k * 16;
+        svg.appendChild(el("rect", { x: xDay(a.s), y: y - 6, width: xDay(a.e) - xDay(a.s), height: 9, rx: 2, fill: ae, opacity: 0.85 }));
+        svg.appendChild(el("text", { x: xDay(a.e) + 6, y: y + 2 }, a.t + " (days " + a.s + "–" + a.e + ")"));
+      });
+    }
+    svg.appendChild(el("text", { x: L + (W - L - R) / 2, y: H - 8, "text-anchor": "middle", "class": "title" }, m === "visit" ? "Visit" : "Study day"));
+    svg.appendChild(el("text", { x: 14, y: T + plotH / 2, "class": "title", transform: "rotate(-90 14 " + (T + plotH / 2) + ")", "text-anchor": "middle" }, "ALT (×ULN)"));
+    var d = "M" + pts.map(function (p, i) { return xs[i].toFixed(1) + "," + yS(p.y).toFixed(1); }).join("L");
+    svg.appendChild(el("path", { d: d, fill: "none", stroke: acc, "stroke-width": 2 }));
+    pts.forEach(function (p, i) {
+      var c = el("circle", { cx: xs[i], cy: yS(p.y), r: p.un ? 6 : 5, fill: p.bl ? css("--surface") : acc, stroke: p.un ? visC : acc, "stroke-width": p.un || p.bl ? 2.5 : 1.5, tabindex: 0 });
+      var label = p.v + " · Day " + p.d + " · ALT " + p.y.toFixed(1) + "×ULN" + (p.bl ? " · baseline" : "") + (p.un ? " · unscheduled" : "");
+      c.appendChild(el("title", {}, label));
+      function show() { tip.textContent = label; }
+      c.addEventListener("mouseenter", show); c.addEventListener("focus", show); c.addEventListener("click", show);
+      svg.appendChild(c);
+    });
+  }
+  function renderList(m) {
+    list.innerHTML = "";
+    if (m === "visit") {
+      var h = document.createElement("div"); h.innerHTML = "<strong>Adverse events</strong> (listed, because a visit axis has no days to draw them on):";
+      list.appendChild(h);
+      aes.forEach(function (a) { var r = document.createElement("div"); r.textContent = "• " + a.t + ": study days " + a.s + " to " + a.e; list.appendChild(r); });
+    }
+  }
+  function go(m) {
+    mode = m;
+    bV.setAttribute("aria-pressed", m === "visit"); bD.setAttribute("aria-pressed", m === "day");
+    var to = target(m), from = cur || to;
+    renderList(m);
+    if (reduce || !cur) { cur = to; draw(to, m); return; }
+    var t0 = null; if (raf) cancelAnimationFrame(raf);
+    function step(ts) {
+      if (!t0) t0 = ts; var k = Math.min(1, (ts - t0) / 450); var e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      var xs = from.map(function (f, i) { return f + (to[i] - f) * e; });
+      cur = xs; draw(xs, m);
+      if (k < 1) raf = requestAnimationFrame(step); else cur = to;
+    }
+    raf = requestAnimationFrame(step);
+  }
+  bV.addEventListener("click", function () { go("visit"); });
+  bD.addEventListener("click", function () { if (!bD.disabled) go("day"); });
+  sel.addEventListener("change", function () {
+    var s = sel.value, neither = s === "neither";
+    bD.disabled = s !== "both"; bV.disabled = neither;
+    bD.title = s !== "both" ? "No study day in this data" : ""; bV.title = neither ? "No visit in this data" : "";
+    msg.hidden = !neither; box.hidden = neither; list.hidden = neither;
+    if (neither) { tip.textContent = ""; return; }
+    go("visit");
+    tip.textContent = s === "noday" ? "Study day is greyed out: “No study day in this data”. Visit view still works." : "Hover or tap a point.";
+  });
+  go("visit");
+  if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { draw(cur || target(mode), mode); });
+})();
+</script>
+</body>
+</html>
