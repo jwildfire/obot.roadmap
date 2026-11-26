@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>study.viz v0.1.0 — annotated demo</title>
+<meta name="description" content="The first release candidate of study.viz, the demo app carved out of safety.viz into its own repository: its own name and address, the same studies and charts, a simulated study in sections, and the records that hold the copy to its source.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#737882;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;        /* interactive: links, steps */
+  --bronze:#6c3270;      /* accent: the demo app's plum */
+  --ask:#a8640c; --askbg:#fff6e6;
+  --bad:#a23b3b; --badbg:#fff3f0;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32);overflow-wrap:anywhere}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono);font-size:.92em}
+code{overflow-wrap:anywhere}
+p{margin:0}
+
+/* ---------- masthead ---------- */
+.mast{padding:52px 0 26px}
+.eyebrow{font:600 11px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--rule2);vertical-align:middle}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:66ch;margin:14px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:18px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+
+/* ---------- callouts ---------- */
+.note{margin:22px 0 0;padding:16px 20px 18px;border:1px solid var(--rule);border-left:3px solid var(--bronze);border-radius:5px;background:var(--panel);font-size:15px;color:var(--ink2)}
+.note>.lbl{margin-bottom:10px}
+.note ol,.note ul{margin:0;padding-left:20px}
+.note li+li{margin-top:7px}
+.note p+p,.note p+ul,.note ul+p,.note ol+p,.note p+ol{margin-top:9px}
+.ask{border-left-color:var(--ask);background:var(--askbg);border-color:#ecd9b4;border-left-color:var(--ask)}
+.ask h3{font-size:17px;margin:20px 0 0;color:var(--ink)}
+.ask h3:first-of-type{margin-top:16px}
+.lbl{font:600 10.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+.ask>.lbl{color:var(--ask)}
+.list{margin:14px 0 0;padding-left:20px;max-width:76ch;font-size:15.5px;color:var(--ink2)}
+.list li+li{margin-top:7px}
+
+/* ---------- steps to try ---------- */
+.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:12px}
+.steps li{counter-increment:s;position:relative;padding-left:34px}
+.steps li+li{margin-top:0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;border:1px solid var(--blue);color:var(--blue);display:grid;place-items:center;font:600 11.5px/1 var(--mono)}
+.steps .do{display:block;color:var(--ink)}
+.steps .see{display:block;color:var(--ink2);font-size:14.5px}
+
+/* ---------- contents ---------- */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:14px 16px 16px;border:0;border-left:1px solid var(--rule);border-top:1px solid var(--rule)}
+.toc a:nth-child(-n+4){border-top:0}
+.toc a:nth-child(4n+1){border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+/* ---------- sections ---------- */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+.src{margin:10px 0 0;font-size:13.5px;color:var(--mute);max-width:86ch}
+.src .dot{margin:0 6px}
+h3{font-size:19px;margin:42px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+/* ---------- figures ---------- */
+figure{margin:20px 0 0;position:relative}
+a.frame{position:relative;display:block;border:1px solid var(--rule);border-radius:5px;overflow:hidden;background:var(--panel);line-height:0}
+a.frame:hover{border-color:var(--rule2)}
+.frame img{display:block;width:100%;height:auto}
+.mk{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--bronze);color:#fff;font:700 12px/22px var(--mono);text-align:center;box-shadow:0 0 0 2px #fff,0 1px 5px rgba(0,0,0,.4)}
+.mk.sm{width:16px;height:16px;font-size:9.5px;line-height:16px;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.4)}
+.cap{margin:12px 0 0;font-size:14.5px;color:var(--ink2);max-width:80ch}
+.legend{list-style:none;counter-reset:l;margin:12px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;font-size:14.5px;color:var(--ink2)}
+.legend li{counter-increment:l;position:relative;padding-left:30px}
+.legend li::before{content:counter(l);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--bronze);color:#fff;font:700 11px/20px var(--mono);text-align:center}
+.swap>input{position:absolute;opacity:0;pointer-events:none}
+.switch{display:inline-flex;border:1px solid var(--rule2);border-radius:999px;overflow:hidden;margin:0 0 10px;background:var(--panel)}
+.switch label{padding:8px 15px;font:600 12px/1 var(--mono);letter-spacing:.04em;color:var(--mute);cursor:pointer;user-select:none}
+.swap>input:nth-of-type(1):checked~.switch label:nth-of-type(1),
+.swap>input:nth-of-type(2):checked~.switch label:nth-of-type(2){background:var(--bronze);color:#fff}
+.swap>input:focus-visible~.switch{outline:2px solid var(--blue);outline-offset:2px}
+.swap>input:nth-of-type(1):checked~.frames .after,
+.swap>input:nth-of-type(2):checked~.frames .before,
+.swap>input:nth-of-type(1):checked~figcaption .is-after,
+.swap>input:nth-of-type(2):checked~figcaption .is-before{display:none}
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,300px));gap:24px;margin-top:20px;align-items:start}
+.phones figure{margin:0}
+.states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px;margin-top:20px;align-items:start}
+.states figure{margin:0}
+.states .cap{margin-top:8px}
+.states .lbl{margin:0 0 6px}
+.states .legend,.phones .legend{grid-template-columns:1fr}
+.views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 24px;margin-top:20px;align-items:start}
+.views figure{margin:0}
+.views .cap{margin-top:8px;font-size:13.5px}
+.views .lbl{margin:0 0 6px}
+.phones .lbl{margin:0 0 6px}
+.phones .legend{grid-template-columns:1fr}
+/* a button of the app's, inside a quoted sentence */
+.key{display:inline-block;padding:0 7px;margin:0 1px;border:1px solid var(--rule2);border-radius:999px;background:var(--panel);font:600 10.5px/1.7 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink2);white-space:nowrap;vertical-align:.08em}
+/* a colour read from the app */
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;vertical-align:-.02em;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+h4{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:20px 0 0}
+h4:first-child{margin-top:0}
+.words{margin:8px 0 0;display:grid;grid-template-columns:minmax(120px,170px) 1fr;gap:7px 18px}
+.words dt{font-size:13.5px;color:var(--mute);padding-top:1px}
+.words dd{margin:0;color:var(--ink)}
+.try{border-left-color:var(--blue)}
+.key3 ul{list-style:none;padding-left:0}
+.rulings{margin:0;padding:0;list-style:none;counter-reset:r}
+.rulings>li{counter-increment:r;position:relative;padding-left:38px}
+.rulings>li+li{margin-top:20px}
+.rulings>li::before{content:counter(r);position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:var(--ask);color:#fff;display:grid;place-items:center;font:700 12px/1 var(--mono)}
+.rulings h3,.ask .rulings h3:first-of-type{font-size:17px;margin:0 0 6px;color:var(--ink)}
+.rulings ul{margin:0;padding-left:18px}
+
+/* ---------- closing ---------- */
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+footer hr{border:0;border-top:1px solid var(--rule);margin:18px 0 14px}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(-n+4){border-top:1px solid var(--rule)}
+  .toc a:nth-child(-n+2){border-top:0}
+  .toc a:nth-child(4n+1){border-left:1px solid var(--rule)}
+  .toc a:nth-child(2n+1){border-left:0}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .mast{padding-top:34px}
+  .toc{grid-template-columns:1fr}
+  .toc a,.toc a:nth-child(-n+4),.toc a:nth-child(4n+1){border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .legend{grid-template-columns:1fr}
+  .states{grid-template-columns:1fr}
+  .views{grid-template-columns:1fr}
+  .words{grid-template-columns:1fr;gap:2px 0}
+  .words dd{margin-bottom:10px}
+  .rulings>li{padding-left:32px}
+  .mk{width:16px;height:16px;font-size:9.5px;line-height:16px;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.4)}
+  .note{padding:14px 15px 16px}
+}
+
+
+/* ---------- v1.11.3: the listing's columns ---------- */
+.cols{margin:0;padding:12px 14px 12px 34px;border:1px solid var(--rule);border-radius:5px;background:var(--panel);font-size:14px;color:var(--ink)}
+.cols li+li{margin-top:2px}
+.narrow{max-width:760px}
+
+/* ---------- v1.11.3: before and after, side by side; stacked on a phone ---------- */
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px;margin-top:20px;align-items:start}
+.pair figure{margin:0}
+.pair .lbl{margin:0 0 6px}
+.pair .lbl.now{color:var(--bronze)}
+.pair .legend{grid-template-columns:1fr}
+.pair+.cap{margin-top:10px}
+.pair~.pair{margin-top:28px}
+@media (max-width:640px){
+  .pair{grid-template-columns:1fr}
+}
+/* a long chip in a step wraps rather than widening the page at 390px */
+.steps .key{white-space:normal}
+.lbl{overflow-wrap:anywhere}
+
+/* ---------- v1.12.0: a single still, a decided-in-the-build callout, a reads table ---------- */
+.solo{max-width:760px;margin-top:22px}
+.solo .lbl{margin:0 0 6px}
+.solo .lbl.now{color:var(--bronze)}
+.solo .legend{grid-template-columns:1fr}
+.decided{border-left-color:var(--ask);background:var(--askbg);border-color:#ecd9b4;border-left-color:var(--ask)}
+.decided>.lbl{color:var(--ask)}
+.found{border-left-color:var(--bad);background:var(--badbg);border-color:#efd0c8;border-left-color:var(--bad)}
+.found>.lbl{color:var(--bad)}
+.reads{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px;color:var(--ink2)}
+.reads th,.reads td{text-align:left;vertical-align:top;padding:8px 10px;border-top:1px solid var(--rule)}
+.reads th{font:600 10.5px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);border-top:0}
+.reads td:first-child{color:var(--ink)}
+.reads td{overflow-wrap:anywhere}
+.list.cites{font-size:14px}
+@media (max-width:640px){
+  .reads,.reads tbody,.reads tr,.reads td{display:block;width:100%}
+  .reads thead{display:none}
+  .reads tr{border-top:1px solid var(--rule);padding:8px 0}
+  .reads td{border:0;padding:2px 0}
+  .reads td[data-h]::before{content:attr(data-h) ": ";font:600 10.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+}
+
+/* ---------- v1.13.0: PNG stills at their own size, a status word, a wide table ---------- */
+/* A still narrower than the column is shown at its own size, not stretched. */
+figure.own{max-width:var(--w,760px)}
+.solo.wide{max-width:none}
+.views .lbl.now,.solo .lbl.now{color:var(--bronze)}
+#status-word{color:var(--bronze)}
+.reads.fit{table-layout:auto}
+.reads td.num,.reads th.num{text-align:right;white-space:nowrap}
+.toc a:nth-child(n+5){border-top:1px solid var(--rule)}
+.mast .note:first-of-type{margin-top:26px}
+.missing{display:grid;place-items:center;min-height:180px;padding:18px;border:1px dashed var(--rule2);border-radius:5px;background:var(--panel);color:var(--mute);font:500 13px/1.5 var(--mono);text-align:center}
+@media (max-width:640px){
+  .reads td.num{text-align:left}
+}
+
+</style>
+</head><body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>study.viz</span><span class="dot"></span><span>v0.1.0</span><span class="dot"></span><span id="status-word">Release candidate</span><span class="dot"></span><span>Annotated demo</span></div>
+  <h1>study.viz <span class="v">v0.1.0</span>: the demo app, in a home of its own</h1>
+  <p class="lede">study.viz is new. It is the demo app that lived inside safety.viz, copied into its own repository under its own name. safety.viz keeps the charts. study.viz keeps the app that hosts them. This page shows what is particular to study.viz; what the app does is walked in full on the <a href="../sv-v1.13.0-demo/">safety.viz v1.13.0 demo page</a>.</p>
+  <div class="facts"><span>Captured 26 November 2026</span><span>the dev build, dev at 3b7a8f36</span><span>27 of 27 checks held</span><span>1,400 by 900 window, light theme</span></div>
+
+  <div class="note">
+    <div class="lbl">Where it stands</div>
+    <ul>
+      <li id="rc-links">study.viz v0.1.0 is a release candidate, the first for this repository. It is not released until @jwildfire approves the candidate. The stills on this page are of the dev build the candidate is cut from.</li>
+      <li>Until the release, the app is at <a href="https://jwildfire.github.io/study.viz/dev/">jwildfire.github.io/study.viz/dev/</a>. After the release it is at <a href="https://jwildfire.github.io/study.viz/">jwildfire.github.io/study.viz/</a>; that address has no page before then.</li>
+      <li>Every study on this page is public or made up. The demo studies come from the public CDISC pilot study, and every row of a simulated study is synthetic.</li>
+      <li>Nothing in the app is qualified. Its own label reads “Exploratory”: every result should be confirmed.</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <div class="lbl">In short</div>
+    <ul>
+      <li>The app has its own address and its own name. Its header reads “study.viz”, its browser tab “study.viz demo”, and its footer “study.viz 0.1.0 · safety.viz 1.12.0”.</li>
+      <li>It does what the safety.viz demo does. The capture read both apps and found the same tabs, the same 18 charts, the same 7 studies and the same Studies page.</li>
+      <li>A simulated study is shown in sections: Overview, Design, Data, One participant, Reporting.</li>
+      <li>No chart's source is in study.viz. The charts are safety.viz's built file, copied byte for byte.</li>
+      <li>Every copied file is recorded with a checksum against the safety.viz commit it came from, and a check fails when a file and the record disagree.</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <div class="lbl">What to look at</div>
+    <ol>
+      <li>Open the <a href="https://jwildfire.github.io/study.viz/dev/">app</a>. Read the name in the header, the title of the browser tab, and the last line of the footer.</li>
+      <li>Press the chip that reads “Pilot study”. The list is the one the safety.viz demo shows.</li>
+      <li>Choose <span class="key">PILOT-PROTOCOL</span>, then press <span class="key">Overview</span>, and walk the sections.</li>
+      <li>Read section 5 of this page: what is recorded, and what was compared.</li>
+    </ol>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#home"><span class="ref">01</span><span class="t">Its own home and name</span><span class="s">The header, the tab, the footer</span></a>
+  <a href="#same"><span class="ref">02</span><span class="t">The same app</span><span class="s">Read beside the safety.viz demo</span></a>
+  <a href="#sections"><span class="ref">03</span><span class="t">A study in sections</span><span class="s">study.builder's study view</span></a>
+  <a href="#build"><span class="ref">04</span><span class="t">Built with R</span><span class="s">One study, built and scored</span></a>
+  <a href="#held"><span class="ref">05</span><span class="t">How it is held</span><span class="s">The record, the charts, the tests</span></a>
+  <a href="#not"><span class="ref">06</span><span class="t">Not checked</span><span class="s">What this page does not show</span></a>
+</nav>
+
+<div class="cut"><span>01 <em>/ its own home and name</em></span></div>
+<section id="home">
+  <div class="hd"><h2>The app has its own home and name</h2></div>
+  <p class="what">In safety.viz the app was one page of the docs site, at <code>demo/</code>. Here the app is the site: it opens at the site's root.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">The app as it opens</div><a class="frame" href="media/home.png"><img src="media/home.png" width="1400" height="560" alt="The study.viz demo app as it opens: a header with the name study.viz and the words Demo app, a chip naming the study, the tabs, and the Safety Histogram on the Pilot study." loading="lazy"><span class="mk" style="left:8.73%;top:10.68%" aria-hidden="true">1</span></a><ol class="legend"><li>The wordmark reads study.viz. It is not a link: there is no docs site behind it here.</li></ol></figure>
+<p class="cap">The browser tab is titled “Histogram · study.viz demo”.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">The footer</div><a class="frame" href="media/footer.png"><img src="media/footer.png" width="1400" height="99" alt="The footer of the app: a line about files and R, then the links safety.viz chart docs and gallery, The standard domains, Download as one file, Source on GitHub, then study.viz 0.1.0 · safety.viz 1.12.0." loading="lazy"><span class="mk" style="left:89.07%;top:59.66%" aria-hidden="true">1</span><span class="mk" style="left:39.16%;top:60.67%" aria-hidden="true">2</span></a><ol class="legend"><li>“study.viz 0.1.0 · safety.viz 1.12.0”: the app's own version, then the version of the charts it carries.</li><li>“safety.viz chart docs and gallery”: the docs are safety.viz's, and the link says so.</li></ol></figure>
+<p class="cap">Two versions, because two things are here: the app, and the charts it hosts.</p>
+  <dl class="words">
+    <dt>Header</dt><dd>“study.viz”, with the words “Demo app” beside it.</dd>
+    <dt>Browser tab</dt><dd>“Histogram · study.viz demo”: the chart or page, then “study.viz demo”.</dd>
+    <dt>Footer</dt><dd>“study.viz 0.1.0 · safety.viz 1.12.0”.</dd>
+    <dt>safety.viz chart docs and gallery</dt><dd>Leads to <a href="https://jwildfire.github.io/safety.viz/">jwildfire.github.io/safety.viz/</a>. The chart gallery and each chart's own pages stay on safety.viz's site.</dd>
+    <dt>Source on GitHub</dt><dd>Leads to <a href="https://github.com/jwildfire/study.viz">github.com/jwildfire/study.viz</a>.</dd>
+    <dt>Download as one file</dt><dd>Leads to a file named <code>study.viz-app.html</code>. It was not opened here.</dd>
+  </dl>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Open the <a href="https://jwildfire.github.io/study.viz/dev/">app</a>.</span><span class="see">The header reads study.viz. The browser tab reads “Histogram · study.viz demo”.</span></li><li><span class="do">Scroll to the foot of the page.</span><span class="see">The last line reads “study.viz 0.1.0 · safety.viz 1.12.0”.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>02 <em>/ the same app</em></span></div>
+<section id="same">
+  <div class="hd"><h2>It does what the safety.viz demo does</h2></div>
+  <p class="what">The capture opened study.viz and the <a href="https://jwildfire.github.io/safety.viz/dev/demo/">safety.viz demo</a> built from its dev branch, read the same things from each, and compared them. They were the same.</p>
+  <table class="reads">
+    <thead><tr><th>What was read</th><th>In both apps</th></tr></thead>
+    <tbody>
+      <tr><td>The tabs</td><td data-h="Both">Overview, then Labs and vitals 9, ECG 1, Adverse events 3, Biomarkers 5, RBQM</td></tr>
+      <tr><td>The charts under the tabs</td><td data-h="Both">18, with the same names and the same ready marks</td></tr>
+      <tr><td>The studies under the chip</td><td data-h="Both">4 marked DEMO (Pilot study, Renamed columns, Liver cohort, labs only, RBQM study) and 3 marked SIMULATED (READY-P1, READY-P2, PILOT-PROTOCOL)</td></tr>
+      <tr><td>The Studies page</td><td data-h="Both">3 ways to add a study (From your files, Describe a simulated study, From a protocol) and 7 studies listed</td></tr>
+      <tr><td>On the study it opens with</td><td data-h="Both">“18 of 18 charts supported by the loaded data”</td></tr>
+    </tbody>
+  </table>
+  <p class="cap">What differs is the name: the header, the tab title, the footer and its links, as section 1 shows.</p>
+  <div class="views"><figure><div class="lbl now">The chip, pressed</div><a class="frame" href="media/chip-menu.png"><img src="media/chip-menu.png" width="760" height="525" alt="The list under the chip in study.viz: Pilot study, DEMO; Renamed columns, DEMO; Liver cohort, labs only, DEMO; RBQM study, DEMO; READY-P1, SIMULATED; READY-P2, SIMULATED; PILOT-PROTOCOL, SIMULATED; then the buttons ADD A STUDY and ALL STUDIES." loading="lazy"></a><p class="cap">The list of studies, with <span class="key">ADD A STUDY</span> and <span class="key">ALL STUDIES</span> under it.</p></figure>
+<figure><div class="lbl now">The Studies page</div><a class="frame" href="media/studies.png"><img src="media/studies.png" width="1400" height="640" alt="The Studies page in study.viz: three ways to add a study, then the list of studies." loading="lazy"></a><p class="cap">CHOOSE FILES, DESCRIBE A STUDY, OPEN THE BUILDER, then every study.</p></figure></div>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">A chart tab</div><a class="frame" href="media/chart.png"><img src="media/chart.png" width="1400" height="640" alt="The Hepatic Explorer in study.viz, on the Pilot study." loading="lazy"></a></figure>
+<p class="cap">The Hepatic Explorer. The chart is safety.viz's; study.viz draws it from the copied bundle (section 5).</p>
+  <ul class="list"><li>For the chip, the Studies page, the builder, the files and the mapping in detail, see the <a href="../sv-v1.13.0-demo/">safety.viz v1.13.0 demo page</a>. Each of its steps works the same here.</li></ul>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">In the <a href="https://jwildfire.github.io/study.viz/dev/">app</a>, press the chip.</span><span class="see">7 studies: 4 demo, 3 simulated.</span></li><li><span class="do">Press <span class="key">ALL STUDIES</span>.</span><span class="see">The Studies page, titled “Studies · study.viz demo” in the browser tab.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>03 <em>/ a study in sections</em></span></div>
+<section id="sections">
+  <div class="hd"><h2>A simulated study is shown in sections</h2></div>
+  <p class="what">For a simulated study the Overview tab is study.builder's study view, from its v0.5.0 release. The views are grouped into sections, and a section with more than one view has a second row of tabs.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">PILOT-PROTOCOL · Overview</div><a class="frame" href="media/view-overview.png"><img src="media/view-overview.png" width="1400" height="900" alt="The Overview tab on PILOT-PROTOCOL in study.viz. A line of facts: Phase 2, Inflammation, 120 participants, 12 sites, 7 months, Seed 505. On the left the study's tables by layer: RAW 13, RAW.RBQM 6, ADAM 6, ANALYSIS 19, REPORTING 4. On the right the sections Overview, Design, Data, One participant, Reporting, with Overview open." loading="lazy"></a></figure>
+<p class="cap">The sections: Overview, Design, Data, One participant, Reporting. The facts in the line: Phase 2, Inflammation, 120 participants, 12 sites, 7 months, Seed 505. This ready-made study opened with no R.</p>
+  <div class="views"><figure><div class="lbl now">Design · Schedule</div><a class="frame" href="media/view-design.png"><img src="media/view-design.png" width="1132" height="733" alt="The Design section, Schedule view: the protocol’s visits across the top and its activities down the side, with a dot where an activity happens at a visit." loading="lazy"></a><p class="cap">Design has two views, Protocol and Schedule. It appears only when the study followed a protocol.</p></figure>
+<figure><div class="lbl now">Data · Pipeline</div><a class="frame" href="media/view-data.png"><img src="media/view-data.png" width="1132" height="733" alt="The Data section, Pipeline view: the settings the study was asked to be, then every table by layer with the workflow that built it." loading="lazy"></a><p class="cap">Data has three views: Pipeline, Tables and Columns.</p></figure>
+<figure><div class="lbl now">One participant</div><a class="frame" href="media/view-participant.png"><img src="media/view-participant.png" width="1132" height="733" alt="The One participant section: a chooser for the participant, then that participant’s rows in each table." loading="lazy"></a><p class="cap">One participant, followed across every table.</p></figure>
+<figure><div class="lbl now">Reporting · Efficacy</div><a class="frame" href="media/view-reporting.png"><img src="media/view-reporting.png" width="1132" height="733" alt="The Reporting section, Efficacy view: a line chart of a simulated score by arm, with a table under it." loading="lazy"></a><p class="cap">Reporting has two views here: Efficacy and Adverse events.</p></figure></div>
+  <ul class="list"><li>study.builder has RBQM and Safety views of its own. They are left out here, in the study view and in the builder. The app’s RBQM tab and its chart tabs show the same study.</li><li>On a window 1,400 wide, each of the five views stayed inside the page: none made it scroll sideways.</li></ul>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Choose <span class="key">PILOT-PROTOCOL</span> from the chip, then press <span class="key">Overview</span>.</span><span class="see">The sections are Overview, Design, Data, One participant, Reporting.</span></li><li><span class="do">Press <span class="key">Design</span>, then <span class="key">Schedule</span>.</span><span class="see">The protocol’s visits run across the top, its activities down the side.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>04 <em>/ built with R</em></span></div>
+<section id="build">
+  <div class="hd"><h2>A study built with R, then scored on the RBQM tab</h2></div>
+  <p class="what">One study was built here, small: 24 participants at 3 sites over 3 months. R ran in the browser. The same R then ran the site metrics.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">Built</div><a class="frame" href="media/built.png"><img src="media/built.png" width="1400" height="760" alt="The built study, DEMO-BUILT, in study.viz: a badge reading Built in 9.3 s, the button Load into the demo, the facts Phase 1, Oncology, 24 participants, 3 sites, 3 months, Seed 11, and the study view under them." loading="lazy"><span class="mk" style="left:88.27%;top:23.34%" aria-hidden="true">1</span></a><ol class="legend"><li><span class="key">Load into the demo</span> hands the study to the charts and the RBQM tab.</li></ol></figure>
+<p class="cap">“Built in 9.3 s”. From pressing <span class="key">Build the study</span> to this screen took 61 seconds, which includes starting R.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">The RBQM tab: 8 OF 8</div><a class="frame" href="media/rbqm.png"><img src="media/rbqm.png" width="1400" height="470" alt="The RBQM tab in study.viz on the built study: the tab reads RBQM 8 OF 8 and a site overview table lists the study's sites with a mark for each metric." loading="lazy"></a></figure>
+<p class="cap">“R ran 8 of 8 metrics on the 9 loaded files in 3.8 seconds.” Starting it took 7 seconds and made 0 requests to R's own host: R was already running.</p>
+  <ul class="list"><li>The build said its steps as R took them: “Start R in this browser”, “Install R’s packages”, “Fetch gsm.datasim”, “Simulate the study and build its layers”.</li><li>After <span class="key">Load into the demo</span> the chip read “DEMO-BUILT”, and the app said “18 of 18 charts supported by the loaded data”.</li><li>Times are from one run on one machine. The form, a protocol in the form, and both orders of starting R are on the <a href="../sv-v1.13.0-demo/#build">safety.viz v1.13.0 demo page</a>.</li></ul>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Press the chip, <span class="key">ADD A STUDY</span>, then <span class="key">Describe a study</span>. Keep the numbers small and press <span class="key">Build the study</span>.</span><span class="see">Allow about a minute the first time, while R starts.</span></li><li><span class="do">Press <span class="key">Load into the demo</span>, open the <span class="key">RBQM</span> tab and press <span class="key">Start R</span>.</span><span class="see">The site overview appears in seconds.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>05 <em>/ how it is held</em></span></div>
+<section id="held">
+  <div class="hd"><h2>How the copy is held to its source</h2></div>
+  <p class="what">study.viz began as a copy. A copy can drift without anyone noticing, so the repository keeps a record of what was copied and checks it on every change. The capture read the records from the repository at commit 3b7a8f36 and tested two of them itself.</p>
+  <table class="reads">
+    <thead><tr><th>What</th><th>How it is held</th><th>Checked by this page</th></tr></thead>
+    <tbody>
+      <tr><td>The app's source, its tests and what they read</td><td data-h="Held">299 files copied from safety.viz at commit <a href="https://github.com/jwildfire/safety.viz/commit/b0c9385142e88cc106236f4d3e37a69b860640d4">b0c93851</a>. The record, <code>SOURCE.json</code>, lists each with its checksum and size. A line that differs from safety.viz's, such as the name, is listed with its reason. <code>npm run copied:check</code> fails when a file and the record disagree.</td><td data-h="Checked">All 299 entries carry a checksum. 11 of the files were fetched and their checksums worked out again: all matched. The command itself was not run.</td></tr>
+      <tr><td>The charts</td><td data-h="Held">No chart's source is in study.viz. The charts are safety.viz 1.12.0's built file, <code>safety.viz.esm.js</code>, copied from safety.viz at commit <a href="https://github.com/jwildfire/safety.viz/commit/f94fea414c888b0ad1d628598bf023b24a659038">f94fea41</a>. <code>npm run safety-viz:check</code> holds the copy to its record.</td><td data-h="Checked">The copy and safety.viz's own file were both fetched. They are the same 1,567,717 bytes, with the checksum the record names (it begins 4376a4f0e507).</td></tr>
+      <tr><td>The pictures the browser tests are compared with</td><td data-h="Held">76 pictures are listed as left out of the record, each with its reason: they show the app's name, so study.viz draws its own.</td><td data-h="Checked">Counted in the record. 67 pictures are stored in the repository.</td></tr>
+      <tr><td>study.builder</td><td data-h="Held">The copy is its v0.5.0 release, 90 files with a record of their own, taken from safety.viz with the app.</td><td data-h="Checked">Read from the record. Not compared with study.builder's release.</td></tr>
+      <tr><td>The tests</td><td data-h="Held">One check, “Build, format, and test”, runs on every pull request. It runs the unit tests and the browser tests, and on its Linux runner each stored picture is compared with a fresh one. On commit 3b7a8f36 it ran 131 browser tests and all passed (<a href="https://github.com/jwildfire/study.viz/actions/runs/45853688302">the run</a>).</td><td data-h="Checked">Not run here. The run's commit and its result were read; the count of 131 is from the run's own log.</td></tr>
+    </tbody>
+  </table>
+  <ul class="list"><li>Two safety.viz commits are named, and each record names its own. The app's files are held to safety.viz at b0c93851: 299 files with checksums. The chart bundle's record names f94fea41, and the bundle there is byte for byte the copy. The capture fetched the bundle at b0c93851 too: it is the same file.</li><li>The record is the proof of the copy, not a lock on the app. The repository says it will be retired once safety.viz no longer carries the app.</li><li>What each release holds, and the commands above, are in study.viz's <a href="https://github.com/jwildfire/study.viz/blob/dev/NEWS.md">NEWS</a>, <a href="https://github.com/jwildfire/study.viz/blob/dev/README.md">README</a> and <a href="https://github.com/jwildfire/study.viz/blob/dev/CONTRIBUTING.md">CONTRIBUTING</a>.</li></ul>
+</section>
+
+<div class="cut"><span>06 <em>/ not checked</em></span></div>
+<section id="not">
+  <div class="note">
+    <div class="lbl">Not checked on this page</div>
+    <ul>
+      <li>The tests. They run in the repository's own check. This page ran none of them; the count is from the check's own run, linked in section 5.</li>
+      <li>The other places the app names itself: the mapping file it saves, its console warnings, and the single file that opens from disk with no network. The repository's CONTRIBUTING lists them.</li>
+      <li>Running it on your own machine with <code>npm run demo</code>.</li>
+      <li>Files of your own, building from a protocol, a phone, and any browser but Chromium.</li>
+      <li>Whether a result is right. This page shows that the app is the same app under its own name, not that a chart or a simulated study is correct.</li>
+    </ul>
+  </div>
+  <div class="note found">
+    <div class="lbl">Noticed while capturing</div>
+    <ul>
+      <li>The footer names safety.viz 1.12.0. That is the chart bundle study.viz carries, not the newest safety.viz.</li>
+      <li>The released address, jwildfire.github.io/study.viz/, has no page until the release.</li>
+      <li>What the safety.viz page notes about the app's wording applies here too, because it is the same app: see <a href="../sv-v1.13.0-demo/#found">its section 8</a>.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="cut"><span>07 <em>/ where to check it</em></span></div>
+<section>
+  <div class="close">
+    <div>
+      <h3>The release</h3>
+      <ul>
+        <li>The <a href="https://github.com/jwildfire/study.viz/blob/dev/NEWS.md">release notes</a>, section v0.1.0.</li>
+        <li>The app, until the release: <a href="https://jwildfire.github.io/study.viz/dev/">the dev build</a>. After it: <a href="https://jwildfire.github.io/study.viz/">the released app</a>.</li>
+        <li>The repository: <a href="https://github.com/jwildfire/study.viz">jwildfire/study.viz</a>.</li>
+        <li>The requirement it answers (<a href="https://github.com/jwildfire/obot.roadmap/issues/440">hub #440</a>); the study view in sections (<a href="https://github.com/jwildfire/study.viz/issues/16">study.viz #16</a>).</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Beside it</h3>
+      <ul>
+        <li><a href="../sv-v1.13.0-demo/">The safety.viz v1.13.0 demo page</a>: what the app does, in detail.</li>
+        <li><a href="https://github.com/jwildfire/safety.viz">safety.viz</a>: the charts, their gallery and their docs.</li>
+        <li><a href="https://github.com/jwildfire/study.builder">study.builder</a>: the builder and the study view.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Data: the Pilot study is the public, de-identified CDISC Pilot 01 study (pharmaverseadam), with synthetic liver and kidney groups added to the labs. PILOT-PROTOCOL and DEMO-BUILT are simulated by gsm.datasim: every row is made up. No real participant appears on this page.</p>
+  <p>Captured with Playwright, headless Chromium, from <a href="https://jwildfire.github.io/study.viz/dev/">the dev build</a>, and compared with <a href="https://jwildfire.github.io/safety.viz/dev/demo/">the safety.viz demo</a>. One part of the capture starts real R in the browser. The records in section 5 were read from the public repository with no sign-in. Every label, count, checksum and time quoted was read by the script, and 27 checks held them. How it was made, and how to take the stills again: <a href="https://github.com/jwildfire/obot.roadmap/tree/main/reports/study-viz-v0.1.0-demo">this page’s folder</a>.</p>
+  <hr>
+  <p>This page was drafted by Claude Code using Fable 5.2.</p>
+</footer>
+
+</div>
+</body></html>
