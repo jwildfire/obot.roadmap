@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>safety.viz v1.13.0 — annotated demo</title>
+<meta name="description" content="What safety.viz v1.13.0 adds to its demo app, with stills and steps to try: a chip that names the study in use, a Studies page, simulated studies shown in sections, a study built with R in the browser, and what each loaded file holds.">
+<style>
+:root{
+  --paper:#faf7f0; --panel:#fffdf9; --ink:#17191c; --ink2:#454a51; --mute:#737882;
+  --rule:#e2dccf; --rule2:#c8bfa9;
+  --blue:#2f6fa8;        /* interactive: links, steps */
+  --bronze:#6c3270;      /* accent: the demo app's plum */
+  --ask:#a8640c; --askbg:#fff6e6;
+  --bad:#a23b3b; --badbg:#fff3f0;
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(47,111,168,.32);overflow-wrap:anywhere}
+a:hover{border-bottom-color:var(--blue)}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.15;margin:0}
+code,.mono{font-family:var(--mono);font-size:.92em}
+code{overflow-wrap:anywhere}
+p{margin:0}
+
+/* ---------- masthead ---------- */
+.mast{padding:52px 0 26px}
+.eyebrow{font:600 11px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--rule2);vertical-align:middle}
+h1{font-size:clamp(30px,5vw,46px);margin:14px 0 0}
+h1 .v{color:var(--bronze)}
+.lede{max-width:66ch;margin:14px 0 0;font-size:17.5px;color:var(--ink2)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:18px 0 0;font:500 12.5px/1.5 var(--mono);color:var(--mute)}
+
+/* ---------- callouts ---------- */
+.note{margin:22px 0 0;padding:16px 20px 18px;border:1px solid var(--rule);border-left:3px solid var(--bronze);border-radius:5px;background:var(--panel);font-size:15px;color:var(--ink2)}
+.note>.lbl{margin-bottom:10px}
+.note ol,.note ul{margin:0;padding-left:20px}
+.note li+li{margin-top:7px}
+.note p+p,.note p+ul,.note ul+p,.note ol+p,.note p+ol{margin-top:9px}
+.ask{border-left-color:var(--ask);background:var(--askbg);border-color:#ecd9b4;border-left-color:var(--ask)}
+.ask h3{font-size:17px;margin:20px 0 0;color:var(--ink)}
+.ask h3:first-of-type{margin-top:16px}
+.lbl{font:600 10.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+.ask>.lbl{color:var(--ask)}
+.list{margin:14px 0 0;padding-left:20px;max-width:76ch;font-size:15.5px;color:var(--ink2)}
+.list li+li{margin-top:7px}
+
+/* ---------- steps to try ---------- */
+.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:12px}
+.steps li{counter-increment:s;position:relative;padding-left:34px}
+.steps li+li{margin-top:0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;border:1px solid var(--blue);color:var(--blue);display:grid;place-items:center;font:600 11.5px/1 var(--mono)}
+.steps .do{display:block;color:var(--ink)}
+.steps .see{display:block;color:var(--ink2);font-size:14.5px}
+
+/* ---------- contents ---------- */
+.toc{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:30px 0 0;display:grid;grid-template-columns:repeat(4,1fr)}
+.toc a{display:block;padding:14px 16px 16px;border:0;border-left:1px solid var(--rule);border-top:1px solid var(--rule)}
+.toc a:nth-child(-n+4){border-top:0}
+.toc a:nth-child(4n+1){border-left:0}
+.toc a:hover{background:var(--panel)}
+.toc .ref{font:600 11px/1 var(--mono);color:var(--bronze);letter-spacing:.04em}
+.toc .t{display:block;margin-top:7px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);line-height:1.25}
+.toc .s{display:block;margin-top:5px;font-size:12.5px;color:var(--mute);line-height:1.4}
+
+/* ---------- sections ---------- */
+.cut{position:relative;margin:64px 0 0;height:0;border-top:1px dashed var(--rule2)}
+.cut span{position:absolute;top:-9px;left:0;background:var(--paper);padding-right:14px;font:600 12px/1 var(--mono);color:var(--bronze);letter-spacing:.06em}
+.cut span em{font-style:normal;color:var(--mute)}
+section{padding-top:26px}
+.hd{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h2{font-size:clamp(22px,3vw,29px)}
+.what{max-width:70ch;margin:12px 0 0;font-size:17px;color:var(--ink2)}
+.src{margin:10px 0 0;font-size:13.5px;color:var(--mute);max-width:86ch}
+.src .dot{margin:0 6px}
+h3{font-size:19px;margin:42px 0 0}
+h3+.what{margin-top:8px;font-size:15.5px}
+
+/* ---------- figures ---------- */
+figure{margin:20px 0 0;position:relative}
+a.frame{position:relative;display:block;border:1px solid var(--rule);border-radius:5px;overflow:hidden;background:var(--panel);line-height:0}
+a.frame:hover{border-color:var(--rule2)}
+.frame img{display:block;width:100%;height:auto}
+.mk{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--bronze);color:#fff;font:700 12px/22px var(--mono);text-align:center;box-shadow:0 0 0 2px #fff,0 1px 5px rgba(0,0,0,.4)}
+.mk.sm{width:16px;height:16px;font-size:9.5px;line-height:16px;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.4)}
+.cap{margin:12px 0 0;font-size:14.5px;color:var(--ink2);max-width:80ch}
+.legend{list-style:none;counter-reset:l;margin:12px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;font-size:14.5px;color:var(--ink2)}
+.legend li{counter-increment:l;position:relative;padding-left:30px}
+.legend li::before{content:counter(l);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--bronze);color:#fff;font:700 11px/20px var(--mono);text-align:center}
+.swap>input{position:absolute;opacity:0;pointer-events:none}
+.switch{display:inline-flex;border:1px solid var(--rule2);border-radius:999px;overflow:hidden;margin:0 0 10px;background:var(--panel)}
+.switch label{padding:8px 15px;font:600 12px/1 var(--mono);letter-spacing:.04em;color:var(--mute);cursor:pointer;user-select:none}
+.swap>input:nth-of-type(1):checked~.switch label:nth-of-type(1),
+.swap>input:nth-of-type(2):checked~.switch label:nth-of-type(2){background:var(--bronze);color:#fff}
+.swap>input:focus-visible~.switch{outline:2px solid var(--blue);outline-offset:2px}
+.swap>input:nth-of-type(1):checked~.frames .after,
+.swap>input:nth-of-type(2):checked~.frames .before,
+.swap>input:nth-of-type(1):checked~figcaption .is-after,
+.swap>input:nth-of-type(2):checked~figcaption .is-before{display:none}
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,300px));gap:24px;margin-top:20px;align-items:start}
+.phones figure{margin:0}
+.states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px;margin-top:20px;align-items:start}
+.states figure{margin:0}
+.states .cap{margin-top:8px}
+.states .lbl{margin:0 0 6px}
+.states .legend,.phones .legend{grid-template-columns:1fr}
+.views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 24px;margin-top:20px;align-items:start}
+.views figure{margin:0}
+.views .cap{margin-top:8px;font-size:13.5px}
+.views .lbl{margin:0 0 6px}
+.phones .lbl{margin:0 0 6px}
+.phones .legend{grid-template-columns:1fr}
+/* a button of the app's, inside a quoted sentence */
+.key{display:inline-block;padding:0 7px;margin:0 1px;border:1px solid var(--rule2);border-radius:999px;background:var(--panel);font:600 10.5px/1.7 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink2);white-space:nowrap;vertical-align:.08em}
+/* a colour read from the app */
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;vertical-align:-.02em;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+h4{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:20px 0 0}
+h4:first-child{margin-top:0}
+.words{margin:8px 0 0;display:grid;grid-template-columns:minmax(120px,170px) 1fr;gap:7px 18px}
+.words dt{font-size:13.5px;color:var(--mute);padding-top:1px}
+.words dd{margin:0;color:var(--ink)}
+.try{border-left-color:var(--blue)}
+.key3 ul{list-style:none;padding-left:0}
+.rulings{margin:0;padding:0;list-style:none;counter-reset:r}
+.rulings>li{counter-increment:r;position:relative;padding-left:38px}
+.rulings>li+li{margin-top:20px}
+.rulings>li::before{content:counter(r);position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:var(--ask);color:#fff;display:grid;place-items:center;font:700 12px/1 var(--mono)}
+.rulings h3,.ask .rulings h3:first-of-type{font-size:17px;margin:0 0 6px;color:var(--ink)}
+.rulings ul{margin:0;padding-left:18px}
+
+/* ---------- closing ---------- */
+.close{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.close h3{margin-top:0}
+.close ul{margin:12px 0 0;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+.close li+li{margin-top:6px}
+footer{margin:64px 0 0;border-top:1px solid var(--rule);padding:22px 0 60px;font-size:13.5px;color:var(--mute)}
+footer a{color:var(--mute);border-bottom-color:var(--rule2)}
+footer hr{border:0;border-top:1px solid var(--rule);margin:18px 0 14px}
+
+@media (max-width:900px){
+  .toc{grid-template-columns:1fr 1fr}
+  .toc a:nth-child(-n+4){border-top:1px solid var(--rule)}
+  .toc a:nth-child(-n+2){border-top:0}
+  .toc a:nth-child(4n+1){border-left:1px solid var(--rule)}
+  .toc a:nth-child(2n+1){border-left:0}
+  .close{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .mast{padding-top:34px}
+  .toc{grid-template-columns:1fr}
+  .toc a,.toc a:nth-child(-n+4),.toc a:nth-child(4n+1){border-left:0;border-top:1px solid var(--rule)}
+  .toc a:first-child{border-top:0}
+  .legend{grid-template-columns:1fr}
+  .states{grid-template-columns:1fr}
+  .views{grid-template-columns:1fr}
+  .words{grid-template-columns:1fr;gap:2px 0}
+  .words dd{margin-bottom:10px}
+  .rulings>li{padding-left:32px}
+  .mk{width:16px;height:16px;font-size:9.5px;line-height:16px;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.4)}
+  .note{padding:14px 15px 16px}
+}
+
+
+/* ---------- v1.11.3: the listing's columns ---------- */
+.cols{margin:0;padding:12px 14px 12px 34px;border:1px solid var(--rule);border-radius:5px;background:var(--panel);font-size:14px;color:var(--ink)}
+.cols li+li{margin-top:2px}
+.narrow{max-width:760px}
+
+/* ---------- v1.11.3: before and after, side by side; stacked on a phone ---------- */
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px;margin-top:20px;align-items:start}
+.pair figure{margin:0}
+.pair .lbl{margin:0 0 6px}
+.pair .lbl.now{color:var(--bronze)}
+.pair .legend{grid-template-columns:1fr}
+.pair+.cap{margin-top:10px}
+.pair~.pair{margin-top:28px}
+@media (max-width:640px){
+  .pair{grid-template-columns:1fr}
+}
+/* a long chip in a step wraps rather than widening the page at 390px */
+.steps .key{white-space:normal}
+.lbl{overflow-wrap:anywhere}
+
+/* ---------- v1.12.0: a single still, a decided-in-the-build callout, a reads table ---------- */
+.solo{max-width:760px;margin-top:22px}
+.solo .lbl{margin:0 0 6px}
+.solo .lbl.now{color:var(--bronze)}
+.solo .legend{grid-template-columns:1fr}
+.decided{border-left-color:var(--ask);background:var(--askbg);border-color:#ecd9b4;border-left-color:var(--ask)}
+.decided>.lbl{color:var(--ask)}
+.found{border-left-color:var(--bad);background:var(--badbg);border-color:#efd0c8;border-left-color:var(--bad)}
+.found>.lbl{color:var(--bad)}
+.reads{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px;color:var(--ink2)}
+.reads th,.reads td{text-align:left;vertical-align:top;padding:8px 10px;border-top:1px solid var(--rule)}
+.reads th{font:600 10.5px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);border-top:0}
+.reads td:first-child{color:var(--ink)}
+.reads td{overflow-wrap:anywhere}
+.list.cites{font-size:14px}
+@media (max-width:640px){
+  .reads,.reads tbody,.reads tr,.reads td{display:block;width:100%}
+  .reads thead{display:none}
+  .reads tr{border-top:1px solid var(--rule);padding:8px 0}
+  .reads td{border:0;padding:2px 0}
+  .reads td[data-h]::before{content:attr(data-h) ": ";font:600 10.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+}
+
+/* ---------- v1.13.0: PNG stills at their own size, a status word, a wide table ---------- */
+/* A still narrower than the column is shown at its own size, not stretched. */
+figure.own{max-width:var(--w,760px)}
+.solo.wide{max-width:none}
+.views .lbl.now,.solo .lbl.now{color:var(--bronze)}
+#status-word{color:var(--bronze)}
+.reads.fit{table-layout:auto}
+.reads td.num,.reads th.num{text-align:right;white-space:nowrap}
+.toc a:nth-child(n+5){border-top:1px solid var(--rule)}
+.mast .note:first-of-type{margin-top:26px}
+.missing{display:grid;place-items:center;min-height:180px;padding:18px;border:1px dashed var(--rule2);border-radius:5px;background:var(--panel);color:var(--mute);font:500 13px/1.5 var(--mono);text-align:center}
+@media (max-width:640px){
+  .reads td.num{text-align:left}
+}
+
+</style>
+</head><body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span>safety.viz</span><span class="dot"></span><span>v1.13.0</span><span class="dot"></span><span id="status-word">Release candidate</span><span class="dot"></span><span>Annotated demo</span></div>
+  <h1>safety.viz <span class="v">v1.13.0</span>: the demo app knows its studies</h1>
+  <p class="lede">The demo app now says which study you are working with, and lists the others. A simulated study opens ready-made, or is built in the browser with R, and is shown in sections. Every loaded file shows what it holds. The release notes list changes to the demo app only.</p>
+  <div class="facts"><span>Captured 26 November 2026</span><span>the dev site, dev at f66a92a4</span><span>before: release 1.12.0, the released site</span><span>34 of 34 checks held</span><span>1,400 by 900 window, light theme</span></div>
+
+  <div class="note">
+    <div class="lbl">Where it stands</div>
+    <ul>
+      <li id="rc-links">safety.viz v1.13.0 is a release candidate. It is not released until @jwildfire approves the candidate. The stills on this page are of the dev build the candidate is cut from.</li>
+      <li>Until the release, the app with these changes is at <a href="https://jwildfire.github.io/safety.viz/dev/demo/">jwildfire.github.io/safety.viz/dev/demo/</a>. After the release it is at <a href="https://jwildfire.github.io/safety.viz/demo/">jwildfire.github.io/safety.viz/demo/</a>.</li>
+      <li>Every study on this page is public or made up. The demo studies come from the public CDISC pilot study, and every row of a simulated study is synthetic.</li>
+      <li>The stills were captured on the dev build before the release's version number was set, so its footer read “safety.viz 1.12.0”. From the release on, the app's footer reads safety.viz 1.13.0.</li>
+      <li>The release notes are short. The detail behind them is here. (<a href="https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md">NEWS.md on dev</a>)</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <div class="lbl">In short</div>
+    <ul>
+      <li>A chip in the header names the study in use. Pressing it lists 7 studies: 4 marked Demo and 3 marked Simulated.</li>
+      <li>Choosing a study keeps you on the tab you were on. A ready-made simulated study opened in under a second on this capture, with no R.</li>
+      <li>The Overview tab shows a simulated study in sections: Overview, Design, Data, One participant, Reporting.</li>
+      <li>A Studies page lists every study and the three ways to add one.</li>
+      <li>A study can be built in the browser. You describe the trial, R simulates it, and one button hands it to the charts and the RBQM tab.</li>
+      <li>Each loaded file has a Details section, and columns are mapped in the Columns view.</li>
+      <li>R starts once. The RBQM tab and the builder share it.</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <div class="lbl">What to look at</div>
+    <ol>
+      <li>Press the chip that reads “Pilot study”. Read the list, then choose <span class="key">PILOT-PROTOCOL</span>.</li>
+      <li>Press <span class="key">Overview</span>. Walk the sections: Overview, Design, Data, One participant, Reporting.</li>
+      <li>Press the chip, then <span class="key">ALL STUDIES</span>. The Studies page has three ways to add a study.</li>
+      <li>Press <span class="key">DESCRIBE A STUDY</span>, keep the numbers small, and press <span class="key">Build the study</span>. Allow about a minute the first time.</li>
+      <li>Press <span class="key">Load into the demo</span>, then open the RBQM tab and press <span class="key">Start R</span>. It does not download R again.</li>
+    </ol>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#chip"><span class="ref">01</span><span class="t">The study chip</span><span class="s">Which study is in use, and the list</span></a>
+  <a href="#switch"><span class="ref">02</span><span class="t">Switching study</span><span class="s">Same tab, no R</span></a>
+  <a href="#sections"><span class="ref">03</span><span class="t">A study in sections</span><span class="s">Overview, Design, Data, One participant, Reporting</span></a>
+  <a href="#studies"><span class="ref">04</span><span class="t">The Studies page</span><span class="s">Every study, and three ways to add one</span></a>
+  <a href="#build"><span class="ref">05</span><span class="t">Build a study</span><span class="s">Described, simulated by R, loaded</span></a>
+  <a href="#files"><span class="ref">06</span><span class="t">Files and mapping</span><span class="s">What a file holds; columns set in place</span></a>
+  <a href="#r"><span class="ref">07</span><span class="t">One R</span><span class="s">Started once, shared</span></a>
+  <a href="#found"><span class="ref">08</span><span class="t">Noticed, and not checked</span><span class="s">What the capture saw, and what it did not try</span></a>
+</nav>
+
+<div class="cut"><span>01 <em>/ the study chip</em></span></div>
+<section id="chip">
+  <div class="hd"><h2>A chip in the header names the study in use</h2></div>
+  <p class="what">The chip sits beside the app's name. It reads “Pilot study” when the app opens. The small i beside it says what the study is.</p>
+  <div class="pair">
+  <figure><div class="lbl">Before · release 1.12.0</div><a class="frame" href="media/header-before.png"><img src="media/header-before.png" width="720" height="100" alt="The header of the demo app in release 1.12.0: the name safety.viz, then a Data tab labelled with the study, then the chart tabs. There is no chip." loading="lazy"></a></figure>
+  <figure><div class="lbl now">After · release 1.13.0 (dev site)</div><a class="frame" href="media/header-after.png"><img src="media/header-after.png" width="720" height="100" alt="The header in release 1.13.0: the name safety.viz, a chip reading Pilot study with an i beside it, then an Overview tab and the chart tabs." loading="lazy"><span class="mk" style="left:39.12%;top:66.19%" aria-hidden="true">1</span><span class="mk" style="left:59.7%;top:63.59%" aria-hidden="true">2</span></a><ol class="legend"><li>The chip, with the i beside it.</li><li>The first tab is now called Overview.</li></ol></figure>
+</div>
+<p class="cap">Before, the study's name was a label on the Data tab. Now the chip carries it on every tab.</p>
+  <div class="views"><figure><div class="lbl now">The chip, pressed</div><a class="frame" href="media/chip-menu.png"><img src="media/chip-menu.png" width="760" height="525" alt="The list under the chip, headed STUDIES: Pilot study, 4 files, DEMO; Renamed columns, 4 files, DEMO; Liver cohort, labs only, 1 file, DEMO; RBQM study, 9 files, DEMO; READY-P1, 40 participants · 4 sites, SIMULATED; READY-P2, 150 participants · 20 sites, SIMULATED; PILOT-PROTOCOL, 120 participants · 12 sites, SIMULATED. Under the list, two buttons: ADD A STUDY and ALL STUDIES." loading="lazy"><span class="mk" style="left:50.18%;top:6.59%" aria-hidden="true">1</span><span class="mk" style="left:73.67%;top:22.8%" aria-hidden="true">2</span><span class="mk" style="left:76.49%;top:61.8%" aria-hidden="true">3</span><span class="mk" style="left:77.06%;top:91.09%" aria-hidden="true">4</span></a><ol class="legend"><li>The chip. A tick marks the study in use.</li><li>4 studies marked DEMO: Pilot study, Renamed columns, Liver cohort, labs only, RBQM study.</li><li>3 marked SIMULATED: READY-P1, READY-P2, PILOT-PROTOCOL. These are ready-made.</li><li><span class="key">ADD A STUDY</span> and <span class="key">ALL STUDIES</span> both lead to the Studies page.</li></ol></figure>
+<figure><div class="lbl now">The i, pressed</div><a class="frame" href="media/chip-info.png"><img src="media/chip-info.png" width="760" height="319" alt="A card under the i: Pilot study. DEMO. Files. 4. Supports. 18 of 18 charts ready. 254 participants from the CDISC pilot study, with standard column names. The labs file also carries 110 synthetic liver and kidney participants who are in no other file.. LOOK THROUGH THE DATA." loading="lazy"><span class="mk" style="left:50.18%;top:10.84%" aria-hidden="true">1</span></a><ol class="legend"><li>The card names the study and its kind, counts its files, and says “18 of 18 charts ready”.</li></ol></figure></div>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Open the <a href="https://jwildfire.github.io/safety.viz/dev/demo/">demo app</a> and press the chip that reads <span class="key">Pilot study</span>.</span><span class="see">A list headed STUDIES opens: 4 demo studies, then 3 simulated ones.</span></li><li><span class="do">Press the i beside the chip.</span><span class="see">A card says what the study is, and ends with LOOK THROUGH THE DATA.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>02 <em>/ switching study</em></span></div>
+<section id="switch">
+  <div class="hd"><h2>Choosing a study keeps you on the tab you were on</h2></div>
+  <p class="what">Here the app is on the Outlier Explorer. PILOT-PROTOCOL is chosen from the chip. The same chart is drawn again, on the new study.</p>
+  <div class="views"><figure><div class="lbl">Pilot study · Outlier Explorer</div><a class="frame" href="media/switch-pilot.png"><img src="media/switch-pilot.png" width="1400" height="600" alt="The Outlier Explorer on the Pilot study: the chip reads Pilot study." loading="lazy"></a></figure>
+<figure><div class="lbl now">PILOT-PROTOCOL · still the Outlier Explorer</div><a class="frame" href="media/switch-protocol.png"><img src="media/switch-protocol.png" width="1400" height="600" alt="The Outlier Explorer after PILOT-PROTOCOL was chosen: the chip reads PILOT-PROTOCOL and the Outlier Explorer is still the chart shown." loading="lazy"><span class="mk" style="left:21.89%;top:10.7%" aria-hidden="true">1</span><span class="mk" style="left:13.99%;top:17.06%" aria-hidden="true">2</span></a><ol class="legend"><li>The chip now reads “PILOT-PROTOCOL”.</li><li>The Outlier Explorer is still the chart shown.</li></ol></figure></div>
+  <ul class="list"><li>The browser tab's title was “Outlier Explorer · safety.viz demo” before and after.</li><li>The switch took 798 milliseconds on this capture. The page made 0 requests to R's hosts: a ready-made study is a stored file, not a build.</li><li>The app said “18 of 18 charts supported by the loaded data”. The Adverse events and ECG tabs were opened on it too (Adverse Event Explorer, QT Explorer); they are read here, not shown.</li><li>The i for a simulated study says how it was made, gsm.datasim 2.1.0, and that “Every row is synthetic.”</li></ul>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">In the <a href="https://jwildfire.github.io/safety.viz/dev/demo/">demo app</a>, choose <span class="key">Outlier Explorer</span>.</span><span class="see">The chart draws the Pilot study.</span></li><li><span class="do">Press the chip and choose <span class="key">PILOT-PROTOCOL</span>.</span><span class="see">The chip changes. You are still on the Outlier Explorer.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>03 <em>/ a study in sections</em></span></div>
+<section id="sections">
+  <div class="hd"><h2>The Overview tab shows a simulated study in sections</h2></div>
+  <p class="what">For a simulated study the Overview tab is study.builder's study view. One line gives the study's facts. Under it are the sections, and a section with more than one view has a second row of tabs.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">PILOT-PROTOCOL · Overview</div><a class="frame" href="media/view-overview.png"><img src="media/view-overview.png" width="1400" height="900" alt="The Overview tab on PILOT-PROTOCOL. A line of facts: Phase 2, Inflammation, 120 participants, 12 sites, 7 months, Seed 505, and a Snapshot chooser. On the left a list of tables by layer: RAW 13, RAW.RBQM 6, ADAM 6, ANALYSIS 19, REPORTING 4. On the right the sections Overview, Design, Data, One participant, Reporting, with Overview open: counts of participants, sites, adverse events and visits, and three small tables." loading="lazy"><span class="mk" style="left:49.8%;top:22.53%" aria-hidden="true">1</span><span class="mk" style="left:2.79%;top:27.72%" aria-hidden="true">2</span><span class="mk" style="left:58.37%;top:16.26%" aria-hidden="true">3</span></a><ol class="legend"><li>The sections: Overview, Design, Data, One participant, Reporting.</li><li>The study's tables, by layer: RAW 13, RAW.RBQM 6, ADAM 6, ANALYSIS 19, REPORTING 4.</li><li>The snapshot chooser. This study kept 7 monthly snapshots.</li></ol></figure>
+<p class="cap">The facts in the line: Phase 2, Inflammation, 120 participants, 12 sites, 7 months, Seed 505. The app said “18 of 18 charts ready”.</p>
+  <table class="reads">
+    <thead><tr><th>Section</th><th>Its views</th><th>What it holds</th></tr></thead>
+    <tbody>
+      <tr><td>Overview</td><td data-h="Views">one</td><td data-h="Holds">Counts, sites by country, what each layer holds, how the study grew.</td></tr>
+      <tr><td>Design</td><td data-h="Views">Protocol, Schedule</td><td data-h="Holds">The protocol the study followed, and its schedule of activities. Shown only when the study followed a protocol.</td></tr>
+      <tr><td>Data</td><td data-h="Views">Pipeline, Tables, Columns</td><td data-h="Holds">What built each table, the rows of a table, and a profile of each column.</td></tr>
+      <tr><td>One participant</td><td data-h="Views">one</td><td data-h="Holds">One participant followed across every table.</td></tr>
+      <tr><td>Reporting</td><td data-h="Views">Efficacy, Adverse events</td><td data-h="Holds">The simulated score by arm, when the study simulated one, and adverse events by arm.</td></tr>
+    </tbody>
+  </table>
+  <div class="views"><figure><div class="lbl now">Design · Protocol</div><a class="frame" href="media/view-design-protocol.png"><img src="media/view-design-protocol.png" width="1132" height="733" alt="Design, Protocol: the protocol's name, phase, indication, arms and epochs, then Arms by epochs · Parallel Study, Double Blind Study; Objectives, endpoints and estimands; Activities · 10 of 36 simulated; What was left out of the protocol file." loading="lazy"></a><p class="cap">Headings on this view: “Arms by epochs · Parallel Study, Double Blind Study”, “Objectives, endpoints and estimands”, “Activities · 10 of 36 simulated”.</p></figure>
+<figure><div class="lbl now">Design · Schedule</div><a class="frame" href="media/view-design-schedule.png"><img src="media/view-design-schedule.png" width="1132" height="733" alt="Design, Schedule: a grid of activities down the side and visits across the top, with a dot where an activity happens at a visit." loading="lazy"></a><p class="cap">Activities by visit. A dot marks an activity at a visit; activities the simulator leaves out are labelled so.</p></figure>
+<figure><div class="lbl now">Data · Pipeline</div><a class="frame" href="media/view-data-pipeline.png"><img src="media/view-data-pipeline.png" width="1132" height="733" alt="Data, Pipeline: the settings the study was asked to be, then every table by layer with the workflow that built it." loading="lazy"></a><p class="cap">“Pipeline: every table, and the workflow that built it”.</p></figure>
+<figure><div class="lbl now">Data · Tables</div><a class="frame" href="media/view-data-tables.png"><img src="media/view-data-tables.png" width="1132" height="733" alt="Data, Tables: the rows of one table, with a Download CSV button and a filter." loading="lazy"></a><p class="cap">The rows of the table chosen on the left, with filters and sorting.</p></figure>
+<figure><div class="lbl now">Data · Columns</div><a class="frame" href="media/view-data-columns.png"><img src="media/view-data-columns.png" width="1132" height="733" alt="Data, Columns: one row per column of the table, with its label, kind, share filled, number of values and range." loading="lazy"></a><p class="cap">A profile of every column of the table.</p></figure>
+<figure><div class="lbl now">One participant</div><a class="frame" href="media/view-participant.png"><img src="media/view-participant.png" width="1132" height="733" alt="One participant: a chooser for the participant, then that participant’s rows in each table." loading="lazy"></a><p class="cap">One participant across every table that holds them.</p></figure>
+<figure><div class="lbl now">Reporting · Efficacy</div><a class="frame" href="media/view-reporting-efficacy.png"><img src="media/view-reporting-efficacy.png" width="1132" height="733" alt="Reporting, Efficacy: a line chart titled ADAS-Cog (11): mean change from baseline, by arm, one line per arm, and a table under it." loading="lazy"></a><p class="cap">“ADAS-Cog (11): mean change from baseline, by arm”. The view says the numbers are simulated.</p></figure>
+<figure><div class="lbl now">Reporting · Adverse events</div><a class="frame" href="media/view-reporting-ae.png"><img src="media/view-reporting-ae.png" width="1132" height="733" alt="Reporting, Adverse events: a table of adverse event terms by body system, with the number and share of each arm." loading="lazy"></a><p class="cap">“Adverse events by arm”.</p></figure></div>
+  <figure class="solo own" style="--w:760px"><div class="lbl now">READY-P1 · no protocol</div><a class="frame" href="media/view-plain-sections.png"><img src="media/view-plain-sections.png" width="760" height="73" alt="The row of sections on READY-P1: Overview, Data, One participant, Reporting. There is no Design section." loading="lazy"></a></figure>
+<p class="cap">READY-P1 did not follow a protocol, so it has no Design section: Overview, Data, One participant, Reporting. Its Reporting section has one view, “Adverse events by arm”, because it simulated no score.</p>
+  <ul class="list"><li>study.builder has RBQM and Safety views of its own. They are left out here. The app’s RBQM tab and its chart tabs show the same study.</li><li>A demo study is not shown in sections. Its Overview tab has Tables, Columns, One participant (section 6).</li></ul>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Choose <span class="key">PILOT-PROTOCOL</span> from the chip, then press <span class="key">Overview</span>.</span><span class="see">The sections are Overview, Design, Data, One participant, Reporting.</span></li><li><span class="do">Press <span class="key">Design</span>, then <span class="key">Schedule</span>.</span><span class="see">The protocol’s visits run across the top, its activities down the side.</span></li><li><span class="do">Choose <span class="key">READY-P1</span> from the chip.</span><span class="see">The Design section is gone: that study followed no protocol.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>04 <em>/ the Studies page</em></span></div>
+<section id="studies">
+  <div class="hd"><h2>All studies opens a Studies page</h2></div>
+  <p class="what">The page is the chip's list, laid out in full, with the ways to add a study above it. “Every study this page offers and this browser has kept, whatever it came from. Open one to work with it.”</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">The Studies page</div><a class="frame" href="media/studies.png"><img src="media/studies.png" width="1400" height="433" alt="The Studies page. Under ADD A STUDY, three cards: From your files, with a button CHOOSE FILES; Describe a simulated study, with a button DESCRIBE A STUDY; From a protocol, with a button OPEN THE BUILDER. Under them the heading OPEN A STUDY." loading="lazy"><span class="mk" style="left:98.71%;top:38.44%" aria-hidden="true">1</span><span class="mk" style="left:98.71%;top:96.1%" aria-hidden="true">2</span></a><ol class="legend"><li>ADD A STUDY: three ways.</li><li>OPEN A STUDY: every study, with its kind and size. The list is the next still.</li></ol></figure>
+<p class="cap">The three ways to add a study, as the page words them:</p>
+  <dl class="words">
+    <dt>From your files</dt><dd>CSV or JSON. They are read in this browser and sent nowhere. <span class="key">CHOOSE FILES</span></dd>
+    <dt>Describe a simulated study</dt><dd>Phase, size, domains and layers. study.builder makes it in this browser: a few seconds, and about half a minute the first time. <span class="key">DESCRIBE A STUDY</span></dd>
+    <dt>From a protocol</dt><dd>Open a CDISC USDM study definition, the data form of an ICH M11 protocol. The study is built on its schedule of activities, which you can change first. <span class="key">OPEN THE BUILDER</span></dd>
+  </dl>
+  <figure class="solo wide" style="--w:1368px"><div class="lbl now">The list</div><a class="frame" href="media/studies-list.png"><img src="media/studies-list.png" width="1368" height="615" alt="The list of studies: Pilot study, DEMO, 4 files; Renamed columns, DEMO, 4 files; Liver cohort, labs only, DEMO, 1 file; RBQM study, DEMO, 9 files; READY-P1, SIMULATED, 40 participants · 4 sites; READY-P2, SIMULATED, 150 participants · 20 sites; PILOT-PROTOCOL, SIMULATED, 120 participants · 12 sites." loading="lazy"><span class="mk" style="left:83.2%;top:16.23%" aria-hidden="true">1</span></a><ol class="legend"><li>The study in use has <span class="key">LOOK THROUGH THE DATA</span> in place of <span class="key">OPEN</span>.</li></ol></figure>
+<p class="cap">The list held 7 studies on this capture. A study you build is added to it (section 5).</p>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Press the chip, then <span class="key">ALL STUDIES</span>.</span><span class="see">The page is titled Studies. The browser tab reads “Studies · safety.viz demo”.</span></li><li><span class="do">Press <span class="key">Open</span> beside <span class="key">READY-P2</span>.</span><span class="see">The chip reads “READY-P2”. You stay on the Studies page.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>05 <em>/ build a study</em></span></div>
+<section id="build">
+  <div class="hd"><h2>A study can be built in the browser</h2></div>
+  <p class="what"><span class="key">DESCRIBE A STUDY</span> opens study.builder's form in place of the loaded files. You describe a trial. gsm.datasim simulates it with R, in this browser. Nothing is sent anywhere.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">The form</div><a class="frame" href="media/builder-form.png"><img src="media/builder-form.png" width="1400" height="900" alt="The form, headed Build a study, New study, THE TRIAL. Fields: Name; Participants · 20 to 500; Sites · 2 to 100; Months · 3 to 12; Seed · optional; buttons for phase, therapeutic area and outliers. Under them, 5 buttons to try an example protocol, then the layers drawn as a pipeline: Raw Always; Raw.RBQM Needed by Analysis; ADaM Needed by Analysis; Analysis Needed by Reporting; Reporting In the study. At the right, a panel headed WHAT YOU WILL GET with the button Build the study." loading="lazy"><span class="mk" style="left:27.81%;top:23.8%" aria-hidden="true">1</span><span class="mk" style="left:39.4%;top:55.59%" aria-hidden="true">2</span><span class="mk" style="left:23.29%;top:86.9%" aria-hidden="true">3</span><span class="mk" style="left:75.86%;top:49.16%" aria-hidden="true">4</span></a><ol class="legend"><li>The trial: a name, a phase, a therapeutic area, then Participants · 20 to 500, Sites · 2 to 100, Months · 3 to 12, Seed · optional.</li><li>A protocol, in place of a description: <span class="key">Open a file…</span> or one of 5 examples.</li><li>The layers, drawn as the pipeline they are: Raw, Raw.RBQM, ADaM, Analysis, Reporting. Under them, the raw domains to include.</li><li>What you will get, and <span class="key">Build the study</span>.</li></ol></figure>
+<p class="cap">This capture pressed phase 1, which filled in 40 participants at 4 sites over 6 months, then typed smaller numbers: 24 participants, 3 sites, 3 months, seed 11.</p>
+  <div class="views"><figure class="own" style="--w:285px"><div class="lbl now">While it builds</div><a class="frame" href="media/build-steps.png"><img src="media/build-steps.png" width="285" height="313" alt="A panel headed BUILDING DEMO-BUILT with four steps: Start R in this browser; Install R’s packages; Fetch gsm.datasim; Simulate the study and build its layers. The first is under way." loading="lazy"></a><p class="cap">Each step is said as R takes it: “Start R in this browser”, “Install R’s packages”, “Fetch gsm.datasim”, “Simulate the study and build its layers”.</p></figure>
+<figure><div class="lbl now">A protocol in the form</div><a class="frame" href="media/builder-protocol.png"><img src="media/builder-protocol.png" width="700" height="640" alt="The form after Try the CDISC pilot protocol was pressed: a section headed SCHEDULE OF ACTIVITIES: 16 VISITS, FROM THE PROTOCOL, a grid with visits across the top, each with its study day in a box, and activities down the side with a tick box at each visit." loading="lazy"></a><p class="cap">After <span class="key">Try the CDISC pilot protocol</span>: “SCHEDULE OF ACTIVITIES: 16 VISITS, FROM THE PROTOCOL”. Each visit's day can be typed over, and each activity ticked or cleared. This capture did not build from a protocol.</p></figure></div>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">Built</div><a class="frame" href="media/built.png"><img src="media/built.png" width="1400" height="900" alt="The built study, DEMO-BUILT: a badge reading Built in 10.0 s, the buttons Save, Study file, Download all (.zip), Load into the demo, the facts Phase 1, Oncology, 24 participants, 3 sites, 3 months, Seed 11, and the study view with the sections Overview, Data, One participant, Reporting." loading="lazy"><span class="mk" style="left:38.67%;top:14.23%" aria-hidden="true">1</span><span class="mk" style="left:88.27%;top:19.71%" aria-hidden="true">2</span><span class="mk" style="left:39.17%;top:28.78%" aria-hidden="true">3</span></a><ol class="legend"><li>“Built in 10.0 s”: the simulation itself, once R was ready.</li><li><span class="key">Load into the demo</span> hands the study to the app.</li><li>The study view, in the builder: Overview, Data, One participant, Reporting.</li></ol></figure>
+<p class="cap">From pressing <span class="key">Build the study</span> to this screen took 61 seconds on this capture. The first three steps, starting R and fetching what it needs, took 32 seconds of that: the page made 9 requests to R's own host and 39 to its package host. The study has RAW 12, RAW.RBQM 6, ADAM 5, ANALYSIS 18, REPORTING 4.</p>
+  <div class="views"><figure><div class="lbl now">Loaded: the chip</div><a class="frame" href="media/loaded-menu.png"><img src="media/loaded-menu.png" width="760" height="576" alt="The chip's list after Load into the demo: DEMO-BUILT is listed as Simulated, with a tick." loading="lazy"><span class="mk" style="left:78.12%;top:56.33%" aria-hidden="true">1</span></a><ol class="legend"><li>DEMO-BUILT is in the list, marked SIMULATED, and in use.</li></ol></figure>
+<figure><div class="lbl now">Loaded: a chart</div><a class="frame" href="media/built-chart.png"><img src="media/built-chart.png" width="1400" height="620" alt="The Adverse Event Explorer drawing the built study." loading="lazy"></a><p class="cap">The Adverse Event Explorer on the built study. The app said “18 of 18 charts supported by the loaded data”.</p></figure></div>
+  <ul class="list"><li>After <span class="key">Load into the demo</span> the app showed the Overview tab, with the chip reading “DEMO-BUILT”.</li><li>The built study is kept by this browser. After the page was reloaded it was still in the chip's list. The study in use after the reload was “Pilot study”, not the built one.</li><li>The builder says what a simulated study is: “Every row is synthetic. Phase and area shape the results a little. Phase 1: labs are out of range less often, fewer adverse events are serious and they are milder. Oncology: more gastrointestinal, general and nutrition events, more serious and severe ones, and more liver and kidney rises.”</li></ul>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Press the chip, then <span class="key">ADD A STUDY</span>, then <span class="key">DESCRIBE A STUDY</span>.</span><span class="see">The form opens, headed New study.</span></li><li><span class="do">Press phase <span class="key">1</span>. Set 24 participants, 3 sites and 3 months. Press <span class="key">Build the study</span>.</span><span class="see">The four steps tick by. The first build took 61 seconds here; yours depends on your connection.</span></li><li><span class="do">Press <span class="key">Load into the demo</span>.</span><span class="see">The chip names your study. Every chart tab draws it.</span></li><li><span class="do">To see a protocol: press <span class="key">ADD A STUDY</span> again, <span class="key">OPEN THE BUILDER</span>, then <span class="key">Try the CDISC pilot protocol</span>.</span><span class="see">The schedule of activities appears in the form, as a grid you can change.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>06 <em>/ files and mapping</em></span></div>
+<section id="files">
+  <div class="hd"><h2>Every loaded file shows what it holds, and columns are mapped in place</h2></div>
+  <p class="what">For a demo study the Overview tab has two faces: Explore the data, Files. Files lists each file with a folded Details section. Explore the data is where a column is set.</p>
+  <figure class="solo own" style="--w:1006px"><div class="lbl now">Files · Details, opened</div><a class="frame" href="media/file-details.png"><img src="media/file-details.png" width="1006" height="807" alt="The Details section of adsl.csv, opened: a table of its columns with the kind of each (USUBJID text, SITEID number, ARM text, EOSDY number, EOSSTT text), its first 20 rows, and a Download CSV button." loading="lazy"><span class="mk" style="left:0.6%;top:20.51%" aria-hidden="true">1</span><span class="mk" style="left:15.34%;top:93.57%" aria-hidden="true">2</span></a><ol class="legend"><li>The fold reads “DETAILS: 254 ROWS, 5 COLUMNS”.</li><li>Under the first 20 rows, <span class="key">DOWNLOAD CSV</span>.</li></ol></figure>
+<p class="cap">adsl.csv in the Pilot study. Each column has a kind: number, date or text. The other files read “DETAILS: 1,159 ROWS, 10 COLUMNS”, “DETAILS: 57,929 ROWS, 15 COLUMNS”, “DETAILS: 5,361 ROWS, 17 COLUMNS”.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">Explore the data · Columns</div><a class="frame" href="media/columns-mapping.png"><img src="media/columns-mapping.png" width="1400" height="767" alt="The Columns view on the Renamed columns study: a Mapping box reading 4 rows to set, of 7, with a chooser for each row still to set, one of them marked Needed by 1 chart; under it a profile of every column of the file." loading="lazy"><span class="mk" style="left:26.08%;top:28.06%" aria-hidden="true">1</span><span class="mk" style="left:33.79%;top:47.09%" aria-hidden="true">2</span><span class="mk" style="left:77.44%;top:64.28%" aria-hidden="true">3</span></a><ol class="legend"><li>The Columns view.</li><li>“4 rows to set, of 7”: the rows still to set come first.</li><li>A row that a chart waits on says so: “Needed by 1 chart”.</li></ol></figure>
+<p class="cap">The Renamed columns study, whose columns have other names. The app said “12 of 18 charts supported by the loaded data”.</p>
+  <ul class="list"><li>This capture set “End-of-study day” to the column LASTDAY. The box then read “3 rows to set, of 7”, and the app said “13 of 18 charts supported by the loaded data”.</li><li>The same row on the Files face then read LASTDAY: one mapping, set in either place.</li></ul>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Choose <span class="key">Pilot study</span> from the chip, press <span class="key">Overview</span>, then <span class="key">Files</span>. Open <span class="key">Details</span> under a file.</span><span class="see">Its columns with their kinds, its first 20 rows, and a Download CSV button.</span></li><li><span class="do">Choose <span class="key">Renamed columns</span> from the chip, press <span class="key">Explore the data</span>, then <span class="key">Columns</span>.</span><span class="see">The Mapping box reads “4 rows to set, of 7”.</span></li><li><span class="do">Set <span class="key">End-of-study day</span> to <span class="key">LASTDAY</span>.</span><span class="see">The count of charts the data supports goes up: 12 to 13 here.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>07 <em>/ one R</em></span></div>
+<section id="r">
+  <div class="hd"><h2>The app starts R once</h2></div>
+  <p class="what">Two parts of the app use R in the browser: the RBQM tab and the builder. They share one R. Whichever starts it first pays for the download; the other does not download it again. Both orders were run, each in a fresh browser.</p>
+  <table class="reads fit">
+    <thead><tr><th>Order</th><th>Step</th><th class="num">Time</th><th class="num">Requests to R's host</th><th class="num">Requests for packages</th></tr></thead>
+    <tbody>
+      <tr><td>Build first</td><td data-h="Step">Build a study of 24 participants</td><td class="num" data-h="Time">61 seconds</td><td class="num" data-h="R's host">9</td><td class="num" data-h="Packages">39</td></tr>
+      <tr><td></td><td data-h="Step">Then the RBQM tab, <span class="key">Start R</span>, on the built study</td><td class="num" data-h="Time">9 seconds</td><td class="num" data-h="R's host">0</td><td class="num" data-h="Packages">0</td></tr>
+      <tr><td>RBQM first</td><td data-h="Step">The RBQM tab, <span class="key">Start R</span>, on the Pilot study</td><td class="num" data-h="Time">62 seconds</td><td class="num" data-h="R's host">9</td><td class="num" data-h="Packages">35</td></tr>
+      <tr><td></td><td data-h="Step">Then build the same small study</td><td class="num" data-h="Time">20 seconds</td><td class="num" data-h="R's host">0</td><td class="num" data-h="Packages">4</td></tr>
+    </tbody>
+  </table>
+  <p class="cap">Times are from one run on one machine and will differ on yours. The counts are requests the page made to webr.r-wasm.org, R's own host, and to repo.r-wasm.org, its packages. The second step in each order made no request to R's own host.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">After a build: the RBQM tab, before Start R</div><a class="frame" href="media/rbqm-needs-r.png"><img src="media/rbqm-needs-r.png" width="1400" height="330" alt="The RBQM tab on the built study, after the builder had started R. It still reads Site metrics need R 55 MB, once START R, with a Start R button." loading="lazy"></a></figure>
+<p class="cap">R was already running here, started by the builder. The tab still asks for <span class="key">Start R</span>, and still says “55 MB, once”. Pressing it downloaded nothing.</p>
+  <figure class="solo wide" style="--w:1400px"><div class="lbl now">After Start R: 8 OF 8</div><a class="frame" href="media/rbqm-built.png"><img src="media/rbqm-built.png" width="1400" height="470" alt="The RBQM tab after Start R: the tab reads RBQM 8 OF 8, an R chip reads R READY, and a site overview table lists the built study's 3 sites with a mark for each metric." loading="lazy"></a></figure>
+<p class="cap">“R ran 8 of 8 metrics on the 9 loaded files in 4.4 seconds.” Every one of gsm's eight site metrics runs on a built study, because it carries gsm's raw files. On the Pilot study the tab ran 3 of 8.</p>
+  <div class="note try"><div class="lbl">Try it</div><ol class="steps"><li><span class="do">Build a study and load it (section 5).</span><span class="see">R is now running in the page.</span></li><li><span class="do">Open the <span class="key">RBQM</span> tab and press <span class="key">Start R</span>.</span><span class="see">The site overview appears in seconds, not the minute a first start takes. Here: 9 seconds.</span></li></ol></div>
+</section>
+
+<div class="cut"><span>08 <em>/ noticed, and not checked</em></span></div>
+<section id="found">
+  <div class="note found">
+    <div class="lbl">Noticed while capturing</div>
+    <ul>
+      <li>After the builder had started R, the RBQM tab still read “Site metrics need R 55 MB, once” and still asked for <span class="key">Start R</span>. After the RBQM tab had started R, the builder still read “First build in this browser: about half a minute and 55 MB, to start R.” In both cases R was not downloaded a second time (section 7).</li>
+      <li>The first build took 61 seconds on this capture. The builder's own note reads “First build in this browser: about half a minute and 55 MB, to start R.”</li>
+      <li>While the builder is open, the panel on the left reads “No files loaded”, though the chip still names “Pilot study” and its charts still draw.</li>
+      <li>PILOT-PROTOCOL opened on its last snapshot, “2012-07-31 · 7 of 7”. Opened after READY-P1, whose last snapshot is “2012-06-30 · 6 of 6”, it showed “2012-06-30 · 6 of 7”: the snapshot chosen for one study carried to the next.</li>
+      <li>After a reload the app opens on “Pilot study”, whichever study was in use before.</li>
+    </ul>
+  </div>
+  <div class="note">
+    <div class="lbl">Not checked on this page</div>
+    <ul>
+      <li>Files of your own. Every still is of a demo study, a ready-made study or the study built here.</li>
+      <li>Building from a protocol. The form was opened on “the CDISC pilot protocol” and not built. The other 4 examples and <span class="key">Open a file…</span> were not pressed.</li>
+      <li>The builder's Save, Study file, Download all (.zip) buttons, the app's “Download as one file”, and the Biomarkers tab on a simulated study.</li>
+      <li>A phone, and any browser but Chromium. The stills are of a 1,400 by 900 window.</li>
+      <li>Whether a result is right. This page shows what the app does, not that a simulated study is a good one. Nothing in the app is qualified; its own label says “Exploratory”.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="cut"><span>09 <em>/ where to check it</em></span></div>
+<section>
+  <div class="close">
+    <div>
+      <h3>The release</h3>
+      <ul>
+        <li>The <a href="https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md">release notes</a>, section v1.13.0.</li>
+        <li>The app, until the release: <a href="https://jwildfire.github.io/safety.viz/dev/demo/">the dev build</a>. After it: <a href="https://jwildfire.github.io/safety.viz/demo/">the released app</a>.</li>
+        <li>Studies, the chip and the study view as the Overview tab (<a href="https://github.com/jwildfire/safety.viz/pull/395">safety.viz pull request #395</a>).</li>
+        <li>The copy of study.builder moved to its v0.5.0 release (<a href="https://github.com/jwildfire/safety.viz/pull/398">#398</a>) (<a href="https://github.com/jwildfire/safety.viz/pull/399">#399</a>).</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Beside it</h3>
+      <ul>
+        <li><a href="https://github.com/jwildfire/study.builder">study.builder</a>: the builder and the study view. safety.viz carries a copy of its v0.5.0 release.</li>
+        <li><a href="../study-viz-v0.1.0-demo/">The study.viz v0.1.0 demo page</a>: the same app in a repository of its own.</li>
+        <li><a href="../sv-v1.12.0-demo/">The safety.viz v1.12.0 demo page</a>: the release before this one.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Data: the Pilot study and the Renamed columns study are the public, de-identified CDISC Pilot 01 study (pharmaverseadam), with synthetic liver and kidney groups added to the labs. PILOT-PROTOCOL, READY-P1 and DEMO-BUILT are simulated by gsm.datasim: every row is made up. No real participant appears on this page.</p>
+  <p>Captured with Playwright, headless Chromium, from <a href="https://jwildfire.github.io/safety.viz/dev/demo/">the dev site</a>; the one before still is from <a href="https://jwildfire.github.io/safety.viz/demo/">the released site</a>, release 1.12.0. Two parts of the capture start real R in the browser. Every label, count and time quoted from the app was read by the script, and 34 checks held them. How it was made, and how to take the stills again: <a href="https://github.com/jwildfire/obot.roadmap/tree/main/reports/sv-v1.13.0-demo">this page’s folder</a>.</p>
+  <hr>
+  <p>This page was drafted by Claude Code using Fable 5.2.</p>
+</footer>
+
+</div>
+</body></html>
