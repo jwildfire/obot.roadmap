@@ -46,6 +46,7 @@ Nothing else is reworded.
 | safety.viz | clinical, JS | `dev` | `main` |
 | gsm.safety | clinical, R | `dev` | `main` |
 | bio.viz | clinical, JS | `dev` | `main` |
+| study.viz | clinical, JS | `dev` | `main` |
 | gsm.bio | clinical, R | `dev` | `main` |
 | open.csr, open.gismo | clinical | `dev` | `main` |
 | demo-301 | clinical | `main` | `site` |

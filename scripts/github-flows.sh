@@ -34,6 +34,7 @@ REPOS=(
   "safety.viz|dev|main|Build, format, and test"
   "gsm.safety|dev|main|"
   "bio.viz|dev|main|Build, format, and test"
+  "study.viz|dev|main|Build, format, and test"
   "gsm.bio|dev|main|R-CMD-check"
   "open.csr|dev|main|"
   "open.gismo|dev|main|"
