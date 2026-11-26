@@ -50,3 +50,7 @@ Data: the Pilot study is the public, de-identified CDISC Pilot 01 study, with sy
 
 ---
 This page was drafted by Claude Code using Fable 5.2.
+
+## comparison/
+
+Eight screenshots, `counts.json` and `table.md` from one run of study.viz's `scripts/compare-demos.mjs` on 26 November 2026, with safety.viz's demo at https://jwildfire.github.io/safety.viz/dev/demo/ and study.viz's at https://jwildfire.github.io/study.viz/dev/ . The roadmap requirement "study.viz exists and runs the demo" (obot.roadmap#440) asks for this comparison; its closing comment links these files. They are not part of the page.
