@@ -284,7 +284,7 @@ ${css}
     <ul>
       <li>The footer names safety.viz ${esc(chartVersion.replace(/^safety\.viz /, ''))}. That is the chart bundle study.viz carries, not the newest safety.viz.</li>
       <li>The released address, ${esc(RELEASED_APP.replace(/^https:\/\//, ''))}, ${RELEASED_ON ? 'opened after the release' : 'has no page until the release'}.</li>
-      <li>What the safety.viz page notes about the app's wording applies here too, because it is the same app: see ${a(`${SV_PAGE}#found`, 'its section 8')}.</li>
+      <li>What the safety.viz page notes about the app's wording applies here too, because it is the same app: see ${a(`${SV_PAGE}#found`, 'its section on limits')}.</li>
     </ul>
   </div>
 </section>

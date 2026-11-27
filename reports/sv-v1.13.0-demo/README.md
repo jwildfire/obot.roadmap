@@ -1,64 +1,70 @@
 # safety.viz v1.13.0 — annotated demo
 
-The demo page for the safety.viz v1.13.0 release candidate. Every change in the release notes is to the demo app, and the page walks each one on the live dev build:
+The demo page for the safety.viz v1.13.0 release candidate. It is the "See it move" companion to the release notes, and walks each thing they list on a build of the candidate:
 
 - A chip in the header names the study in use and lists every study: four demo studies and three ready-made simulated ones.
-- Choosing a study keeps the tab you were on. A ready-made simulated study opens with no R.
+- Choosing a study keeps the tab you were on. A ready-made simulated study opens with no R. A study that fails to open says so under the chip.
+- The Overview tab, which was the Data tab, opens on the loaded study, looked through with study.viewer. Its second face, Files, keeps each file, the file picker and Reset.
 - The Overview tab shows a simulated study in sections, with study.builder's study view: Overview; Design (Protocol, Schedule) when the study followed a protocol; Data (Pipeline, Tables, Columns); One participant; Reporting (Efficacy, Adverse events).
+- For a study that kept monthly snapshots, the chip says which one is drawn, and the charts and the RBQM tab draw that one.
 - A Studies page lists every study and the three ways to add one.
-- A study can be described in a form and built in the browser by gsm.datasim with R, then loaded into the charts and the RBQM tab. The form also takes a protocol.
+- A study can be described in a form and built in the browser with R by a modified copy of gsm.datasim 2.1.0, then loaded into the charts and the RBQM tab. The form also takes a protocol. CDISC's attribution is under the builder and on the card of a study that followed a protocol.
 - Every loaded file has a Details section, and columns are mapped in the viewer's Columns view.
-- The app starts R once, shared by the RBQM tab and the builder.
+- The app starts R once, shared by the RBQM tab and the builder. The page says what starting R downloads and from where.
+- The expanded participant profile draws its chart beside its controls: the one change to the chart bundle, shown beside release 1.12.0.
+- The header keeps one row at 1,280 pixels; the status panel and the footer each have a new sentence.
+- The limits: what the release notes list as known and not fixed, the open ruling on the charts' statistics, what the capture noticed, and what it did not check.
 
 The page is a release candidate's page until the release. Two elements carry the status and are the only ones to change at release: `#status-word` in the eyebrow and `#rc-links` under "Where it stands". `RELEASED_ON="<date>" node build.cjs` rewrites both and points the try-it links at the released app.
 
-Release notes: safety.viz [`NEWS.md` on `dev`](https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md), section v1.13.0. Pull requests named on the page: safety.viz [#395](https://github.com/jwildfire/safety.viz/pull/395), [#398](https://github.com/jwildfire/safety.viz/pull/398), [#399](https://github.com/jwildfire/safety.viz/pull/399). The same app in its own repository: the [study.viz v0.1.0 demo page](../study-viz-v0.1.0-demo/).
+Release notes: safety.viz [`NEWS.md` on `dev`](https://github.com/jwildfire/safety.viz/blob/dev/NEWS.md), section v1.13.0. Changes named on the page: safety.viz pull requests [#395](https://github.com/jwildfire/safety.viz/pull/395) and [#419](https://github.com/jwildfire/safety.viz/pull/419), and issues [#423](https://github.com/jwildfire/safety.viz/issues/423), [#424](https://github.com/jwildfire/safety.viz/issues/424), [#259](https://github.com/jwildfire/safety.viz/issues/259) and [#410](https://github.com/jwildfire/safety.viz/issues/410); study.viz issues [#19](https://github.com/jwildfire/study.viz/issues/19) and [#20](https://github.com/jwildfire/study.viz/issues/20). The same app in its own repository: the [study.viz v0.1.0 demo page](../study-viz-v0.1.0-demo/).
 
 ## The parts
 
 | File | What it is |
 |---|---|
-| `capture.cjs` | Takes the stills and reads the live app. It holds each thing the page states to what the app shows, and exits 1 when a check fails. |
-| `capture.json` | Everything `capture.cjs` read: the chip's list, the titles, the sections and their views, the Studies page, the form's labels, the build's steps and times, the requests to R's hosts, the mapping before and after a column was set, each check, and where each numbered marker sits on its still. |
-| `build.cjs` | Writes `index.html` from `capture.json`. It stops if a check did not hold, a still is missing, or the page would carry a script. |
+| `capture.cjs` | Takes the stills and reads the app. It holds each thing the page states to what the app shows, and exits 1 when a check fails. |
+| `capture.json` | Everything `capture.cjs` read: the chip's list, the cards, the titles, the sections and their views, the snapshot chosen and what the chip, a chart and the RBQM tab then said, the Studies page, the form's labels, the build's steps and times, the requests to R's hosts, every host asked, the mapping before and after a column was set, the header at five widths on seven studies, the expanded profile's measurements, each check, and where each numbered marker sits on its still. |
+| `build.cjs` | Writes `index.html` from `capture.json`. It stops if a check did not hold, a still is missing, the capture asked a host the page does not name, or the page would carry a script or a local address. |
 | `page.css` | The styles of the v1.12.0 demo page, plus a few rules for PNG stills shown at their own size. `build.cjs` puts them inline. |
 | `index.html` | The page. Self-contained: inline CSS, no script, no outside asset but its own stills. |
-| `media/` | The stills: PNG, from a 1,400 by 900 window at one pixel per point, light theme, cropped to what matters. `header-before.png` is release 1.12.0 on the released site; every other still is the dev build. |
+| `media/` | The stills: PNG, at one pixel per point, light theme, cropped to what matters. All are of a 1,400 by 900 window but three of the header, at 1,280 and 1,440 wide. `header-before.png` and `profile-expanded-before.png` are release 1.12.0 on the released site; every other still is the build of the candidate. |
 
 ## How it was made
 
-- `capture.cjs` uses Playwright with headless Chromium against `https://jwildfire.github.io/safety.viz/dev/demo/`, the demo app built from `dev`. The page's fact bar names the commit `dev` was at, read from GitHub's public API with no token. The script writes nothing to GitHub and signs in to nothing.
-- Run it from the root of an `npm ci` checkout of safety.viz, for its Playwright: `node <path>/capture.cjs`, then `node <path>/build.cjs`. `BASE` and `BEFORE` point it at other builds. After the release, `BASE=https://jwildfire.github.io/safety.viz/demo/` takes the stills from the released app; the one "before" still is then kept from this capture.
-- `PARTS=chip,switch,sections,studies,files,build,other` takes only the named parts again and keeps the rest from the `capture.json` already here. The parts `build` and `other` start real R in the browser (webR) and take one to two minutes each.
+- `capture.cjs` uses Playwright with headless Chromium. This capture ran against a build of the release candidate served from the capture's own machine: safety.viz at commit `dac20938`, which is `dev` at `9e49f5f8` with two changes that were not yet on `dev` when the capture ran: the copy of study.builder moved to v0.5.1 (safety.viz #423), and the release notes, the footer and the data sources page made true (safety.viz #424). The dev site did not yet show them. The script writes nothing to GitHub and signs in to nothing.
+- Run it from the root of an `npm ci` checkout of safety.viz, for its Playwright (or set `PLAYWRIGHT` to that folder): `node <path>/capture.cjs`, then `node <path>/build.cjs`. With nothing set it captures the dev site, `https://jwildfire.github.io/safety.viz/dev/demo/`, and reads the commit `dev` is at from GitHub's public API with no token. `BASE` and `BEFORE` point it at other builds; with a build of your own, `BUILD_IS` gives the words the page calls it and `COMMIT` its commit. After the release, `BASE=https://jwildfire.github.io/safety.viz/demo/` takes the stills from the released app; the two "before" stills are then kept from this capture.
+- `PARTS=chip,switch,sections,snapshot,studies,files,build,other,profile` takes only the named parts again and keeps the rest from the `capture.json` already here. The parts `snapshot`, `build` and `other` start real R in the browser (webR) and take one to two minutes each.
 - The app is driven by its own buttons, as a reader would press them. Nothing is injected into the page.
+- One step changes what reaches the page: in the part `switch`, the file of one ready-made study (READY-P2) is stopped on its way to the page, as a dropped connection would stop it, to read what the app says when a study does not open. The block is then lifted and the same study opened.
+- The expanded profile is opened by pressing the chart near where one participant (CLD-9002, on the Hepatic Explorer, on the Pilot study) sits, in both releases.
 - The one study built is small on purpose: phase 1, 24 participants, 3 sites, 3 months, seed 11, named `DEMO-BUILT`. The second, for the other order of starting R, uses the same numbers.
-- "Requests to R's host" counts the requests the page made to `webr.r-wasm.org`, and "requests for packages" those to `repo.r-wasm.org`, during the step named. They are how the page shows that R is not downloaded twice.
+- "Requests to R's host" counts the requests the page made to `webr.r-wasm.org`, and "requests for packages" those to `repo.r-wasm.org`, during the step named. They are how the page shows that R is not downloaded twice. The capture also lists every host the app asked anything of: its own, and those two. It counts requests by host; it does not read what a request carried.
 - Times are from one run on one machine. They are on the page as "on this capture".
 
-Data: the Pilot study and the Renamed columns study are the public, de-identified CDISC Pilot 01 study, with synthetic liver and kidney groups in the labs. The simulated studies are made up by gsm.datasim, every row. No real participant appears.
+Data: the Pilot study and the Renamed columns study are the public, de-identified CDISC Pilot 01 study, with synthetic liver and kidney groups in the labs. The simulated studies are made up, every row, by a modified copy of gsm.datasim 2.1.0 that study.builder carries. No real participant appears. PILOT-PROTOCOL follows one of CDISC's example protocols (DDF-RA, CC-BY-4.0); the app's attribution is on the page in full.
 
 ## Things the page states that the capture does not read
 
-- That the release notes list changes to the demo app only: the notes on `dev`.
-- That the app's footer reads 1.13.0 from the release on. The stills were captured on the dev build before the release's version number was set, and its footer read "safety.viz 1.12.0"; the page says so under "Where it stands".
-- That study.builder has RBQM and Safety views of its own, left out here: the release notes. The capture checks only that the app shows none.
-- That safety.viz carries study.builder's v0.5.0 release: the titles of pull requests #398 and #399.
-- That the simulation is gsm.datasim's: the app's own words, quoted.
+- That safety.viz carries study.builder v0.5.1: the release notes, and the record in safety.viz's `site/vendor/study.builder/`.
+- That the chip's list also holds your own files while they are loaded and studies saved in the builder; that study.builder has RBQM and Safety views of its own, left out here; what a library's `source`, `portfolio: true` and `viewer` do; that no chart's settings, data or numbers change: the release notes. The capture checks only that the app shows no RBQM or Safety view in the study view, and that Build a study draws in place of the loaded files.
+- The "Known, and not fixed" item about the Patient Journey Explorer, and the list of the charts' statistics awaiting a ruling: the release notes. That chart is not in the demo app.
+- That the dev site will show what the stills show once the two changes are on `dev`.
 - The status line: that v1.13.0 is a release candidate until it is approved.
 
 ## What the capture saw, listed on the page as "Noticed while capturing"
 
-Each is an observation of the dev build on the day, not a promise that it will change.
+Each is an observation of the build on the day, not a promise that it will change.
 
-- After the builder has started R, the RBQM tab still reads "Site metrics need R · 55 MB, once" and still asks for Start R; after the RBQM tab has started R, the builder still reads "First build in this browser: about half a minute and 55 MB, to start R". In both orders the second step made no request to R's own host.
-- The first build took about a minute on this capture, where the builder's note says about half a minute.
-- While the builder is open, the panel on the left reads "No files loaded" though the chip still names the study in use.
-- The snapshot chosen for one simulated study carries to the next: PILOT-PROTOCOL opened after READY-P1 showed snapshot 6 of 7, not its last.
-- After a reload the app opens on the Pilot study, whichever study was in use. A built study is still in the chip's list after the reload.
+- The sentence for a study that did not open ends "Its settings are in the form, and Build makes it." while the reader is on a chart, where no form is shown.
+- At 1,200 pixels wide the header took two rows on two of the seven studies (Renamed columns; Liver cohort, labs only). At 1,280, the width the release notes name, it was one row on all seven.
+- On PILOT-PROTOCOL at its last snapshot the RBQM tab listed 11 sites and the Overview tab counted 12. At the third snapshot both said 4. Why was not looked into.
+
+The four things the release notes list as known and not fixed are on the page beside what the capture saw of each.
 
 ## Not checked
 
-- Files of the reader's own; building from a protocol (the form was opened on one example, not built); the other four example protocols and "Open a file…"; the builder's Save, Study file and Download all buttons; the app's one-file download; the Biomarkers tab on a simulated study; a phone; any browser but Chromium.
+- Files of the reader's own; building from a protocol (the form was opened on one example, not built); the other four example protocols and "Open a file…"; the builder's Save, Study file and Download all buttons; the app's one-file download; the Biomarkers tab on a simulated study; the expanded profile in any chart but the Hepatic Explorer; the Patient Journey Explorer; any statistic; a phone; a window narrower than 1,199 pixels; any browser but Chromium.
 
 ---
 This page was drafted by Claude Code using Fable 5.2.
