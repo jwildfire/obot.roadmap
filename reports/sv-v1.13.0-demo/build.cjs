@@ -153,8 +153,8 @@ ${css}
     <div class="lbl">Where it stands</div>
     <ul>
       <li id="rc-links">${STANDS}</li>
-      <li>The stills are of ${OF}${c.site.after ? '' : `. That is the dev branch with two changes not yet on it: the copy of study.builder moved to ${BUILDER_VERSION}${cite(issue(423), 'safety.viz #423')}, and the notes, the footer and the data sources page made true${cite(issue(424), 'safety.viz #424')}`}. The app's footer read ${q(versionSaid)}.</li>
-      <li>Until the release, the app is published from the dev branch at ${a(DEV_APP, 'jwildfire.github.io/safety.viz/dev/demo/')}${c.site.after ? '' : '. It shows what these stills show once those two changes are on dev'}. After the release it is at ${a(RELEASED_APP, 'jwildfire.github.io/safety.viz/demo/')}.</li>
+      <li>The stills are of ${OF}${c.site.after ? '' : `. When the stills were taken that was the dev branch plus two changes: the copy of study.builder moved to ${BUILDER_VERSION}${cite(issue(423), 'safety.viz #423')}, and the notes, the footer and the data sources page made true${cite(issue(424), 'safety.viz #424')}. Both have since merged, and dev at 7d1066d0 holds the same files but for the stored test pictures and their records`}. The app's footer read ${q(versionSaid)}.</li>
+      <li>Until the release, the app is published from the dev branch at ${a(DEV_APP, 'jwildfire.github.io/safety.viz/dev/demo/')}. After the release it is at ${a(RELEASED_APP, 'jwildfire.github.io/safety.viz/demo/')}.</li>
       <li>Every study on this page is public or made up. The demo studies come from the public CDISC pilot study, and every row of a simulated study is synthetic.</li>
       <li>This page is the companion to the release notes. The notes are short, and the detail behind them is here.${cite(NEWS, 'NEWS.md on dev')}</li>
     </ul>
@@ -579,7 +579,7 @@ ${css}
     <ul>
       <li>The sentence for a study that did not open ends ${q((SW.failed.said.match(/Its settings[^.]*\./) || [''])[0])} The reader was on a chart, where no form is shown (section 2).</li>
       ${twoRows(1200).length ? `<li>At ${px(1200)} the header took two rows on ${n(twoRows(1200).length)} of ${n(atWidth(1200).length)} studies: ${list(twoRows(1200))}. At 1,280, the width the release notes name, it was one row on every study (section 10).</li>` : ''}
-      ${Number(SN.back.read.sites) !== Number(SN.last.tiles.sites) ? `<li>On ${esc(pp.name)} at its last snapshot the RBQM tab listed ${q(SN.back.read.count)}, and the Overview tab counted ${esc(SN.last.tiles.sites)} sites. At the snapshot chosen in section 4 the two agreed, at ${esc(SN.chosen.tiles.sites)}. Why they differ was not looked into.</li>` : ''}
+      ${Number(SN.back.read.sites) !== Number(SN.last.tiles.sites) ? `<li>On ${esc(pp.name)} at its last snapshot the RBQM tab listed ${q(SN.back.read.count)}, and the Overview tab counted ${esc(SN.last.tiles.sites)} sites. At the snapshot chosen in section 4 the two agreed, at ${esc(SN.chosen.tiles.sites)}. The study has 12 sites and one of them has no participants; the RBQM tab lists the sites that have participants.</li>` : ''}
       ${firstBuildNote && BU.build.seconds > 90 ? `<li>The first build took ${secs(BU.build.seconds)} on this capture. The builder's own note reads ${q(first(firstBuildNote))}</li>` : ''}
       ${snapshotCarried ? `<li>${esc(pp.name)} opened on its last snapshot, ${q(SE.snapshot.chosen)}. Opened after ${esc(plainName)}, whose last snapshot is ${q(SE.plain.snapshot.chosen)}, it showed ${q(SE.snapshotAfterPlain)}: the snapshot chosen for one study carried to the next.</li>` : ''}
     </ul>
