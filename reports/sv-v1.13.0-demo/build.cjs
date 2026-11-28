@@ -168,7 +168,7 @@ ${css}
     <div class="lbl">Where it stands</div>
     <ul>
       <li id="rc-links">${STANDS}</li>
-      <li>The stills are of ${OF}${c.site.after ? '' : `. The build was made just before its last change merged: the fixes from the second review of the candidate${cite(issue(427), 'safety.viz #427')}, in ${a(pr(430), 'pull request #430')}. The dev branch at ${DEV_IS_AT} now holds the same files, apart from the stored test records under docs/evidence. At 11 PM Eastern on 27 November, minutes after the merge, the dev site had not yet published that change`}. The app's footer read ${q(versionSaid)}.</li>
+      <li>The stills are of ${OF}${c.site.after ? '' : `. The build was made just before its last change merged: the fixes from the second review of the candidate${cite(issue(427), 'safety.viz #427')}, in ${a(pr(430), 'pull request #430')}. The dev branch at ${DEV_IS_AT} now holds the same files, apart from the stored test records under docs/evidence. The dev site has shown that change since 11:07 PM Eastern on 27 November`}. The app's footer read ${q(versionSaid)}.</li>
       <li>Until the release, the app is published from the dev branch at ${a(DEV_APP, 'jwildfire.github.io/safety.viz/dev/demo/')}. After the release it is at ${a(RELEASED_APP, 'jwildfire.github.io/safety.viz/demo/')}.</li>
       <li>Every study on this page is public or made up. The demo studies come from the public CDISC pilot study, and every row of a simulated study is synthetic.</li>
       <li>This page is the companion to the release notes. The notes are short, and the detail behind them is here.${cite(NEWS, 'NEWS.md on dev')}</li>
