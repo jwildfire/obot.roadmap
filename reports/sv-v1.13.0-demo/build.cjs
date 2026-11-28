@@ -42,7 +42,7 @@ const BUILDER_VERSION = 'v0.5.2';
 // dev branch that holds the same files as the build, apart from the stored test
 // records under docs/evidence. Checked by hand with
 // `git diff <COMMIT> <DEV_IS_AT> -- . ':(exclude)docs/evidence'`, which prints nothing.
-const DEV_IS_AT = '57b50d13';
+const DEV_IS_AT = '75b918cd';
 
 // ---------------------------------------------------------------- words
 const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -593,13 +593,15 @@ ${css}
   <div class="hd"><h2>Limits</h2></div>
   <div class="note found">
     <div class="lbl">Known, and not fixed</div>
-    <p>These three are in the release notes. Beside each is what this capture saw.</p>
+    <p>These are in the release notes. Beside each is what this capture saw.</p>
     <ul>
       <li>The Patient Journey Explorer's Collapse button does not close its panel. Not captured: that chart is on the docs site, not in the demo app.</li>
       <li>After the builder starts R, the RBQM tab still says R must be downloaded, and the reverse.${rbqmWords.length ? ` Captured: after a build the RBQM tab read ${q(rbqmWords[0].replace(/ START R$/, ''))} and asked for ${key('Start R')}.` : ''}${noteAfterR ? ` After the RBQM tab had started R, the builder read ${q(first(noteAfterR))}` : ''} In both orders the second step made no request to R's own host (section 8).</li>
       <li>A reload reopens the pilot study. Captured: after a reload the chip read ${q(BU.reload.chip)}, though ${esc(BS.name)} was in use before.${BU.reload.kept ? ' The built study was still in the list.' : ''}</li>
+      <li>study.builder's own faults include downloads not marked simulated. Not captured. The app's own two download buttons do mark theirs: with a simulated study in use, Details' Download CSV saves a file named simulated- and the table's name. study.builder's own buttons, a failed build that says R could not be started when R is running, and the rest are listed in study.builder's issue.</li>
     </ul>
-    <p>Where they are tracked: ${a(issue(410), 'safety.viz #410')}, ${a(`${STV}/issues/19`, 'study.viz #19')}, ${a(`${STV}/issues/20`, 'study.viz #20')}.</p>
+    <p>Known and not in the release notes, found by the last reviewer of the release candidate: on a simulated study, a file moved by hand to another domain is put back when another snapshot is chosen, with nothing said. Not captured.</p>
+    <p>Where they are tracked: ${a(issue(410), 'safety.viz #410')}, ${a(`${STV}/issues/19`, 'study.viz #19')}, ${a(`${STV}/issues/20`, 'study.viz #20')}, ${a(`${SB}/issues/1`, 'study.builder #1')}, ${a(issue(432), 'safety.viz #432')}.</p>
   </div>
   <div class="note found">
     <div class="lbl">The statistics</div>
