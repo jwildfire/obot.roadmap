@@ -55,7 +55,7 @@ const date = new Date(c.site.captured).toLocaleDateString('en-GB', { day: 'numer
 const commit = c.site.commit ? c.site.commit.slice(0, 8) : 'unknown';
 const key = (t) => `<span class="key">${esc(t)}</span>`;
 const list = (items) => items.map(esc).join(', ');
-const and = (items) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+const and = (items, word = 'and') => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} ${word} ${items[items.length - 1]}`);
 // A label the app draws in capitals, as a sentence would write it.
 const sentence = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : '');
 const first = (t) => `${String(t).split('. ')[0].replace(/\.$/, '')}.`;
@@ -168,7 +168,7 @@ ${css}
     <div class="lbl">Where it stands</div>
     <ul>
       <li id="rc-links">${STANDS}</li>
-      <li>The stills are of ${OF}${c.site.after ? '' : `. The build was made just before its last change merged: the fixes from the second review of the candidate${cite(issue(427), 'safety.viz #427')}, in ${a(pr(430), 'pull request #430')}. The dev branch at ${DEV_IS_AT} now holds the same files, apart from the stored test records under docs/evidence`}. The app's footer read ${q(versionSaid)}.</li>
+      <li>The stills are of ${OF}${c.site.after ? '' : `. The build was made just before its last change merged: the fixes from the second review of the candidate${cite(issue(427), 'safety.viz #427')}, in ${a(pr(430), 'pull request #430')}. The dev branch at ${DEV_IS_AT} now holds the same files, apart from the stored test records under docs/evidence. At 11 PM Eastern on 27 November, minutes after the merge, the dev site had not yet published that change`}. The app's footer read ${q(versionSaid)}.</li>
       <li>Until the release, the app is published from the dev branch at ${a(DEV_APP, 'jwildfire.github.io/safety.viz/dev/demo/')}. After the release it is at ${a(RELEASED_APP, 'jwildfire.github.io/safety.viz/demo/')}.</li>
       <li>Every study on this page is public or made up. The demo studies come from the public CDISC pilot study, and every row of a simulated study is synthetic.</li>
       <li>This page is the companion to the release notes. The notes are short, and the detail behind them is here.${cite(NEWS, 'NEWS.md on dev')}</li>
@@ -269,7 +269,7 @@ ${css}
   <p class="what">Here the app is on the Outlier Explorer. ${esc(pp.name)} is chosen from the chip. The same chart is drawn again, on the new study.</p>
   ${grid([
     { label: `${SW.before.chip} · Outlier Explorer`, plain: true, still: SW.before.still, alt: `The Outlier Explorer on the ${SW.before.chip}: the chip reads ${SW.before.chip}.` },
-    { label: `${SW.after.chip} · still the Outlier Explorer`, still: SW.after.still, alt: `The Outlier Explorer after ${SW.after.chip} was chosen: the chip reads ${SW.after.chip}, with ${SW.after.snap} under the name, and the Outlier Explorer is still the chart shown.`, legend: [`The chip now reads ${q(SW.after.chip)}, with ${q(SW.after.snap)} under the name.`, 'The Outlier Explorer is still the chart shown.'] }
+    { label: `${SW.after.chip} · still the Outlier Explorer`, still: SW.after.still, alt: `The Outlier Explorer after ${SW.after.chip} was chosen: the chip reads ${SW.after.chip}, with ${SW.after.snap} under the name, and the Outlier Explorer is still the chart shown.`, cap: `The chip now reads ${q(SW.after.chip)}, with ${q(SW.after.snap)} under the name. The Outlier Explorer is still the chart shown.` }
   ])}
   ${solo(SW.after.markStill, 'The chip on a chart tab', `The left of the header on the Outlier Explorer, with ${SW.after.chip} in use: under the study's name the chip reads ${SW.after.snap}.`, [], `The chip, close up, on a chart tab. Under the study's name it reads ${q(SW.after.snap)}: the word ${q(MARK.simulated)}, then the snapshot drawn (section 4). To a screen reader the chip says ${q(MARK.spoken)}. A demo study has no such line: the chip of the ${esc(SW.before.chip)} reads its name alone.`)}
   ${ul([
@@ -294,7 +294,7 @@ ${css}
       label: 'A study that does not open',
       still: SW.failed.still,
       alt: `The Outlier Explorer on the ${SW.failed.chip}, with a sentence in a box under the chip: ${SW.failed.said}`,
-      legend: [`The chip still names the study in use, ${q(SW.failed.chip)}.`, 'The sentence, under the chip.'],
+      legend: [`The sentence, under the chip. The chip above it still names the study in use, ${q(SW.failed.chip)}.`],
       cap: `For this still the capture stopped ${esc(SW.failed.study)}'s file on its way to the page, as a dropped connection would. The app said: ${q(SW.failed.said)} The chart stayed as it was. With the file let through, the same study opened.`
     }
   ])}
@@ -320,7 +320,7 @@ ${css}
   ${solo(SE.label.still, `${pp.name} · the ${SE.label.word} label, pressed`, `The Overview tab on ${pp.name} with the label ${SE.label.word} at the top right, pressed. A panel under it is headed ${SE.label.heading} and says: ${SE.label.text.join(' ')} Under that, the four rungs, with ${SE.label.rung} marked ${SE.label.marked.join(', ')}.`, [
     `The label, ${q(SE.label.word)}, on the corner of the tab. The app's own label, ${q(sentence(CH.status))}, stays above it.`,
     `Its sentence: ${q(SE.label.says)}`
-  ], `The panel is headed ${q(SE.label.heading)}. Hovering the label gives the same sentence. A demo study's Overview tab has no such label.`)}
+  ], `The panel is headed ${q(SE.label.heading)}. The label's tooltip holds the same sentence. A demo study's Overview tab has no such label (section 7).`)}
   <table class="reads">
     <thead><tr><th>Section</th><th>Its views</th><th>What it holds</th></tr></thead>
     <tbody>
@@ -347,7 +347,7 @@ ${css}
   ${ul([
     'study.builder has RBQM and Safety views of its own. They are left out here, and in the builder. The app’s RBQM tab and its chart tabs show the same study.',
     `A demo study is not shown in sections. Its Overview tab has ${list(FI.viewerViews)} (section 7).`,
-    `A simulated study has a ${esc(FI.faces[1].name)} face too. On ${esc(pp.name)} it said ${q(SE.filesFace.loaded)}. ${n(SE.filesFace.raw.length)} of them are gsm's raw files, which the RBQM tab reads. ${n(SE.filesFace.noMetric)} of those are read by no site metric, and each is labelled ${q(SE.filesFace.raw.find((x) => /read by no metric/i.test(x)))}.`
+    `A simulated study has a ${esc(FI.faces[1].name)} face too. On ${esc(pp.name)} it said ${q(SE.filesFace.loaded)}. ${n(SE.filesFace.raw.length)} of them are gsm's raw files. ${n(SE.filesFace.raw.length - SE.filesFace.noMetric)} are labelled with the gsm file they are read as, such as ${q(SE.filesFace.raw.find((x) => /by its name/i.test(x)))}. The other ${n(SE.filesFace.noMetric)} are each labelled ${q(SE.filesFace.raw.find((x) => /read by no metric/i.test(x)))}.`
   ])}
   ${steps([
     [`Choose ${key(pp.name)} from the chip, then press ${key('Overview')}.`, `The sections are ${list(SE.sections)}.`],
@@ -371,7 +371,7 @@ ${css}
       label: 'A chart, on that snapshot',
       still: SN.chartStill,
       alt: `The Outlier Explorer on ${pp.name} at ${SN.chosen.snap}. It says ${SN.chosen.chart}.`,
-      legend: [`The chip still reads ${q(SN.chosen.snapOnChart)}.`, `The chart says ${q(SN.chosen.chart)}. At the last snapshot it said ${q(SN.last.chart)}.`]
+      cap: `The chip still reads ${q(SN.chosen.snapOnChart)}. The chart says ${q(SN.chosen.chart)}. At the last snapshot it said ${q(SN.last.chart)}.`
     },
     {
       label: 'The RBQM tab, on that snapshot',
@@ -614,7 +614,7 @@ ${css}
     <div class="lbl">Noticed while capturing</div>
     <ul>
       ${twoRows(1200).length ? `<li>At ${px(1200)} the header took two rows on ${n(twoRows(1200).length)} of ${n(atWidth(1200).length)} studies: ${list(twoRows(1200))}. The release notes promise one row at 1,280 pixels, and there it was one row on every study (section 10). Widths between 1,200 and 1,280 were not read.</li>` : ''}
-      ${focusLost.length ? `<li>In the builder's form, Tab from a changed ${esc(fieldLabel.participants)} field landed on ${esc(fieldLabel[FOCUS.participants] || FOCUS.participants)}, and from ${esc(fieldLabel.sites)} on ${esc(fieldLabel[FOCUS.sites] || FOCUS.sites)}. Tab from a changed ${and(focusLost.map((k) => esc(fieldLabel[k])))} field left keyboard focus on nothing in the page. After each of those fields the form has a row of buttons, not a field to type in.</li>` : ''}
+      ${focusLost.length ? `<li>In the builder's form, Tab from a changed ${esc(fieldLabel.participants)} field landed on ${esc(fieldLabel[FOCUS.participants] || FOCUS.participants)}, and from ${esc(fieldLabel.sites)} on ${esc(fieldLabel[FOCUS.sites] || FOCUS.sites)}. Tab from a changed ${and(focusLost.map((k) => esc(fieldLabel[k])), 'or')} field left keyboard focus on nothing in the page. After each of those fields the form has a row of buttons, not a field to type in.</li>` : ''}
       ${Number(SN.back.read.sites) !== Number(SN.last.tiles.sites) ? `<li>On ${esc(pp.name)} at its last snapshot the RBQM tab listed ${q(SN.back.read.count)}, and the Overview tab counted ${esc(SN.last.tiles.sites)} sites. At the snapshot chosen in section 4 the two agreed, at ${esc(SN.chosen.tiles.sites)}. The study has 12 sites and one of them has no participants; the RBQM tab lists the sites that have participants.</li>` : ''}
       ${firstBuildNote && BU.build.seconds > 90 ? `<li>The first build took ${secs(BU.build.seconds)} on this capture. The builder's own note reads ${q(first(firstBuildNote))}</li>` : ''}
       ${snapshotCarried ? `<li>${esc(pp.name)} opened on its last snapshot, ${q(SE.snapshot.chosen)}. Opened after ${esc(plainName)}, whose last snapshot is ${q(SE.plain.snapshot.chosen)}, it showed ${q(SE.snapshotAfterPlain)}: the snapshot chosen for one study carried to the next.</li>` : ''}

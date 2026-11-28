@@ -201,7 +201,7 @@ async function cornerLabel(page, file) {
   const label = await box(page, '.sva-corner .sv-status-label');
   const panel = await box(page, '.sva-corner .sv-status-panel');
   const sentence = await box(page, '.sva-corner .sv-status-panel .sv-status-text');
-  r.still = await still(page, file, { x: 0, y: 0, width: W, height: Math.min(H, panel.y + panel.height + 18) }, [label && { ...label, dx: -16 }, sentence && { ...sentence, dx: -15, dy: 10 }]);
+  r.still = await still(page, file, { x: 0, y: 0, width: W, height: Math.min(H, panel.y + panel.height + 18) }, [label && { ...label, dx: -16 }, sentence && { ...sentence, dx: -25, dy: 10 }]);
   await page.click('.sva-corner .sv-status-close');
   await page.waitForTimeout(250);
   return r;
@@ -450,12 +450,11 @@ async function partSwitch(browser) {
   r.ms = await chooseStudy(page, PROTOCOL_STUDY);
   await page.waitForTimeout(1200);
   r.after = { title: await title(page), chip: await chip(page), snap: await chipSnap(page), mark: await chipMark(page), item: await activeItem(page), count: await count(page), r: t.rCount() };
-  const chipBox = await box(page, '.sva-studychip');
   // The chip close up, on a chart tab: the line under the study's name. No
   // marker: there is no clear space beside the chip to put one.
   r.after.markStill = await still(page, 'chip-simulated.png', { x: 0, y: 0, width: 720, height: 100 });
-  const itemBox = await locBox(page.locator('.sva-item:has-text("Outlier Explorer")'));
-  r.after.still = await still(page, 'switch-protocol.png', { x: 0, y: 0, width: W, height: 600 }, [{ ...chipBox, dy: chipBox.height + 12 }, itemBox && { ...itemBox, dy: itemBox.height + 12 }]);
+  // No markers on this one: the page draws a whole-window still small, and a marker would cover the chip it points at.
+  r.after.still = await still(page, 'switch-protocol.png', { x: 0, y: 0, width: W, height: 600 });
   await page.click('.sva-chip-info');
   await page.waitForSelector('.sva-chip-card');
   r.info = await page.evaluate(() => document.querySelector('.sva-chip-card').innerText.split('\n').map((l) => l.trim()).filter(Boolean));
@@ -472,7 +471,7 @@ async function partSwitch(browser) {
     const madeBy = await mark('^Made by$');
     const snapLine = await mark('^Snapshot drawn$');
     const credit = await mark('DDF-RA');
-    r.cardStill = await still(page, 'card-simulated.png', { x: 0, y: 0, width: Math.max(760, cardBox.x + cardBox.width + 40), height: Math.min(H, cardBox.y + cardBox.height + 18) }, [madeBy && { ...madeBy, dx: -17 }, snapLine && { ...snapLine, dx: -17 }, credit && { ...credit, dx: -17, dy: 12 }]);
+    r.cardStill = await still(page, 'card-simulated.png', { x: 0, y: 0, width: Math.max(760, cardBox.x + cardBox.width + 40), height: Math.min(H, cardBox.y + cardBox.height + 18) }, [madeBy && { ...madeBy, dx: -27 }, snapLine && { ...snapLine, dx: -27 }, credit && { ...credit, dx: -27, dy: 12 }]);
   }
   await closeMenu(page);
   check('the card of a simulated study says what made it', r.card.facts['Made by'] === 'a modified copy of gsm.datasim 2.1.0', r.card.facts['Made by']);
@@ -519,8 +518,7 @@ async function partSwitch(browser) {
     title: await title(f.page)
   };
   const saidBox = await box(f.page, '.sva-chip-said.sva-problem');
-  const fChip = await box(f.page, '.sva-studychip');
-  r.failed.still = await still(f.page, 'open-failed.png', { x: 0, y: 0, width: Math.max(760, saidBox.x + saidBox.width + 60), height: saidBox.y + saidBox.height + 40 }, [fChip && { ...fChip, dx: -8 }, { ...saidBox, dx: saidBox.width + 14 }]);
+  r.failed.still = await still(f.page, 'open-failed.png', { x: 0, y: 0, width: Math.max(760, saidBox.x + saidBox.width + 60), height: saidBox.y + saidBox.height + 40 }, [{ ...saidBox, dx: saidBox.width + 14 }]);
   // The connection back: the same study opens.
   await f.page.unroute(BLOCKED_FILE);
   await chooseStudy(f.page, BLOCKED_STUDY);
@@ -747,14 +745,8 @@ async function partSnapshot(browser) {
   await page.waitForTimeout(1800);
   r.chosen.chart = await chartSays(page);
   r.chosen.snapOnChart = await chipSnap(page);
-  const says = await page.evaluate(() => {
-    const e = [...document.querySelectorAll('.sv-main *')].find((x) => x.children.length === 0 && /participants shown/.test(x.innerText || ''));
-    if (!e) return null;
-    const b = e.getBoundingClientRect();
-    return { x: b.left, y: b.top, width: Math.min(b.width, 260), height: b.height };
-  });
-  const chipBox2 = await box(page, '.sva-studychip');
-  r.chartStill = await still(page, 'snapshot-chart.png', { x: 0, y: 0, width: W, height: 600 }, [chipBox2 && { ...chipBox2, dy: chipBox2.height + 14 }, says && { ...says, dy: -10 }]);
+  // No markers: the page draws this whole-window still small, and a marker would cover the words it points at.
+  r.chartStill = await still(page, 'snapshot-chart.png', { x: 0, y: 0, width: W, height: 600 });
 
   // The RBQM tab, on the snapshot chosen. Real R.
   r.rbqm = await startRbqm(page, t.rCount);
@@ -781,7 +773,7 @@ async function partSnapshot(browser) {
       const b = dt.getBoundingClientRect();
       return { x: b.left, y: b.top, width: b.width, height: b.height };
     });
-    r.rbqm.detailsStill = await still(page, 'snapshot-rbqm-details.png', { x: 0, y: 0, width: W, height: Math.min(H, panel.y + panel.height + 16) }, [snapDt && { ...snapDt, dx: -14 }]);
+    r.rbqm.detailsStill = await still(page, 'snapshot-rbqm-details.png', { x: 0, y: 0, width: W, height: Math.min(H, panel.y + panel.height + 16) }, [snapDt && { ...snapDt, dx: -22 }]);
   }
   await page.click('.sva-r-panel .sva-r-x');
   await page.waitForTimeout(300);
@@ -988,7 +980,7 @@ async function partFiles(browser) {
     const source = await box(page, 'aside.sva-side [data-action="source-build"]');
     const reset = await box(page, 'aside.sva-side [data-action="reset"]');
     const faceBox = await locBox(page.locator('button.sva-face').nth(1));
-    r.filesStill = await still(page, 'files-face.png', { x: 0, y: 0, width: W, height: 640 }, [faceBox && { ...faceBox, dy: -8 }, choose && { ...choose, dy: -8 }, source && { ...source, dy: source.height + 10 }, reset && { ...reset, dx: reset.width + 12 }]);
+    r.filesStill = await still(page, 'files-face.png', { x: 0, y: 0, width: W, height: 640 }, [faceBox && { ...faceBox, dy: -8 }, choose && { ...choose, dx: -17 }, source && { ...source, dx: -17 }, reset && { ...reset, dx: reset.width + 12 }]);
     r.sideWidth = side && side.width;
   }
   r.details = await page.evaluate(() => [...document.querySelectorAll('details.sva-file-details')].map((d) => ({ file: d.dataset.details, summary: d.querySelector('summary').innerText.trim() })));

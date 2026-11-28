@@ -49,7 +49,7 @@ Data: the Pilot study and the Renamed columns study are the public, de-identifie
 - That safety.viz carries study.builder v0.5.2: the release notes, and the record in safety.viz's `site/vendor/study.builder/`.
 - That the chip's list also holds your own files while they are loaded and studies saved in the builder; that study.builder has RBQM and Safety views of its own, left out here; what a library's `source`, `portfolio: true` and `viewer` do; that no chart's settings, data or numbers change: the release notes. The capture checks only that the app shows no RBQM or Safety view in the study view, and that Build a study draws in place of the loaded files.
 - The "Known, and not fixed" item about the Patient Journey Explorer, and the list of the charts' statistics awaiting a ruling: the release notes. That chart is not in the demo app.
-- That the dev site shows what the stills show. The change is on `dev`; the dev site itself was not opened after the merge.
+- That the dev site shows what the stills show. The change is on `dev`. At 11 PM Eastern on 27 November, minutes after the merge, the dev site's app file did not yet hold it; study.builder's file there was already v0.5.2's.
 - The status line: that v1.13.0 is a release candidate until it is approved.
 
 ## What the capture saw, listed on the page as "Noticed while capturing"
