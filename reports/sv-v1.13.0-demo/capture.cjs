@@ -1,7 +1,9 @@
 // Captures and checks for the safety.viz v1.13.0 demo page: the study chip and
-// the list of studies, a failed open, the Studies page, a simulated study shown
-// in sections and at the snapshot chosen, building a study with R in the
-// browser, what each loaded file holds, mapping in the Columns view, one R
+// the list of studies, the Simulated mark on the chip, a failed open, the
+// Studies page, a simulated study shown in sections and at the snapshot
+// chosen, the Experimental label on that view and on Build a study, a study's
+// own notes, building a study with R in the browser, CDISC's attribution in
+// the builder, what each loaded file holds, mapping in the Columns view, one R
 // shared by the RBQM tab and the builder, the expanded participant profile,
 // and the header, the status panel and the footer.
 //
@@ -26,9 +28,9 @@
 //
 // Three parts start real R in the browser (webR, from webr.r-wasm.org and
 // repo.r-wasm.org) and take a minute or two each: snapshot, build and other.
-// One part, switch, blocks one study's file on its way to the page, as a
-// dropped connection would, to read what the app says when a study does not
-// open. Nothing is written anywhere but <out dir>, and the script signs in to
+// One part, switch, blocks one ready-made study's file and then one demo
+// study's files on their way to the page, as a dropped connection would, to
+// read what the app says when a study does not open. Nothing is written anywhere but <out dir>, and the script signs in to
 // nothing.
 const fs = require('node:fs');
 const path = require('node:path');
@@ -56,6 +58,9 @@ const PLAIN_STUDY = 'READY-P1';
 // The study whose file is blocked once, and the file.
 const BLOCKED_STUDY = 'READY-P2';
 const BLOCKED_FILE = '**/presets/phase2-oncology.study.json.gz';
+// The demo study whose files are blocked once, and the files.
+const BLOCKED_DEMO = 'Renamed columns';
+const BLOCKED_DEMO_FILES = '**/renamed/*';
 // The participant whose profile is expanded, in the Hepatic Explorer on the Pilot study.
 const PROFILE_OF = 'CLD-9002';
 // The widths the header is read at, and the studies it is read on.
@@ -142,9 +147,65 @@ async function still(page, name, b, markers = []) {
 }
 
 const title = (page) => page.title();
-// The study the chip names, and the words under the name when the study kept its snapshots.
+// The study the chip names, and the line under the name: "Simulated" for a
+// simulated study, then the snapshot drawn when the study kept its snapshots.
+// A demo study has no such line.
 const chip = (page) => page.evaluate(() => (document.querySelector('.sva-studychip .sva-chip-name')?.innerText || document.querySelector('.sva-studychip')?.innerText || '').replace(/[▾\s]+/g, ' ').trim());
-const chipSnap = (page) => page.evaluate(() => (document.querySelector('.sva-studychip .sva-chip-snap')?.innerText || '').replace(/\s+/g, ' ').trim() || null);
+const chipSnap = (page) => page.evaluate(() => (document.querySelector('.sva-studychip .sva-chip-under')?.innerText || '').replace(/\s+/g, ' ').trim() || null);
+/** The two parts of the line under the name, and what the chip says to a screen reader and on hover. */
+const chipMark = (page) =>
+  page.evaluate(() => {
+    const said = (sel) => (document.querySelector(sel)?.innerText || '').replace(/\s+/g, ' ').trim() || null;
+    const c = document.querySelector('.sva-studychip');
+    return { simulated: said('.sva-studychip .sva-chip-sim'), snapshot: said('.sva-studychip .sva-chip-snap'), spoken: c.getAttribute('aria-label'), hover: c.title || null };
+  });
+/** CDISC's attribution wherever the page shows it now: each element that says it, and what comes just before. */
+const attributions = (page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('main *')]
+      .filter((e) => e.offsetParent && /DDF-RA/.test(e.innerText || '') && /CC-BY-4\.0/.test(e.innerText || '') && ![...e.children].some((c) => /DDF-RA/.test(c.innerText || '')))
+      .map((e) => {
+        const before = e.previousElementSibling;
+        return {
+          text: e.innerText.replace(/\s+/g, ' ').trim(),
+          after: !before ? null : before.matches('table') ? 'the schedule grid' : before.querySelector('[data-action="try-protocol"]') ? 'the example protocols' : before.innerText.replace(/\s+/g, ' ').trim().slice(0, 60)
+        };
+      })
+  );
+/**
+ * The Experimental label on the corner of the Overview tab, where the app
+ * draws one: its word and its sentence, then the panel it opens, with a still.
+ */
+async function cornerLabel(page, file) {
+  if (!(await page.locator('.sva-corner .sv-status-label').count())) return null;
+  const r = await page.evaluate(() => {
+    const b = document.querySelector('.sva-corner .sv-status-label');
+    return { word: b.querySelector('.sv-status-word').textContent.trim(), says: b.querySelector('.sv-status-tip').textContent.replace(/\s+/g, ' ').trim() };
+  });
+  await page.click('.sva-corner .sv-status-label');
+  await page.waitForSelector('.sva-corner .sv-status-panel', { state: 'visible' });
+  await page.waitForTimeout(300);
+  Object.assign(
+    r,
+    await page.evaluate(() => {
+      const p = document.querySelector('.sva-corner .sv-status-panel');
+      const here = p.querySelector('.sv-status-here');
+      return {
+        heading: p.querySelector('.sv-status-heading').textContent.trim(),
+        text: [...p.querySelectorAll('.sv-status-text:not(.sv-status-foot)')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
+        rung: here ? here.querySelector('.sv-status-rung').textContent.trim() : null,
+        marked: here ? [...here.querySelectorAll('.sv-status-mark')].map((e) => e.textContent.trim()) : []
+      };
+    })
+  );
+  const label = await box(page, '.sva-corner .sv-status-label');
+  const panel = await box(page, '.sva-corner .sv-status-panel');
+  const sentence = await box(page, '.sva-corner .sv-status-panel .sv-status-text');
+  r.still = await still(page, file, { x: 0, y: 0, width: W, height: Math.min(H, panel.y + panel.height + 18) }, [label && { ...label, dx: -16 }, sentence && { ...sentence, dx: -25, dy: 10 }]);
+  await page.click('.sva-corner .sv-status-close');
+  await page.waitForTimeout(250);
+  return r;
+}
 /** The card under the i: its facts as pairs, and its sentences. */
 const readCard = (page) =>
   page.evaluate(() => {
@@ -338,7 +399,7 @@ async function partChip(browser) {
   check('the first tab is Overview', (await page.locator('button.sva-item').first().innerText()).trim() === 'Overview');
   check('the footer says what starting R downloads, and from where', /webr\.r-wasm\.org/.test(r.pitch) && /repo\.r-wasm\.org/.test(r.pitch) && /Build a study/.test(r.pitch) && /never uploaded/.test(r.pitch), r.pitch);
   check('the footer reads safety.viz 1.13.0', r.version === 'safety.viz 1.13.0', r.version);
-  check('the status panel has a sentence about study.builder', r.statusPanel.text.some((l) => /study\.builder/.test(l) && /synthetic/.test(l)), r.statusPanel.text.find((l) => /study\.builder/.test(l)));
+  check('the status panel says Build a study and the view of a simulated study are Experimental', r.statusPanel.text.some((l) => /study\.builder/.test(l) && /synthetic/.test(l) && /Build a study and the view of a simulated study are Experimental/.test(l)), r.statusPanel.text.find((l) => /study\.builder/.test(l)));
   r.errors = t.errors;
   await t.context.close();
 
@@ -384,14 +445,16 @@ async function partSwitch(browser) {
   const { page } = t;
   await page.click('.sva-item:has-text("Outlier Explorer")');
   await page.waitForTimeout(1500);
-  r.before = { title: await title(page), chip: await chip(page), item: await activeItem(page), count: await count(page) };
+  r.before = { title: await title(page), chip: await chip(page), snap: await chipSnap(page), item: await activeItem(page), count: await count(page) };
   r.before.still = await still(page, 'switch-pilot.png', { x: 0, y: 0, width: W, height: 600 });
   r.ms = await chooseStudy(page, PROTOCOL_STUDY);
   await page.waitForTimeout(1200);
-  r.after = { title: await title(page), chip: await chip(page), snap: await chipSnap(page), item: await activeItem(page), count: await count(page), r: t.rCount() };
-  const chipBox = await box(page, '.sva-studychip');
-  const itemBox = await locBox(page.locator('.sva-item:has-text("Outlier Explorer")'));
-  r.after.still = await still(page, 'switch-protocol.png', { x: 0, y: 0, width: W, height: 600 }, [{ ...chipBox, dy: chipBox.height + 12 }, itemBox && { ...itemBox, dy: itemBox.height + 12 }]);
+  r.after = { title: await title(page), chip: await chip(page), snap: await chipSnap(page), mark: await chipMark(page), item: await activeItem(page), count: await count(page), r: t.rCount() };
+  // The chip close up, on a chart tab: the line under the study's name. No
+  // marker: there is no clear space beside the chip to put one.
+  r.after.markStill = await still(page, 'chip-simulated.png', { x: 0, y: 0, width: 720, height: 100 });
+  // No markers on this one: the page draws a whole-window still small, and a marker would cover the chip it points at.
+  r.after.still = await still(page, 'switch-protocol.png', { x: 0, y: 0, width: W, height: 600 });
   await page.click('.sva-chip-info');
   await page.waitForSelector('.sva-chip-card');
   r.info = await page.evaluate(() => document.querySelector('.sva-chip-card').innerText.split('\n').map((l) => l.trim()).filter(Boolean));
@@ -408,12 +471,13 @@ async function partSwitch(browser) {
     const madeBy = await mark('^Made by$');
     const snapLine = await mark('^Snapshot drawn$');
     const credit = await mark('DDF-RA');
-    r.cardStill = await still(page, 'card-simulated.png', { x: 0, y: 0, width: Math.max(760, cardBox.x + cardBox.width + 40), height: Math.min(H, cardBox.y + cardBox.height + 18) }, [madeBy && { ...madeBy, dx: -17 }, snapLine && { ...snapLine, dx: -17 }, credit && { ...credit, dx: -17, dy: 12 }]);
+    r.cardStill = await still(page, 'card-simulated.png', { x: 0, y: 0, width: Math.max(760, cardBox.x + cardBox.width + 40), height: Math.min(H, cardBox.y + cardBox.height + 18) }, [madeBy && { ...madeBy, dx: -27 }, snapLine && { ...snapLine, dx: -27 }, credit && { ...credit, dx: -27, dy: 12 }]);
   }
   await closeMenu(page);
   check('the card of a simulated study says what made it', r.card.facts['Made by'] === 'a modified copy of gsm.datasim 2.1.0', r.card.facts['Made by']);
   check('the card of a study that followed a protocol carries CDISC\'s attribution', r.card.credit.some((l) => /DDF-RA/.test(l) && /CC-BY-4\.0/.test(l) && /not endorsed by CDISC/.test(l)), r.card.credit);
-  check('the chip says which snapshot is drawn', /^Snapshot \d+ of \d+$/.test(r.after.snap || ''), r.after.snap);
+  check('on a chart tab the chip marks a simulated study Simulated, and says which snapshot is drawn', /^Simulated · Snapshot \d+ of \d+$/.test(r.after.snap || '') && r.after.mark.simulated === 'Simulated' && /Outlier Explorer/.test(r.after.title), { chip: r.after.snap, spoken: r.after.mark.spoken, tab: r.after.title });
+  check('the chip of a demo study has no such line', r.before.snap === null, { study: r.before.chip, line: r.before.snap });
   check('choosing a study keeps the tab you were on', r.before.title === r.after.title && /Outlier Explorer/.test(r.after.title) && r.after.chip === PROTOCOL_STUDY, { before: r.before.title, after: r.after.title, chip: r.after.chip });
   check('a ready-made simulated study opens with no R', r.after.r.runtime === 0 && r.after.r.packages === 0, { ms: r.ms, ...r.after.r });
   check('the i says a simulated study is synthetic', r.info.some((l) => /Every row is synthetic/.test(l)), r.info.slice(-3));
@@ -454,15 +518,32 @@ async function partSwitch(browser) {
     title: await title(f.page)
   };
   const saidBox = await box(f.page, '.sva-chip-said.sva-problem');
-  const fChip = await box(f.page, '.sva-studychip');
-  r.failed.still = await still(f.page, 'open-failed.png', { x: 0, y: 0, width: Math.max(760, saidBox.x + saidBox.width + 60), height: saidBox.y + saidBox.height + 40 }, [fChip && { ...fChip, dx: -8 }, { ...saidBox, dx: saidBox.width + 14 }]);
+  r.failed.still = await still(f.page, 'open-failed.png', { x: 0, y: 0, width: Math.max(760, saidBox.x + saidBox.width + 60), height: saidBox.y + saidBox.height + 40 }, [{ ...saidBox, dx: saidBox.width + 14 }]);
   // The connection back: the same study opens.
   await f.page.unroute(BLOCKED_FILE);
   await chooseStudy(f.page, BLOCKED_STUDY);
   r.failed.then = { chip: await chip(f.page), said: await f.page.locator('.sva-chip-said.sva-problem').count() };
-  check('a study that does not open is said under the chip, and the study in use stays', /could not be fetched/.test(r.failed.said) && r.failed.role === 'alert' && r.failed.chip === 'Pilot study' && /Outlier Explorer/.test(r.failed.title), r.failed);
+  check('a study that does not open is said under the chip, and the study in use stays', r.failed.said.startsWith(`${BLOCKED_STUDY} did not open. `) && /could not be fetched/.test(r.failed.said) && r.failed.said.endsWith(' The study in use is unchanged.') && r.failed.role === 'alert' && r.failed.chip === 'Pilot study' && /Outlier Explorer/.test(r.failed.title), r.failed);
   check('the same study opens once its file can be fetched', r.failed.then.chip === BLOCKED_STUDY && r.failed.then.said === 0, r.failed.then);
-  // The one error this page raised is the blocked file itself.
+  // A demo study that does not open: its files are stopped the same way. Read, not shown.
+  await f.page.route(BLOCKED_DEMO_FILES, (route) => route.abort('internetdisconnected'));
+  await f.page.click('.sva-studychip');
+  await f.page.waitForSelector('.sva-chip-menu');
+  await f.page.locator('.sva-chip-menu .sva-chip-item', { has: f.page.locator(`.sva-chip-study:text-is("${BLOCKED_DEMO}")`) }).click();
+  await f.page.waitForSelector('.sva-chip-said.sva-problem', { timeout: 30000 });
+  await f.page.waitForTimeout(600);
+  r.failedDemo = {
+    study: BLOCKED_DEMO,
+    said: flat(await f.page.evaluate(() => document.querySelector('.sva-chip-said.sva-problem').innerText)),
+    role: await f.page.evaluate(() => document.querySelector('.sva-chip-said.sva-problem').getAttribute('role')),
+    chip: await chip(f.page),
+    title: await title(f.page)
+  };
+  await f.page.unroute(BLOCKED_DEMO_FILES);
+  await chooseStudy(f.page, BLOCKED_DEMO);
+  r.failedDemo.then = { chip: await chip(f.page), said: await f.page.locator('.sva-chip-said.sva-problem').count(), title: await title(f.page) };
+  check('a demo study that does not open is said under the chip too, and the tab and the study in use stay', r.failedDemo.said.startsWith(`${BLOCKED_DEMO} could not be opened`) && r.failedDemo.said.endsWith(' The study in use is unchanged.') && r.failedDemo.role === 'alert' && r.failedDemo.chip === BLOCKED_STUDY && /Outlier Explorer/.test(r.failedDemo.title) && r.failedDemo.then.chip === BLOCKED_DEMO, r.failedDemo);
+  // The errors this page raised are the blocked files themselves.
   r.failed.errors = f.errors;
   r.errors = r.errors.concat(f.errors.filter((e) => !/ERR_INTERNET_DISCONNECTED/.test(e)));
   await f.context.close();
@@ -511,6 +592,33 @@ async function partSections(browser) {
   ]);
   r.overviewText = flat(await page.evaluate(() => document.body.innerText)).slice(0, 2500);
 
+  // The Experimental label on the corner of a simulated study's view.
+  r.label = await cornerLabel(page, 'view-experimental.png');
+  check('the view of a simulated study carries the Experimental label, with a sentence', !!r.label && r.label.word === 'Experimental' && /^Experimental: /.test(r.label.says) && /study\.builder/.test(r.label.says) && /experimental$/.test(r.label.heading) && r.label.text[0] === r.label.says, r.label && { word: r.label.word, heading: r.label.heading, says: r.label.says });
+
+  // The study's own notes, folded under the Overview section: read, opened, and one sentence marked.
+  {
+    const fold = page.locator('details.sb-caveats');
+    r.notes = { summary: flat(await fold.locator('summary').innerText()), openAtFirst: await fold.evaluate((d) => d.open) };
+    if (!r.notes.openAtFirst) await fold.locator('summary').click();
+    await page.waitForTimeout(400);
+    r.notes.items = await fold.evaluate((d) => [...d.querySelectorAll('li')].map((li) => li.innerText.replace(/\s+/g, ' ').trim()));
+    await fold.evaluate((d) => {
+      d.scrollIntoView({ block: 'start', behavior: 'instant' });
+      window.scrollBy({ top: -90, behavior: 'instant' });
+    });
+    await page.waitForTimeout(300);
+    const foldBox = await locBox(fold);
+    const firstItem = await locBox(fold.locator('li').first());
+    const naming = r.notes.items.filter((x) => /gsm\.datasim/.test(x));
+    r.notes.naming = naming.length;
+    r.notes.still = await still(page, 'view-notes.png', { x: foldBox.x - 34, y: foldBox.y - 12, width: foldBox.width + 46, height: Math.min(foldBox.height + 24, 330) }, [firstItem && { ...firstItem, dx: -26, dy: 11 }]);
+    check('every sentence of a simulated study\'s notes that names gsm.datasim names the modified copy', naming.length > 0 && naming.every((x) => /\b(the|a) modified copy of gsm\.datasim/i.test(x)) && /modified copy of gsm\.datasim/.test(r.notes.items[0]), { sentences: r.notes.items.length, naming: naming.length, first: r.notes.items[0] });
+    await fold.locator('summary').click();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(300);
+  }
+
   // The pane to the right of the table rail, from just above the row of sections.
   const pane = { x: 250, y: Math.max(0, secRow.y - 14), width: W - 250 - 18, height: H - Math.max(0, secRow.y - 14) };
   r.walk = [];
@@ -537,7 +645,11 @@ async function partSections(browser) {
       while (el && el.innerText.length < 500 && el.parentElement) el = el.parentElement;
       return el.innerText.replace(/\s+/g, ' ').trim().slice(0, 700);
     });
-    r.walk.push({ section: sec, view: sub, heads, lead, still: await still(page, file, pane) });
+    r.walk.push({ section: sec, view: sub, heads, lead, attributions: await attributions(page), still: await still(page, file, pane) });
+  }
+  {
+    const inSchedule = r.walk.find((w) => w.view === 'Schedule').attributions;
+    check('the Schedule view carries CDISC\'s attribution, once', inSchedule.length === 1 && inSchedule[0].after === 'the schedule grid', inSchedule);
   }
   check('a study that followed a protocol is shown in five sections', same(r.sections, ['Overview', 'Design', 'Data', 'One participant', 'Reporting']), r.sections);
   check('Design holds Protocol and Schedule', same(r.subviews.Design, ['Protocol', 'Schedule']), r.subviews.Design);
@@ -569,6 +681,16 @@ async function partSections(browser) {
     const s = [...document.querySelectorAll('select')].find((x) => [...x.options].some((o) => / of \d+$/.test(o.text)));
     return s ? s.options[s.selectedIndex].text : null;
   });
+  // The Files face on a simulated study: what each of gsm's raw files is said to be.
+  await page.click('[data-action="files"]');
+  await page.waitForTimeout(900);
+  r.filesFace = await page.evaluate(() => {
+    const tags = [...document.querySelectorAll('main .sva-tag')].filter((e) => e.offsetParent).map((e) => e.textContent.replace(/\s+/g, ' ').trim());
+    const side = (document.querySelector('aside.sva-side')?.innerText || '').replace(/\s+/g, ' ');
+    return { raw: tags.filter((x) => /^gsm raw file/i.test(x)), notRecognised: tags.filter((x) => /not recognised/i.test(x)), loaded: (side.match(/\d+ files? loaded/) || [null])[0], label: document.querySelector('.sva-corner .sv-status-word')?.textContent.trim() || null };
+  });
+  r.filesFace.noMetric = r.filesFace.raw.filter((x) => /read by no metric/i.test(x)).length;
+  check('on the Files face, a gsm raw file no metric reads says so', r.filesFace.noMetric > 0 && r.filesFace.raw.every((x) => /^gsm raw file: (read by no metric|Raw_\w+, by its name)$/i.test(x)) && r.filesFace.notRecognised.length === 0, { rawFiles: r.filesFace.raw.length, readByNoMetric: r.filesFace.noMetric, notRecognised: r.filesFace.notRecognised.length });
   r.errors = t.errors;
   await t.context.close();
   return r;
@@ -623,20 +745,38 @@ async function partSnapshot(browser) {
   await page.waitForTimeout(1800);
   r.chosen.chart = await chartSays(page);
   r.chosen.snapOnChart = await chipSnap(page);
-  const says = await page.evaluate(() => {
-    const e = [...document.querySelectorAll('.sv-main *')].find((x) => x.children.length === 0 && /participants shown/.test(x.innerText || ''));
-    if (!e) return null;
-    const b = e.getBoundingClientRect();
-    return { x: b.left, y: b.top, width: Math.min(b.width, 260), height: b.height };
-  });
-  const chipBox2 = await box(page, '.sva-studychip');
-  r.chartStill = await still(page, 'snapshot-chart.png', { x: 0, y: 0, width: W, height: 600 }, [chipBox2 && { ...chipBox2, dy: chipBox2.height + 14 }, says && { ...says, dy: -10 }]);
+  // No markers: the page draws this whole-window still small, and a marker would cover the words it points at.
+  r.chartStill = await still(page, 'snapshot-chart.png', { x: 0, y: 0, width: W, height: 600 });
 
   // The RBQM tab, on the snapshot chosen. Real R.
   r.rbqm = await startRbqm(page, t.rCount);
   r.rbqm.read = await readRbqm(page);
   r.rbqm.snap = await chipSnap(page);
   r.rbqmStill = await still(page, 'snapshot-rbqm.png', { x: 0, y: 0, width: W, height: 520 });
+  // Run details, on the snapshot chosen: which snapshot R was handed.
+  await page.click('.sva-rbqm-details');
+  await page.waitForSelector('.sva-r-panel', { state: 'visible' });
+  await page.waitForTimeout(400);
+  r.rbqm.details = await page.evaluate(() => {
+    const p = document.querySelector('.sva-r-panel');
+    return {
+      heading: p.querySelector('.sva-r-heading').innerText.trim(),
+      text: p.querySelector('.sva-r-text').innerText.replace(/\s+/g, ' ').trim(),
+      versions: Object.fromEntries([...p.querySelectorAll('dl.sva-r-list dt')].map((dt) => [dt.textContent.trim(), dt.nextElementSibling.textContent.replace(/\s+/g, ' ').trim()]))
+    };
+  });
+  {
+    const panel = await box(page, '.sva-r-panel');
+    const snapDt = await page.evaluate(() => {
+      const dt = [...document.querySelectorAll('.sva-r-panel dl.sva-r-list dt')].find((x) => x.textContent.trim() === 'Snapshot');
+      if (!dt) return null;
+      const b = dt.getBoundingClientRect();
+      return { x: b.left, y: b.top, width: b.width, height: b.height };
+    });
+    r.rbqm.detailsStill = await still(page, 'snapshot-rbqm-details.png', { x: 0, y: 0, width: W, height: Math.min(H, panel.y + panel.height + 16) }, [snapDt && { ...snapDt, dx: -22 }]);
+  }
+  await page.click('.sva-r-panel .sva-r-x');
+  await page.waitForTimeout(300);
 
   // Back to the last snapshot: what the RBQM tab does then is read, not asserted.
   await openOverview(page);
@@ -661,9 +801,13 @@ async function partSnapshot(browser) {
 
   const num = (v) => Number(String(v || '').replace(/[^\d]/g, ''));
   const shown = (v) => num(String(v || '').split(' of ')[0]);
-  check('choosing a snapshot changes what the chip says', r.last.snap === `Snapshot ${r.options.length} of ${r.options.length}` && r.chosen.snap === `Snapshot ${PICK + 1} of ${r.options.length}`, { last: r.last.snap, chosen: r.chosen.snap, title: r.chosen.chipTitle });
+  check('choosing a snapshot changes what the chip says', r.last.snap === `Simulated · Snapshot ${r.options.length} of ${r.options.length}` && r.chosen.snap === `Simulated · Snapshot ${PICK + 1} of ${r.options.length}`, { last: r.last.snap, chosen: r.chosen.snap, title: r.chosen.chipTitle });
   check('a chart draws the snapshot chosen', shown(r.chosen.chart) > 0 && shown(r.chosen.chart) < shown(r.last.chart) && r.chosen.snapOnChart === r.chosen.snap, { last: r.last.chart, chosen: r.chosen.chart });
   check('the RBQM tab runs on the snapshot chosen', r.rbqm.read.sites === num(r.chosen.tiles && r.chosen.tiles.sites) && r.rbqm.read.sites < num(r.last.tiles && r.last.tiles.sites), { sitesInTheTab: r.rbqm.read.sites, sitesAtTheSnapshot: r.chosen.tiles, sitesAtTheLast: r.last.tiles, tab: r.rbqm.tab });
+  {
+    const day = String(r.chosen.option).split(' · ')[0];
+    check('the RBQM tab\'s Run details says the snapshot chosen, by its date', r.rbqm.details.versions.Snapshot === `${day} · snapshot ${PICK + 1} of ${r.options.length} of the study`, { snapshot: r.rbqm.details.versions.Snapshot, chosen: r.chosen.option });
+  }
   r.errors = t.errors;
   await t.context.close();
   return r;
@@ -815,6 +959,8 @@ async function partFiles(browser) {
   r.rail = await page.evaluate(() => [...document.querySelectorAll('.sv-pick')].map((b) => b.innerText.replace(/\s+/g, ' ').trim()));
   r.heading = flat(await page.evaluate(() => document.querySelector('h1.sva-title')?.innerText));
   r.viewerTitle = flat(await page.evaluate(() => document.querySelector('h3.sv-title')?.innerText));
+  // A demo study's Overview tab is the app's own: no second label on its corner.
+  r.cornerLabels = await page.locator('.sva-corner .sv-status-label').count();
   {
     const faceBox = await locBox(page.locator('button.sva-face').first());
     const pick = await locBox(page.locator('.sv-pick'));
@@ -834,7 +980,7 @@ async function partFiles(browser) {
     const source = await box(page, 'aside.sva-side [data-action="source-build"]');
     const reset = await box(page, 'aside.sva-side [data-action="reset"]');
     const faceBox = await locBox(page.locator('button.sva-face').nth(1));
-    r.filesStill = await still(page, 'files-face.png', { x: 0, y: 0, width: W, height: 640 }, [faceBox && { ...faceBox, dy: -8 }, choose && { ...choose, dy: -8 }, source && { ...source, dy: source.height + 10 }, reset && { ...reset, dx: reset.width + 12 }]);
+    r.filesStill = await still(page, 'files-face.png', { x: 0, y: 0, width: W, height: 640 }, [faceBox && { ...faceBox, dy: -8 }, choose && { ...choose, dx: -17 }, source && { ...source, dx: -17 }, reset && { ...reset, dx: reset.width + 12 }]);
     r.sideWidth = side && side.width;
   }
   r.details = await page.evaluate(() => [...document.querySelectorAll('details.sva-file-details')].map((d) => ({ file: d.dataset.details, summary: d.querySelector('summary').innerText.trim() })));
@@ -858,6 +1004,7 @@ async function partFiles(browser) {
   const dl = await locBox(d.locator('button, a').last());
   r.detailsStill = await still(page, 'file-details.png', { x: db.x - 8, y: Math.max(0, db.y - 150), width: db.width + 16, height: Math.min(H, db.y + db.height + 22) - Math.max(0, db.y - 150) }, [sum && { ...sum, dx: -2 }, dl && { ...dl, dx: dl.width + 14 }]);
   check('the Overview tab opens on the loaded study, looked through', r.heading === 'Overview' && same(r.viewerViews, ['Tables', 'Columns', 'One participant']) && r.rail.length === 4, { heading: r.heading, views: r.viewerViews, rail: r.rail });
+  check('a demo study\'s Overview tab carries no Experimental label', r.cornerLabels === 0, { labels: r.cornerLabels });
   check('the Files face keeps each file, the file picker and Reset, and offers Build a study', r.filesCards === 4 && ['choose-files', 'source-build', 'reset'].every((a) => r.filesButtons.some((b) => b.action === a)), r.filesButtons.map((b) => b.text));
 
   // A source draws in place of the loaded files, and gives them back.
@@ -940,9 +1087,19 @@ const willGet = (page) =>
     const h = [...document.querySelectorAll('h3')].find((x) => /what you will get/i.test(x.innerText));
     return h ? h.parentElement.innerText.split('\n').map((l) => l.trim()).filter(Boolean) : null;
   });
+/** What has keyboard focus: a field's name, a button's words, or null when nothing in the page has it. */
+const focused = (page) =>
+  page.evaluate(() => {
+    const a = document.activeElement;
+    return !a || a === document.body ? null : a.name || (a.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 30) || a.tagName.toLowerCase();
+  });
 async function fillTrial(page, name) {
+  // Where keyboard focus lands when Tab is pressed in a field that was changed.
+  const focus = {};
   await page.fill('input[name=name]', name);
   await page.keyboard.press('Tab');
+  await page.waitForTimeout(350);
+  focus.name = await focused(page);
   const phase = await page.evaluate((p) => {
     const lab = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && /^Phase/.test(e.textContent.trim()));
     const b = lab && [...lab.parentElement.querySelectorAll('button')].find((x) => x.innerText.trim() === p);
@@ -952,8 +1109,11 @@ async function fillTrial(page, name) {
   await page.waitForTimeout(500);
   const typical = await page.evaluate(() => Object.fromEntries(['participants', 'sites', 'months'].map((n) => [n, document.querySelector(`input[name=${n}]`).value])));
   const set = {};
-  for (const k of ['participants', 'sites', 'months', 'seed']) set[k] = await setNumber(page, k, BUILD[k]);
-  return { phaseLabel: phase, typical, set };
+  for (const k of ['participants', 'sites', 'months', 'seed']) {
+    set[k] = await setNumber(page, k, BUILD[k]);
+    focus[k] = await focused(page);
+  }
+  return { phaseLabel: phase, typical, set, focus };
 }
 async function runBuild(page, rCount) {
   const r0 = rCount();
@@ -1032,9 +1192,17 @@ async function partBuild(browser) {
     domains: await page.evaluate(() => [...document.querySelectorAll('button.sb-chip')].map((b) => ({ name: b.innerText.trim(), on: b.getAttribute('aria-pressed') === 'true' }))),
     panel: await willGet(page),
     rail: flat(await page.evaluate(() => document.querySelector('aside.sva-side')?.innerText)).slice(0, 400),
+    // The side panel beside the builder: how many files it says are loaded, and the files it lists.
+    railSays: await page.evaluate(() => ((document.querySelector('aside.sva-side')?.innerText || '').replace(/\s+/g, ' ').match(/(No|\d+) files? loaded/) || [null])[0]),
+    railFiles: await page.evaluate(() => (((document.querySelector('aside.sva-side')?.innerText || '').split(/LOADED DATA/i)[1] || '').match(/[\w.-]+\.(csv|json)/g) || [])),
     chip: await chip(page)
   };
-  r.form.credit = flat(await page.evaluate(() => [...document.querySelectorAll('main p, main div')].filter((e) => e.offsetParent && /DDF-RA/.test(e.innerText) && ![...e.children].some((c) => /DDF-RA/.test(c.innerText))).map((e) => e.innerText)[0] || ''));
+  // The Experimental label on the corner of Build a study.
+  r.form.label = await cornerLabel(page, 'builder-experimental.png');
+  check('Build a study carries the Experimental label, with a sentence', !!r.form.label && r.form.label.word === 'Experimental' && /^Experimental: /.test(r.form.label.says) && /study\.builder/.test(r.form.label.says) && r.form.label.heading === 'Build a study is experimental' && r.form.label.text[0] === r.form.label.says, r.form.label && { word: r.form.label.word, heading: r.form.label.heading, says: r.form.label.says });
+  check('beside the builder the side panel lists what is loaded', r.form.railSays === '4 files loaded' && r.form.railFiles.length === 4 && r.form.chip === 'Pilot study', { says: r.form.railSays, files: r.form.railFiles, chip: r.form.chip });
+  r.form.credits = await attributions(page);
+  r.form.credit = r.form.credits.length ? r.form.credits[0].text : '';
   r.form.terms = flat(await page.evaluate(() => [...document.querySelectorAll('main p')].filter((e) => e.offsetParent && /MedDRA/.test(e.innerText)).map((e) => e.innerText)[0] || ''));
   r.form.fetches = (r.form.panel || []).find((l) => /^First build/.test(l)) || '';
   r.trial = await fillTrial(page, BUILT_NAME);
@@ -1072,13 +1240,18 @@ async function partBuild(browser) {
     await rect('credit', 'center');
     await page.waitForTimeout(300);
     const creditBox = await rect('credit');
-    const terms = await rect('terms');
-    if (creditBox) r.form.creditStill = await still(page, 'builder-credit.png', pad(union(creditBox, terms), 12), [{ ...creditBox, dx: -2, dy: 10 }]);
+    const ask = await box(page, '.sb-protocol-ask');
+    // The marker sits in the margin to the left of the line, clear of its first letter.
+    if (creditBox) {
+      const both = union(creditBox, ask);
+      r.form.creditStill = await still(page, 'builder-credit.png', { x: both.x - 36, y: both.y - 12, width: both.width + 48, height: both.height + 24 }, [{ ...creditBox, dx: -19, dy: 10 }]);
+    }
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(300);
   }
   check('the builder says what a first build fetches, and that no study data is sent', /No study data is sent anywhere/.test(r.form.fetches) && /webr\.r-wasm\.org/.test(r.form.fetches) && /repo\.r-wasm\.org/.test(r.form.fetches), r.form.fetches);
-  check('CDISC\'s attribution is under the builder', /DDF-RA/.test(r.form.credit) && /CC-BY-4\.0/.test(r.form.credit), r.form.credit.slice(0, 140));
+  check('CDISC\'s attribution is inside the builder, once, under the example protocols', r.form.credits.length === 1 && r.form.credits[0].after === 'the example protocols' && /DDF-RA/.test(r.form.credit) && /CC-BY-4\.0/.test(r.form.credit), r.form.credits);
+  check('in the form, Tab from a changed number field lands on the next number field', r.trial.focus.participants === 'sites' && r.trial.focus.sites === 'months', r.trial.focus);
   check('the builder names the simulator as a modified copy of gsm.datasim', /modified copy of gsm\.datasim/.test(r.form.terms), r.form.terms);
 
   // Build, and take the steps as R takes them.
@@ -1114,6 +1287,7 @@ async function partBuild(browser) {
   await page.waitForFunction((n) => (document.querySelector('.sva-studychip')?.innerText || '').includes(n), BUILT_NAME, { timeout: 60000 });
   await page.waitForTimeout(2500);
   r.loaded = { title: await title(page), url: page.url().replace(BASE, ''), chip: await chip(page), count: await count(page), tabs: await tabs(page), sections: (await views(page)).map((v) => v.name) };
+  r.loaded.label = await page.evaluate(() => document.querySelector('.sva-corner .sv-status-word')?.textContent.trim() || null);
   r.loaded.menu = await readMenu(page);
   const menuBox = await box(page, '.sva-chip-menu');
   const mine = await locBox(page.locator('.sva-chip-menu .sva-chip-item', { has: page.locator(`.sva-chip-study:text-is("${BUILT_NAME}")`) }));
@@ -1175,7 +1349,19 @@ async function partBuild(browser) {
     const table = th.closest('table');
     return { heads: [...table.querySelectorAll('th')].map((x) => x.innerText.replace(/\s+/g, ' ').trim()), rows: [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.children].map((td) => td.innerText.replace(/\s+/g, ' ').trim())) };
   });
-  r.protocol.credit = flat(await page.evaluate(() => [...document.querySelectorAll('main p, main div')].filter((e) => e.offsetParent && /DDF-RA/.test(e.innerText) && ![...e.children].some((c) => /DDF-RA/.test(c.innerText))).map((e) => e.innerText)[0] || ''));
+  r.protocol.credits = await attributions(page);
+  r.protocol.credit = r.protocol.credits.length ? r.protocol.credits[0].text : '';
+  // The foot of the schedule grid, with the attribution under it.
+  {
+    const line = page.locator('main .sb-attribution').first();
+    if (await line.count()) {
+      await line.evaluate((e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+      await page.waitForTimeout(300);
+      const lb = await locBox(line);
+      r.protocol.creditStill = await still(page, 'builder-protocol-credit.png', { x: lb.x - 36, y: lb.y - 200, width: lb.width + 48, height: 200 + lb.height + 16 }, [{ ...lb, dx: -19, dy: 10 }]);
+    }
+  }
+  check('with a protocol in the form, the attribution is under its schedule grid, once', r.protocol.credits.length === 1 && r.protocol.credits[0].after === 'the schedule grid', r.protocol.credits);
   check('the builder offers five example protocols', r.form.protocols.length === 5, r.form.protocols);
   check('a protocol puts its schedule of activities in the form', /SCHEDULE OF ACTIVITIES/i.test(r.protocol.head), r.protocol.head);
   r.errors = t.errors;

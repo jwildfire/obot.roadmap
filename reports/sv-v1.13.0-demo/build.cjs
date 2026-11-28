@@ -37,7 +37,12 @@ const pr = (n) => `${SV}/pull/${n}`;
 const issue = (n) => `${SV}/issues/${n}`;
 // The release of study.builder that safety.viz carries: from its record in
 // safety.viz and the release notes, not read from the app.
-const BUILDER_VERSION = 'v0.5.1';
+const BUILDER_VERSION = 'v0.5.2';
+// A build of one's own (BUILD_IS and COMMIT in capture.cjs): the commit of the
+// dev branch that holds the same files as the build, apart from the stored test
+// records under docs/evidence. Checked by hand with
+// `git diff <COMMIT> <DEV_IS_AT> -- . ':(exclude)docs/evidence'`, which prints nothing.
+const DEV_IS_AT = '57b50d13';
 
 // ---------------------------------------------------------------- words
 const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -50,7 +55,7 @@ const date = new Date(c.site.captured).toLocaleDateString('en-GB', { day: 'numer
 const commit = c.site.commit ? c.site.commit.slice(0, 8) : 'unknown';
 const key = (t) => `<span class="key">${esc(t)}</span>`;
 const list = (items) => items.map(esc).join(', ');
-const and = (items) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+const and = (items, word = 'and') => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} ${word} ${items[items.length - 1]}`);
 // A label the app draws in capitals, as a sentence would write it.
 const sentence = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : '');
 const first = (t) => `${String(t).split('. ')[0].replace(/\.$/, '')}.`;
@@ -99,7 +104,6 @@ const info = (lines, label) => lines[lines.indexOf(label) + 1];
 const versionSaid = CH.version;
 const stepNames = BU.build.panel.steps;
 const snapshotCarried = SE.snapshotAfterPlain && SE.snapshot && SE.snapshotAfterPlain !== SE.snapshot.chosen;
-const railSaysNone = /No files loaded/.test(BU.form.rail) && BU.form.chip;
 const firstBuildNote = BU.form.fetches || (BU.form.panel || []).find((l) => /^First build/.test(l)) || '';
 const noteAfterR = (OT.panelAfterR || []).find((l) => /^First build/.test(l));
 const rbqmWords = BU.rbqm.before.words || [];
@@ -120,10 +124,21 @@ if (otherHosts.length) throw new Error(`the capture asked a host the page does n
 const unset = M.before.rows.filter((x) => x.label);
 const tileWords = (t) => `${esc(t.participants)} participants, ${esc(t.enrolled)} enrolled, ${esc(t.sites)} sites`;
 const notSent = (firstBuildNote.match(/No study data is sent anywhere/) || [''])[0];
+// The line under the study's name on the chip, in its two parts.
+const MARK = SW.after.mark;
+// The page says the mark was read on three kinds of tab: hold it to that.
+for (const [where, line] of [['the Overview tab', SE.chipSnap], ['a chart', SN.chosen.snapOnChart], ['the RBQM tab', SN.rbqm.snap]]) {
+  if (!String(line || '').startsWith(MARK.simulated)) throw new Error(`the chip did not read ${MARK.simulated} on ${where}: ${line}`);
+}
+const schedule = walk('Design', 'Schedule');
+// Where Tab left keyboard focus after a changed field of the form: a field's name, or nothing.
+const FOCUS = BU.trial.focus || {};
+const focusLost = ['name', 'participants', 'sites', 'months', 'seed'].filter((k) => k in FOCUS && FOCUS[k] === null);
+const fieldLabel = { name: 'Name', participants: 'Participants', sites: 'Sites', months: 'Months', seed: 'Seed' };
 
 const css = fs.readFileSync(path.join(dir, 'page.css'), 'utf8');
 
-const DESCRIPTION = 'What safety.viz v1.13.0 changes, with stills and steps to try: a chip that names the study and its snapshot, a Studies page, simulated studies built with R in the browser, what each file holds, and the expanded participant profile.';
+const DESCRIPTION = 'What safety.viz v1.13.0 changes, with stills and steps to try: a chip that names the study, marks it Simulated and says its snapshot, a Studies page, simulated studies built with R in the browser, what each file holds, and the expanded participant profile.';
 if (DESCRIPTION.length < 40 || DESCRIPTION.length > 260) throw new Error(`description is ${DESCRIPTION.length} characters`);
 
 const STATUS_WORD = RELEASED_ON ? `Released ${esc(RELEASED_ON)}` : 'Release candidate';
@@ -146,14 +161,14 @@ ${css}
 <header class="mast">
   <div class="eyebrow"><span>safety.viz</span><span class="dot"></span><span>v1.13.0</span><span class="dot"></span><span id="status-word">${STATUS_WORD}</span><span class="dot"></span><span>Annotated demo</span></div>
   <h1>safety.viz <span class="v">v1.13.0</span>: the demo app knows its studies</h1>
-  <p class="lede">The demo app now names the study you are working with, and lists the others. A simulated study opens ready-made, or is built in the browser by study.builder with R. It is shown in sections, at the snapshot you choose. Every loaded file shows what it holds. The chart bundle changes in one place: the layout of the expanded participant profile.</p>
+  <p class="lede">The demo app now names the study you are working with, and lists the others. A simulated study opens ready-made, or is built in the browser by study.builder with R. The chip marks it Simulated. It is shown in sections, at the snapshot you choose. Every loaded file shows what it holds. The chart bundle changes in one place: the layout of the expanded participant profile.</p>
   <div class="facts"><span>Captured ${esc(date)}</span><span>${OF}</span>${CH.before ? `<span>before: ${esc(THEN)}, the released site</span>` : ''}<span>${held} of ${held} checks held</span><span>1,400 by 900 window, light theme</span></div>
 
   <div class="note">
     <div class="lbl">Where it stands</div>
     <ul>
       <li id="rc-links">${STANDS}</li>
-      <li>The stills are of ${OF}${c.site.after ? '' : `. When the stills were taken that was the dev branch plus two changes: the copy of study.builder moved to ${BUILDER_VERSION}${cite(issue(423), 'safety.viz #423')}, and the notes, the footer and the data sources page made true${cite(issue(424), 'safety.viz #424')}. Both have since merged, and dev at 7d1066d0 holds the same files but for the stored test pictures and their records`}. The app's footer read ${q(versionSaid)}.</li>
+      <li>The stills are of ${OF}${c.site.after ? '' : `. The build was made just before its last change merged: the fixes from the second review of the candidate${cite(issue(427), 'safety.viz #427')}, in ${a(pr(430), 'pull request #430')}. The dev branch at ${DEV_IS_AT} now holds the same files, apart from the stored test records under docs/evidence. The dev site has shown that change since 11:07 PM Eastern on 27 November`}. The app's footer read ${q(versionSaid)}.</li>
       <li>Until the release, the app is published from the dev branch at ${a(DEV_APP, 'jwildfire.github.io/safety.viz/dev/demo/')}. After the release it is at ${a(RELEASED_APP, 'jwildfire.github.io/safety.viz/demo/')}.</li>
       <li>Every study on this page is public or made up. The demo studies come from the public CDISC pilot study, and every row of a simulated study is synthetic.</li>
       <li>This page is the companion to the release notes. The notes are short, and the detail behind them is here.${cite(NEWS, 'NEWS.md on dev')}</li>
@@ -164,11 +179,13 @@ ${css}
     <div class="lbl">In short</div>
     <ul>
       <li>A chip in the header names the study in use. Pressing it lists ${n(CH.menu.items.length)} studies: ${n(demo.length)} marked Demo and ${n(sim.length)} marked Simulated.</li>
-      <li>Choosing a study keeps you on the tab you were on. A ready-made simulated study opened in ${SW.ms < 1000 ? 'under a second' : `${n(SW.ms)} milliseconds`} on this capture, with no R. A study that fails to open says so under the chip.</li>
+      <li>Under the name, the chip marks a simulated study ${q(MARK.simulated)}. It read so on the Overview tab, on a chart and on the RBQM tab.</li>
+      <li>Choosing a study keeps you on the tab you were on. A ready-made simulated study opened in ${SW.ms < 1000 ? 'under a second' : `${n(SW.ms)} milliseconds`} on this capture, with no R. A study that fails to open says so under the chip, and the study in use stays.</li>
       <li>The Overview tab, which was the Data tab, opens on the loaded study, looked through. Its second face, ${esc(FI.faces[1].name)}, keeps each file, the file picker and Reset.</li>
       <li>The Overview tab shows a simulated study in sections: ${list(SE.sections)}.</li>
-      <li>For a study that kept monthly snapshots, the chip says which one is drawn. The charts and the RBQM tab draw that one.</li>
+      <li>For a study that kept monthly snapshots, the chip says which one is drawn. The charts and the RBQM tab draw that one, and the RBQM tab's Run details names it by its date.</li>
       <li>A study can be built in the browser. You describe the trial, ${esc(madeBy)} simulates it with R, and one button hands it to the charts and the RBQM tab.</li>
+      <li>Build a study and the view of a simulated study each carry the label ${q(SE.label.word)}, with a sentence that says why.</li>
       <li>Each loaded file has a Details section, and columns are mapped in the Columns view.</li>
       <li>R starts once. The RBQM tab and the builder share it. Starting it downloads R and its packages. The app says no study data is sent.</li>
       <li>The expanded participant profile draws its chart beside its controls. That is the only change to the charts.</li>
@@ -191,8 +208,8 @@ ${css}
 
 <nav class="toc" aria-label="Contents">
   <a href="#chip"><span class="ref">01</span><span class="t">The study chip</span><span class="s">Which study is in use, and the list</span></a>
-  <a href="#switch"><span class="ref">02</span><span class="t">Switching study</span><span class="s">Same tab, no R, and a failed open</span></a>
-  <a href="#sections"><span class="ref">03</span><span class="t">A study in sections</span><span class="s">Overview, Design, Data, One participant, Reporting</span></a>
+  <a href="#switch"><span class="ref">02</span><span class="t">Switching study</span><span class="s">Same tab, no R, the Simulated mark, a failed open</span></a>
+  <a href="#sections"><span class="ref">03</span><span class="t">A study in sections</span><span class="s">Five sections, the Experimental label, the study's notes</span></a>
   <a href="#snapshot"><span class="ref">04</span><span class="t">The snapshot you choose</span><span class="s">On the chip, in the charts, in the RBQM tab</span></a>
   <a href="#studies"><span class="ref">05</span><span class="t">The Studies page</span><span class="s">Every study, and three ways to add one</span></a>
   <a href="#build"><span class="ref">06</span><span class="t">Build a study</span><span class="s">Described, simulated by R, loaded</span></a>
@@ -252,8 +269,9 @@ ${css}
   <p class="what">Here the app is on the Outlier Explorer. ${esc(pp.name)} is chosen from the chip. The same chart is drawn again, on the new study.</p>
   ${grid([
     { label: `${SW.before.chip} · Outlier Explorer`, plain: true, still: SW.before.still, alt: `The Outlier Explorer on the ${SW.before.chip}: the chip reads ${SW.before.chip}.` },
-    { label: `${SW.after.chip} · still the Outlier Explorer`, still: SW.after.still, alt: `The Outlier Explorer after ${SW.after.chip} was chosen: the chip reads ${SW.after.chip}, with ${SW.after.snap} under the name, and the Outlier Explorer is still the chart shown.`, legend: [`The chip now reads ${q(SW.after.chip)}, with ${q(SW.after.snap)} under the name (section 4).`, 'The Outlier Explorer is still the chart shown.'] }
+    { label: `${SW.after.chip} · still the Outlier Explorer`, still: SW.after.still, alt: `The Outlier Explorer after ${SW.after.chip} was chosen: the chip reads ${SW.after.chip}, with ${SW.after.snap} under the name, and the Outlier Explorer is still the chart shown.`, cap: `The chip now reads ${q(SW.after.chip)}, with ${q(SW.after.snap)} under the name. The Outlier Explorer is still the chart shown.` }
   ])}
+  ${solo(SW.after.markStill, 'The chip on a chart tab', `The left of the header on the Outlier Explorer, with ${SW.after.chip} in use: under the study's name the chip reads ${SW.after.snap}.`, [], `The chip, close up, on a chart tab. Under the study's name it reads ${q(SW.after.snap)}: the word ${q(MARK.simulated)}, then the snapshot drawn (section 4). To a screen reader the chip says ${q(MARK.spoken)}. A demo study has no such line: the chip of the ${esc(SW.before.chip)} reads its name alone.`)}
   ${ul([
     `The browser tab's title was ${q(SW.before.title)} before and after.`,
     `The switch took ${n(SW.ms)} milliseconds on this capture. The page made ${n(SW.after.r.runtime + SW.after.r.packages)} requests to R's hosts: a ready-made study is a stored file, not a build.`,
@@ -276,9 +294,12 @@ ${css}
       label: 'A study that does not open',
       still: SW.failed.still,
       alt: `The Outlier Explorer on the ${SW.failed.chip}, with a sentence in a box under the chip: ${SW.failed.said}`,
-      legend: [`The chip still names the study in use, ${q(SW.failed.chip)}.`, 'The sentence, under the chip.'],
+      legend: [`The sentence, under the chip. The chip above it still names the study in use, ${q(SW.failed.chip)}.`],
       cap: `For this still the capture stopped ${esc(SW.failed.study)}'s file on its way to the page, as a dropped connection would. The app said: ${q(SW.failed.said)} The chart stayed as it was. With the file let through, the same study opened.`
     }
+  ])}
+  ${ul([
+    `A demo study that does not open is said under the chip too. With the files of ${q(SW.failedDemo.study)} stopped the same way, the app said: ${q(SW.failedDemo.said)} The chip still read ${q(SW.failedDemo.chip)}, and the Outlier Explorer was still the chart shown. With the files let through, the study opened. This one is read, not shown.`
   ])}
   ${steps([
     [`In the ${a(APP, 'demo app')}, choose ${key('Outlier Explorer')}.`, 'The chart draws the Pilot study.'],
@@ -296,6 +317,10 @@ ${css}
     `The study's tables, by layer: ${list(SE.layers)}.`,
     `The snapshot chooser. This study kept ${n(SE.snapshot.options.length)} monthly snapshots (section 4).`
   ], `The study's facts, in the line: ${list(SE.facts)}. The app said ${q(SE.ready.replace(/\. What each tab says$/, ''))}.`)}
+  ${solo(SE.label.still, `${pp.name} · the ${SE.label.word} label, pressed`, `The Overview tab on ${pp.name} with the label ${SE.label.word} at the top right, pressed. A panel under it is headed ${SE.label.heading} and says: ${SE.label.text.join(' ')} Under that, the four rungs, with ${SE.label.rung} marked ${SE.label.marked.join(', ')}.`, [
+    `The label, ${q(SE.label.word)}, on the corner of the tab. The app's own label, ${q(sentence(CH.status))}, stays above it.`,
+    `Its sentence: ${q(SE.label.says)}`
+  ], `The panel is headed ${q(SE.label.heading)}. The label's tooltip holds the same sentence. A demo study's Overview tab has no such label (section 7).`)}
   <table class="reads">
     <thead><tr><th>Section</th><th>Its views</th><th>What it holds</th></tr></thead>
     <tbody>
@@ -308,7 +333,7 @@ ${css}
   </table>
   ${grid([
     { label: 'Design · Protocol', still: walk('Design', 'Protocol').still, alt: `Design, Protocol: the protocol's name, phase, indication, arms and epochs, then ${walk('Design', 'Protocol').heads.slice(1).join('; ')}.`, cap: `Headings on this view: ${walk('Design', 'Protocol').heads.slice(1, 4).map(q).join(', ')}.` },
-    { label: 'Design · Schedule', still: walk('Design', 'Schedule').still, alt: 'Design, Schedule: a grid of activities down the side and visits across the top, with a dot where an activity happens at a visit.', cap: 'Activities by visit. A dot marks an activity at a visit; activities the simulator leaves out are labelled so.' },
+    { label: 'Design · Schedule', still: walk('Design', 'Schedule').still, alt: 'Design, Schedule: a grid of activities down the side and visits across the top, with a dot where an activity happens at a visit.', cap: `Activities by visit. A dot marks an activity at a visit; activities the simulator leaves out are labelled so. Under the grid, once, is CDISC's attribution: ${q(schedule.attributions[0].text)}` },
     { label: 'Data · Pipeline', still: walk('Data', 'Pipeline').still, alt: 'Data, Pipeline: the settings the study was asked to be, then every table by layer with the workflow that built it.', cap: `${q(walk('Data', 'Pipeline').heads[0])}.` },
     { label: 'Data · Tables', still: walk('Data', 'Tables').still, alt: 'Data, Tables: the rows of one table, with a Download CSV button and a filter.', cap: 'The rows of the table chosen on the left, with filters and sorting.' },
     { label: 'Data · Columns', still: walk('Data', 'Columns').still, alt: 'Data, Columns: one row per column of the table, with its label, kind, share filled, number of values and range.', cap: 'A profile of every column of the table.' },
@@ -317,12 +342,16 @@ ${css}
     { label: 'Reporting · Adverse events', still: walk('Reporting', 'Adverse events').still, alt: 'Reporting, Adverse events: a table of adverse event terms by body system, with the number and share of each arm.', cap: `${q(walk('Reporting', 'Adverse events').heads[0])}.` }
   ])}
   ${solo(SE.plain.still, `${plainName} · no protocol`, `The row of sections on ${plainName}: ${SE.plain.sections.join(', ')}. There is no Design section.`, [], `${esc(plainName)} did not follow a protocol, so it has no Design section: ${list(SE.plain.sections)}. Its Reporting section has one view, ${q(SE.plain.reportingHeads[0] || 'Adverse events by arm')}, because it simulated no score.`)}
+  <h3>The study's own notes</h3>
+  ${solo(SE.notes.still, `${pp.name} · Overview · ${SE.notes.summary}`, `The fold ${SE.notes.summary}, opened, at the foot of the Overview section on ${pp.name}: a list of sentences. The first reads: ${SE.notes.items[0]}`, [`The first sentence: ${q(SE.notes.items[0])}`], `At the foot of the Overview section is a fold, ${q(SE.notes.summary)}. It is closed until pressed. On ${esc(pp.name)} it holds ${n(SE.notes.items.length)} sentences, and the still shows the first of them. ${n(SE.notes.naming)} name gsm.datasim, and each of those says it is the modified copy.`)}
   ${ul([
     'study.builder has RBQM and Safety views of its own. They are left out here, and in the builder. The app’s RBQM tab and its chart tabs show the same study.',
-    `A demo study is not shown in sections. Its Overview tab has ${list(FI.viewerViews)} (section 7).`
+    `A demo study is not shown in sections. Its Overview tab has ${list(FI.viewerViews)} (section 7).`,
+    `A simulated study has a ${esc(FI.faces[1].name)} face too. On ${esc(pp.name)} it said ${q(SE.filesFace.loaded)}. ${n(SE.filesFace.raw.length)} of them are gsm's raw files. ${n(SE.filesFace.raw.length - SE.filesFace.noMetric)} are labelled with the gsm file they are read as, such as ${q(SE.filesFace.raw.find((x) => /by its name/i.test(x)))}. The other ${n(SE.filesFace.noMetric)} are each labelled ${q(SE.filesFace.raw.find((x) => /read by no metric/i.test(x)))}.`
   ])}
   ${steps([
     [`Choose ${key(pp.name)} from the chip, then press ${key('Overview')}.`, `The sections are ${list(SE.sections)}.`],
+    [`Press the label ${key(SE.label.word)} at the top right.`, `A panel says why: ${q(SE.label.says)}`],
     [`Press ${key('Design')}, then ${key('Schedule')}.`, 'The protocol’s visits run across the top, its activities down the side.'],
     [`Choose ${key(plainName)} from the chip.`, 'The Design section is gone: that study followed no protocol.']
   ])}
@@ -342,7 +371,7 @@ ${css}
       label: 'A chart, on that snapshot',
       still: SN.chartStill,
       alt: `The Outlier Explorer on ${pp.name} at ${SN.chosen.snap}. It says ${SN.chosen.chart}.`,
-      legend: [`The chip still reads ${q(SN.chosen.snapOnChart)}.`, `The chart says ${q(SN.chosen.chart)}. At the last snapshot it said ${q(SN.last.chart)}.`]
+      cap: `The chip still reads ${q(SN.chosen.snapOnChart)}. The chart says ${q(SN.chosen.chart)}. At the last snapshot it said ${q(SN.last.chart)}.`
     },
     {
       label: 'The RBQM tab, on that snapshot',
@@ -351,15 +380,17 @@ ${css}
       cap: `After ${key('Start R')}: ${q(SN.rbqm.read.count)}, the ${esc(SN.chosen.tiles.sites)} sites the study had at that snapshot. ${SN.rbqm.said ? q(SN.rbqm.said) : ''}`
     }
   ])}
+  ${solo(SN.rbqm.detailsStill, 'The RBQM tab · Run details, on that snapshot', `The RBQM tab on ${pp.name} at ${SN.rbqm.snap}, with Run details pressed. A panel headed ${SN.rbqm.details.heading} lists the steps, what R was handed, and the versions. Its last row reads Snapshot: ${SN.rbqm.details.versions.Snapshot}.`, [`The row ${q('Snapshot')}: ${q(SN.rbqm.details.versions.Snapshot)}.`], `${key('Run details')}, pressed after the run. The panel says which snapshot R was handed, by its date: ${q(SN.rbqm.details.versions.Snapshot)}. It is the snapshot chosen on the Overview tab, ${q(SN.chosen.option)}.`)}
   ${ul([
     `The card under the i says ${q(`Snapshot drawn: ${SN.chosen.card}`)}. Hovering the chip gives ${q(SN.chosen.chipTitle)}.`,
     `Set back to the last snapshot, the chip read ${q(SN.back.snap)}. ${/running/i.test(SN.back.tabAtOnce) || !SN.back.buttons.length ? 'The RBQM tab ran again without being asked' : `The RBQM tab ran again after ${key(SN.back.buttons[0])}`}, and listed ${q(SN.back.read.count)}.`,
-    ST.opened.snap === null ? `A study that kept only its last snapshot has no such words on its chip: ${esc(ST.opened.chip)} reads its name alone.` : ''
+    ST.opened.snap && !/Snapshot/.test(ST.opened.snap) ? `A study that kept only its last snapshot names no snapshot on its chip. Under its name, ${esc(ST.opened.chip)} reads ${q(ST.opened.snap)} alone.` : ''
   ])}
   ${steps([
     [`Choose ${key(pp.name)} from the chip, then press ${key('Overview')}.`, `The chip reads ${q(SN.last.snap)}.`],
     [`In the line of facts, set ${key('Snapshot')} to ${key(SN.chosen.option)}.`, `The chip reads ${q(SN.chosen.snap)}, and the counts fall to ${tileWords(SN.chosen.tiles)}.`],
-    [`Press ${key('Labs and vitals')}, then ${key('Outlier Explorer')}.`, `The chart says ${q(SN.chosen.chart)}.`]
+    [`Press ${key('Labs and vitals')}, then ${key('Outlier Explorer')}.`, `The chart says ${q(SN.chosen.chart)}.`],
+    [`Open the ${key('RBQM')} tab, press ${key('Start R')}, and when the sites are listed press ${key('Run details')}.`, `The row Snapshot reads ${q(SN.rbqm.details.versions.Snapshot)}.`]
   ])}
 </section>
 
@@ -392,7 +423,11 @@ ${css}
     `What you will get, and ${key('Build the study')}.`
   ], `This capture pressed phase ${esc(BS.phase)}, which filled in ${esc(BU.trial.typical.participants)} participants at ${esc(BU.trial.typical.sites)} sites over ${esc(BU.trial.typical.months)} months, then typed smaller numbers: ${n(BS.participants)} participants, ${n(BS.sites)} sites, ${n(BS.months)} months, seed ${n(BS.seed)}.`)}
   ${solo(BU.form.panelStill, 'The panel at the right of the form', `The panel headed ${BU.form.panel[0]}: ${BU.form.panelSet.slice(1, 9).join(', ')}; a note on the first build; the buttons Build the study, Save settings and Settings file; and a sentence on what a simulated study is.`, [`What a first build costs and downloads: ${q(firstBuildNote)}`], `The panel after the smaller numbers were typed. Under the buttons the builder says what a simulated study is.`)}
-  ${solo(BU.form.creditStill, 'The foot of the form', `The foot of the builder's form: a sentence on adverse event terms, then CDISC's attribution for the example protocols.`, [`CDISC's attribution, under the builder: ${q(first(BU.form.credit))} The rest is in the still, and in full at the foot of this page.`], `Above the attribution the builder says where its adverse event terms come from: ${q(BU.form.terms)}`)}
+  ${solo(BU.form.label.still, `Build a study · the ${BU.form.label.word} label, pressed`, `Build a study with the label ${BU.form.label.word} at the top right, pressed. A panel under it is headed ${BU.form.label.heading} and says: ${BU.form.label.text.join(' ')} Under that, the four rungs, with ${BU.form.label.rung} marked ${BU.form.label.marked.join(', ')}.`, [
+    `The label, ${q(BU.form.label.word)}, on the corner of Build a study.`,
+    `Its sentence: ${q(BU.form.label.says)}`
+  ], `The panel is headed ${q(BU.form.label.heading)}. Beside the builder the side panel still lists what is loaded: ${q(BU.form.railSays)}, the ${esc(BU.form.chip)}'s ${list(BU.form.railFiles)}.`)}
+  ${solo(BU.form.creditStill, 'In the form: the example protocols', `The part of the builder's form that asks for a protocol: a sentence, a button to open a file, ${BU.form.protocols.length} buttons to try an example protocol, and under them one line: ${BU.form.credit}`, [`CDISC's attribution, inside the builder, under the example protocols: ${q(BU.form.credit)}`], `The attribution is in the form once. With a protocol in the form it moves to the foot of the schedule grid (below). The longer form of it, from the study's card, is at the foot of this page.`)}
   ${grid([
     {
       label: 'While it builds',
@@ -407,6 +442,7 @@ ${css}
       cap: `After ${key(BU.protocol.button)}: ${q(BU.protocol.head)}. Each visit's day can be typed over, and each activity ticked or cleared. A protocol here is a CDISC USDM study definition, the data form of an ICH M11 protocol. This capture did not build from a protocol.`
     }
   ])}
+  ${solo(BU.protocol.creditStill, 'A protocol in the form: the foot of its schedule', `The last rows of the schedule grid in the form, and under the grid one line: ${BU.protocol.credit}`, [`CDISC's attribution, under the schedule grid: ${q(BU.protocol.credit)}`], `With a protocol in the form the attribution is under its schedule grid, and nowhere else in the form.`)}
   ${solo(BU.built.still, 'Built', `The built study, ${BS.name}: a badge reading ${BU.built.builtIn}, the buttons ${BU.built.buttons.slice(0, 4).join(', ')}, the facts ${BU.built.facts.slice(0, 6).join(', ')}, and the study view with the sections ${BU.built.sections.join(', ')}.`, [
     `${q(BU.built.builtIn)}: the simulation itself, once R was ready.`,
     `${key('Load into the demo')} hands the study to the app.`,
@@ -427,12 +463,13 @@ ${css}
     }
   ])}
   ${ul([
-    `After ${key('Load into the demo')} the app showed the Overview tab, with the chip reading ${q(BU.loaded.chip)}${BU.loaded.snap ? ` and ${q(BU.loaded.snap)}` : ''}. Its card says ${q(`Made by: ${BU.loaded.card.facts['Made by']}`)}.`,
+    `After ${key('Load into the demo')} the app showed the Overview tab, with the chip reading ${q(BU.loaded.chip)}${BU.loaded.snap ? ` and, under the name, ${q(BU.loaded.snap)}` : ''}. Its card says ${q(`Made by: ${BU.loaded.card.facts['Made by']}`)}.`,
     'The chart tabs drew the built study, and the RBQM tab ran every one of its site metrics on it (section 8).',
     BU.reload.kept
       ? `The built study is kept by this browser. After the page was reloaded it was still in the chip's list. The study in use after the reload was ${q(BU.reload.chip)}, not the built one.`
       : `After the page was reloaded the built study was not in the chip's list, and the study in use was ${q(BU.reload.chip)}.`,
-    `The builder says what a simulated study is: ${q((BU.form.panelSet || BU.form.panel).find((l) => /^Every row is synthetic/.test(l)) || 'Every row is synthetic.')}`
+    `The builder says what a simulated study is: ${q((BU.form.panelSet || BU.form.panel).find((l) => /^Every row is synthetic/.test(l)) || 'Every row is synthetic.')}`,
+    `Lower in the form it says where its adverse event terms come from: ${q(BU.form.terms)}`
   ])}
   ${steps([
     [`Press the chip, then ${key(CH.menu.foot[0])}, then ${key(way('describe a study').button)}.`, 'The form opens, headed New study.'],
@@ -556,11 +593,10 @@ ${css}
   <div class="hd"><h2>Limits</h2></div>
   <div class="note found">
     <div class="lbl">Known, and not fixed</div>
-    <p>These four are in the release notes. Beside each is what this capture saw.</p>
+    <p>These three are in the release notes. Beside each is what this capture saw.</p>
     <ul>
       <li>The Patient Journey Explorer's Collapse button does not close its panel. Not captured: that chart is on the docs site, not in the demo app.</li>
       <li>After the builder starts R, the RBQM tab still says R must be downloaded, and the reverse.${rbqmWords.length ? ` Captured: after a build the RBQM tab read ${q(rbqmWords[0].replace(/ START R$/, ''))} and asked for ${key('Start R')}.` : ''}${noteAfterR ? ` After the RBQM tab had started R, the builder read ${q(first(noteAfterR))}` : ''} In both orders the second step made no request to R's own host (section 8).</li>
-      <li>With the builder open the side panel says no files are loaded.${railSaysNone ? ` Captured: the panel read ${q('No files loaded')} while the chip named ${q(BU.form.chip)}.` : ''}</li>
       <li>A reload reopens the pilot study. Captured: after a reload the chip read ${q(BU.reload.chip)}, though ${esc(BS.name)} was in use before.${BU.reload.kept ? ' The built study was still in the list.' : ''}</li>
     </ul>
     <p>Where they are tracked: ${a(issue(410), 'safety.viz #410')}, ${a(`${STV}/issues/19`, 'study.viz #19')}, ${a(`${STV}/issues/20`, 'study.viz #20')}.</p>
@@ -577,8 +613,8 @@ ${css}
   <div class="note found">
     <div class="lbl">Noticed while capturing</div>
     <ul>
-      <li>The sentence for a study that did not open ends ${q((SW.failed.said.match(/Its settings[^.]*\./) || [''])[0])} The reader was on a chart, where no form is shown (section 2).</li>
-      ${twoRows(1200).length ? `<li>At ${px(1200)} the header took two rows on ${n(twoRows(1200).length)} of ${n(atWidth(1200).length)} studies: ${list(twoRows(1200))}. At 1,280, the width the release notes name, it was one row on every study (section 10).</li>` : ''}
+      ${twoRows(1200).length ? `<li>At ${px(1200)} the header took two rows on ${n(twoRows(1200).length)} of ${n(atWidth(1200).length)} studies: ${list(twoRows(1200))}. The release notes promise one row at 1,280 pixels, and there it was one row on every study (section 10). Widths between 1,200 and 1,280 were not read.</li>` : ''}
+      ${focusLost.length ? `<li>In the builder's form, Tab from a changed ${esc(fieldLabel.participants)} field landed on ${esc(fieldLabel[FOCUS.participants] || FOCUS.participants)}, and from ${esc(fieldLabel.sites)} on ${esc(fieldLabel[FOCUS.sites] || FOCUS.sites)}. Tab from a changed ${and(focusLost.map((k) => esc(fieldLabel[k])), 'or')} field left keyboard focus on nothing in the page. After each of those fields the form has a row of buttons, not a field to type in.</li>` : ''}
       ${Number(SN.back.read.sites) !== Number(SN.last.tiles.sites) ? `<li>On ${esc(pp.name)} at its last snapshot the RBQM tab listed ${q(SN.back.read.count)}, and the Overview tab counted ${esc(SN.last.tiles.sites)} sites. At the snapshot chosen in section 4 the two agreed, at ${esc(SN.chosen.tiles.sites)}. The study has 12 sites and one of them has no participants; the RBQM tab lists the sites that have participants.</li>` : ''}
       ${firstBuildNote && BU.build.seconds > 90 ? `<li>The first build took ${secs(BU.build.seconds)} on this capture. The builder's own note reads ${q(first(firstBuildNote))}</li>` : ''}
       ${snapshotCarried ? `<li>${esc(pp.name)} opened on its last snapshot, ${q(SE.snapshot.chosen)}. Opened after ${esc(plainName)}, whose last snapshot is ${q(SE.plain.snapshot.chosen)}, it showed ${q(SE.snapshotAfterPlain)}: the snapshot chosen for one study carried to the next.</li>` : ''}
@@ -588,6 +624,7 @@ ${css}
     <div class="lbl">Not checked on this page</div>
     <ul>
       <li>Files of your own. Every still is of a demo study, a ready-made study or the study built here.</li>
+      <li>Three things the second review's fixes changed${cite(issue(427), 'safety.viz #427')}: your own files or Reset chosen while a slow study is still arriving; a column set by hand kept when another snapshot is chosen; and what a build says when it fails.</li>
       <li>Building from a protocol. The form was opened on ${q(BU.protocol.button.replace(/^Try the /, 'the '))} and not built. The other ${n(BU.form.protocols.length - 1)} examples and ${key('Open a file…')} were not pressed.</li>
       <li>The builder's ${list(BU.built.buttons.slice(0, 3))} buttons, the app's ${q('Download as one file')}, and the Biomarkers tab on a simulated study.</li>
       <li>The expanded profile in any chart but the Hepatic Explorer, and the Patient Journey Explorer.</li>
@@ -607,8 +644,9 @@ ${css}
         <li>The app, until the release: ${a(DEV_APP, 'the dev build')}. After it: ${a(RELEASED_APP, 'the released app')}.</li>
         <li>Studies, the chip, the viewer as the Overview tab, the builder and the expanded profile${cite(pr(395), 'safety.viz pull request #395')}.</li>
         <li>The snapshot on the chip and in the charts, and the header's one row${cite(pr(419), '#419')}.</li>
-        <li>The copy of study.builder moved to ${BUILDER_VERSION}, and the simulator named as a modified copy${cite(issue(423), '#423')}.</li>
+        <li>The simulator named as a modified copy${cite(issue(423), '#423')}, and the copy of study.builder moved to ${BUILDER_VERSION}, whose studies say so in their own notes${cite(issue(428), '#428')}.</li>
         <li>The notes, the footer and the data sources page${cite(issue(424), '#424')}.</li>
+        <li>What the second review of the candidate found: the Simulated mark, the Experimental labels, the failed-open sentence, the snapshot in Run details${cite(issue(427), '#427')}.</li>
       </ul>
     </div>
     <div>
@@ -625,7 +663,7 @@ ${css}
 <footer>
   <p>Data: the Pilot study and the Renamed columns study are the public, de-identified CDISC Pilot 01 study (pharmaverseadam), with synthetic liver and kidney groups added to the labs. ${esc(pp.name)}, ${esc(plainName)}, READY-P2 and ${esc(BS.name)} are simulated by ${esc(madeBy)}, which study.builder carries: every row is made up. No real participant appears on this page.</p>
   <p>${esc(pp.name)} follows one of CDISC's example protocols, and stills of it show that protocol's name, visits and activities. The app's attribution, in full: ${esc(credit)}</p>
-  <p>Captured with Playwright, headless Chromium, from ${c.site.after ? a(c.site.after, esc(c.site.after_is)) : OF}${CH.before ? `; the before stills are from ${a(c.site.before, 'the released site')}, ${esc(THEN)}` : ''}. Three parts of the capture start real R in the browser. One part stops one study's file on its way to the page, to read what the app says. Every label, count and time quoted from the app was read by the script, and ${held} checks held them. How it was made, and how to take the stills again: ${a(HERE, 'this page’s folder')}.</p>
+  <p>Captured with Playwright, headless Chromium, from ${c.site.after ? a(c.site.after, esc(c.site.after_is)) : OF}${CH.before ? `; the before stills are from ${a(c.site.before, 'the released site')}, ${esc(THEN)}` : ''}. Three parts of the capture start real R in the browser. One part stops one ready-made study's file, and then one demo study's files, on their way to the page, to read what the app says. Every label, count and time quoted from the app was read by the script, and ${held} checks held them. How it was made, and how to take the stills again: ${a(HERE, 'this page’s folder')}.</p>
   <hr>
   <p>This page was drafted by Claude Code using Fable 5.2.</p>
 </footer>
