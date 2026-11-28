@@ -46,7 +46,7 @@ const svIssue = (n) => `${SV}/issues/${n}`;
 const stvIssue = (n) => `${STV}/issues/${n}`;
 // The comparison in comparison/: when it was made and of which builds. Not read
 // by capture.cjs; see this folder's README.
-const COMPARISON = { date: '28 November 2026', safety: '75b918cd', study: 'beee1a56' };
+const COMPARISON = { date: '28 November 2026', safety: 'v1.13.0', study: 'v0.1.0' };
 
 // ---------------------------------------------------------------- words
 const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -115,7 +115,7 @@ const SV_STATUS = SV_RELEASED_ON
 
 const css = fs.readFileSync(path.join(dir, 'page.css'), 'utf8');
 
-const DESCRIPTION = 'The first release candidate of study.viz, the demo app copied out of safety.viz into its own repository: its own name and address, the same studies and charts, what it says of a simulated study, and the records that hold the copy.';
+const DESCRIPTION = `The first ${RELEASED_ON ? 'release' : 'release candidate'} of study.viz, the demo app copied out of safety.viz into its own repository: its own name and address, the same studies and charts, what it says of a simulated study, and the records that hold the copy.`;
 if (DESCRIPTION.length < 40 || DESCRIPTION.length > 260) throw new Error(`description is ${DESCRIPTION.length} characters`);
 
 const STATUS_WORD = RELEASED_ON ? `Released ${esc(RELEASED_ON)}` : 'Release candidate';
@@ -229,7 +229,7 @@ ${css}
   ])}
   ${solo(SA.chart.still, 'A chart tab', `The ${SA.chart.title.split(' · ')[0]} in study.viz, on the Pilot study.`, [], `The ${esc(SA.chart.title.split(' · ')[0])}. The chart is safety.viz's; study.viz draws it from the copied bundle (section 7).`)}
   ${ul([
-    `A second comparison ran R in both apps. study.viz's <code>scripts/compare-demos.mjs</code> was run on ${esc(COMPARISON.date)} against both dev sites: safety.viz's at ${esc(COMPARISON.safety)} and study.viz's at ${esc(COMPARISON.study)}. On the Pilot study and on PILOT-PROTOCOL, R ran the same metrics in both apps, and the RBQM tab's site table was the same, cell for cell, at every site. Its table and screenshots are in ${a(`${HERE}/comparison`, 'this page’s comparison folder')}.`,
+    `A second comparison ran R in both apps. study.viz's <code>scripts/compare-demos.mjs</code> was run on ${esc(COMPARISON.date)} against the two released apps: safety.viz's demo at ${esc(COMPARISON.safety)} and study.viz at ${esc(COMPARISON.study)}. On the Pilot study and on PILOT-PROTOCOL, R ran the same metrics in both apps, and the RBQM tab's site table was the same, cell for cell, at every site. Its table and screenshots are in ${a(`${HERE}/comparison`, 'this page’s comparison folder')}.`,
     `For the chip, the Studies page, the builder, the files and the mapping in detail, see the ${a(SV_PAGE, 'safety.viz v1.13.0 demo page')}. Each of its steps works the same here.`
   ])}
   ${steps([
@@ -376,7 +376,7 @@ ${css}
       <h3>The release</h3>
       <ul>
         <li>The ${a(doc('NEWS.md'), 'release notes')}, section v0.1.0.</li>
-        <li>The app, until the release: ${a(DEV_APP, 'the dev site')}. After it: ${a(RELEASED_APP, 'the released app')}.</li>
+        <li>${RELEASED_ON ? `The app: ${a(RELEASED_APP, 'the released app')}. Work for the next release: ${a(DEV_APP, 'the dev site')}.` : `The app, until the release: ${a(DEV_APP, 'the dev site')}. After it: ${a(RELEASED_APP, 'the released app')}.`}</li>
         <li>The repository: ${a(STV, 'jwildfire/study.viz')}.</li>
         <li>The requirement it answers${cite(`${HUB}/issues/440`, 'roadmap #440')}; the study view in sections${cite(stvIssue(16), 'study.viz #16')}; the copy moved to safety.viz ${esc(short(HE.app.commit))} and study.builder ${esc(HE.builder.tag)}${cite(stvIssue(32), 'study.viz #32')}.</li>
       </ul>
