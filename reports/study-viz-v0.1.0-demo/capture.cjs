@@ -821,6 +821,9 @@ async function partHeld() {
     version: source.version,
     files: source.files.length,
     left: (source.left || []).length,
+    // What is left out, by kind: the stored pictures the browser tests compare with, and the screenshots the demo-path walk writes.
+    leftPictures: (source.left || []).filter((l) => /^A picture the browser tests are compared with/.test(l.reason || '')).length,
+    leftWalk: (source.left || []).filter((l) => /^A screenshot a walk/.test(l.reason || '')).length,
     withChecksum: source.files.filter((f) => /^[0-9a-f]{64}$/.test(f.sha256 || '')).length,
     changedFiles: changed.length,
     changes: changed.reduce((s, f) => s + f.changes.length, 0),
